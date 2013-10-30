@@ -44,7 +44,8 @@ public class SonarQubeConfigurable implements Configurable {
   @Override
   public javax.swing.JComponent createComponent() {
     if (settingsForm == null) {
-      settingsForm = new SonarQubeSettingsForm(SonarQubeSettings.getInstance());
+      settingsForm = new SonarQubeSettingsForm();
+      settingsForm.setServers(SonarQubeSettings.getInstance().getServers());
     }
     return settingsForm.getFormComponent();
   }
@@ -52,7 +53,7 @@ public class SonarQubeConfigurable implements Configurable {
   @Override
   public boolean isModified() {
     if (settingsForm != null) {
-      return settingsForm.isModified(SonarQubeSettings.getInstance());
+      return settingsForm.isModified();
     }
     return false;
 
@@ -61,7 +62,8 @@ public class SonarQubeConfigurable implements Configurable {
   @Override
   public void apply() throws com.intellij.openapi.options.ConfigurationException {
     if (settingsForm != null) {
-      SonarQubeSettings.getInstance().loadState(settingsForm.getState());
+      SonarQubeSettings.getInstance().getServers().clear();
+      SonarQubeSettings.getInstance().getServers().addAll(settingsForm.getServers());
     }
 
   }
@@ -69,7 +71,7 @@ public class SonarQubeConfigurable implements Configurable {
   @Override
   public void reset() {
     if (settingsForm != null) {
-      settingsForm.loadState(SonarQubeSettings.getInstance());
+      settingsForm.setServers(SonarQubeSettings.getInstance().getServers());
     }
 
   }
@@ -79,7 +81,6 @@ public class SonarQubeConfigurable implements Configurable {
     settingsForm = null;
   }
 
-  @Override
   public Icon getIcon() {
     return null;
   }

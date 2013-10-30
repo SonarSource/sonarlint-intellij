@@ -19,98 +19,70 @@
  */
 package org.sonar.ide.intellij.config;
 
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.ValidationInfo;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.model.SonarQubeServer;
+import org.sonar.ide.intellij.util.SonarQubeBundle;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.awt.event.ActionEvent;
 
-public class SonarQubeServerDialog extends JDialog {
+public class SonarQubeServerDialog extends DialogWrapper {
   private JPanel contentPane;
-  private JButton buttonOK;
-  private JButton buttonCancel;
   private JTextField idTextField;
   private JTextField urlTextField;
-  private JButton testConnectionButton;
-  private JLabel msgLabel;
 
-  SonarQubeServer server = null;
+  private SonarQubeServer server = null;
+  private boolean edit = false;
 
-  public SonarQubeServerDialog() {
-    setContentPane(contentPane);
-    setModal(true);
-    getRootPane().setDefaultButton(buttonOK);
-
-    buttonOK.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        onOK();
-      }
-    });
-
-    buttonCancel.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        onCancel();
-      }
-    });
-
-// call onCancel() when cross is clicked
-    setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
-    addWindowListener(new WindowAdapter() {
-      public void windowClosing(WindowEvent e) {
-        onCancel();
-      }
-    });
-
-// call onCancel() on ESCAPE
-    contentPane.registerKeyboardAction(new ActionListener() {
-      public void actionPerformed(ActionEvent e) {
-        onCancel();
-      }
-    }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+  public JTextField getUrlTextField() {
+    return urlTextField;
   }
 
-  private void onOK() {
-    SonarQubeServer validatedServer = validateServer();
-    if (validatedServer != null) {
-      server = validatedServer;
-      dispose();
+  public JTextField getIdTextField() {
+    return idTextField;
+  }
+
+  @Nullable
+  @Override
+  protected JComponent createCenterPanel() {
+    return contentPane;
+  }
+
+  public SonarQubeServerDialog(@NotNull Component parent) {
+    super(parent, false);
+    init();
+    setTitle(SonarQubeBundle.message("sonarqube.settings.server.add.title"));
+  }
+
+  @Override
+  protected ValidationInfo doValidate() {
+    this.server = new SonarQubeServer();
+    this.server.setId(idTextField.getText());
+    this.server.setUrl(urlTextField.getText());
+    if (edit) {
+      return SonarQubeSettings.getInstance().validateServer(this.server, this);
+    } else {
+      return SonarQubeSettings.getInstance().validateNewServer(this.server, this);
     }
-  }
-
-  private SonarQubeServer validateServer() {
-    msgLabel.setText("");
-    SonarQubeServer correct = new SonarQubeServer();
-    correct.setId(idTextField.getText());
-    try {
-      correct.setUrl(new URL(urlTextField.getText()));
-    } catch (MalformedURLException e) {
-      error(e.getMessage());
-      return null;
-    }
-    return correct;
-  }
-
-  private void error(String msg) {
-    msgLabel.setText(msg);
-    msgLabel.setForeground(Color.RED);
-  }
-
-  private void onCancel() {
-    server = null;
-    dispose();
   }
 
   public void setServer(SonarQubeServer server) {
     this.server = server;
     if (server == null) {
+      setTitle(SonarQubeBundle.message("sonarqube.settings.server.add.title"));
       idTextField.setText("");
       urlTextField.setText("");
+      edit = false;
     } else {
+      setTitle(SonarQubeBundle.message("sonarqube.settings.server.edit.title"));
       idTextField.setText(server.getId());
       idTextField.setEditable(false);
       urlTextField.setText(server.getUrl().toString());
+      edit = true;
     }
   }
 
@@ -118,10 +90,14 @@ public class SonarQubeServerDialog extends JDialog {
     return server;
   }
 
-  public static void main(String[] args) {
-    SonarQubeServerDialog dialog = new SonarQubeServerDialog();
-    dialog.pack();
-    dialog.setVisible(true);
-    System.exit(0);
+  @NotNull
+  @Override
+  protected Action[] createLeftSideActions() {
+    return new Action[]{new AbstractAction(SonarQubeBundle.message("sonarqube.settings.server.test")) {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        // TODO
+      }
+    }};
   }
 }

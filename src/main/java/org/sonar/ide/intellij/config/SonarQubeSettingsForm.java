@@ -19,73 +19,111 @@
  */
 package org.sonar.ide.intellij.config;
 
-import com.intellij.openapi.components.PersistentStateComponent;
+import com.intellij.openapi.ui.ComboBox;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.Messages;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 
-import javax.swing.DefaultListModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.ListModel;
-
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
-public final class SonarQubeSettingsForm implements PersistentStateComponent<SonarQubeSettings> {
+public final class SonarQubeSettingsForm {
 
   private JPanel formComponent;
   private JButton addButton;
-  private JComboBox<SonarQubeServer> serversList;
+  private ComboBox serversList;
   private JButton editButton;
   private JButton removeButton;
 
-  private final SonarQubeSettings settings = new SonarQubeSettings();
   private boolean modified = false;
 
-  public SonarQubeSettingsForm(SonarQubeSettings settings) {
-    loadState(settings);
+  public SonarQubeSettingsForm() {
     addButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        SonarQubeServerDialog dialog = new SonarQubeServerDialog();
-        dialog.pack();
-        dialog.setVisible(true);
-        if (dialog.getServer() != null) {
+        SonarQubeServerDialog dialog = new SonarQubeServerDialog(formComponent);
+        dialog.show();
+        if (dialog.getExitCode() == DialogWrapper.OK_EXIT_CODE) {
           serversList.addItem(dialog.getServer());
+          serversList.setSelectedItem(dialog.getServer());
           modified = true;
+          refreshButtons();
+        }
+      }
+    });
+    serversList.setRenderer(new DefaultListCellRenderer() {
+      @Override
+      public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        return super.getListCellRendererComponent(list, value != null ? ((SonarQubeServer) value).getId() : "<no server>", index, isSelected, cellHasFocus);
+      }
+    });
+    editButton.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        SonarQubeServerDialog dialog = new SonarQubeServerDialog(formComponent);
+        dialog.setServer((SonarQubeServer) serversList.getSelectedItem());
+        dialog.show();
+        if (dialog.getExitCode() == DialogWrapper.OK_EXIT_CODE) {
+          DefaultComboBoxModel model = ((DefaultComboBoxModel) serversList.getModel());
+          int selectedIndex = model.getIndexOf(model.getSelectedItem());
+          model.removeElementAt(selectedIndex);
+          model.insertElementAt(dialog.getServer(), selectedIndex);
+          model.setSelectedItem(dialog.getServer());
+          modified = true;
+          refreshButtons();
+        }
+      }
+    });
+    removeButton.addActionListener(new ActionListener() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        if (Messages.showYesNoDialog(formComponent, "Are you sure you want to delete this SonarQube server?", "Delete SonarQube server", Messages.getQuestionIcon()) == Messages.YES) {
+          serversList.removeItem(serversList.getSelectedItem());
+          modified = true;
+          refreshButtons();
         }
       }
     });
   }
 
-  private void createUIComponents() {
-    serversList = new JComboBox<SonarQubeServer>();
+  private void refreshButtons() {
+    if (serversList.getModel().getSize() > 0) {
+      editButton.setEnabled(true);
+      removeButton.setEnabled(true);
+    } else {
+      editButton.setEnabled(false);
+      removeButton.setEnabled(false);
+    }
   }
 
   public JComponent getFormComponent() {
     return formComponent;
   }
 
-  public boolean isModified(SonarQubeSettings state) {
+  public boolean isModified() {
     return modified;
   }
 
-  public final SonarQubeSettings getState() {
-    ListModel<SonarQubeServer> model = serversList.getModel();
-    settings.getServers().clear();
+  public final java.util.List<SonarQubeServer> getServers() {
+    ComboBoxModel model = serversList.getModel();
+    java.util.List<SonarQubeServer> result = new ArrayList<SonarQubeServer>(model.getSize());
     for (int i = 0; i < model.getSize(); i++) {
-      settings.getServers().add(model.getElementAt(i));
+      result.add((SonarQubeServer) model.getElementAt(i));
     }
-    return settings;
+    return result;
   }
 
-  public final void loadState(SonarQubeSettings state) {
-    DefaultListModel model = new DefaultListModel();
-    for (SonarQubeServer server : state.getServers()) {
+  public final void setServers(java.util.List<SonarQubeServer> servers) {
+    DefaultComboBoxModel model = new DefaultComboBoxModel();
+    for (SonarQubeServer server : servers) {
       model.addElement(server);
     }
+    serversList.setModel(model);
     modified = false;
+    refreshButtons();
   }
 
 }

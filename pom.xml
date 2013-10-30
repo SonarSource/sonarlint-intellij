@@ -57,19 +57,28 @@
     <license.title>SonarQube IntelliJ</license.title>
     <license.year>2013</license.year>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Used by Intellij plugin development with Maven -->
+    <ij.plugin>true</ij.plugin>
+    <ij.version>12.1.6</ij.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>annotations</artifactId>
-      <version>12.0</version>
+      <version>${ij.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>openapi</artifactId>
-      <version>7.0.3</version>
+      <version>${ij.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>util</artifactId>
+      <version>${ij.version}</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
