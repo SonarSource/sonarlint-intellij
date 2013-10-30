@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.sonar-plugins</groupId>
+    <artifactId>parent</artifactId>
+    <version>17</version>
+  </parent>
+
+  <groupId>org.codehaus.sonar-ide.intellij</groupId>
+  <artifactId>sonar-intellij-plugin</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+
+  <name>SonarQube Integration for IntelliJ</name>
+  <description></description>
+  <url></url>
+  <inceptionYear>2013</inceptionYear>
+  <organization>
+    <name>SonarSource</name>
+    <url>http://www.sonarsource.com</url>
+  </organization>
+
+  <developers>
+    <developer>
+      <id>henryju</id>
+      <name>Julien Henry</name>
+      <timezone>+1</timezone>
+      <roles>
+        <role>Developer</role>
+      </roles>
+    </developer>
+  </developers>
+
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
+
+  <scm>
+    <connection>scm:git:git@github.com:SonarSource/sonar-intellij.git</connection>
+    <developerConnection>scm:git:git@github.com:SonarSource/sonar-intellij.git</developerConnection>
+    <url>https://github.com/SonarSource/sonar-intellij</url>
+  </scm>
+
+  <issueManagement>
+    <system>JIRA</system>
+    <url>http://jira.codehaus.org/browse/SONARIDE/component/16155</url>
+  </issueManagement>
+  <ciManagement>
+    <system>jenkins</system>
+    <url>https://sonarplugins.ci.cloudbees.com/job/IntelliJ/</url>
+  </ciManagement>
+
+  <properties>
+    <license.title>SonarQube IntelliJ</license.title>
+    <license.year>2013</license.year>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>annotations</artifactId>
+      <version>12.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>openapi</artifactId>
+      <version>7.0.3</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+</project>
