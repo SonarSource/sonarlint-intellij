@@ -32,9 +32,10 @@ import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
 
 import java.io.File;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.MessageFormat;import java.util.List;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @State(name = "SonarQubeSettings", storages = {@Storage(id = "sonarqube", file = "$APP_CONFIG$/sonarqube.xml")})
@@ -43,67 +44,71 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
   private static String SERVER_ID_REGEXP = "[a-zA-Z0-9_\\-:]+";
   private static Pattern SERVER_ID_PATTERN = Pattern.compile(SERVER_ID_REGEXP);
 
-    public static SonarQubeSettings getInstance() {
-        return com.intellij.openapi.application.ApplicationManager.getApplication().getComponent(SonarQubeSettings.class);
-    }
+  public static SonarQubeSettings getInstance() {
+    return com.intellij.openapi.application.ApplicationManager.getApplication().getComponent(SonarQubeSettings.class);
+  }
 
-    public java.util.List<SonarQubeServer> servers = new java.util.ArrayList<SonarQubeServer>();
+  public java.util.List<SonarQubeServer> servers = new java.util.ArrayList<SonarQubeServer>();
 
   public List<SonarQubeServer> getServers() {
     return servers;
   }
 
   public SonarQubeSettings getState() {
-        return this;
-    }
+    return this;
+  }
 
-    public void loadState(SonarQubeSettings state) {
-        XmlSerializerUtil.copyBean(state, this);
-    }
+  public void loadState(SonarQubeSettings state) {
+    XmlSerializerUtil.copyBean(state, this);
+  }
 
-    @NotNull
-    public File[] getExportFiles() {
-        return new File[]{PathManager.getOptionsFile("sonarqube")};
-    }
+  @NotNull
+  public File[] getExportFiles() {
+    return new File[]{PathManager.getOptionsFile("sonarqube")};
+  }
 
-    @NotNull
-    public String getPresentableName() {
-        return SonarQubeBundle.message("sonarqube.settings");
-    }
+  @NotNull
+  public String getPresentableName() {
+    return SonarQubeBundle.message("sonarqube.settings");
+  }
 
-    @NotNull
-    @NonNls
-    public String getComponentName() {
-        return "SonarQubeSettings";
-    }
+  @NotNull
+  @NonNls
+  public String getComponentName() {
+    return "SonarQubeSettings";
+  }
 
   public ValidationInfo validateNewServer(SonarQubeServer server, SonarQubeServerDialog dialog) {
     if (!SERVER_ID_PATTERN.matcher(server.getId()).matches()) {
       return new ValidationInfo("Invalid server ID: " + server.getId() + ". Should match " + SERVER_ID_REGEXP, dialog.getIdTextField());
     }
     for (SonarQubeServer other : servers) {
-      if (other.getId().equals(server.getId()))  {
+      if (other.getId().equals(server.getId())) {
         return new ValidationInfo(SonarQubeBundle.message("sonarqube.settings.server.duplicateId", server.getId()), dialog.getUrlTextField());
       }
     }
-    return validateServer(server, dialog)      ;
+    return validateServer(server, dialog);
   }
 
   public ValidationInfo validateServer(SonarQubeServer server, SonarQubeServerDialog dialog) {
     try {
-      new URL(server.getUrl());
+      URL url = new URL(server.getUrl());
+      if (url.getPort() < 0 || url.getPort() > 0xFFFF) {
+        return new ValidationInfo("port out of range:" + url.getPort(), dialog.getUrlTextField());
+      }
+      new InetSocketAddress(url.getPort());
     } catch (MalformedURLException e) {
       return new ValidationInfo("Invalid URL: " + e.getMessage(), dialog.getUrlTextField());
     }
     return null;
   }
 
-    public void initComponent() {
+  public void initComponent() {
 
-    }
+  }
 
-    public void disposeComponent() {
+  public void disposeComponent() {
 
-    }
+  }
 
 }

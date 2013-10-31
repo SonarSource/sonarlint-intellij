@@ -19,13 +19,15 @@
  */
 package org.sonar.ide.intellij.model;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.net.URL;
 
-public class SonarQubeServer {
+public class SonarQubeServer implements ISonarServer {
 
   private String id;
   private String url;
-  private String login;
+  private String username;
   private String password;
 
   public String getId() {
@@ -44,12 +46,12 @@ public class SonarQubeServer {
     this.url = url;
   }
 
-  public String getLogin() {
-    return login;
+  public String getUsername() {
+    return username;
   }
 
-  public void setLogin(String login) {
-    this.login = login;
+  public void setUsername(String username) {
+    this.username = username;
   }
 
   public String getPassword() {
@@ -58,5 +60,10 @@ public class SonarQubeServer {
 
   public void setPassword(String password) {
     this.password = password;
+  }
+
+  @Override
+  public boolean hasCredentials() {
+    return StringUtils.isNotBlank(getPassword()) && StringUtils.isNotBlank(getUsername());
   }
 }

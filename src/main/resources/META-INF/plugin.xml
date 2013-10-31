@@ -25,6 +25,9 @@
     <component>
       <implementation-class>org.sonar.ide.intellij.config.SonarQubeSettings</implementation-class>
     </component>
+    <component>
+      <implementation-class>org.sonar.ide.intellij.wsclient.WSClientFactory</implementation-class>
+    </component>
   </application-components>
 
   <project-components>
