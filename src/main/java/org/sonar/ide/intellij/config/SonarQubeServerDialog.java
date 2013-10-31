@@ -41,6 +41,8 @@ public class SonarQubeServerDialog extends DialogWrapper {
   private JPanel contentPane;
   private JTextField idTextField;
   private JTextField urlTextField;
+  private JTextField usernameTextField;
+  private JPasswordField passwordField;
 
   private SonarQubeServer server = null;
   private boolean edit = false;
@@ -70,6 +72,8 @@ public class SonarQubeServerDialog extends DialogWrapper {
     this.server = new SonarQubeServer();
     this.server.setId(idTextField.getText());
     this.server.setUrl(urlTextField.getText());
+    this.server.setUsername(usernameTextField.getText());
+    this.server.setPassword(new String(passwordField.getPassword()));
     if (edit) {
       return SonarQubeSettings.getInstance().validateServer(this.server, this);
     } else {
@@ -83,12 +87,16 @@ public class SonarQubeServerDialog extends DialogWrapper {
       setTitle(SonarQubeBundle.message("sonarqube.settings.server.add.title"));
       idTextField.setText("");
       urlTextField.setText("");
+      usernameTextField.setText("");
+      passwordField.setText("");
       edit = false;
     } else {
       setTitle(SonarQubeBundle.message("sonarqube.settings.server.edit.title"));
       idTextField.setText(server.getId());
       idTextField.setEditable(false);
-      urlTextField.setText(server.getUrl().toString());
+      urlTextField.setText(server.getUrl());
+      usernameTextField.setText(server.getUsername());
+      passwordField.setText(server.getPassword());
       edit = true;
     }
   }
