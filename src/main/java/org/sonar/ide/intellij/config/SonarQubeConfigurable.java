@@ -19,13 +19,22 @@
  */
 package org.sonar.ide.intellij.config;
 
+import com.intellij.ide.passwordSafe.PasswordSafe;
+import com.intellij.ide.passwordSafe.PasswordSafeException;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.util.ui.UIUtil;
+import org.apache.commons.lang.StringUtils;
+import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
 
-import javax.swing.Icon;
+import javax.swing.*;
+import java.util.List;
 
 public class SonarQubeConfigurable implements Configurable {
-
+  private static final Logger LOG = Logger.getInstance(SonarQubeConfigurable.class);
   private SonarQubeSettingsForm settingsForm;
 
   @org.jetbrains.annotations.Nls
@@ -45,7 +54,7 @@ public class SonarQubeConfigurable implements Configurable {
   public javax.swing.JComponent createComponent() {
     if (settingsForm == null) {
       settingsForm = new SonarQubeSettingsForm();
-      settingsForm.setServers(SonarQubeSettings.getInstance().getServers());
+      loadServerPasswords();
     }
     return settingsForm.getFormComponent();
   }
@@ -62,8 +71,24 @@ public class SonarQubeConfigurable implements Configurable {
   @Override
   public void apply() throws com.intellij.openapi.options.ConfigurationException {
     if (settingsForm != null) {
-      SonarQubeSettings.getInstance().getServers().clear();
-      SonarQubeSettings.getInstance().getServers().addAll(settingsForm.getServers());
+      final List<SonarQubeServer> servers = settingsForm.getServers();
+      UIUtil.invokeAndWaitIfNeeded(new Runnable() {
+        public void run() {
+          SonarQubeSettings.getInstance().getServers().clear();
+          SonarQubeSettings.getInstance().getServers().addAll(servers);
+          for (SonarQubeServer server : servers) {
+            try {
+              if (StringUtils.isBlank(server.getPassword())) {
+                PasswordSafe.getInstance().removePassword(null, SonarQubeServer.class, server.getId());
+              } else {
+                PasswordSafe.getInstance().storePassword(null, SonarQubeServer.class, server.getId(), server.getPassword());
+              }
+            } catch (PasswordSafeException e) {
+              LOG.error("Unable to store password", e);
+            }
+          }
+        }
+      });
     }
 
   }
@@ -71,9 +96,26 @@ public class SonarQubeConfigurable implements Configurable {
   @Override
   public void reset() {
     if (settingsForm != null) {
-      settingsForm.setServers(SonarQubeSettings.getInstance().getServers());
+      loadServerPasswords();
     }
 
+  }
+
+  private void loadServerPasswords() {
+    final List<SonarQubeServer> servers = SonarQubeSettings.getInstance().getServers();
+    settingsForm.setServers(servers);
+    // Load server passwords asynchronously to avoid UI lock
+    UIUtil.invokeAndWaitIfNeeded(new Runnable() {
+      public void run() {
+        for (SonarQubeServer server : servers) {
+          try {
+            server.setPassword(PasswordSafe.getInstance().getPassword(null, SonarQubeServer.class, server.getId()));
+          } catch (PasswordSafeException e) {
+            LOG.error("Unable to load password", e);
+          }
+        }
+      }
+    });
   }
 
   @Override

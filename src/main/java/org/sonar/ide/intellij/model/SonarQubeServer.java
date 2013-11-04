@@ -19,15 +19,15 @@
  */
 package org.sonar.ide.intellij.model;
 
+import com.intellij.util.xmlb.annotations.Transient;
 import org.apache.commons.lang.StringUtils;
-
-import java.net.URL;
 
 public class SonarQubeServer implements ISonarServer {
 
   private String id;
   private String url;
   private String username;
+  @Transient
   private String password;
 
   public String getId() {
@@ -54,6 +54,7 @@ public class SonarQubeServer implements ISonarServer {
     this.username = username;
   }
 
+  @Transient
   public String getPassword() {
     return password;
   }

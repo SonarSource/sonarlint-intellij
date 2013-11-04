@@ -24,6 +24,7 @@ import com.intellij.openapi.components.ExportableApplicationComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NonNls;
@@ -41,6 +42,7 @@ import java.util.regex.Pattern;
 @State(name = "SonarQubeSettings", storages = {@Storage(id = "sonarqube", file = "$APP_CONFIG$/sonarqube.xml")})
 public final class SonarQubeSettings implements PersistentStateComponent<SonarQubeSettings>, ExportableApplicationComponent {
 
+  private static final Logger LOG = Logger.getInstance(SonarQubeSettings.class);
   private static String SERVER_ID_REGEXP = "[a-zA-Z0-9_\\-:]+";
   private static Pattern SERVER_ID_PATTERN = Pattern.compile(SERVER_ID_REGEXP);
 
