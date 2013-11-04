@@ -1,6 +1,6 @@
 /*
- * SonarQube Eclipse
- * Copyright (C) 2010-2013 SonarSource
+ * SonarQube IntelliJ
+ * Copyright (C) 2013 SonarSource
  * dev@sonar.codehaus.org
  *
  * This program is free software; you can redistribute it and/or
@@ -21,7 +21,9 @@ package org.sonar.ide.intellij.wsclient;
 
 import com.intellij.openapi.diagnostic.Logger;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.sonar.ide.intellij.model.ISonarIssue;
+import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.wsclient.Sonar;
 import org.sonar.wsclient.SonarClient;
 import org.sonar.wsclient.connectors.ConnectionException;
@@ -40,10 +42,12 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
 
   private final Sonar sonar;
   private final SonarClient sonarClient;
+  private final SonarQubeServer server;
 
-  public SonarWSClientFacade(final Sonar sonar, final SonarClient sonarClient) {
+  public SonarWSClientFacade(final Sonar sonar, final SonarClient sonarClient, final SonarQubeServer server) {
     this.sonar = sonar;
     this.sonarClient = sonarClient;
+    this.server = server;
   }
 
   @Override
@@ -72,7 +76,7 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     List<Resource> resources = findAll(query);
     List<ISonarRemoteModule> result = new ArrayList<ISonarRemoteModule>(resources.size());
     for (Resource resource : resources) {
-      result.add(new SonarRemoteModule(resource));
+      result.add(new SonarRemoteModule(resource, server));
     }
     return result;
   }
@@ -105,7 +109,7 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
 
       result = new ArrayList<ISonarRemoteModule>(resources.size());
       for (Resource resource : resources) {
-        result.add(new SonarRemoteModule(resource));
+        result.add(new SonarRemoteModule(resource, server));
       }
     } else {
       ResourceSearchQuery query = ResourceSearchQuery.create(text).setQualifiers(Resource.QUALIFIER_PROJECT, Resource.QUALIFIER_MODULE);
@@ -113,7 +117,7 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
 
       result = new ArrayList<ISonarRemoteModule>(searchResult.getResources().size());
       for (ResourceSearchResult.Resource resource : searchResult.getResources()) {
-        result.add(new SonarRemoteModule(resource));
+        result.add(new SonarRemoteModule(resource, server));
       }
     }
 
@@ -254,15 +258,18 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
 
     private String key;
     private String name;
+    private SonarQubeServer server;
 
-    public SonarRemoteModule(final Resource resource) {
+    public SonarRemoteModule(final Resource resource, final SonarQubeServer server) {
       this.key = resource.getKey();
       this.name = resource.getName();
+      this.server = server;
     }
 
-    public SonarRemoteModule(final ResourceSearchResult.Resource resource) {
+    public SonarRemoteModule(final ResourceSearchResult.Resource resource, final SonarQubeServer server) {
       this.key = resource.key();
       this.name = resource.name();
+      this.server = server;
     }
 
     @Override
@@ -273,6 +280,25 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     @Override
     public String getName() {
       return this.name;
+    }
+
+    @Override
+    public SonarQubeServer getServer() {
+      return server;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if (!(obj instanceof SonarRemoteModule)) {
+        return false;
+      }
+      SonarRemoteModule other = (SonarRemoteModule) obj;
+      return server.getId().equals(other.getServer().getId()) && getKey().equals(other.getKey());
+    }
+
+    @Override
+    public int hashCode() {
+      return new HashCodeBuilder().append(getKey()).append(getServer().getId()).toHashCode();
     }
   }
 

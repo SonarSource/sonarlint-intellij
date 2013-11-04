@@ -1,6 +1,6 @@
 /*
- * SonarQube Eclipse
- * Copyright (C) 2010-2013 SonarSource
+ * SonarQube IntelliJ
+ * Copyright (C) 2013 SonarSource
  * dev@sonar.codehaus.org
  *
  * This program is free software; you can redistribute it and/or
@@ -19,10 +19,14 @@
  */
 package org.sonar.ide.intellij.wsclient;
 
+import org.sonar.ide.intellij.model.SonarQubeServer;
+
 public interface ISonarRemoteModule {
 
   String getKey();
 
   String getName();
+
+  SonarQubeServer getServer();
 
 }

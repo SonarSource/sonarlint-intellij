@@ -26,14 +26,14 @@ import org.jetbrains.annotations.PropertyKey;
 import java.util.ResourceBundle;
 
 public final class SonarQubeBundle {
-    @NonNls
-    private static final String BUNDLE_NAME = "org.sonar.ide.intellij.util.SonarQubeBundle";
-    private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
+  @NonNls
+  private static final String BUNDLE_NAME = "org.sonar.ide.intellij.util.SonarQubeBundle";
+  private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
 
-    private SonarQubeBundle() {
-    }
+  private SonarQubeBundle() {
+  }
 
-    public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME)String key, Object... params) {
-        return CommonBundle.message(BUNDLE, key, params);
-    }
+  public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME) String key, Object... params) {
+    return CommonBundle.message(BUNDLE, key, params);
+  }
 }

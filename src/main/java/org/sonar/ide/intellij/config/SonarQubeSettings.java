@@ -20,10 +20,7 @@
 package org.sonar.ide.intellij.config;
 
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ExportableApplicationComponent;
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
+import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.util.xmlb.XmlSerializerUtil;
@@ -39,7 +36,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.regex.Pattern;
 
-@State(name = "SonarQubeSettings", storages = {@Storage(id = "sonarqube", file = "$APP_CONFIG$/sonarqube.xml")})
+@State(name = "SonarQubeSettings", storages = {@Storage(id = "sonarqube", file = StoragePathMacros.APP_CONFIG + "/sonarqube.xml")})
 public final class SonarQubeSettings implements PersistentStateComponent<SonarQubeSettings>, ExportableApplicationComponent {
 
   private static final Logger LOG = Logger.getInstance(SonarQubeSettings.class);

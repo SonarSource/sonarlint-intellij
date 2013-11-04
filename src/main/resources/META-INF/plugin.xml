@@ -31,15 +31,20 @@
   </application-components>
 
   <project-components>
-    <!-- Add your project components here -->
+    <component>
+      <implementation-class>org.sonar.ide.intellij.config.ProjectSettings</implementation-class>
+    </component>
   </project-components>
 
   <actions>
     <!-- Add your actions here -->
+    <action id="associate" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube" description="Associate with a remote SonarQube server">
+      <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddFrameworkSupport"/>
+    </action>
   </actions>
 
   <extensions defaultExtensionNs="com.intellij">
     <!-- Add your extensions here -->
-        <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
+    <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
   </extensions>
 </idea-plugin>
