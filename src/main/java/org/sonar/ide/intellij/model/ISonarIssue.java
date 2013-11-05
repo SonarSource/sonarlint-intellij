@@ -21,6 +21,12 @@ package org.sonar.ide.intellij.model;
 
 public interface ISonarIssue {
 
+  String BLOCKER = "BLOCKER";
+  String CRITICAL = "CRITICAL";
+  String MAJOR = "MAJOR";
+  String MINOR = "MINOR";
+  String INFO = "INFO";
+
   String key();
 
   String resourceKey();

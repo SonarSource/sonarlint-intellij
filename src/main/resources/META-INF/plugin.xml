@@ -37,14 +37,21 @@
   </project-components>
 
   <actions>
-    <!-- Add your actions here -->
     <action id="associate" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube" description="Associate with a remote SonarQube server">
       <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddFrameworkSupport"/>
     </action>
   </actions>
 
   <extensions defaultExtensionNs="com.intellij">
-    <!-- Add your extensions here -->
     <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
+    <codeInspection.InspectionExtension id="sonarqubeInspection"
+                                        implementation="org.sonar.ide.intellij.inspection.SonarQubeInspectionExtensionsFactory"/>
+
+    <globalInspection groupName="SonarQube"
+                      shortName="sonarqube"
+                      enabledByDefault="true"
+                      level="WARNING"
+                      implementationClass="org.sonar.ide.intellij.inspection.SonarQubeInspection"/>
+
   </extensions>
 </idea-plugin>

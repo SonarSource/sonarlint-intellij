@@ -110,4 +110,12 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
 
   }
 
+  public SonarQubeServer getServer(String serverId) {
+    for (SonarQubeServer server : getServers()) {
+      if (server.getId().equals(serverId)) {
+        return server;
+      }
+    }
+    return null;
+  }
 }
