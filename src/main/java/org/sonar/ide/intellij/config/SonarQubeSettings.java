@@ -92,8 +92,8 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
   public ValidationInfo validateServer(SonarQubeServer server, SonarQubeServerDialog dialog) {
     try {
       URL url = new URL(server.getUrl());
-      if (url.getPort() < 0 || url.getPort() > 0xFFFF) {
-        return new ValidationInfo("port out of range:" + url.getPort(), dialog.getUrlTextField());
+      if (url.getPort() != -1 && (url.getPort() < 0 || url.getPort() > 0xFFFF)) {
+        return new ValidationInfo("Port out of range:" + url.getPort(), dialog.getUrlTextField());
       }
       new InetSocketAddress(url.getPort());
     } catch (MalformedURLException e) {
