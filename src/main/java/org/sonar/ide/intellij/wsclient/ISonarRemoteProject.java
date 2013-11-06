@@ -21,10 +21,12 @@ package org.sonar.ide.intellij.wsclient;
 
 import org.sonar.ide.intellij.model.SonarQubeServer;
 
-public interface ISonarRemoteModule {
+public interface ISonarRemoteProject {
 
   String getKey();
 
   String getName();
+
+  SonarQubeServer getServer();
 
 }

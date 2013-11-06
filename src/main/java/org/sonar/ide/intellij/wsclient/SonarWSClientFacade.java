@@ -71,10 +71,10 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
   }
 
   @Override
-  public List<ISonarRemoteModule> listAllRemoteModules() {
-    ResourceQuery query = new ResourceQuery().setScopes(Resource.SCOPE_SET).setQualifiers(Resource.QUALIFIER_PROJECT, Resource.QUALIFIER_MODULE);
+  public List<ISonarRemoteProject> listAllRemoteProjects() {
+    ResourceQuery query = new ResourceQuery().setScopes(Resource.SCOPE_SET).setQualifiers(Resource.QUALIFIER_PROJECT);
     List<Resource> resources = findAll(query);
-    List<ISonarRemoteModule> result = new ArrayList<ISonarRemoteModule>(resources.size());
+    List<ISonarRemoteProject> result = new ArrayList<ISonarRemoteProject>(resources.size());
     for (Resource resource : resources) {
       result.add(new SonarRemoteModule(resource, server));
     }
@@ -98,29 +98,44 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
   }
 
   @Override
-  public List<ISonarRemoteModule> searchRemoteModules(String text) {
-    List<ISonarRemoteModule> result;
+  public List<ISonarRemoteProject> searchRemoteProjects(String text) {
+    List<ISonarRemoteProject> result;
     if (text.length() < 3) {
       ResourceQuery query = new ResourceQuery()
           .setScopes(Resource.SCOPE_SET)
-          .setQualifiers(Resource.QUALIFIER_PROJECT, Resource.QUALIFIER_MODULE)
+          .setQualifiers(Resource.QUALIFIER_PROJECT)
           .setResourceKeyOrId(text);
       List<Resource> resources = findAll(query);
 
-      result = new ArrayList<ISonarRemoteModule>(resources.size());
+      result = new ArrayList<ISonarRemoteProject>(resources.size());
       for (Resource resource : resources) {
         result.add(new SonarRemoteModule(resource, server));
       }
     } else {
-      ResourceSearchQuery query = ResourceSearchQuery.create(text).setQualifiers(Resource.QUALIFIER_PROJECT, Resource.QUALIFIER_MODULE);
+      ResourceSearchQuery query = ResourceSearchQuery.create(text).setQualifiers(Resource.QUALIFIER_PROJECT);
       ResourceSearchResult searchResult = find(query);
 
-      result = new ArrayList<ISonarRemoteModule>(searchResult.getResources().size());
+      result = new ArrayList<ISonarRemoteProject>(searchResult.getResources().size());
       for (ResourceSearchResult.Resource resource : searchResult.getResources()) {
         result.add(new SonarRemoteModule(resource, server));
       }
     }
 
+    return result;
+  }
+
+  @Override
+  public List<ISonarRemoteModule> getRemoteModules(ISonarRemoteProject project) {
+    ResourceQuery query = new ResourceQuery()
+        .setAllDepths()
+        .setScopes(Resource.SCOPE_SET)
+        .setQualifiers(Resource.QUALIFIER_MODULE)
+        .setResourceKeyOrId(project.getKey());
+    List<Resource> resources = findAll(query);
+    List<ISonarRemoteModule> result = new ArrayList<ISonarRemoteModule>(resources.size());
+    for (Resource resource : resources) {
+      result.add(new SonarRemoteModule(resource, server));
+    }
     return result;
   }
 
@@ -254,7 +269,7 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
 
   }
 
-  private static class SonarRemoteModule implements ISonarRemoteModule {
+  private static class SonarRemoteModule implements ISonarRemoteProject, ISonarRemoteModule {
 
     private String key;
     private String name;

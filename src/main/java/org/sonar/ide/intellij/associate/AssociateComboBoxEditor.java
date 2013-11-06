@@ -19,7 +19,7 @@
  */
 package org.sonar.ide.intellij.associate;
 
-import org.sonar.ide.intellij.wsclient.ISonarRemoteModule;
+import org.sonar.ide.intellij.wsclient.ISonarRemoteProject;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -30,7 +30,7 @@ import java.awt.event.FocusListener;
 
 public class AssociateComboBoxEditor implements ComboBoxEditor, FocusListener {
   protected JTextField editor;
-  private ISonarRemoteModule oldValue;
+  private ISonarRemoteProject oldValue;
 
   public AssociateComboBoxEditor() {
     editor = createEditorComponent();
@@ -59,8 +59,8 @@ public class AssociateComboBoxEditor implements ComboBoxEditor, FocusListener {
    * @param anObject the displayed value of the editor
    */
   public void setItem(Object anObject) {
-    if (anObject instanceof ISonarRemoteModule) {
-      ISonarRemoteModule module = (ISonarRemoteModule) anObject;
+    if (anObject instanceof ISonarRemoteProject) {
+      ISonarRemoteProject module = (ISonarRemoteProject) anObject;
       editor.setText(module.getName() + " (" + module.getServer().getId() + ")");
 
       oldValue = module;

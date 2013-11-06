@@ -73,7 +73,7 @@ public class SonarQubeInspection extends GlobalInspectionTool {
     }
     Project p = globalContext.getProject();
     ModuleManager.getInstance(p);
-    final String moduleKey = p.getComponent(ProjectSettings.class).getModuleKey();
+    final String moduleKey = p.getComponent(ProjectSettings.class).getProjectKey();
     final Map<String, PsiFile> resourceCache = new HashMap<String, PsiFile>();
     final SearchScope searchScope = globalContext.getRefManager().getScope().toSearchScope();
     for (final VirtualFile virtualFile : FileTypeIndex.getFiles(JavaFileType.INSTANCE, (GlobalSearchScope) searchScope)) {

@@ -34,9 +34,11 @@ public interface ISonarWSClientFacade {
 
   String getServerVersion();
 
-  List<ISonarRemoteModule> listAllRemoteModules();
+  List<ISonarRemoteProject> listAllRemoteProjects();
 
-  List<ISonarRemoteModule> searchRemoteModules(String partialName);
+  List<ISonarRemoteProject> searchRemoteProjects(String partialName);
+
+  List<ISonarRemoteModule> getRemoteModules(ISonarRemoteProject project);
 
   boolean exists(String resourceKey);
 

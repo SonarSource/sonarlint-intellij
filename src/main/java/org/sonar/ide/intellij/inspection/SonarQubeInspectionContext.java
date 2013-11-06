@@ -69,7 +69,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         return;
       }
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-      issues = sonarClient.getRemoteIssuesRecursively(projectSettings.getModuleKey());
+      issues = sonarClient.getRemoteIssuesRecursively(projectSettings.getProjectKey());
     }
 
 

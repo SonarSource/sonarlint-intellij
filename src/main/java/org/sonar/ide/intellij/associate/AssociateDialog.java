@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
-import org.sonar.ide.intellij.wsclient.ISonarRemoteModule;
+import org.sonar.ide.intellij.wsclient.ISonarRemoteProject;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
@@ -57,28 +57,28 @@ public class AssociateDialog extends DialogWrapper {
     projectComboBox.setRenderer(new DefaultListCellRenderer() {
       @Override
       public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        ISonarRemoteModule module = (ISonarRemoteModule) value;
+        ISonarRemoteProject module = (ISonarRemoteProject) value;
         return super.getListCellRendererComponent(list, module != null ? module.getName() + " (" + module.getServer().getId() + ")" : null, index, isSelected, cellHasFocus);
       }
     });
     projectComboBox.setEditor(new AssociateComboBoxEditor());
-    List<ISonarRemoteModule> allModules = new ArrayList<ISonarRemoteModule>();
+    List<ISonarRemoteProject> allProjects = new ArrayList<ISonarRemoteProject>();
     for (SonarQubeServer server : SonarQubeSettings.getInstance().getServers()) {
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-      allModules.addAll(sonarClient.listAllRemoteModules());
+      allProjects.addAll(sonarClient.listAllRemoteProjects());
     }
-    for (ISonarRemoteModule module : allModules) {
+    for (ISonarRemoteProject module : allProjects) {
       projectComboBox.addItem(module);
     }
   }
 
-  public ISonarRemoteModule getSelectedModule() {
-    return (ISonarRemoteModule) projectComboBox.getSelectedItem();
+  public ISonarRemoteProject getSelectedSonarQubeProject() {
+    return (ISonarRemoteProject) projectComboBox.getSelectedItem();
   }
 
-  public void setSelectedModule(String serverId, String moduleKey) {
+  public void setSelectedSonarQubeProject(String serverId, String moduleKey) {
     for (int i = 0; i < projectComboBox.getModel().getSize(); i++) {
-      ISonarRemoteModule module = (ISonarRemoteModule) projectComboBox.getModel().getElementAt(i);
+      ISonarRemoteProject module = (ISonarRemoteProject) projectComboBox.getModel().getElementAt(i);
       if (module.getServer().getId().equals(serverId) && module.getKey().equals(moduleKey)) {
         projectComboBox.setSelectedIndex(i);
         return;

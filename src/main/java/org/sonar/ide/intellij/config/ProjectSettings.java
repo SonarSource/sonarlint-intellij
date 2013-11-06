@@ -24,6 +24,9 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @State(
     name = "SonarQubeConfiguration",
     storages = {
@@ -36,7 +39,8 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
   private static final Logger LOG = Logger.getInstance(ProjectSettings.class);
 
   private String serverId = null;
-  private String moduleKey = null;
+  private String projectKey = null;
+  private Map<String, String> moduleKeys = new HashMap<String, String>();
 
   public String getServerId() {
     return serverId;
@@ -46,12 +50,20 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
     this.serverId = serverId;
   }
 
-  public String getModuleKey() {
-    return moduleKey;
+  public String getProjectKey() {
+    return projectKey;
   }
 
-  public void setModuleKey(String moduleKey) {
-    this.moduleKey = moduleKey;
+  public void setProjectKey(String projectKey) {
+    this.projectKey = projectKey;
+  }
+
+  public Map<String, String> getModuleKeys() {
+    return moduleKeys;
+  }
+
+  public void setModuleKeys(Map<String, String> moduleKeys) {
+    this.moduleKeys = moduleKeys;
   }
 
   public ProjectSettings getState() {

@@ -93,6 +93,18 @@
       <version>${ij.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.intellij.plugins.maven</groupId>
+      <artifactId>maven</artifactId>
+      <version>${ij.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij.plugins.maven</groupId>
+      <artifactId>maven-server-api</artifactId>
+      <version>${ij.version}</version>
+      <scope>provided</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.codehaus.sonar</groupId>
