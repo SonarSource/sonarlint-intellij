@@ -25,6 +25,7 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.proxy.CommonProxy;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -55,14 +56,23 @@ public final class WSClientFactory implements ApplicationComponent {
   }
 
   /**
-   * Creates Sonar web service client facade, which uses proxy settings from IntelliJ.
+   * Creates Sonar web service client facade, which uses proxy settings from IntelliJ and load server password from safe store.
    */
   public ISonarWSClientFacade getSonarClient(SonarQubeServer sonarServer) {
+    return getSonarClient(sonarServer, true);
+  }
+
+  /**
+   * Creates Sonar web service client facade, which uses proxy settings from IntelliJ and load server password from safe store.
+   */
+  public ISonarWSClientFacade getSonarClient(SonarQubeServer sonarServer, boolean loadPasswordFromStorage) {
     Host host;
-    try {
-      sonarServer.setPassword(PasswordSafe.getInstance().getPassword(null, SonarQubeServer.class, sonarServer.getId()));
-    } catch (PasswordSafeException e) {
-      LOG.error("Unable to load password", e);
+    if (loadPasswordFromStorage) {
+      try {
+        sonarServer.setPassword(PasswordSafe.getInstance().getPassword(null, SonarQubeServer.class, sonarServer.getId()));
+      } catch (PasswordSafeException e) {
+        LOG.error("Unable to load password", e);
+      }
     }
     if (sonarServer.hasCredentials()) {
       host = new Host(sonarServer.getUrl(), sonarServer.getUsername(), sonarServer.getPassword());

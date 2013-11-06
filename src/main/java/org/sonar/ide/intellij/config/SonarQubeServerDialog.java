@@ -112,7 +112,7 @@ public class SonarQubeServerDialog extends DialogWrapper {
       @Override
       public void actionPerformed(ActionEvent e) {
         if (doValidate() == null) {
-          ISonarWSClientFacade.ConnectionTestResult result = WSClientFactory.getInstance().getSonarClient(SonarQubeServerDialog.this.server).testConnection();
+          ISonarWSClientFacade.ConnectionTestResult result = WSClientFactory.getInstance().getSonarClient(SonarQubeServerDialog.this.server, false).testConnection();
           switch (result) {
             case OK:
               Messages.showInfoMessage(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ok"), SonarQubeBundle.message("sonarqube.settings.server.test"));
