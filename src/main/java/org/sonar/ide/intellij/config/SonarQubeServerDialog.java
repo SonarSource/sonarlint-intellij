@@ -36,6 +36,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.URL;
+import java.util.*;
 
 public class SonarQubeServerDialog extends DialogWrapper {
 
@@ -48,6 +49,7 @@ public class SonarQubeServerDialog extends DialogWrapper {
   private JPasswordField passwordField;
 
   private SonarQubeServer server = null;
+  java.util.List<SonarQubeServer> otherServers;
   private boolean edit = false;
 
   public JTextField getUrlTextField() {
@@ -64,28 +66,11 @@ public class SonarQubeServerDialog extends DialogWrapper {
     return contentPane;
   }
 
-  public SonarQubeServerDialog(@NotNull Component parent) {
+  public SonarQubeServerDialog(@NotNull Component parent, @Nullable SonarQubeServer server, @NotNull java.util.List<SonarQubeServer> otherServers) {
     super(parent, true);
-    init();
-    setServer(null);
-  }
-
-  @Override
-  protected ValidationInfo doValidate() {
-    this.server = new SonarQubeServer();
-    this.server.setId(idTextField.getText());
-    this.server.setUrl(urlTextField.getText());
-    this.server.setUsername(usernameTextField.getText());
-    this.server.setPassword(new String(passwordField.getPassword()));
-    if (edit) {
-      return SonarQubeSettings.getInstance().validateServer(this.server, this);
-    } else {
-      return SonarQubeSettings.getInstance().validateNewServer(this.server, this);
-    }
-  }
-
-  public void setServer(SonarQubeServer server) {
     this.server = server;
+    this.otherServers = otherServers;
+    init();
     if (server == null) {
       setTitle(SonarQubeBundle.message("sonarqube.settings.server.add.title"));
       idTextField.setText("");
@@ -102,6 +87,20 @@ public class SonarQubeServerDialog extends DialogWrapper {
       usernameTextField.setText(server.getUsername());
       passwordField.setText(server.getPassword());
       edit = true;
+    }
+  }
+
+  @Override
+  protected ValidationInfo doValidate() {
+    this.server = new SonarQubeServer();
+    this.server.setId(idTextField.getText());
+    this.server.setUrl(urlTextField.getText());
+    this.server.setUsername(usernameTextField.getText());
+    this.server.setPassword(new String(passwordField.getPassword()));
+    if (edit) {
+      return SonarQubeSettings.getInstance().validateServer(this.server, this);
+    } else {
+      return SonarQubeSettings.getInstance().validateNewServer(otherServers, this.server, this);
     }
   }
 
@@ -155,6 +154,8 @@ public class SonarQubeServerDialog extends DialogWrapper {
             default:
               LOG.error("Unknow status " + result);
           }
+        } else {
+          initValidation();
         }
       }
     }};

@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 public final class SonarQubeSettings implements PersistentStateComponent<SonarQubeSettings>, ExportableApplicationComponent {
 
   private static final Logger LOG = Logger.getInstance(SonarQubeSettings.class);
-  private static String SERVER_ID_REGEXP = "[a-zA-Z0-9_\\-:]+";
+  private static String SERVER_ID_REGEXP = "[a-zA-Z0-9_\\-:\\.]+";
   private static Pattern SERVER_ID_PATTERN = Pattern.compile(SERVER_ID_REGEXP);
 
   public static SonarQubeSettings getInstance() {
@@ -77,11 +77,11 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
     return "SonarQubeSettings";
   }
 
-  public ValidationInfo validateNewServer(SonarQubeServer server, SonarQubeServerDialog dialog) {
+  public static ValidationInfo validateNewServer(List<SonarQubeServer> otherServers, SonarQubeServer server, SonarQubeServerDialog dialog) {
     if (!SERVER_ID_PATTERN.matcher(server.getId()).matches()) {
       return new ValidationInfo("Invalid server ID: " + server.getId() + ". Should match " + SERVER_ID_REGEXP, dialog.getIdTextField());
     }
-    for (SonarQubeServer other : servers) {
+    for (SonarQubeServer other : otherServers) {
       if (other.getId().equals(server.getId())) {
         return new ValidationInfo(SonarQubeBundle.message("sonarqube.settings.server.duplicateId", server.getId()), dialog.getUrlTextField());
       }
@@ -89,7 +89,7 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
     return validateServer(server, dialog);
   }
 
-  public ValidationInfo validateServer(SonarQubeServer server, SonarQubeServerDialog dialog) {
+  public static ValidationInfo validateServer(SonarQubeServer server, SonarQubeServerDialog dialog) {
     try {
       URL url = new URL(server.getUrl());
       if (url.getPort() != -1 && (url.getPort() < 0 || url.getPort() > 0xFFFF)) {

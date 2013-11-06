@@ -44,7 +44,7 @@ public final class SonarQubeSettingsForm {
     addButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        SonarQubeServerDialog dialog = new SonarQubeServerDialog(formComponent);
+        SonarQubeServerDialog dialog = new SonarQubeServerDialog(formComponent, null, getServers());
         dialog.show();
         if (dialog.getExitCode() == DialogWrapper.OK_EXIT_CODE) {
           serversList.addItem(dialog.getServer());
@@ -63,8 +63,7 @@ public final class SonarQubeSettingsForm {
     editButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        SonarQubeServerDialog dialog = new SonarQubeServerDialog(formComponent);
-        dialog.setServer((SonarQubeServer) serversList.getSelectedItem());
+        SonarQubeServerDialog dialog = new SonarQubeServerDialog(formComponent, (SonarQubeServer) serversList.getSelectedItem(), getServers());
         dialog.show();
         if (dialog.getExitCode() == DialogWrapper.OK_EXIT_CODE) {
           DefaultComboBoxModel model = ((DefaultComboBoxModel) serversList.getModel());
