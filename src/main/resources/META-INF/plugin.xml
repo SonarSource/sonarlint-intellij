@@ -2,7 +2,7 @@
   <id>org.sonar.ide.idea</id>
   <name>SonarQube IntelliJ Plugin</name>
   <version>1.0</version>
-  <vendor logo="images/sonarqube-48x200.png" email="dev@sonar.codehaus.org" url="http://www.sonarsource.com">SonarSource</vendor>
+  <vendor logo="/images/sonarqube-48x200.png" email="dev@sonar.codehaus.org" url="http://www.sonarsource.com">SonarSource</vendor>
 
   <description><![CDATA[
       SonarQube plugin for IntelliJ IDEA.
@@ -38,7 +38,7 @@
   </project-components>
 
   <actions>
-    <action id="associate" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube" description="Associate with a remote SonarQube server">
+    <action id="associate" icon="/images/onde-sonar-16.png" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube" description="Associate with a remote SonarQube server">
       <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddFrameworkSupport"/>
     </action>
   </actions>
