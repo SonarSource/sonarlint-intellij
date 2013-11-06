@@ -60,6 +60,7 @@
     <!-- Used by Intellij plugin development with Maven -->
     <ij.plugin>true</ij.plugin>
     <ij.version>12.1.6</ij.version>
+    <ij.deps.scope>compile</ij.deps.scope>
   </properties>
 
   <dependencies>
@@ -68,56 +69,56 @@
       <artifactId>annotations</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>openapi</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>util</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>extensions</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>idea</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij.plugins.maven</groupId>
       <artifactId>maven</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij.plugins.maven</groupId>
       <artifactId>maven-server-api</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>forms_rt</artifactId>
       <version>${ij.version}</version>
       <!-- Should be provided but not work with ideauidesigner plugin -->
-      <scope>compile</scope>
+      <scope>${ij.deps.scope}</scope>
     </dependency>
 
     <dependency>
@@ -221,5 +222,15 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <!-- This profile should be activated when working inside intellij) -->
+      <id>intellij</id>
+      <properties>
+        <ij.deps.scope>provided</ij.deps.scope>
+      </properties>
+    </profile>
+  </profiles>
 
 </project>
