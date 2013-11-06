@@ -23,10 +23,13 @@ import com.intellij.analysis.AnalysisScope;
 import com.intellij.codeInspection.*;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
@@ -47,6 +50,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SonarQubeInspection extends GlobalInspectionTool {
+
+  private static final Logger LOG = Logger.getInstance(SonarQubeInspection.class);
 
   private static final char DELIMITER = ':';
   private static final char PACKAGE_DELIMITER = '.';
@@ -71,9 +76,10 @@ public class SonarQubeInspection extends GlobalInspectionTool {
     if (sonarQubeInspectionContext == null) {
       return;
     }
-    Project p = globalContext.getProject();
-    ModuleManager.getInstance(p);
-    final String moduleKey = p.getComponent(ProjectSettings.class).getProjectKey();
+    final Project p = globalContext.getProject();
+    ModuleManager moduleManager = ModuleManager.getInstance(p);
+    final ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
+    final String moduleKey = projectSettings.getProjectKey();
     final Map<String, PsiFile> resourceCache = new HashMap<String, PsiFile>();
     final SearchScope searchScope = globalContext.getRefManager().getScope().toSearchScope();
     for (final VirtualFile virtualFile : FileTypeIndex.getFiles(JavaFileType.INSTANCE, (GlobalSearchScope) searchScope)) {
@@ -82,7 +88,13 @@ public class SonarQubeInspection extends GlobalInspectionTool {
         public void run() {
           PsiFile psiFile = PsiManager.getInstance(globalContext.getProject()).findFile(virtualFile);
           PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
-          resourceCache.put(getComponentKey(moduleKey, psiJavaFile), psiJavaFile);
+          Module module = ProjectRootManager.getInstance(p).getFileIndex().getModuleForFile(virtualFile);
+          String sonarKeyOfModule = projectSettings.getModuleKeys().get(module.getName());
+          if (sonarKeyOfModule == null) {
+            LOG.warn("Module " + module.getName() + " is not associated to SonarQube");
+          } else {
+            resourceCache.put(getComponentKey(sonarKeyOfModule, psiJavaFile), psiJavaFile);
+          }
         }
       });
     }
