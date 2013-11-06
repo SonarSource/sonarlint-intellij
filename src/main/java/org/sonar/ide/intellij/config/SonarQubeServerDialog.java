@@ -31,8 +31,11 @@ import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.net.URL;
 
 public class SonarQubeServerDialog extends DialogWrapper {
 
@@ -64,8 +67,7 @@ public class SonarQubeServerDialog extends DialogWrapper {
   public SonarQubeServerDialog(@NotNull Component parent) {
     super(parent, true);
     init();
-    setTitle(SonarQubeBundle.message("sonarqube.settings.server.add.title"));
-    idTextField.requestFocusInWindow();
+    setServer(null);
   }
 
   @Override
@@ -88,6 +90,7 @@ public class SonarQubeServerDialog extends DialogWrapper {
       setTitle(SonarQubeBundle.message("sonarqube.settings.server.add.title"));
       idTextField.setText("");
       urlTextField.setText("");
+      addUpdateIdListener();
       usernameTextField.setText("");
       passwordField.setText("");
       edit = false;
@@ -100,6 +103,31 @@ public class SonarQubeServerDialog extends DialogWrapper {
       passwordField.setText(server.getPassword());
       edit = true;
     }
+  }
+
+  private void addUpdateIdListener() {
+    urlTextField.getDocument().addDocumentListener(new DocumentListener() {
+      public void changedUpdate(DocumentEvent e) {
+        update();
+      }
+
+      public void removeUpdate(DocumentEvent e) {
+        update();
+      }
+
+      public void insertUpdate(DocumentEvent e) {
+        update();
+      }
+
+      public void update() {
+        try {
+          URL url = new URL(urlTextField.getText());
+          idTextField.setText(url.getHost());
+        } catch (Exception e) {
+          // Do nothing
+        }
+      }
+    });
   }
 
   public SonarQubeServer getServer() {
@@ -135,6 +163,6 @@ public class SonarQubeServerDialog extends DialogWrapper {
   @Nullable
   @Override
   public JComponent getPreferredFocusedComponent() {
-    return edit ? urlTextField : idTextField;
+    return urlTextField;
   }
 }
