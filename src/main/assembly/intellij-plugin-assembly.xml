@@ -38,6 +38,9 @@
       <outputDirectory>${project.artifactId}/lib</outputDirectory>
       <scope>runtime</scope>
       <useProjectArtifact>false</useProjectArtifact>
+      <excludes>
+        <exclude>com.intellij*:*</exclude>
+      </excludes>
     </dependencySet>
   </dependencySets>
 

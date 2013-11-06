@@ -67,43 +67,57 @@
       <groupId>com.intellij</groupId>
       <artifactId>annotations</artifactId>
       <version>${ij.version}</version>
-      <scope>provided</scope>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>openapi</artifactId>
       <version>${ij.version}</version>
-      <scope>provided</scope>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>util</artifactId>
       <version>${ij.version}</version>
-      <scope>provided</scope>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>extensions</artifactId>
       <version>${ij.version}</version>
-      <scope>provided</scope>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>idea</artifactId>
       <version>${ij.version}</version>
-      <scope>provided</scope>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij.plugins.maven</groupId>
       <artifactId>maven</artifactId>
       <version>${ij.version}</version>
-      <scope>provided</scope>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.intellij.plugins.maven</groupId>
       <artifactId>maven-server-api</artifactId>
       <version>${ij.version}</version>
-      <scope>provided</scope>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>forms_rt</artifactId>
+      <version>${ij.version}</version>
+      <!-- Should be provided but not work with ideauidesigner plugin -->
+      <scope>compile</scope>
     </dependency>
 
     <dependency>
@@ -141,6 +155,50 @@
     </resources>
 
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>ideauidesigner-maven-plugin</artifactId>
+        <version>1.0-beta-1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>javac2</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <fork>true</fork>
+          <debug>true</debug>
+          <failOnError>true</failOnError>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.intellij</groupId>
+            <artifactId>javac2</artifactId>
+            <version>${ij.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant</artifactId>
+            <version>1.8.2</version>
+          </dependency>
+          <dependency>
+            <groupId>com.intellij</groupId>
+            <artifactId>asm4-all</artifactId>
+            <version>${ij.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>com.intellij</groupId>
+            <artifactId>forms_rt</artifactId>
+            <version>${ij.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>jdom</groupId>
+            <artifactId>jdom</artifactId>
+            <version>1.0</version>
+          </dependency>
+        </dependencies>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
