@@ -65,6 +65,7 @@ public class SonarQubeServerDialog extends DialogWrapper {
     super(parent, true);
     init();
     setTitle(SonarQubeBundle.message("sonarqube.settings.server.add.title"));
+    idTextField.requestFocusInWindow();
   }
 
   @Override
@@ -129,5 +130,11 @@ public class SonarQubeServerDialog extends DialogWrapper {
         }
       }
     }};
+  }
+
+  @Nullable
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    return edit ? urlTextField : idTextField;
   }
 }
