@@ -122,7 +122,8 @@ public class SonarQubeInspection extends GlobalInspectionTool {
     if (document == null) {
       return null;
     }
-    TextRange range = getTextRange(document, issue.line());
+    Integer line = issue.line();
+    TextRange range = getTextRange(document, line != null ? line : 1);
     return manager.createProblemDescriptor(psiFile, range,
         issue.message(),
         issueToProblemHighlightType(issue),
