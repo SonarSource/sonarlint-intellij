@@ -95,7 +95,6 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
       if (url.getPort() != -1 && (url.getPort() < 0 || url.getPort() > 0xFFFF)) {
         return new ValidationInfo("Port out of range:" + url.getPort(), dialog.getUrlTextField());
       }
-      new InetSocketAddress(url.getPort());
     } catch (MalformedURLException e) {
       return new ValidationInfo("Invalid URL: " + e.getMessage(), dialog.getUrlTextField());
     }
