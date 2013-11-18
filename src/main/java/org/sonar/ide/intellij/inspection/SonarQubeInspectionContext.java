@@ -23,22 +23,60 @@ import com.intellij.codeInspection.GlobalInspectionContext;
 import com.intellij.codeInspection.InspectionProfileEntry;
 import com.intellij.codeInspection.ex.Tools;
 import com.intellij.codeInspection.lang.GlobalInspectionContextExtension;
+import com.intellij.execution.filters.TextConsoleBuilderFactory;
+import com.intellij.execution.ui.ConsoleView;
+import com.intellij.execution.ui.ConsoleViewContentType;
+import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectCoreUtil;
+import com.intellij.openapi.roots.*;
+import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.util.Key;
+import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.ui.content.Content;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.idea.maven.execution.MavenRunner;
+import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
+import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
+import org.jetbrains.idea.maven.project.MavenEmbeddersManager;
+import org.jetbrains.idea.maven.project.MavenProject;
+import org.jetbrains.idea.maven.project.MavenProjectsManager;
+import org.jetbrains.idea.maven.server.MavenServerExecutionResult;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
 import org.sonar.ide.intellij.model.SonarQubeServer;
+import org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
+import org.sonar.runner.api.ForkedRunner;
+import org.sonar.runner.api.ProcessMonitor;
+import org.sonar.runner.api.StreamConsumer;
 
-import java.util.List;
+import java.io.File;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SonarQubeInspectionContext implements GlobalInspectionContextExtension<SonarQubeInspectionContext> {
 
-  List<ISonarIssue> issues;
+  private static final Logger LOG = Logger.getInstance(SonarQubeInspectionContext.class);
+
+  private  List<ISonarIssue> remoteIssues;
+  private File jsonReport;
+  private SonarQubeServer server;
+  private boolean debugEnabled;
 
   public static final Key<SonarQubeInspectionContext> KEY = Key.create("SonarQubeInspectionContext");
 
@@ -47,8 +85,20 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     return KEY;
   }
 
-  public List<ISonarIssue> getIssues() {
-    return issues;
+  public List<ISonarIssue> getRemoteIssues() {
+    return remoteIssues;
+  }
+
+  public boolean isDebugEnabled() {
+    return debugEnabled;
+  }
+
+  public SonarQubeServer getServer() {
+    return server;
+  }
+
+  public File getJsonReport() {
+    return jsonReport;
   }
 
   @Override
@@ -63,16 +113,27 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         return;
       }
       SonarQubeSettings settings = SonarQubeSettings.getInstance();
-      SonarQubeServer server = settings.getServer(serverId);
+      server = settings.getServer(serverId);
       if (server == null) {
         System.out.println("Project was associated to a server that is not configured: " + serverId);
         return;
       }
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-      issues = sonarClient.getRemoteIssuesRecursively(projectSettings.getProjectKey());
+      remoteIssues = sonarClient.getRemoteIssuesRecursively(projectSettings.getProjectKey());
+
+      debugEnabled = LOG.isDebugEnabled();
+      String jvmArgs = "";
+
+      MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
+      ModuleManager moduleManager = ModuleManager.getInstance(p);
+      Module[] ijModules = moduleManager.getModules();
+      if (ijModules.length == 1) {
+        jsonReport = new SonarRunnerAnalysis().analyzeSingleModuleProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
+      } else {
+        // Use Maven
+        jsonReport = new MavenAnalysis().runMavenAnalysis(p, projectSettings, server, debugEnabled);
+      }
     }
-
-
   }
 
   @Override
@@ -82,4 +143,5 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   @Override
   public void cleanup() {
   }
+
 }

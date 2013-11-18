@@ -21,12 +21,15 @@ package org.sonar.ide.intellij.inspection;
 
 import com.intellij.analysis.AnalysisScope;
 import com.intellij.codeInspection.*;
+import com.intellij.execution.runners.ProgramRunner;
+import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -39,15 +42,30 @@ import com.intellij.psi.PsiManager;
 import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.idea.maven.execution.MavenRunConfigurationType;
+import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
+import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
+import org.jetbrains.idea.maven.project.MavenProject;
+import org.jetbrains.idea.maven.project.MavenProjectsManager;
+import org.jetbrains.idea.maven.server.MavenEmbedderWrapper;
+import org.jetbrains.idea.maven.server.MavenServerExecutionResult;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
+import org.sonar.ide.intellij.model.SonarQubeServer;
+import org.sonar.wsclient.jsonsimple.JSONArray;
+import org.sonar.wsclient.jsonsimple.JSONObject;
+import org.sonar.wsclient.jsonsimple.JSONValue;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
+import java.io.FileReader;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SonarQubeInspection extends GlobalInspectionTool {
 
@@ -99,7 +117,7 @@ public class SonarQubeInspection extends GlobalInspectionTool {
       });
     }
 
-    for (final ISonarIssue issue : sonarQubeInspectionContext.getIssues()) {
+    for (final ISonarIssue issue : sonarQubeInspectionContext.getRemoteIssues()) {
       final PsiFile psiFile = resourceCache.get(issue.resourceKey());
       if (psiFile != null) {
         ApplicationManager.getApplication().runReadAction(new Runnable() {
@@ -112,8 +130,58 @@ public class SonarQubeInspection extends GlobalInspectionTool {
       }
     }
 
+    createProblemsFromReportOutput(sonarQubeInspectionContext.getJsonReport(), resourceCache, manager, globalContext, problemDescriptionsProcessor);
+
     super.runInspection(scope, manager, globalContext, problemDescriptionsProcessor);
   }
+
+  public void createProblemsFromReportOutput(File outputFile, Map<String, PsiFile> resourceCache, final InspectionManager manager, final GlobalInspectionContext globalContext, final ProblemDescriptionsProcessor problemDescriptionsProcessor) {
+    FileReader fileReader = null;
+    try {
+      fileReader = new FileReader(outputFile);
+      Object obj = JSONValue.parse(fileReader);
+      JSONObject sonarResult = (JSONObject) obj;
+      // Start by cleaning all components
+      final JSONArray components = (JSONArray) sonarResult.get("components");
+      for (Object component : components) {
+        String key = ObjectUtils.toString(((JSONObject) component).get("key"));
+        PsiFile resource = resourceCache.get(key);
+        if (resource != null) {
+          //Delete remote issues for this file
+          problemDescriptionsProcessor.ignoreElement(globalContext.getRefManager().getReference(resource));
+        }
+      }
+      // Now read all rules name in a cache
+      final Map<String, String> ruleByKey = new HashMap<String, String>();
+      final JSONArray rules = (JSONArray) sonarResult.get("rules");
+      for (Object rule : rules) {
+        String key = ObjectUtils.toString(((JSONObject) rule).get("key"));
+        String name = ObjectUtils.toString(((JSONObject) rule).get("name"));
+        ruleByKey.put(key, name);
+      }
+      // Now iterate over all issues and create markers
+      for (Object issueObj : (JSONArray) sonarResult.get("issues")) {
+        final JSONObject jsonIssue = (JSONObject) issueObj;
+        String componentKey = ObjectUtils.toString(jsonIssue.get("component"));
+        if (resourceCache.containsKey(componentKey)) {
+          final PsiFile resource = resourceCache.get(componentKey);
+          boolean isNew = Boolean.TRUE.equals(jsonIssue.get("isNew"));
+          ApplicationManager.getApplication().runReadAction(new Runnable() {
+            @Override
+            public void run() {
+              ProblemDescriptor descriptor = computeIssueProblemDescriptor(resource, new SonarIssueFromJsonReport(jsonIssue, ruleByKey), globalContext, manager);
+              problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getReference(resource), descriptor);
+            }
+          });
+        }
+      }
+    } catch (Exception e) {
+      LOG.error(e.getMessage(), e);
+    } finally {
+      IOUtils.closeQuietly(fileReader);
+    }
+  }
+
 
   @Nullable
   private ProblemDescriptor computeIssueProblemDescriptor(PsiFile psiFile, ISonarIssue issue, GlobalInspectionContext globalContext, InspectionManager manager) {

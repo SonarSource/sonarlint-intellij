@@ -83,7 +83,7 @@ public final class WSClientFactory implements ApplicationComponent {
   }
 
   /**
-   * Creates Sonar web service client, which uses proxy settings from Eclipse.
+   * Creates Sonar web service client, which uses proxy settings from IntelliJ.
    */
   private Sonar create(Host host) {
     HttpClient4Connector connector = new HttpClient4Connector(host);
@@ -92,7 +92,7 @@ public final class WSClientFactory implements ApplicationComponent {
   }
 
   /**
-   * Creates new Sonar web service client, which uses proxy settings from Eclipse.
+   * Creates new Sonar web service client, which uses proxy settings from IntelliJ.
    */
   private SonarClient createSonarClient(Host host) {
     SonarClient.Builder builder = SonarClient.builder()

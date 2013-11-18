@@ -53,6 +53,7 @@
                       enabledByDefault="true"
                       level="WARNING"
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeInspection"/>
+    <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-16.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 
   </extensions>
 </idea-plugin>
