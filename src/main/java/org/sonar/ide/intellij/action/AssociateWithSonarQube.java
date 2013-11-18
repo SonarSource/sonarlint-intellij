@@ -80,7 +80,7 @@ public class AssociateWithSonarQube extends AnAction {
               if (mavenModule == null) {
                 LOG.error("Module " + ijModule.getName() + " is not a Maven module");
               } else {
-                String expectedKey =  sonarKey(mavenModule) + branchSuffix;
+                String expectedKey = sonarKey(mavenModule) + branchSuffix;
                 if (expectedKey.equals(sonarProject.getKey())) {
                   settings.getModuleKeys().put(ijModule.getName(), expectedKey);
                   continue;
@@ -110,9 +110,9 @@ public class AssociateWithSonarQube extends AnAction {
 
   private String guessBranchSuffix(MavenProject rootProject, String key) {
     String rootKey = sonarKey(rootProject);
-     if (key.startsWith(rootKey)) {
-       return key.substring(rootKey.length());
-     }
+    if (key.startsWith(rootKey)) {
+      return key.substring(rootKey.length());
+    }
     return "";
   }
 

@@ -36,11 +36,10 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.net.URL;
-import java.util.*;
 
 public class SonarQubeServerDialog extends DialogWrapper {
 
-  public static final Logger LOG = Logger.getInstance(SonarQubeServerDialog.class);
+  private static final Logger LOG = Logger.getInstance(SonarQubeServerDialog.class);
 
   private JPanel contentPane;
   private JTextField idTextField;
@@ -49,22 +48,8 @@ public class SonarQubeServerDialog extends DialogWrapper {
   private JPasswordField passwordField;
 
   private SonarQubeServer server = null;
-  java.util.List<SonarQubeServer> otherServers;
+  private java.util.List<SonarQubeServer> otherServers;
   private boolean edit = false;
-
-  public JTextField getUrlTextField() {
-    return urlTextField;
-  }
-
-  public JTextField getIdTextField() {
-    return idTextField;
-  }
-
-  @Nullable
-  @Override
-  protected JComponent createCenterPanel() {
-    return contentPane;
-  }
 
   public SonarQubeServerDialog(@NotNull Component parent, @Nullable SonarQubeServer server, @NotNull java.util.List<SonarQubeServer> otherServers) {
     super(parent, true);
@@ -88,6 +73,20 @@ public class SonarQubeServerDialog extends DialogWrapper {
       passwordField.setText(server.getPassword());
       edit = true;
     }
+  }
+
+  public JTextField getUrlTextField() {
+    return urlTextField;
+  }
+
+  public JTextField getIdTextField() {
+    return idTextField;
+  }
+
+  @Nullable
+  @Override
+  protected JComponent createCenterPanel() {
+    return contentPane;
   }
 
   @Override
@@ -136,34 +135,41 @@ public class SonarQubeServerDialog extends DialogWrapper {
   @NotNull
   @Override
   protected Action[] createLeftSideActions() {
-    return new Action[]{new AbstractAction(SonarQubeBundle.message("sonarqube.settings.server.test")) {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        if (doValidate() == null) {
-          ISonarWSClientFacade.ConnectionTestResult result = WSClientFactory.getInstance().getSonarClient(SonarQubeServerDialog.this.server, false).testConnection();
-          switch (result) {
-            case OK:
-              Messages.showInfoMessage(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ok"), SonarQubeBundle.message("sonarqube.settings.server.test"));
-              return;
-            case AUTHENTICATION_ERROR:
-              Messages.showErrorDialog(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.authko"), SonarQubeBundle.message("sonarqube.settings.server.test"));
-              return;
-            case CONNECT_ERROR:
-              Messages.showErrorDialog(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ko"), SonarQubeBundle.message("sonarqube.settings.server.test"));
-              return;
-            default:
-              LOG.error("Unknow status " + result);
-          }
-        } else {
-          initValidation();
-        }
-      }
-    }};
+    return new Action[]{new TestConnectionAction()};
   }
 
   @Nullable
   @Override
   public JComponent getPreferredFocusedComponent() {
     return urlTextField;
+  }
+
+  private class TestConnectionAction extends AbstractAction {
+    public TestConnectionAction() {
+      super(SonarQubeBundle.message("sonarqube.settings.server.test"));
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+      if (doValidate() == null) {
+        ISonarWSClientFacade.ConnectionTestResult result = WSClientFactory.getInstance().getSonarClient(SonarQubeServerDialog.this.server, false).testConnection();
+        switch (result) {
+          case OK:
+            Messages.showInfoMessage(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ok"), SonarQubeBundle.message("sonarqube.settings.server.test"));
+            return;
+          case AUTHENTICATION_ERROR:
+            Messages.showErrorDialog(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.authko"), SonarQubeBundle.message("sonarqube.settings.server.test"));
+            return;
+          case CONNECT_ERROR:
+            Messages.showErrorDialog(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ko"), SonarQubeBundle.message("sonarqube.settings.server.test"));
+            return;
+          default:
+            LOG.error("Unknow status " + result);
+            return;
+        }
+      } else {
+        initValidation();
+      }
+    }
   }
 }

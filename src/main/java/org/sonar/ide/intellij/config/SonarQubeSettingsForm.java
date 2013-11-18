@@ -23,6 +23,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import org.sonar.ide.intellij.model.SonarQubeServer;
+import org.sonar.ide.intellij.util.SonarQubeBundle;
 
 import javax.swing.*;
 import java.awt.*;
@@ -66,7 +67,7 @@ public final class SonarQubeSettingsForm {
         SonarQubeServerDialog dialog = new SonarQubeServerDialog(formComponent, (SonarQubeServer) serversList.getSelectedItem(), getServers());
         dialog.show();
         if (dialog.getExitCode() == DialogWrapper.OK_EXIT_CODE) {
-          DefaultComboBoxModel model = ((DefaultComboBoxModel) serversList.getModel());
+          DefaultComboBoxModel model = (DefaultComboBoxModel) serversList.getModel();
           int selectedIndex = model.getIndexOf(model.getSelectedItem());
           model.removeElementAt(selectedIndex);
           model.insertElementAt(dialog.getServer(), selectedIndex);
@@ -79,7 +80,10 @@ public final class SonarQubeSettingsForm {
     removeButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        if (Messages.showYesNoDialog(formComponent, "Are you sure you want to delete this SonarQube server?", "Delete SonarQube server", Messages.getQuestionIcon()) == Messages.YES) {
+        if (Messages.showYesNoDialog(formComponent,
+            SonarQubeBundle.message("sonarqube.settings.server.delete.msg"),
+            SonarQubeBundle.message("sonarqube.settings.server.delete.title"),
+            Messages.getQuestionIcon()) == Messages.YES) {
           serversList.removeItem(serversList.getSelectedItem());
           modified = true;
           refreshButtons();

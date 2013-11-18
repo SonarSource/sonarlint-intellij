@@ -71,7 +71,6 @@ public class AssociateComboBoxEditor implements ComboBoxEditor, FocusListener {
 
   public Object getItem() {
     Object newValue = editor.getText();
-
     // TODO
     return oldValue;
   }
@@ -81,14 +80,12 @@ public class AssociateComboBoxEditor implements ComboBoxEditor, FocusListener {
     editor.requestFocus();
   }
 
-  // This used to do something but now it doesn't.  It couldn't be
-  // removed because it would be an API change to do so.
   public void focusGained(FocusEvent e) {
+    // Nothing to do
   }
 
-  // This used to do something but now it doesn't.  It couldn't be
-  // removed because it would be an API change to do so.
   public void focusLost(FocusEvent e) {
+    // Nothing to do
   }
 
   public void addActionListener(ActionListener l) {

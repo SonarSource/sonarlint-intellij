@@ -21,15 +21,12 @@ package org.sonar.ide.intellij.inspection;
 
 import com.intellij.analysis.AnalysisScope;
 import com.intellij.codeInspection.*;
-import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.execution.ui.RunContentDescriptor;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -48,24 +45,16 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.idea.maven.execution.MavenRunConfigurationType;
-import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
-import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
-import org.jetbrains.idea.maven.project.MavenProject;
-import org.jetbrains.idea.maven.project.MavenProjectsManager;
-import org.jetbrains.idea.maven.server.MavenEmbedderWrapper;
-import org.jetbrains.idea.maven.server.MavenServerExecutionResult;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
-import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.wsclient.jsonsimple.JSONArray;
 import org.sonar.wsclient.jsonsimple.JSONObject;
 import org.sonar.wsclient.jsonsimple.JSONValue;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SonarQubeInspection extends GlobalInspectionTool {
 
@@ -207,9 +196,9 @@ public class SonarQubeInspection extends GlobalInspectionTool {
   }
 
   public String getComponentKey(String moduleKey, PsiFile file) {
-     if (file instanceof PsiJavaFile) {
-       return getJavaComponentKey(moduleKey, (PsiJavaFile) file);
-     }
+    if (file instanceof PsiJavaFile) {
+      return getJavaComponentKey(moduleKey, (PsiJavaFile) file);
+    }
     final StringBuilder result = new StringBuilder();
     result.append(moduleKey).append(":");
     final VirtualFile virtualFile = file.getVirtualFile();

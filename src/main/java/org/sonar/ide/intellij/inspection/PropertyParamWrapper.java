@@ -22,12 +22,12 @@ package org.sonar.ide.intellij.inspection;
 import java.util.Properties;
 
 /**
-* Created with IntelliJ IDEA.
-* User: julien
-* Date: 15/11/13
-* Time: 18:34
-* To change this template use File | Settings | File Templates.
-*/
+ * Created with IntelliJ IDEA.
+ * User: julien
+ * Date: 15/11/13
+ * Time: 18:34
+ * To change this template use File | Settings | File Templates.
+ */
 class PropertyParamWrapper implements ParamWrapper {
   private final Properties props;
 

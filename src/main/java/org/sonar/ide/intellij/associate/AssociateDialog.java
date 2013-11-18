@@ -38,17 +38,10 @@ import java.util.List;
 
 public class AssociateDialog extends DialogWrapper {
 
-  public static final Logger LOG = Logger.getInstance(AssociateDialog.class);
+  private static final Logger LOG = Logger.getInstance(AssociateDialog.class);
 
   private JPanel contentPane;
   private ComboBox projectComboBox;
-
-
-  @Nullable
-  @Override
-  protected JComponent createCenterPanel() {
-    return contentPane;
-  }
 
   public AssociateDialog(@Nullable Project project) {
     super(project, true);
@@ -70,6 +63,12 @@ public class AssociateDialog extends DialogWrapper {
     for (ISonarRemoteProject module : allProjects) {
       projectComboBox.addItem(module);
     }
+  }
+
+  @Nullable
+  @Override
+  protected JComponent createCenterPanel() {
+    return contentPane;
   }
 
   public ISonarRemoteProject getSelectedSonarQubeProject() {

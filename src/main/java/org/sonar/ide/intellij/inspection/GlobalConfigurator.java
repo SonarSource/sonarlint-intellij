@@ -20,8 +20,6 @@
 package org.sonar.ide.intellij.inspection;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectCoreUtil;
-import org.jetbrains.idea.maven.project.MavenProject;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 

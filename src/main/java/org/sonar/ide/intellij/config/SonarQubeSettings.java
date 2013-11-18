@@ -30,7 +30,6 @@ import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
 
 import java.io.File;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -43,14 +42,18 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
   private static String SERVER_ID_REGEXP = "[a-zA-Z0-9_\\-:\\.]+";
   private static Pattern SERVER_ID_PATTERN = Pattern.compile(SERVER_ID_REGEXP);
 
+  private java.util.List<SonarQubeServer> servers = new java.util.ArrayList<SonarQubeServer>();
+
   public static SonarQubeSettings getInstance() {
     return com.intellij.openapi.application.ApplicationManager.getApplication().getComponent(SonarQubeSettings.class);
   }
 
-  public java.util.List<SonarQubeServer> servers = new java.util.ArrayList<SonarQubeServer>();
-
   public List<SonarQubeServer> getServers() {
     return servers;
+  }
+
+  public void setServers(List<SonarQubeServer> servers) {
+    this.servers = servers;
   }
 
   public SonarQubeSettings getState() {
@@ -102,11 +105,11 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
   }
 
   public void initComponent() {
-
+    // Nothing to do
   }
 
   public void disposeComponent() {
-
+    // Nothing to do
   }
 
   public SonarQubeServer getServer(String serverId) {

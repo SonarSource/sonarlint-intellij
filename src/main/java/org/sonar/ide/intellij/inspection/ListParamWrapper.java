@@ -22,12 +22,12 @@ package org.sonar.ide.intellij.inspection;
 import java.util.List;
 
 /**
-* Created with IntelliJ IDEA.
-* User: julien
-* Date: 15/11/13
-* Time: 18:34
-* To change this template use File | Settings | File Templates.
-*/
+ * Created with IntelliJ IDEA.
+ * User: julien
+ * Date: 15/11/13
+ * Time: 18:34
+ * To change this template use File | Settings | File Templates.
+ */
 class ListParamWrapper implements ParamWrapper {
   private final List<String> props;
 

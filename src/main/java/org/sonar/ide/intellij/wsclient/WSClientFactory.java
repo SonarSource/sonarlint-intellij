@@ -25,7 +25,6 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.proxy.CommonProxy;
-import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
@@ -160,10 +159,12 @@ public final class WSClientFactory implements ApplicationComponent {
 
   @Override
   public void initComponent() {
+    // Nothing to do
   }
 
   @Override
   public void disposeComponent() {
+    // Nothing to do
   }
 
 }

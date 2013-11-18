@@ -17,27 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.ide.intellij.inspection;
+@ParametersAreNonnullByDefault package org.sonar.ide.intellij.action;
 
-import java.util.Map;
-
-/**
- * Created with IntelliJ IDEA.
- * User: julien
- * Date: 15/11/13
- * Time: 18:34
- * To change this template use File | Settings | File Templates.
- */
-class MapParamWrapper implements ParamWrapper {
-  private final Map<String, String> props;
-
-  public MapParamWrapper(Map<String, String> props) {
-    this.props = props;
-  }
-
-  @Override
-  public ParamWrapper add(String key, String value) {
-    props.put(key, value);
-    return this;
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;
