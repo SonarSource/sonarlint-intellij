@@ -52,6 +52,7 @@ import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
+import org.sonar.ide.intellij.wsclient.SonarWSClientException;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
 import org.sonar.wsclient.jsonsimple.JSONArray;
 import org.sonar.wsclient.jsonsimple.JSONObject;
@@ -59,10 +60,7 @@ import org.sonar.wsclient.jsonsimple.JSONValue;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SonarQubeInspectionContext implements GlobalInspectionContextExtension<SonarQubeInspectionContext> {
 
@@ -71,9 +69,9 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   private static final char PACKAGE_DELIMITER = '.';
   public static final String DEFAULT_PACKAGE_NAME = "[default]";
 
-  private List<ISonarIssue> remoteIssues;
-  private List<ISonarIssue> localIssues;
-  private List<ISonarIssue> localNewIssues;
+  private List<ISonarIssue> remoteIssues = new ArrayList<ISonarIssue>();
+  private List<ISonarIssue> localIssues = new ArrayList<ISonarIssue>();
+  private List<ISonarIssue> localNewIssues = new ArrayList<ISonarIssue>();
   private List<String> modifiedFiles;
   private SonarQubeServer server;
   private boolean debugEnabled;
@@ -128,7 +126,12 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         return;
       }
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-      remoteIssues = sonarClient.getRemoteIssuesRecursively(projectSettings.getProjectKey());
+      try {
+        remoteIssues = sonarClient.getRemoteIssuesRecursively(projectSettings.getProjectKey());
+      } catch (SonarWSClientException e) {
+        LOG.warn("Unable to retrieve remote issues", e);
+        return;
+      }
 
       debugEnabled = LOG.isDebugEnabled();
       String jvmArgs = "";
