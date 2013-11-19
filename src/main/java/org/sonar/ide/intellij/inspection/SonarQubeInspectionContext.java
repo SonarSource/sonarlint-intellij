@@ -49,6 +49,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
+import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.ISonarIssue;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
@@ -76,6 +77,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   private SonarQubeServer server;
   private boolean debugEnabled;
   private Map<String, PsiFile> resourceCache;
+  private SonarQubeConsole console;
 
   public static final Key<SonarQubeInspectionContext> KEY = Key.create("SonarQubeInspectionContext");
 
@@ -113,16 +115,17 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
     Project p = context.getProject();
     if (p != null) {
+      console = SonarQubeConsole.getSonarQubeConsole(p);
       ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
       String serverId = projectSettings.getServerId();
       if (serverId == null) {
-        System.out.println("Project is not associated to SonarQube");
+        console.error("Project is not associated to SonarQube");
         return;
       }
       SonarQubeSettings settings = SonarQubeSettings.getInstance();
       server = settings.getServer(serverId);
       if (server == null) {
-        System.out.println("Project was associated to a server that is not configured: " + serverId);
+        console.error("Project was associated to a server that is not configured: " + serverId);
         return;
       }
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
@@ -130,6 +133,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         remoteIssues = sonarClient.getRemoteIssuesRecursively(projectSettings.getProjectKey());
       } catch (SonarWSClientException e) {
         LOG.warn("Unable to retrieve remote issues", e);
+        console.error("Unable to retrieve remote issues: " + e.getMessage());
         return;
       }
 
@@ -147,7 +151,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         // Use SQ Runner
         jsonReport = new SonarRunnerAnalysis().analyzeSingleModuleProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
       } else {
-        LOG.warn("Local analysis is not supported for your project");
+        console.error("Local analysis is not supported for your project");
       }
       if (jsonReport != null) {
         createIssuesFromReportOutput(jsonReport);
@@ -168,7 +172,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
             Module module = ProjectRootManager.getInstance(p).getFileIndex().getModuleForFile(virtualFile);
             String sonarKeyOfModule = projectSettings.getModuleKeys().get(module.getName());
             if (sonarKeyOfModule == null) {
-              LOG.warn("Module " + module.getName() + " is not associated to SonarQube");
+              console.error("Module " + module.getName() + " is not associated to SonarQube");
             } else {
               resourceCache.put(getComponentKey(sonarKeyOfModule, psiJavaFile), psiJavaFile);
             }

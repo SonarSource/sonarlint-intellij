@@ -42,6 +42,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
+import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory;
 import org.sonar.runner.api.ForkedRunner;
@@ -187,20 +188,7 @@ public class SonarRunnerAnalysis {
   public void run(Project project, Properties props, boolean debugEnabled, String jvmArgs, final ProgressIndicator monitor) {
 
     try {
-      final ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-      final ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SonarQubeToolWindowFactory.ID);
-      SwingUtilities.invokeLater(new Runnable() {
-        @Override
-        public void run() {
-          toolWindow.show(new Runnable() {
-            @Override
-            public void run() {
-              Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "SonarQube Console", true);
-              toolWindow.getContentManager().addContent(content);
-            }
-          });
-        }
-      });
+      final SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(project);
 
       if (debugEnabled) {
         LOG.info("Start sonar-runner with args:\n" + propsToString(props));
@@ -217,12 +205,12 @@ public class SonarRunnerAnalysis {
           .addJvmArguments(jvmArgs.trim().split("\\s+"))
           .setStdOut(new StreamConsumer() {
             public void consumeLine(String text) {
-              consoleView.print(text + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+              console.info(text);
             }
           })
           .setStdErr(new StreamConsumer() {
             public void consumeLine(String text) {
-              consoleView.print(text + "\n", ConsoleViewContentType.ERROR_OUTPUT);
+              console.error(text);
             }
           })
           .execute();
