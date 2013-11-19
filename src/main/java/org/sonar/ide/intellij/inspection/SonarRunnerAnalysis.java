@@ -48,6 +48,7 @@ import org.sonar.runner.api.ForkedRunner;
 import org.sonar.runner.api.ProcessMonitor;
 import org.sonar.runner.api.StreamConsumer;
 
+import javax.swing.*;
 import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -68,6 +69,7 @@ public class SonarRunnerAnalysis {
   public static final String PROJECT_MODULES_PROPERTY = "sonar.modules";
   public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
   public static final String PROJECT_BASEDIR = "sonar.projectBaseDir";
+  public static final String WORK_DIR = "sonar.working.directory";
 
   private static final char SEPARATOR = ',';
 
@@ -83,6 +85,7 @@ public class SonarRunnerAnalysis {
     configureProjectSettings(p, properties, indicator);
     File baseDir = new File(p.getBasePath());
     File projectSpecificWorkDir = new File(new File(baseDir, ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR), "sonarqube");
+    properties.setProperty(WORK_DIR, projectSpecificWorkDir.getAbsolutePath());
     File outputFile = new File(projectSpecificWorkDir, "sonar-report.json");
     GlobalConfigurator.configureAnalysis(p, outputFile, projectSettings, server, debugEnabled, new PropertyParamWrapper(properties));
 
@@ -186,11 +189,16 @@ public class SonarRunnerAnalysis {
     try {
       final ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
       final ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SonarQubeToolWindowFactory.ID);
-      toolWindow.show(new Runnable() {
+      SwingUtilities.invokeLater(new Runnable() {
         @Override
         public void run() {
-          Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "SonarQube Console", true);
-          toolWindow.getContentManager().addContent(content);
+          toolWindow.show(new Runnable() {
+            @Override
+            public void run() {
+              Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "SonarQube Console", true);
+              toolWindow.getContentManager().addContent(content);
+            }
+          });
         }
       });
 
