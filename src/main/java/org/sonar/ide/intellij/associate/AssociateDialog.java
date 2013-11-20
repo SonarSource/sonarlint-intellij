@@ -25,6 +25,7 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
+import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
 import org.sonar.ide.intellij.wsclient.ISonarRemoteProject;
@@ -58,7 +59,12 @@ public class AssociateDialog extends DialogWrapper {
     List<ISonarRemoteProject> allProjects = new ArrayList<ISonarRemoteProject>();
     for (SonarQubeServer server : SonarQubeSettings.getInstance().getServers()) {
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
+      try {
       allProjects.addAll(sonarClient.listAllRemoteProjects());
+      } catch (Exception e) {
+        SonarQubeConsole.getSonarQubeConsole(project).error("Unable to retrieve list of remote projects from server " + server.getId() + ": " + e.getMessage());
+        LOG.warn("Unable to retrieve list of remote projects from server " + server.getId(), e);
+      }
     }
     for (ISonarRemoteProject module : allProjects) {
       projectComboBox.addItem(module);
