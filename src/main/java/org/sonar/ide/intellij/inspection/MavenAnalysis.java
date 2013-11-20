@@ -19,16 +19,16 @@
  */
 package org.sonar.ide.intellij.inspection;
 
-import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
-import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
-import org.jetbrains.idea.maven.project.MavenProject;
-import org.jetbrains.idea.maven.project.MavenProjectsManager;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.idea.maven.execution.*;
+import org.jetbrains.idea.maven.project.*;
 import org.jetbrains.idea.maven.server.MavenServerExecutionResult;
-import org.jetbrains.idea.maven.utils.MavenUtil;
+import org.jetbrains.idea.maven.utils.MavenLog;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 
@@ -43,7 +43,7 @@ public class MavenAnalysis {
 
   private static final Logger LOG = Logger.getInstance(MavenAnalysis.class);
 
-  public File runMavenAnalysis(ProgressIndicator indicator, final Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled) {
+  public File runMavenAnalysis(final ProgressIndicator indicator, final Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled) {
     MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     if (!mavenProjectsManager.isMavenizedProject()) {
       LOG.error("This is not a Maven project");
@@ -58,6 +58,7 @@ public class MavenAnalysis {
     MavenProject rootProject = rootProjects.get(0);
     MavenServerExecutionResult result;
     Map<String, String> params = new LinkedHashMap<String, String>();
+    params.put("enforcer.skip", "true");
     File jsonReport = getJsonReportLocation(rootProject);
     GlobalConfigurator.configureAnalysis(p, jsonReport, projectSettings, server, debugEnabled, new MapParamWrapper(params));
     final MavenRunnerParameters mvnParams = new MavenRunnerParameters(true,
@@ -66,24 +67,7 @@ public class MavenAnalysis {
         rootProject.getActivatedProfilesIds());
     final MavenRunnerSettings runnerSettings = new MavenRunnerSettings();
     runnerSettings.setMavenProperties(params);
-    final AtomicBoolean done = new AtomicBoolean(false);
-    MavenUtil.invokeLater(p, ModalityState.NON_MODAL, new Runnable() {
-      public void run() {
-        org.jetbrains.idea.maven.execution.MavenRunner.getInstance(p).run(mvnParams, runnerSettings, new Runnable() {
-          @Override
-          public void run() {
-            done.set(true);
-          }
-        });
-      }
-    });
-    while (!indicator.isCanceled() && !done.get()) {
-      try {
-        Thread.sleep(100);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-    }
+    MavenRunner.getInstance(p).runBatch(Arrays.asList(mvnParams), null, runnerSettings, null, indicator);
     if (indicator.isCanceled()) {
       return null;
     }
