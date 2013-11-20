@@ -59,45 +59,19 @@ public class SonarQubeIssueInspection extends AbstractSonarQubeInspection {
   }
 
   @Override
-  public void runInspection(AnalysisScope scope, final InspectionManager manager, final GlobalInspectionContext globalContext, final ProblemDescriptionsProcessor problemDescriptionsProcessor) {
-    final SonarQubeInspectionContext sonarQubeInspectionContext = globalContext.getExtension(SonarQubeInspectionContext.KEY);
-    if (sonarQubeInspectionContext == null) {
-      return;
-    }
-    final Project p = globalContext.getProject();
-    final ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
-    final Map<String, PsiFile> resourceCache = sonarQubeInspectionContext.getResourceCache(globalContext, p, projectSettings);
+  public void populateProblems(SonarQubeInspectionContext sonarQubeInspectionContext) {
 
     for (final ISonarIssue issue : sonarQubeInspectionContext.getRemoteIssues()) {
       if (sonarQubeInspectionContext.getModifiedFileKeys().contains(issue.resourceKey())) {
         // Don't create issue for resources that are locally modified as they will be populated by local issues
         continue;
       }
-      final PsiFile psiFile = resourceCache.get(issue.resourceKey());
-      if (psiFile != null) {
-        ApplicationManager.getApplication().runReadAction(new Runnable() {
-          @Override
-          public void run() {
-            ProblemDescriptor descriptor = computeIssueProblemDescriptor(psiFile, issue, globalContext, manager);
-            problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getReference(psiFile), descriptor);
-          }
-        });
-      }
+      createProblem(issue);
     }
 
     for (final ISonarIssue issue : sonarQubeInspectionContext.getLocalIssues()) {
-      final PsiFile psiFile = resourceCache.get(issue.resourceKey());
-      if (psiFile != null) {
-        ApplicationManager.getApplication().runReadAction(new Runnable() {
-          @Override
-          public void run() {
-            ProblemDescriptor descriptor = computeIssueProblemDescriptor(psiFile, issue, globalContext, manager);
-            problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getReference(psiFile), descriptor);
-          }
-        });
-      }
+      createProblem(issue);
     }
-    super.runInspection(scope, manager, globalContext, problemDescriptionsProcessor);
   }
 
 

@@ -60,6 +60,47 @@ public abstract class AbstractSonarQubeInspection extends GlobalInspectionTool {
 
   private static final Logger LOG = Logger.getInstance(AbstractSonarQubeInspection.class);
 
+  private Map<String, PsiFile> resourceCache;
+  private GlobalInspectionContext globalContext;
+  private InspectionManager manager;
+  private ProblemDescriptionsProcessor problemDescriptionsProcessor;
+
+  @Override
+  public void runInspection(AnalysisScope scope, final InspectionManager manager, final GlobalInspectionContext globalContext, final ProblemDescriptionsProcessor problemDescriptionsProcessor) {
+    this.globalContext = globalContext;
+    this.manager = manager;
+    this.problemDescriptionsProcessor = problemDescriptionsProcessor;
+    final SonarQubeInspectionContext sonarQubeInspectionContext = globalContext.getExtension(SonarQubeInspectionContext.KEY);
+    if (sonarQubeInspectionContext == null) {
+      return;
+    }
+    final Project p = globalContext.getProject();
+    final ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
+    resourceCache = sonarQubeInspectionContext.getResourceCache(globalContext, p, projectSettings);
+
+    populateProblems(sonarQubeInspectionContext);
+
+    super.runInspection(scope, manager, globalContext, problemDescriptionsProcessor);
+  }
+
+  protected void createProblem(final ISonarIssue issue) {
+    if (issue.resolved()) {
+      return;
+    }
+    final PsiFile psiFile = resourceCache.get(issue.resourceKey());
+    if (psiFile != null) {
+      ApplicationManager.getApplication().runReadAction(new Runnable() {
+        @Override
+        public void run() {
+          ProblemDescriptor descriptor = computeIssueProblemDescriptor(psiFile, issue, globalContext, manager);
+          problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getReference(psiFile), descriptor);
+        }
+      });
+    }
+  }
+
+  protected abstract void populateProblems(SonarQubeInspectionContext sonarQubeInspectionContext);
+
   @Nullable
   protected ProblemDescriptor computeIssueProblemDescriptor(PsiFile psiFile, ISonarIssue issue, GlobalInspectionContext globalContext, InspectionManager manager) {
     PsiDocumentManager documentManager = PsiDocumentManager.getInstance(globalContext.getProject());
