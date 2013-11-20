@@ -56,7 +56,7 @@
                       groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true"  level="ERROR"
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeNewIssueInspection"/>
 
-    <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-16.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
+    <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 
   </extensions>
 </idea-plugin>
