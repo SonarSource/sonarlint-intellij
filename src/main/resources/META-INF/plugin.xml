@@ -1,6 +1,6 @@
 <idea-plugin version="2" url="${project.url}">
   <id>org.sonar.ide.idea</id>
-  <name>SonarQube IntelliJ Plugin</name>
+  <name>SonarQube</name>
   <version>${project.version}</version>
   <vendor logo="/images/sonarqube-48x200.png" email="dev@sonar.codehaus.org" url="http://www.sonarsource.com">SonarSource</vendor>
 

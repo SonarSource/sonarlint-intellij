@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
+import org.sonar.ide.intellij.util.SonarQubeBundle;
 
 import java.util.Map;
 
@@ -48,6 +49,13 @@ public class SonarQubeIssueInspection extends AbstractSonarQubeInspection {
   @Override
   public String getShortName() {
     return "SonarQubeIssue";
+  }
+
+
+  @NotNull
+  @Override
+  public String getStaticDescription() {
+    return SonarQubeBundle.message("sonarqube.inspection.description");
   }
 
   @Override

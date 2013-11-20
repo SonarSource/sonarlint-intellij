@@ -31,9 +31,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
+import org.sonar.ide.intellij.util.SonarQubeBundle;
 
+import java.net.URL;
 import java.util.Map;
 
 public class SonarQubeNewIssueInspection extends AbstractSonarQubeInspection {
@@ -51,6 +54,12 @@ public class SonarQubeNewIssueInspection extends AbstractSonarQubeInspection {
   @Override
   public String getShortName() {
     return "SonarQubeNewIssue";
+  }
+
+  @Nullable
+  @Override
+  public String getStaticDescription() {
+    return SonarQubeBundle.message("sonarqube.inspection.newIssues.description");
   }
 
   @Override
