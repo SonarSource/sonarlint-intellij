@@ -62,7 +62,7 @@ public class AssociateDialog extends DialogWrapper {
     for (SonarQubeServer server : SonarQubeSettings.getInstance().getServers()) {
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
       try {
-      allProjects.addAll(sonarClient.listAllRemoteProjects());
+        allProjects.addAll(sonarClient.listAllRemoteProjects());
       } catch (Exception e) {
         SonarQubeConsole.getSonarQubeConsole(project).error("Unable to retrieve list of remote projects from server " + server.getId() + ": " + e.getMessage());
         LOG.warn("Unable to retrieve list of remote projects from server " + server.getId(), e);

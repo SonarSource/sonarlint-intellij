@@ -21,39 +21,19 @@ package org.sonar.ide.intellij.inspection;
 
 import com.intellij.analysis.AnalysisScope;
 import com.intellij.codeInspection.*;
-import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.psi.search.FileTypeIndex;
-import com.intellij.psi.search.GlobalSearchScope;
-import com.intellij.psi.search.SearchScope;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
-import org.sonar.wsclient.jsonsimple.JSONArray;
-import org.sonar.wsclient.jsonsimple.JSONObject;
-import org.sonar.wsclient.jsonsimple.JSONValue;
 
-import java.io.File;
-import java.io.FileReader;
-import java.util.HashMap;
 import java.util.Map;
 
 public abstract class AbstractSonarQubeInspection extends GlobalInspectionTool {
@@ -92,8 +72,12 @@ public abstract class AbstractSonarQubeInspection extends GlobalInspectionTool {
       ApplicationManager.getApplication().runReadAction(new Runnable() {
         @Override
         public void run() {
-          ProblemDescriptor descriptor = computeIssueProblemDescriptor(psiFile, issue, globalContext, manager);
-          problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getReference(psiFile), descriptor);
+          try {
+            ProblemDescriptor descriptor = computeIssueProblemDescriptor(psiFile, issue, globalContext, manager);
+            problemDescriptionsProcessor.addProblemElement(globalContext.getRefManager().getReference(psiFile), descriptor);
+          } catch (Exception e) {
+            LOG.error("Unable to create problem for issue " + issue.key(), e);
+          }
         }
       });
     }

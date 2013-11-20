@@ -37,13 +37,13 @@ public class SonarQubeConsole {
   private final ConsoleView consoleView;
 
   private SonarQubeConsole(Project project) {
-     this.consoleView = getConsoleView(project);
+    this.consoleView = getConsoleView(project);
   }
 
   public static synchronized SonarQubeConsole getSonarQubeConsole(Project p) {
-     if (INSTANCE == null) {
-       INSTANCE = new SonarQubeConsole(p);
-     }
+    if (INSTANCE == null) {
+      INSTANCE = new SonarQubeConsole(p);
+    }
     return INSTANCE;
   }
 

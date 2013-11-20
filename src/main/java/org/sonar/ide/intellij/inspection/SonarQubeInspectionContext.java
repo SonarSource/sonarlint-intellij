@@ -20,9 +20,7 @@
 package org.sonar.ide.intellij.inspection;
 
 import com.intellij.codeInspection.GlobalInspectionContext;
-import com.intellij.codeInspection.InspectionManager;
 import com.intellij.codeInspection.InspectionProfileEntry;
-import com.intellij.codeInspection.ProblemDescriptionsProcessor;
 import com.intellij.codeInspection.ex.Tools;
 import com.intellij.codeInspection.lang.GlobalInspectionContextExtension;
 import com.intellij.ide.highlighter.JavaFileType;
@@ -61,7 +59,10 @@ import org.sonar.wsclient.jsonsimple.JSONValue;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class SonarQubeInspectionContext implements GlobalInspectionContextExtension<SonarQubeInspectionContext> {
 
@@ -145,8 +146,8 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       Module[] ijModules = moduleManager.getModules();
       File jsonReport = null;
       if (mavenProjectsManager.isMavenizedProject()) {
-         // Use Maven
-         jsonReport = new MavenAnalysis().runMavenAnalysis(p, projectSettings, server, debugEnabled);
+        // Use Maven
+        jsonReport = new MavenAnalysis().runMavenAnalysis(p, projectSettings, server, debugEnabled);
       } else if (ijModules.length == 1) {
         // Use SQ Runner
         jsonReport = new SonarRunnerAnalysis().analyzeSingleModuleProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);

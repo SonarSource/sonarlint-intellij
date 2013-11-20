@@ -19,9 +19,6 @@
  */
 package org.sonar.ide.intellij.inspection;
 
-import com.intellij.execution.filters.TextConsoleBuilderFactory;
-import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
@@ -34,9 +31,6 @@ import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.content.Content;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.idea.maven.project.MavenProject;
@@ -44,12 +38,10 @@ import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.SonarQubeServer;
-import org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory;
 import org.sonar.runner.api.ForkedRunner;
 import org.sonar.runner.api.ProcessMonitor;
 import org.sonar.runner.api.StreamConsumer;
 
-import javax.swing.*;
 import java.io.File;
 import java.util.*;
 import java.util.regex.Matcher;

@@ -19,20 +19,11 @@
  */
 package org.sonar.ide.intellij.inspection;
 
-import com.intellij.analysis.AnalysisScope;
-import com.intellij.codeInspection.*;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.project.Project;
-import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
-
-import java.util.Map;
 
 public class SonarQubeIssueInspection extends AbstractSonarQubeInspection {
 
