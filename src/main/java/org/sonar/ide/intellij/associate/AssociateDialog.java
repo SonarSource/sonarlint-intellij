@@ -35,6 +35,8 @@ import org.sonar.ide.intellij.wsclient.WSClientFactory;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 public class AssociateDialog extends DialogWrapper {
@@ -66,6 +68,15 @@ public class AssociateDialog extends DialogWrapper {
         LOG.warn("Unable to retrieve list of remote projects from server " + server.getId(), e);
       }
     }
+    Collections.sort(allProjects, new Comparator<ISonarRemoteProject>() {
+      @Override
+      public int compare(ISonarRemoteProject o1, ISonarRemoteProject o2) {
+        if (o1.getName().equals(o2.getName())) {
+          return o1.getServer().getId().compareTo(o2.getServer().getId());
+        }
+        return o1.getName().compareTo(o2.getName());
+      }
+    });
     for (ISonarRemoteProject module : allProjects) {
       projectComboBox.addItem(module);
     }
