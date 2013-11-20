@@ -46,9 +46,9 @@ public interface ISonarWSClientFacade {
 
   String[] getRemoteCode(String resourceKey);
 
-  List<ISonarIssue> getRemoteIssuesRecursively(String resourceKey);
+  List<ISonarIssue> getUnresolvedRemoteIssuesRecursively(String resourceKey);
 
-  List<ISonarIssue> getRemoteIssues(String resourceKey);
+  List<ISonarIssue> getUnresolvedRemoteIssues(String resourceKey);
 
   String[] getChildrenKeys(String resourceKey);
 

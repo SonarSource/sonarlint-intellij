@@ -167,13 +167,13 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
   }
 
   @Override
-  public List<ISonarIssue> getRemoteIssuesRecursively(String resourceKey) {
+  public List<ISonarIssue> getUnresolvedRemoteIssuesRecursively(String resourceKey) {
     int maxPageSize = -1;
     List<ISonarIssue> result = new ArrayList<ISonarIssue>();
     int pageIndex = 1;
     Issues issues;
     do {
-      issues = findIssues(IssueQuery.create().componentRoots(resourceKey).pageSize(maxPageSize).pageIndex(pageIndex));
+      issues = findIssues(IssueQuery.create().componentRoots(resourceKey).resolved(false).pageSize(maxPageSize).pageIndex(pageIndex));
       for (Issue issue : issues.list()) {
         result.add(new SonarRemoteIssue(issue, issues.rule(issue)));
       }
@@ -182,8 +182,8 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
   }
 
   @Override
-  public List<ISonarIssue> getRemoteIssues(String resourceKey) {
-    Issues issues = findIssues(IssueQuery.create().components(resourceKey));
+  public List<ISonarIssue> getUnresolvedRemoteIssues(String resourceKey) {
+    Issues issues = findIssues(IssueQuery.create().components(resourceKey).resolved(false));
     List<ISonarIssue> result = new ArrayList<ISonarIssue>(issues.list().size());
     for (Issue issue : issues.list()) {
       result.add(new SonarRemoteIssue(issue, issues.rule(issue)));

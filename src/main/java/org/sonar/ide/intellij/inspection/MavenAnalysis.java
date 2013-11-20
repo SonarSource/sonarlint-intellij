@@ -21,6 +21,7 @@ package org.sonar.ide.intellij.inspection;
 
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
 import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
@@ -42,7 +43,7 @@ public class MavenAnalysis {
 
   private static final Logger LOG = Logger.getInstance(MavenAnalysis.class);
 
-  public File runMavenAnalysis(final Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled) {
+  public File runMavenAnalysis(ProgressIndicator indicator, final Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled) {
     MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     if (!mavenProjectsManager.isMavenizedProject()) {
       LOG.error("This is not a Maven project");
@@ -76,13 +77,15 @@ public class MavenAnalysis {
         });
       }
     });
-    //MavenRunConfigurationType.runConfiguration(p, mvnParams, null, runnerSettings, null);
-    while (!done.get()) {
+    while (!indicator.isCanceled() && !done.get()) {
       try {
         Thread.sleep(100);
       } catch (InterruptedException e) {
         e.printStackTrace();
       }
+    }
+    if (indicator.isCanceled()) {
+      return null;
     }
     return jsonReport;
   }

@@ -131,7 +131,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       }
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
       try {
-        remoteIssues = sonarClient.getRemoteIssuesRecursively(projectSettings.getProjectKey());
+        remoteIssues = sonarClient.getUnresolvedRemoteIssuesRecursively(projectSettings.getProjectKey());
       } catch (SonarWSClientException e) {
         LOG.warn("Unable to retrieve remote issues", e);
         console.error("Unable to retrieve remote issues: " + e.getMessage());
@@ -147,7 +147,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       File jsonReport = null;
       if (mavenProjectsManager.isMavenizedProject()) {
         // Use Maven
-        jsonReport = new MavenAnalysis().runMavenAnalysis(p, projectSettings, server, debugEnabled);
+        jsonReport = new MavenAnalysis().runMavenAnalysis(indicator, p, projectSettings, server, debugEnabled);
       } else if (ijModules.length == 1) {
         // Use SQ Runner
         jsonReport = new SonarRunnerAnalysis().analyzeSingleModuleProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
