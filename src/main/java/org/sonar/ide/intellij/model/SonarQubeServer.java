@@ -43,7 +43,7 @@ public class SonarQubeServer implements ISonarServer {
   }
 
   public void setUrl(String url) {
-    this.url = url;
+    this.url = StringUtils.removeEnd(url, "/");
   }
 
   public String getUsername() {
