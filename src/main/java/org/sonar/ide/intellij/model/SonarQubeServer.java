@@ -22,6 +22,8 @@ package org.sonar.ide.intellij.model;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.apache.commons.lang.StringUtils;
 
+import javax.annotation.Nullable;
+
 public class SonarQubeServer implements ISonarServer {
 
   private String id;
@@ -50,7 +52,7 @@ public class SonarQubeServer implements ISonarServer {
     return username;
   }
 
-  public void setUsername(String username) {
+  public void setUsername(@Nullable String username) {
     this.username = username;
   }
 
@@ -59,7 +61,7 @@ public class SonarQubeServer implements ISonarServer {
     return password;
   }
 
-  public void setPassword(String password) {
+  public void setPassword(@Nullable String password) {
     this.password = password;
   }
 

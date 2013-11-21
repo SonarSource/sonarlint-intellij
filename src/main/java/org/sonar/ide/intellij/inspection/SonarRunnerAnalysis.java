@@ -107,7 +107,12 @@ public class SonarRunnerAnalysis {
     if ("".equals(prefix)) {
       if (mavenProjectsManager.isMavenizedModule(ijModule)) {
         MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
-        properties.setProperty(PROJECT_VERSION_PROPERTY, mavenModule.getMavenId().getVersion());
+        if (mavenModule != null) {
+          String version = mavenModule.getMavenId().getVersion();
+          properties.setProperty(PROJECT_VERSION_PROPERTY, version != null ? version : "1.0-SNAPSHOT");
+        } else {
+          properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
+        }
       } else {
         properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
       }
@@ -149,18 +154,26 @@ public class SonarRunnerAnalysis {
     }
     if (mavenProjectsManager.isMavenizedModule(ijModule)) {
       MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
-      if (mavenModule.isAggregator()) {
+      if (mavenModule != null && mavenModule.isAggregator()) {
         List<MavenProject> submodules = mavenProjectsManager.getModules(mavenModule);
         Set<String> submoduleKeys = new HashSet<String>();
         Map<String, String> modulesPathsAndNames = mavenModule.getModulesPathsAndNames();
         for (Map.Entry<String, String> modulePathAndName : modulesPathsAndNames.entrySet()) {
           String subModulePath = modulePathAndName.getKey();
           String subModuleName = modulePathAndName.getValue();
-          Module ijSubModule = ProjectFileIndex.SERVICE.getInstance(p).getModuleForFile(LocalFileSystem.getInstance().findFileByPath(subModulePath));
-          String key = settings.getModuleKeys().get(ijSubModule.getName());
-          if (key != null) {
-            configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", ijSubModule.getModuleFile().getParent().getPath());
-            submoduleKeys.add(subModuleName);
+          VirtualFile file = LocalFileSystem.getInstance().findFileByPath(subModulePath);
+          if (file != null) {
+            Module ijSubModule = ProjectFileIndex.SERVICE.getInstance(p).getModuleForFile(file);
+            if (ijSubModule != null) {
+              String key = settings.getModuleKeys().get(ijSubModule.getName());
+              if (key != null) {
+                VirtualFile moduleFile = ijSubModule.getModuleFile();
+                if (moduleFile != null) {
+                  configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath());
+                  submoduleKeys.add(subModuleName);
+                }
+              }
+            }
           }
         }
         properties.setProperty(prefix + PROJECT_MODULES_PROPERTY, StringUtils.join(submoduleKeys, SEPARATOR));

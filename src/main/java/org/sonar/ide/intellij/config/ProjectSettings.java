@@ -64,7 +64,7 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
   }
 
   public Map<String, String> getModuleKeys() {
-    return moduleKeys;
+    return moduleKeys != null ? moduleKeys : new HashMap<String, String>();
   }
 
   public void setModuleKeys(Map<String, String> moduleKeys) {
