@@ -19,16 +19,17 @@
  */
 package org.sonar.ide.intellij.inspection;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.util.ProgressWrapper;
 import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.Nullable;
-import org.jetbrains.idea.maven.execution.*;
-import org.jetbrains.idea.maven.project.*;
+import org.jetbrains.idea.maven.execution.MavenRunner;
+import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
+import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
+import org.jetbrains.idea.maven.project.MavenProject;
+import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.jetbrains.idea.maven.server.MavenServerExecutionResult;
-import org.jetbrains.idea.maven.utils.MavenLog;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 
@@ -37,7 +38,6 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class MavenAnalysis {
 
@@ -67,7 +67,10 @@ public class MavenAnalysis {
         rootProject.getActivatedProfilesIds());
     final MavenRunnerSettings runnerSettings = new MavenRunnerSettings();
     runnerSettings.setMavenProperties(params);
-    MavenRunner.getInstance(p).runBatch(Arrays.asList(mvnParams), null, runnerSettings, null, indicator);
+    final ProgressIndicator original = ProgressManager.getInstance().getProgressIndicator();
+    final ProgressIndicator progress = ProgressWrapper.wrap(original);
+    MavenRunner.getInstance(p).runBatch(Arrays.asList(mvnParams), null, runnerSettings, null, progress);
+
     if (indicator.isCanceled()) {
       return null;
     }

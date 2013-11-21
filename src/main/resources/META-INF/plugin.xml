@@ -46,12 +46,10 @@
 
   <extensions defaultExtensionNs="com.intellij">
     <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
-    <codeInspection.InspectionExtension id="sonarqubeInspection"
-                                        implementation="org.sonar.ide.intellij.inspection.SonarQubeInspectionExtensionsFactory"/>
 
-    <globalInspection hasStaticDescription="true" shortName="SonarQubeIssue" displayName="SonarQube Issue"
-                      groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true"  level="WARNING"
-                      implementationClass="org.sonar.ide.intellij.inspection.SonarQubeIssueInspection"/>
+    <localInspection shortName="SonarQubeIssue" displayName="SonarQube Issue"
+                     groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true"  level="WARNING"
+                     implementationClass="org.sonar.ide.intellij.inspection.SonarQubeLocalInspection" />
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 

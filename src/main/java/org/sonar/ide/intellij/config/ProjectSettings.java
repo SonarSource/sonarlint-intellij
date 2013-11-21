@@ -23,6 +23,9 @@ import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
+import org.sonar.ide.intellij.model.SonarQubeServer;
+import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
+import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,6 +44,8 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
   private String serverId = null;
   private String projectKey = null;
   private Map<String, String> moduleKeys = new HashMap<String, String>();
+
+  private ISonarWSClientFacade sonarClient;
 
   public String getServerId() {
     return serverId;
@@ -76,7 +81,14 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
 
   @Override
   public void projectOpened() {
-    // Nothing to do
+    if (serverId != null) {
+      SonarQubeSettings settings = SonarQubeSettings.getInstance();
+      SonarQubeServer server = settings.getServer(serverId);
+      if (server != null) {
+        // Force initialization of password storage
+        sonarClient = WSClientFactory.getInstance().getSonarClient(server);
+      }
+    }
   }
 
   @Override
