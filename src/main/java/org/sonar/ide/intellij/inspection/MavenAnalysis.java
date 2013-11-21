@@ -50,7 +50,6 @@ public class MavenAnalysis {
       return null;
     }
     List<MavenProject> rootProjects = mavenProjectsManager.getRootProjects();
-    List<MavenProject> mavenModules = mavenProjectsManager.getProjects();
     if (rootProjects.size() > 1) {
       LOG.error("Maven projects with more than 1 root project are not supported");
       return null;

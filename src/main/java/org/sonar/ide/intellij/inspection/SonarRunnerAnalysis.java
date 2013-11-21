@@ -94,7 +94,6 @@ public class SonarRunnerAnalysis {
 
   private void configureProjectSettings(Project p, Properties properties, ProgressIndicator indicator) {
     ProjectSettings settings = p.getComponent(ProjectSettings.class);
-    MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     ModuleManager moduleManager = ModuleManager.getInstance(p);
     Module[] ijModules = moduleManager.getModules();
     properties.setProperty(PROJECT_NAME_PROPERTY, p.getName());

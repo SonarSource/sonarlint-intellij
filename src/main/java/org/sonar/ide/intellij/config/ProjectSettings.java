@@ -27,6 +27,8 @@ import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -47,11 +49,13 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
 
   private ISonarWSClientFacade sonarClient;
 
-  public String getServerId() {
+  public
+  @CheckForNull
+  String getServerId() {
     return serverId;
   }
 
-  public void setServerId(String serverId) {
+  public void setServerId(@Nullable String serverId) {
     this.serverId = serverId;
   }
 

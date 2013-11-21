@@ -26,7 +26,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
-import com.intellij.openapi.progress.util.ProgressWrapper;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -109,7 +108,14 @@ public class SonarQubeLocalInspection extends LocalInspectionTool {
     }
     ProgressManager.checkCanceled();
     PsiJavaFile psiJavaFile = (PsiJavaFile) file;
-    Module module = ProjectRootManager.getInstance(file.getProject()).getFileIndex().getModuleForFile(file.getVirtualFile());
+    VirtualFile virtualFile = file.getVirtualFile();
+    if (virtualFile == null) {
+      return null;
+    }
+    Module module = ProjectRootManager.getInstance(file.getProject()).getFileIndex().getModuleForFile(virtualFile);
+    if (module == null) {
+      return null;
+    }
     String sonarKeyOfModule = projectSettings.getModuleKeys().get(module.getName());
     if (sonarKeyOfModule == null) {
       console.error("Module " + module.getName() + " is not associated to SonarQube");
@@ -243,7 +249,7 @@ public class SonarQubeLocalInspection extends LocalInspectionTool {
       packageName = DEFAULT_PACKAGE_NAME;
     }
     String fileName = StringUtils.substringBeforeLast(file.getName(), ".");
-    if (moduleKey != null && packageName != null) {
+    if (moduleKey != null) {
       result = new StringBuilder()
           .append(moduleKey).append(DELIMITER).append(packageName)
           .append(PACKAGE_DELIMITER).append(fileName)
