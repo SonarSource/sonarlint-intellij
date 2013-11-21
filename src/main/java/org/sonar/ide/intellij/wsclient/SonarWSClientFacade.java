@@ -267,6 +267,10 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
       return remoteIssue.assignee();
     }
 
+    @Override
+    public boolean isNew() {
+      return false;
+    }
   }
 
   private static class SonarRemoteModule implements ISonarRemoteProject, ISonarRemoteModule {

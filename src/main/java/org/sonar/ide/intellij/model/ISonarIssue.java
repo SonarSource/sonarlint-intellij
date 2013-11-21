@@ -45,4 +45,6 @@ public interface ISonarIssue {
 
   String assignee();
 
+  boolean isNew();
+
 }

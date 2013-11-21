@@ -52,9 +52,6 @@
     <globalInspection hasStaticDescription="true" shortName="SonarQubeIssue" displayName="SonarQube Issue"
                       groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true"  level="WARNING"
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeIssueInspection"/>
-    <globalInspection hasStaticDescription="true" shortName="SonarQubeNewIssue" displayName="SonarQube New Issue"
-                      groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true"  level="ERROR"
-                      implementationClass="org.sonar.ide.intellij.inspection.SonarQubeNewIssueInspection"/>
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 

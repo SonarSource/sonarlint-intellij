@@ -71,10 +71,9 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   private static final char PACKAGE_DELIMITER = '.';
   public static final String DEFAULT_PACKAGE_NAME = "[default]";
 
-  private List<ISonarIssue> remoteIssues = new ArrayList<ISonarIssue>();
-  private List<ISonarIssue> localIssues = new ArrayList<ISonarIssue>();
-  private List<ISonarIssue> localNewIssues = new ArrayList<ISonarIssue>();
-  private List<String> modifiedFiles;
+  private Map<PsiFile, List<ISonarIssue>> remoteIssuesByFile = new HashMap<PsiFile, List<ISonarIssue>>();
+  private Map<PsiFile, List<ISonarIssue>> localIssuesByFile = new HashMap<PsiFile, List<ISonarIssue>>();
+  private List<PsiFile> modifiedFiles = new ArrayList<PsiFile>();
   private SonarQubeServer server;
   private boolean debugEnabled;
   private Map<String, PsiFile> resourceCache;
@@ -87,19 +86,15 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     return KEY;
   }
 
-  public List<ISonarIssue> getRemoteIssues() {
-    return remoteIssues;
+  public Map<PsiFile, List<ISonarIssue>> getLocalIssuesByFile() {
+    return localIssuesByFile;
   }
 
-  public List<ISonarIssue> getLocalIssues() {
-    return localIssues;
+  public Map<PsiFile, List<ISonarIssue>> getRemoteIssuesByFile() {
+    return remoteIssuesByFile;
   }
 
-  public List<ISonarIssue> getLocalNewIssues() {
-    return localNewIssues;
-  }
-
-  public List<String> getModifiedFileKeys() {
+  public List<PsiFile> getModifiedFile() {
     return modifiedFiles;
   }
 
@@ -129,14 +124,9 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         console.error("Project was associated to a server that is not configured: " + serverId);
         return;
       }
-      ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-      try {
-        remoteIssues = sonarClient.getUnresolvedRemoteIssuesRecursively(projectSettings.getProjectKey());
-      } catch (SonarWSClientException e) {
-        LOG.warn("Unable to retrieve remote issues", e);
-        console.error("Unable to retrieve remote issues: " + e.getMessage());
-        return;
-      }
+      populateResourceCache(context, p, projectSettings);
+
+      fetchRemoteIssues(projectSettings);
 
       debugEnabled = LOG.isDebugEnabled();
       String jvmArgs = "";
@@ -160,8 +150,29 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     }
   }
 
-  public Map<String, PsiFile> getResourceCache(final GlobalInspectionContext globalContext, final Project p, final ProjectSettings projectSettings) {
-    if (resourceCache == null) {
+  private void fetchRemoteIssues(ProjectSettings projectSettings) {
+    ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
+    List<ISonarIssue> remoteIssues;
+    try {
+      remoteIssues = sonarClient.getUnresolvedRemoteIssuesRecursively(projectSettings.getProjectKey());
+    } catch (SonarWSClientException e) {
+      LOG.warn("Unable to retrieve remote issues", e);
+      console.error("Unable to retrieve remote issues: " + e.getMessage());
+      return;
+    }
+    for (ISonarIssue remoteIssue : remoteIssues) {
+      PsiFile resource = resourceCache.get(remoteIssue.resourceKey());
+      if (resource == null) {
+        continue;
+      }
+      if (!remoteIssuesByFile.containsKey(resource)) {
+        remoteIssuesByFile.put(resource, new ArrayList<ISonarIssue>());
+      }
+      remoteIssuesByFile.get(resource).add(remoteIssue);
+    }
+  }
+
+  private void populateResourceCache(final GlobalInspectionContext globalContext, final Project p, final ProjectSettings projectSettings) {
       resourceCache = new HashMap<String, PsiFile>();
       final SearchScope searchScope = globalContext.getRefManager().getScope().toSearchScope();
       for (final VirtualFile virtualFile : FileTypeIndex.getFiles(JavaFileType.INSTANCE, (GlobalSearchScope) searchScope)) {
@@ -180,8 +191,6 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
           }
         });
       }
-    }
-    return resourceCache;
   }
 
   private String getComponentKey(String moduleKey, PsiFile file) {
@@ -232,9 +241,6 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   }
 
   private void createIssuesFromReportOutput(File outputFile) {
-    this.modifiedFiles = new ArrayList<String>();
-    this.localIssues = new ArrayList<ISonarIssue>();
-    this.localNewIssues = new ArrayList<ISonarIssue>();
     FileReader fileReader = null;
     try {
       fileReader = new FileReader(outputFile);
@@ -244,7 +250,10 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       final JSONArray components = (JSONArray) sonarResult.get("components");
       for (Object component : components) {
         String key = ObjectUtils.toString(((JSONObject) component).get("key"));
-        modifiedFiles.add(key);
+        PsiFile file = resourceCache.get(key);
+        if (file != null) {
+          modifiedFiles.add(file);
+        }
       }
       // Now read all rules name in a cache
       final Map<String, String> ruleByKey = new HashMap<String, String>();
@@ -257,12 +266,15 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       // Now iterate over all issues and store them
       for (Object issueObj : (JSONArray) sonarResult.get("issues")) {
         final JSONObject jsonIssue = (JSONObject) issueObj;
-        boolean isNew = Boolean.TRUE.equals(jsonIssue.get("isNew"));
-        if (isNew) {
-          localNewIssues.add(new SonarIssueFromJsonReport(jsonIssue, ruleByKey));
-        } else {
-          localIssues.add(new SonarIssueFromJsonReport(jsonIssue, ruleByKey));
+        ISonarIssue issue = new SonarIssueFromJsonReport(jsonIssue, ruleByKey);
+        PsiFile file = resourceCache.get(issue.resourceKey());
+        if (file == null) {
+          continue;
         }
+        if (!localIssuesByFile.containsKey(file)) {
+          localIssuesByFile.put(file, new ArrayList<ISonarIssue>());
+        }
+        localIssuesByFile.get(file).add(issue);
       }
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);

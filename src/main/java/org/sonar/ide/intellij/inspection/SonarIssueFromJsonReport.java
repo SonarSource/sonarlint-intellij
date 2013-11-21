@@ -38,38 +38,38 @@ public class SonarIssueFromJsonReport implements ISonarIssue {
 
   @Override
   public String key() {
-    return ObjectUtils.toString(jsonIssue.get("key")); //$NON-NLS-1$
+    return ObjectUtils.toString(jsonIssue.get("key"));
   }
 
   @Override
   public String resourceKey() {
-    return ObjectUtils.toString(jsonIssue.get("component")); //$NON-NLS-1$
+    return ObjectUtils.toString(jsonIssue.get("component"));
   }
 
   @Override
   public boolean resolved() {
-    return StringUtils.isNotBlank(ObjectUtils.toString(jsonIssue.get("resolution"))); //$NON-NLS-1$
+    return StringUtils.isNotBlank(ObjectUtils.toString(jsonIssue.get("resolution")));
   }
 
   @Override
   public Integer line() {
-    Long line = (Long) jsonIssue.get("line");//$NON-NLS-1$
+    Long line = (Long) jsonIssue.get("line");
     return line != null ? line.intValue() : null;
   }
 
   @Override
   public String severity() {
-    return ObjectUtils.toString(jsonIssue.get("severity"));//$NON-NLS-1$
+    return ObjectUtils.toString(jsonIssue.get("severity"));
   }
 
   @Override
   public String message() {
-    return ObjectUtils.toString(jsonIssue.get("message"));//$NON-NLS-1$
+    return ObjectUtils.toString(jsonIssue.get("message"));
   }
 
   @Override
   public String ruleKey() {
-    return ObjectUtils.toString(jsonIssue.get("rule"));//$NON-NLS-1$
+    return ObjectUtils.toString(jsonIssue.get("rule"));
   }
 
   @Override
@@ -79,7 +79,11 @@ public class SonarIssueFromJsonReport implements ISonarIssue {
 
   @Override
   public String assignee() {
-    return ObjectUtils.toString(jsonIssue.get("assignee"));//$NON-NLS-1$
+    return ObjectUtils.toString(jsonIssue.get("assignee"));
   }
 
+  @Override
+  public boolean isNew() {
+    return "true".equals(ObjectUtils.toString(jsonIssue.get("isNew")));
+  }
 }
