@@ -58,7 +58,8 @@
                       groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true" level="WARNING"
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeGlobalInspection"/>
 
-    <externalAnnotator language="JAVA" implementationClass="org.sonar.ide.intellij.inspection.SonarQubeExternalAnnotator"/>
+    <!-- Disable annotator until we find a better way to relocate issues at the correct location -->
+    <!--<externalAnnotator language="JAVA" implementationClass="org.sonar.ide.intellij.inspection.SonarQubeExternalAnnotator"/>-->
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 
