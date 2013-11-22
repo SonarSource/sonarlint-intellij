@@ -95,7 +95,7 @@ public class InspectionUtils {
   }
 
   public static String getProblemMessage(@NotNull ISonarIssue issue) {
-     return issue.isNew() ? "NEW: " + issue.message() : issue.message();
+    return issue.isNew() ? "NEW: " + issue.message() : issue.message();
   }
 
   private static String getJavaComponentKey(final String moduleKey, final PsiJavaFile file) {
