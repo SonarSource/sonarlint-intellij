@@ -191,6 +191,8 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
 
   private void createIssuesFromReportOutput(File outputFile) {
+    issueCache.getLocalIssuesByFile().clear();
+    issueCache.getModifiedFile().clear();
     FileReader fileReader = null;
     try {
       fileReader = new FileReader(outputFile);

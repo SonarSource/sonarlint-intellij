@@ -167,6 +167,7 @@ public class SonarQubeServerDialog extends DialogWrapper {
             return;
           default:
             LOG.error("Unknow status " + result);
+            return;
         }
       } else {
         initValidation();
