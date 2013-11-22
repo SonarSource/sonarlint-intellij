@@ -70,8 +70,6 @@ public class AssociateComboBoxEditor implements ComboBoxEditor, FocusListener {
   }
 
   public Object getItem() {
-    Object newValue = editor.getText();
-    // TODO
     return oldValue;
   }
 

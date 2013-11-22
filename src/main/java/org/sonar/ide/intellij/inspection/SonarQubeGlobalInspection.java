@@ -22,10 +22,8 @@ package org.sonar.ide.intellij.inspection;
 import com.intellij.codeInspection.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
@@ -74,7 +72,6 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
       return;
     }
     final Project p = globalContext.getProject();
-    final ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
 
     if (sonarQubeInspectionContext.getRemoteIssuesByFile().containsKey(file) && !sonarQubeInspectionContext.getIssueCache().getModifiedFile().contains(file)) {
       for (final ISonarIssue issue : sonarQubeInspectionContext.getRemoteIssuesByFile().get(file)) {
@@ -107,35 +104,12 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
 
   @Nullable
   protected ProblemDescriptor computeIssueProblemDescriptor(PsiFile psiFile, ISonarIssue issue, GlobalInspectionContext globalContext, InspectionManager manager) {
-    String message = issue.message();
-    if (issue.isNew()) {
-      message = "NEW: " + message;
-    }
-    Integer line = issue.line();
-    TextRange range = InspectionUtils.getTextRange(psiFile.getProject(), psiFile, line != null ? line : 1);
+    TextRange range = InspectionUtils.getTextRange(psiFile.getProject(), psiFile, issue);
     return manager.createProblemDescriptor(psiFile, range,
-        message,
-        issueToProblemHighlightType(issue),
+        InspectionUtils.getProblemMessage(issue),
+        issue.isNew() ? ProblemHighlightType.GENERIC_ERROR_OR_WARNING : ProblemHighlightType.WEAK_WARNING,
         false
     );
   }
-
-  public ProblemHighlightType issueToProblemHighlightType(ISonarIssue issue) {
-    if (StringUtils.isBlank(issue.severity())) {
-      return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
-    } else {
-      String sonarSeverity = issue.severity();
-      if (ISonarIssue.BLOCKER.equals(sonarSeverity)) {
-        return ProblemHighlightType.ERROR;
-      } else if (ISonarIssue.CRITICAL.equals(sonarSeverity) || ISonarIssue.MAJOR.equals(sonarSeverity)) {
-        return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
-      } else if (ISonarIssue.INFO.equals(sonarSeverity) || ISonarIssue.MINOR.equals(sonarSeverity)) {
-        return ProblemHighlightType.WEAK_WARNING;
-      } else {
-        return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
-      }
-    }
-  }
-
 
 }

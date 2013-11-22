@@ -31,7 +31,6 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -43,7 +42,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
@@ -107,7 +105,8 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       console = SonarQubeConsole.getSonarQubeConsole(p);
       ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
       String serverId = projectSettings.getServerId();
-      if (serverId == null) {
+      String projectKey = projectSettings.getProjectKey();
+      if (serverId == null || projectKey == null) {
         console.error("Project is not associated to SonarQube");
         return;
       }
@@ -119,7 +118,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       }
       populateResourceCache(context, p, projectSettings);
 
-      fetchRemoteIssues(projectSettings);
+      fetchRemoteIssues(projectKey);
 
       debugEnabled = LOG.isDebugEnabled();
       String jvmArgs = "";
@@ -130,7 +129,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       File jsonReport = null;
       if (mavenProjectsManager.isMavenizedProject()) {
         // Use Maven
-        jsonReport = new MavenAnalysis().runMavenAnalysis(indicator, p, projectSettings, server, debugEnabled);
+        jsonReport = new MavenAnalysis().runMavenAnalysis(p, projectSettings, server, debugEnabled);
       } else if (ijModules.length == 1) {
         // Use SQ Runner
         jsonReport = new SonarRunnerAnalysis().analyzeSingleModuleProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
@@ -143,11 +142,11 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     }
   }
 
-  private void fetchRemoteIssues(ProjectSettings projectSettings) {
+  private void fetchRemoteIssues(String projectKey) {
     ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
     List<ISonarIssue> remoteIssues;
     try {
-      remoteIssues = sonarClient.getUnresolvedRemoteIssuesRecursively(projectSettings.getProjectKey());
+      remoteIssues = sonarClient.getUnresolvedRemoteIssuesRecursively(projectKey);
     } catch (SonarWSClientException e) {
       LOG.warn("Unable to retrieve remote issues", e);
       console.error("Unable to retrieve remote issues: " + e.getMessage());
@@ -166,24 +165,28 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   }
 
   private void populateResourceCache(final GlobalInspectionContext globalContext, final Project p, final ProjectSettings projectSettings) {
-      resourceCache = new HashMap<String, PsiFile>();
-      final SearchScope searchScope = globalContext.getRefManager().getScope().toSearchScope();
-      for (final VirtualFile virtualFile : FileTypeIndex.getFiles(JavaFileType.INSTANCE, (GlobalSearchScope) searchScope)) {
-        ApplicationManager.getApplication().runReadAction(new Runnable() {
-          @Override
-          public void run() {
-            PsiFile psiFile = PsiManager.getInstance(globalContext.getProject()).findFile(virtualFile);
-            PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
-            Module module = ProjectRootManager.getInstance(p).getFileIndex().getModuleForFile(virtualFile);
-            String sonarKeyOfModule = projectSettings.getModuleKeys().get(module.getName());
-            if (sonarKeyOfModule == null) {
-              console.error("Module " + module.getName() + " is not associated to SonarQube");
-            } else {
-              resourceCache.put(InspectionUtils.getComponentKey(sonarKeyOfModule, psiJavaFile), psiJavaFile);
-            }
+    resourceCache = new HashMap<String, PsiFile>();
+    final SearchScope searchScope = globalContext.getRefManager().getScope().toSearchScope();
+    for (final VirtualFile virtualFile : FileTypeIndex.getFiles(JavaFileType.INSTANCE, (GlobalSearchScope) searchScope)) {
+      ApplicationManager.getApplication().runReadAction(new Runnable() {
+        @Override
+        public void run() {
+          PsiFile psiFile = PsiManager.getInstance(globalContext.getProject()).findFile(virtualFile);
+          PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
+          Module module = ProjectRootManager.getInstance(p).getFileIndex().getModuleForFile(virtualFile);
+          if (module == null) {
+            console.error("Unable to find module for file " + virtualFile.getName());
+            return;
           }
-        });
-      }
+          String sonarKeyOfModule = projectSettings.getModuleKeys().get(module.getName());
+          if (sonarKeyOfModule == null) {
+            console.error("Module " + module.getName() + " is not associated to SonarQube");
+          } else {
+            resourceCache.put(InspectionUtils.getComponentKey(sonarKeyOfModule, psiJavaFile), psiJavaFile);
+          }
+        }
+      });
+    }
   }
 
 
@@ -232,10 +235,12 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
   @Override
   public void performPostRunActivities(List<InspectionProfileEntry> inspections, GlobalInspectionContext context) {
+    // Nothing to do
   }
 
   @Override
   public void cleanup() {
+    // Nothing to do
   }
 
 }

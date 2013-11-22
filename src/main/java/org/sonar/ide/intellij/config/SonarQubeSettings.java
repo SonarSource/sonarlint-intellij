@@ -38,7 +38,6 @@ import java.util.regex.Pattern;
 @State(name = "SonarQubeSettings", storages = {@Storage(id = "sonarqube", file = StoragePathMacros.APP_CONFIG + "/sonarqube.xml")})
 public final class SonarQubeSettings implements PersistentStateComponent<SonarQubeSettings>, ExportableApplicationComponent {
 
-  private static final Logger LOG = Logger.getInstance(SonarQubeSettings.class);
   private static String SERVER_ID_REGEXP = "[a-zA-Z0-9_\\-:\\.]+";
   private static Pattern SERVER_ID_PATTERN = Pattern.compile(SERVER_ID_REGEXP);
 

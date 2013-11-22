@@ -19,9 +19,7 @@
  */
 package org.sonar.ide.intellij.inspection;
 
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
@@ -36,18 +34,11 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.sonar.ide.intellij.model.ISonarIssue;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class InspectionUtils {
-
-  private static final Logger LOG = Logger.getInstance(InspectionUtils.class);
 
   private static final char DELIMITER = ':';
   private static final char PACKAGE_DELIMITER = '.';
-  public static final String DEFAULT_PACKAGE_NAME = "[default]";
+  private static final String DEFAULT_PACKAGE_NAME = "[default]";
 
   private InspectionUtils() {
     // Utility class
@@ -85,15 +76,26 @@ public class InspectionUtils {
     return result.toString();
   }
 
-  public static @NotNull TextRange getTextRange(@NotNull Project project, @NotNull PsiFile psiFile, int line) {
-    PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
-    Document document = documentManager.getDocument(psiFile.getContainingFile());
-    if (document == null) {
+  @NotNull
+  public static TextRange getTextRange(@NotNull Project project, @NotNull PsiFile psiFile, ISonarIssue issue) {
+    int line = issue.line() != null ? issue.line().intValue() : 1;
+    try {
+      PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
+      Document document = documentManager.getDocument(psiFile.getContainingFile());
+      if (document == null) {
+        return TextRange.EMPTY_RANGE;
+      }
+      int lineStartOffset = document.getLineStartOffset(line - 1);
+      int lineEndOffset = document.getLineEndOffset(line - 1);
+      return new TextRange(lineStartOffset, lineEndOffset);
+    } catch (IndexOutOfBoundsException e) {
+      // Local file should be different than remote
       return TextRange.EMPTY_RANGE;
     }
-    int lineStartOffset = document.getLineStartOffset(line - 1);
-    int lineEndOffset = document.getLineEndOffset(line - 1);
-    return new TextRange(lineStartOffset, lineEndOffset);
+  }
+
+  public static String getProblemMessage(@NotNull ISonarIssue issue) {
+     return issue.isNew() ? "NEW: " + issue.message() : issue.message();
   }
 
   private static String getJavaComponentKey(final String moduleKey, final PsiJavaFile file) {

@@ -19,31 +19,20 @@
  */
 package org.sonar.ide.intellij.inspection;
 
-import com.intellij.codeInspection.*;
 import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
@@ -52,16 +41,9 @@ import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.SonarWSClientException;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
-import org.sonar.wsclient.jsonsimple.JSONArray;
-import org.sonar.wsclient.jsonsimple.JSONObject;
-import org.sonar.wsclient.jsonsimple.JSONValue;
 
-import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExternalAnnotator.State, SonarQubeExternalAnnotator.State> {
 
@@ -72,11 +54,11 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
   private SonarQubeConsole console;
 
   public static class State {
-    public PsiJavaFile file;
-    public VirtualFile vfile;
-    public Project project;
-    public List<ISonarIssue> remoteIssues;
-    public String componentKey;
+    private PsiJavaFile file;
+    private VirtualFile vfile;
+    private Project project;
+    private List<ISonarIssue> remoteIssues;
+    private String componentKey;
   }
 
   @Nullable
@@ -163,13 +145,11 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
 
   @Nullable
   public static Annotation createIssueAnnotation(AnnotationHolder holder, PsiFile psiFile, ISonarIssue issue) {
-    String message = issue.message();
-    Integer line = issue.line();
-    TextRange range = InspectionUtils.getTextRange(psiFile.getProject(), psiFile, line != null ? line : 1);
+    TextRange range = InspectionUtils.getTextRange(psiFile.getProject(), psiFile, issue);
     if (issue.isNew()) {
-      return holder.createWarningAnnotation(range, "NEW: " + message);
+      return holder.createWarningAnnotation(range, InspectionUtils.getProblemMessage(issue));
     } else {
-      return holder.createWeakWarningAnnotation(range, message);
+      return holder.createWeakWarningAnnotation(range, InspectionUtils.getProblemMessage(issue));
     }
   }
 }

@@ -42,17 +42,14 @@
   </project-components>
 
   <actions>
-    <action id="associate" icon="/images/onde-sonar-16.png" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube" description="Associate with a remote SonarQube server">
+    <action id="associate" icon="/images/onde-sonar-16.png" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube"
+            description="Associate with a remote SonarQube server">
       <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddFrameworkSupport"/>
     </action>
   </actions>
 
   <extensions defaultExtensionNs="com.intellij">
     <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
-
-   <!-- <localInspection shortName="SonarQubeIssue" displayName="SonarQube Issue"
-                     groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true"  level="WARNING"
-                     implementationClass="org.sonar.ide.intellij.inspection.SonarQubeLocalInspection" />-->
 
     <codeInspection.InspectionExtension id="sonarqubeInspection"
                                         implementation="org.sonar.ide.intellij.inspection.SonarQubeInspectionExtensionsFactory"/>

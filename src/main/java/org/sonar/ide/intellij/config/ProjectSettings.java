@@ -23,9 +23,7 @@ import com.intellij.openapi.components.*;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
-import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
-import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -41,13 +39,9 @@ import java.util.Map;
 )
 public final class ProjectSettings implements PersistentStateComponent<ProjectSettings>, ProjectComponent {
 
-  private static final Logger LOG = Logger.getInstance(ProjectSettings.class);
-
   private String serverId = null;
   private String projectKey = null;
   private Map<String, String> moduleKeys = new HashMap<String, String>();
-
-  private ISonarWSClientFacade sonarClient;
 
   public
   @CheckForNull

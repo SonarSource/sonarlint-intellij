@@ -43,7 +43,7 @@ public class MavenAnalysis {
 
   private static final Logger LOG = Logger.getInstance(MavenAnalysis.class);
 
-  public File runMavenAnalysis(final ProgressIndicator indicator, final Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled) {
+  public File runMavenAnalysis(final Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled) {
     MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     if (!mavenProjectsManager.isMavenizedProject()) {
       LOG.error("This is not a Maven project");
@@ -55,7 +55,6 @@ public class MavenAnalysis {
       return null;
     }
     MavenProject rootProject = rootProjects.get(0);
-    MavenServerExecutionResult result;
     Map<String, String> params = new LinkedHashMap<String, String>();
     params.put("enforcer.skip", "true");
     File jsonReport = getJsonReportLocation(rootProject);
