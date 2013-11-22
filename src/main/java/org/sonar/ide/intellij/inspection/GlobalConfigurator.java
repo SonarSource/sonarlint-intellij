@@ -37,6 +37,10 @@ public class GlobalConfigurator {
   public static final String REPORT_OUTPUT_PROPERTY = "sonar.report.export.path";
   public static final String VERBOSE_PROPERTY = "sonar.verbose";
 
+  private GlobalConfigurator() {
+    // Utility class
+  }
+
   public static void configureAnalysis(Project p, File outputFile, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, ParamWrapper params) {
 
     // Global configuration

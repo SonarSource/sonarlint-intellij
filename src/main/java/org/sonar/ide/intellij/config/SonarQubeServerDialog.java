@@ -97,35 +97,37 @@ public class SonarQubeServerDialog extends DialogWrapper {
     this.server.setUsername(usernameTextField.getText());
     this.server.setPassword(new String(passwordField.getPassword()));
     if (edit) {
-      return SonarQubeSettings.getInstance().validateServer(this.server, this);
+      return SonarQubeSettings.validateServer(this.server, this);
     } else {
-      return SonarQubeSettings.getInstance().validateNewServer(otherServers, this.server, this);
+      return SonarQubeSettings.validateNewServer(otherServers, this.server, this);
     }
   }
 
   private void addUpdateIdListener() {
-    urlTextField.getDocument().addDocumentListener(new DocumentListener() {
-      public void changedUpdate(DocumentEvent e) {
-        update();
-      }
+    urlTextField.getDocument().addDocumentListener(new ServerIdAutoComplete());
+  }
 
-      public void removeUpdate(DocumentEvent e) {
-        update();
-      }
+  private class ServerIdAutoComplete implements DocumentListener {
+    public void changedUpdate(DocumentEvent e) {
+      update();
+    }
 
-      public void insertUpdate(DocumentEvent e) {
-        update();
-      }
+    public void removeUpdate(DocumentEvent e) {
+      update();
+    }
 
-      public void update() {
-        try {
-          URL url = new URL(urlTextField.getText());
-          idTextField.setText(url.getHost());
-        } catch (Exception e) {
-          // Do nothing
-        }
+    public void insertUpdate(DocumentEvent e) {
+      update();
+    }
+
+    private void update() {
+      try {
+        URL url = new URL(urlTextField.getText());
+        idTextField.setText(url.getHost());
+      } catch (Exception e) {
+        // Do nothing
       }
-    });
+    }
   }
 
   public SonarQubeServer getServer() {
@@ -165,7 +167,6 @@ public class SonarQubeServerDialog extends DialogWrapper {
             return;
           default:
             LOG.error("Unknow status " + result);
-            return;
         }
       } else {
         initValidation();

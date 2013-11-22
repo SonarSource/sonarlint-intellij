@@ -113,7 +113,7 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     SonarQubeIssueCache cache = p.getComponent(SonarQubeIssueCache.class);
 
     if (!cache.getModifiedFile().contains(collectedInfo.file)) {
-      populateRemoteIssues(collectedInfo, collectedInfo.file, console, server, collectedInfo.componentKey);
+      populateRemoteIssues(collectedInfo, console, server, collectedInfo.componentKey);
     }
     return collectedInfo;
   }
@@ -132,7 +132,7 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     }
   }
 
-  private void populateRemoteIssues(State state, PsiFile file, SonarQubeConsole console, SonarQubeServer server, String componentKey) {
+  private void populateRemoteIssues(State state, SonarQubeConsole console, SonarQubeServer server, String componentKey) {
     try {
       ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
       state.remoteIssues = sonarClient.getUnresolvedRemoteIssues(componentKey);

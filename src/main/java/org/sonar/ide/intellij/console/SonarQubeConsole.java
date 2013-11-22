@@ -37,7 +37,7 @@ public class SonarQubeConsole {
   private final ConsoleView consoleView;
 
   private SonarQubeConsole(Project project) {
-    this.consoleView = getConsoleView(project);
+    this.consoleView = createConsoleView(project);
   }
 
   public static synchronized SonarQubeConsole getSonarQubeConsole(Project p) {
@@ -47,8 +47,8 @@ public class SonarQubeConsole {
     return INSTANCE;
   }
 
-  private ConsoleView getConsoleView(Project project) {
-    final ConsoleView consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+  private ConsoleView createConsoleView(Project project) {
+    final ConsoleView newConsoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
     final ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SonarQubeToolWindowFactory.ID);
     SwingUtilities.invokeLater(new Runnable() {
       @Override
@@ -56,13 +56,13 @@ public class SonarQubeConsole {
         toolWindow.show(new Runnable() {
           @Override
           public void run() {
-            Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "SonarQube Console", true);
+            Content content = toolWindow.getContentManager().getFactory().createContent(newConsoleView.getComponent(), "SonarQube Console", true);
             toolWindow.getContentManager().addContent(content);
           }
         });
       }
     });
-    return consoleView;
+    return newConsoleView;
   }
 
   public void info(String msg) {

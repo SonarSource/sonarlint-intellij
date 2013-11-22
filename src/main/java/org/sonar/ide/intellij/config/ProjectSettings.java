@@ -62,6 +62,11 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
     this.projectKey = projectKey;
   }
 
+  public void unassociate() {
+    this.serverId = null;
+    this.projectKey = null;
+  }
+
   public Map<String, String> getModuleKeys() {
     return moduleKeys != null ? moduleKeys : new HashMap<String, String>();
   }

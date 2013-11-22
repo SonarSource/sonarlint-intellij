@@ -66,8 +66,8 @@ public class SonarRunnerAnalysis {
 
   private static final char SEPARATOR = ',';
 
-  private static final String jarRegexp = "(jar://)?(.*)!/";
-  private static final Pattern jarPattern = Pattern.compile(jarRegexp);
+  private static final String JAR_REGEXP = "(jar://)?(.*)!/";
+  private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
 
 
   public File analyzeSingleModuleProject(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, String jvmArgs) {
@@ -181,7 +181,7 @@ public class SonarRunnerAnalysis {
   }
 
   private String toFile(String path) {
-    Matcher m = jarPattern.matcher(path);
+    Matcher m = JAR_PATTERN.matcher(path);
     if (m.matches()) {
       return m.group(1);
     }

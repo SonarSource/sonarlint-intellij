@@ -63,7 +63,8 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
   }
 
   @Override
-  public void checkFile(@NotNull PsiFile file, @NotNull InspectionManager manager, @NotNull ProblemsHolder problemsHolder, @NotNull GlobalInspectionContext globalContext, @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
+  public void checkFile(@NotNull PsiFile file, @NotNull InspectionManager manager, @NotNull ProblemsHolder problemsHolder,
+                        @NotNull GlobalInspectionContext globalContext, @NotNull ProblemDescriptionsProcessor problemDescriptionsProcessor) {
     this.globalContext = globalContext;
     this.manager = manager;
     this.problemDescriptionsProcessor = problemDescriptionsProcessor;
@@ -71,7 +72,6 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
     if (sonarQubeInspectionContext == null) {
       return;
     }
-    final Project p = globalContext.getProject();
 
     if (sonarQubeInspectionContext.getRemoteIssuesByFile().containsKey(file) && !sonarQubeInspectionContext.getIssueCache().getModifiedFile().contains(file)) {
       for (final ISonarIssue issue : sonarQubeInspectionContext.getRemoteIssuesByFile().get(file)) {
