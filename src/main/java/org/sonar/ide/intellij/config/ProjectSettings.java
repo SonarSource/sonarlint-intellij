@@ -86,14 +86,7 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
 
   @Override
   public void projectOpened() {
-    if (serverId != null) {
-      SonarQubeSettings settings = SonarQubeSettings.getInstance();
-      SonarQubeServer server = settings.getServer(serverId);
-      if (server != null) {
-        // Force initialization of password storage
-        sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-      }
-    }
+    // Nothing to do
   }
 
   @Override

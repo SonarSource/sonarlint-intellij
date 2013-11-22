@@ -36,6 +36,9 @@
     <component>
       <implementation-class>org.sonar.ide.intellij.config.ProjectSettings</implementation-class>
     </component>
+    <component>
+      <implementation-class>org.sonar.ide.intellij.inspection.SonarQubeIssueCache</implementation-class>
+    </component>
   </project-components>
 
   <actions>
@@ -47,9 +50,18 @@
   <extensions defaultExtensionNs="com.intellij">
     <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
 
-    <localInspection shortName="SonarQubeIssue" displayName="SonarQube Issue"
+   <!-- <localInspection shortName="SonarQubeIssue" displayName="SonarQube Issue"
                      groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true"  level="WARNING"
-                     implementationClass="org.sonar.ide.intellij.inspection.SonarQubeLocalInspection" />
+                     implementationClass="org.sonar.ide.intellij.inspection.SonarQubeLocalInspection" />-->
+
+    <codeInspection.InspectionExtension id="sonarqubeInspection"
+                                        implementation="org.sonar.ide.intellij.inspection.SonarQubeInspectionExtensionsFactory"/>
+
+    <globalInspection hasStaticDescription="true" shortName="SonarQubeIssue" displayName="SonarQube Issue"
+                      groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true" level="WARNING"
+                      implementationClass="org.sonar.ide.intellij.inspection.SonarQubeGlobalInspection"/>
+
+    <externalAnnotator language="JAVA" implementationClass="org.sonar.ide.intellij.inspection.SonarQubeExternalAnnotator"/>
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 

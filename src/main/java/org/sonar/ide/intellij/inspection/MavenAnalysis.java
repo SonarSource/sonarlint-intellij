@@ -69,10 +69,6 @@ public class MavenAnalysis {
     final ProgressIndicator original = ProgressManager.getInstance().getProgressIndicator();
     final ProgressIndicator progress = ProgressWrapper.wrap(original);
     MavenRunner.getInstance(p).runBatch(Arrays.asList(mvnParams), null, runnerSettings, null, progress);
-
-    if (indicator.isCanceled()) {
-      return null;
-    }
     return jsonReport;
   }
 
