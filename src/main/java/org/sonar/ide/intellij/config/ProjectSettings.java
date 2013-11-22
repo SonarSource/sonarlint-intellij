@@ -59,11 +59,12 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
     this.serverId = serverId;
   }
 
+  @CheckForNull
   public String getProjectKey() {
     return projectKey;
   }
 
-  public void setProjectKey(String projectKey) {
+  public void setProjectKey(@Nullable String projectKey) {
     this.projectKey = projectKey;
   }
 

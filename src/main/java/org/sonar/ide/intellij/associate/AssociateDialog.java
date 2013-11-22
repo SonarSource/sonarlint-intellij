@@ -23,6 +23,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.ui.ListCellRendererWrapper;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
@@ -50,11 +51,11 @@ public class AssociateDialog extends DialogWrapper {
     super(project, true);
     init();
     setTitle(SonarQubeBundle.message("sonarqube.associate.title"));
-    projectComboBox.setRenderer(new DefaultListCellRenderer() {
+    projectComboBox.setRenderer(new ListCellRendererWrapper<ISonarRemoteProject>() {
       @Override
-      public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        ISonarRemoteProject module = (ISonarRemoteProject) value;
-        return super.getListCellRendererComponent(list, module != null ? module.getName() + " (" + module.getServer().getId() + ")" : null, index, isSelected, cellHasFocus);
+      public void customize(JList list, ISonarRemoteProject value, int index, boolean isSelected, boolean cellHasFocus) {
+        ISonarRemoteProject sonarProject = (ISonarRemoteProject) value;
+        setText(sonarProject != null ? sonarProject.getName() + " (" + sonarProject.getServer().getId() + ")" : null);
       }
     });
     projectComboBox.setEditor(new AssociateComboBoxEditor());
@@ -92,7 +93,7 @@ public class AssociateDialog extends DialogWrapper {
     return (ISonarRemoteProject) projectComboBox.getSelectedItem();
   }
 
-  public void setSelectedSonarQubeProject(String serverId, String moduleKey) {
+  public void setSelectedSonarQubeProject(@Nullable String serverId, @Nullable String moduleKey) {
     for (int i = 0; i < projectComboBox.getModel().getSize(); i++) {
       ISonarRemoteProject module = (ISonarRemoteProject) projectComboBox.getModel().getElementAt(i);
       if (module.getServer().getId().equals(serverId) && module.getKey().equals(moduleKey)) {
