@@ -104,10 +104,10 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
 
   @Nullable
   protected ProblemDescriptor computeIssueProblemDescriptor(PsiFile psiFile, ISonarIssue issue, GlobalInspectionContext globalContext, InspectionManager manager) {
-    TextRange range = InspectionUtils.getTextRange(psiFile.getProject(), psiFile, issue);
-    return manager.createProblemDescriptor(psiFile, range,
+    return manager.createProblemDescriptor(InspectionUtils.getElementAtLine(psiFile, issue),
         InspectionUtils.getProblemMessage(issue),
         issue.isNew() ? ProblemHighlightType.GENERIC_ERROR_OR_WARNING : ProblemHighlightType.WEAK_WARNING,
+        null,
         false
     );
   }

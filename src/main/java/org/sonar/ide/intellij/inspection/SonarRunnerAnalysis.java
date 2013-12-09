@@ -27,12 +27,13 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.*;
-import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
@@ -40,9 +41,11 @@ import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.runner.api.ForkedRunner;
 import org.sonar.runner.api.ProcessMonitor;
+import org.sonar.runner.api.ScanProperties;
 import org.sonar.runner.api.StreamConsumer;
 
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,11 +57,13 @@ public class SonarRunnerAnalysis {
   public static final String PROJECT_BRANCH_PROPERTY = "sonar.branch";
   public static final String PROJECT_VERSION_PROPERTY = "sonar.projectVersion";
   public static final String PROJECT_KEY_PROPERTY = "sonar.projectKey";
+  public static final String MODULE_KEY_PROPERTY = "sonar.moduleKey";
   public static final String PROJECT_NAME_PROPERTY = "sonar.projectName";
   public static final String PROJECT_LANGUAGE_PROPERTY = "sonar.language";
   public static final String PROJECT_SOURCES_PROPERTY = "sonar.sources";
   public static final String PROJECT_TESTS_PROPERTY = "sonar.tests";
   public static final String PROJECT_LIBRARIES_PROPERTY = "sonar.libraries";
+  public static final String PROJECT_BINARIES_PROPERTY = "sonar.binaries";
   public static final String PROJECT_MODULES_PROPERTY = "sonar.modules";
   public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
   public static final String PROJECT_BASEDIR = "sonar.projectBaseDir";
@@ -66,11 +71,11 @@ public class SonarRunnerAnalysis {
 
   private static final char SEPARATOR = ',';
 
-  private static final String JAR_REGEXP = "(jar://)?(.*)!/";
+  private static final String JAR_REGEXP = "(.*)!/";
   private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
 
 
-  public File analyzeSingleModuleProject(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, String jvmArgs) {
+  public File analyzeProject(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, String jvmArgs) {
     // Use SonarQube Runner
 
     // Configure
@@ -97,26 +102,27 @@ public class SonarRunnerAnalysis {
     ModuleManager moduleManager = ModuleManager.getInstance(p);
     Module[] ijModules = moduleManager.getModules();
     properties.setProperty(PROJECT_NAME_PROPERTY, p.getName());
+    configureEncoding(p, properties);
     configureModuleSettings(p, settings, ijModules[0], properties, "", p.getBasePath());
   }
 
-  private void configureModuleSettings(Project p, ProjectSettings settings, Module ijModule, Properties properties, String prefix, String baseDir) {
-    MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
-    // Only on root module
-    if ("".equals(prefix)) {
-      if (mavenProjectsManager.isMavenizedModule(ijModule)) {
-        MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
-        if (mavenModule != null) {
-          String version = mavenModule.getMavenId().getVersion();
-          properties.setProperty(PROJECT_VERSION_PROPERTY, version != null ? version : "1.0-SNAPSHOT");
-        } else {
-          properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
-        }
-      } else {
-        properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
-      }
+  private void configureEncoding(Project p, Properties properties) {
+    Charset encoding = EncodingProjectManager.getInstance(p).getEncoding(null, true);
+    if (encoding != null) {
+      properties.setProperty(ENCODING_PROPERTY, encoding.toString());
     }
-    properties.setProperty(prefix + PROJECT_KEY_PROPERTY, settings.getModuleKeys().get(ijModule.getName()));
+  }
+
+  private void configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule, @NotNull Properties properties, @NotNull String prefix, @NotNull String baseDir) {
+    MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
+    if ("".equals(prefix)) {
+      // Only on root module
+      configureProjectVersion(ijModule, properties, mavenProjectsManager);
+      properties.setProperty(PROJECT_KEY_PROPERTY, settings.getModuleKeys().get(ijModule.getName()));
+    } else {
+      // Only on modules
+      properties.setProperty(prefix + MODULE_KEY_PROPERTY, settings.getModuleKeys().get(ijModule.getName()));
+    }
     properties.setProperty(prefix + PROJECT_BASEDIR, baseDir);
 
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(ijModule);
@@ -143,14 +149,18 @@ public class SonarRunnerAnalysis {
     }
 
     List<String> libs = new ArrayList<String>();
-    for (Library lib : LibraryTablesRegistrar.getInstance().getLibraryTable(p).getLibraries()) {
-      for (VirtualFile f : lib.getFiles(OrderRootType.CLASSES)) {
-        libs.add(toFile(f.getPath()));
-      }
+    for (VirtualFile f : getProjectClasspath(ijModule)) {
+      libs.add(toFile(f.getPath()));
     }
     if (!libs.isEmpty()) {
       properties.setProperty(prefix + PROJECT_LIBRARIES_PROPERTY, StringUtils.join(libs, SEPARATOR));
     }
+
+    VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
+    if (compilerOutput != null) {
+      properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, compilerOutput.getCanonicalPath());
+    }
+
     if (mavenProjectsManager.isMavenizedModule(ijModule)) {
       MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
       if (mavenModule != null && mavenModule.isAggregator()) {
@@ -177,6 +187,54 @@ public class SonarRunnerAnalysis {
         }
         properties.setProperty(prefix + PROJECT_MODULES_PROPERTY, StringUtils.join(submoduleKeys, SEPARATOR));
       }
+    }
+  }
+
+  @NotNull
+  public static VirtualFile[] getProjectClasspath(@Nullable final Module module) {
+    //noinspection ConstantConditions
+    if (module == null) {
+      return new VirtualFile[0];
+    }
+    final List<VirtualFile> found = new LinkedList<VirtualFile>();
+    final ModuleRootManager mrm = ModuleRootManager.getInstance(module);
+    final OrderEntry[] orderEntries = mrm.getOrderEntries();
+    for (final OrderEntry entry : orderEntries) {
+      if (entry instanceof ModuleOrderEntry) {
+        // Add dependent module output dir as library
+        Module dependentModule = ((ModuleOrderEntry) entry).getModule();
+        VirtualFile output = getCompilerOutputPath(dependentModule);
+        if (output != null) {
+          found.add(output);
+        }
+      } else if (entry instanceof LibraryOrderEntry) {
+        Collections.addAll(found, ((LibraryOrderEntry) entry).getLibrary().getFiles(OrderRootType.CLASSES));
+      }
+    }
+    return found.toArray(new VirtualFile[found.size()]);
+  }
+
+  @Nullable
+  public static VirtualFile getCompilerOutputPath(final Module module) {
+    final CompilerModuleExtension compilerModuleExtension = CompilerModuleExtension.getInstance(module);
+    if (compilerModuleExtension != null) {
+      return compilerModuleExtension.getCompilerOutputPath();
+    }
+    return null;
+  }
+
+
+  private void configureProjectVersion(Module ijModule, Properties properties, MavenProjectsManager mavenProjectsManager) {
+    if (mavenProjectsManager.isMavenizedModule(ijModule)) {
+      MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
+      if (mavenModule != null) {
+        String version = mavenModule.getMavenId().getVersion();
+        properties.setProperty(PROJECT_VERSION_PROPERTY, version != null ? version : "1.0-SNAPSHOT");
+      } else {
+        properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
+      }
+    } else {
+      properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
     }
   }
 
@@ -228,6 +286,7 @@ public class SonarRunnerAnalysis {
   private void handleException(final ProgressIndicator monitor, Exception e) {
     if (monitor.isCanceled()) {
       // On OSX it seems that cancelling produce an exception
+      return;
     }
     throw new RuntimeException(e);
   }

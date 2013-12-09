@@ -28,10 +28,12 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.model.ISonarIssue;
 
 public class InspectionUtils {
@@ -92,6 +94,31 @@ public class InspectionUtils {
       // Local file should be different than remote
       return TextRange.EMPTY_RANGE;
     }
+  }
+
+  @Nullable
+  public static PsiElement getElementAtLine(@NotNull final PsiFile file, ISonarIssue issue) {
+    //noinspection ConstantConditions
+    if (file == null) {
+      return null;
+    }
+    int line = issue.line() != null ? issue.line().intValue() : 1;
+    final Document document = PsiDocumentManager.getInstance(file.getProject()).getDocument(file);
+    PsiElement element = null;
+    try {
+      if (document != null) {
+        final int offset = document.getLineStartOffset(line);
+        element = file.getViewProvider().findElementAt(offset);
+        if (element != null) {
+          if (document.getLineNumber(element.getTextOffset()) != line) {
+            element = element.getNextSibling();
+          }
+        }
+      }
+    } catch (@NotNull final IndexOutOfBoundsException ignore) {
+    }
+
+    return element;
   }
 
   public static String getProblemMessage(@NotNull ISonarIssue issue) {

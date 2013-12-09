@@ -123,20 +123,8 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       debugEnabled = LOG.isDebugEnabled();
       String jvmArgs = "";
 
-      MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
-      ModuleManager moduleManager = ModuleManager.getInstance(p);
-      Module[] ijModules = moduleManager.getModules();
-      File jsonReport = null;
-      if (mavenProjectsManager.isMavenizedProject()) {
-        // Use Maven
-        jsonReport = new MavenAnalysis().runMavenAnalysis(p, projectSettings, server, debugEnabled);
-      } else if (ijModules.length == 1) {
-        // Use SQ Runner
-        jsonReport = new SonarRunnerAnalysis().analyzeSingleModuleProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
-      } else {
-        console.error("Local analysis is not supported for your project");
-      }
-      if (jsonReport != null) {
+      File jsonReport = new SonarRunnerAnalysis().analyzeProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
+      if (jsonReport != null && !indicator.isCanceled()) {
         createIssuesFromReportOutput(jsonReport);
       }
     }
