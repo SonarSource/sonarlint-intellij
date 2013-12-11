@@ -22,29 +22,27 @@ package org.sonar.ide.intellij.console;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
+import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
+import org.jetbrains.annotations.NotNull;
 import org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory;
 
 import javax.swing.*;
 
-public class SonarQubeConsole {
+public class SonarQubeConsole implements ProjectComponent {
 
-  private static SonarQubeConsole INSTANCE;
+  private final Project project;
+  private ConsoleView consoleView;
 
-  private final ConsoleView consoleView;
-
-  private SonarQubeConsole(Project project) {
-    this.consoleView = createConsoleView(project);
+  public SonarQubeConsole(Project project) {
+    this.project = project;
   }
 
-  public static synchronized SonarQubeConsole getSonarQubeConsole(Project p) {
-    if (INSTANCE == null) {
-      INSTANCE = new SonarQubeConsole(p);
-    }
-    return INSTANCE;
+  public static synchronized SonarQubeConsole getSonarQubeConsole(@NotNull Project p) {
+    return p.getComponent(SonarQubeConsole.class);
   }
 
   private ConsoleView createConsoleView(Project project) {
@@ -66,10 +64,43 @@ public class SonarQubeConsole {
   }
 
   public void info(String msg) {
-    consoleView.print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+    getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
   }
 
   public void error(String msg) {
-    consoleView.print(msg + "\n", ConsoleViewContentType.ERROR_OUTPUT);
+    getConsoleView().print(msg + "\n", ConsoleViewContentType.ERROR_OUTPUT);
+  }
+
+  private synchronized ConsoleView getConsoleView() {
+    if (this.consoleView == null) {
+      this.consoleView = createConsoleView(project);
+    }
+    return this.consoleView;
+  }
+
+  @Override
+  public void projectOpened() {
+    //Nothing to do
+  }
+
+  @Override
+  public void projectClosed() {
+    //Nothing to do
+  }
+
+  @Override
+  public void initComponent() {
+    //Nothing to do
+  }
+
+  @Override
+  public void disposeComponent() {
+    //Nothing to do
+  }
+
+  @NotNull
+  @Override
+  public String getComponentName() {
+    return this.getClass().getSimpleName();
   }
 }
