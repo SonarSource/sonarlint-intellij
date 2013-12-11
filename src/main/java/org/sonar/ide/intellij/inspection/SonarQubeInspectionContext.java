@@ -19,6 +19,7 @@
  */
 package org.sonar.ide.intellij.inspection;
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInspection.GlobalInspectionContext;
 import com.intellij.codeInspection.InspectionProfileEntry;
 import com.intellij.codeInspection.ex.Tools;
@@ -27,7 +28,6 @@ import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -42,7 +42,6 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
-import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
@@ -179,7 +178,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
 
   private void createIssuesFromReportOutput(File outputFile) {
-    issueCache.getLocalIssuesByFile().clear();
+    issueCache.getLocalIssuesByElement().clear();
     issueCache.getModifiedFile().clear();
     FileReader fileReader = null;
     try {
@@ -211,10 +210,10 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         if (file == null) {
           continue;
         }
-        if (!issueCache.getLocalIssuesByFile().containsKey(file)) {
-          issueCache.getLocalIssuesByFile().put(file, new ArrayList<ISonarIssue>());
+        if (!issueCache.getLocalIssuesByElement().containsKey(file)) {
+          issueCache.getLocalIssuesByElement().put(file, new ArrayList<IssueOnPsiElement>());
         }
-        issueCache.getLocalIssuesByFile().get(file).add(issue);
+        issueCache.getLocalIssuesByElement().get(file).add(new IssueOnPsiElement(file, issue));
       }
     } catch (Exception e) {
       LOG.error(e.getMessage(), e);
@@ -225,7 +224,10 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
   @Override
   public void performPostRunActivities(List<InspectionProfileEntry> inspections, GlobalInspectionContext context) {
-    // Nothing to do
+    Project p = context.getProject();
+    if (p != null) {
+      DaemonCodeAnalyzer.getInstance(p).restart();
+    }
   }
 
   @Override

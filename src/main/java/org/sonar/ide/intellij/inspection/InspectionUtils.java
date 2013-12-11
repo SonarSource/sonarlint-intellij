@@ -20,7 +20,6 @@
 package org.sonar.ide.intellij.inspection;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -79,16 +78,34 @@ public class InspectionUtils {
   }
 
   @NotNull
-  public static TextRange getTextRange(@NotNull Project project, @NotNull PsiFile psiFile, ISonarIssue issue) {
-    int line = issue.line() != null ? issue.line().intValue() : 1;
+  public static TextRange getLineRange(@NotNull PsiFile psiFile, ISonarIssue issue) {
+    Project project = psiFile.getProject();
+    PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
+    Document document = documentManager.getDocument(psiFile.getContainingFile());
+    if (document == null) {
+      return TextRange.EMPTY_RANGE;
+    }
+    int line = issue.line() != null ? issue.line() - 1 : 0;
+    return getTextRangeForLine(document, project, psiFile, line);
+  }
+
+  @NotNull
+  public static TextRange getLineRange(@NotNull PsiElement psiElement) {
+    Project project = psiElement.getProject();
+    PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
+    Document document = documentManager.getDocument(psiElement.getContainingFile().getContainingFile());
+    if (document == null) {
+      return TextRange.EMPTY_RANGE;
+    }
+    int line = document.getLineNumber(psiElement.getTextOffset());
+    int lineEndOffset = document.getLineEndOffset(line);
+    return new TextRange(psiElement.getTextOffset(), lineEndOffset);
+  }
+
+  private static TextRange getTextRangeForLine(Document document, Project project, PsiFile psiFile, int line) {
     try {
-      PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
-      Document document = documentManager.getDocument(psiFile.getContainingFile());
-      if (document == null) {
-        return TextRange.EMPTY_RANGE;
-      }
-      int lineStartOffset = document.getLineStartOffset(line - 1);
-      int lineEndOffset = document.getLineEndOffset(line - 1);
+      int lineStartOffset = document.getLineStartOffset(line);
+      int lineEndOffset = document.getLineEndOffset(line);
       return new TextRange(lineStartOffset, lineEndOffset);
     } catch (IndexOutOfBoundsException e) {
       // Local file should be different than remote
@@ -97,25 +114,32 @@ public class InspectionUtils {
   }
 
   @Nullable
-  public static PsiElement getElementAtLine(@NotNull final PsiFile file, ISonarIssue issue) {
+  public static PsiElement getStartElementAtLine(@NotNull final PsiFile file, ISonarIssue issue) {
     //noinspection ConstantConditions
     if (file == null) {
       return null;
     }
-    int line = issue.line() != null ? issue.line().intValue() : 1;
+    if (issue.line() == null) {
+      return file;
+    }
+    int ijLine = issue.line() - 1;
     final Document document = PsiDocumentManager.getInstance(file.getProject()).getDocument(file);
     PsiElement element = null;
     try {
       if (document != null) {
-        final int offset = document.getLineStartOffset(line);
+        final int offset = document.getLineStartOffset(ijLine);
         element = file.getViewProvider().findElementAt(offset);
         if (element != null) {
-          if (document.getLineNumber(element.getTextOffset()) != line) {
+          if (document.getLineNumber(element.getTextOffset()) != ijLine) {
             element = element.getNextSibling();
           }
         }
       }
     } catch (@NotNull final IndexOutOfBoundsException ignore) {
+    }
+
+    while (element != null && element.getTextLength() == 0) {
+      element = element.getNextSibling();
     }
 
     return element;

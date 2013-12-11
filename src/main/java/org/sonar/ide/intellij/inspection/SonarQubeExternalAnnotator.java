@@ -29,6 +29,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
 import org.jetbrains.annotations.NotNull;
@@ -122,12 +123,12 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
   public void apply(@NotNull PsiFile file, State annotationResult, @NotNull AnnotationHolder holder) {
     SonarQubeIssueCache cache = annotationResult.project.getComponent(SonarQubeIssueCache.class);
     if (cache.getModifiedFile().contains(annotationResult.file)) {
-      for (final ISonarIssue issue : cache.getLocalIssuesByFile().get(file)) {
-        createIssueAnnotation(holder, file, issue);
+      for (final IssueOnPsiElement issueOnPsiElement : cache.getLocalIssuesByElement().get(file)) {
+        createIssueAnnotation(holder, file, issueOnPsiElement);
       }
     } else {
       for (final ISonarIssue issue : annotationResult.remoteIssues) {
-        createIssueAnnotation(holder, file, issue);
+        createIssueAnnotation(holder, file, new IssueOnPsiElement(file, issue));
       }
     }
   }
@@ -143,13 +144,38 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     }
   }
 
-  @Nullable
-  public static Annotation createIssueAnnotation(AnnotationHolder holder, PsiFile psiFile, ISonarIssue issue) {
-    TextRange range = InspectionUtils.getTextRange(psiFile.getProject(), psiFile, issue);
-    if (issue.isNew()) {
-      return holder.createWarningAnnotation(range, InspectionUtils.getProblemMessage(issue));
+  public static void createIssueAnnotation(AnnotationHolder holder, PsiFile psiFile, IssueOnPsiElement issueOnPsiElement) {
+    Annotation annotation;
+    String message = InspectionUtils.getProblemMessage(issueOnPsiElement.getIssue());
+    if (issueOnPsiElement.getIssue().line() == null) {
+      annotation = createAnnotation(holder, issueOnPsiElement.getIssue(), message, psiFile);
+      annotation.setFileLevelAnnotation(true);
     } else {
-      return holder.createWeakWarningAnnotation(range, InspectionUtils.getProblemMessage(issue));
+      PsiElement startElement = issueOnPsiElement.getPsiElement();
+      if (startElement == null) {
+        // There is no AST element on this line. Maybe a tabulation issue on a blank line?
+        annotation = createAnnotation(holder, issueOnPsiElement.getIssue(), message, InspectionUtils.getLineRange(psiFile, issueOnPsiElement.getIssue()));
+      } else if (startElement.isValid()) {
+        TextRange lineRange = InspectionUtils.getLineRange(startElement);
+        annotation = createAnnotation(holder, issueOnPsiElement.getIssue(), message, lineRange);
+      } else {
+        return;
+      }
     }
+    annotation.setTooltip(message);
+  }
+
+  private static Annotation createAnnotation(AnnotationHolder holder, ISonarIssue issue, String message, PsiElement location) {
+    if (issue.isNew()) {
+      return holder.createWarningAnnotation(location, message);
+    }
+    return holder.createWeakWarningAnnotation(location, message);
+  }
+
+  private static Annotation createAnnotation(AnnotationHolder holder, ISonarIssue issue, String message, TextRange textRange) {
+    if (issue.isNew()) {
+      return holder.createWarningAnnotation(textRange, message);
+    }
+    return holder.createWeakWarningAnnotation(textRange, message);
   }
 }

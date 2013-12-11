@@ -22,14 +22,11 @@ package org.sonar.ide.intellij.inspection;
 import com.intellij.codeInspection.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.TextRange;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.model.ISonarIssue;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
 
@@ -78,9 +75,10 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
         createProblem(file, issue);
       }
     }
-    if (sonarQubeInspectionContext.getIssueCache().getLocalIssuesByFile().containsKey(file)) {
-      for (final ISonarIssue issue : sonarQubeInspectionContext.getIssueCache().getLocalIssuesByFile().get(file)) {
-        createProblem(file, issue);
+    if (sonarQubeInspectionContext.getIssueCache().getLocalIssuesByElement().containsKey(file)) {
+      for (final IssueOnPsiElement issueOnPsiElement : sonarQubeInspectionContext.getIssueCache().getLocalIssuesByElement().get(file)) {
+        issueOnPsiElement.getPsiElement();
+        createProblem(file, issueOnPsiElement.getIssue());
       }
     }
   }
@@ -104,7 +102,12 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
 
   @Nullable
   protected ProblemDescriptor computeIssueProblemDescriptor(PsiFile psiFile, ISonarIssue issue, GlobalInspectionContext globalContext, InspectionManager manager) {
-    return manager.createProblemDescriptor(InspectionUtils.getElementAtLine(psiFile, issue),
+    PsiElement location = InspectionUtils.getStartElementAtLine(psiFile, issue);
+    if (location == null) {
+      LOG.warn("Unable to locate issue " + issue.key() + " on file " + psiFile.toString() + " at line " + issue.line());
+      location = psiFile;
+    }
+    return manager.createProblemDescriptor(location,
         InspectionUtils.getProblemMessage(issue),
         issue.isNew() ? ProblemHighlightType.GENERIC_ERROR_OR_WARNING : ProblemHighlightType.WEAK_WARNING,
         null,

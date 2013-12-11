@@ -20,10 +20,8 @@
 package org.sonar.ide.intellij.inspection;
 
 import com.intellij.openapi.components.ProjectComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.NotNull;
-import org.sonar.ide.intellij.model.ISonarIssue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,10 +30,10 @@ import java.util.Map;
 
 public class SonarQubeIssueCache implements ProjectComponent {
 
-  private Map<PsiFile, List<ISonarIssue>> localIssuesByFile = new HashMap<PsiFile, List<ISonarIssue>>();
+  private Map<PsiFile, List<IssueOnPsiElement>> localIssuesByFile = new HashMap<PsiFile, List<IssueOnPsiElement>>();
   private List<PsiFile> modifiedFiles = new ArrayList<PsiFile>();
 
-  public Map<PsiFile, List<ISonarIssue>> getLocalIssuesByFile() {
+  public Map<PsiFile, List<IssueOnPsiElement>> getLocalIssuesByElement() {
     return localIssuesByFile;
   }
 

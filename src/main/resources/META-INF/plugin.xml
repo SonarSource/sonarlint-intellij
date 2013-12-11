@@ -59,7 +59,7 @@
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeGlobalInspection"/>
 
     <!-- Disable annotator until we find a better way to relocate issues at the correct location -->
-    <!--<externalAnnotator language="JAVA" implementationClass="org.sonar.ide.intellij.inspection.SonarQubeExternalAnnotator"/>-->
+    <externalAnnotator language="JAVA" implementationClass="org.sonar.ide.intellij.inspection.SonarQubeExternalAnnotator"/>
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 
