@@ -20,10 +20,8 @@
 package org.sonar.ide.intellij.config;
 
 import com.intellij.openapi.components.*;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
-import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -42,6 +40,7 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
   private String serverId = null;
   private String projectKey = null;
   private Map<String, String> moduleKeys = new HashMap<String, String>();
+  private boolean verboseEnabled = false;
 
   public
   @CheckForNull
@@ -111,5 +110,13 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
   @Override
   public String getComponentName() {
     return "ProjectSettings";
+  }
+
+  public boolean isVerboseEnabled() {
+    return verboseEnabled;
+  }
+
+  public void setVerboseEnabled(boolean verboseEnabled) {
+    this.verboseEnabled = verboseEnabled;
   }
 }

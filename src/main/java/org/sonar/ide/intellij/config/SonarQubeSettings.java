@@ -21,7 +21,6 @@ package org.sonar.ide.intellij.config;
 
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.*;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NonNls;

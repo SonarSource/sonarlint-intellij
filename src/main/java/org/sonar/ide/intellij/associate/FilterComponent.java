@@ -22,7 +22,6 @@ package org.sonar.ide.intellij.associate;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.ui.SearchTextField;
 import com.intellij.util.Alarm;
-import org.jetbrains.annotations.NonNls;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -103,7 +102,7 @@ public class FilterComponent extends JPanel {
   private void onChange() {
     if (myOnTheFly) {
       myUpdateAlarm.cancelAllRequests();
-      myUpdateAlarm.addRequest(new Runnable(){
+      myUpdateAlarm.addRequest(new Runnable() {
         public void run() {
           onlineFilter();
         }
@@ -114,7 +113,7 @@ public class FilterComponent extends JPanel {
   protected void onEscape(KeyEvent e) {
   }
 
-  public String getFilter(){
+  public String getFilter() {
     return myFilter.getText();
   }
 
@@ -122,11 +121,11 @@ public class FilterComponent extends JPanel {
     myFilter.setSelectedItem(filter);
   }
 
-  public void setFilter(final String filter){
+  public void setFilter(final String filter) {
     myFilter.setText(filter);
   }
 
-  public void selectText(){
+  public void selectText() {
     myFilter.selectText();
   }
 
@@ -138,7 +137,7 @@ public class FilterComponent extends JPanel {
     // To be implemented
   }
 
-  protected void onlineFilter(){
+  protected void onlineFilter() {
     filter();
   }
 

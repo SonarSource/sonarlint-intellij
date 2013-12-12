@@ -19,9 +19,16 @@
  */
 package org.sonar.ide.intellij.toolwindow;
 
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.ToggleAction;
+import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.openapi.wm.ex.ToolWindowEx;
+import org.sonar.ide.intellij.config.ProjectSettings;
 
 public class SonarQubeToolWindowFactory implements ToolWindowFactory {
 
@@ -29,6 +36,32 @@ public class SonarQubeToolWindowFactory implements ToolWindowFactory {
 
   @Override
   public void createToolWindowContent(Project project, ToolWindow toolWindow) {
-    //To change body of implemented methods use File | Settings | File Templates.
+    DefaultActionGroup group = new DefaultActionGroup();
+    group.add(new EnableVerboseModeAction());
+
+    ((ToolWindowEx) toolWindow).setAdditionalGearActions(group);
+  }
+
+
+  private class EnableVerboseModeAction extends ToggleAction implements DumbAware {
+    public EnableVerboseModeAction() {
+      super("Verbose output", "Enable verbose output for local analysis",
+          AllIcons.General.Debug);
+    }
+
+    public boolean isSelected(AnActionEvent event) {
+      Project p = event.getProject();
+      if (p != null) {
+        return p.getComponent(ProjectSettings.class).isVerboseEnabled();
+      }
+      return false;
+    }
+
+    public void setSelected(AnActionEvent event, boolean flag) {
+      Project p = event.getProject();
+      if (p != null) {
+        p.getComponent(ProjectSettings.class).setVerboseEnabled(flag);
+      }
+    }
   }
 }

@@ -102,6 +102,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     if (p != null) {
       issueCache = p.getComponent(SonarQubeIssueCache.class);
       console = SonarQubeConsole.getSonarQubeConsole(p);
+      console.clear();
       ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
@@ -119,7 +120,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
       fetchRemoteIssues(projectKey);
 
-      debugEnabled = LOG.isDebugEnabled();
+      debugEnabled = projectSettings.isVerboseEnabled();
       String jvmArgs = "";
 
       try {

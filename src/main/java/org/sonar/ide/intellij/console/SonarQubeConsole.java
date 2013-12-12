@@ -71,6 +71,10 @@ public class SonarQubeConsole implements ProjectComponent {
     getConsoleView().print(msg + "\n", ConsoleViewContentType.ERROR_OUTPUT);
   }
 
+  public void clear() {
+    getConsoleView().clear();
+  }
+
   private synchronized ConsoleView getConsoleView() {
     if (this.consoleView == null) {
       this.consoleView = createConsoleView(project);

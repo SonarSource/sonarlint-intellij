@@ -140,15 +140,15 @@ public class AssociateDialog extends DialogWrapper {
   @Override
   protected Action[] createLeftSideActions() {
     if (displayUnassociateButton) {
-      return new Action[] {
-        new AbstractAction("Remove association") {
+      return new Action[]{
+          new AbstractAction("Remove association") {
 
-          @Override
-          public void actionPerformed(ActionEvent e) {
-            projectList.setSelectedIndex(-1);
-            close(UNASSOCIATE_EXIT_CODE);
+            @Override
+            public void actionPerformed(ActionEvent e) {
+              projectList.setSelectedIndex(-1);
+              close(UNASSOCIATE_EXIT_CODE);
+            }
           }
-        }
       };
     } else {
       return super.createLeftSideActions();
