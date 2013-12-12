@@ -249,9 +249,8 @@ public class SonarRunnerAnalysis {
 
   public void run(Project project, Properties props, boolean debugEnabled, String jvmArgs, final ProgressIndicator monitor) {
 
+    final SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(project);
     try {
-      final SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(project);
-
       if (debugEnabled) {
         LOG.info("Start sonar-runner with args:\n" + propsToString(props));
       }
@@ -278,14 +277,14 @@ public class SonarRunnerAnalysis {
           .execute();
 
     } catch (Exception e) {
-      handleException(monitor, e);
+      handleException(monitor, e, console);
     }
 
   }
 
-  private void handleException(final ProgressIndicator monitor, Exception e) {
+  private void handleException(final ProgressIndicator monitor, Exception e, SonarQubeConsole console) {
     if (monitor.isCanceled()) {
-      // On OSX it seems that cancelling produce an exception
+      // On OSX it seems that cancelling produce an exception so we just ignore it
       return;
     }
     throw new RuntimeException(e);

@@ -122,9 +122,14 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       debugEnabled = LOG.isDebugEnabled();
       String jvmArgs = "";
 
-      File jsonReport = new SonarRunnerAnalysis().analyzeProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
-      if (jsonReport != null && !indicator.isCanceled()) {
-        createIssuesFromReportOutput(jsonReport);
+      try {
+        File jsonReport = new SonarRunnerAnalysis().analyzeProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
+        if (jsonReport != null && !indicator.isCanceled()) {
+          createIssuesFromReportOutput(jsonReport);
+        }
+      } catch (Exception e) {
+        console.error(e.getMessage());
+        LOG.warn("Error during execution of SonarQube analysis", e);
       }
     }
   }
