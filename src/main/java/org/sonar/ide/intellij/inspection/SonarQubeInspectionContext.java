@@ -173,10 +173,10 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
           }
           String sonarKeyOfModule = projectSettings.getModuleKeys().get(module.getName());
           if (sonarKeyOfModule == null) {
-            console.error("Module " + module.getName() + " is not associated to SonarQube");
-          } else {
-            resourceCache.put(InspectionUtils.getComponentKey(sonarKeyOfModule, psiJavaFile), psiJavaFile);
+            console.info("Module " + module.getName() + " is not associated to SonarQube");
+            sonarKeyOfModule = module.getName();
           }
+          resourceCache.put(InspectionUtils.getComponentKey(sonarKeyOfModule, psiJavaFile), psiJavaFile);
         }
       });
     }

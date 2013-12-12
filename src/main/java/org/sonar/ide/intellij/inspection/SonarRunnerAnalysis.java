@@ -113,15 +113,20 @@ public class SonarRunnerAnalysis {
     }
   }
 
-  private void configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule, @NotNull Properties properties, @NotNull String prefix, @NotNull String baseDir) {
+  private boolean configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule, @NotNull Properties properties, @NotNull String prefix, @NotNull String baseDir) {
     MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     if ("".equals(prefix)) {
       // Only on root module
       configureProjectVersion(ijModule, properties, mavenProjectsManager);
-      properties.setProperty(PROJECT_KEY_PROPERTY, settings.getModuleKeys().get(ijModule.getName()));
+      properties.setProperty(PROJECT_KEY_PROPERTY, settings.getProjectKey());
     } else {
       // Only on modules
-      properties.setProperty(prefix + MODULE_KEY_PROPERTY, settings.getModuleKeys().get(ijModule.getName()));
+      String moduleKey = settings.getModuleKeys().get(ijModule.getName());
+      if (moduleKey == null) {
+        // This module was not associated. Maybe a new module.
+        moduleKey = ijModule.getName();
+      }
+      properties.setProperty(prefix + MODULE_KEY_PROPERTY, moduleKey);
     }
     properties.setProperty(prefix + PROJECT_BASEDIR, baseDir);
 
@@ -175,10 +180,12 @@ public class SonarRunnerAnalysis {
             Module ijSubModule = ProjectFileIndex.SERVICE.getInstance(p).getModuleForFile(file);
             if (ijSubModule != null) {
               String key = settings.getModuleKeys().get(ijSubModule.getName());
-              if (key != null) {
-                VirtualFile moduleFile = ijSubModule.getModuleFile();
-                if (moduleFile != null) {
-                  configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath());
+              if (key == null) {
+                key = ijSubModule.getName();
+              }
+              VirtualFile moduleFile = ijSubModule.getModuleFile();
+              if (moduleFile != null) {
+                if (configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath())) {
                   submoduleKeys.add(subModuleName);
                 }
               }
@@ -186,8 +193,11 @@ public class SonarRunnerAnalysis {
           }
         }
         properties.setProperty(prefix + PROJECT_MODULES_PROPERTY, StringUtils.join(submoduleKeys, SEPARATOR));
+        return true;
       }
     }
+    // Skip modules that are not aggregator and that don't have sources
+    return !sources.isEmpty();
   }
 
   @NotNull
