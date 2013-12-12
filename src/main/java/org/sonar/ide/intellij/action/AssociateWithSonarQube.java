@@ -44,19 +44,32 @@ public class AssociateWithSonarQube extends AnAction {
   public void actionPerformed(AnActionEvent e) {
     Project p = e.getProject();
     if (p != null) {
+      MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
       ProjectSettings settings = p.getComponent(ProjectSettings.class);
-      AssociateDialog dialog = new AssociateDialog(p);
-      dialog.setSelectedSonarQubeProject(settings.getServerId(), settings.getProjectKey());
-      dialog.show();
-      if (dialog.getExitCode() == DialogWrapper.OK_EXIT_CODE) {
-        settings.setServerId(null);
-        settings.setProjectKey(null);
-        MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
-        ISonarRemoteProject sonarProject = dialog.getSelectedSonarQubeProject();
-        if (sonarProject == null) {
-          settings.unassociate();
-          return;
+      AssociateDialog dialog = new AssociateDialog(p, settings.isAssociated());
+      if (settings.isAssociated()) {
+        dialog.setSelectedSonarQubeProject(settings.getServerId(), settings.getProjectKey());
+      } else {
+        // Try to guess project association
+        if (mavenProjectsManager.isMavenizedProject() && mavenProjectsManager.hasProjects()) {
+          dialog.setFilter(mavenProjectsManager.getRootProjects().get(0).getDisplayName());
         }
+      }
+      dialog.show();
+      processResult(p, mavenProjectsManager, settings, dialog);
+    }
+  }
+
+  private void processResult(Project p, MavenProjectsManager mavenProjectsManager, ProjectSettings settings, AssociateDialog dialog) {
+    if (dialog.getExitCode() == AssociateDialog.UNASSOCIATE_EXIT_CODE) {
+      settings.unassociate();
+    } else if (dialog.getExitCode() == DialogWrapper.OK_EXIT_CODE) {
+      settings.setServerId(null);
+      settings.setProjectKey(null);
+      ISonarRemoteProject sonarProject = dialog.getSelectedSonarQubeProject();
+      if (sonarProject == null) {
+        settings.unassociate();
+      } else {
         associate(p, settings, mavenProjectsManager, sonarProject);
       }
     }
@@ -132,7 +145,7 @@ public class AssociateWithSonarQube extends AnAction {
     Project p = e.getProject();
     if (p != null) {
       ProjectSettings settings = p.getComponent(ProjectSettings.class);
-      if (settings.getServerId() == null) {
+      if (!settings.isAssociated()) {
         e.getPresentation().setText("Associate with SonarQube...");
       } else {
         e.getPresentation().setText("Update SonarQube association...");

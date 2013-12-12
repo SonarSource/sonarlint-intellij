@@ -121,6 +121,9 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
 
   @Override
   public void apply(@NotNull PsiFile file, State annotationResult, @NotNull AnnotationHolder holder) {
+    if (annotationResult == null) {
+      return;
+    }
     SonarQubeIssueCache cache = annotationResult.project.getComponent(SonarQubeIssueCache.class);
     if (cache.getModifiedFile().contains(annotationResult.file)) {
       for (final IssueOnPsiElement issueOnPsiElement : cache.getLocalIssuesByElement().get(file)) {

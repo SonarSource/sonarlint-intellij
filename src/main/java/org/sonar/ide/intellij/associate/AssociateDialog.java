@@ -21,9 +21,9 @@ package org.sonar.ide.intellij.associate;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.ui.ListCellRendererWrapper;
+import com.intellij.openapi.ui.ValidationInfo;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
@@ -34,52 +34,91 @@ import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.util.*;
 import java.util.List;
 
 public class AssociateDialog extends DialogWrapper {
 
   private static final Logger LOG = Logger.getInstance(AssociateDialog.class);
+  public static final int UNASSOCIATE_EXIT_CODE = NEXT_USER_EXIT_CODE;
 
+  private final Project project;
   private JPanel contentPane;
-  private ComboBox projectComboBox;
+  private FilterComponent projectFilter;
+  private JList projectList;
+  private Map<SonarQubeServer, ISonarWSClientFacade> serverClients = new HashMap<SonarQubeServer, ISonarWSClientFacade>();
+  private final boolean displayUnassociateButton;
 
-  public AssociateDialog(@Nullable Project project) {
+  public AssociateDialog(@NotNull Project project, boolean displayUnassociateButton) {
     super(project, true);
+    this.project = project;
+    this.displayUnassociateButton = displayUnassociateButton;
     init();
     setTitle(SonarQubeBundle.message("sonarqube.associate.title"));
-    projectComboBox.setRenderer(new ListCellRendererWrapper<ISonarRemoteProject>() {
-      @Override
-      public void customize(JList list, ISonarRemoteProject value, int index, boolean isSelected, boolean cellHasFocus) {
-        ISonarRemoteProject sonarProject = (ISonarRemoteProject) value;
-        setText(sonarProject != null ? sonarProject.getName() + " (" + sonarProject.getServer().getId() + ")" : null);
-      }
-    });
-    projectComboBox.setEditor(new AssociateComboBoxEditor());
-    List<ISonarRemoteProject> allProjects = new ArrayList<ISonarRemoteProject>();
     for (SonarQubeServer server : SonarQubeSettings.getInstance().getServers()) {
-      ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
       try {
-        allProjects.addAll(sonarClient.listAllRemoteProjects());
+        ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
+        if (sonarClient.testConnection() != ISonarWSClientFacade.ConnectionTestResult.OK) {
+          LOG.error("Unable to connect to SonarQube server " + server.getId() + ". Please check settings.");
+          continue;
+        }
+        serverClients.put(server, sonarClient);
       } catch (Exception e) {
-        SonarQubeConsole.getSonarQubeConsole(project).error("Unable to retrieve list of remote projects from server " + server.getId() + ": " + e.getMessage());
-        LOG.warn("Unable to retrieve list of remote projects from server " + server.getId(), e);
+        LOG.error("Unable to connect to SonarQube server " + server.getId() + ". Please check settings.");
       }
     }
-    Collections.sort(allProjects, new Comparator<ISonarRemoteProject>() {
+    if (serverClients.isEmpty()) {
+      LOG.error("No SonarQube server is properly configured. Association is not possible.");
+    }
+    projectList.setCellRenderer(new DefaultListCellRenderer() {
       @Override
-      public int compare(ISonarRemoteProject o1, ISonarRemoteProject o2) {
-        if (o1.getName().equals(o2.getName())) {
-          return o1.getServer().getId().compareTo(o2.getServer().getId());
-        }
-        return o1.getName().compareTo(o2.getName());
+      public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        ISonarRemoteProject sonarProject = (ISonarRemoteProject) value;
+        String label = sonarProject != null ? sonarProject.getName() + " (" + sonarProject.getServer().getId() + ")" : null;
+        return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
       }
     });
-    for (ISonarRemoteProject module : allProjects) {
-      projectComboBox.addItem(module);
-    }
+  }
+
+  public void createUIComponents() {
+    projectFilter = new FilterComponent() {
+      @Override
+      public void filter() {
+        List<ISonarRemoteProject> allProjects = new ArrayList<ISonarRemoteProject>();
+        for (Map.Entry<SonarQubeServer, ISonarWSClientFacade> serverClient : serverClients.entrySet()) {
+          try {
+            allProjects.addAll(serverClient.getValue().searchRemoteProjects(getFilter()));
+          } catch (Exception e) {
+            SonarQubeConsole.getSonarQubeConsole(project).error("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId() + ": " + e.getMessage());
+            LOG.warn("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId(), e);
+          }
+        }
+        Collections.sort(allProjects, new Comparator<ISonarRemoteProject>() {
+          @Override
+          public int compare(ISonarRemoteProject o1, ISonarRemoteProject o2) {
+            if (o1.getName().equals(o2.getName())) {
+              return o1.getServer().getId().compareTo(o2.getServer().getId());
+            }
+            return o1.getName().compareTo(o2.getName());
+          }
+        });
+        Object previouslySelectedValue = projectList.getSelectedValue();
+        DefaultListModel model = new DefaultListModel();
+        projectList.setModel(model);
+        for (ISonarRemoteProject module : allProjects) {
+          model.addElement(module);
+        }
+        if (previouslySelectedValue != null) {
+          projectList.setSelectedValue(previouslySelectedValue, true);
+        } else if (model.size() == 1) {
+          projectList.setSelectedIndex(0);
+        } else {
+          projectList.setSelectedIndex(-1);
+        }
+      }
+    };
   }
 
   @Nullable
@@ -88,18 +127,59 @@ public class AssociateDialog extends DialogWrapper {
     return contentPane;
   }
 
-  public ISonarRemoteProject getSelectedSonarQubeProject() {
-    return (ISonarRemoteProject) projectComboBox.getSelectedItem();
+  @Nullable
+  @Override
+  protected ValidationInfo doValidate() {
+    if (getSelectedSonarQubeProject() == null) {
+      return new ValidationInfo("Please select a SonarQube project to associate with", projectList);
+    }
+    return null;
   }
 
-  public void setSelectedSonarQubeProject(@Nullable String serverId, @Nullable String moduleKey) {
-    for (int i = 0; i < projectComboBox.getModel().getSize(); i++) {
-      ISonarRemoteProject module = (ISonarRemoteProject) projectComboBox.getModel().getElementAt(i);
-      if (module.getServer().getId().equals(serverId) && module.getKey().equals(moduleKey)) {
-        projectComboBox.setSelectedIndex(i);
-        return;
+  @NotNull
+  @Override
+  protected Action[] createLeftSideActions() {
+    if (displayUnassociateButton) {
+      return new Action[] {
+        new AbstractAction("Remove association") {
+
+          @Override
+          public void actionPerformed(ActionEvent e) {
+            projectList.setSelectedIndex(-1);
+            close(UNASSOCIATE_EXIT_CODE);
+          }
+        }
+      };
+    } else {
+      return super.createLeftSideActions();
+    }
+  }
+
+  @Nullable
+  public ISonarRemoteProject getSelectedSonarQubeProject() {
+    return (ISonarRemoteProject) projectList.getSelectedValue();
+  }
+
+  public void setFilter(String projectName) {
+    projectFilter.setFilter(projectName);
+  }
+
+  public void setSelectedSonarQubeProject(@Nullable String serverId, @Nullable String projectKey) {
+    if (serverId != null) {
+      for (Map.Entry<SonarQubeServer, ISonarWSClientFacade> serverClient : serverClients.entrySet()) {
+        if (serverClient.getKey().getId().equals(serverId)) {
+          List<ISonarRemoteProject> remoteProjects = serverClient.getValue().listAllRemoteProjects();
+          for (ISonarRemoteProject remoteProject : remoteProjects) {
+            if (remoteProject.getKey().equals(projectKey)) {
+              DefaultListModel model = new DefaultListModel();
+              model.addElement(remoteProject);
+              projectList.setModel(model);
+              projectList.setSelectedValue(remoteProject, true);
+              return;
+            }
+          }
+        }
       }
     }
-    projectComboBox.setSelectedIndex(-1);
   }
 }
