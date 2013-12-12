@@ -10,6 +10,7 @@
 
   <change-notes><![CDATA[
       <ul>
+        <li>1.0 - Use SonarQube Runner for mutli-module analysis, enable annotations, rework association screen</li>
         <li>0.9 - Support analysis of Maven projects</li>
       </ul>
       ]]>
