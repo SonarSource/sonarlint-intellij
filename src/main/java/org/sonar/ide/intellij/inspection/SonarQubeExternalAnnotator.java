@@ -64,7 +64,7 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
 
   @Nullable
   @Override
-  public State collectInformation(@NotNull PsiFile file, @NotNull Editor editor) {
+  public State collectInformation(@NotNull PsiFile file) {
     if (!(file instanceof PsiJavaFile)) {
       return null;
     }

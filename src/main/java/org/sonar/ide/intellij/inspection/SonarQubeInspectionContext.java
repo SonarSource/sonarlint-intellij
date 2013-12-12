@@ -22,6 +22,7 @@ package org.sonar.ide.intellij.inspection;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInspection.GlobalInspectionContext;
 import com.intellij.codeInspection.InspectionProfileEntry;
+import com.intellij.codeInspection.ex.InspectionToolWrapper;
 import com.intellij.codeInspection.ex.Tools;
 import com.intellij.codeInspection.lang.GlobalInspectionContextExtension;
 import com.intellij.ide.highlighter.JavaFileType;
@@ -42,6 +43,7 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.search.SearchScope;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
@@ -74,6 +76,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
   public static final Key<SonarQubeInspectionContext> KEY = Key.create("SonarQubeInspectionContext");
 
+  @NotNull
   @Override
   public Key<SonarQubeInspectionContext> getID() {
     return KEY;
@@ -96,42 +99,40 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   }
 
   @Override
-  public void performPreRunActivities(List<Tools> globalTools, List<Tools> localTools, GlobalInspectionContext context) {
+  public void performPreRunActivities(@NotNull List<Tools> globalTools, @NotNull List<Tools> localTools, @NotNull GlobalInspectionContext context) {
     final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
     Project p = context.getProject();
-    if (p != null) {
-      issueCache = p.getComponent(SonarQubeIssueCache.class);
-      console = SonarQubeConsole.getSonarQubeConsole(p);
-      console.clear();
-      ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
-      String serverId = projectSettings.getServerId();
-      String projectKey = projectSettings.getProjectKey();
-      if (serverId == null || projectKey == null) {
-        console.error("Project is not associated to SonarQube");
-        return;
-      }
-      SonarQubeSettings settings = SonarQubeSettings.getInstance();
-      server = settings.getServer(serverId);
-      if (server == null) {
-        console.error("Project was associated to a server that is not configured: " + serverId);
-        return;
-      }
-      populateResourceCache(context, p, projectSettings);
+    issueCache = p.getComponent(SonarQubeIssueCache.class);
+    console = SonarQubeConsole.getSonarQubeConsole(p);
+    console.clear();
+    ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
+    String serverId = projectSettings.getServerId();
+    String projectKey = projectSettings.getProjectKey();
+    if (serverId == null || projectKey == null) {
+      console.error("Project is not associated to SonarQube");
+      return;
+    }
+    SonarQubeSettings settings = SonarQubeSettings.getInstance();
+    server = settings.getServer(serverId);
+    if (server == null) {
+      console.error("Project was associated to a server that is not configured: " + serverId);
+      return;
+    }
+    populateResourceCache(context, p, projectSettings);
 
-      fetchRemoteIssues(projectKey);
+    fetchRemoteIssues(projectKey);
 
-      debugEnabled = projectSettings.isVerboseEnabled();
-      String jvmArgs = "";
+    debugEnabled = projectSettings.isVerboseEnabled();
+    String jvmArgs = "";
 
-      try {
-        File jsonReport = new SonarRunnerAnalysis().analyzeProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
-        if (jsonReport != null && !indicator.isCanceled()) {
-          createIssuesFromReportOutput(jsonReport);
-        }
-      } catch (Exception e) {
-        console.error(e.getMessage());
-        LOG.warn("Error during execution of SonarQube analysis", e);
+    try {
+      File jsonReport = new SonarRunnerAnalysis().analyzeProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
+      if (jsonReport != null && !indicator.isCanceled()) {
+        createIssuesFromReportOutput(jsonReport);
       }
+    } catch (Exception e) {
+      console.error(e.getMessage());
+      LOG.warn("Error during execution of SonarQube analysis", e);
     }
   }
 
@@ -229,13 +230,10 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   }
 
   @Override
-  public void performPostRunActivities(List<InspectionProfileEntry> inspections, GlobalInspectionContext context) {
+  public void performPostRunActivities(@NotNull java.util.List<InspectionToolWrapper> inspections, @NotNull GlobalInspectionContext context) {
     Project p = context.getProject();
-    if (p != null) {
-      DaemonCodeAnalyzer.getInstance(p).restart();
-    }
+    DaemonCodeAnalyzer.getInstance(p).restart();
   }
-
   @Override
   public void cleanup() {
     // Nothing to do

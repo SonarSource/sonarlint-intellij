@@ -59,7 +59,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Used by Intellij plugin development with Maven -->
     <ij.plugin>true</ij.plugin>
-    <ij.version>12.1.6</ij.version>
+    <ij.version>13.0</ij.version>
     <ij.deps.scope>compile</ij.deps.scope>
   </properties>
 
