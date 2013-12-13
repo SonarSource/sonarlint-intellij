@@ -40,13 +40,11 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
 
 
   @Nls
-  @NotNull
   @Override
   public String getDisplayName() {
     return "SonarQube Issue";
   }
 
-  @NotNull
   @Override
   public String getShortName() {
     return "SonarQubeIssue";

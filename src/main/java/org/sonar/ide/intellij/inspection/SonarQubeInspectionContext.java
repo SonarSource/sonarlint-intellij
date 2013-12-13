@@ -133,6 +133,10 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     debugEnabled = projectSettings.isVerboseEnabled();
     String jvmArgs = "";
 
+    localAnalysis(indicator, p, projectSettings, jvmArgs);
+  }
+
+  private void localAnalysis(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, String jvmArgs) {
     try {
       File jsonReport = new SonarRunnerAnalysis().analyzeProject(indicator, p, projectSettings, server, debugEnabled, jvmArgs);
       if (jsonReport != null && !indicator.isCanceled()) {

@@ -23,7 +23,6 @@ import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -49,10 +48,6 @@ import java.util.List;
 public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExternalAnnotator.State, SonarQubeExternalAnnotator.State> {
 
   private static final Logger LOG = Logger.getInstance(SonarQubeExternalAnnotator.class);
-
-  private SonarQubeServer server;
-  private ProjectSettings projectSettings;
-  private SonarQubeConsole console;
 
   public static class State {
     private PsiJavaFile file;
@@ -83,15 +78,15 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
   @Override
   public State doAnnotate(State collectedInfo) {
     final Project p = collectedInfo.project;
-    console = SonarQubeConsole.getSonarQubeConsole(p);
-    projectSettings = p.getComponent(ProjectSettings.class);
+    SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(p);
+    ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
     String serverId = projectSettings.getServerId();
     if (serverId == null) {
       console.error("Project is not associated to SonarQube");
       return null;
     }
     SonarQubeSettings settings = SonarQubeSettings.getInstance();
-    server = settings.getServer(serverId);
+    SonarQubeServer server = settings.getServer(serverId);
     if (server == null) {
       console.error("Project was associated to a server that is not configured: " + serverId);
       return null;

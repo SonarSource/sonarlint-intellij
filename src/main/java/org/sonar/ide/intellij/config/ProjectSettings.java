@@ -42,9 +42,8 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
   private Map<String, String> moduleKeys = new HashMap<String, String>();
   private boolean verboseEnabled = false;
 
-  public
   @CheckForNull
-  String getServerId() {
+  public String getServerId() {
     return serverId;
   }
 

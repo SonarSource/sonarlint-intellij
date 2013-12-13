@@ -80,30 +80,4 @@ public class SonarQubeConsole extends AbstractProjectComponent {
     }
     return this.consoleView;
   }
-
-  @Override
-  public void projectOpened() {
-    //Nothing to do
-  }
-
-  @Override
-  public void projectClosed() {
-    //Nothing to do
-  }
-
-  @Override
-  public void initComponent() {
-    //Nothing to do
-  }
-
-  @Override
-  public void disposeComponent() {
-    //Nothing to do
-  }
-
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return this.getClass().getSimpleName();
-  }
 }

@@ -86,7 +86,7 @@ public class InspectionUtils {
       return TextRange.EMPTY_RANGE;
     }
     int line = issue.line() != null ? issue.line() - 1 : 0;
-    return getTextRangeForLine(document, project, psiFile, line);
+    return getTextRangeForLine(document, psiFile, line);
   }
 
   @NotNull
@@ -102,7 +102,7 @@ public class InspectionUtils {
     return new TextRange(psiElement.getTextOffset(), lineEndOffset);
   }
 
-  private static TextRange getTextRangeForLine(Document document, Project project, PsiFile psiFile, int line) {
+  private static TextRange getTextRangeForLine(Document document, PsiFile psiFile, int line) {
     try {
       int lineStartOffset = document.getLineStartOffset(line);
       int lineEndOffset = document.getLineEndOffset(line);
@@ -115,10 +115,6 @@ public class InspectionUtils {
 
   @Nullable
   public static PsiElement getStartElementAtLine(@NotNull final PsiFile file, ISonarIssue issue) {
-    //noinspection ConstantConditions
-    if (file == null) {
-      return null;
-    }
     if (issue.line() == null) {
       return file;
     }
@@ -136,6 +132,7 @@ public class InspectionUtils {
         }
       }
     } catch (@NotNull final IndexOutOfBoundsException ignore) {
+      // Ignore this exception
     }
 
     while (element != null && element.getTextLength() == 0) {

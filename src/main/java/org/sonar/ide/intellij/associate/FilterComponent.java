@@ -111,6 +111,7 @@ public class FilterComponent extends JPanel {
   }
 
   protected void onEscape(KeyEvent e) {
+    // Implement this method
   }
 
   public String getFilter() {
@@ -145,7 +146,4 @@ public class FilterComponent extends JPanel {
     myUpdateAlarm.cancelAllRequests();
   }
 
-  protected void setHistory(List<String> strings) {
-    myFilter.setHistory(strings);
-  }
 }

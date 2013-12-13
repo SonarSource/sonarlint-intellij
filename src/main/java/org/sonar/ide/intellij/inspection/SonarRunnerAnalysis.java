@@ -27,6 +27,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.*;
+import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
@@ -73,6 +74,7 @@ public class SonarRunnerAnalysis {
 
   private static final String JAR_REGEXP = "(.*)!/";
   private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
+  private static final String DEFAULT_VERSION = "1.0-SNAPSHOT";
 
 
   public File analyzeProject(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, String jvmArgs) {
@@ -80,7 +82,7 @@ public class SonarRunnerAnalysis {
 
     // Configure
     Properties properties = new Properties();
-    configureProjectSettings(p, properties, indicator);
+    configureProjectSettings(p, properties);
     File baseDir = new File(p.getBasePath());
     File projectSpecificWorkDir = new File(new File(baseDir, ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR), "sonarqube");
     properties.setProperty(WORK_DIR, projectSpecificWorkDir.getAbsolutePath());
@@ -97,7 +99,7 @@ public class SonarRunnerAnalysis {
     return outputFile;
   }
 
-  private void configureProjectSettings(Project p, Properties properties, ProgressIndicator indicator) {
+  private void configureProjectSettings(Project p, Properties properties) {
     ProjectSettings settings = p.getComponent(ProjectSettings.class);
     ModuleManager moduleManager = ModuleManager.getInstance(p);
     Module[] ijModules = moduleManager.getModules();
@@ -133,6 +135,67 @@ public class SonarRunnerAnalysis {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(ijModule);
     Set<String> sources = new LinkedHashSet<String>();
     Set<String> tests = new LinkedHashSet<String>();
+    configureSourceDirs(properties, prefix, moduleRootManager, sources, tests);
+
+    configureLibraries(ijModule, properties, prefix);
+
+    configureBinaries(ijModule, properties, prefix);
+
+    if (mavenProjectsManager.isMavenizedModule(ijModule)) {
+      MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
+      if (mavenModule != null && mavenModule.isAggregator()) {
+        configureModules(p, settings, properties, prefix, mavenProjectsManager, mavenModule);
+        return true;
+      }
+    }
+    // Skip modules that are not aggregator and that don't have sources
+    return !sources.isEmpty();
+  }
+
+  private void configureModules(Project p, ProjectSettings settings, Properties properties, String prefix, MavenProjectsManager mavenProjectsManager, MavenProject mavenModule) {
+    Set<String> submoduleKeys = new HashSet<String>();
+    Map<String, String> modulesPathsAndNames = mavenModule.getModulesPathsAndNames();
+    for (Map.Entry<String, String> modulePathAndName : modulesPathsAndNames.entrySet()) {
+      String subModulePath = modulePathAndName.getKey();
+      String subModuleName = modulePathAndName.getValue();
+      VirtualFile file = LocalFileSystem.getInstance().findFileByPath(subModulePath);
+      if (file != null) {
+        Module ijSubModule = ProjectFileIndex.SERVICE.getInstance(p).getModuleForFile(file);
+        if (ijSubModule != null) {
+          String key = settings.getModuleKeys().get(ijSubModule.getName());
+          if (key == null) {
+            key = ijSubModule.getName();
+          }
+          VirtualFile moduleFile = ijSubModule.getModuleFile();
+          if (moduleFile != null) {
+            if (configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath())) {
+              submoduleKeys.add(subModuleName);
+            }
+          }
+        }
+      }
+    }
+    properties.setProperty(prefix + PROJECT_MODULES_PROPERTY, StringUtils.join(submoduleKeys, SEPARATOR));
+  }
+
+  private void configureBinaries(Module ijModule, Properties properties, String prefix) {
+    VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
+    if (compilerOutput != null) {
+      properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, compilerOutput.getCanonicalPath());
+    }
+  }
+
+  private void configureLibraries(Module ijModule, Properties properties, String prefix) {
+    List<String> libs = new ArrayList<String>();
+    for (VirtualFile f : getProjectClasspath(ijModule)) {
+      libs.add(toFile(f.getPath()));
+    }
+    if (!libs.isEmpty()) {
+      properties.setProperty(prefix + PROJECT_LIBRARIES_PROPERTY, StringUtils.join(libs, SEPARATOR));
+    }
+  }
+
+  private void configureSourceDirs(Properties properties, String prefix, ModuleRootManager moduleRootManager, Set<String> sources, Set<String> tests) {
     for (ContentEntry contentEntry : moduleRootManager.getContentEntries()) {
       final SourceFolder[] sourceFolders = contentEntry.getSourceFolders();
       for (SourceFolder sourceFolder : sourceFolders) {
@@ -152,57 +215,10 @@ public class SonarRunnerAnalysis {
     if (!tests.isEmpty()) {
       properties.setProperty(prefix + PROJECT_TESTS_PROPERTY, StringUtils.join(tests, SEPARATOR));
     }
-
-    List<String> libs = new ArrayList<String>();
-    for (VirtualFile f : getProjectClasspath(ijModule)) {
-      libs.add(toFile(f.getPath()));
-    }
-    if (!libs.isEmpty()) {
-      properties.setProperty(prefix + PROJECT_LIBRARIES_PROPERTY, StringUtils.join(libs, SEPARATOR));
-    }
-
-    VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
-    if (compilerOutput != null) {
-      properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, compilerOutput.getCanonicalPath());
-    }
-
-    if (mavenProjectsManager.isMavenizedModule(ijModule)) {
-      MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
-      if (mavenModule != null && mavenModule.isAggregator()) {
-        List<MavenProject> submodules = mavenProjectsManager.getModules(mavenModule);
-        Set<String> submoduleKeys = new HashSet<String>();
-        Map<String, String> modulesPathsAndNames = mavenModule.getModulesPathsAndNames();
-        for (Map.Entry<String, String> modulePathAndName : modulesPathsAndNames.entrySet()) {
-          String subModulePath = modulePathAndName.getKey();
-          String subModuleName = modulePathAndName.getValue();
-          VirtualFile file = LocalFileSystem.getInstance().findFileByPath(subModulePath);
-          if (file != null) {
-            Module ijSubModule = ProjectFileIndex.SERVICE.getInstance(p).getModuleForFile(file);
-            if (ijSubModule != null) {
-              String key = settings.getModuleKeys().get(ijSubModule.getName());
-              if (key == null) {
-                key = ijSubModule.getName();
-              }
-              VirtualFile moduleFile = ijSubModule.getModuleFile();
-              if (moduleFile != null) {
-                if (configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath())) {
-                  submoduleKeys.add(subModuleName);
-                }
-              }
-            }
-          }
-        }
-        properties.setProperty(prefix + PROJECT_MODULES_PROPERTY, StringUtils.join(submoduleKeys, SEPARATOR));
-        return true;
-      }
-    }
-    // Skip modules that are not aggregator and that don't have sources
-    return !sources.isEmpty();
   }
 
   @NotNull
   public static VirtualFile[] getProjectClasspath(@Nullable final Module module) {
-    //noinspection ConstantConditions
     if (module == null) {
       return new VirtualFile[0];
     }
@@ -218,7 +234,10 @@ public class SonarRunnerAnalysis {
           found.add(output);
         }
       } else if (entry instanceof LibraryOrderEntry) {
-        Collections.addAll(found, ((LibraryOrderEntry) entry).getLibrary().getFiles(OrderRootType.CLASSES));
+        Library lib = ((LibraryOrderEntry) entry).getLibrary();
+        if (lib != null) {
+          Collections.addAll(found, lib.getFiles(OrderRootType.CLASSES));
+        }
       }
     }
     return found.toArray(new VirtualFile[found.size()]);
@@ -239,12 +258,12 @@ public class SonarRunnerAnalysis {
       MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
       if (mavenModule != null) {
         String version = mavenModule.getMavenId().getVersion();
-        properties.setProperty(PROJECT_VERSION_PROPERTY, version != null ? version : "1.0-SNAPSHOT");
+        properties.setProperty(PROJECT_VERSION_PROPERTY, version != null ? version : DEFAULT_VERSION);
       } else {
-        properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
+        properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
       }
     } else {
-      properties.setProperty(PROJECT_VERSION_PROPERTY, "1.0-SNAPSHOT");
+      properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
     }
   }
 

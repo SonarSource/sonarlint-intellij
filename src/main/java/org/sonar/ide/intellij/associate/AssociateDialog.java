@@ -66,7 +66,7 @@ public class AssociateDialog extends DialogWrapper {
         }
         serverClients.put(server, sonarClient);
       } catch (Exception e) {
-        LOG.error("Unable to connect to SonarQube server " + server.getId() + ". Please check settings.");
+        LOG.error("Unable to connect to SonarQube server " + server.getId() + ". Please check settings.", e);
       }
     }
     if (serverClients.isEmpty()) {
