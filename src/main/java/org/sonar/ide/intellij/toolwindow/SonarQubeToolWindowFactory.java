@@ -43,7 +43,7 @@ public class SonarQubeToolWindowFactory implements ToolWindowFactory {
   }
 
 
-  private class EnableVerboseModeAction extends ToggleAction implements DumbAware {
+  private static class EnableVerboseModeAction extends ToggleAction implements DumbAware {
     public EnableVerboseModeAction() {
       super("Verbose output", "Enable verbose output for local analysis",
           AllIcons.General.Debug);
@@ -51,10 +51,7 @@ public class SonarQubeToolWindowFactory implements ToolWindowFactory {
 
     public boolean isSelected(AnActionEvent event) {
       Project p = event.getProject();
-      if (p != null) {
-        return p.getComponent(ProjectSettings.class).isVerboseEnabled();
-      }
-      return false;
+      return p != null &&  p.getComponent(ProjectSettings.class).isVerboseEnabled();
     }
 
     public void setSelected(AnActionEvent event, boolean flag) {

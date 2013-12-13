@@ -21,12 +21,15 @@ package org.sonar.ide.intellij.inspection;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInspection.GlobalInspectionContext;
-import com.intellij.codeInspection.InspectionProfileEntry;
 import com.intellij.codeInspection.ex.InspectionToolWrapper;
 import com.intellij.codeInspection.ex.Tools;
 import com.intellij.codeInspection.lang.GlobalInspectionContextExtension;
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.compiler.CompileContext;
+import com.intellij.openapi.compiler.CompileStatusNotification;
+import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -62,6 +65,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SonarQubeInspectionContext implements GlobalInspectionContextExtension<SonarQubeInspectionContext> {
 
@@ -101,10 +105,14 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
   @Override
   public void performPreRunActivities(@NotNull List<Tools> globalTools, @NotNull List<Tools> localTools, @NotNull GlobalInspectionContext context) {
     final ProgressIndicator indicator = ProgressManager.getInstance().getProgressIndicator();
-    Project p = context.getProject();
-    issueCache = p.getComponent(SonarQubeIssueCache.class);
+    final Project p = context.getProject();
     console = SonarQubeConsole.getSonarQubeConsole(p);
     console.clear();
+    issueCache = p.getComponent(SonarQubeIssueCache.class);
+    // Need to compile everything
+    if (!compileProject(indicator, p)) {
+      return;
+    }
     ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
     String serverId = projectSettings.getServerId();
     String projectKey = projectSettings.getProjectKey();
@@ -133,6 +141,45 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     } catch (Exception e) {
       console.error(e.getMessage());
       LOG.warn("Error during execution of SonarQube analysis", e);
+    }
+  }
+
+  private boolean compileProject(ProgressIndicator indicator, final Project p) {
+    console.info("Make project...");
+    final AtomicBoolean compileFinished = new AtomicBoolean(false);
+    final AtomicBoolean compileSuccess = new AtomicBoolean(false);
+    ApplicationManager.getApplication().invokeAndWait(new Runnable() {
+      @Override
+      public void run() {
+        ApplicationManager.getApplication().runReadAction(new Runnable() {
+          @Override
+          public void run() {
+            CompilerManager compilerManager = CompilerManager.getInstance(p);
+            compilerManager.make(compilerManager.createProjectCompileScope(p), new CompileStatusNotification() {
+              @Override
+              public void finished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
+                compileFinished.set(true);
+                compileSuccess.set(!aborted && errors == 0);
+              }
+            });
+          }
+        });
+      }
+    }, ApplicationManager.getApplication().getDefaultModalityState());
+    while (!compileFinished.get() || indicator.isCanceled()) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
+        compileFinished.set(true);
+        compileSuccess.set(false);
+      }
+    }
+    if (compileSuccess.get()) {
+      console.info("Make project done.");
+      return true;
+    } else {
+      console.error("Project compilation failed. Stopping SonarQube inspection.");
+      return false;
     }
   }
 
@@ -234,6 +281,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     Project p = context.getProject();
     DaemonCodeAnalyzer.getInstance(p).restart();
   }
+
   @Override
   public void cleanup() {
     // Nothing to do

@@ -22,7 +22,7 @@ package org.sonar.ide.intellij.console;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -32,13 +32,12 @@ import org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory;
 
 import javax.swing.*;
 
-public class SonarQubeConsole implements ProjectComponent {
+public class SonarQubeConsole extends AbstractProjectComponent {
 
-  private final Project project;
   private ConsoleView consoleView;
 
   public SonarQubeConsole(Project project) {
-    this.project = project;
+    super(project);
   }
 
   public static synchronized SonarQubeConsole getSonarQubeConsole(@NotNull Project p) {
@@ -77,7 +76,7 @@ public class SonarQubeConsole implements ProjectComponent {
 
   private synchronized ConsoleView getConsoleView() {
     if (this.consoleView == null) {
-      this.consoleView = createConsoleView(project);
+      this.consoleView = createConsoleView(myProject);
     }
     return this.consoleView;
   }
