@@ -53,8 +53,6 @@ import java.util.regex.Pattern;
 
 public class SonarRunnerAnalysis {
 
-  private static final Logger LOG = Logger.getInstance(SonarRunnerAnalysis.class);
-
   public static final String PROJECT_BRANCH_PROPERTY = "sonar.branch";
   public static final String PROJECT_VERSION_PROPERTY = "sonar.projectVersion";
   public static final String PROJECT_KEY_PROPERTY = "sonar.projectKey";
@@ -75,10 +73,11 @@ public class SonarRunnerAnalysis {
   private static final String JAR_REGEXP = "(.*)!/";
   private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
   private static final String DEFAULT_VERSION = "1.0-SNAPSHOT";
+  private SonarQubeConsole console;
 
 
   public File analyzeProject(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, String jvmArgs) {
-    // Use SonarQube Runner
+    console = SonarQubeConsole.getSonarQubeConsole(p);
 
     // Configure
     Properties properties = new Properties();
@@ -93,9 +92,11 @@ public class SonarRunnerAnalysis {
     // To be sure to not reuse something from a previous analysis
     FileUtils.deleteQuietly(outputFile);
     long start = System.currentTimeMillis();
-    LOG.info("Start SonarQube analysis on " + p.getName() + "...\n");
+    console.info("Start SonarQube analysis on " + p.getName() + "...\n");
     run(p, properties, debugEnabled, jvmArgs, indicator);
-    LOG.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
+    if (debugEnabled) {
+      console.info("Done in " + (System.currentTimeMillis() - start) + "ms\n");
+    }
     return outputFile;
   }
 
@@ -278,10 +279,9 @@ public class SonarRunnerAnalysis {
 
   public void run(Project project, Properties props, boolean debugEnabled, String jvmArgs, final ProgressIndicator monitor) {
 
-    final SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(project);
     try {
       if (debugEnabled) {
-        LOG.info("Start sonar-runner with args:\n" + propsToString(props));
+        console.info("Start sonar-runner with args:\n" + propsToString(props));
       }
 
       ForkedRunner.create(new ProcessMonitor() {
@@ -308,7 +308,6 @@ public class SonarRunnerAnalysis {
     } catch (Exception e) {
       handleException(monitor, e, console);
     }
-
   }
 
   private void handleException(final ProgressIndicator monitor, Exception e, SonarQubeConsole console) {
