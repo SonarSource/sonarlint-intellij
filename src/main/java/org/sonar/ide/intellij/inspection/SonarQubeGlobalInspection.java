@@ -108,7 +108,7 @@ public class SonarQubeGlobalInspection extends GlobalSimpleInspectionTool {
     return manager.createProblemDescriptor(location,
         InspectionUtils.getProblemMessage(issue),
         new LocalQuickFix[0],
-        issue.isNew() ? ProblemHighlightType.GENERIC_ERROR_OR_WARNING : ProblemHighlightType.WEAK_WARNING,
+        ProblemHighlightType.GENERIC_ERROR_OR_WARNING,
         false,
         false
     );

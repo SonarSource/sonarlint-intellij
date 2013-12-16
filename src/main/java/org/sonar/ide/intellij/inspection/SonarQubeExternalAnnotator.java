@@ -164,16 +164,10 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
   }
 
   private static Annotation createAnnotation(AnnotationHolder holder, ISonarIssue issue, String message, PsiElement location) {
-    if (issue.isNew()) {
-      return holder.createWarningAnnotation(location, message);
-    }
-    return holder.createWeakWarningAnnotation(location, message);
+    return holder.createWarningAnnotation(location, message);
   }
 
   private static Annotation createAnnotation(AnnotationHolder holder, ISonarIssue issue, String message, TextRange textRange) {
-    if (issue.isNew()) {
-      return holder.createWarningAnnotation(textRange, message);
-    }
-    return holder.createWeakWarningAnnotation(textRange, message);
+    return holder.createWarningAnnotation(textRange, message);
   }
 }
