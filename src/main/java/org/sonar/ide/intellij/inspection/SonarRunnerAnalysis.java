@@ -180,7 +180,10 @@ public class SonarRunnerAnalysis {
   private void configureBinaries(Module ijModule, Properties properties, String prefix) {
     VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
     if (compilerOutput != null) {
-      properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, compilerOutput.getCanonicalPath());
+      String path = compilerOutput.getCanonicalPath();
+      if (path != null) {
+        properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, compilerOutput.getCanonicalPath());
+      }
     }
   }
 
@@ -228,9 +231,11 @@ public class SonarRunnerAnalysis {
       if (entry instanceof ModuleOrderEntry) {
         // Add dependent module output dir as library
         Module dependentModule = ((ModuleOrderEntry) entry).getModule();
-        VirtualFile output = getCompilerOutputPath(dependentModule);
-        if (output != null) {
-          found.add(output);
+        if (dependentModule != null) {
+          VirtualFile output = getCompilerOutputPath(dependentModule);
+          if (output != null) {
+            found.add(output);
+          }
         }
       } else if (entry instanceof LibraryOrderEntry) {
         Library lib = ((LibraryOrderEntry) entry).getLibrary();

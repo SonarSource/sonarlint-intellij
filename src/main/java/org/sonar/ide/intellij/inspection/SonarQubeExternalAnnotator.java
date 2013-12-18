@@ -93,8 +93,6 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     final Project p = collectedInfo.project;
     SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(p);
     ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
-    SonarQubeSettings settings = SonarQubeSettings.getInstance();
-    SonarQubeServer server = collectedInfo.server;
     VirtualFile virtualFile = collectedInfo.vfile;
     if (virtualFile == null) {
       return null;
@@ -113,7 +111,7 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     SonarQubeIssueCache cache = p.getComponent(SonarQubeIssueCache.class);
 
     if (!cache.getModifiedFile().contains(collectedInfo.file)) {
-      populateRemoteIssues(collectedInfo, console, server, collectedInfo.componentKey);
+      populateRemoteIssues(collectedInfo, console, collectedInfo.server, collectedInfo.componentKey);
     }
     return collectedInfo;
   }

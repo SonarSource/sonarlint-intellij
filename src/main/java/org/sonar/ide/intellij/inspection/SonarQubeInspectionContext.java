@@ -180,11 +180,10 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
     }
     if (compileSuccess.get()) {
       console.info("Make project done.");
-      return true;
     } else {
       console.error("Project compilation failed. Stopping SonarQube inspection.");
-      return false;
     }
+    return compileSuccess.get();
   }
 
   private void fetchRemoteIssues(String projectKey) {
