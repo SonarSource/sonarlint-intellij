@@ -83,42 +83,7 @@ public class AssociateDialog extends DialogWrapper {
   }
 
   public void createUIComponents() {
-    projectFilter = new FilterComponent() {
-      @Override
-      public void filter() {
-        List<ISonarRemoteProject> allProjects = new ArrayList<ISonarRemoteProject>();
-        for (Map.Entry<SonarQubeServer, ISonarWSClientFacade> serverClient : serverClients.entrySet()) {
-          try {
-            allProjects.addAll(serverClient.getValue().searchRemoteProjects(getFilter()));
-          } catch (Exception e) {
-            SonarQubeConsole.getSonarQubeConsole(project).error("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId() + ": " + e.getMessage());
-            LOG.warn("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId(), e);
-          }
-        }
-        Collections.sort(allProjects, new Comparator<ISonarRemoteProject>() {
-          @Override
-          public int compare(ISonarRemoteProject o1, ISonarRemoteProject o2) {
-            if (o1.getName().equals(o2.getName())) {
-              return o1.getServer().getId().compareTo(o2.getServer().getId());
-            }
-            return o1.getName().compareTo(o2.getName());
-          }
-        });
-        Object previouslySelectedValue = projectList.getSelectedValue();
-        DefaultListModel model = new DefaultListModel();
-        projectList.setModel(model);
-        for (ISonarRemoteProject module : allProjects) {
-          model.addElement(module);
-        }
-        if (previouslySelectedValue != null) {
-          projectList.setSelectedValue(previouslySelectedValue, true);
-        } else if (model.size() == 1) {
-          projectList.setSelectedIndex(0);
-        } else {
-          projectList.setSelectedIndex(-1);
-        }
-      }
-    };
+    projectFilter = new ServerFilterComponent();
   }
 
   @Nullable
@@ -179,6 +144,43 @@ public class AssociateDialog extends DialogWrapper {
             }
           }
         }
+      }
+    }
+  }
+
+  private class ServerFilterComponent extends FilterComponent {
+    @Override
+    public void filter() {
+      List<ISonarRemoteProject> allProjects = new ArrayList<ISonarRemoteProject>();
+      for (Map.Entry<SonarQubeServer, ISonarWSClientFacade> serverClient : serverClients.entrySet()) {
+        try {
+          allProjects.addAll(serverClient.getValue().searchRemoteProjects(getFilter()));
+        } catch (Exception e) {
+          SonarQubeConsole.getSonarQubeConsole(project).error("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId() + ": " + e.getMessage());
+          LOG.warn("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId(), e);
+        }
+      }
+      Collections.sort(allProjects, new Comparator<ISonarRemoteProject>() {
+        @Override
+        public int compare(ISonarRemoteProject o1, ISonarRemoteProject o2) {
+          if (o1.getName().equals(o2.getName())) {
+            return o1.getServer().getId().compareTo(o2.getServer().getId());
+          }
+          return o1.getName().compareTo(o2.getName());
+        }
+      });
+      Object previouslySelectedValue = projectList.getSelectedValue();
+      DefaultListModel model = new DefaultListModel();
+      projectList.setModel(model);
+      for (ISonarRemoteProject module : allProjects) {
+        model.addElement(module);
+      }
+      if (previouslySelectedValue != null) {
+        projectList.setSelectedValue(previouslySelectedValue, true);
+      } else if (model.size() == 1) {
+        projectList.setSelectedIndex(0);
+      } else {
+        projectList.setSelectedIndex(-1);
       }
     }
   }

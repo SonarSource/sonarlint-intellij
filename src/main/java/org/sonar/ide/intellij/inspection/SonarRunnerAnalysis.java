@@ -145,7 +145,7 @@ public class SonarRunnerAnalysis {
     if (mavenProjectsManager.isMavenizedModule(ijModule)) {
       MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
       if (mavenModule != null && mavenModule.isAggregator()) {
-        configureModules(p, settings, properties, prefix, mavenProjectsManager, mavenModule);
+        configureModules(p, settings, properties, prefix, mavenModule);
         return true;
       }
     }
@@ -153,7 +153,7 @@ public class SonarRunnerAnalysis {
     return !sources.isEmpty();
   }
 
-  private void configureModules(Project p, ProjectSettings settings, Properties properties, String prefix, MavenProjectsManager mavenProjectsManager, MavenProject mavenModule) {
+  private void configureModules(Project p, ProjectSettings settings, Properties properties, String prefix, MavenProject mavenModule) {
     Set<String> submoduleKeys = new HashSet<String>();
     Map<String, String> modulesPathsAndNames = mavenModule.getModulesPathsAndNames();
     for (Map.Entry<String, String> modulePathAndName : modulesPathsAndNames.entrySet()) {
@@ -168,10 +168,8 @@ public class SonarRunnerAnalysis {
             key = ijSubModule.getName();
           }
           VirtualFile moduleFile = ijSubModule.getModuleFile();
-          if (moduleFile != null) {
-            if (configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath())) {
-              submoduleKeys.add(subModuleName);
-            }
+          if (moduleFile != null && configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath())) {
+            submoduleKeys.add(subModuleName);
           }
         }
       }
@@ -306,11 +304,11 @@ public class SonarRunnerAnalysis {
           .execute();
 
     } catch (Exception e) {
-      handleException(monitor, e, console);
+      handleException(monitor, e);
     }
   }
 
-  private void handleException(final ProgressIndicator monitor, Exception e, SonarQubeConsole console) {
+  private void handleException(final ProgressIndicator monitor, Exception e) {
     if (monitor.isCanceled()) {
       // On OSX it seems that cancelling produce an exception so we just ignore it
       return;

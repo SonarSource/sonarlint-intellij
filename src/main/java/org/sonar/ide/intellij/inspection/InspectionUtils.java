@@ -86,10 +86,9 @@ public class InspectionUtils {
       return TextRange.EMPTY_RANGE;
     }
     int line = issue.line() != null ? issue.line() - 1 : 0;
-    return getTextRangeForLine(document, psiFile, line);
+    return getTextRangeForLine(document, line);
   }
 
-  @NotNull
   public static TextRange getLineRange(@NotNull PsiElement psiElement) {
     Project project = psiElement.getProject();
     PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
@@ -102,7 +101,7 @@ public class InspectionUtils {
     return new TextRange(psiElement.getTextOffset(), lineEndOffset);
   }
 
-  private static TextRange getTextRangeForLine(Document document, PsiFile psiFile, int line) {
+  private static TextRange getTextRangeForLine(Document document, int line) {
     try {
       int lineStartOffset = document.getLineStartOffset(line);
       int lineEndOffset = document.getLineEndOffset(line);
@@ -125,10 +124,8 @@ public class InspectionUtils {
       if (document != null) {
         final int offset = document.getLineStartOffset(ijLine);
         element = file.getViewProvider().findElementAt(offset);
-        if (element != null) {
-          if (document.getLineNumber(element.getTextOffset()) != ijLine) {
-            element = element.getNextSibling();
-          }
+        if (element != null && document.getLineNumber(element.getTextOffset()) != ijLine) {
+          element = element.getNextSibling();
         }
       }
     } catch (@NotNull final IndexOutOfBoundsException ignore) {
@@ -156,7 +153,7 @@ public class InspectionUtils {
           packageName = DEFAULT_PACKAGE_NAME;
         }
         String fileName = StringUtils.substringBeforeLast(file.getName(), ".");
-        if (moduleKey != null && packageName != null) {
+        if (moduleKey != null) {
           result = new StringBuilder()
               .append(moduleKey).append(DELIMITER).append(packageName)
               .append(PACKAGE_DELIMITER).append(fileName)

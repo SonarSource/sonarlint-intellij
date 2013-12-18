@@ -53,6 +53,7 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     private PsiJavaFile file;
     private VirtualFile vfile;
     private Project project;
+    private SonarQubeServer server;
     private List<ISonarIssue> remoteIssues;
     private String componentKey;
   }
@@ -71,6 +72,18 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     result.file = (PsiJavaFile) file;
     result.vfile = vfile;
     result.project = file.getProject();
+    ProjectSettings projectSettings = result.project.getComponent(ProjectSettings.class);
+    if (!projectSettings.isAssociated()) {
+      return null;
+    }
+    String serverId = projectSettings.getServerId();
+    SonarQubeSettings settings = SonarQubeSettings.getInstance();
+    result.server = settings.getServer(serverId);
+    SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(result.project);
+    if (result.server == null) {
+      console.error("Project is associated to a server that is not configured: " + serverId);
+      return null;
+    }
     return result;
   }
 
@@ -80,17 +93,8 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     final Project p = collectedInfo.project;
     SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(p);
     ProjectSettings projectSettings = p.getComponent(ProjectSettings.class);
-    String serverId = projectSettings.getServerId();
-    if (serverId == null) {
-      console.error("Project is not associated to SonarQube");
-      return null;
-    }
     SonarQubeSettings settings = SonarQubeSettings.getInstance();
-    SonarQubeServer server = settings.getServer(serverId);
-    if (server == null) {
-      console.error("Project was associated to a server that is not configured: " + serverId);
-      return null;
-    }
+    SonarQubeServer server = collectedInfo.server;
     VirtualFile virtualFile = collectedInfo.vfile;
     if (virtualFile == null) {
       return null;
@@ -146,16 +150,16 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     Annotation annotation;
     String message = InspectionUtils.getProblemMessage(issueOnPsiElement.getIssue());
     if (issueOnPsiElement.getIssue().line() == null) {
-      annotation = createAnnotation(holder, issueOnPsiElement.getIssue(), message, psiFile);
+      annotation = createAnnotation(holder, message, psiFile);
       annotation.setFileLevelAnnotation(true);
     } else {
       PsiElement startElement = issueOnPsiElement.getPsiElement();
       if (startElement == null) {
         // There is no AST element on this line. Maybe a tabulation issue on a blank line?
-        annotation = createAnnotation(holder, issueOnPsiElement.getIssue(), message, InspectionUtils.getLineRange(psiFile, issueOnPsiElement.getIssue()));
+        annotation = createAnnotation(holder, message, InspectionUtils.getLineRange(psiFile, issueOnPsiElement.getIssue()));
       } else if (startElement.isValid()) {
         TextRange lineRange = InspectionUtils.getLineRange(startElement);
-        annotation = createAnnotation(holder, issueOnPsiElement.getIssue(), message, lineRange);
+        annotation = createAnnotation(holder, message, lineRange);
       } else {
         return;
       }
@@ -163,11 +167,11 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
     annotation.setTooltip(message);
   }
 
-  private static Annotation createAnnotation(AnnotationHolder holder, ISonarIssue issue, String message, PsiElement location) {
+  private static Annotation createAnnotation(AnnotationHolder holder, String message, PsiElement location) {
     return holder.createWarningAnnotation(location, message);
   }
 
-  private static Annotation createAnnotation(AnnotationHolder holder, ISonarIssue issue, String message, TextRange textRange) {
+  private static Annotation createAnnotation(AnnotationHolder holder, String message, TextRange textRange) {
     return holder.createWarningAnnotation(textRange, message);
   }
 }
