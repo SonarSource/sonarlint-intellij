@@ -51,7 +51,7 @@ public class SonarQubeToolWindowFactory implements ToolWindowFactory {
 
     public boolean isSelected(AnActionEvent event) {
       Project p = event.getProject();
-      return p != null &&  p.getComponent(ProjectSettings.class).isVerboseEnabled();
+      return p != null && p.getComponent(ProjectSettings.class).isVerboseEnabled();
     }
 
     public void setSelected(AnActionEvent event, boolean flag) {

@@ -21,7 +21,6 @@ package org.sonar.ide.intellij.action;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
@@ -105,7 +104,8 @@ public class AssociateWithSonarQube extends AnAction {
     settings.setProjectKey(sonarProject.getKey());
   }
 
-  private void associateModules(ProjectSettings settings, MavenProjectsManager mavenProjectsManager, ISonarRemoteProject sonarProject, Module[] ijModules, SonarQubeConsole console, String branchSuffix, List<ISonarRemoteModule> sonarModules) {
+  private void associateModules(ProjectSettings settings, MavenProjectsManager mavenProjectsManager, ISonarRemoteProject sonarProject,
+                                Module[] ijModules, SonarQubeConsole console, String branchSuffix, List<ISonarRemoteModule> sonarModules) {
     for (Module ijModule : ijModules) {
       MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
       if (mavenModule == null) {
@@ -115,20 +115,24 @@ public class AssociateWithSonarQube extends AnAction {
         if (expectedKey.equals(sonarProject.getKey())) {
           settings.getModuleKeys().put(ijModule.getName(), expectedKey);
         } else {
-          boolean found = false;
-          for (ISonarRemoteModule sonarModule : sonarModules) {
-            if (expectedKey.equals(sonarModule.getKey())) {
-              settings.getModuleKeys().put(ijModule.getName(), expectedKey);
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            console.error("Unable to find matching SonarQube module for IntelliJ module " + ijModule.getName());
-          }
+          associateModule(settings, console, sonarModules, ijModule, expectedKey);
         }
       }
 
+    }
+  }
+
+  private void associateModule(ProjectSettings settings, SonarQubeConsole console, List<ISonarRemoteModule> sonarModules, Module ijModule, String expectedKey) {
+    boolean found = false;
+    for (ISonarRemoteModule sonarModule : sonarModules) {
+      if (expectedKey.equals(sonarModule.getKey())) {
+        settings.getModuleKeys().put(ijModule.getName(), expectedKey);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      console.error("Unable to find matching SonarQube module for IntelliJ module " + ijModule.getName());
     }
   }
 

@@ -33,6 +33,7 @@ import org.sonar.ide.intellij.wsclient.ISonarRemoteProject;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
+import javax.annotation.CheckForNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -43,6 +44,7 @@ public class AssociateDialog extends DialogWrapper {
 
   private static final Logger LOG = Logger.getInstance(AssociateDialog.class);
   public static final int UNASSOCIATE_EXIT_CODE = NEXT_USER_EXIT_CODE;
+  public static final String UNABLE_TO_CONNECT_MSG = "Unable to connect to SonarQube server %s. Please check settings.";
 
   private final Project project;
   private JPanel contentPane;
@@ -61,12 +63,12 @@ public class AssociateDialog extends DialogWrapper {
       try {
         ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
         if (sonarClient.testConnection() != ISonarWSClientFacade.ConnectionTestResult.OK) {
-          LOG.error("Unable to connect to SonarQube server " + server.getId() + ". Please check settings.");
+          LOG.error(String.format(UNABLE_TO_CONNECT_MSG, server.getId()));
           continue;
         }
         serverClients.put(server, sonarClient);
       } catch (Exception e) {
-        LOG.error("Unable to connect to SonarQube server " + server.getId() + ". Please check settings.", e);
+        LOG.error(String.format(UNABLE_TO_CONNECT_MSG, server.getId()), e);
       }
     }
     if (serverClients.isEmpty()) {
@@ -130,22 +132,33 @@ public class AssociateDialog extends DialogWrapper {
   }
 
   public void setSelectedSonarQubeProject(@Nullable String serverId, @Nullable String projectKey) {
-    if (serverId != null) {
-      for (Map.Entry<SonarQubeServer, ISonarWSClientFacade> serverClient : serverClients.entrySet()) {
-        if (serverClient.getKey().getId().equals(serverId)) {
-          List<ISonarRemoteProject> remoteProjects = serverClient.getValue().listAllRemoteProjects();
-          for (ISonarRemoteProject remoteProject : remoteProjects) {
-            if (remoteProject.getKey().equals(projectKey)) {
-              DefaultListModel model = new DefaultListModel();
-              model.addElement(remoteProject);
-              projectList.setModel(model);
-              projectList.setSelectedValue(remoteProject, true);
-              return;
-            }
-          }
-        }
+    if (serverId == null) {
+      return;
+    }
+    ISonarWSClientFacade serverClient = findServerClient(serverId);
+    if (serverClient == null) {
+      return;
+    }
+    List<ISonarRemoteProject> remoteProjects = serverClient.listAllRemoteProjects();
+    for (ISonarRemoteProject remoteProject : remoteProjects) {
+      if (remoteProject.getKey().equals(projectKey)) {
+        DefaultListModel model = new DefaultListModel();
+        model.addElement(remoteProject);
+        projectList.setModel(model);
+        projectList.setSelectedValue(remoteProject, true);
+        return;
       }
     }
+  }
+
+  @CheckForNull
+  private ISonarWSClientFacade findServerClient(String serverId) {
+    for (Map.Entry<SonarQubeServer, ISonarWSClientFacade> serverClient : serverClients.entrySet()) {
+      if (serverClient.getKey().getId().equals(serverId)) {
+        return serverClient.getValue();
+      }
+    }
+    return null;
   }
 
   private class ServerFilterComponent extends FilterComponent {
