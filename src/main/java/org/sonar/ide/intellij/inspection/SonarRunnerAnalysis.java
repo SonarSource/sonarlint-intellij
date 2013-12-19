@@ -115,7 +115,8 @@ public class SonarRunnerAnalysis {
     }
   }
 
-  private boolean configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule, @NotNull Properties properties, @NotNull String prefix, @NotNull String baseDir) {
+  private boolean configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule,
+                                          @NotNull Properties properties, @NotNull String prefix, @NotNull String baseDir) {
     MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     if ("".equals(prefix)) {
       // Only on root module
