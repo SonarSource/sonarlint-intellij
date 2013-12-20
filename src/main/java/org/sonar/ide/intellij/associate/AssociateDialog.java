@@ -86,6 +86,7 @@ public class AssociateDialog extends DialogWrapper {
 
   public void createUIComponents() {
     projectFilter = new ServerFilterComponent();
+    projectFilter.getTextEditor().setToolTipText(SonarQubeBundle.message("sonarqube.associate.comboToolTip"));
   }
 
   @Nullable
@@ -108,7 +109,7 @@ public class AssociateDialog extends DialogWrapper {
   protected Action[] createLeftSideActions() {
     if (displayUnassociateButton) {
       return new Action[]{
-          new AbstractAction("Remove association") {
+          new AbstractAction(SonarQubeBundle.message("sonarqube.associate.remove")) {
 
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -169,8 +170,9 @@ public class AssociateDialog extends DialogWrapper {
         try {
           allProjects.addAll(serverClient.getValue().searchRemoteProjects(getFilter()));
         } catch (Exception e) {
-          SonarQubeConsole.getSonarQubeConsole(project).error("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId() + ": " + e.getMessage());
-          LOG.warn("Unable to retrieve list of remote projects from server " + serverClient.getKey().getId(), e);
+          String msg = "Unable to retrieve list of remote projects from server " + serverClient.getKey().getId();
+          SonarQubeConsole.getSonarQubeConsole(project).error( msg + ": " + e.getMessage());
+          LOG.warn(msg, e);
         }
       }
       Collections.sort(allProjects, new Comparator<ISonarRemoteProject>() {

@@ -31,6 +31,7 @@ import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.associate.AssociateDialog;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
+import org.sonar.ide.intellij.util.SonarQubeBundle;
 import org.sonar.ide.intellij.wsclient.ISonarRemoteModule;
 import org.sonar.ide.intellij.wsclient.ISonarRemoteProject;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
@@ -154,9 +155,9 @@ public class AssociateWithSonarQube extends AnAction {
     if (p != null) {
       ProjectSettings settings = p.getComponent(ProjectSettings.class);
       if (!settings.isAssociated()) {
-        e.getPresentation().setText("Associate with SonarQube...");
+        e.getPresentation().setText(SonarQubeBundle.message("sonarqube.associate.action.label"));
       } else {
-        e.getPresentation().setText("Update SonarQube association...");
+        e.getPresentation().setText(SonarQubeBundle.message("sonarqube.associate.action.label_update"));
       }
     }
   }

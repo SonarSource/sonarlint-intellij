@@ -22,6 +22,7 @@ package org.sonar.ide.intellij.config;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.ui.ListCellRendererWrapper;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.util.SonarQubeBundle;
 
@@ -55,11 +56,13 @@ public final class SonarQubeSettingsForm {
         }
       }
     });
-    serversList.setRenderer(new DefaultListCellRenderer() {
+    serversList.setRenderer(new ListCellRendererWrapper() {
+
       @Override
-      public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        return super.getListCellRendererComponent(list, value != null ? ((SonarQubeServer) value).getId() : "<no server>", index, isSelected, cellHasFocus);
+      public void customize(JList list, Object value, int index, boolean selected, boolean hasFocus) {
+        setText(value != null ? ((SonarQubeServer) value).getId() : SonarQubeBundle.message("sonarqube.settings.server.no_server"));
       }
+
     });
     editButton.addActionListener(new ActionListener() {
       @Override
@@ -80,9 +83,10 @@ public final class SonarQubeSettingsForm {
     removeButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        if (Messages.showYesNoDialog(formComponent,
-            SonarQubeBundle.message("sonarqube.settings.server.delete.msg"),
-            SonarQubeBundle.message("sonarqube.settings.server.delete.title"),
+        SonarQubeServer server = (SonarQubeServer) serversList.getSelectedItem();
+        if (server != null && Messages.showYesNoDialog(formComponent,
+            SonarQubeBundle.message("sonarqube.settings.server.remove.msg", server.getId()),
+            SonarQubeBundle.message("sonarqube.settings.server.remove.title"),
             Messages.getQuestionIcon()) == Messages.YES) {
           serversList.removeItem(serversList.getSelectedItem());
           modified = true;
