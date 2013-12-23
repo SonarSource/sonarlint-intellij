@@ -182,7 +182,7 @@ public class SonarRunnerAnalysis {
     if (compilerOutput != null) {
       String path = compilerOutput.getCanonicalPath();
       if (path != null) {
-        properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, compilerOutput.getCanonicalPath());
+        properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, path);
       }
     }
   }
