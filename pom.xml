@@ -248,8 +248,7 @@
               <goal>single</goal>
             </goals>
             <configuration>
-              <!-- Should be uploaded only to dist -->
-              <attach>false</attach>
+              <attach>true</attach>
               <descriptors>
                 <descriptor>${project.basedir}/src/main/assembly/intellij-plugin-assembly.xml</descriptor>
               </descriptors>
