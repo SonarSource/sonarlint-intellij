@@ -201,17 +201,6 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     }
   }
 
-  @Override
-  public String[] getChildrenKeys(String resourceKey) {
-    ResourceQuery query = new ResourceQuery().setDepth(1).setResourceKeyOrId(resourceKey);
-    Collection<Resource> resources = findAll(query);
-    List<String> result = new ArrayList<String>();
-    for (Resource resource : resources) {
-      result.add(resource.getKey());
-    }
-    return result.toArray(new String[result.size()]);
-  }
-
   private static class SonarRemoteIssue implements ISonarIssue {
 
     private final Issue remoteIssue;

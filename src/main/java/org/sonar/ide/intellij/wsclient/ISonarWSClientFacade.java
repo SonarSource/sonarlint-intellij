@@ -50,6 +50,4 @@ public interface ISonarWSClientFacade {
 
   List<ISonarIssue> getUnresolvedRemoteIssues(String resourceKey);
 
-  String[] getChildrenKeys(String resourceKey);
-
 }
