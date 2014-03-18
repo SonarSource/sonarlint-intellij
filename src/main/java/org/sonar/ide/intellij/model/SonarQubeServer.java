@@ -19,18 +19,27 @@
  */
 package org.sonar.ide.intellij.model;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.apache.commons.lang.StringUtils;
+import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
+import org.sonar.ide.intellij.wsclient.SonarWSClientException;
+import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 
 public class SonarQubeServer implements ISonarServer {
+
+  private static final Logger LOG = Logger.getInstance(SonarQubeServer.class);
 
   private String id;
   private String url;
   private String username;
   @Transient
   private String password;
+  @Transient
+  private String version;
 
   public String getId() {
     return id;
@@ -68,5 +77,18 @@ public class SonarQubeServer implements ISonarServer {
   @Override
   public boolean hasCredentials() {
     return StringUtils.isNotBlank(getPassword()) && StringUtils.isNotBlank(getUsername());
+  }
+
+  @Transient
+  public String getVersion() {
+    if (version == null) {
+      ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(this);
+      version =  sonarClient.getServerVersion();
+    }
+    return version;
+  }
+
+  public void setVersion(String version) {
+    this.version = version;
   }
 }

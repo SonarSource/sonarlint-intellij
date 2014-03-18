@@ -22,10 +22,13 @@ package org.sonar.ide.intellij.wsclient;
 import com.intellij.openapi.diagnostic.Logger;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.model.ISonarIssue;
+import org.sonar.ide.intellij.model.ISonarIssueWithPath;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.wsclient.Sonar;
 import org.sonar.wsclient.SonarClient;
+import org.sonar.wsclient.component.Component;
 import org.sonar.wsclient.connectors.ConnectionException;
 import org.sonar.wsclient.issue.Issue;
 import org.sonar.wsclient.issue.IssueQuery;
@@ -167,15 +170,24 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
   }
 
   @Override
-  public List<ISonarIssue> getUnresolvedRemoteIssuesRecursively(String resourceKey) {
+  public List<ISonarIssueWithPath> getUnresolvedRemoteIssuesRecursively(String resourceKey) {
     int maxPageSize = -1;
-    List<ISonarIssue> result = new ArrayList<ISonarIssue>();
+    List<ISonarIssueWithPath> result = new ArrayList<ISonarIssueWithPath>();
     int pageIndex = 1;
     Issues issues;
     do {
       issues = findIssues(IssueQuery.create().componentRoots(resourceKey).resolved(false).pageSize(maxPageSize).pageIndex(pageIndex));
       for (Issue issue : issues.list()) {
-        result.add(new SonarRemoteIssue(issue, issues.rule(issue)));
+        Component comp = issues.component(issue);
+        Long subProjectId = comp.subProjectId();
+        String subProjectKey = null;
+        if (subProjectId != null) {
+          Component subProject = issues.componentById(subProjectId);
+          if (subProject != null) {
+            subProjectKey =  subProject.key();
+          }
+        }
+        result.add(new SonarRemoteIssue(issue, issues.rule(issue), comp != null ? comp.path() : null, subProjectKey));
       }
     } while (pageIndex++ < issues.paging().pages());
     return result;
@@ -186,7 +198,7 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     Issues issues = findIssues(IssueQuery.create().components(resourceKey).resolved(false));
     List<ISonarIssue> result = new ArrayList<ISonarIssue>(issues.list().size());
     for (Issue issue : issues.list()) {
-      result.add(new SonarRemoteIssue(issue, issues.rule(issue)));
+      result.add(new SonarRemoteIssue(issue, issues.rule(issue), null, null));
     }
     return result;
   }
@@ -201,14 +213,18 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     }
   }
 
-  private static class SonarRemoteIssue implements ISonarIssue {
+  private static class SonarRemoteIssue implements ISonarIssueWithPath {
 
     private final Issue remoteIssue;
     private Rule rule;
+    private final String path;
+    private final String subprojectKey;
 
-    public SonarRemoteIssue(final Issue remoteIssue, final Rule rule) {
+    public SonarRemoteIssue(final Issue remoteIssue, final Rule rule, @Nullable final String path, @Nullable final String subprojectKey) {
       this.remoteIssue = remoteIssue;
       this.rule = rule;
+      this.path = path;
+      this.subprojectKey = subprojectKey;
     }
 
     @Override
@@ -219,6 +235,16 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     @Override
     public String resourceKey() {
       return remoteIssue.componentKey();
+    }
+
+    @Override
+    public String path() {
+      return path;
+    }
+
+    @Override
+    public String subprojectKey() {
+      return subprojectKey;
     }
 
     @Override

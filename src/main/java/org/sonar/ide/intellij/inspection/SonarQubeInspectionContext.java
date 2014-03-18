@@ -31,6 +31,7 @@ import com.intellij.openapi.compiler.CompileStatusNotification;
 import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -50,6 +51,7 @@ import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.config.SonarQubeSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.ISonarIssue;
+import org.sonar.ide.intellij.model.ISonarIssueWithPath;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
 import org.sonar.ide.intellij.wsclient.SonarWSClientException;
@@ -72,6 +74,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
   private Map<PsiFile, List<ISonarIssue>> remoteIssuesByFile = new HashMap<PsiFile, List<ISonarIssue>>();
   private SonarQubeServer server;
+  private String serverVersion;
   private boolean debugEnabled;
   private Map<String, PsiFile> resourceCache;
   private SonarQubeConsole console;
@@ -125,6 +128,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       console.error("Project was associated to a server that is not configured: " + serverId);
       return;
     }
+    serverVersion = WSClientFactory.getInstance().getSonarClient(server).getServerVersion();
     populateResourceCache(context, p, projectSettings);
 
     fetchRemoteIssues(projectKey);
@@ -187,7 +191,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
 
   private void fetchRemoteIssues(String projectKey) {
     ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-    List<ISonarIssue> remoteIssues;
+    List<ISonarIssueWithPath> remoteIssues;
     try {
       remoteIssues = sonarClient.getUnresolvedRemoteIssuesRecursively(projectKey);
     } catch (SonarWSClientException e) {
@@ -216,7 +220,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
         public void run() {
           PsiFile psiFile = PsiManager.getInstance(globalContext.getProject()).findFile(virtualFile);
           PsiJavaFile psiJavaFile = (PsiJavaFile) psiFile;
-          Module module = ProjectRootManager.getInstance(p).getFileIndex().getModuleForFile(virtualFile);
+          Module module = ModuleUtil.findModuleForFile(virtualFile, p);
           if (module == null) {
             console.error("Unable to find module for file " + virtualFile.getName());
             return;
@@ -226,7 +230,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
             console.info("Module " + module.getName() + " is not associated to SonarQube");
             sonarKeyOfModule = module.getName();
           }
-          resourceCache.put(InspectionUtils.getComponentKey(sonarKeyOfModule, psiJavaFile), psiJavaFile);
+          resourceCache.put(InspectionUtils.getComponentKey(sonarKeyOfModule, module, psiJavaFile, serverVersion), psiJavaFile);
         }
       });
     }
@@ -245,6 +249,7 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       final JSONArray components = (JSONArray) sonarResult.get("components");
       for (Object component : components) {
         String key = ObjectUtils.toString(((JSONObject) component).get("key"));
+        String path = ObjectUtils.toString(((JSONObject) component).get("path"));
         PsiFile file = resourceCache.get(key);
         if (file != null) {
           issueCache.getModifiedFile().add(file);

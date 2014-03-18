@@ -20,8 +20,11 @@
 package org.sonar.ide.intellij.inspection;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.TextRange;
@@ -35,7 +38,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.model.ISonarIssue;
 
+import javax.annotation.CheckForNull;
+
 public class InspectionUtils {
+
+  private static final Logger LOG = Logger.getInstance(InspectionUtils.class);
 
   private static final char DELIMITER = ':';
   private static final char PACKAGE_DELIMITER = '.';
@@ -45,36 +52,83 @@ public class InspectionUtils {
     // Utility class
   }
 
+  @Nullable
+  public static String getComponentKey(String moduleKey, Module module, PsiFile file, String serverVersion) {
+    final VirtualFile virtualFile = file.getVirtualFile();
+    if (null == virtualFile) {
+      return null;
+    }
+    final String filePath = virtualFile.getPath();
+    // IntelliJ is only compatible with 4.1+
+    if (!serverVersion.startsWith("4.1")) {
+      return getComponentKeyForSonarQube4_2(moduleKey, module, virtualFile);
+    }
+    return getComponentKeyForSonarQube4_1(moduleKey, file, virtualFile, filePath);
+  }
 
-  public static String getComponentKey(String moduleKey, PsiFile file) {
+  private static String getComponentKeyForSonarQube4_1(String moduleKey, PsiFile file, VirtualFile virtualFile, String filePath) {
     if (file instanceof PsiJavaFile) {
       return getJavaComponentKey(moduleKey, (PsiJavaFile) file);
     }
     final StringBuilder result = new StringBuilder();
     result.append(moduleKey).append(":");
-    final VirtualFile virtualFile = file.getVirtualFile();
-    if (null != virtualFile) {
-      final String filePath = virtualFile.getPath();
 
-      VirtualFile sourceRootForFile = ProjectFileIndex.SERVICE.getInstance(file.getProject()).getSourceRootForFile(virtualFile);
-      // getSourceRootForFile doesn't work in phpstorm for some reasons
-      if (null == sourceRootForFile) {
-        sourceRootForFile = ProjectFileIndex.SERVICE.getInstance(file.getProject()).getContentRootForFile(virtualFile);
+    VirtualFile sourceRootForFile = ProjectFileIndex.SERVICE.getInstance(file.getProject()).getSourceRootForFile(virtualFile);
+    // getSourceRootForFile doesn't work in phpstorm for some reasons
+    if (null == sourceRootForFile) {
+      sourceRootForFile = ProjectFileIndex.SERVICE.getInstance(file.getProject()).getContentRootForFile(virtualFile);
+    }
+
+    if (sourceRootForFile != null) {
+      final String sourceRootForFilePath = sourceRootForFile.getPath() + "/";
+
+      String baseFileName = filePath.replace(sourceRootForFilePath, "");
+
+      if (baseFileName.equals(file.getName())) {
+        result.append("[root]/");
       }
 
-      if (sourceRootForFile != null) {
-        final String sourceRootForFilePath = sourceRootForFile.getPath() + "/";
-
-        String baseFileName = filePath.replace(sourceRootForFilePath, "");
-
-        if (baseFileName.equals(file.getName())) {
-          result.append("[root]/");
-        }
-
-        result.append(baseFileName);
-      }
+      result.append(baseFileName);
     }
     return result.toString();
+  }
+
+  @CheckForNull
+  private static String getComponentKeyForSonarQube4_2(String moduleKey, Module module, VirtualFile file) {
+    final StringBuilder result = new StringBuilder();
+    result.append(moduleKey).append(":");
+    String relativePath = computeRelativePath(module, file);
+    if (relativePath != null) {
+      result.append(relativePath);
+      return result.toString();
+    }
+    return null;
+  }
+
+  @CheckForNull
+  public static String computeRelativePath(Module module, VirtualFile file) {
+    String rootPath = getModuleRootPath(module);
+    if (rootPath == null) {
+      return null;
+    }
+    String filePath = file.getPath();
+    if (filePath.startsWith(rootPath)) {
+      return filePath.substring(rootPath.length());
+    }
+    return null;
+  }
+
+  @CheckForNull
+  public static String getModuleRootPath(Module module) {
+    ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
+
+    VirtualFile[] contentRoots = rootManager.getContentRoots();
+    if (contentRoots.length != 1) {
+      LOG.error("Module " + module + " contains " + contentRoots.length + " content roots and this is not supported");
+      return null;
+    }
+    String rootPath = contentRoots[0].getPath() + "/";
+    return rootPath;
   }
 
   @NotNull

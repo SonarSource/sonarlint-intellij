@@ -105,7 +105,7 @@ public class SonarRunnerAnalysis {
     Module[] ijModules = moduleManager.getModules();
     properties.setProperty(PROJECT_NAME_PROPERTY, p.getName());
     configureEncoding(p, properties);
-    configureModuleSettings(p, settings, ijModules[0], properties, "", p.getBasePath());
+    configureModuleSettings(p, settings, ijModules[0], properties, "");
   }
 
   private void configureEncoding(Project p, Properties properties) {
@@ -116,7 +116,12 @@ public class SonarRunnerAnalysis {
   }
 
   private boolean configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule,
-                                          @NotNull Properties properties, @NotNull String prefix, @NotNull String baseDir) {
+                                          @NotNull Properties properties, @NotNull String prefix) {
+    String baseDir = InspectionUtils.getModuleRootPath(ijModule);
+    if (baseDir == null) {
+      return false;
+    }
+
     MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     if ("".equals(prefix)) {
       // Only on root module
@@ -157,9 +162,9 @@ public class SonarRunnerAnalysis {
     Set<String> submoduleKeys = new HashSet<String>();
     Map<String, String> modulesPathsAndNames = mavenModule.getModulesPathsAndNames();
     for (Map.Entry<String, String> modulePathAndName : modulesPathsAndNames.entrySet()) {
-      String subModulePath = modulePathAndName.getKey();
+      String subModulePomPath = modulePathAndName.getKey();
       String subModuleName = modulePathAndName.getValue();
-      VirtualFile file = LocalFileSystem.getInstance().findFileByPath(subModulePath);
+      VirtualFile file = LocalFileSystem.getInstance().findFileByPath(subModulePomPath);
       if (file != null) {
         Module ijSubModule = ProjectFileIndex.SERVICE.getInstance(p).getModuleForFile(file);
         if (ijSubModule != null) {
@@ -167,8 +172,7 @@ public class SonarRunnerAnalysis {
           if (key == null) {
             key = ijSubModule.getName();
           }
-          VirtualFile moduleFile = ijSubModule.getModuleFile();
-          if (moduleFile != null && configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".", moduleFile.getParent().getPath())) {
+          if (configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".")) {
             submoduleKeys.add(subModuleName);
           }
         }

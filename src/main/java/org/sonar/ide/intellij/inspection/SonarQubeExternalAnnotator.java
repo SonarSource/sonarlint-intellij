@@ -106,7 +106,7 @@ public class SonarQubeExternalAnnotator extends ExternalAnnotator<SonarQubeExter
       console.error("Module " + module.getName() + " is not associated to SonarQube");
       return null;
     }
-    collectedInfo.componentKey = InspectionUtils.getComponentKey(sonarKeyOfModule, collectedInfo.file);
+    collectedInfo.componentKey = InspectionUtils.getComponentKey(sonarKeyOfModule, module, collectedInfo.file, collectedInfo.server.getVersion());
 
     SonarQubeIssueCache cache = p.getComponent(SonarQubeIssueCache.class);
 

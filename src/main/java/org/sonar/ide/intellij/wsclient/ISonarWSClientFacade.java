@@ -20,6 +20,7 @@
 package org.sonar.ide.intellij.wsclient;
 
 import org.sonar.ide.intellij.model.ISonarIssue;
+import org.sonar.ide.intellij.model.ISonarIssueWithPath;
 
 import java.util.Date;
 import java.util.List;
@@ -46,7 +47,7 @@ public interface ISonarWSClientFacade {
 
   String[] getRemoteCode(String resourceKey);
 
-  List<ISonarIssue> getUnresolvedRemoteIssuesRecursively(String resourceKey);
+  List<ISonarIssueWithPath> getUnresolvedRemoteIssuesRecursively(String resourceKey);
 
   List<ISonarIssue> getUnresolvedRemoteIssues(String resourceKey);
 
