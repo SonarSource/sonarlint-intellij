@@ -57,11 +57,9 @@ public class SonarRunnerAnalysis {
   public static final String PROJECT_KEY_PROPERTY = "sonar.projectKey";
   public static final String MODULE_KEY_PROPERTY = "sonar.moduleKey";
   public static final String PROJECT_NAME_PROPERTY = "sonar.projectName";
-  public static final String PROJECT_LANGUAGE_PROPERTY = "sonar.language";
   public static final String PROJECT_SOURCES_PROPERTY = "sonar.sources";
   public static final String PROJECT_TESTS_PROPERTY = "sonar.tests";
   public static final String PROJECT_LIBRARIES_PROPERTY = "sonar.libraries";
-  public static final String PROJECT_BINARIES_PROPERTY = "sonar.binaries";
   public static final String PROJECT_MODULES_PROPERTY = "sonar.modules";
   public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
   public static final String PROJECT_BASEDIR = "sonar.projectBaseDir";
