@@ -37,7 +37,6 @@ import org.sonar.wsclient.rule.Rule;
 import org.sonar.wsclient.services.*;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -179,15 +178,17 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
       issues = findIssues(IssueQuery.create().componentRoots(resourceKey).resolved(false).pageSize(maxPageSize).pageIndex(pageIndex));
       for (Issue issue : issues.list()) {
         Component comp = issues.component(issue);
-        Long subProjectId = comp.subProjectId();
-        String subProjectKey = null;
-        if (subProjectId != null) {
-          Component subProject = issues.componentById(subProjectId);
-          if (subProject != null) {
-            subProjectKey =  subProject.key();
+        if (comp != null) {
+          Long subProjectId = comp.subProjectId();
+          String subProjectKey = null;
+          if (subProjectId != null) {
+            Component subProject = issues.componentById(subProjectId);
+            if (subProject != null) {
+              subProjectKey = subProject.key();
+            }
           }
+        result.add(new SonarRemoteIssue(issue, issues.rule(issue), comp.path(), subProjectKey));
         }
-        result.add(new SonarRemoteIssue(issue, issues.rule(issue), comp != null ? comp.path() : null, subProjectKey));
       }
     } while (pageIndex++ < issues.paging().pages());
     return result;

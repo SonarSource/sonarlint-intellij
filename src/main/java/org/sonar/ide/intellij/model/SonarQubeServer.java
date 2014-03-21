@@ -19,19 +19,14 @@
  */
 package org.sonar.ide.intellij.model;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.apache.commons.lang.StringUtils;
 import org.sonar.ide.intellij.wsclient.ISonarWSClientFacade;
-import org.sonar.ide.intellij.wsclient.SonarWSClientException;
 import org.sonar.ide.intellij.wsclient.WSClientFactory;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 
 public class SonarQubeServer implements ISonarServer {
-
-  private static final Logger LOG = Logger.getInstance(SonarQubeServer.class);
 
   private String id;
   private String url;

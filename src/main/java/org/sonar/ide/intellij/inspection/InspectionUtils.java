@@ -61,12 +61,12 @@ public class InspectionUtils {
     final String filePath = virtualFile.getPath();
     // IntelliJ is only compatible with 4.1+
     if (!serverVersion.startsWith("4.1")) {
-      return getComponentKeyForSonarQube4_2(moduleKey, module, virtualFile);
+      return getComponentKeyForSonarQube42(moduleKey, module, virtualFile);
     }
-    return getComponentKeyForSonarQube4_1(moduleKey, file, virtualFile, filePath);
+    return getComponentKeyForSonarQube41(moduleKey, file, virtualFile, filePath);
   }
 
-  private static String getComponentKeyForSonarQube4_1(String moduleKey, PsiFile file, VirtualFile virtualFile, String filePath) {
+  private static String getComponentKeyForSonarQube41(String moduleKey, PsiFile file, VirtualFile virtualFile, String filePath) {
     if (file instanceof PsiJavaFile) {
       return getJavaComponentKey(moduleKey, (PsiJavaFile) file);
     }
@@ -94,7 +94,7 @@ public class InspectionUtils {
   }
 
   @CheckForNull
-  private static String getComponentKeyForSonarQube4_2(String moduleKey, Module module, VirtualFile file) {
+  private static String getComponentKeyForSonarQube42(String moduleKey, Module module, VirtualFile file) {
     final StringBuilder result = new StringBuilder();
     result.append(moduleKey).append(":");
     String relativePath = computeRelativePath(module, file);
@@ -127,8 +127,7 @@ public class InspectionUtils {
       LOG.error("Module " + module + " contains " + contentRoots.length + " content roots and this is not supported");
       return null;
     }
-    String rootPath = contentRoots[0].getPath() + "/";
-    return rootPath;
+    return contentRoots[0].getPath() + "/";
   }
 
   @NotNull

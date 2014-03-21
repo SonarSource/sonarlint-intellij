@@ -35,7 +35,6 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -249,7 +248,6 @@ public class SonarQubeInspectionContext implements GlobalInspectionContextExtens
       final JSONArray components = (JSONArray) sonarResult.get("components");
       for (Object component : components) {
         String key = ObjectUtils.toString(((JSONObject) component).get("key"));
-        String path = ObjectUtils.toString(((JSONObject) component).get("path"));
         PsiFile file = resourceCache.get(key);
         if (file != null) {
           issueCache.getModifiedFile().add(file);
