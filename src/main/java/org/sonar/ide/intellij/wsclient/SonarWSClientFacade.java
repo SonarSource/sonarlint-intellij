@@ -177,21 +177,25 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     do {
       issues = findIssues(IssueQuery.create().componentRoots(resourceKey).resolved(false).pageSize(maxPageSize).pageIndex(pageIndex));
       for (Issue issue : issues.list()) {
-        Component comp = issues.component(issue);
-        if (comp != null) {
-          Long subProjectId = comp.subProjectId();
-          String subProjectKey = null;
-          if (subProjectId != null) {
-            Component subProject = issues.componentById(subProjectId);
-            if (subProject != null) {
-              subProjectKey = subProject.key();
-            }
-          }
-        result.add(new SonarRemoteIssue(issue, issues.rule(issue), comp.path(), subProjectKey));
-        }
+        processIssue(result, issues, issue);
       }
     } while (pageIndex++ < issues.paging().pages());
     return result;
+  }
+
+  private void processIssue(List<ISonarIssueWithPath> result, Issues issues, Issue issue) {
+    Component comp = issues.component(issue);
+    if (comp != null) {
+      Long subProjectId = comp.subProjectId();
+      String subProjectKey = null;
+      if (subProjectId != null) {
+        Component subProject = issues.componentById(subProjectId);
+        if (subProject != null) {
+          subProjectKey = subProject.key();
+        }
+      }
+      result.add(new SonarRemoteIssue(issue, issues.rule(issue), comp.path(), subProjectKey));
+    }
   }
 
   @Override
