@@ -55,7 +55,7 @@
 
   <properties>
     <license.title>SonarQube IntelliJ</license.title>
-    <license.year>2013</license.year>
+    <license.year>2013-2014</license.year>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Used by Intellij plugin development with Maven -->
     <ij.plugin>true</ij.plugin>
@@ -124,7 +124,7 @@
     <dependency>
       <groupId>org.codehaus.sonar</groupId>
       <artifactId>sonar-ws-client</artifactId>
-      <version>4.2-SNAPSHOT</version>
+      <version>4.2</version>
     </dependency>
     <dependency>
       <groupId>org.codehaus.sonar.runner</groupId>
