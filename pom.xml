@@ -11,7 +11,7 @@
   <groupId>org.codehaus.sonar-ide.intellij</groupId>
   <artifactId>sonar-intellij-plugin</artifactId>
   <packaging>jar</packaging>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1</version>
 
   <name>SonarQube Integration for IntelliJ</name>
   <description />
@@ -41,7 +41,7 @@
     <connection>scm:git:git@github.com:SonarSource/sonar-intellij.git</connection>
     <developerConnection>scm:git:git@github.com:SonarSource/sonar-intellij.git</developerConnection>
     <url>https://github.com/SonarSource/sonar-intellij</url>
-    <tag>HEAD</tag>
+    <tag>1.1</tag>
   </scm>
 
   <issueManagement>
