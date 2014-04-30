@@ -1,6 +1,6 @@
 echo off
 
-set /p "intellij_home"="IntelliJ home path: "
+set /p intellij_home="IntelliJ home path: "
 
 set /p intellij_version="IntelliJ version: "
 
