@@ -46,7 +46,7 @@
 
   <issueManagement>
     <system>JIRA</system>
-    <url>http://jira.codehaus.org/browse/SONARIDE/component/16155</url>
+    <url>http://jira.codehaus.org/browse/SONARPLUGINS/component/16155</url>
   </issueManagement>
   <ciManagement>
     <system>jenkins</system>
