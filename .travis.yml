@@ -6,7 +6,7 @@ jdk:
   - oraclejdk7
 
 script:
-  - mkdir idea
+  - mkdir -p idea
   - cd idea
   - wget -N http://download.jetbrains.com/idea/ideaIU-13.0.4.zip
   - unzip ideaIU-13.0.4.zip
