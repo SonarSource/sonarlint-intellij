@@ -8,13 +8,13 @@ jdk:
 script:
   - mkdir -p idea
   - cd idea
-  - wget -N http://download.jetbrains.com/idea/ideaIU-13.0.4.zip
+  - wget -N http://download.jetbrains.com/idea/ideaIU-13.0.zip
   - cd ..
   - mkdir -p target/idea
   - cd target/idea
-  - unzip ../../idea/ideaIU-13.0.4.zip
+  - unzip ../../idea/ideaIU-13.0.zip
   - cd ../..
-  - sh install-libs.sh <<< $'target/idea\n13.0.4\n'
+  - sh install-libs.sh <<< $'target/idea\n13.0\n'
   - mvn verify -B -e -V
 
 cache:
