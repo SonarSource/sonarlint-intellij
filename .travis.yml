@@ -20,6 +20,7 @@ script:
 cache:
   directories:
     - '$HOME/.m2/repository'
+    - 'idea'
 
 notifications:
   email: false
