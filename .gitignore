@@ -30,3 +30,7 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Gradle
+.gradle
+build

@@ -1,0 +1,43 @@
+#!groovy
+// The above triggers groovy syntax highlighting in vim
+
+plugins {
+  id "org.jetbrains.intellij" version "0.0.21"
+  id "org.sonarqube" version "1.0"
+}
+
+apply plugin: 'org.jetbrains.intellij'
+
+group = 'org.sonarsource.sonar-intellij'
+version = '1.2-SNAPSHOT'
+description = 'SonarQube Integration for IntelliJ'
+
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+intellij {
+  version '14.1.4'
+  plugins 'maven'
+  pluginName 'SonarQube'
+}
+
+repositories {
+  jcenter()
+  mavenLocal()
+  mavenCentral()
+}
+
+dependencies {
+  compile 'org.codehaus.sonar.runner:sonar-runner-api:2.4'
+  compile 'org.codehaus.sonar:sonar-ws-client:4.5.1'
+  compile 'commons-lang:commons-lang:2.4'
+  compile 'commons-io:commons-io:2.4'
+  compile 'com.google.code.findbugs:jsr305:2.0.2'
+  testCompile 'junit:junit:4.11'
+}
+
+sonarqube {
+  properties {
+    property 'sonar.projectName', 'IntelliJ SonarQube Plugin'
+  }
+}
