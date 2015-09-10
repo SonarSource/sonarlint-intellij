@@ -27,15 +27,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.*;
 import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.idea.maven.project.MavenProject;
-import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.SonarQubeServer;
@@ -120,10 +117,9 @@ public class SonarRunnerAnalysis {
       return false;
     }
 
-    MavenProjectsManager mavenProjectsManager = MavenProjectsManager.getInstance(p);
     if ("".equals(prefix)) {
       // Only on root module
-      configureProjectVersion(ijModule, properties, mavenProjectsManager);
+      properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
       properties.setProperty(PROJECT_KEY_PROPERTY, settings.getProjectKey());
     } else {
       // Only on modules
@@ -145,38 +141,8 @@ public class SonarRunnerAnalysis {
 
     configureBinaries(ijModule, properties, prefix);
 
-    if (mavenProjectsManager.isMavenizedModule(ijModule)) {
-      MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
-      if (mavenModule != null && mavenModule.isAggregator()) {
-        configureModules(p, settings, properties, prefix, mavenModule);
-        return true;
-      }
-    }
     // Skip modules that are not aggregator and that don't have sources
     return !sources.isEmpty();
-  }
-
-  private void configureModules(Project p, ProjectSettings settings, Properties properties, String prefix, MavenProject mavenModule) {
-    Set<String> submoduleKeys = new HashSet<String>();
-    Map<String, String> modulesPathsAndNames = mavenModule.getModulesPathsAndNames();
-    for (Map.Entry<String, String> modulePathAndName : modulesPathsAndNames.entrySet()) {
-      String subModulePomPath = modulePathAndName.getKey();
-      String subModuleName = modulePathAndName.getValue();
-      VirtualFile file = LocalFileSystem.getInstance().findFileByPath(subModulePomPath);
-      if (file != null) {
-        Module ijSubModule = ProjectFileIndex.SERVICE.getInstance(p).getModuleForFile(file);
-        if (ijSubModule != null) {
-          String key = settings.getModuleKeys().get(ijSubModule.getName());
-          if (key == null) {
-            key = ijSubModule.getName();
-          }
-          if (configureModuleSettings(p, settings, ijSubModule, properties, subModuleName + ".")) {
-            submoduleKeys.add(subModuleName);
-          }
-        }
-      }
-    }
-    properties.setProperty(prefix + PROJECT_MODULES_PROPERTY, StringUtils.join(submoduleKeys, SEPARATOR));
   }
 
   private void configureBinaries(Module ijModule, Properties properties, String prefix) {
@@ -256,21 +222,6 @@ public class SonarRunnerAnalysis {
       return compilerModuleExtension.getCompilerOutputPath();
     }
     return null;
-  }
-
-
-  private void configureProjectVersion(Module ijModule, Properties properties, MavenProjectsManager mavenProjectsManager) {
-    if (mavenProjectsManager.isMavenizedModule(ijModule)) {
-      MavenProject mavenModule = mavenProjectsManager.findProject(ijModule);
-      if (mavenModule != null) {
-        String version = mavenModule.getMavenId().getVersion();
-        properties.setProperty(PROJECT_VERSION_PROPERTY, version != null ? version : DEFAULT_VERSION);
-      } else {
-        properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
-      }
-    } else {
-      properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
-    }
   }
 
   private String toFile(String path) {
