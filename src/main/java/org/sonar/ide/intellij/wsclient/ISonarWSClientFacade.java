@@ -19,10 +19,6 @@
  */
 package org.sonar.ide.intellij.wsclient;
 
-import org.sonar.ide.intellij.model.ISonarIssue;
-import org.sonar.ide.intellij.model.ISonarIssueWithPath;
-
-import java.util.Date;
 import java.util.List;
 
 public interface ISonarWSClientFacade {
@@ -40,15 +36,5 @@ public interface ISonarWSClientFacade {
   List<ISonarRemoteProject> searchRemoteProjects(String partialName);
 
   List<ISonarRemoteModule> getRemoteModules(ISonarRemoteProject project);
-
-  boolean exists(String resourceKey);
-
-  Date getLastAnalysisDate(String resourceKey);
-
-  String[] getRemoteCode(String resourceKey);
-
-  List<ISonarIssueWithPath> getUnresolvedRemoteIssuesRecursively(String resourceKey);
-
-  List<ISonarIssue> getUnresolvedRemoteIssues(String resourceKey);
 
 }

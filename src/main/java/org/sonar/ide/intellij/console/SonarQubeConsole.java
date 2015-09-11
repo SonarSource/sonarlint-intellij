@@ -31,6 +31,8 @@ import org.jetbrains.annotations.NotNull;
 import org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory;
 
 import javax.swing.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class SonarQubeConsole extends AbstractProjectComponent {
 
@@ -68,6 +70,13 @@ public class SonarQubeConsole extends AbstractProjectComponent {
 
   public void error(String msg) {
     getConsoleView().print(msg + "\n", ConsoleViewContentType.ERROR_OUTPUT);
+  }
+
+  public void error(String msg, Throwable t) {
+      error(msg);
+      StringWriter errors = new StringWriter();
+      t.printStackTrace(new PrintWriter(errors));
+      error(errors.toString());
   }
 
   public void clear() {

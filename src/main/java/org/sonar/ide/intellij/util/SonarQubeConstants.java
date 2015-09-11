@@ -17,27 +17,16 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonar.ide.intellij.inspection;
+package org.sonar.ide.intellij.util;
 
-import java.util.List;
+public final class SonarQubeConstants {
 
-/**
- * Created with IntelliJ IDEA.
- * User: julien
- * Date: 15/11/13
- * Time: 18:34
- * To change this template use File | Settings | File Templates.
- */
-class ListParamWrapper implements ParamWrapper {
-  private final List<String> props;
+  public static final String SONAR_URL = "sonar.host.url";
+  public static final String SONAR_LOGIN = "sonar.login";
+  public static final String SONAR_PASSWORD = "sonar.password";
 
-  public ListParamWrapper(List<String> props) {
-    this.props = props;
-  }
-
-  @Override
-  public ParamWrapper add(String key, String value) {
-    props.add("-D" + key + "=" + value);
-    return this;
-  }
+  public static final String ANALYSIS_MODE = "sonar.analysis.mode";
+  public static final String ANALYSIS_MODE_ISSUES = "issues";
+  public static final String VERBOSE_PROPERTY = "sonar.verbose";
+  public static final String WORK_DIR = "sonar.working.directory";
 }

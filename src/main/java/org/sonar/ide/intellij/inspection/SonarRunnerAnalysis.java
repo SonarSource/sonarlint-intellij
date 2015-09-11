@@ -19,27 +19,23 @@
  */
 package org.sonar.ide.intellij.inspection;
 
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.*;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.config.ProjectSettings;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.ide.intellij.model.SonarQubeServer;
-import org.sonar.runner.api.ForkedRunner;
-import org.sonar.runner.api.ProcessMonitor;
+import org.sonar.runner.api.Issue;
+import org.sonar.runner.api.IssueListener;
 import org.sonar.runner.api.ScanProperties;
-import org.sonar.runner.api.StreamConsumer;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -49,141 +45,132 @@ import java.util.regex.Pattern;
 
 public class SonarRunnerAnalysis {
 
-  public static final String PROJECT_BRANCH_PROPERTY = "sonar.branch";
   public static final String PROJECT_VERSION_PROPERTY = "sonar.projectVersion";
   public static final String PROJECT_KEY_PROPERTY = "sonar.projectKey";
-  public static final String MODULE_KEY_PROPERTY = "sonar.moduleKey";
   public static final String PROJECT_NAME_PROPERTY = "sonar.projectName";
   public static final String PROJECT_SOURCES_PROPERTY = "sonar.sources";
   public static final String PROJECT_TESTS_PROPERTY = "sonar.tests";
-  public static final String PROJECT_LIBRARIES_PROPERTY = "sonar.libraries";
-  public static final String PROJECT_MODULES_PROPERTY = "sonar.modules";
-  public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
+  public static final String PROJECT_LIBRARIES_PROPERTY = "sonar.java.libraries";
+  public static final String PROJECT_BINARIES_PROPERTY = "sonar.java.binaries";
+    public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
   public static final String PROJECT_BASEDIR = "sonar.projectBaseDir";
-  public static final String WORK_DIR = "sonar.working.directory";
 
   private static final char SEPARATOR = ',';
 
   private static final String JAR_REGEXP = "(.*)!/";
   private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
   private static final String DEFAULT_VERSION = "1.0-SNAPSHOT";
-  private SonarQubeConsole console;
 
 
-  public File analyzeProject(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, String jvmArgs) {
-    console = SonarQubeConsole.getSonarQubeConsole(p);
+  public static void analyzeModule(Module module, Collection<String> filesToAnalyze, IssueListener listener) {
+    Project p = module.getProject();
+    SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(p);
+    ProjectSettings settings = p.getComponent(ProjectSettings.class);
+    SonarQubeRunner runner = p.getComponent(SonarQubeRunner.class);
 
     // Configure
     Properties properties = new Properties();
     configureProjectSettings(p, properties);
-    File baseDir = new File(p.getBasePath());
-    File projectSpecificWorkDir = new File(new File(baseDir, ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR), "sonarqube");
-    properties.setProperty(WORK_DIR, projectSpecificWorkDir.getAbsolutePath());
-    File outputFile = new File(projectSpecificWorkDir, "sonar-report.json");
-    GlobalConfigurator.configureAnalysis(p, outputFile, projectSettings, server, debugEnabled, new PropertyParamWrapper(properties));
+    configureModuleSettings(p, settings, module, properties, filesToAnalyze);
 
     // Analyse
-    // To be sure to not reuse something from a previous analysis
-    FileUtils.deleteQuietly(outputFile);
     long start = System.currentTimeMillis();
     console.info("Start SonarQube analysis on " + p.getName() + "...\n");
-    run(p, properties, debugEnabled, jvmArgs, indicator);
-    if (debugEnabled) {
+    run(settings, runner, properties, console, listener);
+    if (settings.isVerboseEnabled()) {
       console.info("Done in " + (System.currentTimeMillis() - start) + "ms\n");
     }
-    return outputFile;
   }
 
-  private void configureProjectSettings(Project p, Properties properties) {
-    ProjectSettings settings = p.getComponent(ProjectSettings.class);
-    ModuleManager moduleManager = ModuleManager.getInstance(p);
-    Module[] ijModules = moduleManager.getModules();
-    properties.setProperty(PROJECT_NAME_PROPERTY, p.getName());
+  private static void configureProjectSettings(Project p, Properties properties) {
     configureEncoding(p, properties);
-    configureModuleSettings(p, settings, ijModules[0], properties, "");
+    properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
   }
 
-  private void configureEncoding(Project p, Properties properties) {
+  private static void configureEncoding(Project p, Properties properties) {
     Charset encoding = EncodingProjectManager.getInstance(p).getEncoding(null, true);
     if (encoding != null) {
       properties.setProperty(ENCODING_PROPERTY, encoding.toString());
     }
   }
 
-  private boolean configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule,
-                                          @NotNull Properties properties, @NotNull String prefix) {
+  private static void configureModuleSettings(@NotNull Project p, @NotNull ProjectSettings settings, @NotNull Module ijModule,
+                                          @NotNull Properties properties, Collection<String> filesToAnalyze) {
     String baseDir = InspectionUtils.getModuleRootPath(ijModule);
     if (baseDir == null) {
-      return false;
+      throw new IllegalStateException("No basedir for module " + ijModule);
     }
+    properties.setProperty(PROJECT_BASEDIR, baseDir);
+    properties.setProperty(PROJECT_NAME_PROPERTY, ijModule.getName());
 
-    if ("".equals(prefix)) {
-      // Only on root module
-      properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
-      properties.setProperty(PROJECT_KEY_PROPERTY, settings.getProjectKey());
-    } else {
-      // Only on modules
-      String moduleKey = settings.getModuleKeys().get(ijModule.getName());
-      if (moduleKey == null) {
-        // This module was not associated. Maybe a new module.
-        moduleKey = ijModule.getName();
-      }
-      properties.setProperty(prefix + MODULE_KEY_PROPERTY, moduleKey);
-    }
-    properties.setProperty(prefix + PROJECT_BASEDIR, baseDir);
+    // TODO
+    // properties.setProperty(PROJECT_KEY_PROPERTY, settings.getProjectKey());
 
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(ijModule);
-    Set<String> sources = new LinkedHashSet<String>();
-    Set<String> tests = new LinkedHashSet<String>();
-    configureSourceDirs(properties, prefix, moduleRootManager, sources, tests);
+    configureSourceDirs(properties, moduleRootManager, filesToAnalyze);
 
-    configureLibraries(ijModule, properties, prefix);
+    configureLibraries(ijModule, properties);
 
-    configureBinaries(ijModule, properties, prefix);
-
-    // Skip modules that are not aggregator and that don't have sources
-    return !sources.isEmpty();
+    configureBinaries(ijModule, properties);
   }
 
-  private void configureBinaries(Module ijModule, Properties properties, String prefix) {
+  private static void configureBinaries(Module ijModule, Properties properties) {
     VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
     if (compilerOutput != null) {
       String path = compilerOutput.getCanonicalPath();
       if (path != null) {
-        properties.setProperty(prefix + ScanProperties.PROJECT_BINARY_DIRS, path);
+        properties.setProperty(PROJECT_BINARIES_PROPERTY, path);
       }
     }
   }
 
-  private void configureLibraries(Module ijModule, Properties properties, String prefix) {
+  private static void configureLibraries(Module ijModule, Properties properties) {
     List<String> libs = new ArrayList<String>();
     for (VirtualFile f : getProjectClasspath(ijModule)) {
       libs.add(toFile(f.getPath()));
     }
     if (!libs.isEmpty()) {
-      properties.setProperty(prefix + PROJECT_LIBRARIES_PROPERTY, StringUtils.join(libs, SEPARATOR));
+      properties.setProperty(PROJECT_LIBRARIES_PROPERTY, StringUtils.join(libs, SEPARATOR));
     }
   }
 
-  private void configureSourceDirs(Properties properties, String prefix, ModuleRootManager moduleRootManager, Set<String> sources, Set<String> tests) {
+  private static void configureSourceDirs(Properties properties, ModuleRootManager moduleRootManager, Collection<String> filesToAnalyze) {
+    Collection<String> testFolderPrefix = new ArrayList<>();
     for (ContentEntry contentEntry : moduleRootManager.getContentEntries()) {
       final SourceFolder[] sourceFolders = contentEntry.getSourceFolders();
       for (SourceFolder sourceFolder : sourceFolders) {
         final VirtualFile file = sourceFolder.getFile();
         if (file != null) {
           if (sourceFolder.isTestSource()) {
-            tests.add(file.getPath());
-          } else {
-            sources.add(file.getPath());
+            testFolderPrefix.add(file.getPath());
           }
         }
       }
     }
+    Collection<String> sources = new ArrayList<>();
+    Collection<String> tests = new ArrayList<>();
+
+    for (String f : filesToAnalyze) {
+      boolean isTest = false;
+      for (String testPrefix : testFolderPrefix) {
+        if (f.startsWith(testPrefix)) {
+          isTest = true;
+          break;
+        }
+      }
+      // TODO make relative to basedir
+      if (isTest) {
+        tests.add(f);
+      } else {
+        sources.add(f);
+      }
+    }
+
     if (!sources.isEmpty()) {
-      properties.setProperty(prefix + PROJECT_SOURCES_PROPERTY, StringUtils.join(sources, SEPARATOR));
+      properties.setProperty(PROJECT_SOURCES_PROPERTY, StringUtils.join(sources, SEPARATOR));
     }
     if (!tests.isEmpty()) {
-      properties.setProperty(prefix + PROJECT_TESTS_PROPERTY, StringUtils.join(tests, SEPARATOR));
+      properties.setProperty(PROJECT_TESTS_PROPERTY, StringUtils.join(tests, SEPARATOR));
     }
   }
 
@@ -224,7 +211,7 @@ public class SonarRunnerAnalysis {
     return null;
   }
 
-  private String toFile(String path) {
+  private static String toFile(String path) {
     Matcher m = JAR_PATTERN.matcher(path);
     if (m.matches()) {
       return m.group(1);
@@ -233,46 +220,16 @@ public class SonarRunnerAnalysis {
   }
 
 
-  public void run(Project project, Properties props, boolean debugEnabled, String jvmArgs, final ProgressIndicator monitor) {
+  public static void run(ProjectSettings projectSettings, SonarQubeRunner runner, Properties props, SonarQubeConsole console, IssueListener listener) {
 
-    try {
-      if (debugEnabled) {
+      if (projectSettings.isVerboseEnabled()) {
         console.info("Start sonar-runner with args:\n" + propsToString(props));
       }
 
-      ForkedRunner.create(new ProcessMonitor() {
-        @Override
-        public boolean stop() {
-          return monitor.isCanceled();
-        }
-      })
-          .setApp("IntelliJ IDEA", ApplicationInfo.getInstance().getFullVersion())
-          .addProperties(props)
-          .addJvmArguments(jvmArgs.trim().split("\\s+"))
-          .setStdOut(new StreamConsumer() {
-            public void consumeLine(String text) {
-              console.info(text);
-            }
-          })
-          .setStdErr(new StreamConsumer() {
-            public void consumeLine(String text) {
-              console.error(text);
-            }
-          })
-          .execute();
+    runner.startAnalysis(props, listener);
 
-    } catch (Exception e) {
-      handleException(monitor, e);
-    }
   }
 
-  private void handleException(final ProgressIndicator monitor, Exception e) {
-    if (monitor.isCanceled()) {
-      // On OSX it seems that cancelling produce an exception so we just ignore it
-      return;
-    }
-    throw new RuntimeException(e);
-  }
 
   private static String propsToString(Properties props) {
     StringBuilder builder = new StringBuilder();

@@ -35,13 +35,13 @@
 
   <project-components>
     <component>
+      <implementation-class>org.sonar.ide.intellij.console.SonarQubeConsole</implementation-class>
+    </component>
+    <component>
       <implementation-class>org.sonar.ide.intellij.config.ProjectSettings</implementation-class>
     </component>
     <component>
-      <implementation-class>org.sonar.ide.intellij.inspection.SonarQubeIssueCache</implementation-class>
-    </component>
-    <component>
-      <implementation-class>org.sonar.ide.intellij.console.SonarQubeConsole</implementation-class>
+      <implementation-class>org.sonar.ide.intellij.inspection.SonarQubeRunner</implementation-class>
     </component>
   </project-components>
 
@@ -55,15 +55,9 @@
   <extensions defaultExtensionNs="com.intellij">
     <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
 
-    <codeInspection.InspectionExtension id="sonarqubeInspection"
-                                        implementation="org.sonar.ide.intellij.inspection.SonarQubeInspectionExtensionsFactory"/>
-
     <globalInspection hasStaticDescription="true" shortName="SonarQubeIssue" displayName="SonarQube Issue"
                       groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true" level="WARNING"
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeGlobalInspection"/>
-
-    <!-- Disable annotator until we find a better way to relocate issues at the correct location -->
-    <externalAnnotator language="JAVA" implementationClass="org.sonar.ide.intellij.inspection.SonarQubeExternalAnnotator"/>
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 

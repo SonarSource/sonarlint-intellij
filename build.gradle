@@ -1,8 +1,18 @@
 #!groovy
 // The above triggers groovy syntax highlighting in vim
 
+buildscript {
+  dependencies {
+    classpath group: 'org.jetbrains', name: 'gradle-intellij-plugin', version: '0.0.22'
+  }
+
+  repositories {
+    mavenLocal()
+  }
+}
+
 plugins {
-  id "org.jetbrains.intellij" version "0.0.20"
+//  id "org.jetbrains.intellij" version "0.0.21"
   id "org.sonarqube" version "1.0"
 }
 
@@ -27,7 +37,7 @@ repositories {
 }
 
 dependencies {
-  compile 'org.codehaus.sonar.runner:sonar-runner-api:2.4'
+  compile 'org.sonarsource.sonar-runner:sonar-runner-api:2.5-SNAPSHOT'
   compile 'org.codehaus.sonar:sonar-ws-client:4.5.1'
   compile 'commons-lang:commons-lang:2.4'
   compile 'commons-io:commons-io:2.4'

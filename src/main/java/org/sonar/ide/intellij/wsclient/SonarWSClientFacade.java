@@ -20,24 +20,14 @@
 package org.sonar.ide.intellij.wsclient;
 
 import com.intellij.openapi.diagnostic.Logger;
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.jetbrains.annotations.Nullable;
-import org.sonar.ide.intellij.model.ISonarIssue;
-import org.sonar.ide.intellij.model.ISonarIssueWithPath;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.wsclient.Sonar;
 import org.sonar.wsclient.SonarClient;
-import org.sonar.wsclient.component.Component;
 import org.sonar.wsclient.connectors.ConnectionException;
-import org.sonar.wsclient.issue.Issue;
-import org.sonar.wsclient.issue.IssueQuery;
-import org.sonar.wsclient.issue.Issues;
-import org.sonar.wsclient.rule.Rule;
 import org.sonar.wsclient.services.*;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 public class SonarWSClientFacade implements ISonarWSClientFacade {
@@ -56,7 +46,7 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
   public ConnectionTestResult testConnection() {
     try {
       Authentication auth = sonar.find(new AuthenticationQuery());
-      if (auth.isValid()) {
+      if (auth != null && auth.isValid()) {
         return ConnectionTestResult.OK;
       } else {
         return ConnectionTestResult.AUTHENTICATION_ERROR;
@@ -141,157 +131,6 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     return result;
   }
 
-  @Override
-  public boolean exists(String resourceKey) {
-    return find(new ResourceQuery().setResourceKeyOrId(resourceKey)) != null;
-  }
-
-  @Override
-  public Date getLastAnalysisDate(String resourceKey) {
-    Resource remoteResource = find(ResourceQuery.createForMetrics(resourceKey));
-    if (remoteResource != null) {
-      return remoteResource.getDate();
-    }
-    return null;
-  }
-
-  @Override
-  public String[] getRemoteCode(String resourceKey) {
-    Source source = find(SourceQuery.create(resourceKey));
-    String[] remote = new String[source.getLinesById().lastKey()];
-    for (int i = 0; i < remote.length; i++) {
-      remote[i] = source.getLine(i + 1);
-      if (remote[i] == null) {
-        remote[i] = "";
-      }
-    }
-    return remote;
-  }
-
-  @Override
-  public List<ISonarIssueWithPath> getUnresolvedRemoteIssuesRecursively(String resourceKey) {
-    int maxPageSize = -1;
-    List<ISonarIssueWithPath> result = new ArrayList<ISonarIssueWithPath>();
-    int pageIndex = 1;
-    Issues issues;
-    do {
-      issues = findIssues(IssueQuery.create().componentRoots(resourceKey).resolved(false).pageSize(maxPageSize).pageIndex(pageIndex));
-      for (Issue issue : issues.list()) {
-        processIssue(result, issues, issue);
-      }
-    } while (pageIndex++ < issues.paging().pages());
-    return result;
-  }
-
-  private void processIssue(List<ISonarIssueWithPath> result, Issues issues, Issue issue) {
-    Component comp = issues.component(issue);
-    if (comp != null) {
-      Long subProjectId = comp.subProjectId();
-      String subProjectKey = null;
-      if (subProjectId != null) {
-        Component subProject = issues.componentById(subProjectId);
-        if (subProject != null) {
-          subProjectKey = subProject.key();
-        }
-      }
-      result.add(new SonarRemoteIssue(issue, issues.rule(issue), comp.path(), subProjectKey));
-    }
-  }
-
-  @Override
-  public List<ISonarIssue> getUnresolvedRemoteIssues(String resourceKey) {
-    Issues issues = findIssues(IssueQuery.create().components(resourceKey).resolved(false));
-    List<ISonarIssue> result = new ArrayList<ISonarIssue>(issues.list().size());
-    for (Issue issue : issues.list()) {
-      result.add(new SonarRemoteIssue(issue, issues.rule(issue), null, null));
-    }
-    return result;
-  }
-
-  private Issues findIssues(IssueQuery query) {
-    try {
-      return sonarClient.issueClient().find(query);
-    } catch (ConnectionException e) {
-      throw new org.sonar.ide.intellij.wsclient.ConnectionException(e);
-    } catch (Exception e) {
-      throw new org.sonar.ide.intellij.wsclient.SonarWSClientException("Error during issue query " + query.toString(), e);
-    }
-  }
-
-  private static class SonarRemoteIssue implements ISonarIssueWithPath {
-
-    private final Issue remoteIssue;
-    private Rule rule;
-    private final String path;
-    private final String subprojectKey;
-
-    public SonarRemoteIssue(final Issue remoteIssue, final Rule rule, @Nullable final String path, @Nullable final String subprojectKey) {
-      this.remoteIssue = remoteIssue;
-      this.rule = rule;
-      this.path = path;
-      this.subprojectKey = subprojectKey;
-    }
-
-    @Override
-    public String key() {
-      return remoteIssue.key();
-    }
-
-    @Override
-    public String resourceKey() {
-      return remoteIssue.componentKey();
-    }
-
-    @Override
-    public String path() {
-      return path;
-    }
-
-    @Override
-    public String subprojectKey() {
-      return subprojectKey;
-    }
-
-    @Override
-    public boolean resolved() {
-      return StringUtils.isNotBlank(remoteIssue.resolution());
-    }
-
-    @Override
-    public Integer line() {
-      return remoteIssue.line();
-    }
-
-    @Override
-    public String severity() {
-      return remoteIssue.severity();
-    }
-
-    @Override
-    public String message() {
-      return remoteIssue.message();
-    }
-
-    @Override
-    public String ruleKey() {
-      return rule.key();
-    }
-
-    @Override
-    public String ruleName() {
-      return rule.name();
-    }
-
-    @Override
-    public String assignee() {
-      return remoteIssue.assignee();
-    }
-
-    @Override
-    public boolean isNew() {
-      return false;
-    }
-  }
 
   private static class SonarRemoteModule implements ISonarRemoteProject, ISonarRemoteModule {
 

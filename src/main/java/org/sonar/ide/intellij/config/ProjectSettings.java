@@ -19,14 +19,26 @@
  */
 package org.sonar.ide.intellij.config;
 
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.components.*;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.sonar.ide.intellij.console.SonarQubeConsole;
+import org.sonar.ide.intellij.model.SonarQubeServer;
+import org.sonar.ide.intellij.util.SonarQubeConstants;
+import org.sonar.runner.api.EmbeddedRunner;
+import org.sonar.runner.api.IssueListener;
+import org.sonar.runner.api.LogOutput;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 @State(
     name = "SonarQubeConfiguration",
@@ -39,7 +51,6 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
 
   private String serverId = null;
   private String projectKey = null;
-  private Map<String, String> moduleKeys = new HashMap<String, String>();
   private boolean verboseEnabled = false;
 
   @CheckForNull
@@ -69,14 +80,6 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
     return this.serverId != null && this.projectKey != null;
   }
 
-  public Map<String, String> getModuleKeys() {
-    return moduleKeys != null ? moduleKeys : new HashMap<String, String>();
-  }
-
-  public void setModuleKeys(Map<String, String> moduleKeys) {
-    this.moduleKeys = moduleKeys;
-  }
-
   public ProjectSettings getState() {
     return this;
   }
@@ -87,12 +90,10 @@ public final class ProjectSettings implements PersistentStateComponent<ProjectSe
 
   @Override
   public void projectOpened() {
-    // Nothing to do
   }
 
   @Override
   public void projectClosed() {
-    // Nothing to do
   }
 
   @Override

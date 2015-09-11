@@ -118,4 +118,12 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
     }
     return null;
   }
+
+  public SonarQubeServer getDefaultServer() {
+    // FIXME
+    if (getServers().isEmpty()) {
+      throw new IllegalStateException("No SonarQube server configured");
+    }
+    return getServers().get(0);
+  }
 }

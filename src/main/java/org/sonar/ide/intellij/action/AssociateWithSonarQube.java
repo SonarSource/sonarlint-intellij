@@ -65,13 +65,7 @@ public class AssociateWithSonarQube extends AnAction {
   private void associate(Project p, ProjectSettings settings, @NotNull ISonarRemoteProject sonarProject) {
     ModuleManager moduleManager = ModuleManager.getInstance(p);
     Module[] ijModules = moduleManager.getModules();
-    settings.getModuleKeys().clear();
     SonarQubeConsole console = SonarQubeConsole.getSonarQubeConsole(p);
-    if (ijModules.length == 1) {
-      settings.getModuleKeys().put(ijModules[0].getName(), sonarProject.getKey());
-    } else if (ijModules.length > 1) {
-      //TODO
-    }
 
     settings.setServerId(sonarProject.getServer().getId());
     settings.setProjectKey(sonarProject.getKey());
