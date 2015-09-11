@@ -45,6 +45,8 @@ import org.sonar.runner.api.ScanProperties;
 import org.sonar.runner.api.StreamConsumer;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -76,11 +78,12 @@ public class SonarRunnerAnalysis {
   public File analyzeProject(ProgressIndicator indicator, Project p, ProjectSettings projectSettings, SonarQubeServer server, boolean debugEnabled, String jvmArgs) {
     console = SonarQubeConsole.getSonarQubeConsole(p);
 
-    // Configure
-    Properties properties = new Properties();
-    configureProjectSettings(p, properties);
     File baseDir = new File(p.getBasePath());
     File projectSpecificWorkDir = new File(new File(baseDir, ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR), "sonarqube");
+
+    // Configure
+    Properties properties = initProperties(baseDir);
+    configureProjectSettings(p, properties);
     properties.setProperty(WORK_DIR, projectSpecificWorkDir.getAbsolutePath());
     File outputFile = new File(projectSpecificWorkDir, "sonar-report.json");
     GlobalConfigurator.configureAnalysis(p, outputFile, projectSettings, server, debugEnabled, new PropertyParamWrapper(properties));
@@ -95,6 +98,21 @@ public class SonarRunnerAnalysis {
       console.info("Done in " + (System.currentTimeMillis() - start) + "ms\n");
     }
     return outputFile;
+  }
+
+  private Properties initProperties(File baseDir) {
+    Properties properties = new Properties();
+
+    File sonarProjectProperties = new File(baseDir, "sonar-project.properties");
+    if (sonarProjectProperties.exists()) {
+      try {
+        FileReader reader = new FileReader(sonarProjectProperties);
+        properties.load(reader);
+        reader.close();
+      } catch (IOException e) {}
+    }
+
+    return properties;
   }
 
   private void configureProjectSettings(Project p, Properties properties) {
