@@ -2,7 +2,7 @@
   <id>org.sonar.ide.idea</id>
   <name>SonarQube</name>
   <version>${project.version}</version>
-  <vendor logo="/images/sonarqube-48x200.png" email="dev@sonar.codehaus.org" url="http://www.sonarsource.com">SonarSource</vendor>
+  <vendor email="dev@sonar.codehaus.org" url="http://www.sonarsource.com">SonarSource</vendor>
 
   <description><![CDATA[
       SonarQube plugin for IntelliJ IDEA.
@@ -58,6 +58,13 @@
     <globalInspection hasStaticDescription="true" shortName="SonarQubeIssue" displayName="SonarQube Issue"
                       groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true" level="WARNING"
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeGlobalInspection"/>
+
+    <!--localInspection implementationClass="org.sonar.ide.intellij.inspection.SonarQubeLocalInspection"
+                     bundle="org.sonar.ide.intellij.util.SonarQubeBundle"
+                     key="sonarqube.inspection.local"
+                     groupKey="sonarqube.inspection.group.title"
+                     level="WARNING"
+                     enabledByDefault="true"/-->
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 

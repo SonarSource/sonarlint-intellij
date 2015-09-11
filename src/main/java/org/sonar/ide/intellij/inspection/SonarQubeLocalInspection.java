@@ -1,10 +1,9 @@
 package org.sonar.ide.intellij.inspection;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.intellij.analysis.AnalysisScope;
-import com.intellij.codeInspection.*;
-import com.intellij.codeInspection.reference.RefElement;
+import com.intellij.codeInspection.InspectionManager;
+import com.intellij.codeInspection.LocalInspectionTool;
+import com.intellij.codeInspection.ProblemDescriptor;
+import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
@@ -13,46 +12,63 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
 import org.sonar.runner.api.Issue;
 import org.sonar.runner.api.IssueListener;
 
-import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
-public class SonarQubeGlobalInspection extends GlobalInspectionTool {
+public class SonarQubeLocalInspection extends LocalInspectionTool {
 
+  private final SonarQubeGlobalInspection delegate;
+
+  public SonarQubeLocalInspection(SonarQubeGlobalInspection delegate) {
+    this.delegate = delegate;
+  }
+
+  @NotNull
   @Override
-  public void runInspection(@NotNull final AnalysisScope scope, @NotNull final InspectionManager manager, @NotNull final GlobalInspectionContext globalContext, @NotNull final ProblemDescriptionsProcessor problemDescriptionsProcessor) {
-    final Project project = globalContext.getProject();
+  public final String getShortName() {
+    return delegate.getShortName();
+  }
+
+  @Nls
+  @NotNull
+  @Override
+  public final String getDisplayName() {
+    return delegate.getDisplayName();
+  }
+
+  @Nullable
+  @Override
+  public ProblemDescriptor[] checkFile(@NotNull PsiFile file, @NotNull final InspectionManager manager, final boolean isOnTheFly) {
+    if (file.getFileType().isBinary() || !file.isValid()) {
+      return new ProblemDescriptor[0];
+    }
+    final Project project = file.getProject();
     final SonarQubeConsole sonarQubeConsole = SonarQubeConsole.getSonarQubeConsole(project);
-    final Multimap<Module, String> filesToAnalyze = HashMultimap.create();
-    scope.accept(new PsiElementVisitor() {
-      @Override
-      public void visitFile(PsiFile psiFile) {
-        if (psiFile.getFileType().isBinary() || !psiFile.isValid()) {
-          return;
-        }
-        final Module module = ModuleUtil.findModuleForPsiElement(psiFile);
-        if (module != null) {
-          String realFile = realFilePath(module, psiFile);
-          if (realFile != null) {
-            filesToAnalyze.put(module, realFile);
-          }
-        }
-      }
-    });
-    for (Module m : filesToAnalyze.keySet()) {
-      final VirtualFile baseDir = InspectionUtils.getModuleRoot(m);
+    final Module module = ModuleUtil.findModuleForPsiElement(file);
+    if (module == null) {
+      return new ProblemDescriptor[0];
+    }
+      final VirtualFile baseDir = InspectionUtils.getModuleRoot(module);
       if (baseDir == null) {
-        throw new IllegalStateException("No basedir for module " + m);
+        throw new IllegalStateException("No basedir for module " + module);
       }
-      SonarRunnerAnalysis.analyzeModule(m, filesToAnalyze.get(m), new IssueListener() {
+    String filePath = realFilePath(module, file);
+    if (filePath == null) {
+      return new ProblemDescriptor[0];
+    }
+    final Collection<ProblemDescriptor> problems = new ArrayList<>();
+    SonarRunnerAnalysis.analyzeModule(module, Collections.singleton(filePath), new IssueListener() {
         @Override
         public void handle(Issue issue) {
           String path = StringUtils.substringAfterLast(issue.getComponentKey(), ":");
@@ -61,35 +77,19 @@ public class SonarQubeGlobalInspection extends GlobalInspectionTool {
             PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
             if (psiFile != null) {
               PsiElement element = InspectionUtils.getStartElementAtLine(psiFile, issue);
-              RefElement reference = globalContext.getRefManager().getReference(psiFile);
-              problemDescriptionsProcessor.addProblemElement(reference, manager.createProblemDescriptor(element != null ? element : psiFile,
+              problems.add(manager.createProblemDescriptor(
+                  element != null ? element : psiFile,
                   InspectionUtils.getProblemMessage(issue),
-                  new LocalQuickFix[0],
-                  problemHighlightType(issue),
-                  false,
-                  false
-              ));
+                  null,
+                  delegate.problemHighlightType(issue),
+                  isOnTheFly,
+                  false));
             }
           }
         }
       });
-    }
-  }
 
-  ProblemHighlightType problemHighlightType(Issue issue) {
-    switch (issue.getSeverity()) {
-      case "BLOCKER":
-      case "CRITICAL":
-        return ProblemHighlightType.ERROR;
-      case "MAJOR":
-        return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
-      case "MINOR":
-        return ProblemHighlightType.WEAK_WARNING;
-      case "INFO":
-        return ProblemHighlightType.INFORMATION;
-      default:
-        return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
-    }
+    return problems.toArray(new ProblemDescriptor[problems.size()]);
   }
 
   @Nullable
@@ -125,17 +125,6 @@ public class SonarQubeGlobalInspection extends GlobalInspectionTool {
         return fileDocumentManager.isDocumentUnsaved(document);
       }
     }
-    return false;
-  }
-
-  @Nullable
-  @Override
-  public LocalInspectionTool getSharedLocalInspectionTool() {
-    return new SonarQubeLocalInspection(this);
-  }
-
-  @Override
-  public boolean isGraphNeeded() {
     return false;
   }
 
