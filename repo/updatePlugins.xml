@@ -1,0 +1,3 @@
+<plugins>
+    <plugin id="SonarLint" url="https://github.com/SonarSource/sonar-intellij/releases/download/2.0-alpha-1/SonarLint-2.0-SNAPSHOT.zip" version="2.0-alpha-1"/>
+</plugins>
