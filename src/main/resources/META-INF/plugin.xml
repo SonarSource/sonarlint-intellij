@@ -1,15 +1,16 @@
-<idea-plugin version="2" url="${project.url}">
+<idea-plugin version="2" url="http://docs.sonarqube.org/display/SONAR/SonarQube+in+IntelliJ">
   <id>org.sonar.ide.idea</id>
   <name>SonarQube</name>
   <version>${project.version}</version>
-  <vendor email="dev@sonar.codehaus.org" url="http://www.sonarsource.com">SonarSource</vendor>
+  <vendor email="sonarqube@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
 
   <description><![CDATA[
-      SonarQube plugin for IntelliJ IDEA.
+      SonarLint for IntelliJ IDEA.
       ]]></description>
 
   <change-notes><![CDATA[
       <ul>
+        <li>2.0 - SonarLint</li>
         <li>1.1 - Support SonarQube 4.2</li>
         <li>1.0 - Use SonarQube Runner for mutli-module analysis, enable annotations, rework association screen</li>
         <li>0.9 - Support analysis of Maven projects</li>
@@ -17,10 +18,10 @@
       ]]>
   </change-notes>
 
-  <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Build+Number+Ranges for description -->
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
   <idea-version since-build="133.193"/>
 
-  <!-- please see http://confluence.jetbrains.net/display/IDEADEV/Plugin+Compatibility+with+IntelliJ+Platform+Products
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
   <depends>com.intellij.modules.lang</depends>
 
@@ -46,10 +47,10 @@
   </project-components>
 
   <actions>
-    <action id="associate" icon="/images/onde-sonar-16.png" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube"
+    <!--action id="associate" icon="/images/onde-sonar-16.png" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube"
             description="Associate with a remote SonarQube server">
       <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddFrameworkSupport"/>
-    </action>
+    </action-->
   </actions>
 
   <extensions defaultExtensionNs="com.intellij">
@@ -58,13 +59,6 @@
     <globalInspection hasStaticDescription="true" shortName="SonarQubeIssue" displayName="SonarQube Issue"
                       groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true" level="WARNING"
                       implementationClass="org.sonar.ide.intellij.inspection.SonarQubeGlobalInspection"/>
-
-    <!--localInspection implementationClass="org.sonar.ide.intellij.inspection.SonarQubeLocalInspection"
-                     bundle="org.sonar.ide.intellij.util.SonarQubeBundle"
-                     key="sonarqube.inspection.local"
-                     groupKey="sonarqube.inspection.group.title"
-                     level="WARNING"
-                     enabledByDefault="true"/-->
 
     <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
 

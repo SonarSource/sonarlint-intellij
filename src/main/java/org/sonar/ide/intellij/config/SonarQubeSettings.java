@@ -102,10 +102,12 @@ public final class SonarQubeSettings implements PersistentStateComponent<SonarQu
     return null;
   }
 
+  @Override
   public void initComponent() {
     // Nothing to do
   }
 
+  @Override
   public void disposeComponent() {
     // Nothing to do
   }

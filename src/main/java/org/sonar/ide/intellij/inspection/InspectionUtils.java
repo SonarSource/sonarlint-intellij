@@ -139,7 +139,7 @@ public class InspectionUtils {
   }
 
   public static String getProblemMessage(@NotNull Issue issue) {
-    return issue.isNew() ? "NEW: " + issue.getMessage() : issue.getMessage();
+    return issue.getMessage();
   }
 
 

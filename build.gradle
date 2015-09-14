@@ -19,15 +19,15 @@ plugins {
 apply plugin: 'org.jetbrains.intellij'
 
 group = 'org.sonarsource.sonar-intellij'
-version = '1.2-SNAPSHOT'
-description = 'SonarQube Integration for IntelliJ'
+version = '2.0-SNAPSHOT'
+description = 'SonarLint for IntelliJ'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 intellij {
   version '14.1.4'
-  pluginName 'SonarQube'
+  pluginName 'SonarLint'
 }
 
 repositories {
