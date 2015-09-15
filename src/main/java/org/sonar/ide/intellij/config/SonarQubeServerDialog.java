@@ -155,7 +155,7 @@ public class SonarQubeServerDialog extends DialogWrapper {
     public void actionPerformed(ActionEvent e) {
       if (doValidate() == null) {
         ISonarWSClientFacade.ConnectionTestResult result = WSClientFactory.getInstance().getSonarClient(SonarQubeServerDialog.this.server, false).testConnection();
-        switch (result) {
+        switch (result.getStatus()) {
           case OK:
             Messages.showInfoMessage(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ok"), SonarQubeBundle.message("sonarqube.settings.server.test"));
             return;
@@ -163,7 +163,8 @@ public class SonarQubeServerDialog extends DialogWrapper {
             Messages.showErrorDialog(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.authko"), SonarQubeBundle.message("sonarqube.settings.server.test"));
             return;
           case CONNECT_ERROR:
-            Messages.showErrorDialog(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ko"), SonarQubeBundle.message("sonarqube.settings.server.test"));
+            Messages.showErrorDialog(contentPane, SonarQubeBundle.message("sonarqube.settings.server.test.ko", result.getMsg()),
+                SonarQubeBundle.message("sonarqube.settings.server.test"));
             return;
           default:
             LOG.error("Unknow status " + result);

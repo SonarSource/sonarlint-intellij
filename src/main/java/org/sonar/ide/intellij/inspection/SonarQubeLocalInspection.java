@@ -76,14 +76,7 @@ public class SonarQubeLocalInspection extends LocalInspectionTool {
           if (file != null) {
             PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
             if (psiFile != null) {
-              PsiElement element = InspectionUtils.getStartElementAtLine(psiFile, issue);
-              problems.add(manager.createProblemDescriptor(
-                  element != null ? element : psiFile,
-                  InspectionUtils.getProblemMessage(issue),
-                  null,
-                  delegate.problemHighlightType(issue),
-                  isOnTheFly,
-                  false));
+              problems.add(delegate.getProblemDescriptor(issue, psiFile, manager));
             }
           }
         }

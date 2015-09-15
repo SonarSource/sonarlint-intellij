@@ -23,8 +23,26 @@ import java.util.List;
 
 public interface ISonarWSClientFacade {
 
-  public static enum ConnectionTestResult {
-    OK, CONNECT_ERROR, AUTHENTICATION_ERROR;
+  public static class ConnectionTestResult {
+    public enum Status {
+      OK, CONNECT_ERROR, AUTHENTICATION_ERROR;
+    }
+
+    private final Status status;
+    private final String msg;
+
+    ConnectionTestResult(Status status, String msg) {
+      this.status = status;
+      this.msg = msg;
+    }
+
+    public Status getStatus() {
+      return status;
+    }
+
+    public String getMsg() {
+      return msg;
+    }
   }
 
   ConnectionTestResult testConnection();

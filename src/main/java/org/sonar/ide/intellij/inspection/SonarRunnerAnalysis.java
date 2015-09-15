@@ -168,6 +168,9 @@ public class SonarRunnerAnalysis {
 
     if (!sources.isEmpty()) {
       properties.setProperty(PROJECT_SOURCES_PROPERTY, StringUtils.join(sources, SEPARATOR));
+    } else {
+      // sonar.sources is mandatory
+      properties.setProperty(PROJECT_SOURCES_PROPERTY,"");
     }
     if (!tests.isEmpty()) {
       properties.setProperty(PROJECT_TESTS_PROPERTY, StringUtils.join(tests, SEPARATOR));

@@ -17,6 +17,7 @@ import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.ide.intellij.console.SonarQubeConsole;
@@ -60,19 +61,32 @@ public class SonarQubeGlobalInspection extends GlobalInspectionTool {
           if (file != null) {
             PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
             if (psiFile != null) {
-              PsiElement element = InspectionUtils.getStartElementAtLine(psiFile, issue);
+
               RefElement reference = globalContext.getRefManager().getReference(psiFile);
-              problemDescriptionsProcessor.addProblemElement(reference, manager.createProblemDescriptor(element != null ? element : psiFile,
-                  InspectionUtils.getProblemMessage(issue),
-                  new LocalQuickFix[0],
-                  problemHighlightType(issue),
-                  false,
-                  false
-              ));
+              problemDescriptionsProcessor.addProblemElement(reference, getProblemDescriptor(issue, psiFile, manager));
             }
           }
         }
       });
+    }
+  }
+
+  ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager) {
+    PsiElement startElement = InspectionUtils.getStartElementAtLine(psiFile, issue);
+    PsiElement endElement = InspectionUtils.getEndElementAtLine(psiFile, issue);
+    if (endElement != null) {
+      return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
+          endElement,
+          InspectionUtils.getProblemMessage(issue),
+          problemHighlightType(issue),
+          false);
+    } else {
+      return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
+          InspectionUtils.getProblemMessage(issue),
+          new LocalQuickFix[0],
+          problemHighlightType(issue),
+          false,
+          false);
     }
   }
 

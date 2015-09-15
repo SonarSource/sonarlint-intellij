@@ -23,7 +23,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.sonar.ide.intellij.model.SonarQubeServer;
 import org.sonar.wsclient.Sonar;
-import org.sonar.wsclient.SonarClient;
 import org.sonar.wsclient.connectors.ConnectionException;
 import org.sonar.wsclient.services.*;
 
@@ -33,12 +32,10 @@ import java.util.List;
 public class SonarWSClientFacade implements ISonarWSClientFacade {
 
   private final Sonar sonar;
-  private final SonarClient sonarClient;
   private final SonarQubeServer server;
 
-  public SonarWSClientFacade(final Sonar sonar, final SonarClient sonarClient, final SonarQubeServer server) {
+  public SonarWSClientFacade(final Sonar sonar, final SonarQubeServer server) {
     this.sonar = sonar;
-    this.sonarClient = sonarClient;
     this.server = server;
   }
 
@@ -47,13 +44,13 @@ public class SonarWSClientFacade implements ISonarWSClientFacade {
     try {
       Authentication auth = sonar.find(new AuthenticationQuery());
       if (auth != null && auth.isValid()) {
-        return ConnectionTestResult.OK;
+        return new ConnectionTestResult(ConnectionTestResult.Status.OK, "");
       } else {
-        return ConnectionTestResult.AUTHENTICATION_ERROR;
+        return new ConnectionTestResult(ConnectionTestResult.Status.AUTHENTICATION_ERROR, "");
       }
     } catch (ConnectionException e) {
-      Logger.getInstance(getClass()).error("Unable to connect", e);
-      return ConnectionTestResult.CONNECT_ERROR;
+      Logger.getInstance(getClass()).error("Unable to connect: " + e.getMessage(), e);
+      return new ConnectionTestResult(ConnectionTestResult.Status.CONNECT_ERROR, e.getCause().getLocalizedMessage());
     }
   }
 

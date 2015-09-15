@@ -74,11 +74,12 @@ public final class SonarQubeRunner extends AbstractProjectComponent {
     if (!started) {
       SonarQubeSettings settings = SonarQubeSettings.getInstance();
       SonarQubeServer server;
-      if (projectSettings.isAssociated()) {
-        server = settings.getServer(projectSettings.getServerId());
-      } else {
+      // TODO
+//      if (projectSettings.isAssociated()) {
+//        server = settings.getServer(projectSettings.getServerId());
+//      } else {
         server = settings.getDefaultServer();
-      }
+//      }
       tryStart(server);
     }
   }

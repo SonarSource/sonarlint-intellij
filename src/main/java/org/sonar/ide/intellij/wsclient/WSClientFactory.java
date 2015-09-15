@@ -78,7 +78,7 @@ public final class WSClientFactory implements ApplicationComponent {
     } else {
       host = new Host(sonarServer.getUrl());
     }
-    return new SonarWSClientFacade(create(host), createSonarClient(host), sonarServer);
+    return new SonarWSClientFacade(create(host), sonarServer);
   }
 
   /**
@@ -88,26 +88,6 @@ public final class WSClientFactory implements ApplicationComponent {
     HttpClient4Connector connector = new HttpClient4Connector(host);
     configureProxy(connector.getHttpClient(), host);
     return new Sonar(connector);
-  }
-
-  /**
-   * Creates new Sonar web service client, which uses proxy settings from IntelliJ.
-   */
-  private SonarClient createSonarClient(Host host) {
-    SonarClient.Builder builder = SonarClient.builder()
-        .url(host.getHost())
-        .login(host.getUsername())
-        .password(host.getPassword());
-    Proxy proxy = getIntelliJProxyFor(host);
-    if (proxy != null) {
-      InetSocketAddress address = (InetSocketAddress) proxy.address();
-      HttpConfigurable proxySettings = HttpConfigurable.getInstance();
-      builder.proxy(address.getHostName(), address.getPort());
-      if (proxySettings.PROXY_AUTHENTICATION) {
-        builder.proxyLogin(proxySettings.PROXY_LOGIN).proxyPassword(proxySettings.getPlainProxyPassword());
-      }
-    }
-    return builder.build();
   }
 
   /**

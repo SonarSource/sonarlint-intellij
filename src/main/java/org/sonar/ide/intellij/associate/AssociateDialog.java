@@ -62,7 +62,7 @@ public class AssociateDialog extends DialogWrapper {
     for (SonarQubeServer server : SonarQubeSettings.getInstance().getServers()) {
       try {
         ISonarWSClientFacade sonarClient = WSClientFactory.getInstance().getSonarClient(server);
-        if (sonarClient.testConnection() != ISonarWSClientFacade.ConnectionTestResult.OK) {
+        if (sonarClient.testConnection().getStatus() != ISonarWSClientFacade.ConnectionTestResult.Status.OK) {
           LOG.error(String.format(UNABLE_TO_CONNECT_MSG, server.getId()));
           continue;
         }
