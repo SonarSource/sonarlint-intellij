@@ -6,7 +6,7 @@ jdk:
   - oraclejdk7
 
 script:
-  - ./gradlew buildPlugin
+  - ./travis.sh
 
 cache:
   directories:
