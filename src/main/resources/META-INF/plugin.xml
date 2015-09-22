@@ -1,6 +1,6 @@
 <idea-plugin version="2" url="http://docs.sonarqube.org/display/SONAR/SonarQube+in+IntelliJ">
-  <id>org.sonar.ide.idea</id>
-  <name>SonarQube</name>
+  <id>org.sonarlint.idea</id>
+  <name>SonarLint</name>
   <version>${project.version}</version>
   <vendor email="sonarqube@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
 
@@ -10,10 +10,7 @@
 
   <change-notes><![CDATA[
       <ul>
-        <li>2.0 - SonarLint</li>
-        <li>1.1 - Support SonarQube 4.2</li>
-        <li>1.0 - Use SonarQube Runner for mutli-module analysis, enable annotations, rework association screen</li>
-        <li>0.9 - Support analysis of Maven projects</li>
+        <li>1.0 - On the fly analysis</li>
       </ul>
       ]]>
   </change-notes>
@@ -27,40 +24,28 @@
 
   <application-components>
     <component>
-      <implementation-class>org.sonar.ide.intellij.config.SonarQubeSettings</implementation-class>
-    </component>
-    <component>
-      <implementation-class>org.sonar.ide.intellij.wsclient.WSClientFactory</implementation-class>
+      <implementation-class>org.sonarlint.intellij.config.SonarLintGlobalSettings</implementation-class>
     </component>
   </application-components>
 
   <project-components>
     <component>
-      <implementation-class>org.sonar.ide.intellij.console.SonarQubeConsole</implementation-class>
+      <implementation-class>org.sonarlint.intellij.console.SonarLintConsole</implementation-class>
     </component>
     <component>
-      <implementation-class>org.sonar.ide.intellij.config.ProjectSettings</implementation-class>
+      <implementation-class>org.sonarlint.intellij.config.SonarLintProjectSettings</implementation-class>
     </component>
     <component>
-      <implementation-class>org.sonar.ide.intellij.inspection.SonarQubeRunner</implementation-class>
+      <implementation-class>org.sonarlint.intellij.inspection.SonarQubeRunnerFacade</implementation-class>
     </component>
   </project-components>
 
-  <actions>
-    <!--action id="associate" icon="/images/onde-sonar-16.png" class="org.sonar.ide.intellij.action.AssociateWithSonarQube" text="Associate with SonarQube"
-            description="Associate with a remote SonarQube server">
-      <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="AddFrameworkSupport"/>
-    </action-->
-  </actions>
-
   <extensions defaultExtensionNs="com.intellij">
-    <applicationConfigurable instance="org.sonar.ide.intellij.config.SonarQubeConfigurable"/>
+    <globalInspection hasStaticDescription="true" shortName="SonarLint" displayName="SonarLint"
+                      groupKey="sonarlint.inspection.group.title" bundle="org.sonarlint.intellij.util.SonarLintBundle" enabledByDefault="true" level="WARNING"
+                      implementationClass="org.sonarlint.intellij.inspection.SonarLintGlobalInspection"/>
 
-    <globalInspection hasStaticDescription="true" shortName="SonarQubeIssue" displayName="SonarQube Issue"
-                      groupKey="sonarqube.inspection.group.title" bundle="org.sonar.ide.intellij.util.SonarQubeBundle" enabledByDefault="true" level="WARNING"
-                      implementationClass="org.sonar.ide.intellij.inspection.SonarQubeGlobalInspection"/>
-
-    <toolWindow id="SonarQube" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonar.ide.intellij.toolwindow.SonarQubeToolWindowFactory"/>
+    <toolWindow id="SonarLint" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonarlint.intellij.toolwindow.SonarLintToolWindowFactory"/>
 
   </extensions>
 </idea-plugin>
