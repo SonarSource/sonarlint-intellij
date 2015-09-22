@@ -47,7 +47,10 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
   @Nullable
   @Override
   public ProblemDescriptor[] checkFile(@NotNull PsiFile file, @NotNull final InspectionManager manager, final boolean isOnTheFly) {
-    if (file.getFileType().isBinary() || !file.isValid()) {
+    if (file.getFileType().isBinary() || !file.isValid() ||
+        // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
+        "html".equalsIgnoreCase(file.getFileType().getName())
+        ) {
       return new ProblemDescriptor[0];
     }
     final Project project = file.getProject();
