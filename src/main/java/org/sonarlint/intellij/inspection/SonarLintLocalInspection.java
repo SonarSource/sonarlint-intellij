@@ -73,7 +73,7 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
         if (file != null) {
           PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
           if (psiFile != null) {
-            problems.add(delegate.getProblemDescriptor(issue, psiFile, manager));
+            problems.add(delegate.getProblemDescriptor(issue, psiFile, manager, true));
           }
         }
       }

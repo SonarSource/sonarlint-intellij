@@ -68,7 +68,7 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
             if (psiFile != null) {
 
               RefElement reference = globalContext.getRefManager().getReference(psiFile);
-              problemDescriptionsProcessor.addProblemElement(reference, getProblemDescriptor(issue, psiFile, manager));
+              problemDescriptionsProcessor.addProblemElement(reference, getProblemDescriptor(issue, psiFile, manager, false));
             }
           }
         }
@@ -76,26 +76,29 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
     }
   }
 
-  ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager) {
+  ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager, boolean isLocal) {
     PsiElement startElement = InspectionUtils.getStartElementAtLine(psiFile, issue);
     PsiElement endElement = InspectionUtils.getEndElementAtLine(psiFile, issue);
     if (endElement != null) {
       return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
         endElement,
         InspectionUtils.getProblemMessage(issue),
-        problemHighlightType(issue),
+        problemHighlightType(issue, isLocal),
         false);
     } else {
       return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
         InspectionUtils.getProblemMessage(issue),
         new LocalQuickFix[0],
-        problemHighlightType(issue),
+        problemHighlightType(issue, isLocal),
         false,
         false);
     }
   }
 
-  ProblemHighlightType problemHighlightType(Issue issue) {
+  ProblemHighlightType problemHighlightType(Issue issue, boolean isLocal) {
+    if (isLocal) {
+      return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
+    }
     switch (issue.getSeverity()) {
       case "BLOCKER":
       case "CRITICAL":
