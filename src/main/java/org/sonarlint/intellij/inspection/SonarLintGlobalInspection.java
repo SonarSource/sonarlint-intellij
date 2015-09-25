@@ -82,12 +82,12 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
     if (endElement != null) {
       return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
         endElement,
-        InspectionUtils.getProblemMessage(issue),
+        InspectionUtils.getProblemMessage(issue, isLocal),
         problemHighlightType(issue, isLocal),
         false);
     } else {
       return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
-        InspectionUtils.getProblemMessage(issue),
+        InspectionUtils.getProblemMessage(issue, isLocal),
         new LocalQuickFix[0],
         problemHighlightType(issue, isLocal),
         false,

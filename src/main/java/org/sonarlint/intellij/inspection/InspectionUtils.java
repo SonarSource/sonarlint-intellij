@@ -19,8 +19,13 @@
  */
 package org.sonarlint.intellij.inspection;
 
+import com.intellij.codeInsight.daemon.DaemonBundle;
+import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.keymap.Keymap;
+import com.intellij.openapi.keymap.KeymapManager;
+import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -29,7 +34,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.ui.UIUtil;
+import com.intellij.xml.util.XmlStringUtil;
 import javax.annotation.CheckForNull;
+import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.Issue;
@@ -154,8 +162,17 @@ public class InspectionUtils {
     return element;
   }
 
-  public static String getProblemMessage(@NotNull Issue issue) {
-    return issue.getMessage();
+  public static String getProblemMessage(@NotNull Issue issue, boolean isLocal) {
+    if (isLocal) {
+      @NonNls final String link = " <a "
+          + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
+          + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
+          + ">" + issue.getRuleKey()
+          + "</a> ";
+      return XmlStringUtil.wrapInHtml(link + XmlStringUtil.escapeString(issue.getMessage()));
+    } else {
+      return issue.getRuleKey() + " " + issue.getMessage();
+    }
   }
 
 }

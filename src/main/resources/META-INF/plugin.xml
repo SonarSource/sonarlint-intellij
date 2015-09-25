@@ -45,6 +45,8 @@
                       groupKey="sonarlint.inspection.group.title" bundle="org.sonarlint.intellij.util.SonarLintBundle" enabledByDefault="true" level="WARNING"
                       implementationClass="org.sonarlint.intellij.inspection.SonarLintGlobalInspection"/>
 
+    <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.inspection.SonarLintLinkHandler"/>
+
     <toolWindow id="SonarLint" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonarlint.intellij.toolwindow.SonarLintToolWindowFactory"/>
 
   </extensions>

@@ -31,7 +31,6 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
     this.delegate = delegate;
   }
 
-  @NotNull
   @Override
   public final String getShortName() {
     return delegate.getShortName();
