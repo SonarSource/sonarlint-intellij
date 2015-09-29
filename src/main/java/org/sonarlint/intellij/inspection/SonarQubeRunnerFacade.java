@@ -54,7 +54,10 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
   }
 
   public synchronized void startAnalysis(Properties props, IssueListener issueListener) {
-    startRunner();
+    if (!started) {
+      SonarLintGlobalSettings settings = SonarLintGlobalSettings.getInstance();
+      tryStart(settings.getServerUrl(), false);
+    }
     if (started) {
       if (projectSettings.isVerboseEnabled()) {
         props.setProperty(SonarLintConstants.VERBOSE_PROPERTY, "true");
@@ -63,14 +66,17 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
     }
   }
 
-  private void startRunner() {
+  public synchronized void tryUpdate() {
+    stop();
+    SonarLintGlobalSettings settings = SonarLintGlobalSettings.getInstance();
+    tryStart(settings.getServerUrl(), true);
     if (!started) {
-      SonarLintGlobalSettings settings = SonarLintGlobalSettings.getInstance();
-      tryStart(settings.getServerUrl());
+      return;
     }
+    runner.syncProject(null);
   }
 
-  private void tryStart(String serverUrl) {
+  private void tryStart(String serverUrl, boolean update) {
     Properties globalProps = new Properties();
     globalProps.setProperty(SonarLintConstants.SONAR_URL, serverUrl);
     globalProps.setProperty(SonarLintConstants.ANALYSIS_MODE, SonarLintConstants.ANALYSIS_MODE_ISSUES);
@@ -110,7 +116,7 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
       .addGlobalProperties(globalProps);
     try {
       console.info("Starting SonarLint");
-      runner.start();
+      runner.start(update);
       this.version = runner.serverVersion();
       this.started = version != null;
     } catch (Throwable e) {

@@ -38,7 +38,7 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
     return com.intellij.openapi.application.ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
   }
 
-  private String serverUrl = "http://localhost:9000";
+  private String serverUrl = "https://update.sonarlint.org";
 
   @Override
   public SonarLintGlobalSettings getState() {

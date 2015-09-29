@@ -50,4 +50,11 @@
     <toolWindow id="SonarLint" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonarlint.intellij.toolwindow.SonarLintToolWindowFactory"/>
 
   </extensions>
+
+  <actions>
+    <action id="org.sonarlint.intellij.actions.UpdateAction" class="org.sonarlint.intellij.actions.UpdateAction"
+            text="Update SonarLint" description="Update SonarLint rules" icon="/images/onde-sonar-13.png">
+      <add-to-group group-id="HelpMenu" anchor="after" relative-to-action="CheckForUpdate"/>
+    </action>
+  </actions>
 </idea-plugin>
