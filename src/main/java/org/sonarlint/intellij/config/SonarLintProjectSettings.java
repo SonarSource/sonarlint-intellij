@@ -26,6 +26,8 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
 @State(
@@ -37,6 +39,7 @@ import org.jetbrains.annotations.NotNull;
 public final class SonarLintProjectSettings implements PersistentStateComponent<SonarLintProjectSettings>, ProjectComponent {
 
   private boolean verboseEnabled = false;
+  private Map<String, String> additionalProperties = new LinkedHashMap<>();
 
   @Override
   public SonarLintProjectSettings getState() {
@@ -80,5 +83,14 @@ public final class SonarLintProjectSettings implements PersistentStateComponent<
 
   public void setVerboseEnabled(boolean verboseEnabled) {
     this.verboseEnabled = verboseEnabled;
+  }
+
+  public Map<String, String> getAdditionalProperties() {
+    return new LinkedHashMap<>(additionalProperties);
+  }
+
+  public void setAdditionalProperties(Map<String, String> additionalProperties) {
+    this.additionalProperties.clear();
+    this.additionalProperties.putAll(additionalProperties);
   }
 }

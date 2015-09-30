@@ -62,6 +62,7 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
       if (projectSettings.isVerboseEnabled()) {
         props.setProperty(SonarLintConstants.VERBOSE_PROPERTY, "true");
       }
+      props.putAll(projectSettings.getAdditionalProperties());
       runner.runAnalysis(props, issueListener);
     }
   }
