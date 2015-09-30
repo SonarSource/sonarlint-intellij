@@ -38,16 +38,15 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.console.SonarLintConsole;
 import org.sonar.runner.api.Issue;
 import org.sonar.runner.api.IssueListener;
+import org.sonarlint.intellij.console.SonarLintConsole;
 
 public class SonarLintGlobalInspection extends GlobalInspectionTool {
 
@@ -55,7 +54,6 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
   public void runInspection(@NotNull final AnalysisScope scope, @NotNull final InspectionManager manager, @NotNull final GlobalInspectionContext globalContext,
     @NotNull final ProblemDescriptionsProcessor problemDescriptionsProcessor) {
     final Project project = globalContext.getProject();
-    final SonarLintConsole sonarLintConsole = SonarLintConsole.getSonarQubeConsole(project);
     final Multimap<Module, String> filesToAnalyze = HashMultimap.create();
     scope.accept(new PsiElementVisitor() {
       @Override
@@ -65,7 +63,7 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
         }
         final Module module = ModuleUtil.findModuleForPsiElement(psiFile);
         if (module != null) {
-          String realFile = realFilePath(module, psiFile);
+          String realFile = realFilePath(psiFile);
           if (realFile != null) {
             filesToAnalyze.put(module, realFile);
           }
@@ -96,16 +94,14 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
   }
 
   ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager, boolean isLocal) {
-    PsiElement startElement = InspectionUtils.getStartElementAtLine(psiFile, issue);
-    PsiElement endElement = InspectionUtils.getEndElementAtLine(psiFile, issue);
-    if (endElement != null) {
-      return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
-        endElement,
+    if (issue.getLine() != null) {
+      return manager.createProblemDescriptor(psiFile,
+        InspectionUtils.getLineRange(psiFile, issue.getLine()),
         InspectionUtils.getProblemMessage(issue, isLocal),
         problemHighlightType(issue, isLocal),
         false);
     } else {
-      return manager.createProblemDescriptor(startElement != null ? startElement : psiFile,
+      return manager.createProblemDescriptor(psiFile,
         InspectionUtils.getProblemMessage(issue, isLocal),
         new LocalQuickFix[0],
         problemHighlightType(issue, isLocal),
@@ -134,7 +130,7 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
   }
 
   @Nullable
-  private String realFilePath(Module module, PsiFile psiFile) {
+  private static String realFilePath(PsiFile psiFile) {
     if (!existsOnFilesystem(psiFile)
       || documentIsModifiedAndUnsaved(psiFile.getVirtualFile())) {
       return null;
@@ -143,19 +139,19 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
     }
   }
 
-  private String pathOf(@NotNull final PsiFile file) {
+  private static String pathOf(@NotNull final PsiFile file) {
     if (file.getVirtualFile() != null) {
       return file.getVirtualFile().getPath();
     }
     throw new IllegalStateException("PSIFile does not have associated virtual file: " + file);
   }
 
-  private boolean existsOnFilesystem(@NotNull final PsiFile file) {
+  private static boolean existsOnFilesystem(@NotNull final PsiFile file) {
     final VirtualFile virtualFile = file.getVirtualFile();
     return virtualFile != null && LocalFileSystem.getInstance().exists(virtualFile);
   }
 
-  private boolean documentIsModifiedAndUnsaved(final VirtualFile virtualFile) {
+  private static boolean documentIsModifiedAndUnsaved(@javax.annotation.Nullable final VirtualFile virtualFile) {
     if (virtualFile == null) {
       return false;
     }

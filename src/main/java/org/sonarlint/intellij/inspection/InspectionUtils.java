@@ -19,13 +19,8 @@
  */
 package org.sonarlint.intellij.inspection;
 
-import com.intellij.codeInsight.daemon.DaemonBundle;
-import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.keymap.Keymap;
-import com.intellij.openapi.keymap.KeymapManager;
-import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -82,38 +77,20 @@ public class InspectionUtils {
   }
 
   @NotNull
-  public static TextRange getLineRange(@NotNull PsiFile psiFile, Issue issue) {
+  public static TextRange getLineRange(@NotNull PsiFile psiFile, int line) {
     Project project = psiFile.getProject();
     PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
     Document document = documentManager.getDocument(psiFile.getContainingFile());
     if (document == null) {
       return TextRange.EMPTY_RANGE;
     }
-    int line = issue.getLine() != null ? issue.getLine() - 1 : 0;
     return getTextRangeForLine(document, line);
   }
 
-  public static TextRange getLineRange(@NotNull PsiElement psiElement) {
-    Project project = psiElement.getProject();
-    PsiDocumentManager documentManager = PsiDocumentManager.getInstance(project);
-    Document document = documentManager.getDocument(psiElement.getContainingFile().getContainingFile());
-    if (document == null) {
-      return TextRange.EMPTY_RANGE;
-    }
-    int line = document.getLineNumber(psiElement.getTextOffset());
-    int lineEndOffset = document.getLineEndOffset(line);
-    return new TextRange(psiElement.getTextOffset(), lineEndOffset);
-  }
-
   private static TextRange getTextRangeForLine(Document document, int line) {
-    try {
-      int lineStartOffset = document.getLineStartOffset(line);
-      int lineEndOffset = document.getLineEndOffset(line);
-      return new TextRange(lineStartOffset, lineEndOffset);
-    } catch (IndexOutOfBoundsException e) {
-      // Local file should be different than remote
-      return TextRange.EMPTY_RANGE;
-    }
+    int lineStartOffset = document.getLineStartOffset(line -1);
+    int lineEndOffset = document.getLineEndOffset(line - 1);
+    return new TextRange(lineStartOffset, lineEndOffset);
   }
 
   @Nullable
@@ -164,11 +141,12 @@ public class InspectionUtils {
 
   public static String getProblemMessage(@NotNull Issue issue, boolean isLocal) {
     if (isLocal) {
-      @NonNls final String link = " <a "
-          + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
-          + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
-          + ">" + issue.getRuleKey()
-          + "</a> ";
+      @NonNls
+      final String link = " <a "
+        + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
+        + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
+        + ">" + issue.getRuleKey()
+        + "</a> ";
       return XmlStringUtil.wrapInHtml(link + XmlStringUtil.escapeString(issue.getMessage()));
     } else {
       return issue.getRuleKey() + " " + issue.getMessage();
