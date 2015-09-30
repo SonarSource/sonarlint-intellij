@@ -1,7 +1,7 @@
-/*
- * SonarQube IntelliJ
- * Copyright (C) 2013-2014 SonarSource
- * dev@sonar.codehaus.org
+/**
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015 SonarSource
+ * sonarqube@googlegroups.com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

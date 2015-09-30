@@ -12,4 +12,4 @@ installTravisTools
 build_snapshot "SonarSource/sonarqube"
 build_snapshot "SonarSource/sonar-runner"
 
-./gradlew buildPlugin
+./gradlew buildPlugin check
