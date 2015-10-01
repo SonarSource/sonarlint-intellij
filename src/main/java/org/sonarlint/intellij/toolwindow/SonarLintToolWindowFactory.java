@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.toolwindow;
 
+import com.intellij.execution.ui.ConsoleView;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -27,8 +28,11 @@ import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
+import com.intellij.ui.content.Content;
 import org.sonarlint.intellij.config.SonarLintProjectSettings;
+import org.sonarlint.intellij.console.SonarLintConsole;
 
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
@@ -40,6 +44,13 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     group.add(new EnableVerboseModeAction());
 
     ((ToolWindowEx) toolWindow).setAdditionalGearActions(group);
+
+    ConsoleView consoleView = project.getComponent(SonarLintConsole.class).getConsoleView();
+
+    Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "Console", true);
+    toolWindow.getContentManager().addContent(content);
+
+
   }
 
   private static class EnableVerboseModeAction extends ToggleAction implements DumbAware {

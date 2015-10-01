@@ -35,32 +35,15 @@ import org.sonarlint.intellij.toolwindow.SonarLintToolWindowFactory;
 
 public class SonarLintConsole extends AbstractProjectComponent {
 
-  private ConsoleView consoleView;
+  private final ConsoleView consoleView;
 
   public SonarLintConsole(Project project) {
     super(project);
+    consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
   }
 
   public static synchronized SonarLintConsole getSonarQubeConsole(@NotNull Project p) {
     return p.getComponent(SonarLintConsole.class);
-  }
-
-  private ConsoleView createConsoleView(Project project) {
-    final ConsoleView newConsoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-    final ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SonarLintToolWindowFactory.ID);
-    SwingUtilities.invokeLater(new Runnable() {
-      @Override
-      public void run() {
-        toolWindow.show(new Runnable() {
-          @Override
-          public void run() {
-            Content content = toolWindow.getContentManager().getFactory().createContent(newConsoleView.getComponent(), "Console", true);
-            toolWindow.getContentManager().addContent(content);
-          }
-        });
-      }
-    });
-    return newConsoleView;
   }
 
   public void info(String msg) {
@@ -82,10 +65,7 @@ public class SonarLintConsole extends AbstractProjectComponent {
     getConsoleView().clear();
   }
 
-  private synchronized ConsoleView getConsoleView() {
-    if (this.consoleView == null) {
-      this.consoleView = createConsoleView(myProject);
-    }
+  public ConsoleView getConsoleView() {
     return this.consoleView;
   }
 }

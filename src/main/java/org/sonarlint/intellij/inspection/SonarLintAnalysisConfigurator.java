@@ -75,7 +75,7 @@ public class SonarLintAnalysisConfigurator {
     // Configure
     Properties properties = new Properties();
     configureProjectSettings(p, properties);
-    configureModuleSettings(p, settings, module, properties, filesToAnalyze);
+    configureModuleSettings(module, properties, filesToAnalyze);
 
     // Analyse
     long start = System.currentTimeMillis();
@@ -98,7 +98,7 @@ public class SonarLintAnalysisConfigurator {
     }
   }
 
-  private static void configureModuleSettings(@NotNull Project p, @NotNull SonarLintProjectSettings settings, @NotNull Module ijModule,
+  private static void configureModuleSettings(@NotNull Module ijModule,
     @NotNull Properties properties, Collection<String> filesToAnalyze) {
     String baseDir = InspectionUtils.getModuleRootPath(ijModule);
     if (baseDir == null) {
@@ -106,9 +106,6 @@ public class SonarLintAnalysisConfigurator {
     }
     properties.setProperty(PROJECT_BASEDIR, baseDir);
     properties.setProperty(PROJECT_NAME_PROPERTY, ijModule.getName());
-
-    // TODO
-    // properties.setProperty(PROJECT_KEY_PROPERTY, settings.getProjectKey());
 
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(ijModule);
     configureSourceDirs(properties, moduleRootManager, filesToAnalyze);
@@ -144,10 +141,8 @@ public class SonarLintAnalysisConfigurator {
       final SourceFolder[] sourceFolders = contentEntry.getSourceFolders();
       for (SourceFolder sourceFolder : sourceFolders) {
         final VirtualFile file = sourceFolder.getFile();
-        if (file != null) {
-          if (sourceFolder.isTestSource()) {
+        if (file != null && sourceFolder.isTestSource()) {
             testFolderPrefix.add(file.getPath());
-          }
         }
       }
     }

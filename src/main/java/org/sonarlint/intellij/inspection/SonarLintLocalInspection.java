@@ -72,7 +72,6 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
       return new ProblemDescriptor[0];
     }
     final Project project = file.getProject();
-    final SonarLintConsole sonarLintConsole = SonarLintConsole.getSonarQubeConsole(project);
     final Module module = ModuleUtil.findModuleForPsiElement(file);
     if (module == null) {
       return new ProblemDescriptor[0];
