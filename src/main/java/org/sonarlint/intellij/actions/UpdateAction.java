@@ -21,13 +21,21 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.inspection.SonarQubeRunnerFacade;
 
 public class UpdateAction extends AnAction {
 
   @Override
-  public void actionPerformed(AnActionEvent e) {
-    SonarQubeRunnerFacade runner = e.getProject().getComponent(SonarQubeRunnerFacade.class);
-    runner.tryUpdate();
+  public void actionPerformed(final AnActionEvent e) {
+    ProgressManager.getInstance().run(new Task.Backgroundable(e.getProject(), "Update SonarLint") {
+      public void run(@NotNull ProgressIndicator progressIndicator) {
+        SonarQubeRunnerFacade runner = e.getProject().getComponent(SonarQubeRunnerFacade.class);
+        runner.tryUpdate();
+      }
+    });
   }
 }
