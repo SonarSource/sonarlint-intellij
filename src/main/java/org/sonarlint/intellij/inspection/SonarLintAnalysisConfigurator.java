@@ -79,7 +79,7 @@ public class SonarLintAnalysisConfigurator {
 
     // Analyse
     long start = System.currentTimeMillis();
-    console.info("Start SonarQube analysis on " + p.getName() + "...\n");
+    console.info("Start SonarLint analysis on " + p.getName() + "...");
     run(settings, runner, properties, console, listener);
     if (settings.isVerboseEnabled()) {
       console.info("Done in " + (System.currentTimeMillis() - start) + "ms\n");
@@ -224,7 +224,7 @@ public class SonarLintAnalysisConfigurator {
   public static void run(SonarLintProjectSettings projectSettings, SonarQubeRunnerFacade runner, Properties props, SonarLintConsole console, IssueListener listener) {
 
     if (projectSettings.isVerboseEnabled()) {
-      console.info("Start sonar-runner with args:\n" + propsToString(props));
+      console.info("SonarLint properties:\n" + propsToString(props));
     }
 
     runner.startAnalysis(props, listener);

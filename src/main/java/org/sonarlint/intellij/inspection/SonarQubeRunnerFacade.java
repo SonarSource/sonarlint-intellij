@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import java.io.File;
 import java.util.Properties;
+import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.SonarLintGlobalSettings;
@@ -40,7 +41,6 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
   private final SonarLintConsole console;
   private boolean started;
   private EmbeddedRunner runner;
-  private String version;
 
   protected SonarQubeRunnerFacade(Project project, SonarLintProjectSettings projectSettings, SonarLintConsole console) {
     super(project);
@@ -56,7 +56,7 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
   public synchronized void startAnalysis(Properties props, IssueListener issueListener) {
     if (!started) {
       SonarLintGlobalSettings settings = SonarLintGlobalSettings.getInstance();
-      tryStart(settings.getServerUrl(), false);
+      tryStart(settings.getServerUrl(), true);
     }
     if (started) {
       if (projectSettings.isVerboseEnabled()) {
@@ -70,18 +70,19 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
   public synchronized void tryUpdate() {
     stop();
     SonarLintGlobalSettings settings = SonarLintGlobalSettings.getInstance();
-    tryStart(settings.getServerUrl(), true);
+    tryStart(settings.getServerUrl(), false);
     if (!started) {
       return;
     }
     runner.syncProject(null);
   }
 
-  private void tryStart(String serverUrl, boolean update) {
+  private void tryStart(String serverUrl, boolean preferCache) {
     Properties globalProps = new Properties();
     globalProps.setProperty(SonarLintConstants.SONAR_URL, serverUrl);
     globalProps.setProperty(SonarLintConstants.ANALYSIS_MODE, SonarLintConstants.ANALYSIS_MODE_ISSUES);
-    globalProps.setProperty(SonarLintConstants.VERBOSE_PROPERTY, Boolean.toString(projectSettings.isVerboseEnabled()));
+    final boolean verboseEnabled = projectSettings.isVerboseEnabled();
+    globalProps.setProperty(SonarLintConstants.VERBOSE_PROPERTY, Boolean.toString(verboseEnabled));
 
     File baseDir = new File(myProject.getBasePath());
     File projectSpecificWorkDir = new File(new File(baseDir, ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR), "sonarlint");
@@ -93,20 +94,16 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
       public void log(String msg, Level level) {
         switch (level) {
           case TRACE:
-            console.info(msg);
-            break;
           case DEBUG:
-            console.info(msg);
-            break;
-          case INFO:
-            console.info(msg);
-            break;
-          case WARN:
-            console.info(msg);
+            if (verboseEnabled) {
+              console.info(msg);
+            }
             break;
           case ERROR:
             console.error(msg);
             break;
+          case INFO:
+          case WARN:
           default:
             console.info(msg);
         }
@@ -117,14 +114,20 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
       .addGlobalProperties(globalProps);
     try {
       console.info("Starting SonarLint");
-      runner.start(update);
-      this.version = runner.serverVersion();
+      runner.start(preferCache);
+      String version = runner.serverVersion();
       this.started = version != null;
+      console.info("Scanner version: " + version);
     } catch (Throwable e) {
       console.error("Unable to start SonarLint", e);
       runner = null;
       started = false;
     }
+  }
+
+  @CheckForNull
+  public String getVersion() {
+    return runner != null ? runner.serverVersion() : null;
   }
 
   public synchronized void stop() {

@@ -21,20 +21,46 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.inspection.SonarQubeRunnerFacade;
 
 public class UpdateAction extends AnAction {
 
+  public static final String TITLE = "SonarLint update";
+
   @Override
   public void actionPerformed(final AnActionEvent e) {
     ProgressManager.getInstance().run(new Task.Backgroundable(e.getProject(), "Update SonarLint") {
       public void run(@NotNull ProgressIndicator progressIndicator) {
-        SonarQubeRunnerFacade runner = e.getProject().getComponent(SonarQubeRunnerFacade.class);
-        runner.tryUpdate();
+        final SonarQubeRunnerFacade runner = e.getProject().getComponent(SonarQubeRunnerFacade.class);
+        try {
+          runner.tryUpdate();
+        } catch (final Exception ex) {
+          ApplicationManager.getApplication().invokeLater(new Runnable() {
+            @Override
+            public void run() {
+              Messages.showMessageDialog(e.getProject(), "Unable to update SonarLint: " + ex.getMessage(), TITLE, Messages.getErrorIcon());
+            }
+          });
+          return;
+        }
+
+        final String version = runner.getVersion();
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+          @Override
+          public void run() {
+            if (version == null) {
+              Messages.showMessageDialog(e.getProject(), "Unable to update SonarLint. Please check logs in SonarLint console.", TITLE, Messages.getErrorIcon());
+            } else {
+              Messages.showMessageDialog(e.getProject(), "SonarLint is up and running Scanner version " + version, TITLE, Messages.getInformationIcon());
+            }
+          }
+        });
       }
     });
   }
