@@ -24,14 +24,9 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.content.Content;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.toolwindow.SonarLintToolWindowFactory;
 
 public class SonarLintConsole extends AbstractProjectComponent {
 

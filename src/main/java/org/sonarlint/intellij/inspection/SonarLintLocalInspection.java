@@ -38,7 +38,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.console.SonarLintConsole;
 import org.sonar.runner.api.Issue;
 import org.sonar.runner.api.IssueListener;
 
@@ -66,9 +65,8 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
   @Override
   public ProblemDescriptor[] checkFile(@NotNull PsiFile file, @NotNull final InspectionManager manager, final boolean isOnTheFly) {
     if (file.getFileType().isBinary() || !file.isValid() ||
-        // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-        "html".equalsIgnoreCase(file.getFileType().getName())
-        ) {
+      // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
+      "html".equalsIgnoreCase(file.getFileType().getName())) {
       return new ProblemDescriptor[0];
     }
     final Project project = file.getProject();
@@ -80,10 +78,17 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
     if (baseDir == null) {
       throw new IllegalStateException("No basedir for module " + module);
     }
-    String filePath = realFilePath(module, file);
+    String filePath = realFilePath(file);
     if (filePath == null) {
       return new ProblemDescriptor[0];
     }
+    final Collection<ProblemDescriptor> problems = runAnalysis(manager, project, module, baseDir, filePath);
+
+    return problems.toArray(new ProblemDescriptor[problems.size()]);
+  }
+
+  @NotNull
+  Collection<ProblemDescriptor> runAnalysis(@NotNull final InspectionManager manager, final Project project, Module module, final VirtualFile baseDir, String filePath) {
     final Collection<ProblemDescriptor> problems = new ArrayList<>();
     SonarLintAnalysisConfigurator.analyzeModule(module, Collections.singleton(filePath), new IssueListener() {
       @Override
@@ -98,12 +103,11 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
         }
       }
     });
-
-    return problems.toArray(new ProblemDescriptor[problems.size()]);
+    return problems;
   }
 
   @Nullable
-  private String realFilePath(Module module, PsiFile psiFile) {
+  private static String realFilePath(PsiFile psiFile) {
     if (!existsOnFilesystem(psiFile)
       || documentIsModifiedAndUnsaved(psiFile.getVirtualFile())) {
       return null;
@@ -112,19 +116,19 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
     }
   }
 
-  private String pathOf(@NotNull final PsiFile file) {
+  private static String pathOf(@NotNull final PsiFile file) {
     if (file.getVirtualFile() != null) {
       return file.getVirtualFile().getPath();
     }
     throw new IllegalStateException("PSIFile does not have associated virtual file: " + file);
   }
 
-  private boolean existsOnFilesystem(@NotNull final PsiFile file) {
+  private static boolean existsOnFilesystem(@NotNull final PsiFile file) {
     final VirtualFile virtualFile = file.getVirtualFile();
     return virtualFile != null && LocalFileSystem.getInstance().exists(virtualFile);
   }
 
-  private boolean documentIsModifiedAndUnsaved(final VirtualFile virtualFile) {
+  private static boolean documentIsModifiedAndUnsaved(@Nullable final VirtualFile virtualFile) {
     if (virtualFile == null) {
       return false;
     }

@@ -44,14 +44,13 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonar.runner.api.IssueListener;
 import org.sonarlint.intellij.config.SonarLintProjectSettings;
 import org.sonarlint.intellij.console.SonarLintConsole;
-import org.sonar.runner.api.IssueListener;
 
 public class SonarLintAnalysisConfigurator {
 
   public static final String PROJECT_VERSION_PROPERTY = "sonar.projectVersion";
-  public static final String PROJECT_KEY_PROPERTY = "sonar.projectKey";
   public static final String PROJECT_NAME_PROPERTY = "sonar.projectName";
   public static final String PROJECT_SOURCES_PROPERTY = "sonar.sources";
   public static final String PROJECT_TESTS_PROPERTY = "sonar.tests";
@@ -126,7 +125,7 @@ public class SonarLintAnalysisConfigurator {
   }
 
   private static void configureLibraries(Module ijModule, Properties properties) {
-    List<String> libs = new ArrayList<String>();
+    List<String> libs = new ArrayList<>();
     for (VirtualFile f : getProjectClasspath(ijModule)) {
       libs.add(toFile(f.getPath()));
     }
@@ -136,19 +135,24 @@ public class SonarLintAnalysisConfigurator {
   }
 
   private static void configureSourceDirs(Properties properties, ModuleRootManager moduleRootManager, Collection<String> filesToAnalyze) {
-    Collection<String> testFolderPrefix = new ArrayList<>();
-    for (ContentEntry contentEntry : moduleRootManager.getContentEntries()) {
-      final SourceFolder[] sourceFolders = contentEntry.getSourceFolders();
-      for (SourceFolder sourceFolder : sourceFolders) {
-        final VirtualFile file = sourceFolder.getFile();
-        if (file != null && sourceFolder.isTestSource()) {
-            testFolderPrefix.add(file.getPath());
-        }
-      }
-    }
+    Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
     Collection<String> sources = new ArrayList<>();
     Collection<String> tests = new ArrayList<>();
 
+    findSourceDirs(filesToAnalyze, testFolderPrefix, sources, tests);
+
+    if (!sources.isEmpty()) {
+      properties.setProperty(PROJECT_SOURCES_PROPERTY, StringUtils.join(sources, SEPARATOR));
+    } else {
+      // sonar.sources is mandatory
+      properties.setProperty(PROJECT_SOURCES_PROPERTY, "");
+    }
+    if (!tests.isEmpty()) {
+      properties.setProperty(PROJECT_TESTS_PROPERTY, StringUtils.join(tests, SEPARATOR));
+    }
+  }
+
+  private static void findSourceDirs(Collection<String> filesToAnalyze, Collection<String> testFolderPrefix, Collection<String> sources, Collection<String> tests) {
     for (String f : filesToAnalyze) {
       boolean isTest = false;
       for (String testPrefix : testFolderPrefix) {
@@ -164,16 +168,21 @@ public class SonarLintAnalysisConfigurator {
         sources.add(f);
       }
     }
+  }
 
-    if (!sources.isEmpty()) {
-      properties.setProperty(PROJECT_SOURCES_PROPERTY, StringUtils.join(sources, SEPARATOR));
-    } else {
-      // sonar.sources is mandatory
-      properties.setProperty(PROJECT_SOURCES_PROPERTY, "");
+  @NotNull
+  private static Collection<String> findTestFolderPrefixes(ModuleRootManager moduleRootManager) {
+    Collection<String> testFolderPrefix = new ArrayList<>();
+    for (ContentEntry contentEntry : moduleRootManager.getContentEntries()) {
+      final SourceFolder[] sourceFolders = contentEntry.getSourceFolders();
+      for (SourceFolder sourceFolder : sourceFolders) {
+        final VirtualFile file = sourceFolder.getFile();
+        if (file != null && sourceFolder.isTestSource()) {
+          testFolderPrefix.add(file.getPath());
+        }
+      }
     }
-    if (!tests.isEmpty()) {
-      properties.setProperty(PROJECT_TESTS_PROPERTY, StringUtils.join(tests, SEPARATOR));
-    }
+    return testFolderPrefix;
   }
 
   @NotNull

@@ -34,11 +34,11 @@ import org.sonarlint.intellij.util.SonarLintBundle;
 @State(name = "SonarLintGlobalSettings", storages = {@Storage(id = "sonarlint", file = StoragePathMacros.APP_CONFIG + "/sonarlint.xml")})
 public final class SonarLintGlobalSettings implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
+  private String serverUrl = "https://update.sonarlint.org";
+
   public static SonarLintGlobalSettings getInstance() {
     return com.intellij.openapi.application.ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
   }
-
-  private String serverUrl = "https://update.sonarlint.org";
 
   @Override
   public SonarLintGlobalSettings getState() {

@@ -27,6 +27,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.console.SonarLintConsole;
 import org.sonarlint.intellij.inspection.SonarQubeRunnerFacade;
 
 public class UpdateAction extends AnAction {
@@ -36,31 +37,37 @@ public class UpdateAction extends AnAction {
   @Override
   public void actionPerformed(final AnActionEvent e) {
     ProgressManager.getInstance().run(new Task.Backgroundable(e.getProject(), "Update SonarLint") {
+      @Override
       public void run(@NotNull ProgressIndicator progressIndicator) {
-        final SonarQubeRunnerFacade runner = e.getProject().getComponent(SonarQubeRunnerFacade.class);
-        try {
-          runner.tryUpdate();
-        } catch (final Exception ex) {
-          ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override
-            public void run() {
-              Messages.showMessageDialog(e.getProject(), "Unable to update SonarLint: " + ex.getMessage(), TITLE, Messages.getErrorIcon());
-            }
-          });
-          return;
-        }
+        doUpdate(e);
+      }
+    });
+  }
 
-        final String version = runner.getVersion();
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            if (version == null) {
-              Messages.showMessageDialog(e.getProject(), "Unable to update SonarLint. Please check logs in SonarLint console.", TITLE, Messages.getErrorIcon());
-            } else {
-              Messages.showMessageDialog(e.getProject(), "SonarLint is up to date and running", TITLE, Messages.getInformationIcon());
-            }
-          }
-        });
+  void doUpdate(final AnActionEvent e) {
+    final SonarQubeRunnerFacade runner = e.getProject().getComponent(SonarQubeRunnerFacade.class);
+    try {
+      runner.tryUpdate();
+    } catch (final Exception ex) {
+      SonarLintConsole.getSonarQubeConsole(e.getProject()).error("Unable to perform update", ex);
+      ApplicationManager.getApplication().invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          Messages.showMessageDialog(e.getProject(), "Unable to update SonarLint: " + ex.getMessage(), TITLE, Messages.getErrorIcon());
+        }
+      });
+      return;
+    }
+
+    final String version = runner.getVersion();
+    ApplicationManager.getApplication().invokeLater(new Runnable() {
+      @Override
+      public void run() {
+        if (version == null) {
+          Messages.showMessageDialog(e.getProject(), "Unable to update SonarLint. Please check logs in SonarLint console.", TITLE, Messages.getErrorIcon());
+        } else {
+          Messages.showMessageDialog(e.getProject(), "SonarLint is up to date and running", TITLE, Messages.getInformationIcon());
+        }
       }
     });
   }

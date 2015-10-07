@@ -88,55 +88,9 @@ public class InspectionUtils {
   }
 
   private static TextRange getTextRangeForLine(Document document, int line) {
-    int lineStartOffset = document.getLineStartOffset(line -1);
+    int lineStartOffset = document.getLineStartOffset(line - 1);
     int lineEndOffset = document.getLineEndOffset(line - 1);
     return new TextRange(lineStartOffset, lineEndOffset);
-  }
-
-  @Nullable
-  public static PsiElement getStartElementAtLine(@NotNull final PsiFile file, Issue issue) {
-    if (issue.getLine() == null) {
-      return file;
-    }
-    int ijLine = issue.getLine() - 1;
-    final Document document = PsiDocumentManager.getInstance(file.getProject()).getDocument(file);
-    PsiElement element = null;
-    try {
-      if (document != null) {
-        final int offset = document.getLineStartOffset(ijLine);
-        element = file.getViewProvider().findElementAt(offset);
-        if (element != null && document.getLineNumber(element.getTextRange().getStartOffset()) != ijLine) {
-          element = element.getNextSibling();
-        }
-      }
-    } catch (@NotNull final IndexOutOfBoundsException ignore) {
-      // Ignore this exception
-    }
-
-    return element;
-  }
-
-  @Nullable
-  public static PsiElement getEndElementAtLine(@NotNull final PsiFile file, Issue issue) {
-    if (issue.getLine() == null) {
-      return file;
-    }
-    int ijLine = issue.getLine() - 1;
-    final Document document = PsiDocumentManager.getInstance(file.getProject()).getDocument(file);
-    PsiElement element = null;
-    try {
-      if (document != null) {
-        final int offset = document.getLineEndOffset(ijLine);
-        element = file.getViewProvider().findElementAt(offset);
-        if (element != null && document.getLineNumber(element.getTextRange().getEndOffset()) != ijLine) {
-          element = element.getPrevSibling();
-        }
-      }
-    } catch (@NotNull final IndexOutOfBoundsException ignore) {
-      // Ignore this exception
-    }
-
-    return element;
   }
 
   public static String getProblemMessage(@NotNull Issue issue, boolean isLocal) {

@@ -27,13 +27,13 @@ import java.io.File;
 import java.util.Properties;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.SonarLintProjectSettings;
-import org.sonarlint.intellij.config.SonarLintGlobalSettings;
-import org.sonarlint.intellij.console.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintConstants;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonar.runner.api.IssueListener;
 import org.sonar.runner.api.LogOutput;
+import org.sonarlint.intellij.config.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.SonarLintProjectSettings;
+import org.sonarlint.intellij.console.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintConstants;
 
 public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
 

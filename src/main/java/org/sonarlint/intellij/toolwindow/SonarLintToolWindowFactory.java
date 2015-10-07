@@ -28,7 +28,6 @@ import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
 import org.sonarlint.intellij.config.SonarLintProjectSettings;
@@ -49,7 +48,6 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
     Content content = toolWindow.getContentManager().getFactory().createContent(consoleView.getComponent(), "Console", true);
     toolWindow.getContentManager().addContent(content);
-
 
   }
 

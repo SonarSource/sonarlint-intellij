@@ -17,17 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+@ParametersAreNonnullByDefault
+package org.sonarlint.intellij.actions;
 
-public final class SonarLintConstants {
-
-  public static final String SONAR_URL = "sonar.host.url";
-
-  public static final String ANALYSIS_MODE = "sonar.analysis.mode";
-  public static final String ANALYSIS_MODE_ISSUES = "issues";
-  public static final String VERBOSE_PROPERTY = "sonar.verbose";
-  public static final String WORK_DIR = "sonar.working.directory";
-
-  private SonarLintConstants() {
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

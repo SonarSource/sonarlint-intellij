@@ -46,14 +46,81 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.Issue;
 import org.sonar.runner.api.IssueListener;
-import org.sonarlint.intellij.console.SonarLintConsole;
 
 public class SonarLintGlobalInspection extends GlobalInspectionTool {
+
+  @Nullable
+  private static String realFilePath(PsiFile psiFile) {
+    if (!existsOnFilesystem(psiFile)
+      || documentIsModifiedAndUnsaved(psiFile.getVirtualFile())) {
+      return null;
+    } else {
+      return pathOf(psiFile);
+    }
+  }
+
+  private static String pathOf(@NotNull final PsiFile file) {
+    if (file.getVirtualFile() != null) {
+      return file.getVirtualFile().getPath();
+    }
+    throw new IllegalStateException("PSIFile does not have associated virtual file: " + file);
+  }
+
+  private static boolean existsOnFilesystem(@NotNull final PsiFile file) {
+    final VirtualFile virtualFile = file.getVirtualFile();
+    return virtualFile != null && LocalFileSystem.getInstance().exists(virtualFile);
+  }
+
+  private static boolean documentIsModifiedAndUnsaved(@javax.annotation.Nullable final VirtualFile virtualFile) {
+    if (virtualFile == null) {
+      return false;
+    }
+    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+    if (fileDocumentManager.isFileModified(virtualFile)) {
+      final Document document = fileDocumentManager.getDocument(virtualFile);
+      if (document != null) {
+        return fileDocumentManager.isDocumentUnsaved(document);
+      }
+    }
+    return false;
+  }
 
   @Override
   public void runInspection(@NotNull final AnalysisScope scope, @NotNull final InspectionManager manager, @NotNull final GlobalInspectionContext globalContext,
     @NotNull final ProblemDescriptionsProcessor problemDescriptionsProcessor) {
     final Project project = globalContext.getProject();
+    final Multimap<Module, String> filesToAnalyzeByModule = findFilesToAnalyze(scope);
+    for (Module m : filesToAnalyzeByModule.keySet()) {
+      runAnalysis(manager, globalContext, problemDescriptionsProcessor, project, filesToAnalyzeByModule, m);
+    }
+  }
+
+  void runAnalysis(@NotNull final InspectionManager manager, @NotNull final GlobalInspectionContext globalContext,
+                   @NotNull final ProblemDescriptionsProcessor problemDescriptionsProcessor, final Project project,
+                   Multimap<Module, String> filesToAnalyzeByModule, Module m) {
+    final VirtualFile baseDir = InspectionUtils.getModuleRoot(m);
+    if (baseDir == null) {
+      throw new IllegalStateException("No basedir for module " + m);
+    }
+    SonarLintAnalysisConfigurator.analyzeModule(m, filesToAnalyzeByModule.get(m), new IssueListener() {
+      @Override
+      public void handle(Issue issue) {
+        String path = StringUtils.substringAfterLast(issue.getComponentKey(), ":");
+        VirtualFile file = baseDir.findFileByRelativePath(path);
+        if (file != null) {
+          PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+          if (psiFile != null) {
+
+            RefElement reference = globalContext.getRefManager().getReference(psiFile);
+            problemDescriptionsProcessor.addProblemElement(reference, getProblemDescriptor(issue, psiFile, manager, false));
+          }
+        }
+      }
+    });
+  }
+
+  @NotNull
+  Multimap<Module, String> findFilesToAnalyze(@NotNull AnalysisScope scope) {
     final Multimap<Module, String> filesToAnalyze = HashMultimap.create();
     scope.accept(new PsiElementVisitor() {
       @Override
@@ -70,27 +137,7 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
         }
       }
     });
-    for (Module m : filesToAnalyze.keySet()) {
-      final VirtualFile baseDir = InspectionUtils.getModuleRoot(m);
-      if (baseDir == null) {
-        throw new IllegalStateException("No basedir for module " + m);
-      }
-      SonarLintAnalysisConfigurator.analyzeModule(m, filesToAnalyze.get(m), new IssueListener() {
-        @Override
-        public void handle(Issue issue) {
-          String path = StringUtils.substringAfterLast(issue.getComponentKey(), ":");
-          VirtualFile file = baseDir.findFileByRelativePath(path);
-          if (file != null) {
-            PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-            if (psiFile != null) {
-
-              RefElement reference = globalContext.getRefManager().getReference(psiFile);
-              problemDescriptionsProcessor.addProblemElement(reference, getProblemDescriptor(issue, psiFile, manager, false));
-            }
-          }
-        }
-      });
-    }
+    return filesToAnalyze;
   }
 
   ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager, boolean isLocal) {
@@ -127,42 +174,6 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
       default:
         return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
     }
-  }
-
-  @Nullable
-  private static String realFilePath(PsiFile psiFile) {
-    if (!existsOnFilesystem(psiFile)
-      || documentIsModifiedAndUnsaved(psiFile.getVirtualFile())) {
-      return null;
-    } else {
-      return pathOf(psiFile);
-    }
-  }
-
-  private static String pathOf(@NotNull final PsiFile file) {
-    if (file.getVirtualFile() != null) {
-      return file.getVirtualFile().getPath();
-    }
-    throw new IllegalStateException("PSIFile does not have associated virtual file: " + file);
-  }
-
-  private static boolean existsOnFilesystem(@NotNull final PsiFile file) {
-    final VirtualFile virtualFile = file.getVirtualFile();
-    return virtualFile != null && LocalFileSystem.getInstance().exists(virtualFile);
-  }
-
-  private static boolean documentIsModifiedAndUnsaved(@javax.annotation.Nullable final VirtualFile virtualFile) {
-    if (virtualFile == null) {
-      return false;
-    }
-    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-    if (fileDocumentManager.isFileModified(virtualFile)) {
-      final Document document = fileDocumentManager.getDocument(virtualFile);
-      if (document != null) {
-        return fileDocumentManager.isDocumentUnsaved(document);
-      }
-    }
-    return false;
   }
 
   @Nullable
