@@ -2,7 +2,7 @@
 
     SonarLint for IntelliJ IDEA
     Copyright (C) 2015 SonarSource
-    sonarqube@googlegroups.com
+    sonarlint@sonarsource.com
 
     This program is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -19,11 +19,11 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
 
 -->
-<idea-plugin version="2" url="http://docs.sonarqube.org/display/SONAR/SonarQube+in+IntelliJ">
+<idea-plugin version="2" url="http://intellij.sonarlint.org/">
   <id>org.sonarlint.idea</id>
   <name>SonarLint</name>
   <version>${project.version}</version>
-  <vendor email="sonarqube@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
+  <vendor email="sonarlint@sonarsource.com" url="http://www.sonarsource.com">SonarSource</vendor>
 
   <description><![CDATA[
       SonarLint for IntelliJ IDEA.
@@ -31,7 +31,7 @@
 
   <change-notes><![CDATA[
       <ul>
-        <li>1.0 - On the fly analysis</li>
+        <li>1.0 - On the fly SonarLint inspection</li>
       </ul>
       ]]>
   </change-notes>
