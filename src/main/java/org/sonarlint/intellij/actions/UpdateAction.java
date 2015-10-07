@@ -57,7 +57,7 @@ public class UpdateAction extends AnAction {
             if (version == null) {
               Messages.showMessageDialog(e.getProject(), "Unable to update SonarLint. Please check logs in SonarLint console.", TITLE, Messages.getErrorIcon());
             } else {
-              Messages.showMessageDialog(e.getProject(), "SonarLint is up and running Scanner version " + version, TITLE, Messages.getInformationIcon());
+              Messages.showMessageDialog(e.getProject(), "SonarLint is up to date and running", TITLE, Messages.getInformationIcon());
             }
           }
         });
