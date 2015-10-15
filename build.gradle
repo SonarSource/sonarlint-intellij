@@ -19,6 +19,7 @@ targetCompatibility = 1.7
 intellij {
   version '14.1'
   pluginName 'SonarLint'
+  updateSinceUntilBuild false
   publish {
     pluginId '7973'
   }
