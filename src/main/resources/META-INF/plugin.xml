@@ -70,7 +70,7 @@
 
     <toolWindow id="SonarLint" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonarlint.intellij.toolwindow.SonarLintToolWindowFactory"/>
 
-    <projectConfigurable displayName="SonarLint" instance="org.sonarlint.intellij.config.SonarLintProjectConfigurable"/>
+    <projectConfigurable displayName="SonarLint" instance="org.sonarlint.intellij.config.SonarLintProjectConfigurable" nonDefaultProject="true"/>
   </extensions>
 
   <actions>
