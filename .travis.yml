@@ -8,6 +8,11 @@ jdk:
 script:
   - ./travis.sh
 
+env:
+  matrix:
+    - JOB=CI 
+    - PR_ANALYSIS=true
+
 cache:
   directories:
     - '$HOME/.m2/repository'
