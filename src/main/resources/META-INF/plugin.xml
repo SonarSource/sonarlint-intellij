@@ -31,6 +31,7 @@
 
   <change-notes><![CDATA[
       <ul>
+        <li>1.1 - More precise issue location</li>
         <li>1.0 - On the fly SonarLint inspection</li>
       </ul>
       ]]>
