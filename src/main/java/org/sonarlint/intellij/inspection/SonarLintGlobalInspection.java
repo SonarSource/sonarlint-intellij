@@ -31,6 +31,8 @@ import com.intellij.codeInspection.ProblemDescriptionsProcessor;
 import com.intellij.codeInspection.ProblemDescriptor;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.reference.RefElement;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
@@ -51,42 +53,6 @@ import org.sonar.runner.api.Issue;
 import org.sonar.runner.api.IssueListener;
 
 public class SonarLintGlobalInspection extends GlobalInspectionTool {
-
-  @Nullable
-  private static String realFilePath(PsiFile psiFile) {
-    if (!existsOnFilesystem(psiFile)
-        || documentIsModifiedAndUnsaved(psiFile.getVirtualFile())) {
-      return null;
-    } else {
-      return pathOf(psiFile);
-    }
-  }
-
-  private static String pathOf(@NotNull final PsiFile file) {
-    if (file.getVirtualFile() != null) {
-      return file.getVirtualFile().getPath();
-    }
-    throw new IllegalStateException("PSIFile does not have associated virtual file: " + file);
-  }
-
-  private static boolean existsOnFilesystem(@NotNull final PsiFile file) {
-    final VirtualFile virtualFile = file.getVirtualFile();
-    return virtualFile != null && LocalFileSystem.getInstance().exists(virtualFile);
-  }
-
-  private static boolean documentIsModifiedAndUnsaved(@javax.annotation.Nullable final VirtualFile virtualFile) {
-    if (virtualFile == null) {
-      return false;
-    }
-    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-    if (fileDocumentManager.isFileModified(virtualFile)) {
-      final Document document = fileDocumentManager.getDocument(virtualFile);
-      if (document != null) {
-        return fileDocumentManager.isDocumentUnsaved(document);
-      }
-    }
-    return false;
-  }
 
   @Override
   public void runInspection(@NotNull final AnalysisScope scope, @NotNull final InspectionManager manager, @NotNull final GlobalInspectionContext globalContext,
@@ -133,14 +99,54 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
         }
         final Module module = ModuleUtil.findModuleForPsiElement(psiFile);
         if (module != null) {
-          String realFile = realFilePath(psiFile);
+          VirtualFile realFile = virtualFile(psiFile, false);
           if (realFile != null) {
-            filesToAnalyze.put(module, realFile);
+            filesToAnalyze.put(module, pathOf(realFile));
           }
         }
       }
     });
     return filesToAnalyze;
+  }
+
+
+  @Nullable
+  static VirtualFile virtualFile(PsiFile psiFile, boolean onTheFly) {
+    final VirtualFile virtualFile = psiFile.getVirtualFile();
+    if (virtualFile == null || !existsOnFilesystem(virtualFile)) {
+      // File only in memory
+      return null;
+    }
+    if (onTheFly) {
+      // SonarLint need content of the file to be written on disk
+      saveFile(virtualFile);
+    }
+    return virtualFile;
+  }
+
+  private static String pathOf(@NotNull final VirtualFile virtualFile) {
+    return virtualFile.getPath();
+  }
+
+  private static boolean existsOnFilesystem(@NotNull VirtualFile virtualFile) {
+    return LocalFileSystem.getInstance().exists(virtualFile);
+  }
+
+  private static void saveFile(@NotNull final VirtualFile virtualFile) {
+    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+    if (fileDocumentManager.isFileModified(virtualFile)) {
+      final Document document = fileDocumentManager.getDocument(virtualFile);
+      if (document != null) {
+        ApplicationManager.getApplication().invokeLater(
+            new Runnable() {
+              @Override
+              public void run() {
+                fileDocumentManager.saveDocument(document);
+              }
+            }, ModalityState.NON_MODAL
+        );
+      }
+    }
   }
 
   ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager, boolean isLocal) {

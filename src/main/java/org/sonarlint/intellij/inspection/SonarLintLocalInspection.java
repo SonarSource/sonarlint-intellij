@@ -2,17 +2,17 @@
  * SonarLint for IntelliJ IDEA
  * Copyright (C) 2015 SonarSource
  * sonarlint@sonarsource.com
- *
+ * <p/>
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
- *
+ * <p/>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p/>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
@@ -22,27 +22,26 @@ package org.sonarlint.intellij.inspection;
 import com.intellij.codeInspection.InspectionManager;
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.codeInspection.ProblemDescriptor;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.LocalFileSystem;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.Callable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.Issue;
 import org.sonar.runner.api.IssueListener;
+import org.sonarlint.intellij.util.Async;
 
 public class SonarLintLocalInspection extends LocalInspectionTool {
 
+  public static final ProblemDescriptor[] NO_PROBLEMS = new ProblemDescriptor[0];
   private final SonarLintGlobalInspection delegate;
 
   public SonarLintLocalInspection(SonarLintGlobalInspection delegate) {
@@ -63,83 +62,62 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
 
   @Nullable
   @Override
-  public ProblemDescriptor[] checkFile(@NotNull PsiFile file, @NotNull final InspectionManager manager, final boolean isOnTheFly) {
+  public ProblemDescriptor[] checkFile(@NotNull final PsiFile file, @NotNull final InspectionManager manager, final boolean isOnTheFly) {
     if (file.getFileType().isBinary() || !file.isValid() ||
-      // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-      "html".equalsIgnoreCase(file.getFileType().getName())) {
-      return new ProblemDescriptor[0];
+        // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
+        "html".equalsIgnoreCase(file.getFileType().getName())) {
+      return NO_PROBLEMS;
     }
-    final Project project = file.getProject();
     final Module module = ModuleUtil.findModuleForPsiElement(file);
     if (module == null) {
-      return new ProblemDescriptor[0];
+      return NO_PROBLEMS;
     }
     final VirtualFile baseDir = InspectionUtils.getModuleRoot(module);
     if (baseDir == null) {
       throw new IllegalStateException("No basedir for module " + module);
     }
-    String filePath = realFilePath(file);
-    if (filePath == null) {
-      return new ProblemDescriptor[0];
+    String baseDirPath = baseDir.getCanonicalPath();
+    if (baseDirPath == null) {
+      throw new IllegalStateException("No basedir for module " + module);
     }
-    final Collection<ProblemDescriptor> problems = runAnalysis(manager, project, module, baseDir, filePath);
+    VirtualFile vFile = SonarLintGlobalInspection.virtualFile(file, isOnTheFly);
+    if (vFile == null) {
+      return NO_PROBLEMS;
+    }
+    String absolutePath = vFile.getCanonicalPath();
+    if (absolutePath == null) {
+      return NO_PROBLEMS;
+    }
+    final String relativePath = StringUtil.trimStart(absolutePath.substring(baseDirPath.length()), "/");
+    final Collection<Issue> issues =
+        Async.asyncResultOf(new Callable<Collection<Issue>>() {
+          @Override
+          public Collection<Issue> call() throws Exception {
+            return runAnalysis(module, relativePath);
+          }
+        }, Collections.<Issue>emptyList());
 
-    return problems.toArray(new ProblemDescriptor[problems.size()]);
+    Collection<ProblemDescriptor> descriptors = new ArrayList<>();
+    for (Issue issue : issues) {
+      descriptors.add(delegate.getProblemDescriptor(issue, file, manager, true));
+    }
+    return descriptors.toArray(new ProblemDescriptor[descriptors.size()]);
   }
 
+
   @NotNull
-  Collection<ProblemDescriptor> runAnalysis(@NotNull final InspectionManager manager, final Project project, Module module, final VirtualFile baseDir, String filePath) {
-    final Collection<ProblemDescriptor> problems = new ArrayList<>();
-    SonarLintAnalysisConfigurator.analyzeModule(module, Collections.singleton(filePath), new IssueListener() {
+  Collection<Issue> runAnalysis(Module module, final String relativePath) {
+    final Collection<Issue> issues = new ArrayList<>();
+    SonarLintAnalysisConfigurator.analyzeModule(module, Collections.singleton(relativePath), new IssueListener() {
       @Override
       public void handle(Issue issue) {
         String path = StringUtils.substringAfterLast(issue.getComponentKey(), ":");
-        VirtualFile file = baseDir.findFileByRelativePath(path);
-        if (file != null) {
-          PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-          if (psiFile != null) {
-            problems.add(delegate.getProblemDescriptor(issue, psiFile, manager, true));
-          }
+        if (path.equals(relativePath)) {
+          issues.add(issue);
         }
       }
     });
-    return problems;
-  }
-
-  @Nullable
-  private static String realFilePath(PsiFile psiFile) {
-    if (!existsOnFilesystem(psiFile)
-      || documentIsModifiedAndUnsaved(psiFile.getVirtualFile())) {
-      return null;
-    } else {
-      return pathOf(psiFile);
-    }
-  }
-
-  private static String pathOf(@NotNull final PsiFile file) {
-    if (file.getVirtualFile() != null) {
-      return file.getVirtualFile().getPath();
-    }
-    throw new IllegalStateException("PSIFile does not have associated virtual file: " + file);
-  }
-
-  private static boolean existsOnFilesystem(@NotNull final PsiFile file) {
-    final VirtualFile virtualFile = file.getVirtualFile();
-    return virtualFile != null && LocalFileSystem.getInstance().exists(virtualFile);
-  }
-
-  private static boolean documentIsModifiedAndUnsaved(@Nullable final VirtualFile virtualFile) {
-    if (virtualFile == null) {
-      return false;
-    }
-    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-    if (fileDocumentManager.isFileModified(virtualFile)) {
-      final Document document = fileDocumentManager.getDocument(virtualFile);
-      if (document != null) {
-        return fileDocumentManager.isDocumentUnsaved(document);
-      }
-    }
-    return false;
+    return issues;
   }
 
 }
