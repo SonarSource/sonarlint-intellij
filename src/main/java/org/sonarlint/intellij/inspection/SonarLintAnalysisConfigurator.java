@@ -2,23 +2,24 @@
  * SonarLint for IntelliJ IDEA
  * Copyright (C) 2015 SonarSource
  * sonarlint@sonarsource.com
- *
+ * <p/>
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
- *
+ * <p/>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p/>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 package org.sonarlint.intellij.inspection;
 
+import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.CompilerModuleExtension;
@@ -54,8 +55,10 @@ public class SonarLintAnalysisConfigurator {
   public static final String PROJECT_NAME_PROPERTY = "sonar.projectName";
   public static final String PROJECT_SOURCES_PROPERTY = "sonar.sources";
   public static final String PROJECT_TESTS_PROPERTY = "sonar.tests";
-  public static final String PROJECT_LIBRARIES_PROPERTY = "sonar.java.libraries";
-  public static final String PROJECT_BINARIES_PROPERTY = "sonar.java.binaries";
+  public static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
+  public static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
+  public static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
+  public static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
   public static final String PROJECT_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
   public static final String PROJECT_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
   public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
@@ -100,7 +103,7 @@ public class SonarLintAnalysisConfigurator {
   }
 
   private static void configureModuleSettings(@NotNull Module ijModule,
-    @NotNull Properties properties, Collection<String> filesToAnalyze) {
+                                              @NotNull Properties properties, Collection<String> filesToAnalyze) {
     String baseDir = InspectionUtils.getModuleRootPath(ijModule);
     if (baseDir == null) {
       throw new IllegalStateException("No basedir for module " + ijModule);
@@ -114,6 +117,18 @@ public class SonarLintAnalysisConfigurator {
     configureLibraries(ijModule, properties);
 
     configureBinaries(ijModule, properties);
+
+    configureJavaSourceTarget(ijModule, properties);
+  }
+
+  private static void configureJavaSourceTarget(Module ijModule, Properties properties) {
+    try {
+      String targetLevel = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
+      properties.setProperty(JAVA_SOURCE_PROPERTY, targetLevel);
+      properties.setProperty(JAVA_TARGET_PROPERTY, targetLevel);
+    } catch (NoClassDefFoundError e) {
+      // CompilerConfiguration not available for example in PHP Storm
+    }
   }
 
   private static void configureBinaries(Module ijModule, Properties properties) {
@@ -121,7 +136,7 @@ public class SonarLintAnalysisConfigurator {
     if (compilerOutput != null) {
       String path = compilerOutput.getCanonicalPath();
       if (path != null) {
-        properties.setProperty(PROJECT_BINARIES_PROPERTY, path);
+        properties.setProperty(JAVA_BINARIES_PROPERTY, path);
       }
     }
     VirtualFile testCompilerOutput = getCompilerTestOutputPath(ijModule);
@@ -140,7 +155,7 @@ public class SonarLintAnalysisConfigurator {
     }
     if (!libs.isEmpty()) {
       String joinedLibs = StringUtils.join(libs, SEPARATOR);
-      properties.setProperty(PROJECT_LIBRARIES_PROPERTY, joinedLibs);
+      properties.setProperty(JAVA_LIBRARIES_PROPERTY, joinedLibs);
       // Can't differentiate main and test classpath
       properties.setProperty(PROJECT_TEST_LIBRARIES_PROPERTY, joinedLibs);
     }
