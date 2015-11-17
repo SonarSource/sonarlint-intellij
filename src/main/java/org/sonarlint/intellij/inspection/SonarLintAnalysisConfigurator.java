@@ -56,6 +56,8 @@ public class SonarLintAnalysisConfigurator {
   public static final String PROJECT_TESTS_PROPERTY = "sonar.tests";
   public static final String PROJECT_LIBRARIES_PROPERTY = "sonar.java.libraries";
   public static final String PROJECT_BINARIES_PROPERTY = "sonar.java.binaries";
+  public static final String PROJECT_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
+  public static final String PROJECT_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
   public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
   public static final String PROJECT_BASEDIR = "sonar.projectBaseDir";
 
@@ -122,6 +124,13 @@ public class SonarLintAnalysisConfigurator {
         properties.setProperty(PROJECT_BINARIES_PROPERTY, path);
       }
     }
+    VirtualFile testCompilerOutput = getCompilerTestOutputPath(ijModule);
+    if (testCompilerOutput != null) {
+      String path = testCompilerOutput.getCanonicalPath();
+      if (path != null) {
+        properties.setProperty(PROJECT_TEST_BINARIES_PROPERTY, path);
+      }
+    }
   }
 
   private static void configureLibraries(Module ijModule, Properties properties) {
@@ -130,7 +139,10 @@ public class SonarLintAnalysisConfigurator {
       libs.add(toFile(f.getPath()));
     }
     if (!libs.isEmpty()) {
-      properties.setProperty(PROJECT_LIBRARIES_PROPERTY, StringUtils.join(libs, SEPARATOR));
+      String joinedLibs = StringUtils.join(libs, SEPARATOR);
+      properties.setProperty(PROJECT_LIBRARIES_PROPERTY, joinedLibs);
+      // Can't differentiate main and test classpath
+      properties.setProperty(PROJECT_TEST_LIBRARIES_PROPERTY, joinedLibs);
     }
   }
 
@@ -214,10 +226,19 @@ public class SonarLintAnalysisConfigurator {
   }
 
   @Nullable
-  public static VirtualFile getCompilerOutputPath(final Module module) {
+  private static VirtualFile getCompilerOutputPath(final Module module) {
     final CompilerModuleExtension compilerModuleExtension = CompilerModuleExtension.getInstance(module);
     if (compilerModuleExtension != null) {
       return compilerModuleExtension.getCompilerOutputPath();
+    }
+    return null;
+  }
+
+  @Nullable
+  private static VirtualFile getCompilerTestOutputPath(final Module module) {
+    final CompilerModuleExtension compilerModuleExtension = CompilerModuleExtension.getInstance(module);
+    if (compilerModuleExtension != null) {
+      return compilerModuleExtension.getCompilerOutputPathForTests();
     }
     return null;
   }
