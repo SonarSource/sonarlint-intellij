@@ -84,7 +84,7 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
     if (vFile == null) {
       return NO_PROBLEMS;
     }
-    String absolutePath = vFile.getCanonicalPath();
+    final String absolutePath = vFile.getCanonicalPath();
     if (absolutePath == null) {
       return NO_PROBLEMS;
     }
@@ -93,7 +93,7 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
         Async.asyncResultOf(new Callable<Collection<Issue>>() {
           @Override
           public Collection<Issue> call() throws Exception {
-            return runAnalysis(module, relativePath);
+            return runAnalysis(module, absolutePath, relativePath);
           }
         }, Collections.<Issue>emptyList());
 
@@ -106,13 +106,13 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
 
 
   @NotNull
-  Collection<Issue> runAnalysis(Module module, final String relativePath) {
+  Collection<Issue> runAnalysis(Module module, final String fileAbsolutePath, final String fileRelativePath) {
     final Collection<Issue> issues = new ArrayList<>();
-    SonarLintAnalysisConfigurator.analyzeModule(module, Collections.singleton(relativePath), new IssueListener() {
+    SonarLintAnalysisConfigurator.analyzeModule(module, Collections.singleton(fileAbsolutePath), new IssueListener() {
       @Override
       public void handle(Issue issue) {
         String path = StringUtils.substringAfterLast(issue.getComponentKey(), ":");
-        if (path.equals(relativePath)) {
+        if (path.equals(fileRelativePath)) {
           issues.add(issue);
         }
       }
