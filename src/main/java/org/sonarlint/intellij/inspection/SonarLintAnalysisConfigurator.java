@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.inspection;
 
 import com.intellij.compiler.CompilerConfiguration;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.EffectiveLanguageLevelUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.CompilerModuleExtension;
@@ -31,8 +33,11 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.util.Computable;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
+import com.intellij.pom.java.LanguageLevel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -121,11 +126,21 @@ public class SonarLintAnalysisConfigurator {
     configureJavaSourceTarget(ijModule, properties);
   }
 
-  private static void configureJavaSourceTarget(Module ijModule, Properties properties) {
+  private static void configureJavaSourceTarget(final Module ijModule, Properties properties) {
     try {
-      String targetLevel = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
-      properties.setProperty(JAVA_SOURCE_PROPERTY, targetLevel);
-      properties.setProperty(JAVA_TARGET_PROPERTY, targetLevel);
+      final String languageLevel = ApplicationManager.getApplication().runReadAction(new Computable<LanguageLevel>() {
+        @Override
+        public LanguageLevel compute() {
+          return EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule);
+        }
+      }).getCompilerComplianceDefaultOption();
+      String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
+      if (StringUtil.isEmpty(bytecodeTarget)) {
+        // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
+        bytecodeTarget = languageLevel;
+      }
+      properties.setProperty(JAVA_SOURCE_PROPERTY, languageLevel);
+      properties.setProperty(JAVA_TARGET_PROPERTY, bytecodeTarget);
     } catch (NoClassDefFoundError e) {
       // CompilerConfiguration not available for example in PHP Storm
     }
