@@ -63,8 +63,21 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
         props.setProperty(SonarLintConstants.VERBOSE_PROPERTY, "true");
       }
       props.putAll(projectSettings.getAdditionalProperties());
+      if (projectSettings.isVerboseEnabled()) {
+        console.info("SonarLint properties:\n" + propsToString(props));
+      }
+
+
       runner.runAnalysis(props, issueListener);
     }
+  }
+
+  private static String propsToString(Properties props) {
+    StringBuilder builder = new StringBuilder();
+    for (Object key : props.keySet()) {
+      builder.append(key).append("=").append(props.getProperty(key.toString())).append("\n");
+    }
+    return builder.toString();
   }
 
   public synchronized void tryUpdate() {
@@ -81,8 +94,7 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
     Properties globalProps = new Properties();
     globalProps.setProperty(SonarLintConstants.SONAR_URL, serverUrl);
     globalProps.setProperty(SonarLintConstants.ANALYSIS_MODE, SonarLintConstants.ANALYSIS_MODE_ISSUES);
-    final boolean verboseEnabled = projectSettings.isVerboseEnabled();
-    globalProps.setProperty(SonarLintConstants.VERBOSE_PROPERTY, Boolean.toString(verboseEnabled));
+    globalProps.setProperty(SonarLintConstants.VERBOSE_PROPERTY, Boolean.toString(projectSettings.isVerboseEnabled()));
 
     File baseDir = new File(myProject.getBasePath());
     File projectSpecificWorkDir = new File(new File(baseDir, ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR), "sonarlint");
@@ -95,9 +107,7 @@ public final class SonarQubeRunnerFacade extends AbstractProjectComponent {
         switch (level) {
           case TRACE:
           case DEBUG:
-            if (verboseEnabled) {
-              console.info(msg);
-            }
+              console.debug(msg);
             break;
           case ERROR:
             console.error(msg);

@@ -27,6 +27,7 @@ import com.intellij.openapi.project.Project;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.config.SonarLintProjectSettings;
 
 public class SonarLintConsole extends AbstractProjectComponent {
 
@@ -39,6 +40,13 @@ public class SonarLintConsole extends AbstractProjectComponent {
 
   public static synchronized SonarLintConsole getSonarQubeConsole(@NotNull Project p) {
     return p.getComponent(SonarLintConsole.class);
+  }
+
+  public void debug(String msg) {
+    SonarLintProjectSettings settings = myProject.getComponent(SonarLintProjectSettings.class);
+    if (settings != null && settings.isVerboseEnabled()) {
+      getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
+    }
   }
 
   public void info(String msg) {

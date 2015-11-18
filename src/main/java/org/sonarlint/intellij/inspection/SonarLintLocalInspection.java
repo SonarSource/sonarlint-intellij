@@ -22,6 +22,10 @@ package org.sonarlint.intellij.inspection;
 import com.intellij.codeInspection.InspectionManager;
 import com.intellij.codeInspection.LocalInspectionTool;
 import com.intellij.codeInspection.ProblemDescriptor;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.util.text.StringUtil;
@@ -84,6 +88,11 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
     if (vFile == null) {
       return NO_PROBLEMS;
     }
+    // SonarLint need content of the file to be written on disk
+    if (isOnTheFly && saveFile(vFile)) {
+      // Inspection will be triggered again since we saved the file
+      return NO_PROBLEMS;
+    }
     final String absolutePath = vFile.getCanonicalPath();
     if (absolutePath == null) {
       return NO_PROBLEMS;
@@ -102,6 +111,25 @@ public class SonarLintLocalInspection extends LocalInspectionTool {
       descriptors.add(delegate.getProblemDescriptor(issue, file, manager, true));
     }
     return descriptors.toArray(new ProblemDescriptor[descriptors.size()]);
+  }
+
+  private static boolean saveFile(@NotNull final VirtualFile virtualFile) {
+    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+    if (fileDocumentManager.isFileModified(virtualFile)) {
+      final Document document = fileDocumentManager.getDocument(virtualFile);
+      if (document != null) {
+        ApplicationManager.getApplication().invokeLater(
+            new Runnable() {
+              @Override
+              public void run() {
+                fileDocumentManager.saveDocument(document);
+              }
+            }, ModalityState.NON_MODAL
+        );
+        return true;
+      }
+    }
+    return false;
   }
 
 

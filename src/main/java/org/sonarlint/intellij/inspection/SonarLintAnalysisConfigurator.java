@@ -217,7 +217,7 @@ public class SonarLintAnalysisConfigurator {
     if (module == null) {
       return new VirtualFile[0];
     }
-    final List<VirtualFile> found = new LinkedList<VirtualFile>();
+    final List<VirtualFile> found = new LinkedList<>();
     final ModuleRootManager mrm = ModuleRootManager.getInstance(module);
     final OrderEntry[] orderEntries = mrm.getOrderEntries();
     for (final OrderEntry entry : orderEntries) {
@@ -268,19 +268,8 @@ public class SonarLintAnalysisConfigurator {
 
   public static void run(SonarLintProjectSettings projectSettings, SonarQubeRunnerFacade runner, Properties props, SonarLintConsole console, IssueListener listener) {
 
-    if (projectSettings.isVerboseEnabled()) {
-      console.info("SonarLint properties:\n" + propsToString(props));
-    }
-
     runner.startAnalysis(props, listener);
 
   }
 
-  private static String propsToString(Properties props) {
-    StringBuilder builder = new StringBuilder();
-    for (Object key : props.keySet()) {
-      builder.append(key).append("=").append(props.getProperty(key.toString())).append("\n");
-    }
-    return builder.toString();
-  }
 }

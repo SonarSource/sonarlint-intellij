@@ -117,10 +117,6 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
       // File only in memory
       return null;
     }
-    if (onTheFly) {
-      // SonarLint need content of the file to be written on disk
-      saveFile(virtualFile);
-    }
     return virtualFile;
   }
 
@@ -130,23 +126,6 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
 
   private static boolean existsOnFilesystem(@NotNull VirtualFile virtualFile) {
     return LocalFileSystem.getInstance().exists(virtualFile);
-  }
-
-  private static void saveFile(@NotNull final VirtualFile virtualFile) {
-    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-    if (fileDocumentManager.isFileModified(virtualFile)) {
-      final Document document = fileDocumentManager.getDocument(virtualFile);
-      if (document != null) {
-        ApplicationManager.getApplication().invokeLater(
-            new Runnable() {
-              @Override
-              public void run() {
-                fileDocumentManager.saveDocument(document);
-              }
-            }, ModalityState.NON_MODAL
-        );
-      }
-    }
   }
 
   ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager, boolean isLocal) {
