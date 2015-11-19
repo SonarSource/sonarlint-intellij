@@ -128,12 +128,12 @@ public class SonarLintAnalysisConfigurator {
 
   private static void configureJavaSourceTarget(final Module ijModule, Properties properties) {
     try {
-      final String languageLevel = ApplicationManager.getApplication().runReadAction(new Computable<LanguageLevel>() {
+      final String languageLevel = getLanguageLevelOption(ApplicationManager.getApplication().runReadAction(new Computable<LanguageLevel>() {
         @Override
         public LanguageLevel compute() {
           return EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule);
         }
-      }).getCompilerComplianceDefaultOption();
+      }));
       String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
       if (StringUtil.isEmpty(bytecodeTarget)) {
         // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
@@ -143,6 +143,27 @@ public class SonarLintAnalysisConfigurator {
       properties.setProperty(JAVA_TARGET_PROPERTY, bytecodeTarget);
     } catch (NoClassDefFoundError e) {
       // CompilerConfiguration not available for example in PHP Storm
+    }
+  }
+
+  private static String getLanguageLevelOption(LanguageLevel level) {
+    switch (level) {
+      case JDK_1_3:
+        return "1.3";
+      case JDK_1_4:
+        return "1.4";
+      case JDK_1_5:
+        return "1.5";
+      case JDK_1_6:
+        return "1.6";
+      case JDK_1_7:
+        return "1.7";
+      case JDK_1_8:
+        return "8";
+      case JDK_1_9:
+        return "9";
+      default:
+        return "";
     }
   }
 

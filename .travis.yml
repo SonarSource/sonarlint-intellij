@@ -10,7 +10,8 @@ script:
 
 env:
   matrix:
-    - JOB=CI 
+    - JOB=CI IJ_VERSION=14.1
+    - JOB=CI IJ_VERSION=15.0.1 
     - PR_ANALYSIS=true
 
 cache:

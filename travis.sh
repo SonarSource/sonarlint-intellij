@@ -38,7 +38,7 @@ then
   fi
 else
   # Regular CI
-  ./gradlew buildPlugin check
+  ./gradlew buildPlugin check -PijVersion=$IJ_VERSION
 fi
 
 
