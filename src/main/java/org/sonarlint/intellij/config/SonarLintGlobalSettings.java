@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ExportableApplicationComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
@@ -26,7 +27,9 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+
 import java.io.File;
+
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintBundle;
@@ -37,7 +40,7 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
   private String serverUrl = "https://update.sonarlint.org";
 
   public static SonarLintGlobalSettings getInstance() {
-    return com.intellij.openapi.application.ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
+    return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
   }
 
   @Override

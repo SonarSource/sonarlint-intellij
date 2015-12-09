@@ -17,24 +17,23 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.editor;
 
-import com.intellij.CommonBundle;
+import org.sonar.runner.api.Issue;
+import org.sonar.runner.api.IssueListener;
 
-import java.util.ResourceBundle;
+import java.util.LinkedList;
+import java.util.List;
 
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.PropertyKey;
+public class AccumulatorIssueListener implements IssueListener {
+  private final List<Issue> issues = new LinkedList<>();
 
-public final class SonarLintBundle {
-  @NonNls
-  private static final String BUNDLE_NAME = "org.sonarlint.intellij.util.SonarLintBundle";
-  private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
-
-  private SonarLintBundle() {
+  public List<Issue> getIssues() {
+    return issues;
   }
 
-  public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME) String key, Object... params) {
-    return CommonBundle.message(BUNDLE, key, params);
+  @Override
+  public void handle(Issue issue) {
+    issues.add(issue);
   }
 }

@@ -19,22 +19,34 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.CommonBundle;
+import com.google.common.io.ByteStreams;
 
-import java.util.ResourceBundle;
+import javax.annotation.concurrent.ThreadSafe;
+import javax.swing.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.PropertyKey;
+@ThreadSafe
+public class ResourceLoader {
+  private static Map<String, Icon> iconCache = new ConcurrentHashMap<>();
 
-public final class SonarLintBundle {
-  @NonNls
-  private static final String BUNDLE_NAME = "org.sonarlint.intellij.util.SonarLintBundle";
-  private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
-
-  private SonarLintBundle() {
+  private ResourceLoader() {
+    // only static
   }
 
-  public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME) String key, Object... params) {
-    return CommonBundle.message(BUNDLE, key, params);
+  public static Icon getIcon(String name) throws IOException {
+    // keep it lock free even if we might load it initially several times
+    Icon icon = iconCache.get(name);
+
+    if (icon != null) {
+      return icon;
+    }
+
+    InputStream stream = ResourceLoader.class.getResourceAsStream("/images/" + name);
+    icon = new ImageIcon(ByteStreams.toByteArray(stream));
+    iconCache.put(name, icon);
+    return icon;
   }
 }

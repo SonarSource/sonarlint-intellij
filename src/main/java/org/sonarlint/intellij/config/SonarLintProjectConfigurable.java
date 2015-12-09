@@ -23,12 +23,14 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.EditableModel;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.table.AbstractTableModel;
+
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 

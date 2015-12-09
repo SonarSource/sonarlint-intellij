@@ -17,24 +17,36 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.editor;
 
-import com.intellij.CommonBundle;
+import org.junit.Before;
+import org.junit.Test;
+import org.sonar.runner.api.Issue;
 
-import java.util.ResourceBundle;
+import static org.assertj.core.api.Assertions.assertThat;
 
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.PropertyKey;
+public class AccumulatorIssueListenerTest {
+    private AccumulatorIssueListener listener;
 
-public final class SonarLintBundle {
-  @NonNls
-  private static final String BUNDLE_NAME = "org.sonarlint.intellij.util.SonarLintBundle";
-  private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
+    @Before
+    public void setUp(){
+        listener = new AccumulatorIssueListener();
+    }
 
-  private SonarLintBundle() {
-  }
+    @Test
+    public void test_issue_listener() {
+        for(int i = 0; i<5; i++) {
+            listener.handle(createIssue(i));
+        }
 
-  public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME) String key, Object... params) {
-    return CommonBundle.message(BUNDLE, key, params);
-  }
+        assertThat(listener.getIssues()).hasSize(5);
+        assertThat(listener.getIssues().get(0).getKey()).isEqualTo("key0");
+    }
+
+    private static Issue createIssue(int n) {
+        return Issue.builder()
+                .setComponentKey("component" + n)
+                .setKey("key" + n)
+                .build();
+    }
 }

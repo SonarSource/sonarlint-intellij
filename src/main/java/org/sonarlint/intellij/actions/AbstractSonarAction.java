@@ -17,24 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.actions;
 
-import com.intellij.CommonBundle;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
+import org.sonarlint.intellij.analysis.SonarLintStatus;
 
-import java.util.ResourceBundle;
+public abstract class AbstractSonarAction extends AnAction {
+  @Override
+  public void update(AnActionEvent e) {
+    Project p = e.getProject();
 
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.PropertyKey;
+    e.getPresentation().setVisible(true);
 
-public final class SonarLintBundle {
-  @NonNls
-  private static final String BUNDLE_NAME = "org.sonarlint.intellij.util.SonarLintBundle";
-  private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
-
-  private SonarLintBundle() {
+    if (p == null || !p.isInitialized() || p.isDisposed()) {
+      e.getPresentation().setEnabled(false);
+    } else {
+      SonarLintStatus status = SonarLintStatus.get(p);
+      e.getPresentation().setEnabled(isEnabled(status));
+    }
   }
 
-  public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME) String key, Object... params) {
-    return CommonBundle.message(BUNDLE, key, params);
-  }
+  protected abstract boolean isEnabled(SonarLintStatus status);
 }

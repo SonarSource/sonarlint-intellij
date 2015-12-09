@@ -26,6 +26,7 @@ import com.intellij.ui.TableUtil;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.EditableModel;
+
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import javax.swing.table.TableCellEditor;

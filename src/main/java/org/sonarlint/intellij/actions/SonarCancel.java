@@ -17,24 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.actions;
 
-import com.intellij.CommonBundle;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import org.sonarlint.intellij.analysis.SonarLintStatus;
 
-import java.util.ResourceBundle;
-
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.PropertyKey;
-
-public final class SonarLintBundle {
-  @NonNls
-  private static final String BUNDLE_NAME = "org.sonarlint.intellij.util.SonarLintBundle";
-  private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
-
-  private SonarLintBundle() {
+public class SonarCancel extends AbstractSonarAction {
+  @Override
+  protected boolean isEnabled(SonarLintStatus status) {
+    return status.isRunning() && !status.isCanceled();
   }
 
-  public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME) String key, Object... params) {
-    return CommonBundle.message(BUNDLE, key, params);
+  @Override
+  public void actionPerformed(AnActionEvent e) {
+    SonarLintStatus.get(e.getProject()).cancel();
   }
 }

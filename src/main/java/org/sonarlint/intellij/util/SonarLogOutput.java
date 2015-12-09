@@ -19,22 +19,30 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.CommonBundle;
+import org.sonar.runner.api.LogOutput;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
-import java.util.ResourceBundle;
+public class SonarLogOutput implements LogOutput {
+  private final SonarLintConsole console;
 
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.PropertyKey;
-
-public final class SonarLintBundle {
-  @NonNls
-  private static final String BUNDLE_NAME = "org.sonarlint.intellij.util.SonarLintBundle";
-  private static final ResourceBundle BUNDLE = ResourceBundle.getBundle(BUNDLE_NAME);
-
-  private SonarLintBundle() {
+  public SonarLogOutput(SonarLintConsole console) {
+    this.console = console;
   }
 
-  public static String message(@PropertyKey(resourceBundle = BUNDLE_NAME) String key, Object... params) {
-    return CommonBundle.message(BUNDLE, key, params);
+  @Override
+  public void log(String msg, Level level) {
+    switch (level) {
+      case TRACE:
+      case DEBUG:
+        console.debug(msg);
+        break;
+      case ERROR:
+        console.error(msg);
+        break;
+      case INFO:
+      case WARN:
+      default:
+        console.info(msg);
+    }
   }
 }
