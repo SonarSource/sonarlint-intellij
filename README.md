@@ -1,4 +1,5 @@
-# SonarQube IntelliJ Plugin
+# SonarLint IntelliJ Plugin
+
 
 [![Build Status](https://travis-ci.org/SonarSource/sonar-intellij.svg)](https://travis-ci.org/SonarSource/sonar-intellij)
 
@@ -16,3 +17,6 @@
 ./gradlew release
 
 Deploy on Jetbrains plugin repository (todo try to use publish task)
+
+## More information
+<b><a href="http://www.sonarlint.org/intellij/">SonarLint for IntelliJ</a></b>
