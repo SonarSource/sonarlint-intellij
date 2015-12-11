@@ -48,3 +48,9 @@ sonarqube {
 license {
   strictCheck true
 }
+
+release {
+  git {
+    requireBranch = ''
+  }
+}
