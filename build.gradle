@@ -37,7 +37,7 @@ repositories {
 }
 
 dependencies {
-  compile 'org.sonarsource.sonar-runner:sonar-runner-api:2.5-SNAPSHOT'
+  compile 'org.sonarsource.sonar-runner:sonar-runner-api:2.5-RC2'
   compile 'commons-lang:commons-lang:2.4'
   compile 'commons-io:commons-io:2.4'
   compile 'com.google.code.findbugs:jsr305:2.0.2'
