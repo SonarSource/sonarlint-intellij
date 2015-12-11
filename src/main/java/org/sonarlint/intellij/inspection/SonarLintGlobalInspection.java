@@ -141,9 +141,9 @@ public class SonarLintGlobalInspection extends GlobalInspectionTool {
   }
 
   ProblemDescriptor getProblemDescriptor(Issue issue, PsiFile psiFile, @NotNull InspectionManager manager, boolean isLocal) {
-    if (issue.getLine() != null) {
+    if (issue.getStartLine() != null) {
       return manager.createProblemDescriptor(psiFile,
-        InspectionUtils.getLineRange(psiFile, issue.getLine()),
+        InspectionUtils.getLineRange(psiFile, issue.getStartLine()),
         InspectionUtils.getProblemMessage(issue, isLocal),
         problemHighlightType(issue, isLocal),
         false);
