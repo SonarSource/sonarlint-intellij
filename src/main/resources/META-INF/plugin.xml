@@ -102,7 +102,7 @@
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
                 text="Run SonarLint on this file"
                 description="Run SonarLint analysis on the file selected in the editor"
-                icon="/images/onde-sonar-16-execute3.png">
+                icon="/images/onde-sonar-16-execute6.png">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default" />
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="SonarLint.toolwindow"/>
