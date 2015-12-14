@@ -20,11 +20,10 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.CommonBundle;
-
-import java.util.ResourceBundle;
-
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.PropertyKey;
+
+import java.util.ResourceBundle;
 
 public final class SonarLintBundle {
   @NonNls

@@ -31,8 +31,9 @@ import com.intellij.openapi.wm.ex.ToolWindowEx;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.Box;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
 
 public class SonarLintToolPanel extends JPanel {
   private static final String ID = "SonarLint";

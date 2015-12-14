@@ -69,7 +69,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       }
 
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
-      for(PsiFile f : psiFiles) {
+      for (PsiFile f : psiFiles) {
         codeAnalyzer.restart(f);
       }
 
@@ -111,9 +111,9 @@ public class IssueProcessor extends AbstractProjectComponent {
   private Collection<PsiFile> getPsi(Collection<VirtualFile> files) {
     List<PsiFile> psiFiles = new LinkedList<>();
 
-    for(VirtualFile f : files) {
+    for (VirtualFile f : files) {
       try {
-      psiFiles.add(matcher.findFile(f));
+        psiFiles.add(matcher.findFile(f));
       } catch (IssueMatcher.NoMatchException e) {
         LOGGER.error("Couldn't find PSI for file: " + f.getPath(), e);
       }
@@ -126,7 +126,7 @@ public class IssueProcessor extends AbstractProjectComponent {
    */
   private void clearFiles(Collection<PsiFile> files) {
     for (PsiFile psiFile : files) {
-        store.clearFile(psiFile);
+      store.clearFile(psiFile);
     }
   }
 

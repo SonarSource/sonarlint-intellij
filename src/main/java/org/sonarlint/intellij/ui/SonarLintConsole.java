@@ -24,13 +24,12 @@ import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
 import com.intellij.openapi.util.Disposer;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.SonarLintProjectSettings;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 public class SonarLintConsole extends AbstractProjectComponent {
 

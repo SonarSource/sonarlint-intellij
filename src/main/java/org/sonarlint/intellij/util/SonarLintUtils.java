@@ -29,7 +29,6 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.CheckForNull;
 import java.util.Collection;
 
 public class SonarLintUtils {

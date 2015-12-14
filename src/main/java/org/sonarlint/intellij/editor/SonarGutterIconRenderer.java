@@ -29,7 +29,7 @@ import org.sonarlint.intellij.actions.SonarUrlAction;
 import org.sonarlint.intellij.util.ResourceLoader;
 
 import javax.annotation.Nullable;
-import javax.swing.*;
+import javax.swing.Icon;
 import java.io.IOException;
 import java.util.Objects;
 

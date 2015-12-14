@@ -28,10 +28,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.analysis.SonarQubeRunnerFacade;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
-import javax.swing.*;
+import javax.swing.Icon;
 
 public class UpdateAction extends AbstractSonarAction {
 

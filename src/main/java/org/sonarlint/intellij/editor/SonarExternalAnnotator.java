@@ -42,7 +42,8 @@ import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.Issue;
 import org.sonarlint.intellij.issue.IssueStore;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Font;
 import java.util.Collection;
 
 /**
@@ -118,7 +119,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   private TextAttributes getTextAttrs() {
     Color c;
-    if(!unitTest) {
+    if (!unitTest) {
       c = JBColor.YELLOW.darker();
     } else {
       c = Color.yellow;
@@ -151,7 +152,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static HighlightSeverity getSeverity(@Nullable String severity) {
-    if(severity == null) {
+    if (severity == null) {
       return HighlightSeverity.WARNING;
     }
     switch (severity) {

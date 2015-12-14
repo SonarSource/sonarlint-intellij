@@ -23,11 +23,6 @@ import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
-
-import java.io.File;
-import java.util.Properties;
-import javax.annotation.CheckForNull;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonar.runner.api.IssueListener;
@@ -36,6 +31,10 @@ import org.sonarlint.intellij.config.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintConstants;
 import org.sonarlint.intellij.util.SonarLogOutput;
+
+import javax.annotation.CheckForNull;
+import java.io.File;
+import java.util.Properties;
 
 public final class DefaultSonarQubeRunnerFacade extends AbstractProjectComponent implements SonarQubeRunnerFacade {
 

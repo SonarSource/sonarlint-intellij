@@ -21,19 +21,18 @@ package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.highlighting.TooltipLinkHandler;
 import com.intellij.openapi.editor.Editor;
-
-import java.awt.Desktop;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+
+import java.awt.Desktop;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 
 public class SonarLinkHandler extends TooltipLinkHandler {
 

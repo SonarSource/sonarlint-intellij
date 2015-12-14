@@ -23,16 +23,15 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.EditableModel;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.Nullable;
 
+import javax.swing.JComponent;
+import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
-import javax.swing.JComponent;
-import javax.swing.table.AbstractTableModel;
-
-import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.Nullable;
 
 public class SonarLintProjectConfigurable implements Configurable {
 
@@ -86,7 +85,7 @@ public class SonarLintProjectConfigurable implements Configurable {
   }
 
   private static class PropertiesTableModel extends AbstractTableModel implements EditableModel {
-    private final java.util.List<KeyValuePair> myRows = new ArrayList<KeyValuePair>();
+    private final java.util.List<KeyValuePair> myRows = new ArrayList<>();
 
     @Override
     public String getColumnName(int column) {
@@ -176,7 +175,7 @@ public class SonarLintProjectConfigurable implements Configurable {
     }
 
     public Map<String, String> getOptions() {
-      final Map<String, String> map = new java.util.HashMap<String, String>();
+      final Map<String, String> map = new java.util.HashMap<>();
       for (KeyValuePair pair : myRows) {
         map.put(pair.key.trim(), pair.value.trim());
       }
@@ -190,13 +189,15 @@ public class SonarLintProjectConfigurable implements Configurable {
         for (Map.Entry<String, String> entry : options.entrySet()) {
           myRows.add(new KeyValuePair(entry.getKey(), entry.getValue()));
         }
-        Collections.sort(myRows, new Comparator<KeyValuePair>() {
-          @Override
-          public int compare(KeyValuePair o1, KeyValuePair o2) {
-            return o1.key.compareToIgnoreCase(o2.key);
-          }
-        });
+        Collections.sort(myRows, new KeyValueComparator());
         fireTableRowsInserted(0, options.size() - 1);
+      }
+    }
+
+    private static class KeyValueComparator implements Comparator<KeyValuePair> {
+        @Override
+        public int compare(KeyValuePair o1, KeyValuePair o2) {
+          return o1.key.compareToIgnoreCase(o2.key);
       }
     }
 

@@ -22,7 +22,8 @@ package org.sonarlint.intellij.util;
 import com.google.common.io.ByteStreams;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.swing.*;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;

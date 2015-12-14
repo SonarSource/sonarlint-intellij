@@ -27,10 +27,10 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.EditableModel;
 
-import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableModel;
+import java.awt.BorderLayout;
 
 public class SonarLintPropertiesForm {
   private JPanel rootPane;

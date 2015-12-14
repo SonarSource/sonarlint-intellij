@@ -97,7 +97,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);
-      indicator.setText("Creating SonarLint Issues: " + listener.getIssues().size());
+      indicator.setText("Creating SonarLint issues: " + listener.getIssues().size());
 
       processor.process(job, listener.getIssues());
     } catch (RuntimeException e) {
@@ -121,7 +121,7 @@ public class SonarLintTask extends Task.Backgroundable {
       this.indicator = indicator;
       this.status = status;
       this.t = t;
-      this.setName("SonarLint-cancel-monitor");
+      this.setName("sonarLint-cancel-monitor");
       this.setDaemon(true);
     }
 
@@ -144,7 +144,7 @@ public class SonarLintTask extends Task.Backgroundable {
             indicator.cancel();
           }
 
-          SonarLintConsole.getSonarQubeConsole(myProject).info("Cancelling...");
+          SonarLintConsole.getSonarQubeConsole(myProject).info("Canceling...");
           t.interrupt();
           break;
         }
