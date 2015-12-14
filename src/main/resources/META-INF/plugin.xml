@@ -100,7 +100,7 @@
 
         <action id="SonarLint.AnalyzeCurrentEditorFile"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
-                text="Run SonarLint on this file"
+                text="Analyze this file with SonarLint"
                 description="Run SonarLint analysis on the file selected in the editor"
                 icon="/images/onde-sonar-16-execute6.png">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default" />
