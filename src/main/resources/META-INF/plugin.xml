@@ -86,7 +86,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
-        <toolWindow id="SonarLint" anchor="bottom" icon="/images/onde-sonar-16.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory"/>
+        <toolWindow id="SonarLint" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory"/>
         <projectConfigurable displayName="SonarLint" instance="org.sonarlint.intellij.config.SonarLintProjectConfigurable" nonDefaultProject="true"/>
     </extensions>
 

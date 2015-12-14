@@ -34,6 +34,6 @@ public class SonarUrlAction extends AnAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    SonarLinkHandler.handleLink(url);
+    SonarLinkHandler.handleLink(e.getProject(), url);
   }
 }

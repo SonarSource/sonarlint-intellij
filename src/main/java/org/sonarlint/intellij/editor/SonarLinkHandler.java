@@ -28,15 +28,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.MessageDialogBuilder;
+import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.SonarLintGlobalSettings;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarLinkHandler extends TooltipLinkHandler {
 
   public static final String UNABLE_TO_OPEN_LINK = "Unable to open link";
 
-  public static void openWebpage(URI uri) {
+  public static void openWebpage(@NotNull Project p, URI uri) {
     Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
     if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
       try {
@@ -44,12 +48,16 @@ public class SonarLinkHandler extends TooltipLinkHandler {
       } catch (Exception e) {
         throw new IllegalStateException(UNABLE_TO_OPEN_LINK, e);
       }
+    } else {
+      String msg = "Launching a browser is not supported on the current platform. Unable to open '" + uri + "'";
+      SonarLintConsole.getSonarQubeConsole(p).error(msg);
+      Messages.showMessageDialog(p, msg, "Unable to open URL", Messages.getWarningIcon());
     }
   }
 
-  public static void openWebpage(URL url) {
+  public static void openWebpage(@NotNull Project p, URL url) {
     try {
-      openWebpage(url.toURI());
+      openWebpage(p, url.toURI());
     } catch (URISyntaxException e) {
       throw new IllegalStateException(UNABLE_TO_OPEN_LINK, e);
     }
@@ -57,13 +65,13 @@ public class SonarLinkHandler extends TooltipLinkHandler {
 
   @Override
   public boolean handleLink(@NotNull String refSuffix, @NotNull Editor editor) {
-    return handleLink(refSuffix);
+    return handleLink(editor.getProject(), refSuffix);
   }
 
-  public static boolean handleLink(@NotNull String refSuffix) {
+  public static boolean handleLink(@NotNull Project p, @NotNull String refSuffix) {
     SonarLintGlobalSettings settings = SonarLintGlobalSettings.getInstance();
     try {
-      openWebpage(new URL(ruleDescriptionUrl(refSuffix, settings.getServerUrl())));
+      openWebpage(p, new URL(ruleDescriptionUrl(refSuffix, settings.getServerUrl())));
     } catch (MalformedURLException e) {
       throw new IllegalStateException(UNABLE_TO_OPEN_LINK, e);
     }

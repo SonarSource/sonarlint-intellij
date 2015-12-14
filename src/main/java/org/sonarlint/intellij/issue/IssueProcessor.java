@@ -35,6 +35,8 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
@@ -58,14 +60,19 @@ public class IssueProcessor extends AbstractProjectComponent {
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
-      clearFiles(job.files());
+      Collection<PsiFile> psiFiles = getPsi(job.files());
+      clearFiles(psiFiles);
       map = transformIssues(moduleBaseDir, issues);
 
       for (PsiFile file : map.keySet()) {
         store.store(file, map.get(file));
-        // trigger full analysis of the file, so that our ExternalAnnotator is called
-        codeAnalyzer.restart(file);
       }
+
+      // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
+      for(PsiFile f : psiFiles) {
+        codeAnalyzer.restart(f);
+      }
+
     } finally {
       token.finish();
     }
@@ -78,7 +85,11 @@ public class IssueProcessor extends AbstractProjectComponent {
     } else {
       end = " issues";
     }
+
+
+  console.clear();
     console.info("Found " + issues.size() + end);
+
   }
 
   /**
@@ -100,17 +111,25 @@ public class IssueProcessor extends AbstractProjectComponent {
     return map;
   }
 
+  private Collection<PsiFile> getPsi(Collection<VirtualFile> files) {
+    List<PsiFile> psiFiles = new LinkedList<>();
+
+    for(VirtualFile f : files) {
+      try {
+      psiFiles.add(matcher.findFile(f));
+      } catch (IssueMatcher.NoMatchException e) {
+        LOGGER.error("Couldn't find PSI for file: " + f.getPath(), e);
+      }
+    }
+    return psiFiles;
+  }
+
   /**
    * Clears all files analyzed (including the ones without issues)
    */
-  private void clearFiles(Collection<VirtualFile> files) {
-    for (VirtualFile file : files) {
-      try {
-        PsiFile psiFile = matcher.findFile(file);
+  private void clearFiles(Collection<PsiFile> files) {
+    for (PsiFile psiFile : files) {
         store.clearFile(psiFile);
-      } catch (IssueMatcher.NoMatchException e) {
-        LOGGER.error("Couldn't find PSI for file: " + file.getPath(), e);
-      }
     }
   }
 

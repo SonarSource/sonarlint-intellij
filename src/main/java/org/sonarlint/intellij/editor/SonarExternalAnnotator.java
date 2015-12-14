@@ -25,6 +25,7 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.TextAttributes;
@@ -69,6 +70,11 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         addAnnotation(i, holder);
       }
     }
+  }
+
+  @Override
+  public AnnotationContext collectInformation(@NotNull PsiFile file, @NotNull Editor editor, boolean hasErrors) {
+    return collectInformation(file);
   }
 
   @Override
