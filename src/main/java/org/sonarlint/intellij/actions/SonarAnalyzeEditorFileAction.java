@@ -19,7 +19,8 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.actionSystem.*;
+import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
@@ -54,9 +55,8 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
     Module m = ModuleUtil.findModuleForFile(selectedFiles[0], p);
 
     if (shouldAnalyze(selectedFiles[0], m)) {
-      boolean background = ActionPlaces.isMainMenuOrActionSearch(e.getPlace());
       SonarlintAnalyzer analyzer = p.getComponent(SonarlintAnalyzer.class);
-      if(background) {
+      if(executeBackground(e)) {
         analyzer.submitAsync(m, Collections.singletonList(selectedFiles[0]));
       } else {
         analyzer.submit(m, Collections.singletonList(selectedFiles[0]));
@@ -64,6 +64,17 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
     } else {
       console.error("File " + selectedFiles[0] + " cannot be analyzed");
     }
+  }
+
+  /**
+   * Whether the analysis should be lauched in the background.
+   * Analysis should be run in background in the following cases:
+   *  - Keybinding used (place = MainMenu)
+   *  - Macro used (place = unknown)
+   *  - Action used, ctrl+shift+A (place = GoToAction)
+   */
+  private static boolean executeBackground(AnActionEvent e) {
+    return ActionPlaces.isMainMenuOrActionSearch(e.getPlace()) || "unknown".equals(e.getPlace());
   }
 
   private static boolean shouldAnalyze(@Nullable VirtualFile file, Module module) {
