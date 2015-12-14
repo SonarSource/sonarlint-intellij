@@ -29,7 +29,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

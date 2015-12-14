@@ -86,10 +86,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       end = " issues";
     }
 
-
-  console.clear();
     console.info("Found " + issues.size() + end);
-
   }
 
   /**
