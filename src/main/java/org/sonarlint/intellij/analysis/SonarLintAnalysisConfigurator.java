@@ -55,6 +55,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.IssueListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.test.TestRunnerFacade;
+import org.sonarlint.intellij.util.SonarLintConstants;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintAnalysisConfigurator {
@@ -107,6 +108,7 @@ public class SonarLintAnalysisConfigurator {
   private static void configureProjectSettings(Project p, Properties properties) {
     configureEncoding(p, properties);
     properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
+    properties.setProperty(SonarLintConstants.USE_WS_CACHE, Boolean.toString(true));
   }
 
   private static void configureEncoding(Project p, Properties properties) {

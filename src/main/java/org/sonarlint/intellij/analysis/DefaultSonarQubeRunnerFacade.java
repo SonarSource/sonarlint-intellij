@@ -99,6 +99,7 @@ public final class DefaultSonarQubeRunnerFacade extends AbstractProjectComponent
     globalProps.setProperty(SonarLintConstants.SONAR_URL, serverUrl);
     globalProps.setProperty(SonarLintConstants.ANALYSIS_MODE, SonarLintConstants.ANALYSIS_MODE_ISSUES);
     globalProps.setProperty(SonarLintConstants.VERBOSE_PROPERTY, Boolean.toString(projectSettings.isVerboseEnabled()));
+    globalProps.setProperty(SonarLintConstants.USE_WS_CACHE, Boolean.toString(true));
 
     File baseDir = new File(myProject.getBasePath());
     File projectSpecificWorkDir = new File(new File(baseDir, ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR), "sonarlint");
