@@ -195,9 +195,9 @@ public class SonarLintProjectConfigurable implements Configurable {
     }
 
     private static class KeyValueComparator implements Comparator<KeyValuePair> {
-        @Override
-        public int compare(KeyValuePair o1, KeyValuePair o2) {
-          return o1.key.compareToIgnoreCase(o2.key);
+      @Override
+      public int compare(KeyValuePair o1, KeyValuePair o2) {
+        return o1.key.compareToIgnoreCase(o2.key);
       }
     }
 

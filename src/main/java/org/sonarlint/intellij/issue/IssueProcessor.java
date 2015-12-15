@@ -45,7 +45,7 @@ public class IssueProcessor extends AbstractProjectComponent {
   private final DaemonCodeAnalyzer codeAnalyzer;
   private final SonarLintConsole console;
 
-  protected IssueProcessor(Project project, IssueMatcher matcher, IssueStore store, DaemonCodeAnalyzer codeAnalyzer) {
+  public IssueProcessor(Project project, IssueMatcher matcher, IssueStore store, DaemonCodeAnalyzer codeAnalyzer) {
     super(project);
     this.matcher = matcher;
     this.store = store;
