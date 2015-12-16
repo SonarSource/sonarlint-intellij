@@ -92,7 +92,7 @@
 
     <actions>
         <action id="SonarLint.UpdateAction" class="org.sonarlint.intellij.actions.UpdateAction"
-                text="Update SonarLint" description="Update SonarLint rules" icon="/images/onde-sonar-13.png">
+                text="Update SonarLint analyzers" description="Update SonarLint rules" icon="/images/onde-sonar-13.png">
             <add-to-group group-id="HelpMenu" anchor="after" relative-to-action="CheckForUpdate"/>
         </action>
 
