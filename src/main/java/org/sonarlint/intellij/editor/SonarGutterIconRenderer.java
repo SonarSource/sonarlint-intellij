@@ -35,7 +35,7 @@ import java.util.Objects;
 
 public class SonarGutterIconRenderer extends GutterIconRenderer {
   private static final Logger LOGGER = Logger.getInstance(SonarGutterIconRenderer.class);
-  private static final String ICON_NAME = "onde-sonar-13.png";
+  private static final String ICON_NAME = "issue_annotation.png";
   private final String toolTip;
   @Nullable
   private final String url;
