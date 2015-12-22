@@ -22,8 +22,11 @@ package org.sonarlint.intellij.issue;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import org.sonar.runner.api.Issue;
 
 import javax.annotation.CheckForNull;
@@ -41,7 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @ThreadSafe
 public class IssueStore extends AbstractProjectComponent {
   private static final long THRESHOLD = 10_000;
-  private final Map<PsiFile, Collection<StoredIssue>> storePerFile;
+  private final Map<VirtualFile, Collection<StoredIssue>> storePerFile;
 
   public IssueStore(Project project) {
     super(project);
@@ -54,7 +57,7 @@ public class IssueStore extends AbstractProjectComponent {
 
   private long getNumberIssues() {
     long count = 0;
-    Iterator<Map.Entry<PsiFile, Collection<StoredIssue>>> it = storePerFile.entrySet().iterator();
+    Iterator<Map.Entry<VirtualFile, Collection<StoredIssue>>> it = storePerFile.entrySet().iterator();
 
     while (it.hasNext()) {
       count += it.next().getValue().size();
@@ -68,12 +71,12 @@ public class IssueStore extends AbstractProjectComponent {
     clear();
   }
 
-  public Collection<StoredIssue> getForFile(PsiFile file) {
+  public Collection<StoredIssue> getForFile(VirtualFile file) {
     Collection<StoredIssue> issues = storePerFile.get(file);
     return issues == null ? Collections.<StoredIssue>emptyList() : issues;
   }
 
-  public void clearFile(PsiFile file) {
+  public void clearFile(VirtualFile file) {
     storePerFile.remove(file);
   }
 
@@ -81,7 +84,7 @@ public class IssueStore extends AbstractProjectComponent {
    * Clears issues in the File if the threshold of issues per project as been passed.
    * It could be improved by being fully synchronized and deleting the oldest file closed.
    */
-  public void clean(PsiFile file) {
+  public void clean(VirtualFile file) {
     long numIssues = getNumberIssues();
 
     if (numIssues > THRESHOLD) {
@@ -89,7 +92,7 @@ public class IssueStore extends AbstractProjectComponent {
     }
   }
 
-  public void store(PsiFile file, Collection<StoredIssue> issues) {
+  public void store(VirtualFile file, Collection<StoredIssue> issues) {
     // this will also delete all existing issues in the file
     storePerFile.put(file, issues);
   }

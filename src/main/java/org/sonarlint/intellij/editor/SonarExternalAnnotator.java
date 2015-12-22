@@ -64,7 +64,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   @Override
   public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
-    Collection<IssueStore.StoredIssue> issues = annotationResult.store.getForFile(file);
+    Collection<IssueStore.StoredIssue> issues = annotationResult.store.getForFile(file.getVirtualFile());
     for (IssueStore.StoredIssue i : issues) {
       // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
       if (i.range() == null || i.range().isValid()) {

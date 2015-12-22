@@ -28,6 +28,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.jetbrains.annotations.NotNull;
@@ -62,10 +63,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
 
     AccessToken token = ReadAction.start();
     try {
-      PsiFile psi = psiManager.findFile(file);
-      if (psi != null) {
-        store.clean(psi);
-      }
+        store.clean(file);
     } finally {
       token.finish();
     }

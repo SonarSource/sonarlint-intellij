@@ -65,7 +65,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       map = transformIssues(moduleBaseDir, issues);
 
       for (PsiFile file : map.keySet()) {
-        store.store(file, map.get(file));
+        store.store(file.getVirtualFile(), map.get(file));
       }
 
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
@@ -126,7 +126,7 @@ public class IssueProcessor extends AbstractProjectComponent {
    */
   private void clearFiles(Collection<PsiFile> files) {
     for (PsiFile psiFile : files) {
-      store.clearFile(psiFile);
+      store.clearFile(psiFile.getVirtualFile());
     }
   }
 

@@ -25,6 +25,7 @@ import com.intellij.lang.annotation.AnnotationSession;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,6 +47,8 @@ public class SonarExternalAnnotatorTest {
     @Mock
     private PsiFile psiFile;
     @Mock
+    private VirtualFile virtualFile;
+    @Mock
     private IssueStore store;
     private AnnotationHolderImpl holder;
     private SonarExternalAnnotator.AnnotationContext ctx;
@@ -60,6 +63,7 @@ public class SonarExternalAnnotatorTest {
         annotator = new SonarExternalAnnotator(true);
         psiFileRange = new TextRange(0, 100);
         when(psiFile.getTextRange()).thenReturn(psiFileRange);
+        when(psiFile.getVirtualFile()).thenReturn(virtualFile);
     }
 
     @Test
@@ -99,7 +103,7 @@ public class SonarExternalAnnotatorTest {
             issues.add(createFileStoredIssue(i, psiFile));
         }
 
-        when(store.getForFile(psiFile)).thenReturn(issues);
+        when(store.getForFile(virtualFile)).thenReturn(issues);
     }
 
     private void createStoredIssues(int number) {
@@ -109,7 +113,7 @@ public class SonarExternalAnnotatorTest {
             issues.add(createRangeStoredIssue(i, i, i+10));
         }
 
-        when(store.getForFile(psiFile)).thenReturn(issues);
+        when(store.getForFile(virtualFile)).thenReturn(issues);
     }
 
     private static IssueStore.StoredIssue createFileStoredIssue(int id, PsiFile file) {
