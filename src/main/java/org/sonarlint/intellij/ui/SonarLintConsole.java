@@ -41,7 +41,8 @@ public class SonarLintConsole extends AbstractProjectComponent {
   }
 
   @Override
-  public void disposeComponent() {
+  public void projectClosed() {
+    // if we do it when Project is disposed, it's too late
     Disposer.dispose(consoleView);
   }
 

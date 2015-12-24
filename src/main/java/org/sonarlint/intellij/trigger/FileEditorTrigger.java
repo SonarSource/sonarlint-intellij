@@ -28,27 +28,31 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.IssueStore;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final IssueStore store;
   private final PsiManager psiManager;
+  private final MessageBusConnection busConnection;
 
   public FileEditorTrigger(Project project, IssueStore store, PsiManager psiManager) {
     super(project);
     this.store = store;
     this.psiManager = psiManager;
-    ApplicationManager.getApplication().getMessageBus().connect()
-      .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+    this.busConnection = ApplicationManager.getApplication().getMessageBus().connect();
+    busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
   }
 
   @Override
+  /**
+   * I've tried hard to group opening events on startup without success.
+   * Tried: Project.isInitialized, Project.isOpen, schedule to EDT thread and to WriteAction.
+   */
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    //nothing to do
+    // nothing to do
   }
 
   @Override
@@ -72,5 +76,10 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
   @Override
   public void selectionChanged(@NotNull FileEditorManagerEvent event) {
     // nothing to do
+  }
+
+  @Override
+  public void disposeComponent() {
+    busConnection.disconnect();
   }
 }
