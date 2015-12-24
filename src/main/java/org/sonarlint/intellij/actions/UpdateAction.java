@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -34,7 +35,7 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import javax.swing.Icon;
 
 public class UpdateAction extends AbstractSonarAction {
-
+  private static final Logger LOGGER = Logger.getInstance(UpdateAction.class);
   public static final String TITLE = "SonarLint update";
 
   @Override
@@ -85,11 +86,20 @@ public class UpdateAction extends AbstractSonarAction {
   }
 
   private static void showMessage(final Project p, final String msg, final Icon icon) {
-    ApplicationManager.getApplication().invokeLater(new Runnable() {
-      @Override
-      public void run() {
-        Messages.showMessageDialog(p, msg, TITLE, icon);
+    if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
+      // typically this is a test env
+      if(icon.equals(Messages.getErrorIcon())) {
+        throw new IllegalStateException(msg);
+      } else {
+        LOGGER.info(msg);
       }
-    });
+    } else {
+      ApplicationManager.getApplication().invokeLater(new Runnable() {
+        @Override
+        public void run() {
+          Messages.showMessageDialog(p, msg, TITLE, icon);
+        }
+      });
+    }
   }
 }

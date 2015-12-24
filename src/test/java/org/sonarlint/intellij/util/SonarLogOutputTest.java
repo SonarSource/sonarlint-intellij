@@ -31,49 +31,48 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class SonarLogOutputTest {
-    private SonarLogOutput logOutput;
-    private SonarLintConsole mockConsole;
+  private SonarLogOutput logOutput;
+  private SonarLintConsole mockConsole;
 
-    @Before
-    public void setUp() {
-        mockConsole = mock(SonarLintConsole.class);
-        logOutput = new SonarLogOutput(mockConsole);
-    }
+  @Before
+  public void setUp() {
+    mockConsole = mock(SonarLintConsole.class);
+    logOutput = new SonarLogOutput(mockConsole);
+  }
 
-    @After
-    public void after() {
-        verifyNoMoreInteractions(mockConsole);
-    }
+  @After
+  public void after() {
+    verifyNoMoreInteractions(mockConsole);
+  }
 
-    @Test
-    public void testDebug() {
-        logOutput.log("test", LogOutput.Level.DEBUG);
-        verify(mockConsole).debug("test");
-    }
+  @Test
+  public void testDebug() {
+    logOutput.log("test", LogOutput.Level.DEBUG);
+    verify(mockConsole).debug("test");
+  }
 
-    @Test
-    public void testInfo() {
-        logOutput.log("test", LogOutput.Level.INFO);
-        verify(mockConsole).info("test");
-    }
+  @Test
+  public void testInfo() {
+    logOutput.log("test", LogOutput.Level.INFO);
+    verify(mockConsole).info("test");
+  }
 
-    @Test
-    public void testError() {
-        logOutput.log("test", LogOutput.Level.ERROR);
-        verify(mockConsole).error("test");
-    }
+  @Test
+  public void testError() {
+    logOutput.log("test", LogOutput.Level.ERROR);
+    verify(mockConsole).error("test");
+  }
 
-    @Test
-    public void testWarn() {
-        logOutput.log("test", LogOutput.Level.WARN);
-        verify(mockConsole).info("test");
-    }
+  @Test
+  public void testWarn() {
+    logOutput.log("test", LogOutput.Level.WARN);
+    verify(mockConsole).info("test");
+  }
 
-    @Test
-    public void testTrace() {
-        logOutput.log("test", LogOutput.Level.TRACE);
-        verify(mockConsole).debug("test");
-    }
-
+  @Test
+  public void testTrace() {
+    logOutput.log("test", LogOutput.Level.TRACE);
+    verify(mockConsole).debug("test");
+  }
 
 }

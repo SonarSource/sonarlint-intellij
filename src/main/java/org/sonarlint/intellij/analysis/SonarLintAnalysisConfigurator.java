@@ -42,7 +42,6 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.IssueListener;
-import org.sonarlint.intellij.test.TestRunnerFacade;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintConstants;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -85,12 +84,7 @@ public class SonarLintAnalysisConfigurator {
   public static void analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.getSonarQubeConsole(p);
-    SonarQubeRunnerFacade runner;
-    if (ApplicationManager.getApplication().isUnitTestMode()) {
-      runner = TestRunnerFacade.getInstance();
-    } else {
-      runner = p.getComponent(SonarQubeRunnerFacade.class);
-    }
+    SonarQubeRunnerFacade runner = p.getComponent(SonarQubeRunnerFacade.class);
 
     // Configure
     Properties properties = new Properties();

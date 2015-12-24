@@ -17,36 +17,8 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.editor;
+package org.sonarlint.intellij.actions;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.sonar.runner.api.Issue;
+public class SonarCleanConsoleTest {
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class AccumulatorIssueListenerTest {
-  private AccumulatorIssueListener listener;
-
-  @Before
-  public void setUp() {
-    listener = new AccumulatorIssueListener();
-  }
-
-  @Test
-  public void test_issue_listener() {
-    for (int i = 0; i < 5; i++) {
-      listener.handle(createIssue(i));
-    }
-
-    assertThat(listener.getIssues()).hasSize(5);
-    assertThat(listener.getIssues().get(0).getKey()).isEqualTo("key0");
-  }
-
-  private static Issue createIssue(int n) {
-    return Issue.builder()
-      .setComponentKey("component" + n)
-      .setKey("key" + n)
-      .build();
-  }
 }

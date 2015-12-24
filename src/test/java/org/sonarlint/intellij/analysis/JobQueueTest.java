@@ -25,6 +25,7 @@ import org.junit.Before;
 import com.intellij.openapi.project.Project;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -50,31 +51,43 @@ public class JobQueueTest {
 
   @Test(expected = JobQueue.NoCapacityException.class)
   public void dontPassCapacity() throws JobQueue.NoCapacityException {
-    for(int i=0; i<= JobQueue.CAPACITY; i++) {
+    for (int i = 0; i <= JobQueue.CAPACITY; i++) {
       queue.queue(createJobNewFiles(1));
     }
   }
 
+  @Test(expected = IllegalArgumentException.class)
+  public void dontAnalyzeDifferentProject() throws JobQueue.NoCapacityException {
+    Project p = mock(Project.class);
+    when(module.getProject()).thenReturn(p);
+    queue.queue(createJobNewFiles(1));
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void dontAnalyzeEmpty() throws JobQueue.NoCapacityException {
+    queue.queue(new SonarLintAnalyzer.SonarLintJob(module, Collections.<VirtualFile>emptySet()));
+  }
+
   @Test
   public void dontOptimize() throws JobQueue.NoCapacityException {
-    SonarlintAnalyzer.SonarLintJob job = createJob();
+    SonarLintAnalyzer.SonarLintJob job = createJob();
 
-    for(int i=0; i< 3; i++) {
+    for (int i = 0; i < 3; i++) {
       queue.queue(job);
     }
 
     assertThat(queue.size()).isEqualTo(3);
 
-    SonarlintAnalyzer.SonarLintJob j;
+    SonarLintAnalyzer.SonarLintJob j;
 
-    while((j = queue.get()) != null) {
+    while ((j = queue.get()) != null) {
       assertThat(j).isEqualTo(job);
     }
   }
 
   @Test
   public void optimize() throws JobQueue.NoCapacityException {
-    for(int i=0; i< 3; i++) {
+    for (int i = 0; i < 3; i++) {
       queue.queue(createJobNewFiles(2), true);
     }
 
@@ -84,7 +97,7 @@ public class JobQueueTest {
 
   @Test
   public void dontRepeatSameFile() throws JobQueue.NoCapacityException {
-    for(int i=0; i< 3; i++) {
+    for (int i = 0; i < 3; i++) {
       queue.queue(createJob(), true);
     }
 
@@ -94,7 +107,7 @@ public class JobQueueTest {
 
   @Test
   public void handleDifferentModules() throws JobQueue.NoCapacityException {
-    for(int i=0; i< 3; i++) {
+    for (int i = 0; i < 3; i++) {
       queue.queue(createJobNewModule(), true);
     }
 
@@ -102,23 +115,23 @@ public class JobQueueTest {
     assertThat(queue.get().files()).hasSize(1);
   }
 
-  private SonarlintAnalyzer.SonarLintJob createJobNewFiles(int numFiles) {
+  private SonarLintAnalyzer.SonarLintJob createJobNewFiles(int numFiles) {
     Set<VirtualFile> files = new HashSet<>(numFiles);
 
-    for(int i = 0; i< numFiles; i++) {
+    for (int i = 0; i < numFiles; i++) {
       files.add(mock(VirtualFile.class));
     }
 
-    return new SonarlintAnalyzer.SonarLintJob(module, files);
+    return new SonarLintAnalyzer.SonarLintJob(module, files);
   }
 
-  private SonarlintAnalyzer.SonarLintJob createJobNewModule() {
+  private SonarLintAnalyzer.SonarLintJob createJobNewModule() {
     Module module = mock(Module.class);
     when(module.getProject()).thenReturn(project);
-    return new SonarlintAnalyzer.SonarLintJob(module, files);
+    return new SonarLintAnalyzer.SonarLintJob(module, files);
   }
 
-  private SonarlintAnalyzer.SonarLintJob createJob() {
-    return new SonarlintAnalyzer.SonarLintJob(module, files);
+  private SonarLintAnalyzer.SonarLintJob createJob() {
+    return new SonarLintAnalyzer.SonarLintJob(module, files);
   }
 }

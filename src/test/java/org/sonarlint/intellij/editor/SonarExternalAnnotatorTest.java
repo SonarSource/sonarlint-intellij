@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.editor;
 
-
 import com.intellij.codeInsight.daemon.impl.AnnotationHolderImpl;
 import com.intellij.lang.annotation.AnnotationSession;
 import com.intellij.lang.annotation.HighlightSeverity;
@@ -44,98 +43,98 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarExternalAnnotatorTest {
-    @Mock
-    private PsiFile psiFile;
-    @Mock
-    private VirtualFile virtualFile;
-    @Mock
-    private IssueStore store;
-    private AnnotationHolderImpl holder;
-    private SonarExternalAnnotator.AnnotationContext ctx;
-    private TextRange psiFileRange;
-    private SonarExternalAnnotator annotator;
+  @Mock
+  private PsiFile psiFile;
+  @Mock
+  private VirtualFile virtualFile;
+  @Mock
+  private IssueStore store;
+  private AnnotationHolderImpl holder;
+  private SonarExternalAnnotator.AnnotationContext ctx;
+  private TextRange psiFileRange;
+  private SonarExternalAnnotator annotator;
 
-    @Before
-    public void setUp() {
-        MockitoAnnotations.initMocks(this);
-        holder = new AnnotationHolderImpl(mock(AnnotationSession.class));
-        ctx = new SonarExternalAnnotator.AnnotationContext(store);
-        annotator = new SonarExternalAnnotator(true);
-        psiFileRange = new TextRange(0, 100);
-        when(psiFile.getTextRange()).thenReturn(psiFileRange);
-        when(psiFile.getVirtualFile()).thenReturn(virtualFile);
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    holder = new AnnotationHolderImpl(mock(AnnotationSession.class));
+    ctx = new SonarExternalAnnotator.AnnotationContext(store);
+    annotator = new SonarExternalAnnotator(true);
+    psiFileRange = new TextRange(0, 100);
+    when(psiFile.getTextRange()).thenReturn(psiFileRange);
+    when(psiFile.getVirtualFile()).thenReturn(virtualFile);
+  }
+
+  @Test
+  public void testRangeIssues() {
+    createStoredIssues(5);
+    annotator.apply(psiFile, ctx, holder);
+
+    for (int i = 0; i < 5; i++) {
+      assertThat(holder.get(i).getStartOffset()).isEqualTo(i);
+      assertThat(holder.get(i).getEndOffset()).isEqualTo(i + 10);
+      assertThat(holder.get(i).getMessage()).contains("issue " + i);
+      assertThat(holder.get(i).getSeverity()).isEqualTo(HighlightSeverity.WARNING);
+      assertThat(holder.get(i).isFileLevelAnnotation()).isFalse();
+    }
+  }
+
+  @Test
+  public void testFileLevelIssues() {
+    createFileIssues(5);
+    annotator.apply(psiFile, ctx, holder);
+
+    assertThat(holder).hasSize(5);
+
+    for (int i = 0; i < 5; i++) {
+      assertThat(holder.get(i).getStartOffset()).isEqualTo(psiFileRange.getStartOffset());
+      assertThat(holder.get(i).getEndOffset()).isEqualTo(psiFileRange.getEndOffset());
+      assertThat(holder.get(i).isFileLevelAnnotation()).isTrue();
+      assertThat(holder.get(i).getMessage()).contains("issue " + i);
+      assertThat(holder.get(i).getSeverity()).isEqualTo(HighlightSeverity.WARNING);
+    }
+  }
+
+  private void createFileIssues(int number) {
+    Collection<IssueStore.StoredIssue> issues = new LinkedList<>();
+
+    for (int i = 0; i < number; i++) {
+      issues.add(createFileStoredIssue(i, psiFile));
     }
 
-    @Test
-    public void testRangeIssues() {
-        createStoredIssues(5);
-        annotator.apply(psiFile, ctx, holder);
+    when(store.getForFile(virtualFile)).thenReturn(issues);
+  }
 
-        for(int i=0; i<5; i++) {
-            assertThat(holder.get(i).getStartOffset()).isEqualTo(i);
-            assertThat(holder.get(i).getEndOffset()).isEqualTo(i+10);
-            assertThat(holder.get(i).getMessage()).contains("issue " + i);
-            assertThat(holder.get(i).getSeverity()).isEqualTo(HighlightSeverity.WARNING);
-            assertThat(holder.get(i).isFileLevelAnnotation()).isFalse();
-        }
+  private void createStoredIssues(int number) {
+    Collection<IssueStore.StoredIssue> issues = new LinkedList<>();
+
+    for (int i = 0; i < number; i++) {
+      issues.add(createRangeStoredIssue(i, i, i + 10));
     }
 
-    @Test
-    public void testFileLevelIssues() {
-        createFileIssues(5);
-        annotator.apply(psiFile, ctx, holder);
+    when(store.getForFile(virtualFile)).thenReturn(issues);
+  }
 
-        assertThat(holder).hasSize(5);
+  private static IssueStore.StoredIssue createFileStoredIssue(int id, PsiFile file) {
+    Issue issue = createIssue(id);
+    return new IssueStore.StoredIssue(issue, file, null);
+  }
 
-        for(int i=0; i<5; i++) {
-            assertThat(holder.get(i).getStartOffset()).isEqualTo(psiFileRange.getStartOffset());
-            assertThat(holder.get(i).getEndOffset()).isEqualTo(psiFileRange.getEndOffset());
-            assertThat(holder.get(i).isFileLevelAnnotation()).isTrue();
-            assertThat(holder.get(i).getMessage()).contains("issue " + i);
-            assertThat(holder.get(i).getSeverity()).isEqualTo(HighlightSeverity.WARNING);
-        }
-    }
+  private static IssueStore.StoredIssue createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
+    Issue issue = createIssue(id);
+    RangeMarker range = mock(RangeMarker.class);
 
-    private void createFileIssues(int number) {
-        Collection<IssueStore.StoredIssue> issues = new LinkedList<>();
+    when(range.getStartOffset()).thenReturn(rangeStart);
+    when(range.getEndOffset()).thenReturn(rangeEnd);
+    when(range.isValid()).thenReturn(true);
 
-        for(int i = 0; i<number; i++) {
-            issues.add(createFileStoredIssue(i, psiFile));
-        }
+    return new IssueStore.StoredIssue(issue, null, range);
+  }
 
-        when(store.getForFile(virtualFile)).thenReturn(issues);
-    }
-
-    private void createStoredIssues(int number) {
-        Collection<IssueStore.StoredIssue> issues = new LinkedList<>();
-
-        for(int i = 0; i<number; i++) {
-            issues.add(createRangeStoredIssue(i, i, i+10));
-        }
-
-        when(store.getForFile(virtualFile)).thenReturn(issues);
-    }
-
-    private static IssueStore.StoredIssue createFileStoredIssue(int id, PsiFile file) {
-        Issue issue = createIssue(id);
-        return new IssueStore.StoredIssue(issue, file, null);
-    }
-
-    private static IssueStore.StoredIssue createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
-        Issue issue = createIssue(id);
-        RangeMarker range = mock(RangeMarker.class);
-
-        when(range.getStartOffset()).thenReturn(rangeStart);
-        when(range.getEndOffset()).thenReturn(rangeEnd);
-        when(range.isValid()).thenReturn(true);
-
-        return new IssueStore.StoredIssue(issue, null, range);
-    }
-
-    private static Issue createIssue(int id) {
-        return Issue.builder()
-                .setKey(Integer.toString(id))
-                .setMessage("issue " + id)
-                .build();
-    }
+  private static Issue createIssue(int id) {
+    return Issue.builder()
+      .setKey(Integer.toString(id))
+      .setMessage("issue " + id)
+      .build();
+  }
 }
