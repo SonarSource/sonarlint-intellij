@@ -17,7 +17,15 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-@ParametersAreNonnullByDefault
-package org.sonarlint.intellij.test;
+package org.sonarlint.intellij.messages;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import com.intellij.util.messages.Topic;
+import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+
+public interface TaskListener {
+  Topic<TaskListener> SONARLINT_TASK_TOPIC = Topic.create("SonarLint task start and finish", TaskListener.class);
+
+  void started(SonarLintAnalyzer.SonarLintJob job);
+
+  void ended(SonarLintAnalyzer.SonarLintJob job);
+}

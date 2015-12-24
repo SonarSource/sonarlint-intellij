@@ -30,7 +30,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.sonar.runner.api.Issue;
-import org.sonarlint.intellij.analysis.SonarlintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -53,7 +53,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.console = SonarLintConsole.getSonarQubeConsole(project);
   }
 
-  public void process(final SonarlintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
+  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
     Multimap<PsiFile, IssueStore.StoredIssue> map;
     final VirtualFile moduleBaseDir = SonarLintUtils.getModuleRoot(job.module());
 

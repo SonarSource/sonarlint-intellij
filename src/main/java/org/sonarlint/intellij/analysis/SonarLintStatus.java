@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
+import org.sonarlint.intellij.messages.StatusListener;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Queue;
@@ -28,12 +29,14 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @ThreadSafe
 public class SonarLintStatus extends AbstractProjectComponent {
+  private final StatusListener statusListener;
   private Status status = Status.STOPPED;
   //lock free list
   private Queue<Listener> listeners = new ConcurrentLinkedQueue<>();
 
   public SonarLintStatus(Project project) {
     super(project);
+    this.statusListener = project.getMessageBus().syncPublisher(StatusListener.SONARLINT_STATUS_TOPIC);
   }
 
   public enum Status {RUNNING, STOPPED, CANCELLING}
@@ -44,13 +47,6 @@ public class SonarLintStatus extends AbstractProjectComponent {
 
   public static SonarLintStatus get(Project p) {
     return p.getComponent(SonarLintStatus.class);
-  }
-
-  @Override
-  public void disposeComponent() {
-    synchronized (this) {
-      listeners.clear();
-    }
   }
 
   public synchronized boolean isRunning() {
@@ -72,7 +68,7 @@ public class SonarLintStatus extends AbstractProjectComponent {
 
     //don't lock while calling listeners
     if (callback != null) {
-      callListeners(callback);
+      statusListener.changed(callback);
     }
   }
 
@@ -87,7 +83,7 @@ public class SonarLintStatus extends AbstractProjectComponent {
 
     //don't lock while calling listeners
     if (callback != null) {
-      callListeners(callback);
+      statusListener.changed(callback);
     }
   }
 
@@ -102,20 +98,10 @@ public class SonarLintStatus extends AbstractProjectComponent {
 
     //don't lock while calling listeners
     if (callback != null) {
-      callListeners(callback);
+      statusListener.changed(callback);
       return true;
     } else {
       return false;
-    }
-  }
-
-  public void subscribe(Listener listener) {
-    listeners.add(listener);
-  }
-
-  private void callListeners(Status status) {
-    for (Listener l : listeners) {
-      l.callback(status);
     }
   }
 }

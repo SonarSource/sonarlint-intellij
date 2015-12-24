@@ -17,71 +17,75 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config;
+package org.sonarlint.intellij.config.project;
 
-import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.project.Project;
+import com.intellij.ui.AnActionButton;
+import com.intellij.ui.AnActionButtonRunnable;
+import com.intellij.ui.TableUtil;
+import com.intellij.ui.ToolbarDecorator;
+import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.EditableModel;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
-import javax.swing.JComponent;
+import javax.swing.BorderFactory;
+import javax.swing.JPanel;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableModel;
+import java.awt.BorderLayout;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
 
-public class SonarLintProjectConfigurable implements Configurable {
+public class SonarLintProjectSettingsPanel {
+  private JPanel rootPane;
+  private PropertiesTableModel tableModel;
 
-  private PropertiesTableModel model;
-  private Project project;
-  private SonarLintProjectSettings projectSettings;
-
-  public SonarLintProjectConfigurable(Project p) {
-    this.project = p;
-    this.projectSettings = project.getComponent(SonarLintProjectSettings.class);
+  public SonarLintProjectSettingsPanel(Map<String, String> props) {
+    rootPane = new JPanel(new BorderLayout());
+    rootPane.add(createTablePanel(), BorderLayout.CENTER);
+    setProperties(props);
   }
 
-  @Nls
-  @Override
-  public String getDisplayName() {
-    return "SonarLint";
+  public JPanel getRootPane() {
+    return rootPane;
   }
 
-  @Nullable
-  @Override
-  public String getHelpTopic() {
-    return null;
+  public Map<String, String> getProperties() {
+    return tableModel.getOptions();
   }
 
-  @Nullable
-  @Override
-  public JComponent createComponent() {
-    model = new PropertiesTableModel();
-    model.setOptions(projectSettings.getAdditionalProperties());
-    return new SonarLintPropertiesForm(model).getRootPane();
+  public void setProperties(Map<String, String> props) {
+    tableModel.setOptions(props);
+    tableModel.fireTableDataChanged();
   }
 
-  @Override
-  public boolean isModified() {
-    return !model.getOptions().equals(projectSettings.getAdditionalProperties());
-  }
+  private JPanel createTablePanel() {
+    tableModel = new PropertiesTableModel();
+    // Unfortunately TableModel's listener does not work properly, it doesn't receive events related to changed cells.
+    final JBTable table = new JBTable(tableModel);
+    table.getEmptyText().setText("No SonarLint properties configured for this project");
 
-  @Override
-  public void apply() throws ConfigurationException {
-    projectSettings.setAdditionalProperties(model.getOptions());
-  }
+    JPanel tablePanel = ToolbarDecorator.createDecorator(table)
+      .disableUpAction()
+      .disableDownAction()
+      .setAddAction(new AnActionButtonRunnable() {
+        @Override
+        public void run(AnActionButton anActionButton) {
+          final TableCellEditor cellEditor = table.getCellEditor();
+          if (cellEditor != null) {
+            cellEditor.stopCellEditing();
+          }
+          final TableModel model = table.getModel();
+          ((EditableModel) model).addRow();
+          TableUtil.editCellAt(table, model.getRowCount() - 1, 0);
+        }
+      })
+      .createPanel();
 
-  @Override
-  public void reset() {
-    model.setOptions(projectSettings.getAdditionalProperties());
-  }
-
-  @Override
-  public void disposeUIResources() {
-    // Nothing to do
+    tablePanel.setBorder(BorderFactory.createTitledBorder("Analysis parameters"));
+    return tablePanel;
   }
 
   private static class PropertiesTableModel extends AbstractTableModel implements EditableModel {

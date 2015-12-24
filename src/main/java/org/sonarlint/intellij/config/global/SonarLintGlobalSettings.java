@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config;
+package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
@@ -37,6 +37,7 @@ import java.io.File;
 public final class SonarLintGlobalSettings implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private String serverUrl = "https://update.sonarlint.org";
+  private boolean autoTrigger = true;
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
@@ -87,5 +88,13 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
 
   public void setServerUrl(String serverUrl) {
     this.serverUrl = serverUrl;
+  }
+
+  public boolean isAutoTrigger() {
+    return autoTrigger;
+  }
+
+  public void setAutoTrigger(boolean autoTrigger) {
+    this.autoTrigger = autoTrigger;
   }
 }

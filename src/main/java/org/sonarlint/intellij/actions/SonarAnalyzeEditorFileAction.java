@@ -27,11 +27,10 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.analysis.SonarlintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-import javax.annotation.Nullable;
 import java.util.Collections;
 
 public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
@@ -54,12 +53,12 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
 
     Module m = ModuleUtil.findModuleForFile(selectedFiles[0], p);
 
-    if (shouldAnalyze(selectedFiles[0], m)) {
-      SonarlintAnalyzer analyzer = p.getComponent(SonarlintAnalyzer.class);
-      if(executeBackground(e)) {
-        analyzer.submitAsync(m, Collections.singletonList(selectedFiles[0]));
+    if (SonarLintUtils.shouldAnalyze(selectedFiles[0], m)) {
+      SonarLintAnalyzer analyzer = p.getComponent(SonarLintAnalyzer.class);
+      if (executeBackground(e)) {
+        analyzer.submitAsync(m, Collections.singleton(selectedFiles[0]));
       } else {
-        analyzer.submit(m, Collections.singletonList(selectedFiles[0]));
+        analyzer.submit(m, Collections.singleton(selectedFiles[0]));
       }
     } else {
       console.error("File " + selectedFiles[0] + " cannot be analyzed");
@@ -75,37 +74,5 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
    */
   private static boolean executeBackground(AnActionEvent e) {
     return ActionPlaces.isMainMenuOrActionSearch(e.getPlace()) || "unknown".equals(e.getPlace());
-  }
-
-  private static boolean shouldAnalyze(@Nullable VirtualFile file, Module module) {
-    if (file == null) {
-      return false;
-    }
-    if (!file.isInLocalFileSystem() || file.getFileType().isBinary() || !file.isValid()
-      || ".idea".equals(file.getParent().getName())) {
-      return false;
-    }
-
-    // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-    if ("html".equalsIgnoreCase(file.getFileType().getName())) {
-      return false;
-    }
-
-    if (module == null) {
-      return false;
-    }
-
-    final VirtualFile baseDir = SonarLintUtils.getModuleRoot(module);
-
-    if (baseDir == null) {
-      throw new IllegalStateException("No basedir for module " + module);
-    }
-
-    String baseDirPath = baseDir.getCanonicalPath();
-    if (baseDirPath == null) {
-      throw new IllegalStateException("No basedir path for module " + module);
-    }
-
-    return true;
   }
 }

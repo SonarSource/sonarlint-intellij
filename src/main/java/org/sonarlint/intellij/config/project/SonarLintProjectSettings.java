@@ -17,10 +17,10 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config;
+package org.sonarlint.intellij.config.project;
 
+import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
@@ -37,10 +37,18 @@ import java.util.Map;
     @Storage(id = "default", file = StoragePathMacros.PROJECT_FILE),
     @Storage(id = "dir", file = StoragePathMacros.PROJECT_CONFIG_DIR + "/sonarlint.xml", scheme = StorageScheme.DIRECTORY_BASED)
   })
-public final class SonarLintProjectSettings implements PersistentStateComponent<SonarLintProjectSettings>, ProjectComponent {
+public final class SonarLintProjectSettings extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectSettings> {
 
   private boolean verboseEnabled = false;
   private Map<String, String> additionalProperties = new LinkedHashMap<>();
+
+  /**
+   * Constructor called by the XML deserialization (no args).
+   * Even though this class has the scope of a project, we can't have it injected here.
+   */
+  public SonarLintProjectSettings() {
+    super(null);
+  }
 
   @Override
   public SonarLintProjectSettings getState() {
@@ -50,26 +58,6 @@ public final class SonarLintProjectSettings implements PersistentStateComponent<
   @Override
   public void loadState(SonarLintProjectSettings state) {
     XmlSerializerUtil.copyBean(state, this);
-  }
-
-  @Override
-  public void projectOpened() {
-    // Nothing to do
-  }
-
-  @Override
-  public void projectClosed() {
-    // Nothing to do
-  }
-
-  @Override
-  public void initComponent() {
-    // Nothing to do
-  }
-
-  @Override
-  public void disposeComponent() {
-    // Nothing to do
   }
 
   @NotNull

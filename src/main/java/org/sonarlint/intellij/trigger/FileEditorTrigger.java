@@ -20,29 +20,33 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.application.AccessToken;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiManager;
 import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.util.SonarLintUtils;
+
+import java.util.Collections;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final IssueStore store;
-  private final PsiManager psiManager;
+  private final SonarLintAnalyzer analyzer;
   private final MessageBusConnection busConnection;
 
-  public FileEditorTrigger(Project project, IssueStore store, PsiManager psiManager) {
+  public FileEditorTrigger(Project project, IssueStore store, SonarLintAnalyzer analyzer) {
     super(project);
     this.store = store;
-    this.psiManager = psiManager;
-    this.busConnection = ApplicationManager.getApplication().getMessageBus().connect();
+    this.analyzer = analyzer;
+    this.busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
   }
 
@@ -50,9 +54,15 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
   /**
    * I've tried hard to group opening events on startup without success.
    * Tried: Project.isInitialized, Project.isOpen, schedule to EDT thread and to WriteAction.
+   * So on startup, opened files will be submitted one by one.
    */
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    // nothing to do
+    Module m = ModuleUtil.findModuleForFile(file, myProject);
+    if (!SonarLintUtils.shouldAnalyze(file, m)) {
+      return;
+    }
+
+    analyzer.submitAsync(m, Collections.singleton(file));
   }
 
   @Override
@@ -67,7 +77,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
 
     AccessToken token = ReadAction.start();
     try {
-        store.clean(file);
+      store.clean(file);
     } finally {
       token.finish();
     }
@@ -76,10 +86,5 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
   @Override
   public void selectionChanged(@NotNull FileEditorManagerEvent event) {
     // nothing to do
-  }
-
-  @Override
-  public void disposeComponent() {
-    busConnection.disconnect();
   }
 }

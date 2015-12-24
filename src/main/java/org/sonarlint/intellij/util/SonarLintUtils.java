@@ -29,6 +29,7 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nullable;
 import java.util.Collection;
 
 public class SonarLintUtils {
@@ -81,6 +82,39 @@ public class SonarLintUtils {
       }
     }
     return false;
+  }
+
+  public static boolean shouldAnalyze(@Nullable VirtualFile file, Module module) {
+    if (file == null || module == null) {
+      return false;
+    }
+
+    if (module.getProject().isDisposed()) {
+      return false;
+    }
+
+    if (!file.isInLocalFileSystem() || file.getFileType().isBinary() || !file.isValid()
+      || ".idea".equals(file.getParent().getName())) {
+      return false;
+    }
+
+    // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
+    if ("html".equalsIgnoreCase(file.getFileType().getName())) {
+      return false;
+    }
+
+    final VirtualFile baseDir = SonarLintUtils.getModuleRoot(module);
+
+    if (baseDir == null) {
+      throw new IllegalStateException("No basedir for module " + module);
+    }
+
+    String baseDirPath = baseDir.getCanonicalPath();
+    if (baseDirPath == null) {
+      throw new IllegalStateException("No basedir path for module " + module);
+    }
+
+    return true;
   }
 
 }

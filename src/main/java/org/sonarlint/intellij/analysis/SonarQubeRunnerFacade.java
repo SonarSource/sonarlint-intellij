@@ -19,11 +19,12 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.components.ProjectComponent;
 import org.sonar.runner.api.IssueListener;
 
 import java.util.Properties;
 
-public interface SonarQubeRunnerFacade {
+public interface SonarQubeRunnerFacade extends ProjectComponent {
   void startAnalysis(Properties props, IssueListener issueListener);
 
   void tryUpdate();

@@ -28,8 +28,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
+import com.intellij.util.messages.MessageBusConnection;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.messages.StatusListener;
 
 import javax.swing.Box;
 import javax.swing.JPanel;
@@ -42,6 +44,8 @@ public class SonarLintToolPanel extends JPanel {
   private final ToolWindow toolWindow;
   private final Project project;
 
+  private ActionToolbar mainToolbar;
+
   public SonarLintToolPanel(ToolWindow toolWindow, Project project) {
     super(new BorderLayout());
     this.toolWindow = toolWindow;
@@ -50,21 +54,10 @@ public class SonarLintToolPanel extends JPanel {
     addDebugAction();
     addToolbar();
     addConsole();
-  }
 
-  private void addToolbar() {
-    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
-    final ActionToolbar mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
-
-    Box toolBarBox = Box.createHorizontalBox();
-    toolBarBox.add(mainToolbar.getComponent());
-
-    this.add(toolBarBox, BorderLayout.WEST);
-    mainToolbar.getComponent().setVisible(true);
-
-    SonarLintStatus.get(project).subscribe(new SonarLintStatus.Listener() {
-      @Override
-      public void callback(SonarLintStatus.Status newStatus) {
+    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, new StatusListener() {
+      @Override public void changed(SonarLintStatus.Status newStatus) {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
           @Override
           public void run() {
@@ -74,6 +67,17 @@ public class SonarLintToolPanel extends JPanel {
         });
       }
     });
+  }
+
+  private void addToolbar() {
+    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
+    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
+
+    Box toolBarBox = Box.createHorizontalBox();
+    toolBarBox.add(mainToolbar.getComponent());
+
+    this.add(toolBarBox, BorderLayout.WEST);
+    mainToolbar.getComponent().setVisible(true);
   }
 
   private void addDebugAction() {

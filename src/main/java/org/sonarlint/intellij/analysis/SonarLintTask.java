@@ -25,26 +25,27 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
+import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarLintTask extends Task.Backgroundable {
-  private static final Logger LOGGER = Logger.getInstance(SonarlintAnalyzer.class);
+  private static final Logger LOGGER = Logger.getInstance(SonarLintAnalyzer.class);
   private final IssueProcessor processor;
-  private final SonarlintAnalyzer.SonarLintJob job;
+  private final SonarLintAnalyzer.SonarLintJob job;
   private final boolean startInBackground;
 
-  private SonarLintTask(IssueProcessor processor, SonarlintAnalyzer.SonarLintJob job, boolean background) {
+  private SonarLintTask(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job, boolean background) {
     super(job.module().getProject(), "SonarLint Analysis", true);
     this.processor = processor;
     this.job = job;
     this.startInBackground = background;
   }
 
-  public static SonarLintTask createBackground(IssueProcessor processor, SonarlintAnalyzer.SonarLintJob job) {
+  public static SonarLintTask createBackground(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job) {
     return new SonarLintTask(processor, job, true);
   }
 
-  public static SonarLintTask createForeground(IssueProcessor processor, SonarlintAnalyzer.SonarLintJob job) {
+  public static SonarLintTask createForeground(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job) {
     return new SonarLintTask(processor, job, false);
   }
 
@@ -53,8 +54,9 @@ public class SonarLintTask extends Task.Backgroundable {
     return startInBackground;
   }
 
-  private void stopRun() {
-    SonarLintStatus.get(job.module().getProject()).stopRun();
+  private void stopRun(SonarLintAnalyzer.SonarLintJob job) {
+    TaskListener taskListener = job.module().getProject().getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
+    taskListener.ended(job);
   }
 
   private static String getFileName(VirtualFile file) {
@@ -106,8 +108,7 @@ public class SonarLintTask extends Task.Backgroundable {
         throw e;
       }
     } finally {
-      stopRun();
-
+      stopRun(job);
     }
   }
 
@@ -121,7 +122,7 @@ public class SonarLintTask extends Task.Backgroundable {
       this.indicator = indicator;
       this.status = status;
       this.t = t;
-      this.setName("sonarLint-cancel-monitor");
+      this.setName("sonarlint-cancel-monitor");
       this.setDaemon(true);
     }
 
@@ -156,5 +157,9 @@ public class SonarLintTask extends Task.Backgroundable {
         }
       }
     }
+  }
+
+  interface TaskFinishListener {
+    void finished();
   }
 }

@@ -17,22 +17,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions;
+package org.sonarlint.intellij.messages;
 
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.options.ShowSettingsUtil;
+import com.intellij.util.messages.Topic;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
-public class SonarConfigureProject extends AbstractSonarAction {
-  @Override
-  protected boolean isEnabled(SonarLintStatus status) {
-    return !status.isRunning();
-  }
+public interface StatusListener {
+  Topic<StatusListener> SONARLINT_STATUS_TOPIC = Topic.create("SonarLint Analyzer Status", StatusListener.class);
 
-  @Override
-  public void actionPerformed(AnActionEvent e) {
-    SonarLintProjectConfigurable configurable = new SonarLintProjectConfigurable(e.getProject());
-    ShowSettingsUtil.getInstance().editConfigurable(e.getProject(), configurable);
-  }
+  void changed(SonarLintStatus.Status newStatus);
 }
