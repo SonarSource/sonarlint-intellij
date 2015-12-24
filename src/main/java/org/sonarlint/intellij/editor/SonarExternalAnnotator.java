@@ -40,6 +40,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.Issue;
+import org.sonarlint.intellij.actions.NoSonarIntentionAction;
 import org.sonarlint.intellij.issue.IssueStore;
 
 import java.awt.Color;
@@ -107,6 +108,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     String htmlMsg = getHtmlMessage(issue);
 
     Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.getSeverity()), textRange, msg, htmlMsg);
+
     if (i.range() == null && el instanceof PsiFile) {
       // It is a file issue if it has no range within a file-type element
       annotation.setFileLevelAnnotation(true);
@@ -114,6 +116,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       annotation.setEnforcedTextAttributes(getTextAttrs());
     }
 
+    annotation.setHighlightType(com.intellij.codeInspection.ProblemHighlightType.ERROR);
+    annotation.registerFix(new NoSonarIntentionAction(i.range()));
     annotation.setGutterIconRenderer(new SonarGutterIconRenderer(issue.getMessage(), issue.getRuleKey(), issue.getRuleKey()));
   }
 
