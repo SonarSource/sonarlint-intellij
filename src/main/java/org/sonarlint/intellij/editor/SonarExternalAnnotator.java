@@ -124,7 +124,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     } else {
       c = Color.yellow;
     }
-    return new TextAttributes(null, null, c, EffectType.WAVE_UNDERSCORE, Font.PLAIN);
+    TextAttributes attr = new TextAttributes(null, null, c, EffectType.WAVE_UNDERSCORE, Font.PLAIN);
+    attr.setErrorStripeColor(Color.red);
+    return attr;
   }
 
   /**
