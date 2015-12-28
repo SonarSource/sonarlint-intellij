@@ -73,6 +73,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
    *  - Action used, ctrl+shift+A (place = GoToAction)
    */
   private static boolean executeBackground(AnActionEvent e) {
-    return ActionPlaces.isMainMenuOrActionSearch(e.getPlace()) || "unknown".equals(e.getPlace());
+    return ActionPlaces.isMainMenuOrActionSearch(e.getPlace())
+      || ActionPlaces.UNKNOWN.equals(e.getPlace());
   }
 }
