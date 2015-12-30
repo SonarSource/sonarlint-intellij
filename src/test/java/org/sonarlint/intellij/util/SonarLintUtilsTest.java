@@ -53,6 +53,7 @@ public class SonarLintUtilsTest extends LightPlatformCodeInsightFixtureTestCase 
     Project disposed = mock(Project.class);
     Module module = mock(Module.class);
 
+    when(disposed.isDisposed()).thenReturn(true);
     when(module.getProject()).thenReturn(disposed);
 
     assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isFalse();

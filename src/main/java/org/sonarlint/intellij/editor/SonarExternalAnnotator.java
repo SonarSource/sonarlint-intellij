@@ -122,7 +122,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     annotation.setGutterIconRenderer(new SonarGutterIconRenderer(issue.getMessage(), issue.getRuleKey(), issue.getRuleKey()));
   }
 
-  private TextAttributesKey getTextAttrsKey(String severity) {
+  private TextAttributesKey getTextAttrsKey(@Nullable String severity) {
+    if(severity == null) {
+      return SonarLintTextAttributes.MAJOR;
+    }
     switch (severity) {
       case "MINOR":
         return SonarLintTextAttributes.MINOR;

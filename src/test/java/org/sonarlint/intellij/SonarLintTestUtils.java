@@ -19,15 +19,23 @@
  */
 package org.sonarlint.intellij;
 
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.impl.ComponentManagerImpl;
 import org.sonarlint.intellij.analysis.SonarQubeRunnerFacade;
 import com.intellij.openapi.project.Project;
+
+import java.awt.GraphicsEnvironment;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SonarLintTestUtils {
   private final static String DEFAULT_VERSION = "5.4";
+
+  static {
+    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+    System.out.println("headless mode: " + ge.isHeadless());
+  }
 
   private SonarLintTestUtils() {
     // only static
@@ -44,5 +52,11 @@ public class SonarLintTestUtils {
     ComponentManagerImpl compManager = (ComponentManagerImpl) project;
     compManager.registerComponentInstance(clazz, mocked);
     return mocked;
+  }
+
+  public static AnActionEvent createAnActionEvent(Project project) {
+    AnActionEvent event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(project);
+    return event;
   }
 }

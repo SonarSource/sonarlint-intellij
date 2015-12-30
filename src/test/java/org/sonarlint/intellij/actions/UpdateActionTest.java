@@ -42,6 +42,7 @@ public class UpdateActionTest extends LightPlatformCodeInsightFixtureTestCase {
     super.setUp();
     runner = SonarLintTestUtils.mockRunner(getProject());
     action = new UpdateAction();
+    getProject().getComponent(SonarLintStatus.class).stopRun();
   }
 
   @Test
@@ -57,7 +58,7 @@ public class UpdateActionTest extends LightPlatformCodeInsightFixtureTestCase {
 
   @Test
   public void testAction() {
-    action.actionPerformed(createEvent());
+    action.actionPerformed(SonarLintTestUtils.createAnActionEvent(getProject()));
 
     verify(runner).tryUpdate();
     verify(runner).getVersion();
@@ -72,18 +73,12 @@ public class UpdateActionTest extends LightPlatformCodeInsightFixtureTestCase {
     SonarLintStatus status = getProject().getComponent(SonarLintStatus.class);
     status.tryRun();
     try {
-      action.actionPerformed(createEvent());
+      action.actionPerformed(SonarLintTestUtils.createAnActionEvent(getProject()));
       fail("Should throw exception");
     } catch (IllegalStateException e) {
       assertThat(e.getMessage()).isEqualTo("Unable to update SonarLint as an analysis is on-going");
     } finally {
       status.stopRun();
     }
-  }
-
-  private AnActionEvent createEvent() {
-    AnActionEvent event = mock(AnActionEvent.class);
-    when(event.getProject()).thenReturn(getProject());
-    return event;
   }
 }

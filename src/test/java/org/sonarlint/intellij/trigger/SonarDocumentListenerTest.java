@@ -21,6 +21,7 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
+import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.editor.impl.event.DocumentEventImpl;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
@@ -37,10 +38,10 @@ import java.io.IOException;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTestCase {
   private SonarDocumentListener listener;
@@ -55,15 +56,19 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     analyzer = mock(SonarLintAnalyzer.class);
     settings = new SonarLintGlobalSettings();
     settings.setAutoTrigger(true);
-    listener = new SonarDocumentListener(super.getProject(), settings, analyzer, super.getProject().getComponent(EditorFactory.class), 100);
+    //IntelliJ 14.1 does not have EditorFactory in the container, so we have to mock it
+    EditorFactory editorFactory = mock(EditorFactory.class);
+    when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
+    listener = new SonarDocumentListener(super.getProject(), settings, analyzer, editorFactory, 100);
     testFile = myFixture.addFileToProject("test.java", "dummy").getVirtualFile();
   }
 
   @Test
-  public void testAnalyze() throws IOException {
+  public void testAnalyze() throws IOException, InterruptedException {
     DocumentEvent event = createDocEvent();
     listener.documentChanged(event);
-    verify(analyzer, timeout(200)).submitAsync(any(Module.class), anySetOf(VirtualFile.class));
+    Thread.sleep(250);
+    verify(analyzer).submitAsync(any(Module.class), anySetOf(VirtualFile.class));
     verifyNoMoreInteractions(analyzer);
   }
 
@@ -72,7 +77,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     settings.setAutoTrigger(false);
     DocumentEvent event = createDocEvent();
     listener.documentChanged(event);
-    Thread.sleep(200);
+    Thread.sleep(250);
     verifyZeroInteractions(analyzer);
   }
 
@@ -82,7 +87,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     FileEditorManager editorManager = FileEditorManager.getInstance(getProject());
     editorManager.closeFile(testFile);
     listener.documentChanged(event);
-    Thread.sleep(200);
+    Thread.sleep(250);
     verifyZeroInteractions(analyzer);
   }
 

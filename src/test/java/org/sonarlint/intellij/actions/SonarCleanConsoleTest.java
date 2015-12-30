@@ -19,6 +19,41 @@
  */
 package org.sonarlint.intellij.actions;
 
-public class SonarCleanConsoleTest {
+import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
+public class SonarCleanConsoleTest extends LightPlatformCodeInsightFixtureTestCase {
+  private SonarCleanConsole cleanConsole;
+  private SonarLintConsole sonarLintConsole;
+
+  @Before
+  public void setUp() throws Exception {
+    super.setUp();
+    cleanConsole = new SonarCleanConsole();
+    sonarLintConsole = SonarLintConsole.getSonarQubeConsole(getProject());
+
+    // make sure it's initialized
+    sonarLintConsole.getConsoleView().getComponent();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    sonarLintConsole.getConsoleView().dispose();
+    super.tearDown();
+  }
+
+  @Test
+  public void testClean() {
+    sonarLintConsole.info("some text");
+
+    assertThat(sonarLintConsole.getConsoleView().getContentSize()).isNotZero();
+    cleanConsole.actionPerformed(SonarLintTestUtils.createAnActionEvent(getProject()));
+    assertThat(sonarLintConsole.getConsoleView().getContentSize()).isZero();
+  }
 }
