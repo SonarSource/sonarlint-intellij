@@ -40,6 +40,10 @@ public class SonarApplication implements ApplicationComponent {
     }
   }
 
+  public String getVersion() {
+    return plugin.getVersion();
+  }
+
   private void registerExternalAnnotatorFor(Language language) {
     LanguageExtensionPoint<SonarExternalAnnotator> ep = new LanguageExtensionPoint<>();
     ep.language = language.getID();

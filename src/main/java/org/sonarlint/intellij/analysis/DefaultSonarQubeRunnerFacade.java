@@ -20,12 +20,14 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import org.jetbrains.annotations.NotNull;
 import org.sonar.runner.api.EmbeddedRunner;
 import org.sonar.runner.api.IssueListener;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -66,7 +68,8 @@ public final class DefaultSonarQubeRunnerFacade extends AbstractProjectComponent
       }
       props.putAll(projectSettings.getAdditionalProperties());
       if (projectSettings.isVerboseEnabled()) {
-        console.info("SonarLint properties:\n" + propsToString(props));
+        SonarApplication sonarLint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
+        console.info(String.format("SonarLint [%s] properties:\n%s", sonarLint.getVersion(), propsToString(props)));
       }
 
       runner.runAnalysis(props, issueListener);
@@ -94,6 +97,7 @@ public final class DefaultSonarQubeRunnerFacade extends AbstractProjectComponent
   }
 
   private void tryStart(String serverUrl, boolean preferCache) {
+    SonarApplication sonarLint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
     Properties globalProps = new Properties();
     globalProps.setProperty(SonarLintConstants.SONAR_URL, serverUrl);
     globalProps.setProperty(SonarLintConstants.ANALYSIS_MODE, SonarLintConstants.ANALYSIS_MODE_ISSUES);
@@ -109,7 +113,7 @@ public final class DefaultSonarQubeRunnerFacade extends AbstractProjectComponent
       .addGlobalProperties(globalProps);
 
     try {
-      console.info("Starting SonarLint");
+      console.info("Starting SonarLint " + sonarLint.getVersion());
       runner.start(preferCache);
       String version = runner.serverVersion();
       this.started = version != null;
