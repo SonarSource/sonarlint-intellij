@@ -32,6 +32,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -40,12 +41,14 @@ import java.util.Collections;
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final IssueStore store;
   private final SonarLintAnalyzer analyzer;
+  private final SonarLintGlobalSettings globalSettings;
   private final MessageBusConnection busConnection;
 
-  public FileEditorTrigger(Project project, IssueStore store, SonarLintAnalyzer analyzer) {
+  public FileEditorTrigger(Project project, IssueStore store, SonarLintAnalyzer analyzer, SonarLintGlobalSettings globalSettings) {
     super(project);
     this.store = store;
     this.analyzer = analyzer;
+    this.globalSettings = globalSettings;
     this.busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
   }
@@ -57,6 +60,10 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
    * So on startup, opened files will be submitted one by one.
    */
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+    if(!globalSettings.isAutoTrigger()) {
+      return;
+    }
+
     Module m = ModuleUtil.findModuleForFile(file, myProject);
     if (!SonarLintUtils.shouldAnalyze(file, m)) {
       return;

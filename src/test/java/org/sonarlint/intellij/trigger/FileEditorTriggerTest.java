@@ -25,6 +25,7 @@ import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCa
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.IssueStore;
 
 import java.util.Collections;
@@ -33,19 +34,23 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 public class FileEditorTriggerTest extends LightPlatformCodeInsightFixtureTestCase {
   private FileEditorTrigger trigger;
   private IssueStore store;
   private SonarLintAnalyzer analyzer;
   private VirtualFile testFile;
+  private SonarLintGlobalSettings settings;
 
   @Before
   public void setUp() throws Exception {
     super.setUp();
     store = mock(IssueStore.class);
     analyzer = mock(SonarLintAnalyzer.class);
-    trigger = new FileEditorTrigger(getProject(), store, analyzer);
+    settings = new SonarLintGlobalSettings();
+    settings.setAutoTrigger(true);
+    trigger = new FileEditorTrigger(getProject(), store, analyzer, settings);
     testFile = myFixture.addFileToProject("testFile.java", "dummy").getVirtualFile();
   }
 
@@ -54,6 +59,14 @@ public class FileEditorTriggerTest extends LightPlatformCodeInsightFixtureTestCa
     trigger.fileOpened(getProject().getComponent(FileEditorManager.class), testFile);
     verify(analyzer).submitAsync(myModule, Collections.singleton(testFile));
     verifyNoMoreInteractions(analyzer);
+    verifyZeroInteractions(store);
+  }
+
+  @Test
+  public void testOpenFileAutoDisabled() {
+    settings.setAutoTrigger(false);
+    trigger.fileOpened(getProject().getComponent(FileEditorManager.class), testFile);
+    verifyZeroInteractions(analyzer);
     verifyZeroInteractions(store);
   }
 

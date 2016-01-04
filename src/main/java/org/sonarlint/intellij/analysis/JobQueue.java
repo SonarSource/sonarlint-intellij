@@ -80,7 +80,7 @@ public class JobQueue {
   }
 
   public void queue(SonarLintAnalyzer.SonarLintJob job) throws NoCapacityException {
-    queue(job, false);
+    queue(job, true);
   }
 
   @Nullable
