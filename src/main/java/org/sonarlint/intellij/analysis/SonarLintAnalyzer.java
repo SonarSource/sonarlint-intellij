@@ -33,6 +33,7 @@ import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class SonarLintAnalyzer extends AbstractProjectComponent {
@@ -161,7 +162,9 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
 
     SonarLintJob(Module m, Set<VirtualFile> files) {
       this.m = m;
-      this.files = files;
+      // make sure that it is not immutable so that it can be changed later
+      this.files = new HashSet<>();
+      this.files.addAll(files);
       this.creationTime = System.currentTimeMillis();
     }
 
