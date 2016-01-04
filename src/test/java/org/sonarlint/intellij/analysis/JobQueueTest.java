@@ -52,7 +52,7 @@ public class JobQueueTest {
   @Test(expected = JobQueue.NoCapacityException.class)
   public void dontPassCapacity() throws JobQueue.NoCapacityException {
     for (int i = 0; i <= JobQueue.CAPACITY; i++) {
-      queue.queue(createJobNewFiles(1));
+      queue.queue(createJobNewFiles(1), false);
     }
   }
 
@@ -73,7 +73,7 @@ public class JobQueueTest {
     SonarLintAnalyzer.SonarLintJob job = createJob();
 
     for (int i = 0; i < 3; i++) {
-      queue.queue(job);
+      queue.queue(job, false);
     }
 
     assertThat(queue.size()).isEqualTo(3);
