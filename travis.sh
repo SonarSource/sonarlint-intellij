@@ -38,7 +38,8 @@ then
   fi
 else
   # Regular CI
-  ./gradlew buildPlugin check -PijVersion=$IJ_VERSION
+  unset DISPLAY
+  ./gradlew buildPlugin check -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit -PijVersion=$IJ_VERSION --debug
 fi
 
 
