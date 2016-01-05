@@ -87,14 +87,13 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   private void addAnnotation(IssueStore.StoredIssue i, AnnotationHolder annotationHolder) {
     Issue issue = i.issue();
-    PsiElement el = i.element();
+    PsiFile psiFile = i.psiFile();
     TextRange textRange;
 
-    // calculate range either from the MarkerRange or from the PSI element itself
     if (i.range() != null) {
       textRange = createTextRange(i.range());
     } else {
-      textRange = i.element().getTextRange();
+      textRange = i.psiFile().getTextRange();
     }
 
     String msg = getMessage(issue);
@@ -102,8 +101,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.getSeverity()), textRange, msg, htmlMsg);
 
-    if (i.range() == null && el instanceof PsiFile) {
-      // It is a file issue if it has no range within a file-type element
+    if (i.range() == null) {
       annotation.setFileLevelAnnotation(true);
     } else {
       annotation.setTextAttributes(getTextAttrsKey(issue.getSeverity()));

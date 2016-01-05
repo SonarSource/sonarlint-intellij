@@ -100,17 +100,17 @@ public class IssueStore extends AbstractProjectComponent {
   public static class StoredIssue {
     private RangeMarker range;
     private Issue issue;
-    private PsiElement element;
+    private PsiFile psiFile;
 
-    public StoredIssue(Issue issue, PsiElement element) {
+    public StoredIssue(Issue issue, PsiFile psiFile) {
       this.issue = issue;
-      this.element = element;
+      this.psiFile = psiFile;
     }
 
-    public StoredIssue(Issue issue, PsiElement element, RangeMarker range) {
+    public StoredIssue(Issue issue, PsiFile psiFile, RangeMarker range) {
       this.range = range;
       this.issue = issue;
-      this.element = element;
+      this.psiFile = psiFile;
     }
 
     public Issue issue() {
@@ -122,8 +122,8 @@ public class IssueStore extends AbstractProjectComponent {
       return range;
     }
 
-    public PsiElement element() {
-      return element;
+    public PsiFile psiFile() {
+      return psiFile;
     }
   }
 }
