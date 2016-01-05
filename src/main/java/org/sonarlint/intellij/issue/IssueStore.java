@@ -25,9 +25,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import org.sonar.runner.api.Issue;
+import com.intellij.util.messages.MessageBusConnection;
+import org.sonarlint.intellij.messages.AnalysisResultsListener;
 
-import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,11 +42,23 @@ import java.util.concurrent.ConcurrentHashMap;
 @ThreadSafe
 public class IssueStore extends AbstractProjectComponent {
   private static final long THRESHOLD = 10_000;
-  private final Map<VirtualFile, Collection<StoredIssue>> storePerFile;
+  private final Map<VirtualFile, Collection<IssuePointer>> storePerFile;
 
   public IssueStore(Project project) {
     super(project);
     this.storePerFile = new ConcurrentHashMap<>();
+    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    busConnection.subscribe(AnalysisResultsListener.SONARLINT_ANALYSIS_DONE_TOPIC, new AnalysisResultsListener() {
+      @Override public void analysisDone(Map<VirtualFile, Collection<IssuePointer>> issuesPerFile) {
+        for(Map.Entry<VirtualFile, Collection<IssuePointer>> e : issuesPerFile.entrySet() ) {
+          if(e.getValue().isEmpty()) {
+            clearFile(e.getKey());
+          } else {
+            store(e.getKey(), e.getValue());
+          }
+        }
+      }
+    });
   }
 
   public void clear() {
@@ -55,7 +67,7 @@ public class IssueStore extends AbstractProjectComponent {
 
   private long getNumberIssues() {
     long count = 0;
-    Iterator<Map.Entry<VirtualFile, Collection<StoredIssue>>> it = storePerFile.entrySet().iterator();
+    Iterator<Map.Entry<VirtualFile, Collection<IssuePointer>>> it = storePerFile.entrySet().iterator();
 
     while (it.hasNext()) {
       count += it.next().getValue().size();
@@ -64,14 +76,18 @@ public class IssueStore extends AbstractProjectComponent {
     return count;
   }
 
+  public Map<VirtualFile, Collection<IssuePointer>> getAll() {
+    return storePerFile;
+  }
+
   @Override
   public void disposeComponent() {
     clear();
   }
 
-  public Collection<StoredIssue> getForFile(VirtualFile file) {
-    Collection<StoredIssue> issues = storePerFile.get(file);
-    return issues == null ? Collections.<StoredIssue>emptyList() : issues;
+  public Collection<IssuePointer> getForFile(VirtualFile file) {
+    Collection<IssuePointer> issues = storePerFile.get(file);
+    return issues == null ? Collections.<IssuePointer>emptyList() : issues;
   }
 
   public void clearFile(VirtualFile file) {
@@ -90,38 +106,8 @@ public class IssueStore extends AbstractProjectComponent {
     }
   }
 
-  public void store(VirtualFile file, Collection<StoredIssue> issues) {
+  public void store(VirtualFile file, Collection<IssuePointer> issues) {
     // this will also delete all existing issues in the file
     storePerFile.put(file, issues);
-  }
-
-  public static class StoredIssue {
-    private RangeMarker range;
-    private Issue issue;
-    private PsiFile psiFile;
-
-    public StoredIssue(Issue issue, PsiFile psiFile) {
-      this.issue = issue;
-      this.psiFile = psiFile;
-    }
-
-    public StoredIssue(Issue issue, PsiFile psiFile, RangeMarker range) {
-      this.range = range;
-      this.issue = issue;
-      this.psiFile = psiFile;
-    }
-
-    public Issue issue() {
-      return issue;
-    }
-
-    @CheckForNull
-    public RangeMarker range() {
-      return range;
-    }
-
-    public PsiFile psiFile() {
-      return psiFile;
-    }
   }
 }

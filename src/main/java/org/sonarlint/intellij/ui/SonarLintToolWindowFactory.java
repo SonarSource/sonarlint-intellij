@@ -26,20 +26,27 @@ import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
 
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
-  public static final String ID = "Analysis";
-
   @Override
   public void createToolWindowContent(Project project, ToolWindow toolWindow) {
-    addAnalyzeTab(project, toolWindow);
-    toolWindow.setTitle(ID);
+    addIssuesTab(project, toolWindow);
+    addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
   }
 
-  private static void addAnalyzeTab(Project project, ToolWindow toolWindow) {
+  private static void addIssuesTab(Project project, ToolWindow toolWindow) {
+    Content logContent = toolWindow.getContentManager().getFactory()
+      .createContent(
+        new SonarLintIssuesPanel(project),
+        "Issues",
+        false);
+    toolWindow.getContentManager().addContent(logContent);
+  }
+
+  private static void addLogTab(Project project, ToolWindow toolWindow) {
     Content toolContent = toolWindow.getContentManager().getFactory().createContent(
       new SonarLintToolPanel(toolWindow, project),
-      "Analyze",
-      true);
+      "Log",
+      false);
     toolWindow.getContentManager().addContent(toolContent);
   }
 }

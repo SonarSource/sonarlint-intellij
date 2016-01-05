@@ -74,7 +74,7 @@ public class IssueMatcher extends AbstractProjectComponent {
    *
    * <b>Can only be called with read access</b>.
    */
-  public IssueStore.StoredIssue match(PsiFile file, Issue issue) throws NoMatchException {
+  public IssuePointer match(PsiFile file, Issue issue) throws NoMatchException {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     Document doc = docManager.getDocument(file);
@@ -91,13 +91,13 @@ public class IssueMatcher extends AbstractProjectComponent {
     }
   }
 
-  private static IssueStore.StoredIssue createRangeIssue(PsiFile file, Document doc, Issue issue, TextRange issueRange) {
+  private static IssuePointer createRangeIssue(PsiFile file, Document doc, Issue issue, TextRange issueRange) {
     RangeMarker range = doc.createRangeMarker(issueRange.getStartOffset(), issueRange.getEndOffset());
-    return new IssueStore.StoredIssue(issue, file, range);
+    return new IssuePointer(issue, file, range);
   }
 
-  private static IssueStore.StoredIssue createFileIssue(PsiFile file, Issue issue) {
-    return new IssueStore.StoredIssue(issue, file);
+  private static IssuePointer createFileIssue(PsiFile file, Issue issue) {
+    return new IssuePointer(issue, file);
   }
 
   private static TextRange getIssueTextRange(PsiFile file, Document doc, Issue issue) throws NoMatchException {

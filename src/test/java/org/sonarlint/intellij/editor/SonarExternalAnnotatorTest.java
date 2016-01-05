@@ -31,15 +31,14 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonar.runner.api.Issue;
+import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 
 import java.util.Collection;
 import java.util.LinkedList;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarExternalAnnotatorTest {
@@ -96,7 +95,7 @@ public class SonarExternalAnnotatorTest {
   }
 
   private void createFileIssues(int number) {
-    Collection<IssueStore.StoredIssue> issues = new LinkedList<>();
+    Collection<IssuePointer> issues = new LinkedList<>();
 
     for (int i = 0; i < number; i++) {
       issues.add(createFileStoredIssue(i, psiFile));
@@ -106,7 +105,7 @@ public class SonarExternalAnnotatorTest {
   }
 
   private void createStoredIssues(int number) {
-    Collection<IssueStore.StoredIssue> issues = new LinkedList<>();
+    Collection<IssuePointer> issues = new LinkedList<>();
 
     for (int i = 0; i < number; i++) {
       issues.add(createRangeStoredIssue(i, i, i + 10));
@@ -115,12 +114,12 @@ public class SonarExternalAnnotatorTest {
     when(store.getForFile(virtualFile)).thenReturn(issues);
   }
 
-  private static IssueStore.StoredIssue createFileStoredIssue(int id, PsiFile file) {
+  private static IssuePointer createFileStoredIssue(int id, PsiFile file) {
     Issue issue = createIssue(id);
-    return new IssueStore.StoredIssue(issue, file, null);
+    return new IssuePointer(issue, file, null);
   }
 
-  private static IssueStore.StoredIssue createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
+  private static IssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
     Issue issue = createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
 
@@ -128,7 +127,7 @@ public class SonarExternalAnnotatorTest {
     when(range.getEndOffset()).thenReturn(rangeEnd);
     when(range.isValid()).thenReturn(true);
 
-    return new IssueStore.StoredIssue(issue, null, range);
+    return new IssuePointer(issue, null, range);
   }
 
   private static Issue createIssue(int id) {

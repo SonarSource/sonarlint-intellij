@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -45,9 +46,18 @@ public class ResourceLoader {
       return icon;
     }
 
-    InputStream stream = ResourceLoader.class.getResourceAsStream("/images/" + name);
+    String resource = "/images/" + name;
+    InputStream stream = ResourceLoader.class.getResourceAsStream(resource);
+    if(stream == null) {
+      throw new IOException("Could't find resource: " + resource);
+    }
     icon = new ImageIcon(ByteStreams.toByteArray(stream));
     iconCache.put(name, icon);
     return icon;
+  }
+
+  public static Icon getSeverityIcon(String severity) throws IOException {
+    Preconditions.checkNotNull(severity);
+    return getIcon("severity/" + severity.toLowerCase() + ".png");
   }
 }

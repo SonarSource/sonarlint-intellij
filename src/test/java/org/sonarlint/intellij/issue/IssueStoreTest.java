@@ -22,6 +22,7 @@ package org.sonarlint.intellij.issue;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonar.runner.api.Issue;
@@ -33,22 +34,23 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class IssueStoreTest {
+public class IssueStoreTest  extends LightPlatformCodeInsightFixtureTestCase {
   private Project project;
   private IssueStore store;
 
   private VirtualFile file1;
   private VirtualFile file2;
 
-  private IssueStore.StoredIssue issue1;
-  private IssueStore.StoredIssue issue2;
+  private IssuePointer issue1;
+  private IssuePointer issue2;
 
   @Before
-  public void setUp() {
+  public void setUp() throws Exception {
+    super.setUp();
     project = mock(Project.class);
     file1 = mock(VirtualFile.class);
     file2 = mock(VirtualFile.class);
-    store = new IssueStore(project);
+    store = new IssueStore(getProject());
 
     issue1 = createRangeStoredIssue(1);
     issue2 = createRangeStoredIssue(2);
@@ -58,13 +60,13 @@ public class IssueStoreTest {
   }
 
   @Test
-  public void store() {
+  public void testStore() {
     assertThat(store.getForFile(file1)).containsExactly(issue1);
     assertThat(store.getForFile(file2)).containsExactly(issue2);
   }
 
   @Test
-  public void clearFile() {
+  public void testClearFile() {
     store.clearFile(file1);
 
     assertThat(store.getForFile(file1)).isEmpty();
@@ -72,7 +74,7 @@ public class IssueStoreTest {
   }
 
   @Test
-  public void clearAll() {
+  public void testClearAll() {
     store.clear();
 
     assertThat(store.getForFile(file1)).isEmpty();
@@ -80,7 +82,7 @@ public class IssueStoreTest {
   }
 
   @Test
-  public void dispose() {
+  public void testDispose() {
     store.disposeComponent();
 
     assertThat(store.getForFile(file1)).isEmpty();
@@ -88,7 +90,7 @@ public class IssueStoreTest {
   }
 
   @Test
-  public void storeShouldOverride() {
+  public void testStoreShouldOverride() {
     store.store(file1, Collections.singletonList(issue2));
     store.store(file2, Collections.singletonList(issue1));
 
@@ -97,7 +99,7 @@ public class IssueStoreTest {
   }
 
   @Test
-  public void clean() {
+  public void testClean() {
     store.clean(file1);
     //nothing should be removed
     assertThat(store.getForFile(file1)).containsExactly(issue1);
@@ -106,7 +108,7 @@ public class IssueStoreTest {
     //add a lot of issues
     store.clear();
 
-    List<IssueStore.StoredIssue> issueList = new ArrayList<>(100_000);
+    List<IssuePointer> issueList = new ArrayList<>(100_000);
     for (int i = 0; i < 100_000; i++) {
       issueList.add(createRangeStoredIssue(i));
     }
@@ -117,10 +119,10 @@ public class IssueStoreTest {
     assertThat(store.getForFile(file1)).isEmpty();
   }
 
-  private static IssueStore.StoredIssue createRangeStoredIssue(int id) {
+  private static IssuePointer createRangeStoredIssue(int id) {
     Issue issue = createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
-    return new IssueStore.StoredIssue(issue, null, range);
+    return new IssuePointer(issue, null, range);
   }
 
   private static Issue createIssue(int id) {

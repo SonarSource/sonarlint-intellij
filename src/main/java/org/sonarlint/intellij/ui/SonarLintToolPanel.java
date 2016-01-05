@@ -26,6 +26,7 @@ import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.util.messages.MessageBusConnection;
@@ -34,10 +35,8 @@ import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.messages.StatusListener;
 
 import javax.swing.Box;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
 
-public class SonarLintToolPanel extends JPanel {
+public class SonarLintToolPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.toolwindow";
 
@@ -47,7 +46,7 @@ public class SonarLintToolPanel extends JPanel {
   private ActionToolbar mainToolbar;
 
   public SonarLintToolPanel(ToolWindow toolWindow, Project project) {
-    super(new BorderLayout());
+    super(false, true);
     this.toolWindow = toolWindow;
     this.project = project;
 
@@ -76,7 +75,7 @@ public class SonarLintToolPanel extends JPanel {
     Box toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
 
-    this.add(toolBarBox, BorderLayout.WEST);
+    super.setToolbar(toolBarBox);
     mainToolbar.getComponent().setVisible(true);
   }
 
@@ -88,6 +87,6 @@ public class SonarLintToolPanel extends JPanel {
 
   private void addConsole() {
     ConsoleView consoleView = project.getComponent(SonarLintConsole.class).getConsoleView();
-    this.add(consoleView.getComponent(), BorderLayout.CENTER);
+    super.setContent(consoleView.getComponent());
   }
 }

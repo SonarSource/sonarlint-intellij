@@ -40,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonar.runner.api.Issue;
 import org.sonarlint.intellij.actions.NoSonarIntentionAction;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
+import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 
 import java.util.Collection;
@@ -57,8 +58,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   @Override
   public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
-    Collection<IssueStore.StoredIssue> issues = annotationResult.store.getForFile(file.getVirtualFile());
-    for (IssueStore.StoredIssue i : issues) {
+    Collection<IssuePointer> issues = annotationResult.store.getForFile(file.getVirtualFile());
+    for (IssuePointer i : issues) {
       // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
       if (i.range() == null || i.range().isValid()) {
         addAnnotation(i, holder);
@@ -84,7 +85,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private void addAnnotation(IssueStore.StoredIssue i, AnnotationHolder annotationHolder) {
+  private void addAnnotation(IssuePointer i, AnnotationHolder annotationHolder) {
     Issue issue = i.issue();
     TextRange textRange;
 

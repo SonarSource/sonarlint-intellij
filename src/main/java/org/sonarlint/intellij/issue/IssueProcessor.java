@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ReadAction;
@@ -29,48 +27,48 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.messages.MessageBus;
 import org.sonar.runner.api.Issue;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
-  private final IssueStore store;
   private final DaemonCodeAnalyzer codeAnalyzer;
   private final SonarLintConsole console;
+  private final MessageBus messageBus;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, IssueStore store, DaemonCodeAnalyzer codeAnalyzer) {
+  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer) {
     super(project);
     this.matcher = matcher;
-    this.store = store;
     this.codeAnalyzer = codeAnalyzer;
     this.console = SonarLintConsole.getSonarQubeConsole(project);
+    this.messageBus = project.getMessageBus();
   }
 
   public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
-    Multimap<PsiFile, IssueStore.StoredIssue> map;
+    Map<VirtualFile, Collection<IssuePointer>> map;
     final VirtualFile moduleBaseDir = SonarLintUtils.getModuleRoot(job.module());
 
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
-      Collection<PsiFile> psiFiles = getPsi(job.files());
-      clearFiles(psiFiles);
-      map = transformIssues(moduleBaseDir, issues);
-
-      for (PsiFile file : map.keySet()) {
-        store.store(file.getVirtualFile(), map.get(file));
-      }
+      map = transformIssues(moduleBaseDir, issues, job.files());
+      messageBus.syncPublisher(AnalysisResultsListener.SONARLINT_ANALYSIS_DONE_TOPIC).analysisDone(map);
 
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
-      for (PsiFile f : psiFiles) {
-        codeAnalyzer.restart(f);
+      for (PsiFile psiFile : getPsi(job.files())) {
+        codeAnalyzer.restart(psiFile);
       }
 
     } finally {
@@ -90,16 +88,20 @@ public class IssueProcessor extends AbstractProjectComponent {
   }
 
   /**
-   * Transforms issues and organizes them per-PsiFile
+   * Transforms issues and organizes them per file
    */
-  private Multimap<PsiFile, IssueStore.StoredIssue> transformIssues(VirtualFile moduleBaseDir, Collection<Issue> issues) {
-    Multimap<PsiFile, IssueStore.StoredIssue> map = HashMultimap.create();
+  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(VirtualFile moduleBaseDir, Collection<Issue> issues, Collection<VirtualFile> analysed) {
+    Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
+
+    for(VirtualFile f : analysed) {
+      map.put(f, new ArrayList<IssuePointer>());
+    }
 
     for (Issue i : issues) {
       try {
         PsiFile psiFile = matcher.findFile(moduleBaseDir, i);
-        IssueStore.StoredIssue toStore = matcher.match(psiFile, i);
-        map.put(psiFile, toStore);
+        IssuePointer toStore = matcher.match(psiFile, i);
+        map.get(psiFile.getVirtualFile()).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue", e);
       }
@@ -120,14 +122,4 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
     return psiFiles;
   }
-
-  /**
-   * Clears all files analyzed (including the ones without issues)
-   */
-  private void clearFiles(Collection<PsiFile> files) {
-    for (PsiFile psiFile : files) {
-      store.clearFile(psiFile.getVirtualFile());
-    }
-  }
-
 }
