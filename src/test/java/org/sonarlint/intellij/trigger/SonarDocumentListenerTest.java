@@ -34,7 +34,7 @@ import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 import java.io.IOException;
-
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySetOf;
 import static org.mockito.Mockito.mock;
@@ -67,7 +67,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
   public void testAnalyze() throws IOException, InterruptedException {
     DocumentEvent event = createDocEvent();
     listener.documentChanged(event);
-    Thread.sleep(250);
+    Thread.sleep(500);
     verify(analyzer).submitAsync(any(Module.class), anySetOf(VirtualFile.class));
     verifyNoMoreInteractions(analyzer);
   }
@@ -77,7 +77,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     settings.setAutoTrigger(false);
     DocumentEvent event = createDocEvent();
     listener.documentChanged(event);
-    Thread.sleep(250);
+    assertThat(!listener.hasEvents());
     verifyZeroInteractions(analyzer);
   }
 
@@ -87,7 +87,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     FileEditorManager editorManager = FileEditorManager.getInstance(getProject());
     editorManager.closeFile(testFile);
     listener.documentChanged(event);
-    Thread.sleep(250);
+    assertThat(!listener.hasEvents());
     verifyZeroInteractions(analyzer);
   }
 

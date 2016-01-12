@@ -79,6 +79,10 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     });
   }
 
+  public boolean hasEvents() {
+    return !eventMap.isEmpty();
+  }
+
   @Override public void beforeDocumentChange(DocumentEvent event) {
     //nothing to do
   }
