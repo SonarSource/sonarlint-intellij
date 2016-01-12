@@ -31,6 +31,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>1.2 - Automatic trigger of analysis; "NO SONAR" quick fix; configurable highlighting of issues;</li>
         <li>1.1 - More precise issue location; trigger of analysis changed to on demand only; improved SonarLint console;</li>
         <li>1.0 - On the fly SonarLint inspection</li>
       </ul>
