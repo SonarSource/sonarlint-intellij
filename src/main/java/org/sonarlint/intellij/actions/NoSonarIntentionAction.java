@@ -34,7 +34,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.util.ResourceLoader;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import javax.swing.Icon;
 import java.io.IOException;
@@ -60,7 +59,8 @@ public class NoSonarIntentionAction extends BaseIntentionAction implements Icona
 
   @Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
     //TODO: disable if NOSONAR is already in the line?
-    return editor.getDocument().isWritable();
+    // some issues concern entire file and have no range (no action possible)
+    return editor.getDocument().isWritable() && range != null;
   }
 
   @NotNull @Override public String getText() {
