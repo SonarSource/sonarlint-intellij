@@ -24,6 +24,7 @@ import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.editor.impl.event.DocumentEventImpl;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.After;
@@ -31,8 +32,15 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.issue.IssueProcessor;
 
 import java.io.IOException;
+import java.util.Set;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anySetOf;
@@ -44,36 +52,38 @@ import static org.mockito.Mockito.when;
 
 public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTestCase {
   private SonarDocumentListener listener;
-  private SonarLintAnalyzer analyzer;
+  private EditorFactory editorFactory;
   private SonarLintGlobalSettings settings;
   private VirtualFile testFile;
 
   @Before
   public void setUp() throws Exception {
     super.setUp();
-
-    analyzer = mock(SonarLintAnalyzer.class);
     settings = new SonarLintGlobalSettings();
     settings.setAutoTrigger(true);
     //IntelliJ 14.1 does not have EditorFactory in the container, so we have to mock it
-    EditorFactory editorFactory = mock(EditorFactory.class);
+    editorFactory = mock(EditorFactory.class);
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
-    listener = new SonarDocumentListener(super.getProject(), settings, analyzer, editorFactory, 100);
-    listener.initComponent();
     testFile = myFixture.addFileToProject("test.java", "dummy").getVirtualFile();
   }
 
   @Test
-  public void testAnalyze() throws IOException, InterruptedException {
+  public void testAnalyze() throws IOException, InterruptedException, TimeoutException, BrokenBarrierException {
+    TestAnalyzer analyzer = new TestAnalyzer(getProject());
+    listener = new SonarDocumentListener(super.getProject(), settings, analyzer, editorFactory, 100);
+    listener.initComponent();
+
     DocumentEvent event = createDocEvent();
     listener.documentChanged(event);
-    Thread.sleep(500);
-    verify(analyzer).submitAsync(any(Module.class), anySetOf(VirtualFile.class));
-    verifyNoMoreInteractions(analyzer);
+    analyzer.waitForSubmission(500);
   }
 
   @Test
   public void testDontAnalyzeWithDisable() throws InterruptedException, IOException {
+    SonarLintAnalyzer analyzer = mock(SonarLintAnalyzer.class);
+    listener = new SonarDocumentListener(super.getProject(), settings, analyzer, editorFactory, 100);
+    listener.initComponent();
+
     settings.setAutoTrigger(false);
     DocumentEvent event = createDocEvent();
     listener.documentChanged(event);
@@ -91,5 +101,29 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     listener.projectClosed();
     listener.disposeComponent();
     super.tearDown();
+  }
+
+  private class TestAnalyzer extends SonarLintAnalyzer {
+    private CyclicBarrier barrier;
+
+    public TestAnalyzer(Project project) {
+      super(project, null);
+      barrier = new CyclicBarrier(2);
+    }
+
+    public void waitForSubmission(int maxTime) throws InterruptedException, TimeoutException, BrokenBarrierException {
+      barrier.await(maxTime, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void submitAsync(Module m, Set<VirtualFile> files) {
+      try {
+        barrier.await();
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      } catch (BrokenBarrierException e) {
+        e.printStackTrace();
+      }
+    }
   }
 }

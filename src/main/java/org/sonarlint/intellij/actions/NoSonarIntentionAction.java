@@ -29,7 +29,6 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
@@ -58,7 +57,7 @@ public class NoSonarIntentionAction extends BaseIntentionAction implements Icona
   }
 
   @Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
-    // how can we disable if NOSONAR is already in the line?
+    // how can we disable if the fix is already suggested in the line?
     // some issues concern entire file and have no range (no action possible)
     return editor.getDocument().isWritable() && range != null;
   }
