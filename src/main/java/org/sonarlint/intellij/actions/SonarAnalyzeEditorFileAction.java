@@ -41,7 +41,6 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    //VirtualFile[] files = DataKeys.VIRTUAL_FILE_ARRAY.getData(e.getDataContext());
     Project p = e.getProject();
     VirtualFile[] selectedFiles = FileEditorManager.getInstance(p).getSelectedFiles();
     SonarLintConsole console = SonarLintConsole.getSonarQubeConsole(p);

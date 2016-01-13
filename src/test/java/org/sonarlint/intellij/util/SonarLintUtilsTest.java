@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.project.Project;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -40,6 +41,7 @@ public class SonarLintUtilsTest extends LightPlatformCodeInsightFixtureTestCase 
     binaryFile = myFixture.addFileToProject("test.bin", "dummy").getVirtualFile();
   }
 
+  @Test
   public void testShouldAnalyze() {
     assertThat(SonarLintUtils.shouldAnalyze(testFile, myModule)).isTrue();
 
@@ -49,6 +51,7 @@ public class SonarLintUtilsTest extends LightPlatformCodeInsightFixtureTestCase 
     assertThat(SonarLintUtils.shouldAnalyze(binaryFile, myModule)).isTrue();
   }
 
+  @Test
   public void testShouldAnalyzeDisposed() {
     Project disposed = mock(Project.class);
     Module module = mock(Module.class);
@@ -59,6 +62,7 @@ public class SonarLintUtilsTest extends LightPlatformCodeInsightFixtureTestCase 
     assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isFalse();
   }
 
+  @Test
   public void testShouldAnalyzeInvalid() {
     VirtualFile f = mock(VirtualFile.class);
     when(f.isValid()).thenReturn(false);

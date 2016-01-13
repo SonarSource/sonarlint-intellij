@@ -24,7 +24,6 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
@@ -44,7 +43,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @ThreadSafe
 public class SonarDocumentListener extends AbstractProjectComponent implements DocumentListener {
-  private final static int DEFAULT_TIMER_MS = 2000;
+  private static final int DEFAULT_TIMER_MS = 2000;
 
   private final SonarLintGlobalSettings globalSettings;
   private final SonarLintAnalyzer analyzer;
@@ -65,7 +64,6 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     this.globalSettings = globalSettings;
     this.watcher = new EventWatcher();
     this.timerMs = timerMs;
-    watcher.start();
 
     editorFactory.getEventMulticaster().addDocumentListener(this);
 
@@ -80,6 +78,11 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     });
   }
 
+  @Override
+  public void initComponent() {
+    watcher.start();
+  }
+
   public boolean hasEvents() {
     return !eventMap.isEmpty();
   }
@@ -89,6 +92,10 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   }
 
   @Override public void documentChanged(DocumentEvent event) {
+    if(!globalSettings.isAutoTrigger()) {
+      return;
+    }
+
     VirtualFile file = FileDocumentManager.getInstance().getFile(event.getDocument());
     Project project = ProjectUtil.guessProjectForFile(file);
 
@@ -130,18 +137,6 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
 
   private void triggerFile(VirtualFile file) {
     if (!globalSettings.isAutoTrigger() || myProject.isDisposed()) {
-      return;
-    }
-
-    VirtualFile[] openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
-    boolean found = false;
-    for (VirtualFile f : openFiles) {
-      if (f.equals(file)) {
-        found = true;
-      }
-    }
-
-    if (!found) {
       return;
     }
 

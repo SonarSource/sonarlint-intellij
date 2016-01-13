@@ -58,7 +58,7 @@ public class NoSonarIntentionAction extends BaseIntentionAction implements Icona
   }
 
   @Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
-    //TODO: disable if NOSONAR is already in the line?
+    // how can we disable if NOSONAR is already in the line?
     // some issues concern entire file and have no range (no action possible)
     return editor.getDocument().isWritable() && range != null;
   }
@@ -67,7 +67,7 @@ public class NoSonarIntentionAction extends BaseIntentionAction implements Icona
     return "Add 'NOSONAR'";
   }
 
-  @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {
+  @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     Document doc = editor.getDocument();
 
     // issue can span through multiple lines, so we use the range start offset and not the caret position (editor.getCaretModel().getOffset())

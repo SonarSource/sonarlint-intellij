@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.fileTypes.PlainSyntaxHighlighter;
 import com.intellij.openapi.fileTypes.SyntaxHighlighter;
@@ -37,6 +38,8 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class SonarLintColorSettingsPage implements ColorSettingsPage {
+  private static final Logger LOGGER = Logger.getInstance(SonarLintColorSettingsPage.class);
+
   private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[] {
     new AttributesDescriptor("Major issue", SonarLintTextAttributes.MAJOR),
     new AttributesDescriptor("Minor issue", SonarLintTextAttributes.MINOR),
@@ -45,14 +48,16 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
     new AttributesDescriptor("Info issue", SonarLintTextAttributes.INFO)
   };
 
+  private static class DescriptorComparator implements Comparator<AttributesDescriptor> {
+    @Override public int compare(AttributesDescriptor o1, AttributesDescriptor o2) {
+      return o1.getDisplayName().compareTo(o2.getDisplayName());
+    }
+  }
+
   private static final Map<String, TextAttributesKey> ADDITIONAL_HIGHLIGHT_DESCRIPTORS;
 
   static {
-    Arrays.sort(DESCRIPTORS, new Comparator<AttributesDescriptor>() {
-      @Override public int compare(AttributesDescriptor o1, AttributesDescriptor o2) {
-        return o1.getDisplayName().compareTo(o2.getDisplayName());
-      }
-    });
+    Arrays.sort(DESCRIPTORS, new DescriptorComparator());
     // sort alphabetically by key
     ADDITIONAL_HIGHLIGHT_DESCRIPTORS = new TreeMap<>();
 
@@ -65,7 +70,7 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
     try {
       return ResourceLoader.getIcon("onde-sonar-16.png");
     } catch (IOException e) {
-      //ignore
+      LOGGER.error("Couldn't load icon", e);
     }
     return null;
   }

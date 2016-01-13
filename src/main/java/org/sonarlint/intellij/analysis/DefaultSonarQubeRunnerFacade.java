@@ -69,7 +69,7 @@ public final class DefaultSonarQubeRunnerFacade extends AbstractProjectComponent
       props.putAll(projectSettings.getAdditionalProperties());
       if (projectSettings.isVerboseEnabled()) {
         SonarApplication sonarLint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
-        console.info(String.format("SonarLint [%s] properties:\n%s", sonarLint.getVersion(), propsToString(props)));
+        console.info(String.format("SonarLint [%s] properties:%n%s", sonarLint.getVersion(), propsToString(props)));
       }
 
       runner.runAnalysis(props, issueListener);

@@ -31,7 +31,6 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
@@ -87,7 +86,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   private void addAnnotation(IssueStore.StoredIssue i, AnnotationHolder annotationHolder) {
     Issue issue = i.issue();
-    PsiFile psiFile = i.psiFile();
     TextRange textRange;
 
     if (i.range() != null) {
@@ -120,7 +118,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     annotation.setGutterIconRenderer(new SonarGutterIconRenderer(issue.getMessage(), issue.getRuleKey(), issue.getRuleKey()));
   }
 
-  private TextAttributesKey getTextAttrsKey(@Nullable String severity) {
+  private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
     if(severity == null) {
       return SonarLintTextAttributes.MAJOR;
     }

@@ -24,8 +24,6 @@ import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.messages.StatusListener;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 @ThreadSafe
 public class SonarLintStatus extends AbstractProjectComponent {

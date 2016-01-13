@@ -23,7 +23,6 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.editor.impl.event.DocumentEventImpl;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
@@ -60,6 +59,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     EditorFactory editorFactory = mock(EditorFactory.class);
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     listener = new SonarDocumentListener(super.getProject(), settings, analyzer, editorFactory, 100);
+    listener.initComponent();
     testFile = myFixture.addFileToProject("test.java", "dummy").getVirtualFile();
   }
 
@@ -77,17 +77,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
     settings.setAutoTrigger(false);
     DocumentEvent event = createDocEvent();
     listener.documentChanged(event);
-    assertThat(!listener.hasEvents());
-    verifyZeroInteractions(analyzer);
-  }
-
-  @Test
-  public void testDontAnalyzeClosedFile() throws IOException, InterruptedException {
-    DocumentEvent event = createDocEvent();
-    FileEditorManager editorManager = FileEditorManager.getInstance(getProject());
-    editorManager.closeFile(testFile);
-    listener.documentChanged(event);
-    assertThat(!listener.hasEvents());
+    assertThat(listener.hasEvents()).isFalse();
     verifyZeroInteractions(analyzer);
   }
 
@@ -97,7 +87,7 @@ public class SonarDocumentListenerTest extends LightPlatformCodeInsightFixtureTe
   }
 
   @After
-  public void stop() throws Exception {
+  public void tearDown() throws Exception {
     listener.projectClosed();
     listener.disposeComponent();
     super.tearDown();

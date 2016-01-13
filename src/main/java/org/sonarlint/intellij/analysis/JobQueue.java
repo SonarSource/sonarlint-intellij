@@ -32,7 +32,7 @@ import com.intellij.openapi.project.Project;
  * NOT thread safe
  */
 public class JobQueue {
-  public final static int CAPACITY = 5;
+  public static final int CAPACITY = 5;
   private final Project project;
 
   private Deque<SonarLintAnalyzer.SonarLintJob> queue;
@@ -46,10 +46,8 @@ public class JobQueue {
     Preconditions.checkArgument(job.module().getProject().equals(project), "job belongs to a different project");
     Preconditions.checkArgument(!job.files().isEmpty(), "no files to analyze");
 
-    if (optimize) {
-      if (tryAddToExisting(job)) {
-        return;
-      }
+    if (optimize && tryAddToExisting(job)) {
+      return;
     }
 
     if (queue.size() >= CAPACITY) {
