@@ -115,7 +115,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      * - let {@link Annotation#getTextAttributes} decide it based on highlight type and severity.
      */
     annotation.setHighlightType(getType(issue.getSeverity()));
-    annotation.registerFix(new NoSonarIntentionAction(i.range()));
+    if(i.range() != null) {
+      annotation.registerFix(new NoSonarIntentionAction(i.range()));
+    }
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
