@@ -54,7 +54,7 @@ public class SonarLintTask extends Task.Backgroundable {
     return startInBackground;
   }
 
-  private void stopRun(SonarLintAnalyzer.SonarLintJob job) {
+  private static void stopRun(SonarLintAnalyzer.SonarLintJob job) {
     TaskListener taskListener = job.module().getProject().getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
     taskListener.ended(job);
   }
@@ -157,9 +157,5 @@ public class SonarLintTask extends Task.Backgroundable {
         }
       }
     }
-  }
-
-  interface TaskFinishListener {
-    void finished();
   }
 }

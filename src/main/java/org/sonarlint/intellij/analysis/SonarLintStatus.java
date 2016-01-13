@@ -31,8 +31,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class SonarLintStatus extends AbstractProjectComponent {
   private final StatusListener statusListener;
   private Status status = Status.STOPPED;
-  //lock free list
-  private Queue<Listener> listeners = new ConcurrentLinkedQueue<>();
 
   public SonarLintStatus(Project project) {
     super(project);
@@ -40,10 +38,6 @@ public class SonarLintStatus extends AbstractProjectComponent {
   }
 
   public enum Status {RUNNING, STOPPED, CANCELLING}
-
-  public interface Listener {
-    void callback(Status newStatus);
-  }
 
   public static SonarLintStatus get(Project p) {
     return p.getComponent(SonarLintStatus.class);

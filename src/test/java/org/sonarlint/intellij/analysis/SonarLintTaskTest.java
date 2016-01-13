@@ -41,6 +41,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 public class SonarLintTaskTest extends LightPlatformCodeInsightFixtureTestCase {
   private SonarLintTask task;
@@ -54,9 +55,11 @@ public class SonarLintTaskTest extends LightPlatformCodeInsightFixtureTestCase {
   public void setUp() throws Exception {
     super.setUp();
     files = new HashSet<>();
-    files.add(mock(VirtualFile.class));
+    VirtualFile testFile = myFixture.addFileToProject("test.java", "dummy").getVirtualFile();
+    files.add(testFile);
     job = createJob();
     progress = mock(ProgressIndicator.class);
+    when(progress.isCanceled()).thenReturn(false);
     processor = mock(IssueProcessor.class);
     task = SonarLintTask.createBackground(processor, job);
     sonarQubeRunnerFacade = SonarLintTestUtils.mockRunner(getProject());
