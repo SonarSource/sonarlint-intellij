@@ -20,12 +20,7 @@
 package org.sonarlint.intellij.config;
 
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.editor.markup.EffectType;
-import com.intellij.openapi.editor.markup.TextAttributes;
-import com.intellij.ui.JBColor;
-
-import java.awt.Color;
-import java.awt.Font;
+import org.sonarlint.intellij.util.SonarLintSeverity;
 
 import static com.intellij.openapi.editor.colors.TextAttributesKey.createTextAttributesKey;
 
@@ -36,24 +31,20 @@ public class SonarLintTextAttributes {
   public static final TextAttributesKey BLOCKER;
   public static final TextAttributesKey INFO;
 
+
   static {
-    // an alternative could be CodeInsightColors.*
-    TextAttributes def = defaultTextAttributes();
-    CRITICAL = createTextAttributesKey("SONARLINT_CRITICAL", def);
-    MAJOR = createTextAttributesKey("SONARLINT_MAJOR", def);
-    MINOR = createTextAttributesKey("SONARLINT_MINOR", def);
-    BLOCKER = createTextAttributesKey("SONARLINT_BLOCKER", def);
-    INFO = createTextAttributesKey("SONARLINT_INFO", def);
+    /**
+     * Defaults should be consistent with SonarLintSeverity
+      */
+    CRITICAL = createTextAttributesKey("SONARLINT_CRITICAL", SonarLintSeverity.CRITICAL.defaultTextAttributes());
+    MAJOR = createTextAttributesKey("SONARLINT_MAJOR", SonarLintSeverity.MAJOR.defaultTextAttributes());
+    MINOR = createTextAttributesKey("SONARLINT_MINOR", SonarLintSeverity.MINOR.defaultTextAttributes());
+    INFO = createTextAttributesKey("SONARLINT_INFO", SonarLintSeverity.INFO.defaultTextAttributes());
+    BLOCKER = createTextAttributesKey("SONARLINT_BLOCKER", SonarLintSeverity.BLOCKER.defaultTextAttributes());
   }
 
   private SonarLintTextAttributes() {
     //only static
   }
 
-  private static TextAttributes defaultTextAttributes() {
-    Color c = JBColor.YELLOW.darker();
-    TextAttributes attr = new TextAttributes(null, null, c, EffectType.WAVE_UNDERSCORE, Font.PLAIN);
-    attr.setErrorStripeColor(c);
-    return attr;
-  }
 }

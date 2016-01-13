@@ -42,6 +42,7 @@ import org.sonarlint.intellij.actions.NoSonarIntentionAction;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.util.SonarLintSeverity;
 
 import java.util.Collection;
 
@@ -173,16 +174,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
     }
 
-    switch (severity) {
-      case "INFO":
-        return ProblemHighlightType.INFORMATION;
-      case "MINOR":
-      case "BLOCKER":
-      case "MAJOR":
-      case "CRITICAL":
-      default:
-        return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
-    }
+    return SonarLintSeverity.byName(severity).highlightType();
   }
 
   /**
@@ -193,16 +185,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (severity == null) {
       return HighlightSeverity.WARNING;
     }
-    switch (severity) {
-      case "INFO":
-        return HighlightSeverity.INFORMATION;
-      case "MINOR":
-      case "BLOCKER":
-      case "MAJOR":
-      case "CRITICAL":
-      default:
-        return HighlightSeverity.WARNING;
-    }
+
+    return SonarLintSeverity.byName(severity).highlightSeverity();
   }
 
   private static TextRange createTextRange(RangeMarker rangeMarker) {
@@ -211,7 +195,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   public static class AnnotationContext {
     IssueStore store;
-
     AnnotationContext(IssueStore store) {
       this.store = store;
     }
