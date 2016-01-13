@@ -10,13 +10,16 @@ script:
 
 env:
   matrix:
-    - JOB=CI IJ_VERSION=14.1
-    - JOB=CI IJ_VERSION=15.0.1 
-    - PR_ANALYSIS=true
+    - TARGET=CI
+    - TARGET=IT IDEA_VERSION=14.1
+    - TARGET=IT IDEA_VERSION=15.0.1 
 
 cache:
   directories:
     - '$HOME/.m2/repository'
+    - '$HOME/.gradle'
+    - '.gradle'
+    - '$HOME/.sonar'
 
 notifications:
   email: false
