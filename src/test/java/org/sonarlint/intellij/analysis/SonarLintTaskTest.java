@@ -63,6 +63,9 @@ public class SonarLintTaskTest extends LightPlatformCodeInsightFixtureTestCase {
     processor = mock(IssueProcessor.class);
     task = SonarLintTask.createBackground(processor, job);
     sonarQubeRunnerFacade = SonarLintTestUtils.mockRunner(getProject());
+
+    //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
+    SonarLintStatus.get(getProject()).stopRun();
   }
 
   @Test

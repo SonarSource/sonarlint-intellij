@@ -66,6 +66,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     this.watcher = new EventWatcher();
     this.timerMs = timerMs;
     watcher.start();
+
     editorFactory.getEventMulticaster().addDocumentListener(this);
 
     project.getMessageBus().connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener() {
@@ -106,6 +107,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
       Map.Entry<VirtualFile, Long> e = it.next();
       if (!e.getKey().isValid()) {
         it.remove();
+        continue;
       }
       // don't trigger if file currently has errors?
       // filter files opened in the editor
