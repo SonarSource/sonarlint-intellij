@@ -116,7 +116,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      */
     annotation.setHighlightType(getType(issue.getSeverity()));
     annotation.registerFix(new NoSonarIntentionAction(i.range()));
-    annotation.setGutterIconRenderer(new SonarGutterIconRenderer(issue.getMessage(), issue.getRuleKey(), issue.getRuleKey()));
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
