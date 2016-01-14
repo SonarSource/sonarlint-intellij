@@ -52,6 +52,11 @@ public class SonarLintUtilsTest extends LightPlatformCodeInsightFixtureTestCase 
   }
 
   @Test
+  public void testGetModuleRoot() {
+    assertThat(SonarLintUtils.getModuleRootPath(myModule)).isEqualTo("/src");
+  }
+
+  @Test
   public void testShouldAnalyzeDisposed() {
     Project disposed = mock(Project.class);
     Module module = mock(Module.class);

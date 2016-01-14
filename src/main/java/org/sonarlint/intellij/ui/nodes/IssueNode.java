@@ -27,6 +27,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 
 public class IssueNode extends AbstractNode {
@@ -64,7 +65,7 @@ public class IssueNode extends AbstractNode {
     return issue;
   }
 
-  private static String issueCoordinates(IssuePointer issue) {
+  private static String issueCoordinates(@Nonnull IssuePointer issue) {
     if(issue.range() == null) {
       return "(0, 0) ";
     }

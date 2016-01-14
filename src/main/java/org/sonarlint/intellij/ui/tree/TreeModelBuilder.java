@@ -32,6 +32,7 @@ import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import java.util.ArrayList;
@@ -194,7 +195,7 @@ public class TreeModelBuilder {
     }
   }
 
-  private class FileNodeComparator implements Comparator<FileNode> {
+  private static class FileNodeComparator implements Comparator<FileNode> {
     @Override public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());
       if(c != 0) {
@@ -211,8 +212,8 @@ public class TreeModelBuilder {
     }
   }
 
-  private class IssueComparator implements Comparator<IssuePointer> {
-    @Override public int compare(IssuePointer o1, IssuePointer o2) {
+  private static class IssueComparator implements Comparator<IssuePointer> {
+    @Override public int compare(@Nonnull IssuePointer o1, @Nonnull IssuePointer o2) {
       int rangeStart1 = (o1.range() == null) ? -1 : o1.range().getStartOffset();
       int rangeStart2 = (o2.range() == null) ? -1 : o2.range().getStartOffset();
 

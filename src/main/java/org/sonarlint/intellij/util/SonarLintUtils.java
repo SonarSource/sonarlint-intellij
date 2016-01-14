@@ -76,7 +76,7 @@ public class SonarLintUtils {
             public void run() {
               fileDocumentManager.saveDocument(document);
             }
-          }, ModalityState.NON_MODAL
+          }, ModalityState.any()
         );
         return true;
       }

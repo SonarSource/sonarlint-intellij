@@ -24,6 +24,7 @@ import com.intellij.psi.PsiFile;
 import org.sonar.runner.api.Issue;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IssuePointer {
@@ -60,6 +61,7 @@ public class IssuePointer {
     return uid;
   }
 
+  @Nonnull
   public Issue issue() {
     return issue;
   }

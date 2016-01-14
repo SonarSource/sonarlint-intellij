@@ -39,14 +39,13 @@ public class IssueTreeIndex {
     fileNodes.put(node.file(), node);
   }
 
-
   public void remove(VirtualFile file) {
     fileNodes.remove(file);
   }
 
-    public void clear() {
-      fileNodes.clear();
-    }
+  public void clear() {
+    fileNodes.clear();
+  }
 
   public Set<VirtualFile> getAllFiles() {
     return fileNodes.keySet();

@@ -17,22 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.scope;
+@ParametersAreNonnullByDefault
+package org.sonarlint.intellij.messages;
 
-import com.intellij.openapi.util.Condition;
-import com.intellij.openapi.vfs.VirtualFile;
-
-public class ProjectScope extends IssueTreeScope {
-  public ProjectScope() {
-    this.condition = new ProjectCondition();
-  }
-  @Override public String getDisplayName() {
-    return "Project";
-  }
-
-  private static class ProjectCondition implements Condition<VirtualFile> {
-    @Override public boolean value(VirtualFile virtualFile) {
-      return true;
-    }
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

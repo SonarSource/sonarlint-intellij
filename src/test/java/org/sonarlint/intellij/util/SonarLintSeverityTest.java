@@ -17,22 +17,21 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.scope;
+package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.util.Condition;
-import com.intellij.openapi.vfs.VirtualFile;
+import org.junit.Test;
 
-public class ProjectScope extends IssueTreeScope {
-  public ProjectScope() {
-    this.condition = new ProjectCondition();
-  }
-  @Override public String getDisplayName() {
-    return "Project";
-  }
+import static org.assertj.core.api.Assertions.assertThat;
 
-  private static class ProjectCondition implements Condition<VirtualFile> {
-    @Override public boolean value(VirtualFile virtualFile) {
-      return true;
-    }
+public class SonarLintSeverityTest {
+  @Test
+  public void testSeveritiesExist() {
+    assertThat(SonarLintSeverity.byName("BLOCKER")).isNotNull();
+    assertThat(SonarLintSeverity.byName("MAJOR")).isNotNull();
+    assertThat(SonarLintSeverity.byName("MINOR")).isNotNull();
+    assertThat(SonarLintSeverity.byName("INFO")).isNotNull();
+    assertThat(SonarLintSeverity.byName("CRITICAL")).isNotNull();
+
+    assertThat(SonarLintSeverity.byName("RANDOM")).isNull();
   }
 }

@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataProvider;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.treeStructure.Tree;
@@ -56,8 +57,9 @@ public class IssueTree extends Tree implements DataProvider {
       IssuePointer issue = ((IssueNode) node).issue();
       int offset;
 
-      if(issue != null && issue.range() != null) {
-        offset = issue.range().getStartOffset();
+      RangeMarker range = issue.range();
+      if(range != null) {
+        offset = range.getStartOffset();
       } else {
         offset = 0;
       }
