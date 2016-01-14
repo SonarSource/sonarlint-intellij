@@ -161,7 +161,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static String getMessage(Issue issue) {
-    return issue.getRuleKey() + " " + issue.getMessage();
+    return issue.getMessage();
   }
 
   /**
