@@ -74,7 +74,7 @@ public class IssueTreeIndexTest {
     assertThat(idx.getFileNode(file1)).isEqualTo(node1);
     assertThat(idx.getFileNode(createFile("file1"))).isNull();
 
-    assertThat(idx.getAllFiles()).containsExactly(file1, file2);
+    assertThat(idx.getAllFiles()).containsOnly(file1, file2);
   }
 
   private VirtualFile createFile(String name) {
