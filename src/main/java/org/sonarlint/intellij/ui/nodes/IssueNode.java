@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
@@ -66,13 +67,14 @@ public class IssueNode extends AbstractNode {
   }
 
   private static String issueCoordinates(@Nonnull IssuePointer issue) {
-    if(issue.range() == null) {
+    RangeMarker range = issue.range();
+    if(range == null) {
       return "(0, 0) ";
     }
 
     Document doc = FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile());
-    int line = doc.getLineNumber(issue.range().getStartOffset());
-    int offset = issue.range().getStartOffset() - doc.getLineStartOffset(line);
+    int line = doc.getLineNumber(range.getStartOffset());
+    int offset = range.getStartOffset() - doc.getLineStartOffset(line);
     return String.format("(%d, %d) ", line, offset);
   }
 }

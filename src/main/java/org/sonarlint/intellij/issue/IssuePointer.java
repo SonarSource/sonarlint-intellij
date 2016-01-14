@@ -25,6 +25,7 @@ import org.sonar.runner.api.Issue;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IssuePointer {
@@ -38,7 +39,7 @@ public class IssuePointer {
     this(issue, psiFile, null);
   }
 
-  public IssuePointer(Issue issue, PsiFile psiFile, RangeMarker range) {
+  public IssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
     this.range = range;
     this.issue = issue;
     this.psiFile = psiFile;

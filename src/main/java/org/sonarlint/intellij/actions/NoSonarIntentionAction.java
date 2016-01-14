@@ -54,7 +54,7 @@ public class NoSonarIntentionAction extends BaseIntentionAction implements Icona
   }
 
   @Nls @NotNull @Override public String getFamilyName() {
-    return "family name";
+    return "NOSONAR";
   }
 
   @Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {

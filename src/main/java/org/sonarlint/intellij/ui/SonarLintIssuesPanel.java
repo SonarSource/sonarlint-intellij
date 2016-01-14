@@ -181,7 +181,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
   }
 
   private void createTree() {
-    treeBuilder = new TreeModelBuilder(project);
+    treeBuilder = new TreeModelBuilder();
     DefaultTreeModel model = treeBuilder.createModel();
     tree = new IssueTree(project, model);
     UIUtil.setLineStyleAngled(tree);

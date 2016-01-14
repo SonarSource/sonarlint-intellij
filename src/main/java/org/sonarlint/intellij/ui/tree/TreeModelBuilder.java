@@ -43,13 +43,12 @@ import java.util.Map;
 import java.util.TreeSet;
 
 public class TreeModelBuilder {
-  private final Project project;
   private DefaultTreeModel model;
   private SummaryNode summary;
   private IssueTreeIndex index;
   private Condition<VirtualFile> condition;
 
-  private Comparator<IssuePointer> issuePointerComparator = new Comparator<IssuePointer>() {
+  private static Comparator<IssuePointer> issuePointerComparator = new Comparator<IssuePointer>() {
     private final List<String> severityOrder = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR","MINOR","INFO");
     private final Ordering<IssuePointer> ordering = Ordering.explicit(severityOrder).onResultOf(new IssueSeverityExtractor())
       .compound(new IssueComparator());
@@ -59,8 +58,7 @@ public class TreeModelBuilder {
     }
   };
 
-  public TreeModelBuilder(Project project) {
-    this.project = project;
+  public TreeModelBuilder() {
     this.index = new IssueTreeIndex();
   }
 
@@ -147,7 +145,7 @@ public class TreeModelBuilder {
     }
   }
 
-  private void setIssues(FileNode node, Iterable<IssuePointer> issuePointers) {
+  private static void setIssues(FileNode node, Iterable<IssuePointer> issuePointers) {
     node.removeAllChildren();
 
     // 15ms for 500 issues -> to improve?

@@ -34,6 +34,7 @@ import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class NoSonarIntentionActionTest extends LightPlatformCodeInsightFixtureTestCase {
   private PsiFile testFile;
@@ -52,6 +53,15 @@ public class NoSonarIntentionActionTest extends LightPlatformCodeInsightFixtureT
 
     NoSonarIntentionAction noSonarAction = new NoSonarIntentionAction(null);
     assertThat(noSonarAction.isAvailable(getProject(), myFixture.getEditor(), myFixture.getFile())).isFalse();
+  }
+
+  @Test
+  public void testInvokeNoRange() {
+    // this should never happen because, but just in case
+    NoSonarIntentionAction noSonarAction = new NoSonarIntentionAction(null);
+    noSonarAction.invoke(getProject(), myFixture.getEditor(), myFixture.getFile());
+
+    verifyZeroInteractions(analyzer);
   }
 
   @Test

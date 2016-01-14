@@ -30,6 +30,8 @@ import java.util.Comparator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class AbstractNodeTest {
@@ -56,7 +58,35 @@ public class AbstractNodeTest {
     assertThat(((FileNode) testNode.getChildAt(1)).file().getName()).isEqualTo("file");
     assertThat(((FileNode) testNode.getChildAt(2)).file().getName()).isEqualTo("name");
     assertThat(((FileNode) testNode.getChildAt(3)).file().getName()).isEqualTo("test");
+  }
 
+  @Test
+  public void testFileCount() {
+    AbstractNode child1 = mock(AbstractNode.class);
+    AbstractNode child2 = mock(AbstractNode.class);
+    AbstractNode child3 = mock(AbstractNode.class);
+
+    when(child1.getFileCount()).thenReturn(1);
+    when(child1.getIssueCount()).thenReturn(1);
+
+    when(child2.getFileCount()).thenReturn(2);
+    when(child2.getIssueCount()).thenReturn(2);
+
+    when(child3.getFileCount()).thenReturn(3);
+    when(child3.getIssueCount()).thenReturn(3);
+
+    testNode.add(child1);
+    testNode.add(child2);
+    testNode.add(child3);
+
+    assertThat(testNode.getFileCount()).isEqualTo(6);
+    assertThat(testNode.getIssueCount()).isEqualTo(6);
+    assertThat(testNode.getFileCount()).isEqualTo(6);
+    assertThat(testNode.getIssueCount()).isEqualTo(6);
+
+    //second call should be from cache
+    verify(child1, times(1)).getFileCount();
+    verify(child1, times(1)).getIssueCount();
   }
 
   private Comparator<FileNode> nameComparator = new Comparator<FileNode>() {
