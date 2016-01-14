@@ -84,7 +84,7 @@ public class SonarLintUtils {
     return false;
   }
 
-  public static boolean shouldAnalyze(@Nullable VirtualFile file, Module module) {
+  public static boolean shouldAnalyze(@Nullable VirtualFile file, @Nullable Module module) {
     if (file == null || module == null) {
       return false;
     }

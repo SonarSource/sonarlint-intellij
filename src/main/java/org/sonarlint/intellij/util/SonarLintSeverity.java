@@ -24,7 +24,6 @@ import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 
-import javax.annotation.CheckForNull;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,7 +64,6 @@ public enum SonarLintSeverity {
     return highlightSeverity;
   }
 
-  @CheckForNull
   public static SonarLintSeverity byName(String name) {
     return cache.get(name);
   }

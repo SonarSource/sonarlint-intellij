@@ -56,7 +56,7 @@ public class IssueTree extends Tree implements DataProvider {
       IssuePointer issue = ((IssueNode) node).issue();
       int offset;
 
-      if(issue.range() != null) {
+      if(issue != null && issue.range() != null) {
         offset = issue.range().getStartOffset();
       } else {
         offset = 0;

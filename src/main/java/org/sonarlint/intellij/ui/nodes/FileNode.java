@@ -23,18 +23,15 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 
 import javax.swing.Icon;
-import com.intellij.openapi.project.Project;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 
 public class FileNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(FileNode.class);
 
-  private final Project project;
   private final VirtualFile file;
 
-  public FileNode(Project project, VirtualFile file) {
-    this.project = project;
+  public FileNode(VirtualFile file) {
     this.file = file;
   }
 
@@ -42,6 +39,7 @@ public class FileNode extends AbstractNode {
     return file;
   }
 
+  @Override
   public int getIssueCount() {
     return super.getChildCount();
   }

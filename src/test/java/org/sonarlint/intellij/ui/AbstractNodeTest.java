@@ -23,7 +23,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import org.junit.Before;
 import org.junit.Test;
-import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 
@@ -35,7 +34,6 @@ import static org.mockito.Mockito.when;
 
 public class AbstractNodeTest {
   private AbstractNode testNode;
-  private Project project;
 
   @Before
   public void setUp() {
@@ -48,10 +46,10 @@ public class AbstractNodeTest {
 
   @Test
   public void testInsertion() {
-    assertThat(testNode.getInsertIdx(new FileNode(project, mockFile("name")), nameComparator)).isEqualTo(0);
-    assertThat(testNode.getInsertIdx(new FileNode(project, mockFile("file")), nameComparator)).isEqualTo(0);
-    assertThat(testNode.getInsertIdx(new FileNode(project, mockFile("test")), nameComparator)).isEqualTo(2);
-    assertThat(testNode.getInsertIdx(new FileNode(project, mockFile("abc")), nameComparator)).isEqualTo(0);
+    assertThat(testNode.getInsertIdx(new FileNode(mockFile("name")), nameComparator)).isEqualTo(0);
+    assertThat(testNode.getInsertIdx(new FileNode(mockFile("file")), nameComparator)).isEqualTo(0);
+    assertThat(testNode.getInsertIdx(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
+    assertThat(testNode.getInsertIdx(new FileNode(mockFile("abc")), nameComparator)).isEqualTo(0);
 
     assertThat(testNode.getChildCount()).isEqualTo(4);
     assertThat(((FileNode) testNode.getChildAt(0)).file().getName()).isEqualTo("abc");

@@ -61,19 +61,27 @@ public class CurrentFileScope extends IssueTreeScope {
     VirtualFile[] selectedFiles = FileEditorManager.getInstance(project).getSelectedFiles();
 
     if(selectedFiles.length == 0) {
-      return new Condition<VirtualFile>() {
-        @Override public boolean value(VirtualFile virtualFile) {
-          return false;
-        }
-      };
+      return new RejectAllCondition();
     }
 
-    final VirtualFile f = selectedFiles[0];
-    return new Condition<VirtualFile>() {
-      @Override public boolean value(VirtualFile virtualFile) {
-        return f.equals(virtualFile);
-      }
-    };
+    return new AcceptFileCondition(selectedFiles[0]);
+  }
+
+  private static class AcceptFileCondition implements Condition<VirtualFile> {
+    private final VirtualFile file;
+    AcceptFileCondition(VirtualFile file) {
+      this.file = file;
+    }
+
+    @Override public boolean value(VirtualFile virtualFile) {
+      return file.equals(virtualFile);
+    }
+  }
+
+  private static class RejectAllCondition implements Condition<VirtualFile> {
+    @Override public boolean value(VirtualFile virtualFile) {
+      return false;
+    }
   }
 
 }

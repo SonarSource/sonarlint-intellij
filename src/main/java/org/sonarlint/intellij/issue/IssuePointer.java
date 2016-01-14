@@ -27,49 +27,49 @@ import javax.annotation.CheckForNull;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class IssuePointer {
-    private static final AtomicLong UID_GEN = new AtomicLong();
-    private long uid;
-    private RangeMarker range;
-    private Issue issue;
-    private PsiFile psiFile;
+  private static final AtomicLong UID_GEN = new AtomicLong();
+  private long uid;
+  private RangeMarker range;
+  private Issue issue;
+  private PsiFile psiFile;
 
-    public IssuePointer(Issue issue, PsiFile psiFile) {
-      this(issue, psiFile, null);
+  public IssuePointer(Issue issue, PsiFile psiFile) {
+    this(issue, psiFile, null);
+  }
+
+  public IssuePointer(Issue issue, PsiFile psiFile, RangeMarker range) {
+    this.range = range;
+    this.issue = issue;
+    this.psiFile = psiFile;
+    this.uid = UID_GEN.getAndIncrement();
+  }
+
+  public boolean isValid() {
+    if (!psiFile.isValid()) {
+      return false;
     }
 
-    public IssuePointer(Issue issue, PsiFile psiFile, RangeMarker range) {
-      this.range = range;
-      this.issue = issue;
-      this.psiFile = psiFile;
-      this.uid = UID_GEN.getAndIncrement();
+    if (range != null) {
+      return range.isValid();
     }
 
-    public boolean isValid() {
-      if(!psiFile.isValid()) {
-        return false;
-      }
-
-      if(range != null) {
-        return range.isValid();
-      }
-
-      return true;
-    }
+    return true;
+  }
 
   public long uid() {
     return uid;
   }
 
-    public Issue issue() {
-      return issue;
-    }
+  public Issue issue() {
+    return issue;
+  }
 
-    @CheckForNull
-    public RangeMarker range() {
-      return range;
-    }
+  @CheckForNull
+  public RangeMarker range() {
+    return range;
+  }
 
-    public PsiFile psiFile() {
-      return psiFile;
-    }
+  public PsiFile psiFile() {
+    return psiFile;
+  }
 }

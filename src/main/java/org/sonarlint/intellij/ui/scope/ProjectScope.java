@@ -24,13 +24,15 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 public class ProjectScope extends IssueTreeScope {
   public ProjectScope() {
-    condition = new Condition<VirtualFile>() {
-      @Override public boolean value(VirtualFile virtualFile) {
-        return true;
-      }
-    };
+    this.condition = new ProjectCondition();
   }
   @Override public String getDisplayName() {
     return "Project";
+  }
+
+  private class ProjectCondition implements Condition<VirtualFile> {
+    @Override public boolean value(VirtualFile virtualFile) {
+      return true;
+    }
   }
 }

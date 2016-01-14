@@ -48,6 +48,16 @@ public class TreeModelBuilder {
   private IssueTreeIndex index;
   private Condition<VirtualFile> condition;
 
+  private Comparator<IssuePointer> issuePointerComparator = new Comparator<IssuePointer>() {
+    private final List<String> severityOrder = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR","MINOR","INFO");
+    private final Ordering<IssuePointer> ordering = Ordering.explicit(severityOrder).onResultOf(new IssueSeverityExtractor())
+      .compound(new IssueComparator());
+
+    @Override public int compare(IssuePointer o1, IssuePointer o2) {
+      return ordering.compare(o1, o2);
+    }
+  };
+
   public TreeModelBuilder(Project project) {
     this.project = project;
     this.index = new IssueTreeIndex();
@@ -72,7 +82,7 @@ public class TreeModelBuilder {
     return model;
    }
 
-  private AbstractNode getParent(VirtualFile file) {
+  private AbstractNode getParent() {
     return summary;
   }
 
@@ -108,14 +118,14 @@ public class TreeModelBuilder {
     FileNode fNode = index.getFileNode(file);
     if(fNode == null) {
       newFile = true;
-      fNode = new FileNode(project, file);
+      fNode = new FileNode(file);
       index.setFileNode(fNode);
     }
 
     setIssues(fNode, filtered);
 
     if(newFile) {
-      AbstractNode parent = getParent(file);
+      AbstractNode parent = getParent();
       int idx = parent.getInsertIdx(fNode, new FileNodeComparator());
       int[] newIdx = { idx};
       model.nodesWereInserted(parent, newIdx);
@@ -177,16 +187,6 @@ public class TreeModelBuilder {
     return condition.value(file);
   }
 
-  private Comparator<IssuePointer> issuePointerComparator = new Comparator<IssuePointer>() {
-    private final List<String> severityOrder = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR","MINOR","INFO");
-    private final Ordering<IssuePointer> ordering = Ordering.explicit(severityOrder).onResultOf(new IssueSeverityExtractor())
-      .compound(new IssueComparator());
-
-    @Override public int compare(IssuePointer o1, IssuePointer o2) {
-      return ordering.compare(o1, o2);
-    }
-  };
-
   public void updateFile(VirtualFile file) {
     FileNode node = index.getFileNode(file);
     if(node != null) {
@@ -205,8 +205,8 @@ public class TreeModelBuilder {
     }
   }
 
-  private class IssueSeverityExtractor implements Function<IssuePointer, String> {
-    @Nullable @Override public String apply(@Nullable IssuePointer o) {
+  private static class IssueSeverityExtractor implements Function<IssuePointer, String> {
+    @Nullable @Override public String apply(IssuePointer o) {
       return o.issue().getSeverity();
     }
   }

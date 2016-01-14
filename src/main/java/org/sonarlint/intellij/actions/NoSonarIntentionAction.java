@@ -31,6 +31,7 @@ import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.util.ResourceLoader;
 
@@ -48,7 +49,7 @@ public class NoSonarIntentionAction extends BaseIntentionAction implements Icona
 
   private final RangeMarker range;
 
-  public NoSonarIntentionAction(RangeMarker range) {
+  public NoSonarIntentionAction(@Nullable RangeMarker range) {
     this.range = range;
   }
 
@@ -67,6 +68,9 @@ public class NoSonarIntentionAction extends BaseIntentionAction implements Icona
   }
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
+    if(range == null) {
+      return;
+    }
     Document doc = editor.getDocument();
 
     // issue can span through multiple lines, so we use the range start offset and not the caret position (editor.getCaretModel().getOffset())

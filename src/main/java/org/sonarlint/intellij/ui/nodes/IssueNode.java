@@ -21,12 +21,9 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
-import org.sonar.runner.api.Issue;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
 

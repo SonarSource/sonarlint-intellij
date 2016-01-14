@@ -98,8 +98,9 @@ public class SonarLintProjectSettingsPanel {
           return "Property Name";
         case 1:
           return "Value";
+        default:
+          return super.getColumnName(column);
       }
-      return super.getColumnName(column);
     }
 
     @Override
@@ -129,20 +130,18 @@ public class SonarLintProjectSettingsPanel {
           return myRows.get(rowIndex).key;
         case 1:
           return myRows.get(rowIndex).value;
+        default:
+          return null;
       }
-      return null;
     }
 
     @Override
     public void setValueAt(@Nullable Object aValue, int rowIndex, int columnIndex) {
       if (aValue != null) {
-        switch (columnIndex) {
-          case 0:
-            myRows.get(rowIndex).key = (String) aValue;
-            break;
-          case 1:
-            myRows.get(rowIndex).value = (String) aValue;
-            break;
+        if (columnIndex == 0) {
+          myRows.get(rowIndex).key = (String) aValue;
+        } else if (columnIndex == 1) {
+          myRows.get(rowIndex).value = (String) aValue;
         }
       }
     }
