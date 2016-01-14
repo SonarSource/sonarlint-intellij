@@ -38,7 +38,7 @@ public class CurrentFileScope extends IssueTreeScope {
   }
 
   @Override public String getDisplayName() {
-    return "current file";
+    return "Current File";
   }
 
   private void initEventHandling() {
