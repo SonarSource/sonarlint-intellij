@@ -22,7 +22,7 @@ CI)
     strongEcho 'Build and analyze commit in master'
     # this commit is master must be built and analyzed (with upload of report)
     ./gradlew buildPlugin check sonarqube \
-        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace \
+        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace --info \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN
 
