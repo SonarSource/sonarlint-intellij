@@ -106,26 +106,6 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     eventMap.put(file, System.currentTimeMillis());
   }
 
-  private void checkTimers() {
-    long t = System.currentTimeMillis();
-
-    Iterator<Map.Entry<VirtualFile, Long>> it = eventMap.entrySet().iterator();
-    while (it.hasNext()) {
-      Map.Entry<VirtualFile, Long> e = it.next();
-      if (!e.getKey().isValid()) {
-        it.remove();
-        continue;
-      }
-      // don't trigger if file currently has errors?
-      // filter files opened in the editor
-      // use some heuristics based on analysis time or average pauses? Or make it configurable?
-      if (e.getValue() + timerMs < t) {
-        triggerFile(e.getKey());
-        it.remove();
-      }
-    }
-  }
-
   /**
    * Marks a file as launched, resetting its state to unchanged
    */
@@ -169,6 +149,26 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
           Thread.sleep(200);
         } catch (InterruptedException e) {
           // continue until stop flag is set
+        }
+      }
+    }
+
+    private void checkTimers() {
+      long t = System.currentTimeMillis();
+
+      Iterator<Map.Entry<VirtualFile, Long>> it = eventMap.entrySet().iterator();
+      while (it.hasNext()) {
+        Map.Entry<VirtualFile, Long> e = it.next();
+        if (!e.getKey().isValid()) {
+          it.remove();
+          continue;
+        }
+        // don't trigger if file currently has errors?
+        // filter files opened in the editor
+        // use some heuristics based on analysis time or average pauses? Or make it configurable?
+        if (e.getValue() + timerMs < t) {
+          triggerFile(e.getKey());
+          it.remove();
         }
       }
     }
