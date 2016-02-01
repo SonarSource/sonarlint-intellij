@@ -11,7 +11,7 @@ plugins {
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'jacoco'
 
-group = 'org.sonarsource.sonarlint-intellij'
+group = 'org.sonarsource.sonarlint.intellij'
 description = 'SonarLint for IntelliJ IDEA'
 
 sourceCompatibility = 1.7
