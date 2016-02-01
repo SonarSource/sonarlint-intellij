@@ -30,9 +30,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonar.runner.api.Issue;
+import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
+import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -115,12 +116,12 @@ public class SonarExternalAnnotatorTest {
   }
 
   private static IssuePointer createFileStoredIssue(int id, PsiFile file) {
-    Issue issue = createIssue(id);
+    Issue issue = SonarLintTestUtils.createIssue(id);
     return new IssuePointer(issue, file, null);
   }
 
   private static IssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
-    Issue issue = createIssue(id);
+    Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
 
     when(range.getStartOffset()).thenReturn(rangeStart);
@@ -128,12 +129,5 @@ public class SonarExternalAnnotatorTest {
     when(range.isValid()).thenReturn(true);
 
     return new IssuePointer(issue, null, range);
-  }
-
-  private static Issue createIssue(int id) {
-    return Issue.builder()
-      .setKey(Integer.toString(id))
-      .setMessage("issue " + id)
-      .build();
   }
 }

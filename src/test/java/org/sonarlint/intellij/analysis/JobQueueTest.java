@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.lang.UrlClassLoader;
 import org.junit.Before;
 import com.intellij.openapi.project.Project;
 import org.junit.Test;

@@ -27,12 +27,14 @@ import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import com.intellij.openapi.project.Project;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintAnalyzer.class);
   private final IssueProcessor processor;
   private final SonarLintAnalyzer.SonarLintJob job;
   private final boolean startInBackground;
+
 
   private SonarLintTask(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job, boolean background) {
     super(job.module().getProject(), "SonarLint Analysis", true);
@@ -65,7 +67,10 @@ public class SonarLintTask extends Task.Backgroundable {
 
   @Override
   public void run(ProgressIndicator indicator) {
-    SonarLintStatus status = SonarLintStatus.get(job.module().getProject());
+    Project p = job.module().getProject();
+    SonarLintStatus status = SonarLintStatus.get(p);
+    SonarLintAnalysisConfigurator configurator = p.getComponent(SonarLintAnalysisConfigurator.class);
+
     try {
       if (indicator.isCanceled() || status.isCanceled()) {
         return;
@@ -84,7 +89,7 @@ public class SonarLintTask extends Task.Backgroundable {
       CancelMonitor monitor = new CancelMonitor(indicator, status, Thread.currentThread());
       try {
         monitor.start();
-        SonarLintAnalysisConfigurator.analyzeModule(job.module(), job.files(), listener);
+        configurator.analyzeModule(job.module(), job.files(), listener);
         indicator.startNonCancelableSection();
       } finally {
         monitor.stopMonitor();
@@ -145,7 +150,7 @@ public class SonarLintTask extends Task.Backgroundable {
             indicator.cancel();
           }
 
-          SonarLintConsole.getSonarQubeConsole(myProject).info("Canceling...");
+          SonarLintConsole.get(myProject).info("Canceling...");
           t.interrupt();
           break;
         }

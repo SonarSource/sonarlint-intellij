@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
@@ -103,6 +104,11 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
       return;
     }
 
+    postEvent(file);
+  }
+
+  @VisibleForTesting
+  void postEvent(VirtualFile file) {
     eventMap.put(file, System.currentTimeMillis());
   }
 

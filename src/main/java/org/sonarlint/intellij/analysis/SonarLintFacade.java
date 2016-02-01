@@ -17,17 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions;
+package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import com.intellij.openapi.components.ProjectComponent;
+import org.sonarsource.sonarlint.core.AnalysisConfiguration;
+import org.sonarsource.sonarlint.core.IssueListener;
 
-public class SonarCleanConsole extends AnAction {
-  @Override
-  public void actionPerformed(AnActionEvent e) {
-    if (e.getProject() != null) {
-      SonarLintConsole.get(e.getProject()).clear();
-    }
-  }
+import java.util.List;
+import java.util.Map;
+
+public interface SonarLintFacade extends ProjectComponent {
+  void startAnalysis(List<AnalysisConfiguration.InputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps);
+
+  void stop();
 }

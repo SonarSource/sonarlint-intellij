@@ -23,8 +23,8 @@ package org.sonarlint.intellij.util;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonar.runner.api.LogOutput;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.LogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

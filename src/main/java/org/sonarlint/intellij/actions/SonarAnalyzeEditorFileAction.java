@@ -43,7 +43,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
   public void actionPerformed(AnActionEvent e) {
     Project p = e.getProject();
     VirtualFile[] selectedFiles = FileEditorManager.getInstance(p).getSelectedFiles();
-    SonarLintConsole console = SonarLintConsole.getSonarQubeConsole(p);
+    SonarLintConsole console = SonarLintConsole.get(p);
 
     if (selectedFiles.length == 0) {
       console.error("No files for analysis");

@@ -19,17 +19,17 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.SonarTest;
 
 import static org.assertj.core.api.Assertions.*;
 
-public class SonarLintStatusTest extends LightPlatformCodeInsightFixtureTestCase {
+public class SonarLintStatusTest extends SonarTest {
   private SonarLintStatus status;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     super.setUp();
     status = new SonarLintStatus(getProject());
   }

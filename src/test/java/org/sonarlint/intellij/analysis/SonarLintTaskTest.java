@@ -21,18 +21,22 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonar.runner.api.Issue;
-import org.sonar.runner.api.IssueListener;
-import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarsource.sonarlint.core.AnalysisConfiguration;
+import org.sonarsource.sonarlint.core.IssueListener;
+
+import static junit.framework.TestCase.fail;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyMapOf;
+import static org.mockito.Matchers.eq;
+import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -43,26 +47,28 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLintTaskTest extends LightPlatformCodeInsightFixtureTestCase {
+public class SonarLintTaskTest extends SonarTest {
   private SonarLintTask task;
   private IssueProcessor processor;
   private HashSet<VirtualFile> files;
   private ProgressIndicator progress;
-  private SonarQubeRunnerFacade sonarQubeRunnerFacade;
   private SonarLintAnalyzer.SonarLintJob job;
+  private SonarLintAnalysisConfigurator configurator;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     super.setUp();
     files = new HashSet<>();
-    VirtualFile testFile = myFixture.addFileToProject("test.java", "dummy").getVirtualFile();
+    VirtualFile testFile = mock(VirtualFile.class);
     files.add(testFile);
     job = createJob();
     progress = mock(ProgressIndicator.class);
     when(progress.isCanceled()).thenReturn(false);
     processor = mock(IssueProcessor.class);
     task = SonarLintTask.createBackground(processor, job);
-    sonarQubeRunnerFacade = SonarLintTestUtils.mockRunner(getProject());
+    configurator = mock(SonarLintAnalysisConfigurator.class);
+    super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
+    super.register(SonarLintAnalysisConfigurator.class, configurator);
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();
@@ -76,11 +82,11 @@ public class SonarLintTaskTest extends LightPlatformCodeInsightFixtureTestCase {
     assertThat(task.shouldStartInBackground()).isTrue();
     task.run(progress);
 
-    verify(sonarQubeRunnerFacade).startAnalysis(any(Properties.class), any(IssueListener.class));
+    verify(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
     verify(processor).process(job, new ArrayList<Issue>());
     verify(listener).ended(job);
 
-    verifyNoMoreInteractions(sonarQubeRunnerFacade);
+    verifyNoMoreInteractions(configurator);
     verifyNoMoreInteractions(processor);
     verifyNoMoreInteractions(listener);
   }
@@ -90,7 +96,7 @@ public class SonarLintTaskTest extends LightPlatformCodeInsightFixtureTestCase {
     TaskListener listener = mock(TaskListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
 
-    doThrow(new IllegalStateException("error")).when(sonarQubeRunnerFacade).startAnalysis(any(Properties.class), any(IssueListener.class));
+    doThrow(new IllegalStateException("error")).when(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
     try {
       task.run(progress);
       fail("should throw exception");
@@ -107,6 +113,6 @@ public class SonarLintTaskTest extends LightPlatformCodeInsightFixtureTestCase {
   }
 
   private SonarLintAnalyzer.SonarLintJob createJob() {
-    return new SonarLintAnalyzer.SonarLintJob(myModule, files);
+    return new SonarLintAnalyzer.SonarLintJob(module, files);
   }
 }

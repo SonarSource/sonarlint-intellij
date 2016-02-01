@@ -26,15 +26,16 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileSystem;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
-import org.apache.commons.lang.StringUtils;
-import org.sonar.runner.api.Issue;
+import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import javax.annotation.Nullable;
+import java.nio.file.Path;
 
 public class IssueMatcher extends AbstractProjectComponent {
   private final PsiManager psiManager;
@@ -46,17 +47,17 @@ public class IssueMatcher extends AbstractProjectComponent {
     this.docManager = docManager;
   }
 
-  public PsiFile findFile(VirtualFile moduleBaseDir, Issue issue) throws NoMatchException {
-    String path = StringUtils.substringAfterLast(issue.getComponentKey(), ":");
-    return findFile(moduleBaseDir, path);
+  public PsiFile findFile(VirtualFileSystem fs, Issue issue) throws NoMatchException {
+    return findFile(fs, issue.getFilePath());
   }
 
-  public PsiFile findFile(VirtualFile moduleBaseDir, String relativePath) throws NoMatchException {
-    VirtualFile file = moduleBaseDir.findFileByRelativePath(relativePath);
+  public PsiFile findFile(VirtualFileSystem fs, Path path) throws NoMatchException {
+    VirtualFile file = fs.findFileByPath(path.toString());
+
     if (file != null) {
       return findFile(file);
     }
-    throw new NoMatchException("Couldn't find file in module: " + relativePath);
+    throw new NoMatchException("Couldn't find file in module: " + path.toString());
   }
 
   public PsiFile findFile(VirtualFile file) throws NoMatchException {

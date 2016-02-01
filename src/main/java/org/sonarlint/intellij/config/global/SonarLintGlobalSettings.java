@@ -36,7 +36,6 @@ import java.io.File;
 @State(name = "SonarLintGlobalSettings", storages = {@Storage(id = "sonarlint", file = StoragePathMacros.APP_CONFIG + "/sonarlint.xml")})
 public final class SonarLintGlobalSettings implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
-  private String serverUrl = "https://update.sonarlint.org";
   private boolean autoTrigger = true;
 
   public static SonarLintGlobalSettings getInstance() {
@@ -80,14 +79,6 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
   @Override
   public void disposeComponent() {
     // Nothing to do
-  }
-
-  public String getServerUrl() {
-    return serverUrl;
-  }
-
-  public void setServerUrl(String serverUrl) {
-    this.serverUrl = serverUrl;
   }
 
   public boolean isAutoTrigger() {

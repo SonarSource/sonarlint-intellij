@@ -19,17 +19,25 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.components.ProjectComponent;
-import org.sonar.runner.api.IssueListener;
+import org.junit.Test;
 
-import java.util.Properties;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
 
-public interface SonarQubeRunnerFacade extends ProjectComponent {
-  void startAnalysis(Properties props, IssueListener issueListener);
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
-  void tryUpdate();
+public class DefaultInputFileTest {
+  private DefaultInputFile inputFile;
 
-  String getVersion();
+  @Test
+  public void roundTrip() {
+    Path p = mock(Path.class);
+    Charset c = mock(Charset.class);
+    inputFile = new DefaultInputFile(p, true, c);
 
-  void stop();
+    assertThat(inputFile.charset()).isEqualTo(c);
+    assertThat(inputFile.isTest()).isTrue();
+    assertThat(inputFile.path()).isEqualTo(p);
+  }
 }

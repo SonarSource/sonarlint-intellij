@@ -41,94 +41,98 @@ import com.intellij.pom.java.LanguageLevel;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonar.runner.api.IssueListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintConstants;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import static org.sonarsource.sonarlint.core.AnalysisConfiguration.InputFile;
+import org.sonarsource.sonarlint.core.IssueListener;
 
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SonarLintAnalysisConfigurator {
 
-  public static final String PROJECT_VERSION_PROPERTY = "sonar.projectVersion";
-  public static final String PROJECT_NAME_PROPERTY = "sonar.projectName";
-  public static final String PROJECT_SOURCES_PROPERTY = "sonar.sources";
-  public static final String PROJECT_TESTS_PROPERTY = "sonar.tests";
   public static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
   public static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
   public static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
   public static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
-  public static final String PROJECT_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
-  public static final String PROJECT_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
-  public static final String ENCODING_PROPERTY = "sonar.sourceEncoding";
-  public static final String PROJECT_BASEDIR = "sonar.projectBaseDir";
+  public static final String JAVA_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
+  public static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
 
   private static final char SEPARATOR = ',';
 
   private static final String JAR_REGEXP = "(.*)!/";
   private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
-  private static final String DEFAULT_VERSION = "1.0-SNAPSHOT";
 
-  private SonarLintAnalysisConfigurator() {
-    //static only
-  }
-
-  public static void analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
+  public void analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
-    SonarLintConsole console = SonarLintConsole.getSonarQubeConsole(p);
-    SonarQubeRunnerFacade runner = p.getComponent(SonarQubeRunnerFacade.class);
+    SonarLintConsole console = SonarLintConsole.get(p);
+    SonarLintFacade runner = p.getComponent(SonarLintFacade.class);
 
-    // Configure
-    Properties properties = new Properties();
-    configureProjectSettings(p, properties);
-    configureModuleSettings(module, properties, filesToAnalyze);
+    // Configure plugin properties
+    Map<String, String> pluginProps = new HashMap<>();
+    configureModuleSettings(module, pluginProps);
+
+    // configure files
+    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+    List<InputFile> inputFiles = getInputFiles(p, moduleRootManager, filesToAnalyze);
 
     // Analyze
     long start = System.currentTimeMillis();
     console.info("Start SonarLint analysis on " + p.getName() + "...");
-    run(runner, properties, listener);
+    runner.startAnalysis(inputFiles, listener, pluginProps);
     console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
   }
 
-  private static void configureProjectSettings(Project p, Properties properties) {
-    configureEncoding(p, properties);
-    properties.setProperty(PROJECT_VERSION_PROPERTY, DEFAULT_VERSION);
-    properties.setProperty(SonarLintConstants.USE_WS_CACHE, Boolean.toString(true));
-  }
-
-  private static void configureEncoding(Project p, Properties properties) {
-    Charset encoding = EncodingProjectManager.getInstance(p).getEncoding(null, true);
-    if (encoding != null) {
-      properties.setProperty(ENCODING_PROPERTY, encoding.toString());
+  private static Charset getEncoding(Project p, @Nullable VirtualFile f) {
+    if(f != null) {
+      Charset encoding = EncodingProjectManager.getInstance(p).getEncoding(f, true);
+      if (encoding != null) {
+        return encoding;
+      }
     }
+    return Charset.defaultCharset();
   }
 
-  private static void configureModuleSettings(@NotNull Module ijModule,
-    @NotNull Properties properties, Collection<VirtualFile> filesToAnalyze) {
-    String baseDir = SonarLintUtils.getModuleRootPath(ijModule);
+  private static List<InputFile> getInputFiles(Project p, ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
+    Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
+    List<InputFile> inputFiles = new LinkedList<>();
 
-    properties.setProperty(PROJECT_BASEDIR, baseDir);
-    properties.setProperty(PROJECT_NAME_PROPERTY, ijModule.getName());
+    for(VirtualFile f : filesToAnalyze) {
+      boolean test = isTestFile(testFolderPrefix, f);
+      Path path = Paths.get(f.getPath());
+      Charset charset = getEncoding(p, f);
+      inputFiles.add(new DefaultInputFile(path, test, charset));
+    }
 
-    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(ijModule);
-    configureSourceDirs(properties, moduleRootManager, filesToAnalyze);
+    return inputFiles;
+  }
 
+  private static boolean isTestFile(Collection<String> testFolderPrefix, VirtualFile f) {
+      String filePath = f.getPath();
+      for (String testPrefix : testFolderPrefix) {
+        if (filePath.startsWith(testPrefix)) {
+          return true;
+        }
+      }
+      return false;
+  }
+
+  private static void configureModuleSettings(@NotNull Module ijModule, @NotNull Map<String, String> properties) {
     configureLibraries(ijModule, properties);
-
     configureBinaries(ijModule, properties);
-
     configureJavaSourceTarget(ijModule, properties);
   }
 
-  private static void configureJavaSourceTarget(final Module ijModule, Properties properties) {
+  private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
     try {
       final String languageLevel = getLanguageLevelOption(ApplicationManager.getApplication().runReadAction(new Computable<LanguageLevel>() {
         @Override
@@ -141,8 +145,8 @@ public class SonarLintAnalysisConfigurator {
         // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
         bytecodeTarget = languageLevel;
       }
-      properties.setProperty(JAVA_SOURCE_PROPERTY, languageLevel);
-      properties.setProperty(JAVA_TARGET_PROPERTY, bytecodeTarget);
+      properties.put(JAVA_SOURCE_PROPERTY, languageLevel);
+      properties.put(JAVA_TARGET_PROPERTY, bytecodeTarget);
     } catch (NoClassDefFoundError e) {
       // CompilerConfiguration not available for example in PHP Storm
     }
@@ -169,70 +173,33 @@ public class SonarLintAnalysisConfigurator {
     }
   }
 
-  private static void configureBinaries(Module ijModule, Properties properties) {
+  private static void configureBinaries(Module ijModule, Map<String, String> properties) {
     VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
     if (compilerOutput != null) {
       String path = compilerOutput.getCanonicalPath();
       if (path != null) {
-        properties.setProperty(JAVA_BINARIES_PROPERTY, path);
+        properties.put(JAVA_BINARIES_PROPERTY, path);
       }
     }
     VirtualFile testCompilerOutput = getCompilerTestOutputPath(ijModule);
     if (testCompilerOutput != null) {
       String path = testCompilerOutput.getCanonicalPath();
       if (path != null) {
-        properties.setProperty(PROJECT_TEST_BINARIES_PROPERTY, path);
+        properties.put(JAVA_TEST_BINARIES_PROPERTY, path);
       }
     }
   }
 
-  private static void configureLibraries(Module ijModule, Properties properties) {
+  private static void configureLibraries(Module ijModule, Map<String, String> properties) {
     List<String> libs = new ArrayList<>();
     for (VirtualFile f : getProjectClasspath(ijModule)) {
       libs.add(toFile(f.getPath()));
     }
     if (!libs.isEmpty()) {
       String joinedLibs = StringUtils.join(libs, SEPARATOR);
-      properties.setProperty(JAVA_LIBRARIES_PROPERTY, joinedLibs);
+      properties.put(JAVA_LIBRARIES_PROPERTY, joinedLibs);
       // Can't differentiate main and test classpath
-      properties.setProperty(PROJECT_TEST_LIBRARIES_PROPERTY, joinedLibs);
-    }
-  }
-
-  private static void configureSourceDirs(Properties properties, ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
-    Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
-    Collection<String> sources = new ArrayList<>();
-    Collection<String> tests = new ArrayList<>();
-
-    findSourceDirs(filesToAnalyze, testFolderPrefix, sources, tests);
-
-    if (!sources.isEmpty()) {
-      properties.setProperty(PROJECT_SOURCES_PROPERTY, StringUtils.join(sources, SEPARATOR));
-    } else {
-      // sonar.sources is mandatory
-      properties.setProperty(PROJECT_SOURCES_PROPERTY, "");
-    }
-    if (!tests.isEmpty()) {
-      properties.setProperty(PROJECT_TESTS_PROPERTY, StringUtils.join(tests, SEPARATOR));
-    }
-  }
-
-  private static void findSourceDirs(Collection<VirtualFile> filesToAnalyze, Collection<String> testFolderPrefix, Collection<String> sources, Collection<String> tests) {
-    for (VirtualFile f : filesToAnalyze) {
-      String filePath = f.getPath();
-      boolean isTest = false;
-      for (String testPrefix : testFolderPrefix) {
-        if (filePath.startsWith(testPrefix)) {
-          isTest = true;
-          break;
-        }
-      }
-      // TODO make relative to basedir
-      if (isTest) {
-        tests.add(filePath);
-      } else {
-        sources.add(filePath);
-      }
+      properties.put(JAVA_TEST_LIBRARIES_PROPERTY, joinedLibs);
     }
   }
 
@@ -305,18 +272,4 @@ public class SonarLintAnalysisConfigurator {
     }
     return path;
   }
-
-  public static void run(SonarQubeRunnerFacade runner, Properties props, IssueListener listener) {
-    String name = Thread.currentThread().getName();
-
-    // some thread names conflict with Persistit
-    try {
-      Thread.currentThread().setName("sonarlint-analysis");
-      runner.startAnalysis(props, listener);
-    } finally {
-      Thread.currentThread().setName(name);
-    }
-
-  }
-
 }

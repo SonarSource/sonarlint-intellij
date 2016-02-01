@@ -21,7 +21,7 @@ package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.psi.PsiFile;
-import org.sonar.runner.api.Issue;
+import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;

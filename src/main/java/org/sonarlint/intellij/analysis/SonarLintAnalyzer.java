@@ -73,7 +73,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
         queue.queue(newJob);
       } catch (JobQueue.NoCapacityException e) {
         String msg = "Not submitting SonarLint analysis because job queue is full";
-        SonarLintConsole.getSonarQubeConsole(myProject).info(msg);
+        SonarLintConsole.get(myProject).info(msg);
         LOGGER.warn(msg);
         return;
       }

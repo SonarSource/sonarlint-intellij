@@ -25,7 +25,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonar.runner.api.Issue;
+import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.SonarTest;
+import org.sonarsource.sonarlint.core.IssueListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,8 +36,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class IssueStoreTest  extends LightPlatformCodeInsightFixtureTestCase {
-  private Project project;
+public class IssueStoreTest extends SonarTest {
   private IssueStore store;
 
   private VirtualFile file1;
@@ -45,12 +46,11 @@ public class IssueStoreTest  extends LightPlatformCodeInsightFixtureTestCase {
   private IssuePointer issue2;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     super.setUp();
-    project = mock(Project.class);
     file1 = mock(VirtualFile.class);
     file2 = mock(VirtualFile.class);
-    store = new IssueStore(getProject());
+    store = new IssueStore(project);
 
     issue1 = createRangeStoredIssue(1);
     issue2 = createRangeStoredIssue(2);
@@ -120,15 +120,8 @@ public class IssueStoreTest  extends LightPlatformCodeInsightFixtureTestCase {
   }
 
   private static IssuePointer createRangeStoredIssue(int id) {
-    Issue issue = createIssue(id);
+    IssueListener.Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
     return new IssuePointer(issue, null, range);
-  }
-
-  private static Issue createIssue(int id) {
-    return Issue.builder()
-      .setKey(Integer.toString(id))
-      .setMessage("issue " + id)
-      .build();
   }
 }

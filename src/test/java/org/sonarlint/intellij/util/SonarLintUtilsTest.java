@@ -19,41 +19,54 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.project.Project;
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.SonarTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarLintUtilsTest extends LightPlatformCodeInsightFixtureTestCase {
+public class SonarLintUtilsTest extends SonarTest {
   private VirtualFile testFile;
-  private VirtualFile binaryFile;
+
+  private FileType binary;
+  private FileType notBinary;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     super.setUp();
-    testFile = myFixture.addFileToProject("testFile.java", "dummy").getVirtualFile();
-    binaryFile = myFixture.addFileToProject("test.bin", "dummy").getVirtualFile();
+    testFile = mock(VirtualFile.class);
+
+    notBinary = mock(FileType.class);
+    binary = mock(FileType.class);
+    when(binary.isBinary()).thenReturn(true);
+
+    when(testFile.getParent()).thenReturn(mock(VirtualFile.class));
+    when(testFile.isInLocalFileSystem()).thenReturn(true);
+    when(testFile.isValid()).thenReturn(true);
+    when(testFile.isInLocalFileSystem()).thenReturn(true);
+    when(testFile.getFileType()).thenReturn(notBinary);
   }
 
   @Test
   public void testShouldAnalyze() {
-    assertThat(SonarLintUtils.shouldAnalyze(testFile, myModule)).isTrue();
+    assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isTrue();
 
-    assertThat(SonarLintUtils.shouldAnalyze(null, myModule)).isFalse();
+    assertThat(SonarLintUtils.shouldAnalyze(null, module)).isFalse();
     assertThat(SonarLintUtils.shouldAnalyze(testFile, null)).isFalse();
 
-    assertThat(SonarLintUtils.shouldAnalyze(binaryFile, myModule)).isTrue();
+    when(testFile.getFileType()).thenReturn(binary);
+    assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isFalse();
   }
 
   @Test
   public void testGetModuleRoot() {
-    assertThat(SonarLintUtils.getModuleRootPath(myModule)).isEqualTo("/src");
+    assertThat(SonarLintUtils.getModuleRootPath(module)).isEqualTo("/src");
   }
 
   @Test
@@ -72,6 +85,6 @@ public class SonarLintUtilsTest extends LightPlatformCodeInsightFixtureTestCase 
     VirtualFile f = mock(VirtualFile.class);
     when(f.isValid()).thenReturn(false);
 
-    assertThat(SonarLintUtils.shouldAnalyze(f, myModule)).isFalse();
+    assertThat(SonarLintUtils.shouldAnalyze(f, module)).isFalse();
   }
 }

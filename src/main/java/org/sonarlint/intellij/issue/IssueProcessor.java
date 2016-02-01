@@ -24,15 +24,16 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.messages.MessageBus;
-import org.sonar.runner.api.Issue;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.IssueListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,11 +53,11 @@ public class IssueProcessor extends AbstractProjectComponent {
     super(project);
     this.matcher = matcher;
     this.codeAnalyzer = codeAnalyzer;
-    this.console = SonarLintConsole.getSonarQubeConsole(project);
+    this.console = SonarLintConsole.get(project);
     this.messageBus = project.getMessageBus();
   }
 
-  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
+  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<IssueListener.Issue> issues) {
     Map<VirtualFile, Collection<IssuePointer>> map;
     final VirtualFile moduleBaseDir = SonarLintUtils.getModuleRoot(job.module());
 
@@ -70,7 +71,6 @@ public class IssueProcessor extends AbstractProjectComponent {
       for (PsiFile psiFile : getPsi(job.files())) {
         codeAnalyzer.restart(psiFile);
       }
-
     } finally {
       token.finish();
     }
@@ -90,16 +90,16 @@ public class IssueProcessor extends AbstractProjectComponent {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(VirtualFile moduleBaseDir, Collection<Issue> issues, Collection<VirtualFile> analysed) {
+  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(VirtualFile moduleBaseDir, Collection<IssueListener.Issue> issues, Collection<VirtualFile> analysed) {
     Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
 
     for(VirtualFile f : analysed) {
       map.put(f, new ArrayList<IssuePointer>());
     }
 
-    for (Issue i : issues) {
+    for (IssueListener.Issue i : issues) {
       try {
-        PsiFile psiFile = matcher.findFile(moduleBaseDir, i);
+        PsiFile psiFile = matcher.findFile(moduleBaseDir.getFileSystem(), i);
         IssuePointer toStore = matcher.match(psiFile, i);
         map.get(psiFile.getVirtualFile()).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {

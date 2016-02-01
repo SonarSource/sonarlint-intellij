@@ -20,30 +20,32 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarCancelTest extends LightPlatformCodeInsightFixtureTestCase {
+public class SonarCancelTest extends SonarTest {
   private SonarCancel sonarCancel;
+
   private AnActionEvent event;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     super.setUp();
+    register(SonarLintStatus.class, new SonarLintStatus(project));
     sonarCancel = new SonarCancel();
-    event = SonarLintTestUtils.createAnActionEvent(getProject());
+    event = SonarLintTestUtils.createAnActionEvent(project);
   }
 
   @Test
   public void testCancel() {
-    SonarLintStatus status = SonarLintStatus.get(getProject());
+    SonarLintStatus status = SonarLintStatus.get(project);
 
     status.stopRun();
     status.tryRun();

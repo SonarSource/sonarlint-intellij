@@ -37,12 +37,12 @@ import com.intellij.xml.util.XmlStringUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonar.runner.api.Issue;
 import org.sonarlint.intellij.actions.NoSonarIntentionAction;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintSeverity;
+import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import java.util.Collection;
 

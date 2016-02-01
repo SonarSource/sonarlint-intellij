@@ -46,7 +46,7 @@ public class SonarLintConsole extends AbstractProjectComponent {
     Disposer.dispose(consoleView);
   }
 
-  public static synchronized SonarLintConsole getSonarQubeConsole(@NotNull Project p) {
+  public static synchronized SonarLintConsole get(@NotNull Project p) {
     return p.getComponent(SonarLintConsole.class);
   }
 

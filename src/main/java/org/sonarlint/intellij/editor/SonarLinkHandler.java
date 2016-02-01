@@ -25,7 +25,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 import java.awt.Desktop;
@@ -48,7 +47,7 @@ public class SonarLinkHandler extends TooltipLinkHandler {
       }
     } else {
       String msg = "Launching a browser is not supported on the current platform. Unable to open '" + uri + "'";
-      SonarLintConsole.getSonarQubeConsole(p).error(msg);
+      SonarLintConsole.get(p).error(msg);
       Messages.showMessageDialog(p, msg, "Unable to open URL", Messages.getWarningIcon());
     }
   }
@@ -67,9 +66,8 @@ public class SonarLinkHandler extends TooltipLinkHandler {
   }
 
   public static boolean handleLink(@NotNull Project p, @NotNull String refSuffix) {
-    SonarLintGlobalSettings settings = SonarLintGlobalSettings.getInstance();
     try {
-      openWebpage(p, new URL(ruleDescriptionUrl(refSuffix, settings.getServerUrl())));
+      openWebpage(p, new URL(ruleDescriptionUrl(refSuffix, "https://update.sonarlint.org")));
     } catch (MalformedURLException e) {
       throw new IllegalStateException(UNABLE_TO_OPEN_LINK, e);
     }

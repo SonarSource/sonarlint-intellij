@@ -21,7 +21,7 @@ package org.sonarlint.intellij.editor;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sonar.runner.api.Issue;
+import org.sonarsource.sonarlint.core.IssueListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,13 +40,13 @@ public class AccumulatorIssueListenerTest {
     }
 
     assertThat(listener.getIssues()).hasSize(5);
-    assertThat(listener.getIssues().get(0).getKey()).isEqualTo("key0");
+    assertThat(listener.getIssues().get(0).getRuleKey()).isEqualTo("rule0");
   }
 
-  private static Issue createIssue(int n) {
-    return Issue.builder()
-      .setComponentKey("component" + n)
-      .setKey("key" + n)
-      .build();
+  private static IssueListener.Issue createIssue(int n) {
+    IssueListener.Issue issue = new IssueListener.Issue();
+    issue.setRuleKey("rule" + n);
+    issue.setRuleName("rule");
+    return issue;
   }
 }

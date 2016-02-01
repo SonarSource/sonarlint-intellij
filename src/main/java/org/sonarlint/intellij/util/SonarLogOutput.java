@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.util;
 
-import org.sonar.runner.api.LogOutput;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.LogOutput;
 
 public class SonarLogOutput implements LogOutput {
   private final SonarLintConsole console;

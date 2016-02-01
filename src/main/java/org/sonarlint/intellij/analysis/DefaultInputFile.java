@@ -17,17 +17,32 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions;
+package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.AnalysisConfiguration;
 
-public class SonarCleanConsole extends AnAction {
-  @Override
-  public void actionPerformed(AnActionEvent e) {
-    if (e.getProject() != null) {
-      SonarLintConsole.get(e.getProject()).clear();
-    }
+import java.nio.charset.Charset;
+import java.nio.file.Path;
+
+public class DefaultInputFile implements AnalysisConfiguration.InputFile {
+  private final Path p;
+  private final boolean test;
+  private final Charset charset;
+
+  DefaultInputFile(Path p, boolean isTest, Charset charset) {
+    this.p = p;
+    this.test = isTest;
+    this.charset = charset;
+  }
+  @Override public Path path() {
+    return p;
+  }
+
+  @Override public boolean isTest() {
+    return test;
+  }
+
+  @Override public Charset charset() {
+    return charset;
   }
 }

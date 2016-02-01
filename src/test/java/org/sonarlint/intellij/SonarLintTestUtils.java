@@ -21,8 +21,9 @@ package org.sonarlint.intellij;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.impl.ComponentManagerImpl;
-import org.sonarlint.intellij.analysis.SonarQubeRunnerFacade;
+import org.sonarlint.intellij.analysis.SonarLintFacade;
 import com.intellij.openapi.project.Project;
+import org.sonarsource.sonarlint.core.IssueListener;
 
 import java.awt.GraphicsEnvironment;
 
@@ -30,8 +31,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SonarLintTestUtils {
-  private final static String DEFAULT_VERSION = "5.4";
-
   static {
     GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
     System.out.println("headless mode: " + ge.isHeadless());
@@ -41,10 +40,8 @@ public class SonarLintTestUtils {
     // only static
   }
 
-  public static SonarQubeRunnerFacade mockRunner(Project project) {
-    SonarQubeRunnerFacade runner = mockInContainer(SonarQubeRunnerFacade.class, project);
-    when(runner.getVersion()).thenReturn(DEFAULT_VERSION);
-    return runner;
+  public static SonarLintFacade mockRunner(Project project) {
+    return mockInContainer(SonarLintFacade.class, project);
   }
 
   public static <T> T mockInContainer(Class<T> clazz, Project project) {
@@ -58,5 +55,12 @@ public class SonarLintTestUtils {
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(project);
     return event;
+  }
+
+  public static IssueListener.Issue createIssue(int id) {
+    IssueListener.Issue issue = new IssueListener.Issue();
+    issue.setRuleKey(Integer.toString(id));
+    issue.setMessage("issue " + id);
+    return issue;
   }
 }

@@ -62,8 +62,8 @@
             <implementation-class>org.sonarlint.intellij.config.project.SonarLintProjectSettings</implementation-class>
         </component>
         <component>
-            <interface-class>org.sonarlint.intellij.analysis.SonarQubeRunnerFacade</interface-class>
-            <implementation-class>org.sonarlint.intellij.analysis.DefaultSonarQubeRunnerFacade</implementation-class>
+            <interface-class>org.sonarlint.intellij.analysis.SonarLintFacade</interface-class>
+            <implementation-class>org.sonarlint.intellij.analysis.DefaultSonarLintFacade</implementation-class>
         </component>
         <component>
             <implementation-class>org.sonarlint.intellij.analysis.SonarLintAnalyzer</implementation-class>
@@ -86,6 +86,9 @@
         <component>
             <implementation-class>org.sonarlint.intellij.trigger.SonarDocumentListener</implementation-class>
         </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintAnalysisConfigurator</implementation-class>
+        </component>
     </project-components>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -97,11 +100,6 @@
     </extensions>
 
     <actions>
-        <action id="SonarLint.UpdateAction" class="org.sonarlint.intellij.actions.UpdateAction"
-                text="Update SonarLint analyzers" description="Update SonarLint rules" icon="/images/onde-sonar-13.png">
-            <add-to-group group-id="HelpMenu" anchor="after" relative-to-action="CheckForUpdate"/>
-        </action>
-
         <group id="SonarLint.toolwindow" text="SonarLint" popup="true" />
 
         <action id="SonarLint.AnalyzeCurrentEditorFile"
