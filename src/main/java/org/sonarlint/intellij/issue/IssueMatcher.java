@@ -106,8 +106,13 @@ public class IssueMatcher extends AbstractProjectComponent {
     int ijEndLine = issue.getEndLine() - 1;
     int lineCount = doc.getLineCount();
 
-    if (ijEndLine > doc.getLineCount()) {
-      throw new NoMatchException("Line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
+    if (ijStartLine >= doc.getLineCount()) {
+      throw new NoMatchException("Start line number (" + ijStartLine + ") larger than lines in file: " + lineCount
+      + " " + issue.getRuleKey());
+    }
+    if (ijEndLine >= doc.getLineCount()) {
+      throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount
+        + " " + issue.getRuleKey());
     }
 
     int rangeStart = findStartLineOffset(file, doc, ijStartLine, issue.getStartLineOffset());
@@ -170,7 +175,8 @@ public class IssueMatcher extends AbstractProjectComponent {
 
     public NoMatchException(String msg) {
       super(msg);
+      System.out.println("asdsad");
     }
-  }
 
+  }
 }
