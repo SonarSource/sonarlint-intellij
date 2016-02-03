@@ -23,6 +23,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -58,6 +59,16 @@ public final class DefaultSonarLintFacade extends AbstractProjectComponent imple
   @Override
   public void projectClosed() {
     stop();
+  }
+
+  @Nullable
+  @Override
+  public synchronized String getDescription(String ruleKey) {
+    if(!started) {
+      return null;
+    }
+
+    return sonarlintClient.getHtmlRuleDescription(ruleKey);
   }
 
   @Override
