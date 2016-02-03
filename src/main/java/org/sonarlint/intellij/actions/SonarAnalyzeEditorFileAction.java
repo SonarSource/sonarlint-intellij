@@ -42,25 +42,25 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
   @Override
   public void actionPerformed(AnActionEvent e) {
     Project p = e.getProject();
-    VirtualFile[] selectedFiles = FileEditorManager.getInstance(p).getSelectedFiles();
+    VirtualFile selectedFile = SonarLintUtils.getSelectedFile(p);
     SonarLintConsole console = SonarLintConsole.get(p);
 
-    if (selectedFiles.length == 0) {
+    if (selectedFile == null) {
       console.error("No files for analysis");
       return;
     }
 
-    Module m = ModuleUtil.findModuleForFile(selectedFiles[0], p);
+    Module m = ModuleUtil.findModuleForFile(selectedFile, p);
 
-    if (SonarLintUtils.shouldAnalyze(selectedFiles[0], m)) {
+    if (SonarLintUtils.shouldAnalyze(selectedFile, m)) {
       SonarLintAnalyzer analyzer = p.getComponent(SonarLintAnalyzer.class);
       if (executeBackground(e)) {
-        analyzer.submitAsync(m, Collections.singleton(selectedFiles[0]));
+        analyzer.submitAsync(m, Collections.singleton(selectedFile));
       } else {
-        analyzer.submit(m, Collections.singleton(selectedFiles[0]));
+        analyzer.submit(m, Collections.singleton(selectedFile));
       }
     } else {
-      console.error("File " + selectedFiles[0] + " cannot be analyzed");
+      console.error("File " + selectedFile + " cannot be analyzed");
     }
   }
 

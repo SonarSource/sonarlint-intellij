@@ -116,7 +116,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
   }
 
   private void switchScope(IssueTreeScope newScope) {
-    if(scope != null) {
+    if (scope != null) {
       scope.removeListeners();
     }
     scope = newScope;
@@ -171,7 +171,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
   public void updateTree() {
     treeBuilder.updateModel(issueStore.getAll(), scope.getCondition());
     tree.expandRow(0);
-    if(tree.getRowCount() > 1) {
+    if (tree.getRowCount() > 1) {
       tree.expandRow(1);
     }
   }

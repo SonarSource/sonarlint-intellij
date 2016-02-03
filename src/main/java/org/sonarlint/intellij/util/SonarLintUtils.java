@@ -23,13 +23,18 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
+
+import com.intellij.openapi.project.Project;
+
 import java.util.Collection;
 
 public class SonarLintUtils {
@@ -63,6 +68,25 @@ public class SonarLintUtils {
       }
     }
     return success;
+  }
+
+  /**
+   * FileEditorManager#getSelectedFiles does not work as expected. In split editors, the order of the files does not change depending
+   * on which one of the split editors is selected.
+   * This seems to work well with split editors.
+   */
+  @Nullable
+  public static VirtualFile getSelectedFile(Project project) {
+    FileEditorManager editorManager = FileEditorManager.getInstance(project);
+    FileDocumentManager docManager = FileDocumentManager.getInstance();
+
+    Editor editor = editorManager.getSelectedTextEditor();
+    if (editor != null) {
+      Document doc = editor.getDocument();
+      return docManager.getFile(doc);
+    }
+
+    return null;
   }
 
   public static boolean saveFile(@NotNull final VirtualFile virtualFile) {
