@@ -23,7 +23,6 @@ import com.google.common.base.Function;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.issue.IssuePointer;
@@ -49,7 +48,7 @@ public class TreeModelBuilder {
   private Condition<VirtualFile> condition;
 
   private static Comparator<IssuePointer> issuePointerComparator = new Comparator<IssuePointer>() {
-    private final List<String> severityOrder = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR","MINOR","INFO");
+    private final List<String> severityOrder = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
     private final Ordering<IssuePointer> ordering = Ordering.explicit(severityOrder).onResultOf(new IssueSeverityExtractor())
       .compound(new IssueComparator());
 
@@ -63,7 +62,7 @@ public class TreeModelBuilder {
   }
 
   public void updateFiles(Map<VirtualFile, Collection<IssuePointer>> issuesPerFile) {
-    for(Map.Entry<VirtualFile, Collection<IssuePointer>> e : issuesPerFile.entrySet() ) {
+    for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : issuesPerFile.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), condition);
     }
 
@@ -79,7 +78,7 @@ public class TreeModelBuilder {
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     return model;
-   }
+  }
 
   private AbstractNode getParent() {
     return summary;
@@ -88,13 +87,13 @@ public class TreeModelBuilder {
   public DefaultTreeModel updateModel(Map<VirtualFile, Collection<IssuePointer>> map, Condition<VirtualFile> condition) {
     this.condition = condition;
 
-    for(VirtualFile f : index.getAllFiles()) {
-      if(!map.containsKey(f)) {
+    for (VirtualFile f : index.getAllFiles()) {
+      if (!map.containsKey(f)) {
         removeFile(f);
       }
     }
 
-    for(Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {
+    for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), condition);
     }
 
@@ -102,20 +101,20 @@ public class TreeModelBuilder {
   }
 
   private FileNode setFileIssues(VirtualFile file, Iterable<IssuePointer> issues, Condition<VirtualFile> condition) {
-    if(!accept(file, condition)) {
+    if (!accept(file, condition)) {
       removeFile(file);
       return null;
     }
 
     List<IssuePointer> filtered = filter(issues);
-    if(filtered.isEmpty()) {
+    if (filtered.isEmpty()) {
       removeFile(file);
       return null;
     }
 
     boolean newFile = false;
     FileNode fNode = index.getFileNode(file);
-    if(fNode == null) {
+    if (fNode == null) {
       newFile = true;
       fNode = new FileNode(file);
       index.setFileNode(fNode);
@@ -123,10 +122,10 @@ public class TreeModelBuilder {
 
     setIssues(fNode, filtered);
 
-    if(newFile) {
+    if (newFile) {
       AbstractNode parent = getParent();
       int idx = parent.getInsertIdx(fNode, new FileNodeComparator());
-      int[] newIdx = { idx};
+      int[] newIdx = {idx};
       model.nodesWereInserted(parent, newIdx);
       model.nodeChanged(parent);
     } else {
@@ -139,7 +138,7 @@ public class TreeModelBuilder {
   private void removeFile(VirtualFile file) {
     FileNode node = index.getFileNode(file);
 
-    if(node != null) {
+    if (node != null) {
       index.remove(node.file());
       model.removeNodeFromParent(node);
     }
@@ -151,11 +150,11 @@ public class TreeModelBuilder {
     // 15ms for 500 issues -> to improve?
     TreeSet<IssuePointer> set = new TreeSet<>(issuePointerComparator);
 
-    for(IssuePointer issue :issuePointers) {
+    for (IssuePointer issue : issuePointers) {
       set.add(issue);
     }
 
-    for(IssuePointer issue : set) {
+    for (IssuePointer issue : set) {
       IssueNode iNode = new IssueNode(issue);
       node.add(iNode);
     }
@@ -163,8 +162,8 @@ public class TreeModelBuilder {
 
   private static List<IssuePointer> filter(Iterable<IssuePointer> issues) {
     List<IssuePointer> filtered = new ArrayList<>();
-    for(IssuePointer ip : issues) {
-      if(!accept(ip)) {
+    for (IssuePointer ip : issues) {
+      if (!accept(ip)) {
         continue;
       }
 
@@ -179,7 +178,7 @@ public class TreeModelBuilder {
   }
 
   private static boolean accept(VirtualFile file, Condition<VirtualFile> condition) {
-    if(!file.isValid()) {
+    if (!file.isValid()) {
       return false;
     }
 
@@ -188,7 +187,7 @@ public class TreeModelBuilder {
 
   public void updateFile(VirtualFile file) {
     FileNode node = index.getFileNode(file);
-    if(node != null) {
+    if (node != null) {
       model.nodeStructureChanged(node);
     }
   }
@@ -196,7 +195,7 @@ public class TreeModelBuilder {
   private static class FileNodeComparator implements Comparator<FileNode> {
     @Override public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());
-      if(c != 0) {
+      if (c != 0) {
         return c;
       }
 

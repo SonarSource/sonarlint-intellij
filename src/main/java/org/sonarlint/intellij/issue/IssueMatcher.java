@@ -175,8 +175,6 @@ public class IssueMatcher extends AbstractProjectComponent {
 
     public NoMatchException(String msg) {
       super(msg);
-      System.out.println("asdsad");
     }
-
   }
 }

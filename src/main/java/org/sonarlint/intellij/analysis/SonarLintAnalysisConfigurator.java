@@ -42,7 +42,9 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+
 import static org.sonarsource.sonarlint.core.AnalysisConfiguration.InputFile;
+
 import org.sonarsource.sonarlint.core.IssueListener;
 
 import java.nio.charset.Charset;
@@ -93,7 +95,7 @@ public class SonarLintAnalysisConfigurator {
   }
 
   private static Charset getEncoding(Project p, @Nullable VirtualFile f) {
-    if(f != null) {
+    if (f != null) {
       Charset encoding = EncodingProjectManager.getInstance(p).getEncoding(f, true);
       if (encoding != null) {
         return encoding;
@@ -106,7 +108,7 @@ public class SonarLintAnalysisConfigurator {
     Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
     List<InputFile> inputFiles = new LinkedList<>();
 
-    for(VirtualFile f : filesToAnalyze) {
+    for (VirtualFile f : filesToAnalyze) {
       boolean test = isTestFile(testFolderPrefix, f);
       Path path = Paths.get(f.getPath());
       Charset charset = getEncoding(p, f);
@@ -117,13 +119,13 @@ public class SonarLintAnalysisConfigurator {
   }
 
   private static boolean isTestFile(Collection<String> testFolderPrefix, VirtualFile f) {
-      String filePath = f.getPath();
-      for (String testPrefix : testFolderPrefix) {
-        if (filePath.startsWith(testPrefix)) {
-          return true;
-        }
+    String filePath = f.getPath();
+    for (String testPrefix : testFolderPrefix) {
+      if (filePath.startsWith(testPrefix)) {
+        return true;
       }
-      return false;
+    }
+    return false;
   }
 
   private static void configureModuleSettings(@NotNull Module ijModule, @NotNull Map<String, String> properties) {

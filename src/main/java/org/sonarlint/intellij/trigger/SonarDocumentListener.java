@@ -121,19 +121,6 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
   }
 
-  private void triggerFile(VirtualFile file) {
-    if (!globalSettings.isAutoTrigger() || myProject.isDisposed()) {
-      return;
-    }
-
-    Module m = ModuleUtil.findModuleForFile(file, myProject);
-    if (!SonarLintUtils.shouldAnalyze(file, m)) {
-      return;
-    }
-
-    analyzer.submitAsync(m, Collections.singleton(file));
-  }
-
   private class EventWatcher extends Thread {
     private boolean stop = false;
 
@@ -157,6 +144,19 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
           // continue until stop flag is set
         }
       }
+    }
+
+    private void triggerFile(VirtualFile file) {
+      if (!globalSettings.isAutoTrigger() || myProject.isDisposed()) {
+        return;
+      }
+
+      Module m = ModuleUtil.findModuleForFile(file, myProject);
+      if (!SonarLintUtils.shouldAnalyze(file, m)) {
+        return;
+      }
+
+      analyzer.submitAsync(m, Collections.singleton(file));
     }
 
     private void checkTimers() {

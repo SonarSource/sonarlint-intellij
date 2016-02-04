@@ -19,10 +19,6 @@
  */
 package org.sonarlint.intellij.ui.scope;
 
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -55,7 +51,7 @@ public class CurrentFileScope extends IssueTreeScope {
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
       condition = selectedFileCondition();
 
-      for(ScopeListener l : listeners) {
+      for (ScopeListener l : listeners) {
         l.conditionChanged();
       }
     }
@@ -64,7 +60,7 @@ public class CurrentFileScope extends IssueTreeScope {
   private Condition<VirtualFile> selectedFileCondition() {
     VirtualFile file = SonarLintUtils.getSelectedFile(project);
 
-    if(file == null) {
+    if (file == null) {
       return new RejectAllCondition();
     }
 
@@ -73,12 +69,13 @@ public class CurrentFileScope extends IssueTreeScope {
 
   private static class AcceptFileCondition implements Condition<VirtualFile> {
     private final VirtualFile file;
+
     AcceptFileCondition(VirtualFile file) {
       this.file = file;
     }
 
     @Override public boolean value(VirtualFile virtualFile) {
-        return file.equals(virtualFile);
+      return file.equals(virtualFile);
     }
   }
 
