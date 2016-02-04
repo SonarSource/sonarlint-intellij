@@ -24,8 +24,12 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeModel;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
@@ -37,6 +41,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ScrollPaneFactory;
@@ -45,11 +50,13 @@ import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.UIUtil;
+import org.sonarlint.intellij.analysis.SonarLintFacade;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 import org.sonarlint.intellij.ui.scope.IssueTreeScope;
 import org.sonarlint.intellij.ui.scope.ProjectScope;
@@ -63,12 +70,16 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.Collection;
 import java.util.Map;
 
 public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataProvider {
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.toolwindow";
+  private static final String SELECTED_SCOPE_KEY = "SONARLINT_ISSUES_VIEW_SCOPE";
+  private static final String SPLIT_PROPORTION = "SONARLINT_ISSUES_SPLIT_PROPORTION";
 
   private final Project project;
   private final IssueStore issueStore;
@@ -76,6 +87,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
   private ActionToolbar mainToolbar;
   private IssueTreeScope scope;
   private TreeModelBuilder treeBuilder;
+  private SonarLintRulePanel rulePanel;
 
   public SonarLintIssuesPanel(Project project) {
     super(false, true);
@@ -84,12 +96,19 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
 
     addToolbar();
 
-    JPanel panel = new JPanel(new BorderLayout());
+    JPanel issuesPanel = new JPanel(new BorderLayout());
     createTree();
-    panel.add(createScopePanel(), BorderLayout.NORTH);
-    panel.add(createTreePanel(), BorderLayout.CENTER);
+    issuesPanel.add(createScopePanel(), BorderLayout.NORTH);
+    issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
 
-    super.setContent(panel);
+    rulePanel = new SonarLintRulePanel(project, project.getComponent(SonarLintFacade.class));
+
+    JComponent scrollableRulePanel = ScrollPaneFactory.createScrollPane(
+      rulePanel.getPanel(),
+      ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+
+    super.setContent(createSplitter(issuesPanel, scrollableRulePanel));
 
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(AnalysisResultsListener.SONARLINT_ANALYSIS_DONE_TOPIC, new AnalysisResultsListener() {
@@ -115,10 +134,28 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     updateTree();
   }
 
+  private JComponent createSplitter(JComponent c1, JComponent c2) {
+    float savedProportion = PropertiesComponent.getInstance(project).getFloat(SPLIT_PROPORTION, 0.65f);
+
+    final Splitter splitter = new Splitter(false);
+    splitter.setFirstComponent(c1);
+    splitter.setSecondComponent(c2);
+    splitter.setProportion(savedProportion);
+    splitter.setHonorComponentsMinimumSize(true);
+    splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION, new PropertyChangeListener() {
+      @Override public void propertyChange(PropertyChangeEvent evt) {
+        PropertiesComponent.getInstance(project).setValue(SPLIT_PROPORTION, splitter.getProportion(), 0.65f);
+      }
+    });
+
+    return splitter;
+  }
+
   private void switchScope(IssueTreeScope newScope) {
     if (scope != null) {
       scope.removeListeners();
     }
+
     scope = newScope;
     scope.addListener(new IssueTreeScope.ScopeListener() {
       @Override public void conditionChanged() {
@@ -132,11 +169,24 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     comboModel.addElement(new CurrentFileScope(project));
     comboModel.addElement(new ProjectScope());
 
+    // set selected element that was last saved, if any
+    String savedSelectedScope = PropertiesComponent.getInstance(project).getValue(SELECTED_SCOPE_KEY);
+    if(savedSelectedScope != null) {
+      for (int i = 0; i < comboModel.getSize(); i++) {
+        Object el = comboModel.getElementAt(i);
+        if (el.toString().equals(savedSelectedScope)) {
+          comboModel.setSelectedItem(el);
+          break;
+        }
+      }
+    }
+
     final ComboBox scopeComboBox = new ComboBox(comboModel);
     scopeComboBox.addActionListener(new ActionListener() {
       @Override public void actionPerformed(ActionEvent e) {
         switchScope((IssueTreeScope) scopeComboBox.getSelectedItem());
         updateTree();
+        PropertiesComponent.getInstance(project).setValue(SELECTED_SCOPE_KEY, scopeComboBox.getSelectedItem().toString());
       }
     });
     switchScope((IssueTreeScope) scopeComboBox.getSelectedItem());
@@ -176,8 +226,13 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     }
   }
 
-  private JComponent createTreePanel() {
-    return ScrollPaneFactory.createScrollPane(tree);
+  private void issueTreeSelectionChanged() {
+    IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
+    if(selectedNodes.length > 0) {
+      rulePanel.setRuleKey(selectedNodes[0].issue().issue().getRuleKey());
+    } else {
+      rulePanel.setRuleKey(null);
+    }
   }
 
   private void createTree() {
@@ -189,6 +244,11 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     tree.setRootVisible(true);
     tree.setCellRenderer(new IssueTreeCellRenderer());
     tree.expandRow(0);
+    tree.addTreeSelectionListener(new TreeSelectionListener() {
+      @Override public void valueChanged(TreeSelectionEvent e) {
+        issueTreeSelectionChanged();
+      }
+    });
 
     DefaultActionGroup group = new DefaultActionGroup();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
