@@ -49,7 +49,7 @@ public class ResourceLoader {
     String resource = "/images/" + name;
     InputStream stream = ResourceLoader.class.getResourceAsStream(resource);
     if(stream == null) {
-      throw new IOException("Could't find resource: " + resource);
+      throw new IOException("Couldn't find resource: " + resource);
     }
     icon = new ImageIcon(ByteStreams.toByteArray(stream));
     iconCache.put(name, icon);

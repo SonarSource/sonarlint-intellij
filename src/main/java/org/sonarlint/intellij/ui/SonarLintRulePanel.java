@@ -19,11 +19,9 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.application.options.colors.ColorAndFontPanelFactory;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
-import com.intellij.openapi.editor.colors.FontPreferences;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
 import org.jetbrains.annotations.Nullable;
