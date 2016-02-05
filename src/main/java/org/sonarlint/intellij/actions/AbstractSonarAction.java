@@ -35,9 +35,9 @@ public abstract class AbstractSonarAction extends AnAction {
       e.getPresentation().setEnabled(false);
     } else {
       SonarLintStatus status = SonarLintStatus.get(p);
-      e.getPresentation().setEnabled(isEnabled(status));
+      e.getPresentation().setEnabled(isEnabled(p, status));
     }
   }
 
-  protected abstract boolean isEnabled(SonarLintStatus status);
+  protected abstract boolean isEnabled(Project project, SonarLintStatus status);
 }

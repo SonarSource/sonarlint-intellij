@@ -34,8 +34,12 @@ import java.util.Collections;
 
 public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
   @Override
-  protected boolean isEnabled(SonarLintStatus status) {
-    return !status.isRunning();
+  protected boolean isEnabled(Project project, SonarLintStatus status) {
+    if(status.isRunning()) {
+      return false;
+    }
+
+    return SonarLintUtils.getSelectedFile(project) != null;
   }
 
   @Override

@@ -24,12 +24,19 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
+import com.intellij.ide.OccurenceNavigator;
+import com.intellij.ide.todo.nodes.TodoItemNode;
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.ide.util.treeView.NodeDescriptor;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
@@ -38,6 +45,7 @@ import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -56,6 +64,7 @@ import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 import org.sonarlint.intellij.ui.scope.IssueTreeScope;
@@ -75,7 +84,7 @@ import java.beans.PropertyChangeListener;
 import java.util.Collection;
 import java.util.Map;
 
-public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataProvider {
+public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataProvider, OccurenceNavigator {
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.toolwindow";
   private static final String SELECTED_SCOPE_KEY = "SONARLINT_ISSUES_VIEW_SCOPE";
@@ -103,10 +112,11 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
 
     rulePanel = new SonarLintRulePanel(project, project.getComponent(SonarLintFacade.class));
 
-    JComponent scrollableRulePanel = ScrollPaneFactory.createScrollPane(
+    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
       rulePanel.getPanel(),
       ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
       ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
     super.setContent(createSplitter(issuesPanel, scrollableRulePanel));
 
@@ -258,5 +268,74 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
 
     EditSourceOnDoubleClickHandler.install(tree);
     EditSourceOnEnterKeyHandler.install(tree);
+  }
+
+  private OccurenceInfo occurrence(IssueNode node) {
+    if(node == null) {
+      return null;
+    }
+
+    TreePath path = new TreePath(node.getPath());
+    tree.getSelectionModel().setSelectionPath(path);
+    tree.scrollPathToVisible(path);
+
+    int range = (node.issue().range() != null) ? node.issue().range().getStartOffset() : 0;
+    return new OccurenceInfo(
+      new OpenFileDescriptor(project, node.issue().psiFile().getVirtualFile(), range),
+      -1,
+      -1);
+  }
+
+  @Override public boolean hasNextOccurence() {
+    // relies on the assumption that a TreeNodes will always be the last row in the table view of the tree
+    TreePath path = tree.getSelectionPath();
+    if (path == null) {
+      return false;
+    }
+    DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+    if (node instanceof IssueNode) {
+      return tree.getRowCount() != tree.getRowForPath(path) + 1;
+    }
+    else {
+      return node.getChildCount() > 0;
+    }
+  }
+
+  @Override public boolean hasPreviousOccurence() {
+    TreePath path = tree.getSelectionPath();
+    if (path == null) {
+      return false;
+    }
+    DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+    return (node instanceof IssueNode) && !isFirst(node);
+  }
+
+  private boolean isFirst(final TreeNode node) {
+    final TreeNode parent = node.getParent();
+    return parent == null || parent.getIndex(node) == 0 && isFirst(parent);
+  }
+
+  @Override public OccurenceInfo goNextOccurence() {
+    TreePath path = tree.getSelectionPath();
+    if(path == null) {
+      return null;
+    }
+    return occurrence(treeBuilder.getNextIssue((AbstractNode<?>) path.getLastPathComponent()));
+  }
+
+  @Override public OccurenceInfo goPreviousOccurence() {
+    TreePath path = tree.getSelectionPath();
+    if(path == null) {
+      return null;
+    }
+    return occurrence(treeBuilder.getPreviousIssue((AbstractNode<?>) path.getLastPathComponent()));
+  }
+
+  @Override public String getNextOccurenceActionName() {
+    return "Next Issue";
+  }
+
+  @Override public String getPreviousOccurenceActionName() {
+    return "Previous Issue";
   }
 }

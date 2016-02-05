@@ -23,10 +23,11 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
+import com.intellij.openapi.project.Project;
 
 public class SonarConfigureProject extends AbstractSonarAction {
   @Override
-  protected boolean isEnabled(SonarLintStatus status) {
+  protected boolean isEnabled(Project project, SonarLintStatus status) {
     return !status.isRunning();
   }
 

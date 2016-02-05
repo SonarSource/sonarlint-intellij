@@ -34,6 +34,7 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -41,6 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+/**
+ * Responsible for maintaining the tree model and send change events when needed.
+ * Should be optimize to minimize the recreation of portions of the tree.
+ */
 public class TreeModelBuilder {
   private DefaultTreeModel model;
   private SummaryNode summary;
@@ -69,6 +74,106 @@ public class TreeModelBuilder {
     model.nodeChanged(summary);
   }
 
+  public IssueNode getNextIssue(AbstractNode<?> startNode) {
+    if(! (startNode instanceof IssueNode)) {
+      return firstIssueDown((AbstractNode) startNode);
+    }
+
+    Object next = getNextNode(startNode);
+
+    if(next == null) {
+      // no next node in the entire tree
+      return null;
+    }
+
+    if(next instanceof IssueNode) {
+      return (IssueNode) next;
+    }
+
+    return firstIssueDown((AbstractNode) next);
+  }
+
+
+  public IssueNode getPreviousIssue(AbstractNode<?> startNode) {
+    Object next = getPreviousNode(startNode);
+
+    if(next == null) {
+      // no next node in the entire tree
+      return null;
+    }
+
+    if(next instanceof IssueNode) {
+      return (IssueNode) next;
+    }
+
+    return lastIssueDown((AbstractNode) next);
+  }
+
+
+  /**
+   * Finds the first issue node which is child of a given node.
+   */
+  private IssueNode firstIssueDown(AbstractNode node) {
+    if(node instanceof IssueNode) {
+      return (IssueNode) node;
+    }
+
+    if(node.getChildCount() > 0) {
+      TreeNode firstChild = node.getFirstChild();
+      return firstIssueDown((AbstractNode) firstChild);
+    }
+
+      return null;
+  }
+
+  /**
+   * Finds the first issue node which is child of a given node.
+   */
+  private IssueNode lastIssueDown(AbstractNode node) {
+    if(node instanceof IssueNode) {
+      return (IssueNode) node;
+    }
+
+    TreeNode lastChild = node.getLastChild();
+
+    if(lastChild == null) {
+      return null;
+    }
+
+    return lastIssueDown((AbstractNode) lastChild);
+  }
+
+  private AbstractNode getPreviousNode(AbstractNode startNode) {
+    AbstractNode parent = (AbstractNode) startNode.getParent();
+
+    if(parent == null) {
+      return null;
+    }
+    TreeNode previous = parent.getChildBefore(startNode);
+    if(previous == null) {
+      return getPreviousNode(parent);
+    }
+
+    return (AbstractNode) previous;
+  }
+
+  /**
+   * Next node, either the sibling if it exists, or the sibling of the parent
+   */
+  private AbstractNode getNextNode(AbstractNode startNode) {
+    AbstractNode parent = (AbstractNode) startNode.getParent();
+
+    if(parent == null) {
+      return null;
+    }
+    TreeNode after = parent.getChildAfter(startNode);
+    if(after == null) {
+      return getNextNode(parent);
+    }
+
+    return (AbstractNode) after;
+  }
+
   /**
    * Creates the model with a basic root
    */
@@ -84,7 +189,7 @@ public class TreeModelBuilder {
     return summary;
   }
 
-  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<IssuePointer>> map, Condition<VirtualFile> condition) {
+  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<IssuePointer>> map, @Nullable Condition<VirtualFile> condition) {
     this.condition = condition;
 
     for (VirtualFile f : index.getAllFiles()) {
@@ -100,7 +205,7 @@ public class TreeModelBuilder {
     return model;
   }
 
-  private FileNode setFileIssues(VirtualFile file, Iterable<IssuePointer> issues, Condition<VirtualFile> condition) {
+  private FileNode setFileIssues(VirtualFile file, Iterable<IssuePointer> issues, @Nullable Condition<VirtualFile> condition) {
     if (!accept(file, condition)) {
       removeFile(file);
       return null;
@@ -177,9 +282,13 @@ public class TreeModelBuilder {
     return issue.isValid();
   }
 
-  private static boolean accept(VirtualFile file, Condition<VirtualFile> condition) {
+  private static boolean accept(VirtualFile file, @Nullable Condition<VirtualFile> condition) {
     if (!file.isValid()) {
       return false;
+    }
+
+    if(condition == null) {
+      return true;
     }
 
     return condition.value(file);
@@ -220,4 +329,5 @@ public class TreeModelBuilder {
         .result();
     }
   }
+
 }

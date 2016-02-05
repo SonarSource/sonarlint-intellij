@@ -63,14 +63,14 @@ public class SonarCancelTest extends SonarTest {
   public void testDisableIfNotRunning() {
     SonarLintStatus status = mock(SonarLintStatus.class);
     when(status.isRunning()).thenReturn(false);
-    assertThat(sonarCancel.isEnabled(status)).isFalse();
+    assertThat(sonarCancel.isEnabled(project, status)).isFalse();
   }
 
   @Test
   public void testEnableIfRunning() {
     SonarLintStatus status = mock(SonarLintStatus.class);
     when(status.isRunning()).thenReturn(true);
-    assertThat(sonarCancel.isEnabled(status)).isTrue();
+    assertThat(sonarCancel.isEnabled(project, status)).isTrue();
   }
 
 }

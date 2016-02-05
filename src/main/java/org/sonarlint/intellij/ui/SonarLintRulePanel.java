@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.colors.FontPreferences;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
 import org.jetbrains.annotations.Nullable;
@@ -33,8 +34,11 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
+
 import com.intellij.openapi.project.Project;
 
 public class SonarLintRulePanel {
@@ -42,10 +46,14 @@ public class SonarLintRulePanel {
   private final SonarLintFacade sonarlint;
   private JPanel panel;
   private JEditorPane editor;
+  private HTMLEditorKit kit;
 
   public SonarLintRulePanel(Project project, SonarLintFacade sonarlint) {
     this.project = project;
     this.sonarlint = sonarlint;
+    this.kit = new HTMLEditorKit();
+    StyleSheet styleSheet = kit.getStyleSheet();
+    styleSheet.addRule("body {font-family:" + FontPreferences.DEFAULT_FONT_NAME + ";}");
     panel = new JPanel(new BorderLayout());
     panel.setBorder(IdeBorderFactory.createBorder(SideBorder.LEFT));
     setRuleKey(null);
@@ -53,11 +61,11 @@ public class SonarLintRulePanel {
   }
 
   public void setRuleKey(@Nullable String key) {
-    if(key == null) {
+    if (key == null) {
       nothingToDisplay(false);
     } else {
       String description = sonarlint.getDescription(key);
-      if(description == null) {
+      if (description == null) {
         nothingToDisplay(true);
       }
       updateEditor(description);
@@ -69,7 +77,7 @@ public class SonarLintRulePanel {
     panel.removeAll();
 
     String txt;
-    if(error) {
+    if (error) {
       txt = "Couldn't find an extended description for the rule";
     } else {
       txt = "Select an issue to see extended rule description";
@@ -82,31 +90,38 @@ public class SonarLintRulePanel {
 
   private void updateEditor(String text) {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    if(editor == null) {
+    if (editor == null) {
       panel.removeAll();
-      editor = new JEditorPane();
-      editor.setBorder(new EmptyBorder(10, 10, 10, 10));
-      editor.setEditable(false);
-      editor.setContentType("text/html");
-      editor.addHyperlinkListener(new HyperlinkListener() {
-        @Override public void hyperlinkUpdate(HyperlinkEvent e) {
-          if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-            System.out.println(e.getURL());
-            Desktop desktop = Desktop.getDesktop();
-            try {
-              desktop.browse(e.getURL().toURI());
-            } catch (Exception ex) {
-              SonarLintConsole.get(project).error("Error opening browser: " + e.getURL(), ex);
-            }
-          }
-        }
-      });
+      editor = createEditor();
       panel.add(editor, BorderLayout.CENTER);
     }
 
     editor.setText(text);
     editor.setCaretPosition(0);
     panel.revalidate();
+  }
+
+  private JEditorPane createEditor() {
+    JEditorPane newEditor = new JEditorPane();
+    newEditor.setEditorKit(kit);
+    newEditor.setBorder(new EmptyBorder(10, 10, 10, 10));
+    newEditor.setEditable(false);
+    newEditor.setContentType("text/html");
+    newEditor.addHyperlinkListener(new HyperlinkListener() {
+      @Override public void hyperlinkUpdate(HyperlinkEvent e) {
+        if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+          System.out.println(e.getURL());
+          Desktop desktop = Desktop.getDesktop();
+          try {
+            desktop.browse(e.getURL().toURI());
+          } catch (Exception ex) {
+            SonarLintConsole.get(project).error("Error opening browser: " + e.getURL(), ex);
+          }
+        }
+      }
+    });
+
+    return newEditor;
   }
 
   public JComponent getPanel() {

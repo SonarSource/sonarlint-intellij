@@ -19,19 +19,95 @@
  */
 package org.sonarlint.intellij.ui.tree;
 
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarsource.sonarlint.core.IssueListener;
+
+import javax.swing.tree.DefaultTreeModel;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class TreeModelBuilderTest {
   private TreeModelBuilder treeBuilder;
+  private DefaultTreeModel model;
 
   @Before
   public void setUp() {
     treeBuilder = new TreeModelBuilder();
-    treeBuilder.createModel();
+    model = treeBuilder.createModel();
   }
 
   @Test
-  public void test() {
+  public void createModel() {
+    DefaultTreeModel model = treeBuilder.createModel();
+    assertThat(model.getRoot()).isNotNull();
   }
+
+  @Test
+  public void testNavigation() {
+    Map<VirtualFile, Collection<IssuePointer>> data = new HashMap<>();
+
+    // ordering of files: name
+    // ordering of issues: severity, ruleName, startLine
+    addFile(data, "file1", 2);
+    addFile(data, "file2", 2);
+    addFile(data, "file3", 2);
+
+    treeBuilder.updateModel(data, null);
+    IssueNode first = treeBuilder.getNextIssue((AbstractNode<?>) model.getRoot());
+    assertNode(first, "file1", 0);
+
+    IssueNode second = treeBuilder.getNextIssue(first);
+    assertNode(second, "file1", 1);
+
+    IssueNode third = treeBuilder.getNextIssue(second);
+    assertNode(third, "file2", 0);
+
+    assertThat(treeBuilder.getPreviousIssue(third)).isEqualTo(second);
+    assertThat(treeBuilder.getPreviousIssue(second)).isEqualTo(first);
+    assertThat(treeBuilder.getPreviousIssue(first)).isNull();
+  }
+
+  private void assertNode(IssueNode node, String file, int number) {
+    assertThat(node).isNotNull();
+    assertThat(node.issue().issue().getFilePath()).isEqualTo(Paths.get(file));
+    assertThat(node.issue().issue().getRuleName()).isEqualTo("rule" + number);
+  }
+
+  private void addFile(Map<VirtualFile, Collection<IssuePointer>> data, String fileName, int numIssues) {
+    VirtualFile file = mock(VirtualFile.class);
+    when(file.getName()).thenReturn(fileName);
+    when(file.isValid()).thenReturn(true);
+
+    PsiFile psiFile = mock(PsiFile.class);
+    when(psiFile.isValid()).thenReturn(true);
+    List<IssuePointer> issueList = new LinkedList<>();
+
+    for (int i = 0; i < numIssues; i++) {
+      IssueListener.Issue issue = new IssueListener.Issue();
+      issue.setStartLine(i);
+      issue.setFilePath(Paths.get(fileName));
+      issue.setRuleKey("rule" + i);
+      issue.setRuleName("rule" + i);
+      issue.setSeverity("MAJOR");
+      IssuePointer ip = new IssuePointer(issue,psiFile);
+      issueList.add(ip);
+    }
+
+    data.put(file, issueList);
+  }
+
 }

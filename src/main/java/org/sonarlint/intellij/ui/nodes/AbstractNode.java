@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 
-public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutableTreeNode {
+public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutableTreeNode  {
   protected int issueCount;
   protected int fileCount;
 
@@ -122,5 +122,10 @@ public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutabl
   protected static String spaceAndThinSpace() {
     String thinSpace = UIUtil.getLabelFont().canDisplay('\u2009') ? String.valueOf('\u2009') : " ";
     return " " + thinSpace;
+  }
+
+  @Override
+  public String toString() {
+    return this.getClass().getSimpleName() + "@" + hashCode();
   }
 }
