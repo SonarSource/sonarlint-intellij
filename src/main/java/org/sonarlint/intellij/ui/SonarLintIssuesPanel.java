@@ -34,9 +34,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 import com.intellij.ide.OccurenceNavigator;
-import com.intellij.ide.todo.nodes.TodoItemNode;
 import com.intellij.ide.util.PropertiesComponent;
-import com.intellij.ide.util.treeView.NodeDescriptor;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
@@ -45,6 +43,7 @@ import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
@@ -279,9 +278,10 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     tree.getSelectionModel().setSelectionPath(path);
     tree.scrollPathToVisible(path);
 
-    int range = (node.issue().range() != null) ? node.issue().range().getStartOffset() : 0;
+    RangeMarker range = node.issue().range();
+    int startOffset = (range != null) ? range.getStartOffset() : 0;
     return new OccurenceInfo(
-      new OpenFileDescriptor(project, node.issue().psiFile().getVirtualFile(), range),
+      new OpenFileDescriptor(project, node.issue().psiFile().getVirtualFile(), startOffset),
       -1,
       -1);
   }
@@ -295,8 +295,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
     if (node instanceof IssueNode) {
       return tree.getRowCount() != tree.getRowForPath(path) + 1;
-    }
-    else {
+    } else {
       return node.getChildCount() > 0;
     }
   }
@@ -310,9 +309,9 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     return (node instanceof IssueNode) && !isFirst(node);
   }
 
-  private boolean isFirst(final TreeNode node) {
+  private static boolean isFirst(final TreeNode node) {
     final TreeNode parent = node.getParent();
-    return parent == null || parent.getIndex(node) == 0 && isFirst(parent);
+    return parent == null || (parent.getIndex(node) == 0 && isFirst(parent));
   }
 
   @Override public OccurenceInfo goNextOccurence() {

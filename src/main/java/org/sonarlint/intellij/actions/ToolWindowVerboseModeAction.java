@@ -35,7 +35,6 @@ public class ToolWindowVerboseModeAction extends ToggleAction implements DumbAwa
   @Override
   public boolean isSelected(AnActionEvent event) {
     Project p = event.getProject();
-    //TODO asd
     return p != null && p.getComponent(SonarLintProjectSettings.class).isVerboseEnabled();
   }
 

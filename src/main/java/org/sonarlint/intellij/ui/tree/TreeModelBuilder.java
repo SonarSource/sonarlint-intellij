@@ -75,82 +75,80 @@ public class TreeModelBuilder {
   }
 
   public IssueNode getNextIssue(AbstractNode<?> startNode) {
-    if(! (startNode instanceof IssueNode)) {
+    if (!(startNode instanceof IssueNode)) {
       return firstIssueDown((AbstractNode) startNode);
     }
 
     Object next = getNextNode(startNode);
 
-    if(next == null) {
+    if (next == null) {
       // no next node in the entire tree
       return null;
     }
 
-    if(next instanceof IssueNode) {
+    if (next instanceof IssueNode) {
       return (IssueNode) next;
     }
 
     return firstIssueDown((AbstractNode) next);
   }
 
-
   public IssueNode getPreviousIssue(AbstractNode<?> startNode) {
     Object next = getPreviousNode(startNode);
 
-    if(next == null) {
+    if (next == null) {
       // no next node in the entire tree
       return null;
     }
 
-    if(next instanceof IssueNode) {
+    if (next instanceof IssueNode) {
       return (IssueNode) next;
     }
 
     return lastIssueDown((AbstractNode) next);
   }
 
-
   /**
    * Finds the first issue node which is child of a given node.
    */
-  private IssueNode firstIssueDown(AbstractNode node) {
-    if(node instanceof IssueNode) {
+  private static IssueNode firstIssueDown(AbstractNode node) {
+    if (node instanceof IssueNode) {
       return (IssueNode) node;
     }
 
-    if(node.getChildCount() > 0) {
+    if (node.getChildCount() > 0) {
       TreeNode firstChild = node.getFirstChild();
       return firstIssueDown((AbstractNode) firstChild);
     }
 
-      return null;
+    return null;
   }
 
   /**
    * Finds the first issue node which is child of a given node.
    */
-  private IssueNode lastIssueDown(AbstractNode node) {
-    if(node instanceof IssueNode) {
+  private static IssueNode lastIssueDown(AbstractNode node) {
+    if (node instanceof IssueNode) {
       return (IssueNode) node;
     }
 
     TreeNode lastChild = node.getLastChild();
 
-    if(lastChild == null) {
+    if (lastChild == null) {
       return null;
     }
 
     return lastIssueDown((AbstractNode) lastChild);
   }
 
-  private AbstractNode getPreviousNode(AbstractNode startNode) {
+  private static AbstractNode getPreviousNode(AbstractNode startNode) {
     AbstractNode parent = (AbstractNode) startNode.getParent();
 
-    if(parent == null) {
+    if (parent == null) {
       return null;
     }
     TreeNode previous = parent.getChildBefore(startNode);
-    if(previous == null) {
+    if (previous == null) {
       return getPreviousNode(parent);
     }
 
@@ -160,14 +158,14 @@ public class TreeModelBuilder {
   /**
    * Next node, either the sibling if it exists, or the sibling of the parent
    */
-  private AbstractNode getNextNode(AbstractNode startNode) {
+  private static AbstractNode getNextNode(AbstractNode startNode) {
     AbstractNode parent = (AbstractNode) startNode.getParent();
 
-    if(parent == null) {
+    if (parent == null) {
       return null;
     }
     TreeNode after = parent.getChildAfter(startNode);
-    if(after == null) {
+    if (after == null) {
       return getNextNode(parent);
     }
 
@@ -287,7 +285,7 @@ public class TreeModelBuilder {
       return false;
     }
 
-    if(condition == null) {
+    if (condition == null) {
       return true;
     }
 

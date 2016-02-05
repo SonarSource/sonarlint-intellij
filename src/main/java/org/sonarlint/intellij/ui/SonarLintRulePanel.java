@@ -19,7 +19,10 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.application.options.colors.ColorAndFontPanelFactory;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.editor.colors.FontPreferences;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
@@ -53,7 +56,9 @@ public class SonarLintRulePanel {
     this.sonarlint = sonarlint;
     this.kit = new HTMLEditorKit();
     StyleSheet styleSheet = kit.getStyleSheet();
-    styleSheet.addRule("body {font-family:" + FontPreferences.DEFAULT_FONT_NAME + ";}");
+    EditorColorsScheme scheme = EditorColorsManager.getInstance().getGlobalScheme();
+    String fontName = scheme.getFontPreferences().getFontFamily();
+    styleSheet.addRule("body {font-family:" + fontName + ";}");
     panel = new JPanel(new BorderLayout());
     panel.setBorder(IdeBorderFactory.createBorder(SideBorder.LEFT));
     setRuleKey(null);
@@ -67,6 +72,7 @@ public class SonarLintRulePanel {
       String description = sonarlint.getDescription(key);
       if (description == null) {
         nothingToDisplay(true);
+        return;
       }
       updateEditor(description);
     }
@@ -110,7 +116,6 @@ public class SonarLintRulePanel {
     newEditor.addHyperlinkListener(new HyperlinkListener() {
       @Override public void hyperlinkUpdate(HyperlinkEvent e) {
         if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-          System.out.println(e.getURL());
           Desktop desktop = Desktop.getDesktop();
           try {
             desktop.browse(e.getURL().toURI());
@@ -126,10 +131,6 @@ public class SonarLintRulePanel {
 
   public JComponent getPanel() {
     return panel;
-  }
-
-  public void hide() {
-    panel.setVisible(false);
   }
 
   public void show() {
