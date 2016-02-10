@@ -37,7 +37,6 @@ import com.intellij.xml.util.XmlStringUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.actions.NoSonarIntentionAction;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
@@ -116,9 +115,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      * - let {@link Annotation#getTextAttributes} decide it based on highlight type and severity.
      */
     annotation.setHighlightType(getType(issue.getSeverity()));
-    if(i.range() != null) {
-      annotation.registerFix(new NoSonarIntentionAction(i.range()));
-    }
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
