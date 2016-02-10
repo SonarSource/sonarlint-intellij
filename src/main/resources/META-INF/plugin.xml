@@ -31,6 +31,8 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>1.4 - No internet required; Several bug fixes;</li>
+        <li>1.3 - Issues views; UI improvements;</li>
         <li>1.2 - Automatic trigger of analysis; "NO SONAR" quick fix; configurable highlighting of issues;</li>
         <li>1.1 - More precise issue location; trigger of analysis changed to on demand only; improved SonarLint console;</li>
         <li>1.0 - On the fly SonarLint inspection</li>
