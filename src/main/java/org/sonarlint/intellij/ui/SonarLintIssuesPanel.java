@@ -153,7 +153,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     splitter.setHonorComponentsMinimumSize(true);
     splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION, new PropertyChangeListener() {
       @Override public void propertyChange(PropertyChangeEvent evt) {
-        PropertiesComponent.getInstance(project).setValue(SPLIT_PROPORTION, splitter.getProportion(), 0.65f);
+        PropertiesComponent.getInstance(project).setValue(SPLIT_PROPORTION, Float.toString(splitter.getProportion()));
       }
     });
 
