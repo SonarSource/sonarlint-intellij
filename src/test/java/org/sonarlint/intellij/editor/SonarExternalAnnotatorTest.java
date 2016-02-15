@@ -36,6 +36,7 @@ import org.sonarlint.intellij.issue.IssueStore;
 import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedList;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,7 +118,7 @@ public class SonarExternalAnnotatorTest {
 
   private static IssuePointer createFileStoredIssue(int id, PsiFile file) {
     Issue issue = SonarLintTestUtils.createIssue(id);
-    return new IssuePointer(issue, file, null);
+    return new IssuePointer(issue, file, new Date().getTime(), null);
   }
 
   private static IssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
@@ -128,6 +129,6 @@ public class SonarExternalAnnotatorTest {
     when(range.getEndOffset()).thenReturn(rangeEnd);
     when(range.isValid()).thenReturn(true);
 
-    return new IssuePointer(issue, null, range);
+    return new IssuePointer(issue, null, new Date().getTime(), range);
   }
 }

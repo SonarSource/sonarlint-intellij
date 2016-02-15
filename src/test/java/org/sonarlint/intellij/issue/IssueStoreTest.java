@@ -31,6 +31,7 @@ import org.sonarsource.sonarlint.core.IssueListener;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -122,6 +123,6 @@ public class IssueStoreTest extends SonarTest {
   private static IssuePointer createRangeStoredIssue(int id) {
     IssueListener.Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
-    return new IssuePointer(issue, null, range);
+    return new IssuePointer(issue, null, new Date().getTime(), range);
   }
 }
