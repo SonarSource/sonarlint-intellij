@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.tree;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
@@ -47,20 +46,13 @@ import java.util.TreeSet;
  * Should be optimize to minimize the recreation of portions of the tree.
  */
 public class TreeModelBuilder {
+  private static final List<String> SEVERITY_ORDER = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
+  private static final Comparator<IssuePointer> ISSUE_COMPARATOR = new IssueComparator();
+
   private DefaultTreeModel model;
   private SummaryNode summary;
   private IssueTreeIndex index;
   private Condition<VirtualFile> condition;
-
-  private static Comparator<IssuePointer> issuePointerComparator = new Comparator<IssuePointer>() {
-    private final List<String> severityOrder = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
-    private final Ordering<IssuePointer> ordering = Ordering.explicit(severityOrder).onResultOf(new IssueSeverityExtractor())
-      .compound(new IssueComparator());
-
-    @Override public int compare(IssuePointer o1, IssuePointer o2) {
-      return ordering.compare(o1, o2);
-    }
-  };
 
   public TreeModelBuilder() {
     this.index = new IssueTreeIndex();
@@ -251,7 +243,7 @@ public class TreeModelBuilder {
     node.removeAllChildren();
 
     // 15ms for 500 issues -> to improve?
-    TreeSet<IssuePointer> set = new TreeSet<>(issuePointerComparator);
+    TreeSet<IssuePointer> set = new TreeSet<>(ISSUE_COMPARATOR);
 
     for (IssuePointer issue : issuePointers) {
       set.add(issue);
@@ -310,22 +302,28 @@ public class TreeModelBuilder {
     }
   }
 
-  private static class IssueSeverityExtractor implements Function<IssuePointer, String> {
-    @Nullable @Override public String apply(IssuePointer o) {
-      return o.issue().getSeverity();
-    }
-  }
-
   private static class IssueComparator implements Comparator<IssuePointer> {
     @Override public int compare(@Nonnull IssuePointer o1, @Nonnull IssuePointer o2) {
+      int dateCompare = Long.compare(o1.creationDate(), o2.creationDate());
+
+      if(dateCompare != 0) {
+        return -dateCompare;
+      }
+
+      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.issue().getSeverity(), o2.issue().getSeverity());
+
+      if(severityCompare != 0) {
+        return severityCompare;
+      }
+
       int rangeStart1 = (o1.range() == null) ? -1 : o1.range().getStartOffset();
       int rangeStart2 = (o2.range() == null) ? -1 : o2.range().getStartOffset();
 
-      return ComparisonChain.start().compare(o1.issue().getRuleName(), o2.issue().getRuleName())
+      return ComparisonChain.start()
+        .compare(o1.issue().getRuleName(), o2.issue().getRuleName())
         .compare(rangeStart1, rangeStart2)
         .compare(o1.uid(), o2.uid())
         .result();
     }
   }
-
 }

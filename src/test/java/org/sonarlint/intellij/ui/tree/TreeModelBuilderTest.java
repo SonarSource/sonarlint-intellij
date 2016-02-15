@@ -61,7 +61,7 @@ public class TreeModelBuilderTest {
     Map<VirtualFile, Collection<IssuePointer>> data = new HashMap<>();
 
     // ordering of files: name
-    // ordering of issues: severity, ruleName, startLine
+    // ordering of issues: creation date, severity, ruleName, startLine
     addFile(data, "file1", 2);
     addFile(data, "file2", 2);
     addFile(data, "file3", 2);

@@ -131,7 +131,6 @@ public class IssueStore extends AbstractProjectComponent {
       trackedIssues.add(rawMatched);
     }
     for (IssuePointer newIssue : tracking.getUnmatchedRaws()) {
-      newIssue.setCreationDate(new Date().getTime());
       trackedIssues.add(newIssue);
     }
     storePerFile.put(file, trackedIssues);

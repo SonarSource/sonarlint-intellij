@@ -31,10 +31,7 @@ import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarsource.sonarlint.core.IssueListener;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
@@ -58,8 +55,8 @@ public class IssueStoreTest extends SonarTest {
     file2 = mock(VirtualFile.class);
     store = new IssueStore(project);
 
-    issue1 = createRangeStoredIssue(1, "issue 1");
-    issue2 = createRangeStoredIssue(2, "issue 2");
+    issue1 = createRangeStoredIssue(1, "issue 1", 10);
+    issue2 = createRangeStoredIssue(2, "issue 2", 10);
 
     store.store(file1, Collections.singletonList(issue1));
     store.store(file2, Collections.singletonList(issue2));
@@ -69,6 +66,40 @@ public class IssueStoreTest extends SonarTest {
   public void testStore() {
     assertThat(store.getForFile(file1)).containsExactly(issue1);
     assertThat(store.getForFile(file2)).containsExactly(issue2);
+  }
+
+  @Test
+  public void testTracking() {
+    // tracking based on ruleKey / line number
+    store.clear();
+    IssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
+    i1.setCreationDate(1000);
+    store.store(file1, Collections.singletonList(i1));
+
+    IssuePointer i2 = createRangeStoredIssue(1, "issue 1", 10);
+    i2.setCreationDate(2000);
+    store.store(file1, Collections.singletonList(i2));
+
+    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+    assertThat(fileIssues.iterator().next().creationDate()).isEqualTo(1000);
+  }
+
+  @Test
+  public void testTrackingChecksum() {
+    // tracking based on checksum
+    store.clear();
+    IssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
+    i1.setCreationDate(1000);
+    store.store(file1, Collections.singletonList(i1));
+
+    IssuePointer i2 = createRangeStoredIssue(1, "issue 1", 11);
+    i2.setCreationDate(2000);
+    store.store(file1, Collections.singletonList(i2));
+
+    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+    assertThat(fileIssues.iterator().next().creationDate()).isEqualTo(1000);
   }
 
   @Test
@@ -125,8 +156,9 @@ public class IssueStoreTest extends SonarTest {
     assertThat(store.getForFile(file1)).isEmpty();
   }
 
-  private IssuePointer createRangeStoredIssue(int id, String rangeContent) {
+  private IssuePointer createRangeStoredIssue(int id, String rangeContent, int line) {
     IssueListener.Issue issue = SonarLintTestUtils.createIssue(id);
+    issue.setStartLine(line);
     RangeMarker range = mock(RangeMarker.class);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);

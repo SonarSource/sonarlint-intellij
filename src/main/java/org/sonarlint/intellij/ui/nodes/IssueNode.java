@@ -61,7 +61,7 @@ public class IssueNode extends AbstractNode {
     renderer.append(creationAge(issue.creationDate()), SimpleTextAttributes.GRAY_ATTRIBUTES);
   }
 
-  public String creationAge(long creationDate) {
+  private static String creationAge(long creationDate) {
     Date date = new Date(creationDate);
     Date now = new Date();
     long days = TimeUnit.MILLISECONDS.toDays(now.getTime() - date.getTime());
@@ -76,8 +76,8 @@ public class IssueNode extends AbstractNode {
     if (minutes > 0) {
       return pluralize(minutes, "minute", "minutes");
     }
-    long seconds = TimeUnit.MILLISECONDS.toSeconds(now.getTime() - date.getTime());
-    return pluralize(Math.max(1, seconds), "second", "seconds");
+
+    return "few seconds ago";
   }
 
   private static String pluralize(long strictlyPositiveCount, String singular, String plural) {
