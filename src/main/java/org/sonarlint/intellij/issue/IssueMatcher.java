@@ -95,11 +95,11 @@ public class IssueMatcher extends AbstractProjectComponent {
 
   private static IssuePointer createRangeIssue(PsiFile file, Document doc, Issue issue, TextRange issueRange) {
     RangeMarker range = doc.createRangeMarker(issueRange.getStartOffset(), issueRange.getEndOffset());
-    return new IssuePointer(issue, file, new Date().getTime(), range);
+    return new IssuePointer(issue, file, range);
   }
 
   private static IssuePointer createFileIssue(PsiFile file, Issue issue) {
-    return new IssuePointer(issue, file, new Date().getTime());
+    return new IssuePointer(issue, file);
   }
 
   private static TextRange getIssueTextRange(PsiFile file, Document doc, Issue issue) throws NoMatchException {

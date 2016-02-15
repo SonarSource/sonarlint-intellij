@@ -123,6 +123,6 @@ public class IssueStoreTest extends SonarTest {
   private static IssuePointer createRangeStoredIssue(int id) {
     IssueListener.Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
-    return new IssuePointer(issue, null, new Date().getTime(), range);
+    return new IssuePointer(issue, null, range);
   }
 }

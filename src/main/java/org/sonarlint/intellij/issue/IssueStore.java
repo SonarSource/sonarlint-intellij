@@ -26,13 +26,13 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.messages.MessageBusConnection;
+import org.sonarlint.intellij.issue.tracking.Input;
+import org.sonarlint.intellij.issue.tracking.Tracker;
+import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 
 import javax.annotation.concurrent.ThreadSafe;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -106,8 +106,34 @@ public class IssueStore extends AbstractProjectComponent {
     }
   }
 
-  public void store(VirtualFile file, Collection<IssuePointer> issues) {
+  public void store(VirtualFile file, final Collection<IssuePointer> rawIssues) {
     // this will also delete all existing issues in the file
-    storePerFile.put(file, issues);
+    final Collection<IssuePointer> previousIssues = getForFile(file);
+    Collection<IssuePointer> trackedIssues = new ArrayList<>();
+
+    Input<IssuePointer> baseInput = new Input<IssuePointer>() {
+      @Override
+      public Collection<IssuePointer> getIssues() {
+        return previousIssues;
+      }
+    };
+    Input<IssuePointer> rawInput = new Input<IssuePointer>() {
+      @Override
+      public Collection<IssuePointer> getIssues() {
+        return rawIssues;
+      }
+    };
+    Tracking<IssuePointer, IssuePointer> tracking = new Tracker<IssuePointer, IssuePointer>().track(rawInput, baseInput);
+    for (Map.Entry<IssuePointer, IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
+      IssuePointer rawMatched = entry.getKey();
+      IssuePointer previousMatched = entry.getValue();
+      rawMatched.setCreationDate(previousMatched.creationDate());
+      trackedIssues.add(rawMatched);
+    }
+    for (IssuePointer newIssue : tracking.getUnmatchedRaws()) {
+      newIssue.setCreationDate(new Date().getTime());
+      trackedIssues.add(newIssue);
+    }
+    storePerFile.put(file, trackedIssues);
   }
 }
