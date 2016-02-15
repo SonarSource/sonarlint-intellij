@@ -75,7 +75,7 @@ public class IssuePointer implements Trackable {
 
   @Override
   public Integer getLine() {
-    return range.getDocument().getLineNumber(range.getStartOffset());
+    return range != null ? range.getDocument().getLineNumber(range.getStartOffset()) : null;
   }
 
   @Override
