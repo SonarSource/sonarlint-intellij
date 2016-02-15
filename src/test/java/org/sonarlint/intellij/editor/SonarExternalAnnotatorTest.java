@@ -118,7 +118,7 @@ public class SonarExternalAnnotatorTest {
 
   private static IssuePointer createFileStoredIssue(int id, PsiFile file) {
     Issue issue = SonarLintTestUtils.createIssue(id);
-    return new IssuePointer(issue, file, new Date().getTime(), null);
+    return new IssuePointer(issue, file, null);
   }
 
   private static IssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
@@ -129,6 +129,6 @@ public class SonarExternalAnnotatorTest {
     when(range.getEndOffset()).thenReturn(rangeEnd);
     when(range.isValid()).thenReturn(true);
 
-    return new IssuePointer(issue, null, new Date().getTime(), range);
+    return new IssuePointer(issue, null, range);
   }
 }
