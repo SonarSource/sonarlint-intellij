@@ -1,7 +1,7 @@
 # SonarLint IntelliJ Plugin
 
 
-[![Build Status](https://travis-ci.org/SonarSource/sonar-intellij.svg)](https://travis-ci.org/SonarSource/sonar-intellij)
+[![Build Status](https://travis-ci.org/SonarSource/sonarlint-intellij.svg)](https://travis-ci.org/SonarSource/sonarlint-intellij)
 
 ## How to build
 
