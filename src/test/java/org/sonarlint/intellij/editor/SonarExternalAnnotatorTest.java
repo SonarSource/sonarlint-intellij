@@ -22,6 +22,7 @@ package org.sonarlint.intellij.editor;
 import com.intellij.codeInsight.daemon.impl.AnnotationHolderImpl;
 import com.intellij.lang.annotation.AnnotationSession;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -33,6 +34,8 @@ import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
+
+import static org.mockito.Matchers.any;
 import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import java.util.Collection;
@@ -54,6 +57,7 @@ public class SonarExternalAnnotatorTest {
   private SonarExternalAnnotator.AnnotationContext ctx;
   private TextRange psiFileRange;
   private SonarExternalAnnotator annotator;
+  private Document document = mock(Document.class);
 
   @Before
   public void setUp() {
@@ -110,7 +114,7 @@ public class SonarExternalAnnotatorTest {
     Collection<IssuePointer> issues = new LinkedList<>();
 
     for (int i = 0; i < number; i++) {
-      issues.add(createRangeStoredIssue(i, i, i + 10));
+      issues.add(createRangeStoredIssue(i, i, i + 10, "foo " + i));
     }
 
     when(store.getForFile(virtualFile)).thenReturn(issues);
@@ -121,14 +125,15 @@ public class SonarExternalAnnotatorTest {
     return new IssuePointer(issue, file, null);
   }
 
-  private static IssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd) {
+  private IssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
     Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
 
     when(range.getStartOffset()).thenReturn(rangeStart);
     when(range.getEndOffset()).thenReturn(rangeEnd);
     when(range.isValid()).thenReturn(true);
-
+    when(range.getDocument()).thenReturn(document);
+    when(document.getText(any(TextRange.class))).thenReturn(text);
     return new IssuePointer(issue, null, range);
   }
 }

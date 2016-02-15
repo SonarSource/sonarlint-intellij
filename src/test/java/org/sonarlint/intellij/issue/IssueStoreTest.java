@@ -19,8 +19,10 @@
  */
 package org.sonarlint.intellij.issue;
 
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
@@ -35,7 +37,9 @@ import java.util.Date;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class IssueStoreTest extends SonarTest {
   private IssueStore store;
@@ -45,6 +49,7 @@ public class IssueStoreTest extends SonarTest {
 
   private IssuePointer issue1;
   private IssuePointer issue2;
+  private Document document = mock(Document.class);
 
   @Before
   public void setUp() {
@@ -53,8 +58,8 @@ public class IssueStoreTest extends SonarTest {
     file2 = mock(VirtualFile.class);
     store = new IssueStore(project);
 
-    issue1 = createRangeStoredIssue(1);
-    issue2 = createRangeStoredIssue(2);
+    issue1 = createRangeStoredIssue(1, "issue 1");
+    issue2 = createRangeStoredIssue(2, "issue 2");
 
     store.store(file1, Collections.singletonList(issue1));
     store.store(file2, Collections.singletonList(issue2));
@@ -111,7 +116,7 @@ public class IssueStoreTest extends SonarTest {
 
     List<IssuePointer> issueList = new ArrayList<>(100_000);
     for (int i = 0; i < 100_000; i++) {
-      issueList.add(createRangeStoredIssue(i));
+      issueList.add(new IssuePointer(SonarLintTestUtils.createIssue(i), null, null));
     }
 
     store.store(file1, issueList);
@@ -120,9 +125,11 @@ public class IssueStoreTest extends SonarTest {
     assertThat(store.getForFile(file1)).isEmpty();
   }
 
-  private static IssuePointer createRangeStoredIssue(int id) {
+  private IssuePointer createRangeStoredIssue(int id, String rangeContent) {
     IssueListener.Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
+    when(range.getDocument()).thenReturn(document);
+    when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
     return new IssuePointer(issue, null, range);
   }
 }
