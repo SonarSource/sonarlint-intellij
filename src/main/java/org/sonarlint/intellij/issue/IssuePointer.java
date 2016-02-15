@@ -45,7 +45,7 @@ public class IssuePointer implements Trackable {
   }
 
   public IssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
-    this.creationDate = creationDate;
+    this.creationDate = System.currentTimeMillis();
     this.range = range;
     this.issue = issue;
     this.psiFile = psiFile;
@@ -85,7 +85,7 @@ public class IssuePointer implements Trackable {
 
   @Override
   public Integer getLineHash() {
-    return null;
+    return checksum;
   }
 
   @Override

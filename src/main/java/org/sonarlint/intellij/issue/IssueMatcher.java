@@ -36,7 +36,6 @@ import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
-import java.util.Date;
 
 public class IssueMatcher extends AbstractProjectComponent {
   private final PsiManager psiManager;
