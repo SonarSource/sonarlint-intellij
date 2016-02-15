@@ -36,6 +36,7 @@ import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
+import java.util.Date;
 
 public class IssueMatcher extends AbstractProjectComponent {
   private final PsiManager psiManager;
@@ -94,11 +95,11 @@ public class IssueMatcher extends AbstractProjectComponent {
 
   private static IssuePointer createRangeIssue(PsiFile file, Document doc, Issue issue, TextRange issueRange) {
     RangeMarker range = doc.createRangeMarker(issueRange.getStartOffset(), issueRange.getEndOffset());
-    return new IssuePointer(issue, file, range);
+    return new IssuePointer(issue, file, new Date().getTime(), range);
   }
 
   private static IssuePointer createFileIssue(PsiFile file, Issue issue) {
-    return new IssuePointer(issue, file);
+    return new IssuePointer(issue, file, new Date().getTime());
   }
 
   private static TextRange getIssueTextRange(PsiFile file, Document doc, Issue issue) throws NoMatchException {

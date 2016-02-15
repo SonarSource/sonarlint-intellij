@@ -30,16 +30,18 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class IssuePointer {
   private static final AtomicLong UID_GEN = new AtomicLong();
-  private long uid;
-  private RangeMarker range;
-  private Issue issue;
-  private PsiFile psiFile;
+  private final long uid;
+  private final RangeMarker range;
+  private final Issue issue;
+  private final PsiFile psiFile;
+  private final long creationDate;
 
-  public IssuePointer(Issue issue, PsiFile psiFile) {
-    this(issue, psiFile, null);
+  public IssuePointer(Issue issue, PsiFile psiFile, long creationDate) {
+    this(issue, psiFile, creationDate, null);
   }
 
-  public IssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
+  public IssuePointer(Issue issue, PsiFile psiFile, long creationDate, @Nullable RangeMarker range) {
+    this.creationDate = creationDate;
     this.range = range;
     this.issue = issue;
     this.psiFile = psiFile;
@@ -74,5 +76,9 @@ public class IssuePointer {
 
   public PsiFile psiFile() {
     return psiFile;
+  }
+
+  public long creationDate() {
+    return creationDate;
   }
 }
