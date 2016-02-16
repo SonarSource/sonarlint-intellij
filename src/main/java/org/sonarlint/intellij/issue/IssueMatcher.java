@@ -32,7 +32,8 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
-import static org.sonarsource.sonarlint.core.IssueListener.Issue;
+import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -48,10 +49,11 @@ public class IssueMatcher extends AbstractProjectComponent {
   }
 
   public PsiFile findFile(VirtualFileSystem fs, Issue issue) throws NoMatchException {
-    return findFile(fs, issue.getFilePath());
+    return findFile(fs, issue.getInputFile());
   }
 
-  public PsiFile findFile(VirtualFileSystem fs, Path path) throws NoMatchException {
+  public PsiFile findFile(VirtualFileSystem fs, ClientInputFile inputFile) throws NoMatchException {
+    Path path = inputFile.getPath();
     VirtualFile file = fs.findFileByPath(path.toString());
 
     if (file != null) {

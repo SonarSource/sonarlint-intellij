@@ -34,12 +34,11 @@ import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import static org.mockito.Matchers.any;
-import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedList;
 
 import static org.assertj.core.api.Assertions.assertThat;

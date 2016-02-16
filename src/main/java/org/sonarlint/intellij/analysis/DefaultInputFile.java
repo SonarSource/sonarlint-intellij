@@ -19,12 +19,12 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import org.sonarsource.sonarlint.core.AnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 
-public class DefaultInputFile implements AnalysisConfiguration.InputFile {
+public class DefaultInputFile implements ClientInputFile {
   private final Path p;
   private final boolean test;
   private final Charset charset;
@@ -34,7 +34,8 @@ public class DefaultInputFile implements AnalysisConfiguration.InputFile {
     this.test = isTest;
     this.charset = charset;
   }
-  @Override public Path path() {
+
+  @Override public Path getPath() {
     return p;
   }
 
@@ -42,7 +43,11 @@ public class DefaultInputFile implements AnalysisConfiguration.InputFile {
     return test;
   }
 
-  @Override public Charset charset() {
+  @Override public Charset getCharset() {
     return charset;
+  }
+
+  @Override public <G> G getClientObject() {
+    return null;
   }
 }

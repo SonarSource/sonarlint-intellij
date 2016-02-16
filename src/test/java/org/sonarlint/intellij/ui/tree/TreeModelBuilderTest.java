@@ -26,9 +26,11 @@ import org.junit.Test;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import javax.swing.tree.DefaultTreeModel;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
@@ -61,20 +63,20 @@ public class TreeModelBuilderTest {
     Map<VirtualFile, Collection<IssuePointer>> data = new HashMap<>();
 
     // ordering of files: name
-    // ordering of issues: creation date, severity, ruleName, startLine
+    // ordering of issues: creation date (inverse), severity, ruleName, startLine
     addFile(data, "file1", 2);
     addFile(data, "file2", 2);
     addFile(data, "file3", 2);
 
     treeBuilder.updateModel(data, null);
     IssueNode first = treeBuilder.getNextIssue((AbstractNode<?>) model.getRoot());
-    assertNode(first, "file1", 0);
+    assertNode(first, "file1", 1);
 
     IssueNode second = treeBuilder.getNextIssue(first);
-    assertNode(second, "file1", 1);
+    assertNode(second, "file1", 0);
 
     IssueNode third = treeBuilder.getNextIssue(second);
-    assertNode(third, "file2", 0);
+    assertNode(third, "file2", 1);
 
     assertThat(treeBuilder.getPreviousIssue(third)).isEqualTo(second);
     assertThat(treeBuilder.getPreviousIssue(second)).isEqualTo(first);
@@ -83,7 +85,7 @@ public class TreeModelBuilderTest {
 
   private void assertNode(IssueNode node, String file, int number) {
     assertThat(node).isNotNull();
-    assertThat(node.issue().issue().getFilePath()).isEqualTo(Paths.get(file));
+    assertThat(node.issue().issue().getInputFile().getPath()).isEqualTo(Paths.get(file));
     assertThat(node.issue().issue().getRuleName()).isEqualTo("rule" + number);
   }
 
@@ -97,17 +99,27 @@ public class TreeModelBuilderTest {
     List<IssuePointer> issueList = new LinkedList<>();
 
     for (int i = 0; i < numIssues; i++) {
-      IssueListener.Issue issue = new IssueListener.Issue();
-      issue.setStartLine(i);
-      issue.setFilePath(Paths.get(fileName));
-      issue.setRuleKey("rule" + i);
-      issue.setRuleName("rule" + i);
-      issue.setSeverity("MAJOR");
+      Issue issue = mock(Issue.class);
+      when(issue.getStartLine()).thenReturn(i);
+      ClientInputFile f = mockFile(fileName);
+      when(issue.getInputFile()).thenReturn(f);
+      when(issue.getRuleKey()).thenReturn("rule" + i);
+      when(issue.getRuleName()).thenReturn("rule" + i);
+      when(issue.getSeverity()).thenReturn("MAJOR");
       IssuePointer ip = new IssuePointer(issue,psiFile);
+      ip.setCreationDate(i);
       issueList.add(ip);
     }
 
     data.put(file, issueList);
+  }
+
+  private static ClientInputFile mockFile(String path) {
+    ClientInputFile file = mock(ClientInputFile.class);
+    when(file.getPath()).thenReturn(Paths.get(path));
+    when(file.getCharset()).thenReturn(Charset.defaultCharset());
+    when(file.isTest()).thenReturn(false);
+    return file;
   }
 
 }

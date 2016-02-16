@@ -32,7 +32,7 @@ import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,7 +56,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.messageBus = project.getMessageBus();
   }
 
-  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<IssueListener.Issue> issues) {
+  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
     Map<VirtualFile, Collection<IssuePointer>> map;
     final VirtualFile moduleBaseDir = SonarLintUtils.getModuleRoot(job.module());
 
@@ -89,14 +89,18 @@ public class IssueProcessor extends AbstractProjectComponent {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(VirtualFile moduleBaseDir, Collection<IssueListener.Issue> issues, Collection<VirtualFile> analysed) {
+  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(VirtualFile moduleBaseDir, Collection<Issue> issues, Collection<VirtualFile> analysed) {
     Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
 
     for(VirtualFile f : analysed) {
       map.put(f, new ArrayList<IssuePointer>());
     }
 
-    for (IssueListener.Issue i : issues) {
+    for (Issue i : issues) {
+      if(i.getInputFile() == null) {
+        // ignore project level issues
+        continue;
+      }
       try {
         PsiFile psiFile = matcher.findFile(moduleBaseDir.getFileSystem(), i);
         IssuePointer toStore = matcher.match(psiFile, i);

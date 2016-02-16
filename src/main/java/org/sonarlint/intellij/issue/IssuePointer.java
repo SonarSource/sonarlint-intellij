@@ -23,8 +23,7 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import org.sonarlint.intellij.issue.tracking.Trackable;
-
-import static org.sonarsource.sonarlint.core.IssueListener.Issue;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
