@@ -104,7 +104,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);
-      indicator.setText("Creating SonarLint issues: " + listener.getIssues().size());
+      indicator.setText("Processing SonarLint issues: " + listener.getIssues().size());
 
       processor.process(job, listener.getIssues());
     } catch (RuntimeException e) {
