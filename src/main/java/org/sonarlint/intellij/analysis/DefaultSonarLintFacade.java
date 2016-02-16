@@ -40,6 +40,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -82,7 +83,9 @@ public final class DefaultSonarLintFacade extends AbstractProjectComponent imple
 
     Path baseDir = Paths.get(myProject.getBasePath());
     Path workDir = baseDir.resolve(ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR).resolve("sonarlint").toAbsolutePath();
-    Map<String, String> props = projectSettings.getAdditionalProperties();
+    Map<String, String> props = new HashMap<>();
+    props.putAll(additionalProps);
+    props.putAll(projectSettings.getAdditionalProperties());
     AnalysisConfiguration config = new AnalysisConfiguration(baseDir, workDir, inputFiles, props);
 
     sonarlintClient.setVerbose(projectSettings.isVerboseEnabled());
