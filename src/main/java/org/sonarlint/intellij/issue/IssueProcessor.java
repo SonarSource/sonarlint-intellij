@@ -31,8 +31,8 @@ import com.intellij.util.messages.MessageBus;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -56,14 +56,12 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.messageBus = project.getMessageBus();
   }
 
-  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<IssueListener.Issue> issues) {
+  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
     Map<VirtualFile, Collection<IssuePointer>> map;
-    final VirtualFile moduleBaseDir = SonarLintUtils.getModuleRoot(job.module());
-
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
-      map = transformIssues(moduleBaseDir, issues, job.files());
+      map = transformIssues(issues, job.files());
       messageBus.syncPublisher(AnalysisResultsListener.SONARLINT_ANALYSIS_DONE_TOPIC).analysisDone(map);
 
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
@@ -89,16 +87,22 @@ public class IssueProcessor extends AbstractProjectComponent {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(VirtualFile moduleBaseDir, Collection<IssueListener.Issue> issues, Collection<VirtualFile> analysed) {
+  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed) {
     Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
 
     for(VirtualFile f : analysed) {
       map.put(f, new ArrayList<IssuePointer>());
     }
 
-    for (IssueListener.Issue i : issues) {
+    for (Issue i : issues) {
+      ClientInputFile inputFile = i.getInputFile();
+      if(inputFile == null || inputFile.getPath() == null) {
+        // ignore project level issues
+        continue;
+      }
       try {
-        PsiFile psiFile = matcher.findFile(moduleBaseDir.getFileSystem(), i);
+        VirtualFile vFile = inputFile.getClientObject();
+        PsiFile psiFile = matcher.findFile(vFile);
         IssuePointer toStore = matcher.match(psiFile, i);
         map.get(psiFile.getVirtualFile()).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {

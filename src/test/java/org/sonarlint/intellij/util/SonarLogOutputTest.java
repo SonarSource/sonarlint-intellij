@@ -24,7 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.LogOutput;
+import org.sonarsource.sonarlint.core.client.api.LogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

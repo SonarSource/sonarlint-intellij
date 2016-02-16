@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.psi.PsiFile;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
@@ -27,17 +26,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
-import org.sonarsource.sonarlint.core.IssueListener;
-
-import javax.annotation.Nullable;
-import javax.swing.*;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class IssueNodeTest {
   private IssueNode node;
@@ -61,7 +57,7 @@ public class IssueNodeTest {
   @Test
   public void testHoursAndSeverity() throws IOException {
     IssuePointer i = createIssue(System.currentTimeMillis()-3600*1000, "rule");
-    i.issue().setSeverity("MAJOR");
+    when(i.issue().getSeverity()).thenReturn("MAJOR");
     node = new IssueNode(i);
     node.render(renderer);
 
@@ -81,8 +77,8 @@ public class IssueNodeTest {
 
   private static IssuePointer createIssue(long date, String ruleName) {
     PsiFile file = mock(PsiFile.class);
-    IssueListener.Issue i = new IssueListener.Issue();
-    i.setRuleName(ruleName);
+    Issue i = mock(Issue.class);
+    when(i.getRuleName()).thenReturn(ruleName);
     IssuePointer issue = new IssuePointer(i, file);
     issue.setCreationDate(date);
     return issue;

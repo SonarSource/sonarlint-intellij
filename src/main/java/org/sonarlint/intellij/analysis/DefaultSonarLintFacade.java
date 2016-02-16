@@ -28,9 +28,8 @@ import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLogOutput;
-import org.sonarsource.sonarlint.core.AnalysisConfiguration;
-import org.sonarsource.sonarlint.core.IssueListener;
-import org.sonarsource.sonarlint.core.SonarLintClient;
+import org.sonarsource.sonarlint.core.SonarLintClientImpl;
+import org.sonarsource.sonarlint.core.client.api.*;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -73,7 +72,7 @@ public final class DefaultSonarLintFacade extends AbstractProjectComponent imple
   }
 
   @Override
-  public synchronized void startAnalysis(List<AnalysisConfiguration.InputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
+  public synchronized void startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
     if (!started) {
       tryStart();
     }
@@ -135,14 +134,15 @@ public final class DefaultSonarLintFacade extends AbstractProjectComponent imple
     try {
       URL[] plugins = loadPlugins();
 
-      sonarlintClient = SonarLintClient.builder()
+      GlobalConfiguration globalConfiguration = GlobalConfiguration.builder()
         .addPlugins(plugins)
         .setLogOutput(new SonarLogOutput(console))
         .setVerbose(projectSettings.isVerboseEnabled())
         .build();
 
       console.info("Starting SonarLint " + sonarLintPlugin.getVersion());
-      sonarlintClient.start();
+      sonarlintClient = new SonarLintClientImpl();
+      sonarlintClient.start(globalConfiguration);
       this.started = true;
     } catch (Exception e) {
       console.error("Unable to start SonarLint", e);

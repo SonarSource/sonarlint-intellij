@@ -21,15 +21,13 @@ package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixtureTestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import java.util.*;
 
@@ -145,8 +143,8 @@ public class IssueStoreTest extends SonarTest {
     //add a lot of issues
     store.clear();
 
-    List<IssuePointer> issueList = new ArrayList<>(100_000);
-    for (int i = 0; i < 100_000; i++) {
+    List<IssuePointer> issueList = new ArrayList<>(10_001);
+    for (int i = 0; i < 10_001; i++) {
       issueList.add(new IssuePointer(SonarLintTestUtils.createIssue(i), null, null));
     }
 
@@ -157,8 +155,8 @@ public class IssueStoreTest extends SonarTest {
   }
 
   private IssuePointer createRangeStoredIssue(int id, String rangeContent, int line) {
-    IssueListener.Issue issue = SonarLintTestUtils.createIssue(id);
-    issue.setStartLine(line);
+    Issue issue = SonarLintTestUtils.createIssue(id);
+    when(issue.getStartLine()).thenReturn(line);
     RangeMarker range = mock(RangeMarker.class);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
