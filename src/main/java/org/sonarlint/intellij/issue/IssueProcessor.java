@@ -97,6 +97,10 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     for (IssueListener.Issue i : issues) {
+      if(i.getFilePath() == null) {
+        // ignore project level issues
+        continue;
+      }
       try {
         PsiFile psiFile = matcher.findFile(moduleBaseDir.getFileSystem(), i);
         IssuePointer toStore = matcher.match(psiFile, i);
