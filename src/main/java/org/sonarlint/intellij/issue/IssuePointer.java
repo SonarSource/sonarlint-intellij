@@ -20,30 +20,44 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
-import static org.sonarsource.sonarlint.core.IssueListener.Issue;
+import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class IssuePointer {
+public class IssuePointer implements Trackable {
   private static final AtomicLong UID_GEN = new AtomicLong();
-  private long uid;
-  private RangeMarker range;
-  private Issue issue;
-  private PsiFile psiFile;
+  private final long uid;
+  private final RangeMarker range;
+  private final Issue issue;
+  private final PsiFile psiFile;
+  private long creationDate;
+  private final Integer checksum;
 
   public IssuePointer(Issue issue, PsiFile psiFile) {
     this(issue, psiFile, null);
   }
 
   public IssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
+    this.creationDate = System.currentTimeMillis();
     this.range = range;
     this.issue = issue;
     this.psiFile = psiFile;
     this.uid = UID_GEN.getAndIncrement();
+    if (range != null) {
+      this.checksum = checksum(range.getDocument().getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
+    } else {
+      this.checksum = null;
+    }
+  }
+
+  public static int checksum(String content) {
+    return content.replaceAll("[\\s]", "").hashCode();
   }
 
   public boolean isValid() {
@@ -56,6 +70,26 @@ public class IssuePointer {
     }
 
     return true;
+  }
+
+  @Override
+  public Integer getLine() {
+    return range != null ? range.getDocument().getLineNumber(range.getStartOffset()) : null;
+  }
+
+  @Override
+  public String getMessage() {
+    return issue.getMessage();
+  }
+
+  @Override
+  public Integer getLineHash() {
+    return checksum;
+  }
+
+  @Override
+  public String getRuleKey() {
+    return issue.getRuleKey();
   }
 
   public long uid() {
@@ -74,5 +108,13 @@ public class IssuePointer {
 
   public PsiFile psiFile() {
     return psiFile;
+  }
+
+  public long creationDate() {
+    return creationDate;
+  }
+
+  public void setCreationDate(long creationDate) {
+    this.creationDate = creationDate;
   }
 }

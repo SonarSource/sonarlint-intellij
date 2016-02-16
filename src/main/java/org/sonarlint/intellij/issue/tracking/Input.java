@@ -17,32 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.issue.tracking;
 
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.LogOutput;
+import java.util.Collection;
 
-public class SonarLogOutput implements LogOutput {
-  private final SonarLintConsole console;
+public interface Input<ISSUE extends Trackable> {
 
-  public SonarLogOutput(SonarLintConsole console) {
-    this.console = console;
-  }
+  Collection<ISSUE> getIssues();
 
-  @Override
-  public void log(String msg, Level level) {
-    switch (level) {
-      case TRACE:
-      case DEBUG:
-        console.debug(msg);
-        break;
-      case ERROR:
-        console.error(msg);
-        break;
-      case INFO:
-      case WARN:
-      default:
-        console.info(msg);
-    }
-  }
 }

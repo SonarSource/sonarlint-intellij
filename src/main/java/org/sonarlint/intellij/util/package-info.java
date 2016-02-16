@@ -21,3 +21,4 @@
 package org.sonarlint.intellij.util;
 
 import javax.annotation.ParametersAreNonnullByDefault;
+

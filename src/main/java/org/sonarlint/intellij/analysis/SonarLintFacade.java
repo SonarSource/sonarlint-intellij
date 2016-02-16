@@ -21,14 +21,14 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.components.ProjectComponent;
 import org.jetbrains.annotations.Nullable;
-import org.sonarsource.sonarlint.core.AnalysisConfiguration;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.IssueListener;
 
 import java.util.List;
 import java.util.Map;
 
 public interface SonarLintFacade extends ProjectComponent {
-  void startAnalysis(List<AnalysisConfiguration.InputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps);
+  void startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps);
 
   @Nullable
   String getDescription(String ruleKey);

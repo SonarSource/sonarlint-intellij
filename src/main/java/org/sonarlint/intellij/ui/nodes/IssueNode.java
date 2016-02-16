@@ -25,11 +25,14 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+import javax.annotation.Nonnull;
+
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
-
-import javax.annotation.Nonnull;
-import java.io.IOException;
 
 public class IssueNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(IssueNode.class);
@@ -52,6 +55,36 @@ public class IssueNode extends AbstractNode {
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
 
     renderer.append(issue.issue().getRuleName());
+
+    renderer.append(" ");
+
+    renderer.append(creationAge(issue.creationDate()), SimpleTextAttributes.GRAY_ATTRIBUTES);
+  }
+
+  private static String creationAge(long creationDate) {
+    Date date = new Date(creationDate);
+    Date now = new Date();
+    long days = TimeUnit.MILLISECONDS.toDays(now.getTime() - date.getTime());
+    if (days > 0) {
+      return pluralize(days, "day", "days");
+    }
+    long hours = TimeUnit.MILLISECONDS.toHours(now.getTime() - date.getTime());
+    if (hours > 0) {
+      return pluralize(hours, "hour", "hours");
+    }
+    long minutes = TimeUnit.MILLISECONDS.toMinutes(now.getTime() - date.getTime());
+    if (minutes > 0) {
+      return pluralize(minutes, "minute", "minutes");
+    }
+
+    return "few seconds ago";
+  }
+
+  private static String pluralize(long strictlyPositiveCount, String singular, String plural) {
+    if (strictlyPositiveCount == 1) {
+      return "1 " + singular + " ago";
+    }
+    return strictlyPositiveCount + " " + plural + " ago";
   }
 
   @Override public int getIssueCount() {

@@ -23,7 +23,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.impl.ComponentManagerImpl;
 import org.sonarlint.intellij.analysis.SonarLintFacade;
 import com.intellij.openapi.project.Project;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import java.awt.GraphicsEnvironment;
 
@@ -57,10 +57,10 @@ public class SonarLintTestUtils {
     return event;
   }
 
-  public static IssueListener.Issue createIssue(int id) {
-    IssueListener.Issue issue = new IssueListener.Issue();
-    issue.setRuleKey(Integer.toString(id));
-    issue.setMessage("issue " + id);
+  public static Issue createIssue(int id) {
+    Issue issue = mock(Issue.class);
+    when(issue.getRuleKey()).thenReturn(Integer.toString(id));
+    when(issue.getMessage()).thenReturn("issue " + id);
     return issue;
   }
 }

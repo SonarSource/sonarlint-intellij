@@ -42,10 +42,8 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-
-import static org.sonarsource.sonarlint.core.AnalysisConfiguration.InputFile;
-
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
@@ -85,7 +83,7 @@ public class SonarLintAnalysisConfigurator {
 
     // configure files
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-    List<InputFile> inputFiles = getInputFiles(p, moduleRootManager, filesToAnalyze);
+    List<ClientInputFile> inputFiles = getInputFiles(p, moduleRootManager, filesToAnalyze);
 
     // Analyze
     long start = System.currentTimeMillis();
@@ -104,9 +102,9 @@ public class SonarLintAnalysisConfigurator {
     return Charset.defaultCharset();
   }
 
-  private static List<InputFile> getInputFiles(Project p, ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
+  private static List<ClientInputFile> getInputFiles(Project p, ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
     Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
-    List<InputFile> inputFiles = new LinkedList<>();
+    List<ClientInputFile> inputFiles = new LinkedList<>();
 
     for (VirtualFile f : filesToAnalyze) {
       boolean test = isTestFile(testFolderPrefix, f);

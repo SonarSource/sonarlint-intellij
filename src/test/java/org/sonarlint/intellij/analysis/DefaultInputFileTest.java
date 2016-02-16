@@ -36,8 +36,8 @@ public class DefaultInputFileTest {
     Charset c = mock(Charset.class);
     inputFile = new DefaultInputFile(p, true, c);
 
-    assertThat(inputFile.charset()).isEqualTo(c);
+    assertThat(inputFile.getCharset()).isEqualTo(c);
     assertThat(inputFile.isTest()).isTrue();
-    assertThat(inputFile.path()).isEqualTo(p);
+    assertThat(inputFile.getPath()).isEqualTo(p);
   }
 }

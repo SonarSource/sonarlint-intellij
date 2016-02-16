@@ -21,17 +21,18 @@ CI)
   if [ "${TRAVIS_BRANCH}" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     strongEcho 'Build and analyze commit in master'
     # this commit is master must be built and analyzed (with upload of report)
+    git fetch --unshallow || true
     ./gradlew buildPlugin check sonarqube \
         -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace --info \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN
 
-  elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ "$TRAVIS_SECURE_ENV_VARS" == "true" ]; then
+  elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN-}" ]; then
     strongEcho 'Build and analyze pull request'                                                                                                                              
     # this pull request must be built and analyzed (without upload of report)                                                                                                
     ./gradlew buildPlugin check sonarqube \
         -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace \
-        -Dsonar.analysis.mode=issues \                                                                                                                                       
+        -Dsonar.analysis.mode=issues \
         -Dsonar.github.pullRequest=$TRAVIS_PULL_REQUEST \
         -Dsonar.github.repository=$TRAVIS_REPO_SLUG \
         -Dsonar.github.oauth=$GITHUB_TOKEN \
