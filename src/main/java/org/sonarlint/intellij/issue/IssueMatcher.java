@@ -26,16 +26,14 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileSystem;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
-import static org.sonarsource.sonarlint.core.IssueListener.Issue;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import javax.annotation.Nullable;
-import java.nio.file.Path;
 
 public class IssueMatcher extends AbstractProjectComponent {
   private final PsiManager psiManager;
@@ -45,19 +43,6 @@ public class IssueMatcher extends AbstractProjectComponent {
     super(project);
     this.psiManager = psiManager;
     this.docManager = docManager;
-  }
-
-  public PsiFile findFile(VirtualFileSystem fs, Issue issue) throws NoMatchException {
-    return findFile(fs, issue.getFilePath());
-  }
-
-  public PsiFile findFile(VirtualFileSystem fs, Path path) throws NoMatchException {
-    VirtualFile file = fs.findFileByPath(path.toString());
-
-    if (file != null) {
-      return findFile(file);
-    }
-    throw new NoMatchException("Couldn't find file in module: " + path.toString());
   }
 
   public PsiFile findFile(VirtualFile file) throws NoMatchException {

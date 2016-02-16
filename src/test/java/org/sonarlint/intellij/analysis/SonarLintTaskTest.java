@@ -26,14 +26,11 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
-import org.sonarsource.sonarlint.core.AnalysisConfiguration;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import static junit.framework.TestCase.fail;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyMapOf;
 import static org.mockito.Matchers.eq;
-import static org.sonarsource.sonarlint.core.IssueListener.Issue;
 
 import java.util.ArrayList;
 import java.util.HashSet;

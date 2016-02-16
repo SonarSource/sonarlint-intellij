@@ -19,25 +19,29 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DefaultInputFileTest {
   private DefaultInputFile inputFile;
 
   @Test
   public void roundTrip() {
-    Path p = mock(Path.class);
+    VirtualFile vFile = mock(VirtualFile.class);
+    when(vFile.getPath()).thenReturn("file");
     Charset c = mock(Charset.class);
-    inputFile = new DefaultInputFile(p, true, c);
+    inputFile = new DefaultInputFile(vFile, true, c);
 
-    assertThat(inputFile.charset()).isEqualTo(c);
+    assertThat(inputFile.getCharset()).isEqualTo(c);
     assertThat(inputFile.isTest()).isTrue();
-    assertThat(inputFile.path()).isEqualTo(p);
+    assertThat(inputFile.getPath()).isEqualTo(Paths.get("file"));
+    assertThat(inputFile.getClientObject()).isEqualTo(vFile);
   }
 }

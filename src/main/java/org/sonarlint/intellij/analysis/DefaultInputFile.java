@@ -19,22 +19,27 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import org.sonarsource.sonarlint.core.AnalysisConfiguration;
+import com.intellij.openapi.vfs.VirtualFile;
+import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
 
 import java.nio.charset.Charset;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
-public class DefaultInputFile implements AnalysisConfiguration.InputFile {
+public class DefaultInputFile implements ClientInputFile {
   private final Path p;
   private final boolean test;
   private final Charset charset;
+  private final VirtualFile vFile;
 
-  DefaultInputFile(Path p, boolean isTest, Charset charset) {
-    this.p = p;
+  DefaultInputFile(VirtualFile vFile, boolean isTest, Charset charset) {
+    this.p = Paths.get(vFile.getPath());
     this.test = isTest;
     this.charset = charset;
+    this.vFile = vFile;
   }
-  @Override public Path path() {
+
+  @Override public Path getPath() {
     return p;
   }
 
@@ -42,7 +47,11 @@ public class DefaultInputFile implements AnalysisConfiguration.InputFile {
     return test;
   }
 
-  @Override public Charset charset() {
+  @Override public Charset getCharset() {
     return charset;
+  }
+
+  @Override public VirtualFile getClientObject() {
+    return vFile;
   }
 }

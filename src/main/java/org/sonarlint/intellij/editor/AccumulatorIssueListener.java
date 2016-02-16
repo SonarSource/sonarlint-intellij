@@ -20,7 +20,8 @@
 package org.sonarlint.intellij.editor;
 
 
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import java.util.LinkedList;
 import java.util.List;

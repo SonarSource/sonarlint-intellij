@@ -21,9 +21,11 @@ package org.sonarlint.intellij.editor;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class AccumulatorIssueListenerTest {
   private AccumulatorIssueListener listener;
@@ -43,10 +45,9 @@ public class AccumulatorIssueListenerTest {
     assertThat(listener.getIssues().get(0).getRuleKey()).isEqualTo("rule0");
   }
 
-  private static IssueListener.Issue createIssue(int n) {
-    IssueListener.Issue issue = new IssueListener.Issue();
-    issue.setRuleKey("rule" + n);
-    issue.setRuleName("rule");
+  private static Issue createIssue(int n) {
+    Issue issue = mock(Issue.class);
+    when(issue.getRuleKey()).thenReturn("rule" + n);
     return issue;
   }
 }
