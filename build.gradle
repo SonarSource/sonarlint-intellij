@@ -22,7 +22,7 @@ intellij {
   if (project.hasProperty("ijVersion")){
     version ijVersion
   } else {
-    version '15.0.333'
+    version '15.0.3'
   }
   pluginName 'SonarLint'
   updateSinceUntilBuild false
