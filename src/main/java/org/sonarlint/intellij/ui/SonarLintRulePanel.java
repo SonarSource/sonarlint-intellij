@@ -41,6 +41,7 @@ import java.awt.BorderLayout;
 import java.awt.Desktop;
 
 import com.intellij.openapi.project.Project;
+import org.sonarsource.sonarlint.core.client.api.Issue;
 
 public class SonarLintRulePanel {
   private final Project project;
@@ -63,16 +64,23 @@ public class SonarLintRulePanel {
     show();
   }
 
-  public void setRuleKey(@Nullable String key) {
-    if (key == null) {
+  public void setRuleKey(@Nullable Issue issue) {
+    if (issue == null) {
       nothingToDisplay(false);
     } else {
-      String description = sonarlint.getDescription(key);
+      String description = sonarlint.getDescription(issue.getRuleKey());
       if (description == null) {
         nothingToDisplay(true);
         return;
       }
-      updateEditor(description);
+
+      StringBuilder builder = new StringBuilder(description.length() + 64);
+
+      builder.append("<h2>")
+        .append(issue.getRuleKey())
+        .append("</h2>")
+        .append(description);
+      updateEditor(builder.toString());
     }
   }
 

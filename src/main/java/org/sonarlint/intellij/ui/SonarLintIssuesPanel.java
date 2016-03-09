@@ -238,7 +238,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
   private void issueTreeSelectionChanged() {
     IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if(selectedNodes.length > 0) {
-      rulePanel.setRuleKey(selectedNodes[0].issue().issue().getRuleKey());
+      rulePanel.setRuleKey(selectedNodes[0].issue().issue());
     } else {
       rulePanel.setRuleKey(null);
     }
