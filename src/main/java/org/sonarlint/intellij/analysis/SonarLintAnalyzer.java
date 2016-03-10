@@ -126,6 +126,10 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
       app.invokeLater(new Runnable() {
         @Override
         public void run() {
+          // check again is we are being closed
+          if(job.module().getProject().isDisposed()) {
+            return;
+          }
           // we save as late as possible, even if job was queued up for a while to get the most up-to-date results
           SonarLintUtils.saveFiles(job.files());
           notifyStart(job);

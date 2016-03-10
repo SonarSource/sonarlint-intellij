@@ -145,7 +145,7 @@ public class SonarLintUtils {
       return false;
     }
 
-    if (module.getProject().isDisposed()) {
+    if (module.isDisposed() || module.getProject().isDisposed()) {
       return false;
     }
 
