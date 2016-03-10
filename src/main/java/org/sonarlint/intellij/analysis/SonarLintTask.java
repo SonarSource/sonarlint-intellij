@@ -68,7 +68,9 @@ public class SonarLintTask extends Task.Backgroundable {
   @Override
   public void run(ProgressIndicator indicator) {
     Project p = job.module().getProject();
+
     SonarLintStatus status = SonarLintStatus.get(p);
+    SonarLintConsole console = SonarLintConsole.get(p);
     SonarLintAnalysisConfigurator configurator = p.getComponent(SonarLintAnalysisConfigurator.class);
 
     try {
@@ -110,7 +112,9 @@ public class SonarLintTask extends Task.Backgroundable {
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {
-        throw e;
+        String msg = "Error running SonarLint analysis";
+        console.error(msg, e);
+        LOGGER.warn(msg, e);
       }
     } finally {
       stopRun(job);
