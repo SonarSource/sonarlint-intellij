@@ -65,7 +65,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
     }
 
     Module m = ModuleUtil.findModuleForFile(file, myProject);
-    if (!SonarLintUtils.shouldAnalyze(file, m)) {
+    if (!SonarLintUtils.shouldAnalyzeAutomatically(file, m)) {
       return;
     }
 

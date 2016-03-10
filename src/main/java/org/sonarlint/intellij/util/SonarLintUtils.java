@@ -27,13 +27,17 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.SourceFolder;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
 
 import com.intellij.openapi.project.Project;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
 import java.util.Collection;
 
@@ -106,6 +110,34 @@ public class SonarLintUtils {
       }
     }
     return false;
+  }
+
+  public static boolean shouldAnalyzeAutomatically(@Nullable VirtualFile file, @Nullable Module module) {
+    if (!shouldAnalyze(file, module)) {
+      return false;
+    }
+
+    // file and module not null here
+    if ("java".equalsIgnoreCase(file.getFileType().getDefaultExtension()) && !isSource(file, module)) {
+      SonarLintConsole.get(module.getProject()).debug("Not automatically analysing java file outside source folder: " + file.getName());
+      return false;
+    }
+
+    return true;
+  }
+
+  public static boolean isSource(VirtualFile file, Module module) {
+    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+    ContentEntry[] entries = moduleRootManager.getContentEntries();
+    for (ContentEntry e : entries) {
+      SourceFolder[] sourceFolders = e.getSourceFolders();
+      for (SourceFolder sourceFolder : sourceFolders) {
+        return VfsUtil.isAncestor(sourceFolder.getFile(), file, false);
+      }
+    }
+
+    return false;
+
   }
 
   public static boolean shouldAnalyze(@Nullable VirtualFile file, @Nullable Module module) {
