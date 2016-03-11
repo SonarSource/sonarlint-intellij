@@ -22,12 +22,17 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.ui.VerticalFlowLayout;
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
-public class SonarLintGlobalConfigurable implements Configurable {
-  private SonarLintGlobalSettingsPanel panel;
+public class SonarLintGlobalConfigurable implements Configurable{
+  private JPanel rootPanel;
+  private SonarQubeServerMgmtPanel serversPanel;
+  private SonarLintGlobalSettingsPanel globalPanel;
+
   private SonarLintGlobalSettings globalSettings;
 
   public SonarLintGlobalConfigurable() {
@@ -43,33 +48,39 @@ public class SonarLintGlobalConfigurable implements Configurable {
   }
 
   @Nullable @Override public JComponent createComponent() {
-    return getPanel().getComponent();
+    return getPanel();
   }
 
   @Override public boolean isModified() {
-    return getPanel().isModified();
+    return  serversPanel.isModified(globalSettings) || globalPanel.isModified();
   }
 
   @Override public void apply() throws ConfigurationException {
-    getPanel().save(globalSettings);
+    serversPanel.save(globalSettings);
+    globalPanel.save(globalSettings);
   }
 
   @Override public void reset() {
-    getPanel().load(globalSettings);
+    serversPanel.load(globalSettings);
+    globalPanel.load(globalSettings);
   }
 
   @Override public void disposeUIResources() {
-    if (panel != null) {
-      panel.getComponent().setVisible(false);
+    if (rootPanel != null) {
+      rootPanel.setVisible(false);
     }
-    panel = null;
+    rootPanel = null;
   }
 
-  private SonarLintGlobalSettingsPanel getPanel() {
-    if (panel == null) {
-      panel = new SonarLintGlobalSettingsPanel(globalSettings);
+  private JPanel getPanel() {
+    if (rootPanel == null) {
+      rootPanel = new JPanel(new VerticalFlowLayout());
+      globalPanel = new SonarLintGlobalSettingsPanel(globalSettings);
+      serversPanel = new SonarQubeServerMgmtPanel(globalSettings);
+      rootPanel.add(globalPanel.getComponent());
+      rootPanel.add(serversPanel.getComponent());
     }
 
-    return panel;
+    return rootPanel;
   }
 }

@@ -21,21 +21,21 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ExportableApplicationComponent;
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
+import com.intellij.openapi.components.*;
 import com.intellij.util.xmlb.XmlSerializerUtil;
-import java.io.File;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintBundle;
+
+import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
 
 @State(name = "SonarLintGlobalSettings", storages = {@Storage(id = "sonarlint", file = StoragePathMacros.APP_CONFIG + "/sonarlint.xml")})
 public final class SonarLintGlobalSettings implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private boolean autoTrigger = true;
+  private List<SonarQubeServer> servers = new LinkedList<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
@@ -86,5 +86,13 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
 
   public void setAutoTrigger(boolean autoTrigger) {
     this.autoTrigger = autoTrigger;
+  }
+
+  public void setSonarQubeServers(List<SonarQubeServer> servers) {
+    this.servers = servers;
+  }
+
+  public List<SonarQubeServer> getServers() {
+    return this.servers;
   }
 }
