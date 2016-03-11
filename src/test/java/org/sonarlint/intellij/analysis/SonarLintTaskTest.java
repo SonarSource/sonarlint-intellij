@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.Issue;
 
@@ -51,6 +52,7 @@ public class SonarLintTaskTest extends SonarTest {
   private ProgressIndicator progress;
   private SonarLintAnalyzer.SonarLintJob job;
   private SonarLintAnalysisConfigurator configurator;
+  private SonarLintConsole console;
 
   @Before
   public void setUp() {
@@ -62,10 +64,12 @@ public class SonarLintTaskTest extends SonarTest {
     progress = mock(ProgressIndicator.class);
     when(progress.isCanceled()).thenReturn(false);
     processor = mock(IssueProcessor.class);
+    console = mock(SonarLintConsole.class);
     task = SonarLintTask.createBackground(processor, job);
     configurator = mock(SonarLintAnalysisConfigurator.class);
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
     super.register(SonarLintAnalysisConfigurator.class, configurator);
+    super.register(SonarLintConsole.class, console);
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();
@@ -94,12 +98,7 @@ public class SonarLintTaskTest extends SonarTest {
     getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
 
     doThrow(new IllegalStateException("error")).when(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
-    try {
-      task.run(progress);
-      fail("should throw exception");
-    } catch(IllegalStateException e) {
-      //expected
-    }
+    task.run(progress);
 
     // never called because of error
     verifyZeroInteractions(processor);
