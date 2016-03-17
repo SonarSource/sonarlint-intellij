@@ -30,6 +30,28 @@ public class SonarLinkHandler extends TooltipLinkHandler {
   @Override
   public String getDescription(@NotNull String refSuffix, @NotNull Editor editor) {
     SonarLintFacade sonarlint = editor.getProject().getComponent(SonarLintFacade.class);
-    return sonarlint.getDescription(refSuffix);
+    String description = sonarlint.getDescription(refSuffix);
+    String name = sonarlint.getRuleName(refSuffix);
+    return transform(refSuffix, name, description);
+  }
+
+  private static String transform(String ruleKey, @Nullable String ruleName, @Nullable String description) {
+    if (description == null || ruleName == null) {
+      StringBuilder sb = new StringBuilder(128);
+      sb.append("<html><body>");
+      sb.append("<code>").append(ruleKey).append("</code></br>");
+      sb.append("</body></html>");
+      return sb.toString();
+    }
+
+    StringBuilder sb = new StringBuilder(description.length() + 256);
+
+    sb.append("<html><body>");
+    sb.append("<h2>").append(ruleName).append("</h2>");
+    sb.append("<code>").append(ruleKey).append("</code></br>");
+    sb.append(description.replaceAll("\n(\\s*\n)+", "\n"));
+    sb.append("</body></html>");
+
+    return sb.toString();
   }
 }

@@ -45,14 +45,40 @@ public class SonarLinkHandlerTest extends SonarTest {
 
     when(editor.getProject()).thenReturn(project);
     when(sonarlint.getDescription(RULE_KEY)).thenReturn("description");
+    when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name");
     register(SonarLintFacade.class, sonarlint);
   }
 
   @Test
   public void testDescription() {
     String desc = handler.getDescription(RULE_KEY, editor);
-    assertThat(desc).isEqualTo("description");
+    assertThat(desc).contains("description");
+    assertThat(desc).contains("name");
+    assertThat(desc).contains(RULE_KEY);
     verify(sonarlint).getDescription(RULE_KEY);
+    verify(sonarlint).getRuleName(RULE_KEY);
+  }
+
+  @Test
+  public void testRuleDoesntExist() {
+    when(sonarlint.getDescription(RULE_KEY)).thenReturn(null);
+    when(sonarlint.getRuleName(RULE_KEY)).thenReturn(null);
+
+    String desc = handler.getDescription(RULE_KEY, editor);
+    assertThat(desc).contains(RULE_KEY);
+    verify(sonarlint).getDescription(RULE_KEY);
+    verify(sonarlint).getRuleName(RULE_KEY);
+  }
+
+  @Test
+  public void testRemoveEmptyLines() {
+    when(sonarlint.getDescription(RULE_KEY)).thenReturn("text1\n\n\ntext2");
+    when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name");
+
+    String desc = handler.getDescription(RULE_KEY, editor);
+    assertThat(desc).contains("text1\ntext2");
+    verify(sonarlint).getDescription(RULE_KEY);
+    verify(sonarlint).getRuleName(RULE_KEY);
   }
 
   @Test
