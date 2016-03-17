@@ -77,8 +77,10 @@ public class SonarLintRulePanel {
       StringBuilder builder = new StringBuilder(description.length() + 64);
 
       builder.append("<h2>")
-        .append(issue.getRuleKey())
+        .append(issue.getRuleName())
         .append("</h2>")
+        .append(issue.getRuleKey())
+        .append("<br />")
         .append(description);
       updateEditor(builder.toString());
     }

@@ -54,7 +54,7 @@ public class IssueNode extends AbstractNode {
     }
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
 
-    renderer.append(issue.issue().getRuleName());
+    renderer.append(issue.issue().getMessage());
 
     renderer.append(" ");
 
