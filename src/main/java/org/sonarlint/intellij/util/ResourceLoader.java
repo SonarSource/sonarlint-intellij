@@ -26,7 +26,8 @@ import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
-import javax.swing.*;
+import javax.swing.Icon;
+import javax.swing.ImageIcon;
 
 @ThreadSafe
 public class ResourceLoader {

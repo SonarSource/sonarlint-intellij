@@ -23,7 +23,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
-import javax.swing.*;
+import javax.swing.Icon;
 
 public class FileNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(FileNode.class);

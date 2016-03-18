@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.ui.ColoredTreeCellRenderer;
-import javax.swing.*;
+import javax.swing.JTree;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 

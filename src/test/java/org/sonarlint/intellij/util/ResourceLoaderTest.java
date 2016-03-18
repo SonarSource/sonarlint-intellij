@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.util;
 
 import java.io.IOException;
-import javax.swing.*;
+import javax.swing.Icon;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

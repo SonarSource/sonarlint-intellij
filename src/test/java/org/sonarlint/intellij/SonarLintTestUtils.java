@@ -22,7 +22,7 @@ package org.sonarlint.intellij;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.impl.ComponentManagerImpl;
 import com.intellij.openapi.project.Project;
-import java.awt.*;
+import java.awt.GraphicsEnvironment;
 import org.sonarlint.intellij.analysis.SonarLintFacade;
 import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
