@@ -19,20 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import javax.swing.Box;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
-
 import com.intellij.ide.OccurenceNavigator;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
@@ -57,6 +43,20 @@ import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.UIUtil;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.Collection;
+import java.util.Map;
+import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import org.sonarlint.intellij.analysis.SonarLintFacade;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.issue.IssuePointer;
@@ -71,17 +71,6 @@ import org.sonarlint.intellij.ui.scope.ProjectScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeCellRenderer;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
-
-import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.Collection;
-import java.util.Map;
 
 public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataProvider, OccurenceNavigator {
   private static final String ID = "SonarLint";
@@ -180,7 +169,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
 
     // set selected element that was last saved, if any
     String savedSelectedScope = PropertiesComponent.getInstance(project).getValue(SELECTED_SCOPE_KEY);
-    if(savedSelectedScope != null) {
+    if (savedSelectedScope != null) {
       for (int i = 0; i < comboModel.getSize(); i++) {
         Object el = comboModel.getElementAt(i);
         if (el.toString().equals(savedSelectedScope)) {
@@ -237,7 +226,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
 
   private void issueTreeSelectionChanged() {
     IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
-    if(selectedNodes.length > 0) {
+    if (selectedNodes.length > 0) {
       rulePanel.setRuleKey(selectedNodes[0].issue().issue());
     } else {
       rulePanel.setRuleKey(null);
@@ -270,7 +259,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
   }
 
   private OccurenceInfo occurrence(IssueNode node) {
-    if(node == null) {
+    if (node == null) {
       return null;
     }
 
@@ -292,7 +281,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     if (path == null) {
       return false;
     }
-    DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
     if (node instanceof IssueNode) {
       return tree.getRowCount() != tree.getRowForPath(path) + 1;
     } else {
@@ -305,7 +294,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     if (path == null) {
       return false;
     }
-    DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
     return (node instanceof IssueNode) && !isFirst(node);
   }
 
@@ -316,7 +305,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
 
   @Override public OccurenceInfo goNextOccurence() {
     TreePath path = tree.getSelectionPath();
-    if(path == null) {
+    if (path == null) {
       return null;
     }
     return occurrence(treeBuilder.getNextIssue((AbstractNode<?>) path.getLastPathComponent()));
@@ -324,7 +313,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
 
   @Override public OccurenceInfo goPreviousOccurence() {
     TreePath path = tree.getSelectionPath();
-    if(path == null) {
+    if (path == null) {
       return null;
     }
     return occurrence(treeBuilder.getPreviousIssue((AbstractNode<?>) path.getLastPathComponent()));

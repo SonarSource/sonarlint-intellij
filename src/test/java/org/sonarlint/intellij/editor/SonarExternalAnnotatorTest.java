@@ -27,6 +27,8 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import java.util.Collection;
+import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -34,14 +36,10 @@ import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
-import static org.mockito.Matchers.any;
-
-import java.util.Collection;
-import java.util.LinkedList;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

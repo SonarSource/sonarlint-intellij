@@ -19,10 +19,9 @@
  */
 package org.sonarlint.intellij.util;
 
-import org.junit.Test;
-
-import javax.swing.Icon;
 import java.io.IOException;
+import javax.swing.*;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -32,7 +31,7 @@ public class ResourceLoaderTest {
   public void severityIcons() throws IOException {
     String[] severities = {"MAJOR", "MINOR", "INFO", "CRITICAL", "BLOCKER"};
 
-    for(String s : severities) {
+    for (String s : severities) {
       assertThat(ResourceLoader.getSeverityIcon(s)).isNotNull();
     }
   }

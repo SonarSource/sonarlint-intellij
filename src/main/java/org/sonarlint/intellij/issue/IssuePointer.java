@@ -22,13 +22,12 @@ package org.sonarlint.intellij.issue;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
-import org.sonarlint.intellij.issue.tracking.Trackable;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
+import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.concurrent.atomic.AtomicLong;
+import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 public class IssuePointer implements Trackable {
   private static final AtomicLong UID_GEN = new AtomicLong();

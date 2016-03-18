@@ -1,4 +1,3 @@
-
 /**
  * SonarLint for IntelliJ IDEA
  * Copyright (C) 2015 SonarSource
@@ -21,12 +20,10 @@
 package org.sonarlint.intellij.analysis;
 
 import com.google.common.base.Preconditions;
-import org.jetbrains.annotations.Nullable;
-
+import com.intellij.openapi.project.Project;
 import java.util.Deque;
 import java.util.LinkedList;
-
-import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * NOT thread safe

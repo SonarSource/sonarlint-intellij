@@ -52,7 +52,6 @@ public class SonarCancelTest extends SonarTest {
     assertThat(status.isRunning()).isTrue();
     assertThat(status.isCanceled()).isFalse();
 
-
     sonarCancel.actionPerformed(event);
 
     assertThat(status.isRunning()).isTrue();

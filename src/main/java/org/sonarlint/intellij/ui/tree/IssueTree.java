@@ -25,20 +25,20 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.treeStructure.Tree;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
-
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.TreePath;
 
 /**
  * Extends {@link Tree} to provide context data for actions
  */
 public class IssueTree extends Tree implements DataProvider {
   private final Project project;
+
   public IssueTree(Project project, TreeModel model) {
     super(model);
     this.project = project;
@@ -58,7 +58,7 @@ public class IssueTree extends Tree implements DataProvider {
       int offset;
 
       RangeMarker range = issue.range();
-      if(range != null) {
+      if (range != null) {
         offset = range.getStartOffset();
       } else {
         offset = 0;

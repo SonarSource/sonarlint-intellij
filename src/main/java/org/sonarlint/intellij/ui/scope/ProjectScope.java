@@ -26,6 +26,7 @@ public class ProjectScope extends IssueTreeScope {
   public ProjectScope() {
     this.condition = new ProjectCondition();
   }
+
   @Override public String getDisplayName() {
     return "Project";
   }

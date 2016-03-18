@@ -26,16 +26,15 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighter;
 import com.intellij.openapi.options.colors.AttributesDescriptor;
 import com.intellij.openapi.options.colors.ColorDescriptor;
 import com.intellij.openapi.options.colors.ColorSettingsPage;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.util.ResourceLoader;
-
-import javax.swing.Icon;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
+import javax.swing.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.util.ResourceLoader;
 
 public class SonarLintColorSettingsPage implements ColorSettingsPage {
   private static final Logger LOGGER = Logger.getInstance(SonarLintColorSettingsPage.class);

@@ -25,12 +25,10 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
-
 import java.io.IOException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
-
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
 
@@ -45,7 +43,7 @@ public class IssueNode extends AbstractNode {
   @Override public void render(ColoredTreeCellRenderer renderer) {
     String severity = issue.issue().getSeverity();
 
-    if(severity != null) {
+    if (severity != null) {
       try {
         renderer.setIcon(ResourceLoader.getSeverityIcon(issue.issue().getSeverity()));
       } catch (IOException e) {
@@ -101,7 +99,7 @@ public class IssueNode extends AbstractNode {
 
   private static String issueCoordinates(@Nonnull IssuePointer issue) {
     RangeMarker range = issue.range();
-    if(range == null) {
+    if (range == null) {
       return "(0, 0) ";
     }
 

@@ -30,11 +30,10 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.util.messages.MessageBusConnection;
+import javax.swing.*;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.messages.StatusListener;
-
-import javax.swing.Box;
 
 public class SonarLintToolPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarLint";

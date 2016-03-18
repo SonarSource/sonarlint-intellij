@@ -22,26 +22,19 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
-import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.SonarLintFacade;
-
-import javax.swing.JComponent;
-import javax.swing.JEditorPane;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
+import java.awt.*;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
-import java.awt.BorderLayout;
-import java.awt.Desktop;
-
-import com.intellij.openapi.project.Project;
-import org.sonarsource.sonarlint.core.client.api.Issue;
+import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.analysis.SonarLintFacade;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 public class SonarLintRulePanel {
   private final Project project;

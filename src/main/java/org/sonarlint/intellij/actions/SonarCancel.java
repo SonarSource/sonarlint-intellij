@@ -20,8 +20,8 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
 import com.intellij.openapi.project.Project;
+import org.sonarlint.intellij.analysis.SonarLintStatus;
 
 public class SonarCancel extends AbstractSonarAction {
   @Override

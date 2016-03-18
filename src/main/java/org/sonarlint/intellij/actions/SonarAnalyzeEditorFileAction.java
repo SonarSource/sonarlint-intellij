@@ -25,12 +25,11 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import java.util.Collections;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
-
-import java.util.Collections;
 
 public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
   @Override

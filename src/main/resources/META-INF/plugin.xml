@@ -42,7 +42,7 @@
     </change-notes>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    <idea-version since-build="141.177" />
+    <idea-version since-build="141.177"/>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
@@ -97,20 +97,20 @@
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
         <toolWindow id="SonarLint" anchor="bottom" icon="/images/onde-sonar-13.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory"/>
-        <projectConfigurable  displayName="SonarLint Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
+        <projectConfigurable displayName="SonarLint Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
         <applicationConfigurable displayName="SonarLint General Settings" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
         <colorSettingsPage implementation="org.sonarlint.intellij.config.SonarLintColorSettingsPage"/>
     </extensions>
 
     <actions>
-        <group id="SonarLint.toolwindow" text="SonarLint" popup="true" />
+        <group id="SonarLint.toolwindow" text="SonarLint" popup="true"/>
 
         <action id="SonarLint.AnalyzeCurrentEditorFile"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
                 text="Analyze this file with SonarLint"
                 description="Run SonarLint analysis on the file selected in the editor"
                 icon="/images/onde-sonar-16-execute.png">
-            <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default" />
+            <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="SonarLint.toolwindow"/>
         </action>

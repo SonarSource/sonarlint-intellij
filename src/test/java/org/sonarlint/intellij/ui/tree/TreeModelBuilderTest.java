@@ -21,15 +21,6 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import org.junit.Before;
-import org.junit.Test;
-import org.sonarlint.intellij.issue.IssuePointer;
-import org.sonarlint.intellij.ui.nodes.AbstractNode;
-import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
-import javax.swing.tree.DefaultTreeModel;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -37,6 +28,14 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.swing.tree.DefaultTreeModel;
+import org.junit.Before;
+import org.junit.Test;
+import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -106,7 +105,7 @@ public class TreeModelBuilderTest {
       when(issue.getRuleKey()).thenReturn("rule" + i);
       when(issue.getRuleName()).thenReturn("rule" + i);
       when(issue.getSeverity()).thenReturn("MAJOR");
-      IssuePointer ip = new IssuePointer(issue,psiFile);
+      IssuePointer ip = new IssuePointer(issue, psiFile);
       ip.setCreationDate(i);
       issueList.add(ip);
     }

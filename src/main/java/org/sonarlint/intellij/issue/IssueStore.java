@@ -26,14 +26,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.messages.MessageBusConnection;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.issue.tracking.Input;
 import org.sonarlint.intellij.issue.tracking.Tracker;
 import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
-
-import javax.annotation.concurrent.ThreadSafe;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Stores issues associated to a {@link PsiElement}, {@link RangeMarker} or  {@link PsiFile}.
@@ -50,8 +53,8 @@ public class IssueStore extends AbstractProjectComponent {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(AnalysisResultsListener.SONARLINT_ANALYSIS_DONE_TOPIC, new AnalysisResultsListener() {
       @Override public void analysisDone(Map<VirtualFile, Collection<IssuePointer>> issuesPerFile) {
-        for(Map.Entry<VirtualFile, Collection<IssuePointer>> e : issuesPerFile.entrySet() ) {
-          if(e.getValue().isEmpty()) {
+        for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : issuesPerFile.entrySet()) {
+          if (e.getValue().isEmpty()) {
             clearFile(e.getKey());
           } else {
             store(e.getKey(), e.getValue());

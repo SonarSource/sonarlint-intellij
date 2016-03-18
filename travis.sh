@@ -8,11 +8,14 @@ function installTravisTools {
   source ~/.local/bin/install
 }
 
+installTravisTools
+
 function strongEcho {
   echo ""
   echo "================ $1 ================="
 }
 
+build_snapshot "SonarSource/sonarlint-core"
 unset DISPLAY
 
 case "$TARGET" in

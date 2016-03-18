@@ -38,13 +38,6 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import com.intellij.pom.java.LanguageLevel;
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
-
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -55,6 +48,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.analysis.IssueListener;
 
 public class SonarLintAnalysisConfigurator {
 

@@ -22,10 +22,10 @@ package org.sonarlint.intellij.ui.scope;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
-import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class CurrentFileScope extends IssueTreeScope {

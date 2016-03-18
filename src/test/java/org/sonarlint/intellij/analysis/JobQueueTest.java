@@ -20,15 +20,13 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.lang.UrlClassLoader;
-import org.junit.Before;
 import com.intellij.openapi.project.Project;
-import org.junit.Test;
-
+import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

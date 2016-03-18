@@ -28,13 +28,12 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
+import java.util.HashSet;
+import java.util.Set;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
-
-import java.util.HashSet;
-import java.util.Set;
 
 public class SonarLintAnalyzer extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(SonarLintAnalyzer.class);
@@ -127,7 +126,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
         @Override
         public void run() {
           // check again is we are being closed
-          if(job.module().getProject().isDisposed()) {
+          if (job.module().getProject().isDisposed()) {
             return;
           }
           // we save as late as possible, even if job was queued up for a while to get the most up-to-date results

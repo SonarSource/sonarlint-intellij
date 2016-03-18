@@ -27,19 +27,16 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.jetbrains.annotations.NotNull;
-
-import javax.annotation.Nullable;
-
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-
 import java.util.Collection;
+import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarLintUtils {
 

@@ -19,12 +19,10 @@
  */
 package org.sonarlint.intellij.editor;
 
-
-import org.sonarsource.sonarlint.core.client.api.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
 import java.util.LinkedList;
 import java.util.List;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.analysis.IssueListener;
 
 public class AccumulatorIssueListener implements IssueListener {
   private final List<Issue> issues = new LinkedList<>();

@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui.scope;
 
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,7 +41,6 @@ public abstract class IssueTreeScope {
   public Condition<VirtualFile> getCondition() {
     return condition;
   }
-
 
   public interface ScopeListener {
     void conditionChanged();

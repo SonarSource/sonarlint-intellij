@@ -121,6 +121,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
   private enum LineAndLineHashKeyFactory implements SearchKeyFactory {
     INSTANCE;
+
     @Override
     public SearchKey create(Trackable t) {
       return new LineAndLineHashKey(t);
@@ -167,6 +168,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
   private enum LineHashAndMessageKeyFactory implements SearchKeyFactory {
     INSTANCE;
+
     @Override
     public SearchKey create(Trackable t) {
       return new LineHashAndMessageKey(t);
@@ -213,6 +215,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
   private enum LineAndMessageKeyFactory implements SearchKeyFactory {
     INSTANCE;
+
     @Override
     public SearchKey create(Trackable t) {
       return new LineAndMessageKey(t);
@@ -255,6 +258,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
   private enum LineHashKeyFactory implements SearchKeyFactory {
     INSTANCE;
+
     @Override
     public SearchKey create(Trackable t) {
       return new LineHashKey(t);

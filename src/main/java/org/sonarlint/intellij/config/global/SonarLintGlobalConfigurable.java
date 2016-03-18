@@ -22,10 +22,9 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
+import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-
-import javax.swing.JComponent;
 
 public class SonarLintGlobalConfigurable implements Configurable {
   private SonarLintGlobalSettingsPanel panel;

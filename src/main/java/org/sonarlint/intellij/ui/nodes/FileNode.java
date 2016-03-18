@@ -21,10 +21,9 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
-
-import javax.swing.Icon;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
+import javax.swing.*;
 
 public class FileNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(FileNode.class);
@@ -59,7 +58,7 @@ public class FileNode extends AbstractNode {
     LOGGER.assertTrue(getIssueCount() > 0);
     String issues;
 
-    if(getIssueCount() > 1) {
+    if (getIssueCount() > 1) {
       issues = " issues)";
     } else {
       issues = " issue)";

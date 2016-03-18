@@ -23,7 +23,6 @@ import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,10 +37,11 @@ public enum SonarLintSeverity {
 
   static {
     cache = new HashMap<>();
-    for(SonarLintSeverity s : SonarLintSeverity.values()) {
+    for (SonarLintSeverity s : SonarLintSeverity.values()) {
       cache.put(s.toString(), s);
     }
   }
+
   private final TextAttributesKey defaultTextAttributes;
   private final ProblemHighlightType highlightType;
   private final HighlightSeverity highlightSeverity;

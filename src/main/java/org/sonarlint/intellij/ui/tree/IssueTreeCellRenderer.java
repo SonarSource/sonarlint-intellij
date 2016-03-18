@@ -20,10 +20,9 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.ui.ColoredTreeCellRenderer;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
-
-import javax.swing.JTree;
 
 public class IssueTreeCellRenderer extends ColoredTreeCellRenderer {
   @Override public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {

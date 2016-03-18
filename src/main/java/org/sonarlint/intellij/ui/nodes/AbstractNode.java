@@ -21,22 +21,21 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.util.ui.UIUtil;
-import org.jetbrains.annotations.NotNull;
-
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.MutableTreeNode;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.MutableTreeNode;
+import org.jetbrains.annotations.NotNull;
 
-public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutableTreeNode  {
+public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutableTreeNode {
   protected int issueCount;
   protected int fileCount;
 
   public abstract void render(ColoredTreeCellRenderer renderer);
 
   public int getIssueCount() {
-    if(issueCount < 0) {
+    if (issueCount < 0) {
       issueCount = 0;
       Enumeration children = super.children();
 
@@ -78,22 +77,22 @@ public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutabl
   }
 
   public int getInsertIdx(T newChild, Comparator<T> comparator) {
-    if(children == null) {
+    if (children == null) {
       insert(newChild, 0);
       return 0;
     }
     int i = Collections.<T>binarySearch(children, newChild, comparator);
-    if(i >=0) {
+    if (i >= 0) {
       throw new IllegalArgumentException("Child already exists");
     }
 
-    int insertIdx = -i -1;
+    int insertIdx = -i - 1;
     insert(newChild, insertIdx);
     return insertIdx;
   }
 
   public int getFileCount() {
-    if(fileCount < 0) {
+    if (fileCount < 0) {
       fileCount = 0;
       Enumeration children = super.children();
 
@@ -113,7 +112,7 @@ public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutabl
   public void setDirty() {
     fileCount = -1;
     issueCount = -1;
-    if(super.getParent() != null) {
+    if (super.getParent() != null) {
       ((AbstractNode) super.getParent()).setDirty();
     }
   }

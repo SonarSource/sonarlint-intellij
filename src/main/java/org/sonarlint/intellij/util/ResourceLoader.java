@@ -21,14 +21,12 @@ package org.sonarlint.intellij.util;
 
 import com.google.common.base.Preconditions;
 import com.google.common.io.ByteStreams;
-
-import javax.annotation.concurrent.ThreadSafe;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.concurrent.ThreadSafe;
+import javax.swing.*;
 
 @ThreadSafe
 public class ResourceLoader {
@@ -48,7 +46,7 @@ public class ResourceLoader {
 
     String resource = "/images/" + name;
     InputStream stream = ResourceLoader.class.getResourceAsStream(resource);
-    if(stream == null) {
+    if (stream == null) {
       throw new IOException("Couldn't find resource: " + resource);
     }
     icon = new ImageIcon(ByteStreams.toByteArray(stream));

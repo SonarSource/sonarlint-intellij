@@ -20,10 +20,9 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import org.junit.Test;
-
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

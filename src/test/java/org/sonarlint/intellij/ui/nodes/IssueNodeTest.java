@@ -22,13 +22,12 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.psi.PsiFile;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
+import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
-import java.io.IOException;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -56,7 +55,7 @@ public class IssueNodeTest {
 
   @Test
   public void testHoursAndSeverity() throws IOException {
-    IssuePointer i = createIssue(System.currentTimeMillis()-3600*1000, "rule");
+    IssuePointer i = createIssue(System.currentTimeMillis() - 3600 * 1000, "rule");
     when(i.issue().getSeverity()).thenReturn("MAJOR");
     node = new IssueNode(i);
     node.render(renderer);
@@ -75,10 +74,10 @@ public class IssueNodeTest {
     assertThat(node.issue()).isEqualTo(i);
   }
 
-  private static IssuePointer createIssue(long date, String ruleName) {
+  private static IssuePointer createIssue(long date, String message) {
     PsiFile file = mock(PsiFile.class);
     Issue i = mock(Issue.class);
-    when(i.getRuleName()).thenReturn(ruleName);
+    when(i.getMessage()).thenReturn(message);
     IssuePointer issue = new IssuePointer(i, file);
     issue.setCreationDate(date);
     return issue;

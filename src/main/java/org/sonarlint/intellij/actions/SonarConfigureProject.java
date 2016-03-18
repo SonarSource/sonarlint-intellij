@@ -21,9 +21,9 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.options.ShowSettingsUtil;
+import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
-import com.intellij.openapi.project.Project;
 
 public class SonarConfigureProject extends AbstractSonarAction {
   @Override

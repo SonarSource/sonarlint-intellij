@@ -23,14 +23,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
-import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLogOutput;
-import org.sonarsource.sonarlint.core.SonarLintClientImpl;
-import org.sonarsource.sonarlint.core.client.api.*;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -42,13 +34,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLogOutput;
+import org.sonarsource.sonarlint.core.SonarLintEngineImpl;
+import org.sonarsource.sonarlint.core.client.api.GlobalConfiguration;
+import org.sonarsource.sonarlint.core.client.api.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.SonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.analysis.AnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.analysis.IssueListener;
 
 public final class DefaultSonarLintFacade extends AbstractProjectComponent implements SonarLintFacade {
 
   private final SonarLintProjectSettings projectSettings;
   private final SonarLintConsole console;
   private boolean started;
-  private SonarLintClient sonarlintClient;
+  private SonarLintEngine sonarlintClient;
 
   public DefaultSonarLintFacade(Project project, SonarLintProjectSettings projectSettings, SonarLintConsole console) {
     super(project);
@@ -64,11 +68,27 @@ public final class DefaultSonarLintFacade extends AbstractProjectComponent imple
   @Nullable
   @Override
   public synchronized String getDescription(String ruleKey) {
-    if(!started) {
+    if (!started) {
       return null;
     }
+    RuleDetails details = sonarlintClient.getRuleDetails(ruleKey);
+    if (details == null) {
+      return null;
+    }
+    return details.getHtmlDescription();
+  }
 
-    return sonarlintClient.getHtmlRuleDescription(ruleKey);
+  @Nullable
+  @Override
+  public synchronized String getRuleName(String ruleKey) {
+    if (!started) {
+      return null;
+    }
+    RuleDetails details = sonarlintClient.getRuleDetails(ruleKey);
+    if (details == null) {
+      return null;
+    }
+    return details.getName();
   }
 
   @Override
@@ -85,7 +105,7 @@ public final class DefaultSonarLintFacade extends AbstractProjectComponent imple
     Map<String, String> props = new HashMap<>();
     props.putAll(additionalProps);
     props.putAll(projectSettings.getAdditionalProperties());
-    AnalysisConfiguration config = new AnalysisConfiguration(baseDir, workDir, inputFiles, props);
+    AnalysisConfiguration config = new AnalysisConfiguration(null, baseDir, workDir, inputFiles, props);
 
     sonarlintClient.setVerbose(projectSettings.isVerboseEnabled());
     if (projectSettings.isVerboseEnabled()) {
@@ -141,8 +161,7 @@ public final class DefaultSonarLintFacade extends AbstractProjectComponent imple
         .build();
 
       console.info("Starting SonarLint " + sonarLintPlugin.getVersion());
-      sonarlintClient = new SonarLintClientImpl();
-      sonarlintClient.start(globalConfiguration);
+      sonarlintClient = new SonarLintEngineImpl(globalConfiguration);
       this.started = true;
     } catch (Exception e) {
       console.error("Unable to start SonarLint", e);

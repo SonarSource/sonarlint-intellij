@@ -24,22 +24,21 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.sonarlint.intellij.issue.IssuePointer;
-import org.sonarlint.intellij.ui.nodes.AbstractNode;
-import org.sonarlint.intellij.ui.nodes.FileNode;
-import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarlint.intellij.ui.nodes.SummaryNode;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import org.sonarlint.intellij.ui.nodes.FileNode;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarlint.intellij.ui.nodes.SummaryNode;
 
 /**
  * Responsible for maintaining the tree model and send change events when needed.
@@ -306,13 +305,13 @@ public class TreeModelBuilder {
     @Override public int compare(@Nonnull IssuePointer o1, @Nonnull IssuePointer o2) {
       int dateCompare = Long.compare(o1.creationDate(), o2.creationDate());
 
-      if(dateCompare != 0) {
+      if (dateCompare != 0) {
         return -dateCompare;
       }
 
       int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.issue().getSeverity(), o2.issue().getSeverity());
 
-      if(severityCompare != 0) {
+      if (severityCompare != 0) {
         return severityCompare;
       }
 

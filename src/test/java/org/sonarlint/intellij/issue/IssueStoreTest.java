@@ -23,13 +23,15 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
-import java.util.*;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;

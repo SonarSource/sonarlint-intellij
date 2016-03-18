@@ -20,12 +20,11 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import org.sonarlint.intellij.ui.nodes.FileNode;
-
-import javax.annotation.CheckForNull;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.ui.nodes.FileNode;
 
 public class IssueTreeIndex {
   private Map<VirtualFile, FileNode> fileNodes = new HashMap<>();

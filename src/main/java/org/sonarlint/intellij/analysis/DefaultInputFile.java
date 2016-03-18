@@ -20,11 +20,10 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
-
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
 
 public class DefaultInputFile implements ClientInputFile {
   private final Path p;

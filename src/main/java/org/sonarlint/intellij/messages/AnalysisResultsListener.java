@@ -21,12 +21,12 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
-import org.sonarlint.intellij.issue.IssuePointer;
-
 import java.util.Collection;
 import java.util.Map;
+import org.sonarlint.intellij.issue.IssuePointer;
 
 public interface AnalysisResultsListener {
   Topic<AnalysisResultsListener> SONARLINT_ANALYSIS_DONE_TOPIC = Topic.create("SonarLint New Issues", AnalysisResultsListener.class);
+
   void analysisDone(Map<VirtualFile, Collection<IssuePointer>> issuesPerFile);
 }

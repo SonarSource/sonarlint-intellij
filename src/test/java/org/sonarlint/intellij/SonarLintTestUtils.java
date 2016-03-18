@@ -21,11 +21,10 @@ package org.sonarlint.intellij;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.impl.ComponentManagerImpl;
-import org.sonarlint.intellij.analysis.SonarLintFacade;
 import com.intellij.openapi.project.Project;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
-import java.awt.GraphicsEnvironment;
+import java.awt.*;
+import org.sonarlint.intellij.analysis.SonarLintFacade;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;

@@ -30,11 +30,11 @@ public class SummaryNode extends AbstractNode {
     int issues = getIssueCount();
     int files = getChildCount();
 
-    if(issues == 0) {
+    if (issues == 0) {
       return "No issues to display";
     }
 
-    return String.format("Found %d %s in %d %s", issues, issues == 1? "issue" : "issues", files, files==1? "file" : "files");
+    return String.format("Found %d %s in %d %s", issues, issues == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
   }
 
   @Override public void render(ColoredTreeCellRenderer renderer) {

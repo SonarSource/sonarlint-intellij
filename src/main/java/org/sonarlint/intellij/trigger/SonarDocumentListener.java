@@ -30,17 +30,16 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.messages.TaskListener;
-import org.sonarlint.intellij.util.SonarLintUtils;
-
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.annotation.concurrent.ThreadSafe;
+import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 @ThreadSafe
 public class SonarDocumentListener extends AbstractProjectComponent implements DocumentListener {
@@ -93,7 +92,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   }
 
   @Override public void documentChanged(DocumentEvent event) {
-    if(!globalSettings.isAutoTrigger()) {
+    if (!globalSettings.isAutoTrigger()) {
       return;
     }
 
@@ -107,8 +106,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     postEvent(file);
   }
 
-  @VisibleForTesting
-  void postEvent(VirtualFile file) {
+  @VisibleForTesting void postEvent(VirtualFile file) {
     eventMap.put(file, System.currentTimeMillis());
   }
 

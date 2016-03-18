@@ -34,6 +34,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
+import java.util.Collection;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,9 +42,7 @@ import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintSeverity;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
-import java.util.Collection;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
   private final boolean unitTest;
@@ -118,7 +117,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
-    if(severity == null) {
+    if (severity == null) {
       return SonarLintTextAttributes.MAJOR;
     }
     switch (severity) {
@@ -190,6 +189,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   public static class AnnotationContext {
     IssueStore store;
+
     AnnotationContext(IssueStore store) {
       this.store = store;
     }

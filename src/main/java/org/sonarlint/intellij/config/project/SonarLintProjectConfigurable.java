@@ -22,10 +22,9 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
+import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-
-import javax.swing.JComponent;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.

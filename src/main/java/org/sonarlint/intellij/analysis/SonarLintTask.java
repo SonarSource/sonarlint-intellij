@@ -22,19 +22,18 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import com.intellij.openapi.project.Project;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintAnalyzer.class);
   private final IssueProcessor processor;
   private final SonarLintAnalyzer.SonarLintJob job;
   private final boolean startInBackground;
-
 
   private SonarLintTask(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job, boolean background) {
     super(job.module().getProject(), "SonarLint Analysis", true);

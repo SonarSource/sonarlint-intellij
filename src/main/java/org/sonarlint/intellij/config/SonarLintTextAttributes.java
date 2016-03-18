@@ -31,11 +31,10 @@ public class SonarLintTextAttributes {
   public static final TextAttributesKey BLOCKER;
   public static final TextAttributesKey INFO;
 
-
   static {
     /**
      * Defaults should be consistent with SonarLintSeverity
-      */
+     */
     CRITICAL = createTextAttributesKey("SONARLINT_CRITICAL", SonarLintSeverity.CRITICAL.defaultTextAttributes());
     MAJOR = createTextAttributesKey("SONARLINT_MAJOR", SonarLintSeverity.MAJOR.defaultTextAttributes());
     MINOR = createTextAttributesKey("SONARLINT_MINOR", SonarLintSeverity.MINOR.defaultTextAttributes());

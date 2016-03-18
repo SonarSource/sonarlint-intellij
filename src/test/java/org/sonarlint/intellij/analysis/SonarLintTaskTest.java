@@ -21,23 +21,20 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
+import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
-import static junit.framework.TestCase.fail;
-import static org.mockito.Matchers.eq;
-
-import java.util.ArrayList;
-import java.util.HashSet;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.analysis.IssueListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

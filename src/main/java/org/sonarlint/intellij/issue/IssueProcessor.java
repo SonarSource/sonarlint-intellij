@@ -28,18 +28,17 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.messages.MessageBus;
-import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
-import org.sonarlint.intellij.messages.AnalysisResultsListener;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.messages.AnalysisResultsListener;
+import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
@@ -90,13 +89,13 @@ public class IssueProcessor extends AbstractProjectComponent {
   private Map<VirtualFile, Collection<IssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed) {
     Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
 
-    for(VirtualFile f : analysed) {
+    for (VirtualFile f : analysed) {
       map.put(f, new ArrayList<IssuePointer>());
     }
 
     for (Issue i : issues) {
       ClientInputFile inputFile = i.getInputFile();
-      if(inputFile == null || inputFile.getPath() == null) {
+      if (inputFile == null || inputFile.getPath() == null) {
         // ignore project level issues
         continue;
       }

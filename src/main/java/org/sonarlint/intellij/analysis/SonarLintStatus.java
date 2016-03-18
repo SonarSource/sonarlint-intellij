@@ -21,9 +21,8 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.messages.StatusListener;
-
 import javax.annotation.concurrent.ThreadSafe;
+import org.sonarlint.intellij.messages.StatusListener;
 
 @ThreadSafe
 public class SonarLintStatus extends AbstractProjectComponent {

@@ -25,18 +25,16 @@ import com.intellij.ui.TableUtil;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.EditableModel;
-import org.jetbrains.annotations.Nullable;
-
-import javax.swing.BorderFactory;
-import javax.swing.JPanel;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableModel;
-import java.awt.BorderLayout;
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
+import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableModel;
+import org.jetbrains.annotations.Nullable;
 
 public class SonarLintProjectSettingsPanel {
   private JPanel rootPane;

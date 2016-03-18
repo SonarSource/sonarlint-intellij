@@ -31,9 +31,8 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
-import org.sonarsource.sonarlint.core.client.api.Issue;
-
 import javax.annotation.Nullable;
+import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
 
 public class IssueMatcher extends AbstractProjectComponent {
   private final PsiManager psiManager;
@@ -93,7 +92,7 @@ public class IssueMatcher extends AbstractProjectComponent {
 
     if (ijStartLine >= doc.getLineCount()) {
       throw new NoMatchException("Start line number (" + ijStartLine + ") larger than lines in file: " + lineCount
-      + " " + issue.getRuleKey());
+        + " " + issue.getRuleKey());
     }
     if (ijEndLine >= doc.getLineCount()) {
       throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount
