@@ -33,10 +33,12 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 public class SonarLintConsole extends AbstractProjectComponent {
 
   private final ConsoleView consoleView;
+  private final SonarLintProjectSettings settings;
 
   public SonarLintConsole(Project project) {
     super(project);
     consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
+    settings = myProject.getComponent(SonarLintProjectSettings.class);
   }
 
   @Override
@@ -50,8 +52,7 @@ public class SonarLintConsole extends AbstractProjectComponent {
   }
 
   public void debug(String msg) {
-    SonarLintProjectSettings settings = myProject.getComponent(SonarLintProjectSettings.class);
-    if (settings != null && settings.isVerboseEnabled()) {
+    if (settings.isVerboseEnabled()) {
       getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
     }
   }

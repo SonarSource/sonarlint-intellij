@@ -17,22 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.editor;
+package org.sonarlint.intellij.messages;
 
-import java.util.LinkedList;
-import java.util.List;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
+import com.intellij.util.messages.Topic;
 
-public class AccumulatorIssueListener implements IssueListener {
-  private final List<Issue> issues = new LinkedList<>();
+public interface GlobalConfigurationListener {
+  Topic<GlobalConfigurationListener> SONARLINT_GLOBAL_CONFIG_TOPIC = Topic.create("Global configuration changed", GlobalConfigurationListener.class);
 
-  public List<Issue> getIssues() {
-    return issues;
-  }
-
-  @Override
-  public void handle(Issue issue) {
-    issues.add(issue);
-  }
+  void changed();
 }

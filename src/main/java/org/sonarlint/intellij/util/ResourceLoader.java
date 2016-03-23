@@ -31,6 +31,11 @@ import javax.swing.ImageIcon;
 
 @ThreadSafe
 public class ResourceLoader {
+  public static final String ICON_SONARQUBE_16 = "onde-sonar-16.png";
+  public static final String ICON_SONARQUBE_32 = "onde-sonar-32.png";
+  public static final String ICON_SONARLINT_16 = "ico-sonarlint-16.png";
+  public static final String ICON_SONARLINT_32 = "ico-sonarlint-32.png";
+
   private static Map<String, Icon> iconCache = new ConcurrentHashMap<>();
 
   private ResourceLoader() {

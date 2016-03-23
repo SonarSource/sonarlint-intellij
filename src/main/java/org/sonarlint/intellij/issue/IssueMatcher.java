@@ -32,7 +32,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class IssueMatcher extends AbstractProjectComponent {
   private final PsiManager psiManager;

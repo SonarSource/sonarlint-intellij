@@ -17,9 +17,10 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.global;
+package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.util.net.HttpConfigurable;
 import java.net.InetSocketAddress;
@@ -28,16 +29,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarsource.sonarlint.core.SonarLintEngineImpl;
-import org.sonarsource.sonarlint.core.client.api.GlobalConfiguration;
-import org.sonarsource.sonarlint.core.client.api.SonarLintEngine;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal {
+  private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
+  private final SonarQubeServer server;
   private Exception exception;
   private ValidationResult result;
-  private SonarQubeServer server;
 
   public ConnectionTestTask(SonarQubeServer server) {
     super(null, "Test connection to SonarQube server", true);
@@ -52,9 +55,8 @@ public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal
 
     try {
       Path tmp = Files.createTempDirectory("sonarlint-test");
-      GlobalConfiguration globalConfig = GlobalConfiguration.builder()
+      ConnectedGlobalConfiguration globalConfig = ConnectedGlobalConfiguration.builder()
         .setServerId("test")
-        .setVerbose(true)
         .setWorkDir(tmp)
         .build();
 
@@ -67,10 +69,11 @@ public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal
       configureProxy(serverConfigBuilder);
       ServerConfiguration serverConfig = serverConfigBuilder.build();
 
-      SonarLintEngine core = new SonarLintEngineImpl(globalConfig);
-      result = core.validateCredentials(serverConfig);
+      ConnectedSonarLintEngine core = new ConnectedSonarLintEngineImpl(globalConfig);
+      result = core.validateConnection(serverConfig);
       return;
     } catch (Exception e) {
+      LOGGER.error("Connection test failed", e);
       exception = e;
       return;
     }

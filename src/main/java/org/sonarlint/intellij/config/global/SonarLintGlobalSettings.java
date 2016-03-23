@@ -92,7 +92,7 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
     this.servers = servers;
   }
 
-  public List<SonarQubeServer> getServers() {
+  public List<SonarQubeServer> getSonarQubeServers() {
     return this.servers;
   }
 }

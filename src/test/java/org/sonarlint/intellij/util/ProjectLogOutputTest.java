@@ -24,20 +24,20 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.LogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class SonarLogOutputTest {
-  private SonarLogOutput logOutput;
+public class ProjectLogOutputTest {
+  private ProjectLogOutput logOutput;
   private SonarLintConsole mockConsole;
 
   @Before
   public void setUp() {
     mockConsole = mock(SonarLintConsole.class);
-    logOutput = new SonarLogOutput(mockConsole);
+    logOutput = new ProjectLogOutput(mockConsole);
   }
 
   @After

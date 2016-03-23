@@ -56,7 +56,7 @@ public class SonarQubeServerEditorPanelTest extends SonarTest {
     assertThat(server.getPassword()).isEqualTo("pass");
     assertThat(server.getName()).isEqualTo("name");
     assertThat(server.getLogin()).isEqualTo("login");
-    assertThat(server.getServerId()).isEqualTo("id");
+    assertThat(server.getStorageId()).isEqualTo("id");
 
     verify(consumer).consume(server);
     verifyNoMoreInteractions(consumer);
@@ -71,7 +71,7 @@ public class SonarQubeServerEditorPanelTest extends SonarTest {
 
     verify(spy).setName("name");
     verify(spy).setHostUrl("host");
-    verify(spy).setServerId("id");
+    verify(spy).setStorageId("id");
     verify(spy).setLogin("login");
     verify(spy).setPassword("pass");
   }
@@ -89,7 +89,7 @@ public class SonarQubeServerEditorPanelTest extends SonarTest {
     server.setPassword("pass");
     server.setName("name");
     server.setLogin("login");
-    server.setServerId("id");
+    server.setStorageId("id");
     return server;
   }
 }

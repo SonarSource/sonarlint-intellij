@@ -34,6 +34,7 @@ import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
+import java.util.Map;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -59,6 +60,14 @@ public class SonarLintUtils {
       throw new IllegalStateException("No basedir for module " + module);
     }
     return contentRoots[0];
+  }
+
+  public static String propsToString(Map<String, String> props) {
+    StringBuilder builder = new StringBuilder();
+    for (Object key : props.keySet()) {
+      builder.append(key).append("=").append(props.get(key.toString())).append("\n");
+    }
+    return builder.toString();
   }
 
   public static boolean saveFiles(final Collection<VirtualFile> virtualFiles) {

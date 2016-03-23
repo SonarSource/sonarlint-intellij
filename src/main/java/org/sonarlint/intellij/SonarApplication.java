@@ -28,6 +28,8 @@ import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
+import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.log.SonarLintLogging;
 
 public class SonarApplication implements ApplicationComponent {
   private IdeaPluginDescriptor plugin;

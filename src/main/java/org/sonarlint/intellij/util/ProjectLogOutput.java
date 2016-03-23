@@ -17,22 +17,32 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.editor;
+package org.sonarlint.intellij.util;
 
-import java.util.LinkedList;
-import java.util.List;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
+import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-public class AccumulatorIssueListener implements IssueListener {
-  private final List<Issue> issues = new LinkedList<>();
+public class ProjectLogOutput implements LogOutput {
+  private SonarLintConsole console;
 
-  public List<Issue> getIssues() {
-    return issues;
+  public ProjectLogOutput(SonarLintConsole console) {
+    this.console = console;
   }
 
   @Override
-  public void handle(Issue issue) {
-    issues.add(issue);
+  public void log(String msg, Level level) {
+    switch (level) {
+      case TRACE:
+      case DEBUG:
+        console.debug(msg);
+        break;
+      case ERROR:
+        console.error(msg);
+        break;
+      case INFO:
+      case WARN:
+      default:
+        console.info(msg);
+    }
   }
 }

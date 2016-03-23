@@ -17,21 +17,18 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis;
+package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.components.ProjectComponent;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
-import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.analysis.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
-public interface SonarLintFacade extends ProjectComponent {
+public interface SonarLintFacade {
   void startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps);
 
   @Nullable String getDescription(String ruleKey);
 
   @Nullable String getRuleName(String ruleKey);
-
-  void stop();
 }

@@ -51,9 +51,11 @@ import java.util.regex.Pattern;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.analysis.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 public class SonarLintAnalysisConfigurator {
 
@@ -72,7 +74,7 @@ public class SonarLintAnalysisConfigurator {
   public void analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintFacade runner = p.getComponent(SonarLintFacade.class);
+    SonarLintServerManager core = p.getComponent(SonarLintServerManager.class);
 
     // Configure plugin properties
     Map<String, String> pluginProps = new HashMap<>();
@@ -84,8 +86,14 @@ public class SonarLintAnalysisConfigurator {
 
     // Analyze
     long start = System.currentTimeMillis();
+
+    SonarLintFacade facade = core.getFacadeForAnalysis(module.getProject());
+    if (facade == null) {
+      console.info("Failed to create SonarLint engine for module '" + module.getName() + "'");
+      return;
+    }
     console.info("Start SonarLint analysis on " + p.getName() + "...");
-    runner.startAnalysis(inputFiles, listener, pluginProps);
+    facade.startAnalysis(inputFiles, listener, pluginProps);
     console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
   }
 

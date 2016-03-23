@@ -67,7 +67,7 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
 
   @Nullable @Override public Icon getIcon() {
     try {
-      return ResourceLoader.getIcon("onde-sonar-16.png");
+      return ResourceLoader.getIcon(ResourceLoader.ICON_SONARLINT_16);
     } catch (IOException e) {
       LOGGER.error("Couldn't load icon", e);
     }

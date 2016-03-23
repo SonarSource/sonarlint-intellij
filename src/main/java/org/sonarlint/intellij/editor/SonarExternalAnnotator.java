@@ -42,7 +42,7 @@ import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintSeverity;
-import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
   private final boolean unitTest;

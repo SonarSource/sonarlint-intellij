@@ -40,6 +40,8 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
 
   private boolean verboseEnabled = false;
   private Map<String, String> additionalProperties = new LinkedHashMap<>();
+  private String serverId = null;
+  private String projectKey = null;
 
   /**
    * Constructor called by the XML deserialization (no args).
@@ -73,6 +75,14 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
     this.verboseEnabled = verboseEnabled;
   }
 
+  public String getProjectKey() {
+    return projectKey;
+  }
+
+  public void setProjectKey(String projectKey) {
+    this.projectKey = projectKey;
+  }
+
   public Map<String, String> getAdditionalProperties() {
     return new LinkedHashMap<>(additionalProperties);
   }
@@ -80,5 +90,13 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   public void setAdditionalProperties(Map<String, String> additionalProperties) {
     this.additionalProperties.clear();
     this.additionalProperties.putAll(additionalProperties);
+  }
+
+  public String getServerId() {
+    return serverId;
+  }
+
+  public void setServerId(String serverId) {
+    this.serverId = serverId;
   }
 }

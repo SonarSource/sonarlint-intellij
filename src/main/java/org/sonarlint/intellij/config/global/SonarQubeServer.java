@@ -31,7 +31,6 @@ public class SonarQubeServer {
   private String name;
   private String login;
   private String password;
-  private String serverId;
   private boolean enableProxy;
 
   public SonarQubeServer() {
@@ -40,7 +39,6 @@ public class SonarQubeServer {
 
   public SonarQubeServer(SonarQubeServer toCopy) {
     setHostUrl(toCopy.getHostUrl());
-    setServerId(toCopy.getServerId());
     setPassword(toCopy.getPassword());
     setToken(toCopy.getToken());
     setLogin(toCopy.getLogin());
@@ -54,7 +52,6 @@ public class SonarQubeServer {
     SonarQubeServer other = (SonarQubeServer)o;
 
     return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
-      Comparing.equal(getServerId(), other.getServerId()) &&
       Comparing.equal(getPassword(), other.getPassword()) &&
       Comparing.equal(getToken(), other.getToken()) &&
       Comparing.equal(getLogin(), other.getLogin()) &&
@@ -140,11 +137,4 @@ public class SonarQubeServer {
     this.name = name;
   }
 
-  public String getServerId() {
-    return serverId;
-  }
-
-  public void setServerId(String serverId) {
-    this.serverId = serverId;
-  }
 }

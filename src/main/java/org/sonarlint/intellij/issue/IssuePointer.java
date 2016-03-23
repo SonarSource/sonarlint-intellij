@@ -27,7 +27,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
-import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class IssuePointer implements Trackable {
   private static final AtomicLong UID_GEN = new AtomicLong();

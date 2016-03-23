@@ -23,7 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
 public class DefaultInputFile implements ClientInputFile {
   private final Path p;

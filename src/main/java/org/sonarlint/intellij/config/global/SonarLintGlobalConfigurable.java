@@ -19,16 +19,21 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.ui.VerticalFlowLayout;
+import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.messages.StatusListener;
 
-public class SonarLintGlobalConfigurable implements Configurable{
+public class SonarLintGlobalConfigurable implements Configurable {
+  private final GlobalConfigurationListener changeListener;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
   private SonarLintGlobalSettingsPanel globalPanel;
@@ -36,7 +41,9 @@ public class SonarLintGlobalConfigurable implements Configurable{
   private SonarLintGlobalSettings globalSettings;
 
   public SonarLintGlobalConfigurable() {
-    globalSettings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
+    Application app = ApplicationManager.getApplication();
+    this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
+    this.changeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC);
   }
 
   @Nls @Override public String getDisplayName() {
@@ -58,11 +65,17 @@ public class SonarLintGlobalConfigurable implements Configurable{
   @Override public void apply() throws ConfigurationException {
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
+
+    changeListener.changed();
   }
 
   @Override public void reset() {
-    serversPanel.load(globalSettings);
-    globalPanel.load(globalSettings);
+    if(serversPanel != null) {
+      serversPanel.load(globalSettings);
+    }
+    if(globalPanel != null) {
+      globalPanel.load(globalSettings);
+    }
   }
 
   @Override public void disposeUIResources() {
@@ -74,11 +87,11 @@ public class SonarLintGlobalConfigurable implements Configurable{
 
   private JPanel getPanel() {
     if (rootPanel == null) {
-      rootPanel = new JPanel(new VerticalFlowLayout());
+      rootPanel = new JPanel(new BorderLayout());
       globalPanel = new SonarLintGlobalSettingsPanel(globalSettings);
       serversPanel = new SonarQubeServerMgmtPanel(globalSettings);
-      rootPanel.add(globalPanel.getComponent());
-      rootPanel.add(serversPanel.getComponent());
+      rootPanel.add(globalPanel.getComponent(), BorderLayout.NORTH);
+      rootPanel.add(serversPanel.getComponent(), BorderLayout.CENTER);
     }
 
     return rootPanel;

@@ -17,32 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+@ParametersAreNonnullByDefault
+package org.sonarlint.intellij.core;
 
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.LogOutput;
-
-public class SonarLogOutput implements LogOutput {
-  private final SonarLintConsole console;
-
-  public SonarLogOutput(SonarLintConsole console) {
-    this.console = console;
-  }
-
-  @Override
-  public void log(String msg, Level level) {
-    switch (level) {
-      case TRACE:
-      case DEBUG:
-        console.debug(msg);
-        break;
-      case ERROR:
-        console.error(msg);
-        break;
-      case INFO:
-      case WARN:
-      default:
-        console.info(msg);
-    }
-  }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

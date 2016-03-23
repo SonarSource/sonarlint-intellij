@@ -37,8 +37,8 @@ import java.util.Map;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.analysis.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);

@@ -30,21 +30,23 @@ import com.intellij.ui.components.JBTextField;
 import com.intellij.util.Consumer;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.ui.FormBuilder;
-
 import java.awt.Component;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
-import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
+import org.sonarlint.intellij.core.ConnectionTestTask;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 import static java.awt.GridBagConstraints.NONE;
-import static java.awt.GridBagConstraints.WEST;
 
 public class SonarQubeServerEditorPanel implements Disposable {
   private JBLabel urlLabel;
@@ -52,9 +54,6 @@ public class SonarQubeServerEditorPanel implements Disposable {
 
   private JBLabel nameLabel;
   private JBTextField nameText;
-
-  private JBLabel idLabel;
-  private JBTextField idText;
 
   private JBTextField loginText;
   private JBLabel loginLabel;
@@ -80,14 +79,8 @@ public class SonarQubeServerEditorPanel implements Disposable {
     nameLabel.setDisplayedMnemonic('N');
     nameText = new JBTextField();
     nameText.setText(server.getName());
-    nameText.getEmptyText().setText("");
+    nameText.setEditable(false);
     nameLabel.setLabelFor(nameText);
-
-    idLabel = new JBLabel("Server ID:", SwingConstants.RIGHT);
-    idText = new JBTextField();
-    idText.setText(server.getServerId());
-    idText.getEmptyText().setText("");
-    idLabel.setLabelFor(idText);
 
     urlLabel = new JBLabel("Server URL:", SwingConstants.RIGHT);
     urlLabel.setDisplayedMnemonic('U');
@@ -140,7 +133,6 @@ public class SonarQubeServerEditorPanel implements Disposable {
     installListener(loginText);
     installListener(passwordText);
     installListener(enableProxy);
-    installListener(idText);
 
     return p;
   }
@@ -150,7 +142,6 @@ public class SonarQubeServerEditorPanel implements Disposable {
       .setAlignLabelOnRight(true)
       .setFormLeftIndent(5)
       .addLabeledComponent(nameLabel, nameText)
-      .addLabeledComponent(idLabel, idText)
       .addLabeledComponent(urlLabel, urlText)
       .addLabeledComponent(loginLabel, loginText)
       .addLabeledComponent(passwordLabel, passwordText)
@@ -180,9 +171,9 @@ public class SonarQubeServerEditorPanel implements Disposable {
     ProgressManager.getInstance().run(test);
     ValidationResult r = test.result();
 
-    if(test.getException() != null) {
+    if (test.getException() != null) {
       Messages.showErrorDialog(testButton, "Error testing connection: " + test.getException().getMessage(), "Error");
-    } else if(r.status()) {
+    } else if (r.success()) {
       Messages.showMessageDialog(testButton, r.message(), "Connection", Messages.getInformationIcon());
     } else {
       Messages.showErrorDialog(testButton, r.message(), "Connection failed");
@@ -208,7 +199,6 @@ public class SonarQubeServerEditorPanel implements Disposable {
 
   void apply() {
     server.setName(nameText.getText().trim());
-    server.setServerId(idText.getText().trim());
     server.setHostUrl(urlText.getText().trim());
     server.setLogin(loginText.getText().trim());
     server.setPassword(new String(passwordText.getPassword()));
@@ -226,7 +216,7 @@ public class SonarQubeServerEditorPanel implements Disposable {
   private class CustomFormBuilder extends FormBuilder {
     @Override
     protected int getFill(JComponent component) {
-      if(component instanceof JButton) {
+      if (component instanceof JButton) {
         return NONE;
       }
       return super.getFill(component);

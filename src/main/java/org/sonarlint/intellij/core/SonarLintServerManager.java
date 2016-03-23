@@ -1,0 +1,239 @@
+/**
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
+package org.sonarlint.intellij.core;
+
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBusConnection;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.CheckForNull;
+import org.apache.http.annotation.ThreadSafe;
+import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
+import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+
+@ThreadSafe
+public class SonarLintServerManager implements ApplicationComponent {
+  private Map<String, ConnectedSonarLintEngine> engines;
+  private StandaloneSonarLintEngine standalone;
+  private MessageBusConnection bus;
+  private Set<String> configuredStorageIds;
+  private GlobalLogOutput globalLogOutput;
+
+  public SonarLintServerManager(GlobalLogOutput globalLogOutput) {
+    this.globalLogOutput = globalLogOutput;
+  }
+
+  @Override
+  public void initComponent() {
+    configuredStorageIds = new HashSet<>();
+    reloadServerIds();
+    engines = new HashMap<>();
+    bus = ApplicationManager.getApplication().getMessageBus().connect();
+    bus.subscribe(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC, new GlobalConfigurationListener() {
+      @Override public void changed() {
+        clean();
+      }
+    });
+  }
+
+  /**
+   * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
+   */
+  public synchronized void clean() {
+    reloadServerIds();
+    Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = engines.entrySet().iterator();
+
+    while (it.hasNext()) {
+      Map.Entry<String, ConnectedSonarLintEngine> e = it.next();
+      if (!configuredStorageIds.contains(e.getKey())) {
+        stopInThread(e.getValue());
+        it.remove();
+      }
+    }
+  }
+
+  public synchronized ConnectedSonarLintEngine getConnectedEngine(String serverId) {
+    if (!engines.containsKey(serverId)) {
+      ConnectedSonarLintEngine engine = createEngine(serverId);
+
+      engines.put(serverId, engine);
+    }
+
+    return engines.get(serverId);
+  }
+
+  public synchronized StandaloneSonarLintEngine getStandaloneEngine() {
+    if (standalone == null) {
+      standalone = createEngine();
+    }
+    return standalone;
+  }
+
+  /**
+   * Will create a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
+   * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an IllegalStateException.
+   */
+  @CheckForNull
+  public synchronized SonarLintFacade getFacadeForAnalysis(Project project) {
+
+    SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
+    String serverId = projectSettings.getServerId();
+    String projectKey = projectSettings.getProjectKey();
+
+    if (projectKey != null && serverId != null) {
+      return createConnectedFacade(project, serverId, projectKey);
+    }
+
+    return new StandaloneSonarLintFacade(project, getStandaloneEngine());
+  }
+
+  private static void stopInThread(final ConnectedSonarLintEngine engine) {
+    new Thread("stop-sonarlint-engine") {
+      @Override
+      public void run() {
+        engine.stop(false);
+      }
+    }.start();
+  }
+
+  private SonarLintFacade createConnectedFacade(Project project, String serverId, String projectKey) {
+    if (!configuredStorageIds.contains(serverId)) {
+      SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
+      throw new IllegalStateException("Invalid server id:" + serverId);
+    }
+
+    ConnectedSonarLintEngine engine;
+    if (engines.containsKey(serverId)) {
+      engine = engines.get(serverId);
+    } else {
+      engine = createEngine(serverId);
+      if (engine.getState() != ConnectedSonarLintEngine.State.UPDATED) {
+        SonarLintProjectNotifications.get(project).notifyServerNotUpdated();
+        throw new IllegalStateException("Server not updated" + serverId);
+      }
+    }
+    // Check if module is not updated
+    //TODO is it too heavy?
+
+    return new ConnectedSonarLintFacade(engine, project, projectKey);
+  }
+
+  private StandaloneSonarLintEngineImpl createEngine() {
+    /*
+     * Some components in the container use the context classloader to find resources. For example, the ServiceLoader uses it by default
+     * to find services declared by some libs.
+     */
+    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
+
+    try {
+      URL[] plugins = loadPlugins();
+
+      StandaloneGlobalConfiguration globalConfiguration = StandaloneGlobalConfiguration.builder()
+        .setLogOutput(globalLogOutput)
+        .addPlugins(plugins)
+        .build();
+
+      return new StandaloneSonarLintEngineImpl(globalConfiguration);
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    } finally {
+      Thread.currentThread().setContextClassLoader(cl);
+    }
+  }
+
+  private ConnectedSonarLintEngine createEngine(String serverId) {
+    ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
+      .setLogOutput(globalLogOutput)
+      .setServerId(serverId)
+      .build();
+
+    // it will also start it
+    return new ConnectedSonarLintEngineImpl(config);
+  }
+
+  private URL[] loadPlugins() throws IOException, URISyntaxException {
+    URL pluginsDir = this.getClass().getClassLoader().getResource("plugins");
+
+    if (pluginsDir == null) {
+      throw new IllegalStateException("Couldn't find plugins");
+    }
+
+    List<URL> pluginsUrls = new ArrayList<>();
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()))) {
+      for (Path path : directoryStream) {
+        //console.debug("Found plugin: " + path.getFileName().toString());
+        pluginsUrls.add(path.toUri().toURL());
+      }
+    }
+    return pluginsUrls.toArray(new URL[pluginsUrls.size()]);
+  }
+
+  private void reloadServerIds() {
+    SonarLintGlobalSettings settings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
+    configuredStorageIds.clear();
+    for (SonarQubeServer s : settings.getSonarQubeServers()) {
+      configuredStorageIds.add(s.getName());
+    }
+  }
+
+  @Override
+  public void disposeComponent() {
+    bus.disconnect();
+    for (ConnectedSonarLintEngine e : engines.values()) {
+      e.stop(false);
+    }
+    engines.clear();
+    if (standalone != null) {
+      standalone.stop();
+      standalone = null;
+    }
+  }
+
+  @NotNull
+  @Override
+  public String getComponentName() {
+    return "SonarLintServerManager";
+  }
+}

@@ -23,7 +23,7 @@ import com.intellij.openapi.editor.Editor;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.analysis.SonarLintFacade;
+import org.sonarlint.intellij.core.SonarLintFacade;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

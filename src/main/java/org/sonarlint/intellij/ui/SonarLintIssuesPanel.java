@@ -66,8 +66,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import org.sonarlint.intellij.analysis.SonarLintFacade;
+import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
@@ -99,6 +100,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     super(false, true);
     this.project = project;
     this.issueStore = project.getComponent(IssueStore.class);
+    SonarLintServerManager manager = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
 
     addToolbar();
 
@@ -107,7 +109,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements DataP
     issuesPanel.add(createScopePanel(), BorderLayout.NORTH);
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
 
-    rulePanel = new SonarLintRulePanel(project, project.getComponent(SonarLintFacade.class));
+    rulePanel = new SonarLintRulePanel(project, manager);
 
     JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
       rulePanel.getPanel(),
