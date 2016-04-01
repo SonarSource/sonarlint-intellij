@@ -138,7 +138,12 @@ public class SonarLintUtils {
     for (ContentEntry e : entries) {
       SourceFolder[] sourceFolders = e.getSourceFolders();
       for (SourceFolder sourceFolder : sourceFolders) {
-        return VfsUtil.isAncestor(sourceFolder.getFile(), file, false);
+        if(sourceFolder.getFile() == null) {
+          continue;
+        }
+        if(VfsUtil.isAncestor(sourceFolder.getFile(), file, false)) {
+          return true;
+        }
       }
     }
 
