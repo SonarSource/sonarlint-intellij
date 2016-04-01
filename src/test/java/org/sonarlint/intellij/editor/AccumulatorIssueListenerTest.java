@@ -21,7 +21,7 @@ package org.sonarlint.intellij.editor;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

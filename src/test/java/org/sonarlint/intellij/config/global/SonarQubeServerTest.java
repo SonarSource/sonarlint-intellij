@@ -36,7 +36,6 @@ public class SonarQubeServerTest {
   public void testRoundTrip() {
     server.setHostUrl("host");
     server.setPassword("pass");
-    server.setStorageId("id");
     server.setToken("token");
     server.setName("name");
     server.setLogin("login");
@@ -45,7 +44,6 @@ public class SonarQubeServerTest {
     assertThat(server.getToken()).isEqualTo("token");
     assertThat(server.getLogin()).isEqualTo("login");
     assertThat(server.getPassword()).isEqualTo("pass");
-    assertThat(server.getStorageId()).isEqualTo("id");
     assertThat(server.getHostUrl()).isEqualTo("host");
   }
 

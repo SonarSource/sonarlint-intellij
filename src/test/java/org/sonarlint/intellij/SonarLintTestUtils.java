@@ -24,7 +24,7 @@ import com.intellij.openapi.components.impl.ComponentManagerImpl;
 import com.intellij.openapi.project.Project;
 import java.awt.GraphicsEnvironment;
 import org.sonarlint.intellij.core.SonarLintFacade;
-import org.sonarsource.sonarlint.core.client.api.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
