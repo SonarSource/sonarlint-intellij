@@ -35,7 +35,7 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener;
  * Coordinates creation of models and visual components from persisted settings.
  * Transforms objects as needed and keeps track of changes.
  */
-public class SonarLintProjectConfigurable implements Configurable, Configurable.NoMargin {
+public class SonarLintProjectConfigurable implements Configurable, Configurable.NoMargin, Configurable.NoScroll {
 
   private final Project project;
   private final SonarLintProjectSettings projectSettings;

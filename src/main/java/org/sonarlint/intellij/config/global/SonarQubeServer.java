@@ -19,10 +19,13 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.google.common.base.Objects;
+import com.google.common.hash.HashCode;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.Transient;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 
 public class SonarQubeServer {
   private String hostUrl;
@@ -34,7 +37,7 @@ public class SonarQubeServer {
   private boolean enableProxy;
 
   public SonarQubeServer() {
-
+    // no args
   }
 
   public SonarQubeServer(SonarQubeServer toCopy) {
@@ -48,7 +51,9 @@ public class SonarQubeServer {
 
   @Override
   public boolean equals(Object o){
-    if (!(o instanceof SonarQubeServer)) return false;
+    if (!(o instanceof SonarQubeServer)) {
+      return false;
+    }
     SonarQubeServer other = (SonarQubeServer)o;
 
     return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
@@ -57,6 +62,11 @@ public class SonarQubeServer {
       Comparing.equal(getLogin(), other.getLogin()) &&
       Comparing.equal(getName(), other.getName()) &&
       Comparing.equal(enableProxy(), other.enableProxy());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getName(), enableProxy);
   }
 
   public String getLogin() {
@@ -88,8 +98,7 @@ public class SonarQubeServer {
   public void setEncodedToken(String token) {
     try {
       setToken(PasswordUtil.decodePassword(token));
-    }
-    catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       // do nothing
     }
   }
@@ -115,8 +124,7 @@ public class SonarQubeServer {
   public void setEncodedPassword(String password) {
     try {
       setPassword(PasswordUtil.decodePassword(password));
-    }
-    catch (NumberFormatException e) {
+    } catch (NumberFormatException e) {
       // do nothing
     }
   }

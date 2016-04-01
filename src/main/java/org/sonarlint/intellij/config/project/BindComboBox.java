@@ -47,7 +47,7 @@ public class BindComboBox {
   private JTextField textField;
 
   public BindComboBox() {
-    textField = new JTextField("",9);
+    textField = new JTextField("", 9);
     textField.setBorder(null);
     textField.setFocusable(true);
     textField.addFocusListener(new FocusListener() {
@@ -57,7 +57,7 @@ public class BindComboBox {
       }
 
       @Override public void focusLost(FocusEvent e) {
-
+        //nothing to do
       }
     });
     textField.addKeyListener(new KeyAdapter() {
@@ -65,8 +65,6 @@ public class BindComboBox {
         search(textField.getText());
       }
     });
-
-
 
     modules = new LinkedList<>();
 
@@ -99,7 +97,7 @@ public class BindComboBox {
 
   private void search(String text) {
     comboBox.removeAllItems();
-    for(RemoteModule mod: searchIndex.search(text)) {
+    for (RemoteModule mod : searchIndex.search(text)) {
       comboBox.addItem(mod);
     }
   }
@@ -109,17 +107,15 @@ public class BindComboBox {
     return null;
   }
 
-
   private class AutoCompleteComboBoxEditor implements ComboBoxEditor {
-    public AutoCompleteComboBoxEditor() {
-    }
-
-    @Override public Component getEditorComponent() {
+    @Override
+    public Component getEditorComponent() {
       return textField;
     }
 
-    @Override public void setItem(Object obj) {
-      if(obj == null) {
+    @Override
+    public void setItem(Object obj) {
+      if (obj == null) {
         textField.setText("");
       } else {
         RemoteModule mod = (RemoteModule) obj;
@@ -127,19 +123,22 @@ public class BindComboBox {
       }
     }
 
-    @Override public Object getItem() {
+    @Override
+    public Object getItem() {
       return textField.getText();
     }
 
-    @Override public void selectAll() {
+    @Override
+    public void selectAll() {
       textField.selectAll();
       textField.requestFocus();
     }
 
+    @Override
     public void addActionListener(ActionListener l) {
       textField.addActionListener(l);
     }
-
+    @Override
     public void removeActionListener(ActionListener l) {
       textField.removeActionListener(l);
     }

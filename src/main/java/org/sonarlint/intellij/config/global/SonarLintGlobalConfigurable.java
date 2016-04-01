@@ -23,16 +23,14 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.openapi.ui.VerticalFlowLayout;
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.messages.StatusListener;
 
-public class SonarLintGlobalConfigurable implements Configurable {
+public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private final GlobalConfigurationListener changeListener;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;

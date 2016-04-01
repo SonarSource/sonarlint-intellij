@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.progress.ProgressManager;
@@ -69,6 +70,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import static org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine.State;
 
 public class SonarLintProjectBindPanel {
+  private static final Logger LOGGER = Logger.getInstance(SonarLintProjectBindPanel.class);
   private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
   private static final String PROJECT_EMPTY_TEXT = "<No project available>";
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:MM");
@@ -146,13 +148,12 @@ public class SonarLintProjectBindPanel {
     if (selectedId == null) {
       engine = null;
       serverStateListener = null;
-      serverStatus.setText("[ no server ]");
+      setServerStatus();
       updateServerButton.setEnabled(false);
     } else {
       // assuming that server ID is valid!
       engine = core.getConnectedEngine(selectedId);
-
-      serverStatus.setText(serverStatusString(engine));
+      setServerStatus();
       serverStateListener = new ServerStateListener();
       engine.addStateListener(serverStateListener);
       updateServerButton.setEnabled(true);
@@ -236,37 +237,40 @@ public class SonarLintProjectBindPanel {
     }
   }
 
-  private static String serverStatusString(ConnectedSonarLintEngine engine) {
-    StringBuilder builder = new StringBuilder();
-    State state = engine.getState();
-    GlobalUpdateStatus updateStatus = null;
+  private void setServerStatus() {
+    if(engine != null) {
+      StringBuilder builder = new StringBuilder();
+      State state = engine.getState();
+      GlobalUpdateStatus updateStatus = null;
 
-    switch (state) {
-      case NEVER_UPDATED:
-        builder.append("never updated");
-        break;
-      case UPDATED:
-        builder.append("updated");
-        updateStatus = engine.getUpdateStatus();
-        break;
-      case UPDATING:
-        builder.append("updating..");
-        break;
-      case UNKNOW:
-      default:
-        builder.append("unknown");
-        break;
+      switch (state) {
+        case NEVER_UPDATED:
+          builder.append("never updated");
+          break;
+        case UPDATED:
+          builder.append("updated");
+          updateStatus = engine.getUpdateStatus();
+          break;
+        case UPDATING:
+          builder.append("updating..");
+          break;
+        case UNKNOW:
+        default:
+          builder.append("unknown");
+          break;
+      }
+
+      if (updateStatus != null) {
+        builder
+          .append(" [")
+          .append(DATE_FORMAT.format(updateStatus.getLastUpdateDate()))
+          .append("]");
+      }
+
+      serverStatus.setText(builder.toString());
+    } else {
+      serverStatus.setText("[ no server ]");
     }
-
-    if (updateStatus != null) {
-      builder.append(" [ version: ")
-        .append(updateStatus.getServerVersion())
-        .append(", updated: ")
-        .append(DATE_FORMAT.format(updateStatus.getLastUpdateDate()))
-        .append(" ]");
-    }
-
-    return builder.toString();
   }
 
   private void createBindPane() {
@@ -296,7 +300,7 @@ public class SonarLintProjectBindPanel {
    */
   private void createServerStatus() {
     updateServerButton = new JButton();
-    JLabel serverStatusLabel = new JLabel("Local storage status: ");
+    JLabel serverStatusLabel = new JLabel("Local configuration: ");
     serverStatus = new JLabel();
 
     serverPanel.add(serverStatusLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
@@ -407,7 +411,7 @@ public class SonarLintProjectBindPanel {
       try {
         setIcon(ResourceLoader.getIcon(ResourceLoader.ICON_SONARQUBE_16));
       } catch (IOException e) {
-        e.printStackTrace();
+        LOGGER.error("Failed to load SonarQube icon", e);
       }
     }
   }
@@ -442,7 +446,7 @@ public class SonarLintProjectBindPanel {
         onServerSelected(getSelectedStorageId());
       }
     }
-  };
+  }
 
   private class ProjectItemListener implements ItemListener {
     @Override
@@ -464,7 +468,7 @@ public class SonarLintProjectBindPanel {
     @Override public void stateChanged(State newState) {
       ApplicationManager.getApplication().invokeLater(new Runnable() {
         @Override public void run() {
-          serverStatus.setText(serverStatusString(engine));
+          setServerStatus();
           if(engine.getState() == State.UPDATED) {
             setProjects();
           }

@@ -49,7 +49,6 @@ public class SonarLintTaskTest extends SonarTest {
   private ProgressIndicator progress;
   private SonarLintAnalyzer.SonarLintJob job;
   private SonarLintAnalysisConfigurator configurator;
-  private SonarLintConsole console;
 
   @Before
   public void setUp() {
@@ -61,7 +60,7 @@ public class SonarLintTaskTest extends SonarTest {
     progress = mock(ProgressIndicator.class);
     when(progress.isCanceled()).thenReturn(false);
     processor = mock(IssueProcessor.class);
-    console = mock(SonarLintConsole.class);
+    SonarLintConsole console = mock(SonarLintConsole.class);
     task = SonarLintTask.createBackground(processor, job);
     configurator = mock(SonarLintAnalysisConfigurator.class);
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));

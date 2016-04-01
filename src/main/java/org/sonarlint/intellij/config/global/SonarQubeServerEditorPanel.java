@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.DocumentAdapter;
@@ -48,7 +47,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 import static java.awt.GridBagConstraints.NONE;
 
-public class SonarQubeServerEditorPanel implements Disposable {
+public class SonarQubeServerEditorPanel {
   private JBLabel urlLabel;
   private JBTextField urlText;
 
@@ -112,6 +111,7 @@ public class SonarQubeServerEditorPanel implements Disposable {
     testButton.setHorizontalAlignment(SwingConstants.RIGHT);
     testButton.setAlignmentX(Component.RIGHT_ALIGNMENT);
     testButton.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         testConnection();
       }
@@ -121,6 +121,7 @@ public class SonarQubeServerEditorPanel implements Disposable {
     addForm(p);
 
     proxySettingsButton.addActionListener(new ActionListener() {
+      @Override
       public void actionPerformed(ActionEvent e) {
         HttpConfigurable.editConfigurable(p);
         enableProxy.setEnabled(HttpConfigurable.getInstance().USE_HTTP_PROXY);
@@ -207,13 +208,10 @@ public class SonarQubeServerEditorPanel implements Disposable {
     changeListener.consume(server);
   }
 
-  @Override public void dispose() {
-  }
-
   /**
    * A {@link FormBuilder} that doesn't fill buttons
    */
-  private class CustomFormBuilder extends FormBuilder {
+  private static class CustomFormBuilder extends FormBuilder {
     @Override
     protected int getFill(JComponent component) {
       if (component instanceof JButton) {

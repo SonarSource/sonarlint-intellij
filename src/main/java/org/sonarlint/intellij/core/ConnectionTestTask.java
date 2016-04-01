@@ -22,14 +22,12 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.util.net.HttpConfigurable;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -66,7 +64,7 @@ public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal
         .readTimeoutMilliseconds(5000)
         .url(server.getHostUrl())
         .credentials(server.getLogin(), server.getPassword());
-      configureProxy(serverConfigBuilder);
+      SonarLintUtils.configureProxy(server, serverConfigBuilder);
       ServerConfiguration serverConfig = serverConfigBuilder.build();
 
       ConnectedSonarLintEngine core = new ConnectedSonarLintEngineImpl(globalConfig);
@@ -76,22 +74,6 @@ public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal
       LOGGER.error("Connection test failed", e);
       exception = e;
       return;
-    }
-  }
-
-  private void configureProxy(ServerConfiguration.Builder builder) {
-    if (server.enableProxy()) {
-      HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
-      if (httpConfigurable.isHttpProxyEnabledForUrl(server.getHostUrl())) {
-        Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
-
-        Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
-        builder.proxy(proxy);
-
-        if (httpConfigurable.PROXY_AUTHENTICATION) {
-          builder.proxyCredentials(httpConfigurable.PROXY_LOGIN, httpConfigurable.getPlainProxyPassword());
-        }
-      }
     }
   }
 

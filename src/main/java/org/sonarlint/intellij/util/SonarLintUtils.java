@@ -31,13 +31,22 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.net.HttpConfigurable;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.URI;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 public class SonarLintUtils {
 
@@ -138,10 +147,10 @@ public class SonarLintUtils {
     for (ContentEntry e : entries) {
       SourceFolder[] sourceFolders = e.getSourceFolders();
       for (SourceFolder sourceFolder : sourceFolders) {
-        if(sourceFolder.getFile() == null) {
+        if (sourceFolder.getFile() == null) {
           continue;
         }
-        if(VfsUtil.isAncestor(sourceFolder.getFile(), file, false)) {
+        if (VfsUtil.isAncestor(sourceFolder.getFile(), file, false)) {
           return true;
         }
       }
@@ -182,6 +191,49 @@ public class SonarLintUtils {
     }
 
     return true;
+  }
+
+  public static void configureProxy(SonarQubeServer server, ServerConfiguration.Builder builder) {
+    if (server.enableProxy()) {
+      HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
+      if (isHttpProxyEnabledForUrl(httpConfigurable, server.getHostUrl())) {
+        Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
+
+        Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
+        builder.proxy(proxy);
+
+        if (httpConfigurable.PROXY_AUTHENTICATION) {
+          builder.proxyCredentials(httpConfigurable.PROXY_LOGIN, httpConfigurable.getPlainProxyPassword());
+        }
+      }
+    }
+  }
+
+  /**
+   * Copy of {@link HttpConfigurable#isHttpProxyEnabledForUrl(String)}, which doesn't exist in IDEA 14.
+   */
+  public static boolean isHttpProxyEnabledForUrl(HttpConfigurable httpConfigurable, String url) {
+    if (!httpConfigurable.USE_HTTP_PROXY) {
+      return false;
+    }
+    URI uri = url != null ? VfsUtil.toUri(url) : null;
+    return uri == null || !isProxyException(httpConfigurable, uri.getHost());
+  }
+
+  public static boolean isProxyException(HttpConfigurable httpConfigurable, @org.jetbrains.annotations.Nullable String uriHost) {
+    if (StringUtil.isEmptyOrSpaces(uriHost) || StringUtil.isEmptyOrSpaces(httpConfigurable.PROXY_EXCEPTIONS)) {
+      return false;
+    }
+
+    List<String> hosts = StringUtil.split(httpConfigurable.PROXY_EXCEPTIONS, ",");
+    for (String hostPattern : hosts) {
+      String regexpPattern = StringUtil.escapeToRegexp(hostPattern.trim()).replace("\\*", ".*");
+      if (Pattern.compile(regexpPattern).matcher(uriHost).matches()) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
 }
