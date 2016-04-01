@@ -23,14 +23,22 @@
     <id>org.sonarlint.idea</id>
     <name>SonarLint</name>
     <version>${project.version}</version>
-    <vendor email="sonarlint@sonarsource.com" url="http://www.sonarsource.com">SonarSource</vendor>
+    <vendor email="sonarlint@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
 
     <description><![CDATA[
-      SonarLint for IntelliJ IDEA.
+      SonarLint for IntelliJ IDEA
+
+      SonarLint for IntelliJ provides on-the-fly feedback on new bugs and code smells injected into Java, JavaScript and PHP code.
+
+      Copyright (c) 2015, 2016 SonarSource.
+      This program and the accompanying materials are made available under the terms of the LGPL License v3.
+
+      Visit http://sonarlint.org
       ]]></description>
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.0 - Connect to a SonarQube server;</li>
         <li>1.5 - Display SonarLint markers age;</li>
         <li>1.4 - No internet required; Several bug fixes;</li>
         <li>1.3 - Issues views; UI improvements;</li>
