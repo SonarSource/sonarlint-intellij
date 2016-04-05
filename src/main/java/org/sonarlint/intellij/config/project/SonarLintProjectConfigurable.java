@@ -103,6 +103,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   public void disposeUIResources() {
     SonarLintProjectNotifications.get(project).reset();
     bus.disconnect();
+    panel.dispose();
     panel = null;
   }
 }

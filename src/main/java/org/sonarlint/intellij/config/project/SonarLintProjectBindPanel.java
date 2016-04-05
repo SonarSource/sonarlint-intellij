@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -70,10 +71,12 @@ import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 
 import static org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine.State;
 
-public class SonarLintProjectBindPanel {
+public class SonarLintProjectBindPanel implements Disposable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintProjectBindPanel.class);
   private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
   private static final String PROJECT_EMPTY_TEXT = "<No project available>";
+  private static final String PROJECT_NO_LOCAL_CONFIG = "<Local configuration not updated>";
+
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:MM");
 
   private JPanel rootPanel;
@@ -190,7 +193,7 @@ public class SonarLintProjectBindPanel {
 
       RemoteModule selected = null;
       for (RemoteModule mod : orderedSet) {
-        if(rootModulesOnly.isSelected() && !mod.isRoot()) {
+        if (rootModulesOnly.isSelected() && !mod.isRoot()) {
           continue;
         }
         projectComboBox.addItem(mod);
@@ -205,14 +208,14 @@ public class SonarLintProjectBindPanel {
       projectComboBox.setEnabled(bindEnable.isSelected());
       rootModulesOnly.setEnabled(bindEnable.isSelected());
     } else {
-      // either no server selected, or not updated
+      final String fMsg = getProjectEmptyText();
       RemoteModule empty = new RemoteModule() {
         @Override public String getKey() {
           return "";
         }
 
         @Override public String getName() {
-          return PROJECT_EMPTY_TEXT;
+          return fMsg;
         }
 
         @Override public boolean isRoot() {
@@ -222,6 +225,15 @@ public class SonarLintProjectBindPanel {
       projectComboBox.setPrototypeDisplayValue(empty);
       projectComboBox.setEnabled(false);
       rootModulesOnly.setEnabled(false);
+    }
+  }
+
+  private String getProjectEmptyText() {
+    if (engine != null) {
+      // not updated
+      return PROJECT_NO_LOCAL_CONFIG;
+    } else {
+      return PROJECT_EMPTY_TEXT;
     }
   }
 
@@ -255,7 +267,7 @@ public class SonarLintProjectBindPanel {
   }
 
   private void setServerStatus() {
-    if(engine != null) {
+    if (engine != null) {
       StringBuilder builder = new StringBuilder();
       State state = engine.getState();
       GlobalUpdateStatus updateStatus = null;
@@ -393,7 +405,7 @@ public class SonarLintProjectBindPanel {
   }
 
   public void actionUpdateProjectTask() {
-    if(engine == null) {
+    if (engine == null) {
       // should mean that no server is selected
       return;
     }
@@ -417,20 +429,30 @@ public class SonarLintProjectBindPanel {
     return rootModulesOnly.isSelected();
   }
 
+  @Override public void dispose() {
+    if (serverStateListener != null) {
+      engine.removeStateListener(serverStateListener);
+    }
+  }
+
   /**
    * Render SonarQube server in combo box
    */
   private class ServerComboBoxRenderer extends ColoredListCellRenderer<SonarQubeServer> {
     @Override protected void customizeCellRenderer(JList list, SonarQubeServer value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
-        append(SERVER_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
+        if (serverComboBox.isEnabled()) {
+          append(SERVER_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
+        } else {
+          append(SERVER_EMPTY_TEXT, SimpleTextAttributes.GRAYED_ATTRIBUTES);
+        }
         return;
       }
 
       SimpleTextAttributes attrs;
-      if(serverComboBox.isEnabled()) {
+      if (serverComboBox.isEnabled()) {
         attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
-      } else  {
+      } else {
         attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
       }
 
@@ -450,7 +472,11 @@ public class SonarLintProjectBindPanel {
   private class ProjectComboBoxRenderer extends ColoredListCellRenderer<RemoteModule> {
     @Override protected void customizeCellRenderer(JList list, RemoteModule value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
-        append(PROJECT_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
+        if (bindEnable.isSelected()) {
+          append(getProjectEmptyText(), SimpleTextAttributes.ERROR_ATTRIBUTES);
+        } else {
+          append(getProjectEmptyText(), SimpleTextAttributes.GRAYED_ATTRIBUTES);
+        }
         return;
       }
 
@@ -459,9 +485,9 @@ public class SonarLintProjectBindPanel {
       }
 
       SimpleTextAttributes attrs;
-      if(projectComboBox.isEnabled()) {
+      if (projectComboBox.isEnabled()) {
         attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
-      } else  {
+      } else {
         attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
       }
       append(value.getName(), attrs, true);
@@ -473,7 +499,7 @@ public class SonarLintProjectBindPanel {
     }
   }
 
-  private class ServerItemListener implements  ItemListener {
+  private class ServerItemListener implements ItemListener {
     @Override
     public void itemStateChanged(ItemEvent event) {
       if (event.getStateChange() == ItemEvent.SELECTED) {
@@ -482,7 +508,7 @@ public class SonarLintProjectBindPanel {
     }
   }
 
-  private class BindItemListener implements  ItemListener {
+  private class BindItemListener implements ItemListener {
     @Override
     public void itemStateChanged(ItemEvent e) {
       boolean bound = e.getStateChange() == ItemEvent.SELECTED;
@@ -530,7 +556,7 @@ public class SonarLintProjectBindPanel {
       ApplicationManager.getApplication().invokeLater(new Runnable() {
         @Override public void run() {
           setServerStatus();
-          if(engine.getState() == State.UPDATED) {
+          if (engine.getState() == State.UPDATED) {
             setProjects();
           }
         }

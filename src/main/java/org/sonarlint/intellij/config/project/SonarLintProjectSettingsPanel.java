@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.project;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
@@ -26,7 +27,7 @@ import javax.swing.JPanel;
 import org.apache.commons.codec.binary.StringUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
-public class SonarLintProjectSettingsPanel {
+public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
   private SonarLintProjectPropertiesPanel propsPanel;
 
@@ -101,4 +102,10 @@ public class SonarLintProjectSettingsPanel {
     return false;
   }
 
+  @Override public void dispose() {
+    if(bindPanel != null) {
+      bindPanel.dispose();
+      bindPanel = null;
+    }
+  }
 }
