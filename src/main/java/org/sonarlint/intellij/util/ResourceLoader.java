@@ -33,6 +33,7 @@ import javax.swing.ImageIcon;
 public class ResourceLoader {
   public static final String ICON_SONARQUBE_16 = "onde-sonar-16.png";
   public static final String ICON_SONARQUBE_32 = "onde-sonar-32.png";
+  public static final String ICON_SONARLINT_13 = "ico-sonarlint-13.png";
   public static final String ICON_SONARLINT_16 = "ico-sonarlint-16.png";
   public static final String ICON_SONARLINT_32 = "ico-sonarlint-32.png";
 
