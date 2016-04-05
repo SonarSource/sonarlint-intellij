@@ -61,15 +61,20 @@ public class SonarLintProjectSettingsPanel {
 
   public void load(SonarLintGlobalSettings globalSettings, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(globalSettings.getSonarQubeServers(), projectSettings.getServerId(), projectSettings.getProjectKey());
+    bindPanel.load(globalSettings.getSonarQubeServers(), projectSettings.isBindingEnabled(),
+      projectSettings.rootModulesOnly(), projectSettings.getServerId(), projectSettings.getProjectKey());
   }
 
   public void save(SonarLintProjectSettings projectSettings) {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     projectSettings.setServerId(bindPanel.getSelectedStorageId());
     projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
+    projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
+    projectSettings.setTopLevelOnly(bindPanel.rootModulesOnly());
 
-    bindPanel.actionUpdateProjectTask();
+    if(projectSettings.isBindingEnabled()) {
+      bindPanel.actionUpdateProjectTask();
+    }
   }
 
   public boolean isModified(SonarLintProjectSettings projectSettings) {
@@ -82,6 +87,14 @@ public class SonarLintProjectSettingsPanel {
     }
 
     if (!StringUtils.equals(projectSettings.getProjectKey(), bindPanel.getSelectedProjectKey())) {
+      return true;
+    }
+
+    if(projectSettings.rootModulesOnly() ^ bindPanel.rootModulesOnly()) {
+      return true;
+    }
+
+    if(projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
       return true;
     }
 

@@ -55,25 +55,17 @@ public class ServerUpdateTask extends com.intellij.openapi.progress.Task.Modal {
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    SonarApplication sonarlint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
     indicator.setIndeterminate(true);
     indicator.setText("Fetching data...");
 
     try {
-      ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
-        .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
-        .connectTimeoutMilliseconds(5000)
-        .readTimeoutMilliseconds(5000)
-        .url(server.getHostUrl())
-        .credentials(server.getLogin(), server.getPassword());
-      SonarLintUtils.configureProxy(server, serverConfigBuilder);
-      ServerConfiguration serverConfig = serverConfigBuilder.build();
+      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       if (!onlyModules) {
-        engine.update(serverConfig);
+        engine.update(serverConfiguration);
       }
 
       if (projectKey != null) {
-        engine.updateModule(serverConfig, projectKey);
+        engine.updateModule(serverConfiguration, projectKey);
       }
       return;
     } catch (final Exception e) {

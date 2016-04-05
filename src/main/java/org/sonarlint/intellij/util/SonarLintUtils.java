@@ -44,6 +44,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -193,20 +194,37 @@ public class SonarLintUtils {
     return true;
   }
 
-  public static void configureProxy(SonarQubeServer server, ServerConfiguration.Builder builder) {
-    if (server.enableProxy()) {
-      HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
-      if (isHttpProxyEnabledForUrl(httpConfigurable, server.getHostUrl())) {
-        Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
+  public static void configureProxy(String host, ServerConfiguration.Builder builder) {
+    HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
+    if (isHttpProxyEnabledForUrl(httpConfigurable, host)) {
+      Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
 
-        Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
-        builder.proxy(proxy);
+      Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
+      builder.proxy(proxy);
 
-        if (httpConfigurable.PROXY_AUTHENTICATION) {
-          builder.proxyCredentials(httpConfigurable.PROXY_LOGIN, httpConfigurable.getPlainProxyPassword());
-        }
+      if (httpConfigurable.PROXY_AUTHENTICATION) {
+        builder.proxyCredentials(httpConfigurable.PROXY_LOGIN, httpConfigurable.getPlainProxyPassword());
       }
     }
+  }
+
+  public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
+    SonarApplication sonarlint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
+    ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
+      .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
+      .connectTimeoutMilliseconds(5000)
+      .readTimeoutMilliseconds(5000)
+      .url(server.getHostUrl());
+    if(server.getToken() != null) {
+      serverConfigBuilder.token(server.getToken());
+    } else {
+      serverConfigBuilder.credentials(server.getLogin(), server.getPassword());
+    }
+
+    if (server.enableProxy()) {
+      SonarLintUtils.configureProxy(server.getHostUrl(), serverConfigBuilder);
+    }
+    return serverConfigBuilder.build();
   }
 
   /**

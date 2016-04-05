@@ -20,12 +20,12 @@
 package org.sonarlint.intellij.config.global;
 
 import com.google.common.base.Objects;
-import com.google.common.hash.HashCode;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.Transient;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 
 public class SonarQubeServer {
   private String hostUrl;
@@ -69,11 +69,12 @@ public class SonarQubeServer {
     return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getName(), enableProxy);
   }
 
+  @CheckForNull
   public String getLogin() {
     return login;
   }
 
-  public void setLogin(String login) {
+  public void setLogin(@Nullable String login) {
     this.login = login;
   }
 
@@ -111,6 +112,7 @@ public class SonarQubeServer {
     this.enableProxy = enableProxy;
   }
 
+  @CheckForNull
   @Transient
   public String getPassword() {
     return password;
@@ -129,11 +131,11 @@ public class SonarQubeServer {
     }
   }
 
-  public void setToken(String token) {
+  public void setToken(@Nullable String token) {
     this.token = token;
   }
 
-  public void setPassword(String password) {
+  public void setPassword(@Nullable String password) {
     this.password = password;
   }
 

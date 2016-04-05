@@ -40,8 +40,11 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
 
   private boolean verboseEnabled = false;
   private Map<String, String> additionalProperties = new LinkedHashMap<>();
+
+  private boolean bindingEnabled = false;
   private String serverId = null;
   private String projectKey = null;
+  private boolean topLevelOnly = false;
 
   /**
    * Constructor called by the XML deserialization (no args).
@@ -98,5 +101,22 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
 
   public void setServerId(String serverId) {
     this.serverId = serverId;
+  }
+
+
+  public boolean isBindingEnabled() {
+    return bindingEnabled;
+  }
+
+  public void setBindingEnabled(boolean bindingEnabled) {
+    this.bindingEnabled = bindingEnabled;
+  }
+
+  public boolean rootModulesOnly() {
+    return topLevelOnly;
+  }
+
+  public void setTopLevelOnly(boolean topLevelOnly) {
+    this.topLevelOnly = topLevelOnly;
   }
 }

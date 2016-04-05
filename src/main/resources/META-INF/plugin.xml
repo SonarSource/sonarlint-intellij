@@ -26,14 +26,7 @@
     <vendor email="sonarlint@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
 
     <description><![CDATA[
-      SonarLint for IntelliJ IDEA
-
-      SonarLint for IntelliJ provides on-the-fly feedback on new bugs and code smells injected into Java, JavaScript and PHP code.
-
-      Copyright (c) 2015, 2016 SonarSource.
-      This program and the accompanying materials are made available under the terms of the LGPL License v3.
-
-      Visit http://sonarlint.org
+        SonarLint is an IntelliJ IDEA plugin that provides on-the-fly feedback to developers on new bugs and quality issues injected into Java, JavaScript and PHP code
       ]]></description>
 
     <change-notes><![CDATA[

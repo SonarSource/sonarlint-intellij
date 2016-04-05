@@ -22,58 +22,62 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 import org.sonarsource.sonarlint.core.container.connected.WsHelperImpl;
 
-public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal {
+public class CreateTokenTask extends com.intellij.openapi.progress.Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
-  private final SonarQubeServer server;
-  private Exception exception;
-  private ValidationResult result;
+  private static final String TOKEN_NAME = "SonarLint_IntelliJ_automatically_generated_";
+  private String host;
+  private String name;
+  private String login;
+  private String password;
 
-  public ConnectionTestTask(SonarQubeServer server) {
-    super(null, "Test connection to SonarQube server", true);
-    this.server = server;
+  private String token;
+  private Exception exception;
+
+  public CreateTokenTask(String host, String name, String login, String password) {
+    super(null, "Create token", true);
+    this.host = host;
+    this.name = name;
+    this.login = login;
+    this.password = password;
   }
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to " + server.getHostUrl() + "...");
+    SonarApplication sonarlint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
+    indicator.setText("Creating token with " + host + "...");
     indicator.setIndeterminate(true);
 
     try {
-      Path tmp = Files.createTempDirectory("sonarlint-test");
-      ConnectedGlobalConfiguration globalConfig = ConnectedGlobalConfiguration.builder()
-        .setServerId("test")
-        .setWorkDir(tmp)
-        .build();
+      ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
+        .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
+        .connectTimeoutMilliseconds(5000)
+        .readTimeoutMilliseconds(5000)
+        .url(host)
+        .credentials(login, password);
+      //TODO: SonarLintUtils.configureProxy(server, serverConfigBuilder);
+      ServerConfiguration serverConfig = serverConfigBuilder.build();
 
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       WsHelper wsHelper = new WsHelperImpl();
-      result = wsHelper.validateConnection(serverConfiguration);
+      String tokenName = TOKEN_NAME + name;
+      token = wsHelper.generateAuthenticationToken(serverConfig, tokenName, true);
     } catch (Exception e) {
-      LOGGER.info("Connection test failed", e);
+      LOGGER.info("Creation of token failed", e);
       exception = e;
     }
+  }
+
+  public String getToken() {
+    return token;
   }
 
   public Exception getException() {
     return exception;
   }
 
-  public ValidationResult result() {
-    return result;
-  }
-
 }
-
-

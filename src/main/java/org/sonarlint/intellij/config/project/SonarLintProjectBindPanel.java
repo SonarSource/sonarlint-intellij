@@ -30,6 +30,7 @@ import com.intellij.openapi.ui.ComboBoxWithWidePopup;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.components.JBCheckBox;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import java.awt.Dimension;
@@ -76,34 +77,44 @@ public class SonarLintProjectBindPanel {
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yy HH:MM");
 
   private JPanel rootPanel;
+  private JBCheckBox bindEnable;
+
+  // server mgmt
   private JPanel serverPanel;
-  private JPanel bindPanel;
   private JComboBox<SonarQubeServer> serverComboBox;
-  private JComboBox<RemoteModule> projectComboBox;
-  private JButton resetButton;
+  private StateListener serverStateListener;
   private JLabel serverStatus;
   private JButton updateServerButton;
+  private JButton configureServerButton;
   private ConnectedSonarLintEngine engine;
-  private StateListener serverStateListener;
-  private ProjectItemListener projectListener;
 
+  // binding mgmt
+  private JPanel bindPanel;
+  private JComboBox<RemoteModule> projectComboBox;
+  private ProjectItemListener projectListener;
+  private JBCheckBox rootModulesOnly;
   private String selectedProjectKey;
 
   public JPanel create() {
     rootPanel = new JPanel(new GridBagLayout());
+    bindEnable = new JBCheckBox("Enable binding to remote SonarQube server", true);
+    bindEnable.addItemListener(new BindItemListener());
     createServerList();
     createServerStatus();
     createBindPane();
 
-    rootPanel.add(serverPanel, new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
-    rootPanel.add(bindPanel, new GridBagConstraints(0, 1, 1, 1, 1, 1, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 4, 4, 0), 0, 0));
+    rootPanel.add(bindEnable, new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+    rootPanel.add(serverPanel, new GridBagConstraints(0, 1, 1, 1, 1, 0, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 0), 0, 0));
+    rootPanel.add(bindPanel, new GridBagConstraints(0, 2, 1, 1, 1, 1, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 0), 0, 0));
 
     return rootPanel;
   }
 
-  public void load(Collection<SonarQubeServer> servers, @Nullable String selectedServerId, @Nullable String selectedProjectKey) {
+  public void load(Collection<SonarQubeServer> servers, boolean enabled, boolean rootOnly, @Nullable String selectedServerId,
+    @Nullable String selectedProjectKey) {
+    this.bindEnable.setSelected(enabled);
     this.selectedProjectKey = selectedProjectKey;
-    resetButton.setEnabled(!servers.isEmpty());
+    this.rootModulesOnly.setSelected(rootOnly);
 
     serverComboBox.removeAllItems();
     setServerList(servers, selectedServerId);
@@ -112,9 +123,6 @@ public class SonarLintProjectBindPanel {
     if (servers.isEmpty()) {
       onServerSelected(null);
     }
-
-    serverComboBox.invalidate();
-    serverComboBox.updateUI();
   }
 
   @CheckForNull
@@ -156,7 +164,7 @@ public class SonarLintProjectBindPanel {
       setServerStatus();
       serverStateListener = new ServerStateListener();
       engine.addStateListener(serverStateListener);
-      updateServerButton.setEnabled(true);
+      updateServerButton.setEnabled(bindEnable.isSelected());
     }
     setProjects();
   }
@@ -182,6 +190,9 @@ public class SonarLintProjectBindPanel {
 
       RemoteModule selected = null;
       for (RemoteModule mod : orderedSet) {
+        if(rootModulesOnly.isSelected() && !mod.isRoot()) {
+          continue;
+        }
         projectComboBox.addItem(mod);
         if (selectedProjectKey != null && selectedProjectKey.equals(mod.getKey())) {
           selected = mod;
@@ -191,7 +202,8 @@ public class SonarLintProjectBindPanel {
       projectComboBox.setSelectedItem(selected);
       projectComboBox.addItemListener(projectListener);
       projectComboBox.setPrototypeDisplayValue(null);
-      projectComboBox.setEnabled(true);
+      projectComboBox.setEnabled(bindEnable.isSelected());
+      rootModulesOnly.setEnabled(bindEnable.isSelected());
     } else {
       // either no server selected, or not updated
       RemoteModule empty = new RemoteModule() {
@@ -202,9 +214,14 @@ public class SonarLintProjectBindPanel {
         @Override public String getName() {
           return PROJECT_EMPTY_TEXT;
         }
+
+        @Override public boolean isRoot() {
+          return true;
+        }
       };
       projectComboBox.setPrototypeDisplayValue(empty);
       projectComboBox.setEnabled(false);
+      rootModulesOnly.setEnabled(false);
     }
   }
 
@@ -219,7 +236,7 @@ public class SonarLintProjectBindPanel {
       s.setName(SERVER_EMPTY_TEXT);
       serverComboBox.setPrototypeDisplayValue(s);
     } else {
-      serverComboBox.setEnabled(true);
+      serverComboBox.setEnabled(bindEnable.isSelected());
       int i = 0;
       int selectedIndex = -1;
       for (SonarQubeServer s : servers) {
@@ -276,23 +293,20 @@ public class SonarLintProjectBindPanel {
   private void createBindPane() {
     projectListener = new ProjectItemListener();
     Border b = IdeBorderFactory.createTitledBorder("Project binding");
+
     bindPanel = new JPanel(new GridBagLayout());
     bindPanel.setBorder(b);
+
+    rootModulesOnly = new JBCheckBox("Only show root modules", true);
+    rootModulesOnly.addItemListener(new TopLevelListener());
+
     projectComboBox = new ComboBoxWithWidePopup(new DefaultComboBoxModel<RemoteModule>());
     projectComboBox.setRenderer(new ProjectComboBoxRenderer());
     projectComboBox.setEditable(false);
     projectComboBox.setMinimumSize(new Dimension(10, 10));
 
-    resetButton = new JButton();
-    resetButton.setAction(new AbstractAction() {
-      @Override public void actionPerformed(ActionEvent e) {
-        actionClearAllBindings();
-      }
-    });
-    resetButton.setText("Clear binding");
-
-    bindPanel.add(projectComboBox, new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
-    bindPanel.add(resetButton, new GridBagConstraints(0, 1, 1, 1, 1, 1, GridBagConstraints.LINE_START, GridBagConstraints.NONE, new Insets(10, 10, 0, 0), 0, 0));
+    bindPanel.add(rootModulesOnly, new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
+    bindPanel.add(projectComboBox, new GridBagConstraints(0, 1, 1, 1, 1, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
   }
 
   /**
@@ -326,7 +340,7 @@ public class SonarLintProjectBindPanel {
     serverPanel = new JPanel(new GridLayoutManager(2, 3));
     Border b = IdeBorderFactory.createTitledBorder("SonarQube server");
     serverPanel.setBorder(b);
-    JButton configureServerButton = new JButton();
+    configureServerButton = new JButton();
     serverComboBox = new ComboBox();
     JLabel serverListLabel = new JLabel("Connect to server:");
 
@@ -366,11 +380,6 @@ public class SonarLintProjectBindPanel {
     }
   }
 
-  private void actionClearAllBindings() {
-    projectComboBox.setSelectedIndex(-1);
-    selectedProjectKey = null;
-  }
-
   private void actionUpdateServerTask() {
     // do things in a type safe way
     int idx = serverComboBox.getSelectedIndex();
@@ -384,6 +393,10 @@ public class SonarLintProjectBindPanel {
   }
 
   public void actionUpdateProjectTask() {
+    if(engine == null) {
+      // should mean that no server is selected
+      return;
+    }
     // do things in a type safe way
     int idx = serverComboBox.getSelectedIndex();
     if (idx < 0) {
@@ -396,17 +409,32 @@ public class SonarLintProjectBindPanel {
     ProgressManager.getInstance().run(task);
   }
 
+  public boolean isBindingEnabled() {
+    return bindEnable.isSelected();
+  }
+
+  public boolean rootModulesOnly() {
+    return rootModulesOnly.isSelected();
+  }
+
   /**
    * Render SonarQube server in combo box
    */
-  private static class ServerComboBoxRenderer extends ColoredListCellRenderer<SonarQubeServer> {
+  private class ServerComboBoxRenderer extends ColoredListCellRenderer<SonarQubeServer> {
     @Override protected void customizeCellRenderer(JList list, SonarQubeServer value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
         append(SERVER_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
         return;
       }
 
-      append(value.getName(), SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
+      SimpleTextAttributes attrs;
+      if(serverComboBox.isEnabled()) {
+        attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
+      } else  {
+        attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
+      }
+
+      append(value.getName(), attrs, true);
       setToolTipText("Connect to this SonarQube server");
       try {
         setIcon(ResourceLoader.getIcon(ResourceLoader.ICON_SONARQUBE_16));
@@ -419,7 +447,7 @@ public class SonarLintProjectBindPanel {
   /**
    * Render modules in combo box
    */
-  private static class ProjectComboBoxRenderer extends ColoredListCellRenderer<RemoteModule> {
+  private class ProjectComboBoxRenderer extends ColoredListCellRenderer<RemoteModule> {
     @Override protected void customizeCellRenderer(JList list, RemoteModule value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
         append(PROJECT_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
@@ -430,7 +458,13 @@ public class SonarLintProjectBindPanel {
         return;
       }
 
-      append(value.getName(), SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
+      SimpleTextAttributes attrs;
+      if(projectComboBox.isEnabled()) {
+        attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
+      } else  {
+        attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
+      }
+      append(value.getName(), attrs, true);
       // it is not working: appendTextPadding
       append(" ");
       if (index >= 0) {
@@ -445,6 +479,33 @@ public class SonarLintProjectBindPanel {
       if (event.getStateChange() == ItemEvent.SELECTED) {
         onServerSelected(getSelectedStorageId());
       }
+    }
+  }
+
+  private class BindItemListener implements  ItemListener {
+    @Override
+    public void itemStateChanged(ItemEvent e) {
+      boolean bound = e.getStateChange() == ItemEvent.SELECTED;
+      boolean serverSelected = getSelectedStorageId() != null;
+      boolean updated = engine != null && engine.getState() == State.UPDATED;
+
+      bindPanel.setEnabled(bound);
+      serverPanel.setEnabled(bound);
+      serverComboBox.setEnabled(bound);
+      serverStatus.setEnabled(bound);
+      configureServerButton.setEnabled(bound);
+      updateServerButton.setEnabled(bound && serverSelected);
+
+      projectComboBox.setEnabled(bound && updated);
+      rootModulesOnly.setEnabled(bound && updated);
+
+      setProjects();
+    }
+  }
+
+  private class TopLevelListener implements ItemListener {
+    @Override public void itemStateChanged(ItemEvent e) {
+      setProjects();
     }
   }
 
