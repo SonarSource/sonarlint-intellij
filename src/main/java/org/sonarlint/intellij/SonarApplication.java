@@ -23,10 +23,12 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageExtensionPoint;
+import com.intellij.notification.NotificationGroup;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
 
 public class SonarApplication implements ApplicationComponent {
@@ -38,6 +40,7 @@ public class SonarApplication implements ApplicationComponent {
     for (Language language : Language.getRegisteredLanguages()) {
       registerExternalAnnotatorFor(language);
     }
+    registerNotifications();
   }
 
   public String getVersion() {
@@ -50,6 +53,10 @@ public class SonarApplication implements ApplicationComponent {
     ep.implementationClass = SonarExternalAnnotator.class.getName();
     ep.setPluginDescriptor(plugin);
     Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator").registerExtension(ep);
+  }
+
+  public void registerNotifications() {
+    NotificationGroup.balloonGroup(SonarLintProjectNotifications.BINDING_PROBLEM);
   }
 
   @Override

@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(IssueNode.class);
@@ -56,33 +57,7 @@ public class IssueNode extends AbstractNode {
 
     renderer.append(" ");
 
-    renderer.append(creationAge(issue.creationDate()), SimpleTextAttributes.GRAY_ATTRIBUTES);
-  }
-
-  private static String creationAge(long creationDate) {
-    Date date = new Date(creationDate);
-    Date now = new Date();
-    long days = TimeUnit.MILLISECONDS.toDays(now.getTime() - date.getTime());
-    if (days > 0) {
-      return pluralize(days, "day", "days");
-    }
-    long hours = TimeUnit.MILLISECONDS.toHours(now.getTime() - date.getTime());
-    if (hours > 0) {
-      return pluralize(hours, "hour", "hours");
-    }
-    long minutes = TimeUnit.MILLISECONDS.toMinutes(now.getTime() - date.getTime());
-    if (minutes > 0) {
-      return pluralize(minutes, "minute", "minutes");
-    }
-
-    return "few seconds ago";
-  }
-
-  private static String pluralize(long strictlyPositiveCount, String singular, String plural) {
-    if (strictlyPositiveCount == 1) {
-      return "1 " + singular + " ago";
-    }
-    return strictlyPositiveCount + " " + plural + " ago";
+    renderer.append(SonarLintUtils.age(issue.creationDate()), SimpleTextAttributes.GRAY_ATTRIBUTES);
   }
 
   @Override public int getIssueCount() {

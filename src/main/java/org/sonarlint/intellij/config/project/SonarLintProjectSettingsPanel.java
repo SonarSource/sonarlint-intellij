@@ -23,9 +23,11 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
+import java.util.List;
 import javax.swing.JPanel;
 import org.apache.commons.codec.binary.StringUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
@@ -62,16 +64,20 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   public void load(SonarLintGlobalSettings globalSettings, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(globalSettings.getSonarQubeServers(), projectSettings.isBindingEnabled(),
-      projectSettings.rootModulesOnly(), projectSettings.getServerId(), projectSettings.getProjectKey());
+    bindPanel.load(globalSettings.getSonarQubeServers(), projectSettings.isBindingEnabled(), projectSettings.getServerId(), projectSettings.getProjectKey());
   }
 
   public void save(SonarLintProjectSettings projectSettings) {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
-    projectSettings.setServerId(bindPanel.getSelectedStorageId());
-    projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
     projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
-    projectSettings.setTopLevelOnly(bindPanel.rootModulesOnly());
+
+    if(bindPanel.isBindingEnabled()) {
+      projectSettings.setServerId(bindPanel.getSelectedStorageId());
+      projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
+    } else {
+      projectSettings.setServerId(null);
+      projectSettings.setProjectKey(null);
+    }
 
     if(projectSettings.isBindingEnabled()) {
       bindPanel.actionUpdateProjectTask();
@@ -83,20 +89,18 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       return true;
     }
 
-    if (!StringUtils.equals(projectSettings.getServerId(), bindPanel.getSelectedStorageId())) {
-      return true;
-    }
-
-    if (!StringUtils.equals(projectSettings.getProjectKey(), bindPanel.getSelectedProjectKey())) {
-      return true;
-    }
-
-    if(projectSettings.rootModulesOnly() ^ bindPanel.rootModulesOnly()) {
-      return true;
-    }
-
     if(projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
       return true;
+    }
+
+    if(bindPanel.isBindingEnabled()) {
+      if (!StringUtils.equals(projectSettings.getServerId(), bindPanel.getSelectedStorageId())) {
+        return true;
+      }
+
+      if (!StringUtils.equals(projectSettings.getProjectKey(), bindPanel.getSelectedProjectKey())) {
+        return true;
+      }
     }
 
     return false;
@@ -106,6 +110,12 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     if(bindPanel != null) {
       bindPanel.dispose();
       bindPanel = null;
+    }
+  }
+
+  public void serversChanged(List<SonarQubeServer> serverList) {
+    if(bindPanel != null) {
+      bindPanel.serversChanged(serverList);
     }
   }
 }

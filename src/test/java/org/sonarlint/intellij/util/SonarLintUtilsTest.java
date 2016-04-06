@@ -19,13 +19,17 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -86,5 +90,39 @@ public class SonarLintUtilsTest extends SonarTest {
     when(f.isValid()).thenReturn(false);
 
     assertThat(SonarLintUtils.shouldAnalyze(f, module)).isFalse();
+  }
+
+  @Test
+  public void testServerConfigurationToken() {
+    SonarApplication app = mock(SonarApplication.class);
+    when(app.getVersion()).thenReturn("1.0");
+    super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
+
+    SonarQubeServer server = new SonarQubeServer();
+    server.setHostUrl("http://myhost");
+    server.setEnableProxy(false);
+    server.setToken("token");
+    ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
+    assertThat(config.getLogin()).isEqualTo(server.getToken());
+    assertThat(config.getPassword()).isNull();
+    assertThat(config.getConnectTimeoutMs()).isEqualTo(5000);
+    assertThat(config.getReadTimeoutMs()).isEqualTo(5000);
+    assertThat(config.getUserAgent()).contains("SonarLint");
+    assertThat(config.getUrl()).isEqualTo(server.getHostUrl());
+  }
+
+  @Test
+  public void testServerConfigurationPassword() {
+    SonarApplication app = mock(SonarApplication.class);
+    when(app.getVersion()).thenReturn("1.0");
+    super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
+
+    SonarQubeServer server = new SonarQubeServer();
+    server.setHostUrl("http://myhost");
+    server.setLogin("token");
+    server.setPassword("pass");
+    ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
+    assertThat(config.getLogin()).isEqualTo(server.getLogin());
+    assertThat(config.getPassword()).isEqualTo(server.getPassword());
   }
 }

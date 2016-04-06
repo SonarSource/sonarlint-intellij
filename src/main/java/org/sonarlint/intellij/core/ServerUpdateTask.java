@@ -28,9 +28,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.util.TaskProgressMonitor;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
@@ -49,19 +50,15 @@ public class ServerUpdateTask extends com.intellij.openapi.progress.Task.Modal {
     this.onlyModules = onlyModules;
   }
 
-  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server) {
-    this(engine, server, null, false);
-  }
-
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setIndeterminate(true);
     indicator.setText("Fetching data...");
 
     try {
+      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator);
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       if (!onlyModules) {
-        engine.update(serverConfiguration);
+        engine.update(serverConfiguration, monitor);
       }
 
       if (projectKey != null) {
@@ -69,7 +66,7 @@ public class ServerUpdateTask extends com.intellij.openapi.progress.Task.Modal {
       }
       return;
     } catch (final Exception e) {
-      LOGGER.error("Error updating server " + server.getName(), e);
+      LOGGER.info("Error updating server " + server.getName(), e);
       final String msg = (e.getMessage() != null) ? e.getMessage() :
         (e.getClass().getSimpleName() + " - please check the logs to see the stack trace");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
@@ -79,4 +76,5 @@ public class ServerUpdateTask extends com.intellij.openapi.progress.Task.Modal {
       }, ModalityState.any());
     }
   }
+
 }

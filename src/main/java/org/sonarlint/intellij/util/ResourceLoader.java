@@ -37,15 +37,15 @@ public class ResourceLoader {
   public static final String ICON_SONARLINT_16 = "ico-sonarlint-16.png";
   public static final String ICON_SONARLINT_32 = "ico-sonarlint-32.png";
 
-  private static Map<String, Icon> iconCache = new ConcurrentHashMap<>();
+  private static Map<String, ImageIcon> iconCache = new ConcurrentHashMap<>();
 
   private ResourceLoader() {
     // only static
   }
 
-  public static Icon getIcon(String name) throws IOException {
+  public static ImageIcon getIcon(String name) throws IOException {
     // keep it lock free even if we might load it initially several times
-    Icon icon = iconCache.get(name);
+    ImageIcon icon = iconCache.get(name);
 
     if (icon != null) {
       return icon;

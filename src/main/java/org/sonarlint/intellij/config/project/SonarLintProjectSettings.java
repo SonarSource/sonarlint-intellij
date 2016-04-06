@@ -44,7 +44,6 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   private boolean bindingEnabled = false;
   private String serverId = null;
   private String projectKey = null;
-  private boolean topLevelOnly = false;
 
   /**
    * Constructor called by the XML deserialization (no args).
@@ -112,11 +111,4 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
     this.bindingEnabled = bindingEnabled;
   }
 
-  public boolean rootModulesOnly() {
-    return topLevelOnly;
-  }
-
-  public void setTopLevelOnly(boolean topLevelOnly) {
-    this.topLevelOnly = topLevelOnly;
-  }
 }

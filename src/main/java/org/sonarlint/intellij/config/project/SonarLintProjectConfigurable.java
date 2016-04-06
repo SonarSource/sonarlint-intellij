@@ -24,10 +24,12 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
+import java.util.List;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
@@ -48,8 +50,10 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     this.projectSettings = project.getComponent(SonarLintProjectSettings.class);
     this.bus = ApplicationManager.getApplication().getMessageBus().connect();
     this.bus.subscribe(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC, new GlobalConfigurationListener() {
-      @Override public void changed() {
-        reset();
+      @Override public void changed(List<SonarQubeServer> serverList) {
+        if(panel != null) {
+          panel.serversChanged(serverList);
+        }
       }
     });
   }

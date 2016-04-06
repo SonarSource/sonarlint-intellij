@@ -31,15 +31,17 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 public class GlobalLogOutput  extends ApplicationComponent.Adapter implements LogOutput, Disposable {
-  private List<SonarLintConsole> consoles;
+  private final ProjectManager projectManager;
+  private final List<SonarLintConsole> consoles;
 
-  public GlobalLogOutput() {
+  public GlobalLogOutput(ProjectManager projectManager) {
     this.consoles = new LinkedList<>();
+    this.projectManager = projectManager;
   }
 
   @Override
   public void initComponent() {
-    ProjectManager.getInstance().addProjectManagerListener(new ProjectListener(), this);
+    projectManager.addProjectManagerListener(new ProjectListener(), this);
   }
 
   @Override
@@ -66,6 +68,7 @@ public class GlobalLogOutput  extends ApplicationComponent.Adapter implements Lo
   }
 
   @Override public void dispose() {
+    // should remove listener in ProjectManager
     Disposer.dispose(this);
   }
 
@@ -80,7 +83,7 @@ public class GlobalLogOutput  extends ApplicationComponent.Adapter implements Lo
     }
 
     @Override public void projectClosed(Project project) {
-
+      //nothing to do
     }
 
     @Override public void projectClosing(Project project) {
