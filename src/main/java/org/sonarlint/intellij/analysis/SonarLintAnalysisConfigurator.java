@@ -92,7 +92,14 @@ public class SonarLintAnalysisConfigurator {
       console.info("Failed to create SonarLint engine for module '" + module.getName() + "'");
       return;
     }
-    console.info("Start SonarLint analysis on " + p.getName() + "...");
+
+    String what;
+    if(filesToAnalyze.size() == 1) {
+      what = "'" + filesToAnalyze.iterator().next().getName() + "'";
+    } else {
+      what = Integer.toString(filesToAnalyze.size()) + " files";
+    }
+    console.info("Analysing " + what + "...");
     facade.startAnalysis(inputFiles, listener, pluginProps);
     console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
   }

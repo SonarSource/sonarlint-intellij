@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -42,6 +43,10 @@ public class GlobalLogOutput  extends ApplicationComponent.Adapter implements Lo
   @Override
   public void initComponent() {
     projectManager.addProjectManagerListener(new ProjectListener(), this);
+  }
+
+  public static GlobalLogOutput get() {
+    return ApplicationManager.getApplication().getComponent(GlobalLogOutput.class);
   }
 
   @Override
