@@ -147,4 +147,9 @@ public class SonarQubeServer {
     this.name = name;
   }
 
+  @Override
+  public String toString() {
+    return name;
+  }
+
 }

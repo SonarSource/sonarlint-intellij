@@ -31,6 +31,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.util.messages.MessageBusConnection;
 import javax.swing.Box;
+import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.messages.StatusListener;
@@ -49,7 +50,7 @@ public class SonarLintToolPanel extends SimpleToolWindowPanel {
     this.toolWindow = toolWindow;
     this.project = project;
 
-    addDebugAction();
+    addLogActions();
     addToolbar();
     addConsole();
 
@@ -78,8 +79,9 @@ public class SonarLintToolPanel extends SimpleToolWindowPanel {
     mainToolbar.getComponent().setVisible(true);
   }
 
-  private void addDebugAction() {
+  private void addLogActions() {
     DefaultActionGroup group = new DefaultActionGroup();
+    group.add(new ToolWindowLogAnalysisAction());
     group.add(new ToolWindowVerboseModeAction());
     ((ToolWindowEx) toolWindow).setAdditionalGearActions(group);
   }

@@ -19,10 +19,8 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.messages.MessageBusConnection;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -43,10 +41,10 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
@@ -56,12 +54,13 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 public class SonarLintServerManager implements ApplicationComponent {
   private Map<String, ConnectedSonarLintEngine> engines;
   private StandaloneSonarLintEngine standalone;
-  private MessageBusConnection bus;
-  private Set<String> configuredStorageIds;
   private GlobalLogOutput globalLogOutput;
+  private SonarLintGlobalSettings settings;
+  private Set<String> configuredStorageIds;
 
-  public SonarLintServerManager(GlobalLogOutput globalLogOutput) {
+  public SonarLintServerManager(GlobalLogOutput globalLogOutput, SonarLintGlobalSettings settings) {
     this.globalLogOutput = globalLogOutput;
+    this.settings = settings;
   }
 
   @Override
@@ -69,18 +68,12 @@ public class SonarLintServerManager implements ApplicationComponent {
     configuredStorageIds = new HashSet<>();
     reloadServerIds();
     engines = new HashMap<>();
-    bus = ApplicationManager.getApplication().getMessageBus().connect();
-    bus.subscribe(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC, new GlobalConfigurationListener() {
-      @Override public void changed() {
-        clean();
-      }
-    });
   }
 
   /**
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
-  public synchronized void clean() {
+  public synchronized void reloadServers() {
     reloadServerIds();
     Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = engines.entrySet().iterator();
 
@@ -116,13 +109,17 @@ public class SonarLintServerManager implements ApplicationComponent {
    */
   @CheckForNull
   public synchronized SonarLintFacade getFacadeForAnalysis(Project project) {
-
     SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
-    String serverId = projectSettings.getServerId();
-    String projectKey = projectSettings.getProjectKey();
+    if(projectSettings.isBindingEnabled()) {
+      String serverId = projectSettings.getServerId();
+      String projectKey = projectSettings.getProjectKey();
 
-    if (projectKey != null && serverId != null) {
-      return createConnectedFacade(project, serverId, projectKey);
+      if (projectKey != null && serverId != null) {
+        return createConnectedFacade(project, serverId, projectKey);
+      } else {
+        SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
+        throw new IllegalStateException("Project as an invalid binding");
+      }
     }
 
     return new StandaloneSonarLintFacade(project, getStandaloneEngine());
@@ -203,7 +200,7 @@ public class SonarLintServerManager implements ApplicationComponent {
     List<URL> pluginsUrls = new ArrayList<>();
     try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()))) {
       for (Path path : directoryStream) {
-        //console.debug("Found plugin: " + path.getFileName().toString());
+        globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
         pluginsUrls.add(path.toUri().toURL());
       }
     }
@@ -211,7 +208,6 @@ public class SonarLintServerManager implements ApplicationComponent {
   }
 
   private void reloadServerIds() {
-    SonarLintGlobalSettings settings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
     configuredStorageIds.clear();
     for (SonarQubeServer s : settings.getSonarQubeServers()) {
       configuredStorageIds.add(s.getName());
@@ -220,7 +216,6 @@ public class SonarLintServerManager implements ApplicationComponent {
 
   @Override
   public void disposeComponent() {
-    bus.disconnect();
     for (ConnectedSonarLintEngine e : engines.values()) {
       e.stop(false);
     }

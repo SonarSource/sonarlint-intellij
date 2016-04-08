@@ -17,38 +17,31 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.actions;
 
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.ToggleAction;
+import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-public class ProjectLogOutput implements LogOutput {
-  private SonarLintConsole console;
-  private SonarLintProjectSettings settings;
-
-  public ProjectLogOutput(SonarLintConsole console, SonarLintProjectSettings settings) {
-    this.console = console;
-    this.settings = settings;
+public class ToolWindowLogAnalysisAction extends ToggleAction implements DumbAware {
+  public ToolWindowLogAnalysisAction() {
+    super("Analysis logs", "Enable logging of SonarLint analysis", AllIcons.General.Progress);
   }
 
   @Override
-  public void log(String msg, Level level) {
-    if(!settings.isAnalysisLogsEnabled()) {
-      return;
-    }
-    switch (level) {
-      case TRACE:
-      case DEBUG:
-        console.debug(msg);
-        break;
-      case ERROR:
-        console.error(msg);
-        break;
-      case INFO:
-      case WARN:
-      default:
-        console.info(msg);
+  public boolean isSelected(AnActionEvent event) {
+    Project p = event.getProject();
+    return p != null && p.getComponent(SonarLintProjectSettings.class).isAnalysisLogsEnabled();
+  }
+
+  @Override
+  public void setSelected(AnActionEvent event, boolean flag) {
+    Project p = event.getProject();
+    if (p != null) {
+      p.getComponent(SonarLintProjectSettings.class).setAnalysisLogsEnabled(flag);
     }
   }
 }

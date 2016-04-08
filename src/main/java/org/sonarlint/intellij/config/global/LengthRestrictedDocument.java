@@ -17,14 +17,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages;
+package org.sonarlint.intellij.config.global;
 
-import com.intellij.util.messages.Topic;
-import java.util.List;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
 
-public interface GlobalConfigurationListener {
-  Topic<GlobalConfigurationListener> SONARLINT_GLOBAL_CONFIG_TOPIC = Topic.create("Global configuration changed", GlobalConfigurationListener.class);
+public class LengthRestrictedDocument extends PlainDocument {
+  private final int limit;
 
-  void changed(List<SonarQubeServer> serverList);
+  public LengthRestrictedDocument(int limit) {
+    this.limit = limit;
+  }
+
+  @Override
+  public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+    if (str == null)
+      return;
+
+    if ((getLength() + str.length()) <= limit) {
+      super.insertString(offs, str, a);
+    }
+  }
 }

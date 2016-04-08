@@ -39,6 +39,8 @@ import org.jetbrains.annotations.NotNull;
 public final class SonarLintProjectSettings extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectSettings> {
 
   private boolean verboseEnabled = false;
+
+  private boolean analysisLogsEnabled = false;
   private Map<String, String> additionalProperties = new LinkedHashMap<>();
 
   private boolean bindingEnabled = false;
@@ -109,6 +111,14 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
 
   public void setBindingEnabled(boolean bindingEnabled) {
     this.bindingEnabled = bindingEnabled;
+  }
+
+  public boolean isAnalysisLogsEnabled() {
+    return analysisLogsEnabled;
+  }
+
+  public void setAnalysisLogsEnabled(boolean analysisLogsEnabled) {
+    this.analysisLogsEnabled = analysisLogsEnabled;
   }
 
 }

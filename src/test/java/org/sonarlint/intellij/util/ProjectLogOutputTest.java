@@ -23,21 +23,26 @@ package org.sonarlint.intellij.util;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class ProjectLogOutputTest {
   private ProjectLogOutput logOutput;
+  private SonarLintProjectSettings settings;
   private SonarLintConsole mockConsole;
 
   @Before
   public void setUp() {
     mockConsole = mock(SonarLintConsole.class);
-    logOutput = new ProjectLogOutput(mockConsole);
+    settings = new SonarLintProjectSettings();
+    settings.setAnalysisLogsEnabled(true);
+    logOutput = new ProjectLogOutput(mockConsole, settings);
   }
 
   @After
@@ -49,6 +54,13 @@ public class ProjectLogOutputTest {
   public void testDebug() {
     logOutput.log("test", LogOutput.Level.DEBUG);
     verify(mockConsole).debug("test");
+  }
+
+  @Test
+  public void testNoLogAnalysis() {
+    settings.setAnalysisLogsEnabled(false);
+    logOutput.log("test", LogOutput.Level.INFO);
+    verifyZeroInteractions(mockConsole);
   }
 
   @Test

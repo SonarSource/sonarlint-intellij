@@ -60,7 +60,6 @@ public class CreateTokenTask extends com.intellij.openapi.progress.Task.Modal {
         .readTimeoutMilliseconds(5000)
         .url(host)
         .credentials(login, password);
-      //TODO: SonarLintUtils.configureProxy(server, serverConfigBuilder);
       ServerConfiguration serverConfig = serverConfigBuilder.build();
 
       WsHelper wsHelper = new WsHelperImpl();

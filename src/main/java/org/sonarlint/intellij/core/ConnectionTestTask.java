@@ -19,16 +19,11 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
@@ -51,12 +46,6 @@ public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal
     indicator.setIndeterminate(true);
 
     try {
-      Path tmp = Files.createTempDirectory("sonarlint-test");
-      ConnectedGlobalConfiguration globalConfig = ConnectedGlobalConfiguration.builder()
-        .setServerId("test")
-        .setWorkDir(tmp)
-        .build();
-
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       WsHelper wsHelper = new WsHelperImpl();
       result = wsHelper.validateConnection(serverConfiguration);

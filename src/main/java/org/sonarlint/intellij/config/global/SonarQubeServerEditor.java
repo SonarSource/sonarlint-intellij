@@ -1,34 +1,15 @@
-/**
- * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015 SonarSource
- * sonarlint@sonarsource.com
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 3 of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this program; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
- */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.ui.DocumentAdapter;
+import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBTextField;
-import com.intellij.util.Consumer;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.ui.FormBuilder;
 import java.awt.Font;
@@ -38,22 +19,32 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.DocumentEvent;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ConnectionTestTask;
 import org.sonarlint.intellij.core.CreateTokenTask;
+import org.sonarlint.intellij.util.ResourceLoader;
+import org.sonarsource.sonarlint.core.client.api.connected.UnsupportedServerException;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
-public class SonarQubeServerEditorPanel {
+public class SonarQubeServerEditor extends DialogWrapper {
+  private static final Logger LOGGER = Logger.getInstance(SonarQubeServerEditor.class);
+  private static final int MAX_LENGTH = 50;
+  private static final int TEXT_COLUMNS = 30;
   private static final String AUTH_PASSWORD = "Password";
   private static final String AUTH_TOKEN = "Token";
+
+  private final SonarQubeServer server;
+  private final boolean isCreating;
+  private final Set<String> serverNames;
 
   private JPanel rootPanel;
 
@@ -80,26 +71,62 @@ public class SonarQubeServerEditorPanel {
   private JButton proxySettingsButton;
 
   protected JButton testButton;
-  private final Consumer<SonarQubeServer> changeListener;
 
-  private SonarQubeServer server;
-
-  public SonarQubeServerEditorPanel(Consumer<SonarQubeServer> changeListener, SonarQubeServer server) {
-    this.changeListener = changeListener;
+  protected SonarQubeServerEditor(JComponent parent, List<SonarQubeServer> serverList, SonarQubeServer server, boolean isCreating) {
+    super(parent, true);
+    this.isCreating = isCreating;
     this.server = server;
+    this.serverNames = new HashSet<>();
+    for (SonarQubeServer s : serverList) {
+      serverNames.add(s.getName());
+    }
+
+    if (isCreating) {
+      super.setTitle("Create SonarQube server configuration");
+    } else {
+      super.setTitle("Edit SonarQube server configuration");
+    }
+    super.setModal(true);
+    super.setResizable(true);
+    super.init();
   }
 
-  public JComponent create() {
+  @Nullable
+  @Override
+  protected ValidationInfo doValidate() {
+    if (isCreating) {
+      if (StringUtils.isEmpty(nameText.getText())) {
+        return new ValidationInfo("Servers must be configured with a name", nameText);
+      }
+
+      if (serverNames.contains(nameText.getText())) {
+        return new ValidationInfo("Server names must be unique", nameText);
+      }
+    }
+
+    if (StringUtils.isEmpty(urlText.getText())) {
+      return new ValidationInfo("Servers must be configured with a host URL", urlText);
+    }
+
+    return null;
+  }
+
+  @Nullable @Override protected JComponent createCenterPanel() {
     nameLabel = new JBLabel("Name:", SwingConstants.RIGHT);
     nameLabel.setDisplayedMnemonic('N');
     nameText = new JBTextField();
+    nameText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
     nameText.setText(server.getName());
-    nameText.setEditable(false);
+    if(!isCreating) {
+      nameText.setFont(nameText.getFont().deriveFont(Font.BOLD));
+    }
+    nameText.setEditable(isCreating);
     nameLabel.setLabelFor(nameText);
 
     urlLabel = new JBLabel("Server URL:", SwingConstants.RIGHT);
     urlLabel.setDisplayedMnemonic('U');
     urlText = new JBTextField();
+    urlText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
     urlText.setText(server.getHostUrl());
     urlText.getEmptyText().setText("Example: http://localhost:9000");
     urlLabel.setLabelFor(urlText);
@@ -113,18 +140,22 @@ public class SonarQubeServerEditorPanel {
     loginLabel = new JBLabel("Login or token:", SwingConstants.RIGHT);
     loginLabel.setDisplayedMnemonic('L');
     loginText = new JBTextField();
+    loginText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
     loginText.setText(server.getLogin());
     loginText.getEmptyText().setText("");
     loginLabel.setLabelFor(loginText);
 
     passwordLabel = new JBLabel("Password:", SwingConstants.RIGHT);
     passwordText = new JBPasswordField();
+    passwordText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
     passwordText.setText(server.getPassword());
     passwordText.getEmptyText().setText("");
     passwordLabel.setLabelFor(passwordText);
 
     tokenLabel = new JBLabel("Token:", SwingConstants.RIGHT);
     tokenText = new JBPasswordField();
+    tokenText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
+    tokenText.setColumns(TEXT_COLUMNS);
     tokenText.setText(server.getToken());
     tokenText.getEmptyText().setText("");
     tokenLabel.setLabelFor(tokenText);
@@ -157,7 +188,6 @@ public class SonarQubeServerEditorPanel {
       public void actionPerformed(ActionEvent e) {
         HttpConfigurable.editConfigurable(rootPanel);
         enableProxy.setEnabled(HttpConfigurable.getInstance().USE_HTTP_PROXY);
-        apply();
       }
     });
 
@@ -171,19 +201,17 @@ public class SonarQubeServerEditorPanel {
       switchAuth(true);
     }
 
-    installListener(nameText);
-    installListener(urlText);
-    installListener(loginText);
-    installListener(tokenText);
-    installListener(authTypeComboBox);
-    installListener(passwordText);
-    installListener(enableProxy);
-
     authTypeComboBox.addItemListener(new ItemListener() {
       @Override public void itemStateChanged(ItemEvent e) {
         switchAuth(e.getItem() == AUTH_TOKEN);
       }
     });
+    try {
+      ImageIcon sonarQubeIcon = ResourceLoader.getIcon(ResourceLoader.ICON_SONARQUBE_32);
+      super.getPeer().getWindow().setIconImage(sonarQubeIcon.getImage());
+    } catch (Exception e) {
+      // ignore and don't set icon
+    }
 
     return rootPanel;
   }
@@ -232,7 +260,9 @@ public class SonarQubeServerEditorPanel {
   }
 
   private void testConnection() {
-    ConnectionTestTask test = new ConnectionTestTask(server);
+    SonarQubeServer tmpServer = new SonarQubeServer();
+    setServer(tmpServer);
+    ConnectionTestTask test = new ConnectionTestTask(tmpServer);
     ProgressManager.getInstance().run(test);
     ValidationResult r = test.result();
 
@@ -249,32 +279,12 @@ public class SonarQubeServerEditorPanel {
     }
   }
 
-  protected void installListener(JTextField textField) {
-    textField.getDocument().addDocumentListener(new DocumentAdapter() {
-      @Override
-      protected void textChanged(DocumentEvent e) {
-        apply();
-      }
-    });
+  protected void doOKAction() {
+    super.doOKAction();
+    setServer(server);
   }
 
-  protected void installListener(JBCheckBox checkBox) {
-    checkBox.addChangeListener(new ChangeListener() {
-      @Override public void stateChanged(ChangeEvent e) {
-        apply();
-      }
-    });
-  }
-
-  protected void installListener(ComboBox comboBox) {
-    comboBox.addItemListener(new ItemListener() {
-      @Override public void itemStateChanged(ItemEvent e) {
-        apply();
-      }
-    });
-  }
-
-  void apply() {
+  private void setServer(SonarQubeServer server) {
     server.setName(nameText.getText().trim());
     server.setHostUrl(urlText.getText().trim());
 
@@ -288,8 +298,6 @@ public class SonarQubeServerEditorPanel {
       server.setPassword(new String(passwordText.getPassword()));
     }
     server.setEnableProxy(enableProxy.isSelected());
-
-    changeListener.consume(server);
   }
 
   private void generateToken() {
@@ -305,13 +313,19 @@ public class SonarQubeServerEditorPanel {
     Exception ex = createTokenTask.getException();
     String token = createTokenTask.getToken();
 
-    if (ex != null && ex.getMessage() != null) {
-      Messages.showErrorDialog(rootPanel, "Failed to create token: " + ex.getMessage(), "Create authentication token");
-    } else if (ex != null || token == null) {
-      Messages.showErrorDialog(rootPanel, "Failed to create token", "Create authentication token");
+    String title = "Create authentication token";
+    if (ex != null) {
+      if (ex instanceof UnsupportedServerException) {
+        Messages.showErrorDialog(rootPanel, "Failed to create token. Tokens are not supported in the SonarQube server. " + ex.getMessage(), title);
+      } else if (ex.getMessage() != null) {
+        Messages.showErrorDialog(rootPanel, "Failed to create token: " + ex.getMessage(), title);
+      } else {
+        Messages.showErrorDialog(rootPanel, "Failed to create token", title);
+        LOGGER.info(ex);
+      }
     } else {
-      Messages.showInfoMessage(rootPanel, "Token created successfully", "Create authentication token");
       tokenText.setText(token);
+      Messages.showInfoMessage(rootPanel, "Token created successfully", title);
     }
   }
 
@@ -356,4 +370,5 @@ public class SonarQubeServerEditorPanel {
       return password.getPassword();
     }
   }
+
 }

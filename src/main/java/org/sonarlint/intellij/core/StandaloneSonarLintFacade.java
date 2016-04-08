@@ -31,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -90,6 +91,6 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
       console.info(String.format("SonarLint [%s] additional properties:%n%s", sonarLint.getVersion(), SonarLintUtils.propsToString(props)));
     }
 
-    sonarlint.analyze(config, issueListener);
+    sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings));
   }
 }
