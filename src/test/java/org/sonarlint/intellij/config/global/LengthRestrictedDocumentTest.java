@@ -19,25 +19,33 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.PlainDocument;
+import javax.swing.text.SimpleAttributeSet;
+import org.junit.Before;
+import org.junit.Test;
 
-public class LengthRestrictedDocument extends PlainDocument {
-  private final int limit;
+import static org.assertj.core.api.Assertions.assertThat;
 
-  public LengthRestrictedDocument(int limit) {
-    this.limit = limit;
+public class LengthRestrictedDocumentTest {
+  private LengthRestrictedDocument doc;
+
+  @Before
+  public void setUp() {
+    doc = new LengthRestrictedDocument(3);
   }
 
-  @Override
-  public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-    if (str == null) {
-      return;
-    }
+  @Test
+  public void testNullStr() throws BadLocationException {
+    doc.insertString(0, null, new SimpleAttributeSet());
+    assertThat(doc.getLength()).isZero();
+  }
 
-    if ((getLength() + str.length()) <= limit) {
-      super.insertString(offs, str, a);
-    }
+  @Test
+  public void testLimit() throws BadLocationException {
+    doc.insertString(doc.getLength(), "txt", new SimpleAttributeSet());
+    assertThat(doc.getText(0, doc.getLength())).isEqualTo("txt");
+
+    doc.insertString(doc.getLength(), "more", new SimpleAttributeSet());
+    assertThat(doc.getText(0, doc.getLength())).isEqualTo("txt");
   }
 }

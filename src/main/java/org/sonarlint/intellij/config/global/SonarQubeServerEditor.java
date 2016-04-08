@@ -222,17 +222,21 @@ public class SonarQubeServerEditor extends DialogWrapper {
 
     authTypeComboBox.addItemListener(new ItemListener() {
       @Override public void itemStateChanged(ItemEvent e) {
-        switchAuth(e.getItem() == AUTH_TOKEN);
+        switchAuth(e.getItem().equals(AUTH_TOKEN));
       }
     });
+    setIcon();
+
+    return rootPanel;
+  }
+
+  private void setIcon() {
     try {
       ImageIcon sonarQubeIcon = ResourceLoader.getIcon(ResourceLoader.ICON_SONARQUBE_32);
       super.getPeer().getWindow().setIconImage(sonarQubeIcon.getImage());
     } catch (Exception e) {
       // ignore and don't set icon
     }
-
-    return rootPanel;
   }
 
   private void switchAuth(boolean token) {
@@ -298,6 +302,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     }
   }
 
+  @Override
   protected void doOKAction() {
     super.doOKAction();
     setServer(server);

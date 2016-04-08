@@ -91,7 +91,7 @@ public class ServerUpdateTask {
       log.log("Update of server '" + server.getName() + "' was cancelled", LogOutput.Level.INFO);
     } catch (final Exception e) {
       LOGGER.info("Error updating from server '" + server.getName() + "'", e);
-      final String msg = (e.getMessage() != null) ? e.getMessage() : "Failed to update binding for server configuration '" + server.getName() + "'";
+      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
         @Override public void doRun() throws Exception {
           Messages.showErrorDialog((Project) null, msg, "Update failed");

@@ -112,6 +112,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     serverList = new JBList();
     serverList.getEmptyText().setText(LABEL_NO_SERVERS);
     serverList.addMouseListener(new MouseAdapter() {
+      @Override
       public void mouseClicked(MouseEvent evt) {
         if (evt.getClickCount() == 2) {
           editServer();
@@ -376,7 +377,6 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         ((CollectionListModel) serverList.getModel()).add(newServer);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
-        SonarLintServerManager serverManager = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
         ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(newServer.getName()), newServer, null, false);
         ProgressManager.getInstance().run(task.asBackground());
       }

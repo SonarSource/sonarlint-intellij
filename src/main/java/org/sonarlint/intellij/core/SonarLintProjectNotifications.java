@@ -30,7 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
 public class SonarLintProjectNotifications extends AbstractProjectComponent {
-  public final static String BINDING_PROBLEM = "SonarLint: Server Binding Errors";
+  public static final String BINDING_PROBLEM = "SonarLint: Server Binding Errors";
   private volatile boolean shown = false;
 
   protected SonarLintProjectNotifications(Project project) {

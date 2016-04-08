@@ -32,6 +32,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
   /**
    * Returns true if the task should be cancelled as soon as possible.
    */
+  @Override
   public boolean isCanceled() {
     return indicator.isCanceled();
   }
@@ -39,6 +40,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
   /**
    * Handles a message regarding the current action
    */
+  @Override
   public void setMessage(String msg) {
     indicator.setText(msg);
   }
@@ -47,6 +49,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
    * Handles the approximate fraction of the task completed.
    * @param fraction Number between 0.0f and 1.0f
    */
+  @Override
   public void setFraction(float fraction) {
     indicator.setFraction(fraction);
   }
@@ -55,6 +58,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
    * Handles whether the task in progress can determinate the fraction of its progress.
    * If not set, it should be assumed false
    */
+  @Override
   public void setIndeterminate(boolean indeterminate) {
     indicator.setIndeterminate(indeterminate);
   }
@@ -62,6 +66,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
   /**
    * Marks the section of the task as not cancelable
    */
+  @Override
   public void startNonCancelableSection() {
     indicator.startNonCancelableSection();
   }
@@ -69,6 +74,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
   /**
    * It's possible to cancel the task from now on
    */
+  @Override
   public void finishNonCancelableSection() {
     indicator.finishNonCancelableSection();
   }

@@ -23,19 +23,14 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
-import com.intellij.ui.CollectionListModel;
 import java.awt.BorderLayout;
-import java.awt.CardLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintServerManager;
-import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
-  private final GlobalConfigurationListener changeListener;
   private final SonarLintServerManager serverManager;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
@@ -46,7 +41,6 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   public SonarLintGlobalConfigurable() {
     Application app = ApplicationManager.getApplication();
     this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
-    this.changeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC);
     this.serverManager = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
   }
 
