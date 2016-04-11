@@ -46,7 +46,10 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -171,7 +174,8 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   }
 
   private JPanel createServerStatus() {
-    JPanel serverStatusPanel = new JPanel(new GridLayout(1, 2));
+    JPanel serverStatusPanel = new JPanel(new GridBagLayout());
+
     JLabel serverStatusLabel = new JLabel("Local update: ");
     updateServerButton = new JButton();
     serverStatus = new JLabel();
@@ -191,16 +195,16 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       }
     });
 
-    JPanel flow1 = new JPanel(new FlowLayout());
+    JPanel flow1 = new JPanel(new FlowLayout(FlowLayout.LEADING));
     flow1.add(serverStatusLabel);
     flow1.add(serverStatus);
 
-    JPanel flow2 = new JPanel(new FlowLayout());
+    JPanel flow2 = new JPanel(new FlowLayout(FlowLayout.LEADING));
     flow2.add(updateServerButton);
     flow2.add(link);
 
-    serverStatusPanel.add(flow1);
-    serverStatusPanel.add(flow2);
+    serverStatusPanel.add(flow1, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0,0,0,0), 0,0));
+    serverStatusPanel.add(flow2, new GridBagConstraints(1, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0,0,0,0), 0,0));
 
     updateServerButton.setAction(new AbstractAction() {
       @Override public void actionPerformed(ActionEvent e) {
@@ -209,7 +213,10 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     });
     updateServerButton.setText("Update binding");
     updateServerButton.setToolTipText("Update local data: quality profile, settings, ...");
-    return serverStatusPanel;
+
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.add(serverStatusPanel, BorderLayout.NORTH);
+    return panel;
   }
 
   private void unbindRemovedServers() {
