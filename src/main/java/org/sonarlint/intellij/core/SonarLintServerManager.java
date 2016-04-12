@@ -41,6 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
@@ -110,11 +111,13 @@ public class SonarLintServerManager implements ApplicationComponent {
   @CheckForNull
   public synchronized SonarLintFacade getFacadeForAnalysis(Project project) {
     SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
+    SonarLintConsole console = project.getComponent(SonarLintConsole.class);
     if(projectSettings.isBindingEnabled()) {
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
 
       if (projectKey != null && serverId != null) {
+        console.info(String.format("Using configuration of '%s' in server '%s'", projectSettings.getProjectKey(), projectSettings.getServerId()));
         return createConnectedFacade(project, serverId, projectKey);
       } else {
         SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
