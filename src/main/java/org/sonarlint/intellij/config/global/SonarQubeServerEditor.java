@@ -321,7 +321,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     server.setName(nameText.getText().trim());
     server.setHostUrl(urlText.getText().trim());
 
-    if (authTypeComboBox.getSelectedItem() == AUTH_TOKEN) {
+    if (AUTH_TOKEN.equals(authTypeComboBox.getSelectedItem())) {
       server.setToken(new String(tokenText.getPassword()));
       server.setLogin(null);
       server.setPassword(null);

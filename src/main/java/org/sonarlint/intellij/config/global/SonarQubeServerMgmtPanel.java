@@ -48,7 +48,6 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -215,9 +214,9 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     updateServerButton.setText("Update binding");
     updateServerButton.setToolTipText("Update local data: quality profile, settings, ...");
 
-    JPanel panel = new JPanel(new BorderLayout());
-    panel.add(serverStatusPanel, BorderLayout.NORTH);
-    return panel;
+    JPanel alignedPanel = new JPanel(new BorderLayout());
+    alignedPanel.add(serverStatusPanel, BorderLayout.NORTH);
+    return alignedPanel;
   }
 
   private void unbindRemovedServers() {

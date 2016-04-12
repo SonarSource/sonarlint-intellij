@@ -26,8 +26,6 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import java.io.IOException;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
