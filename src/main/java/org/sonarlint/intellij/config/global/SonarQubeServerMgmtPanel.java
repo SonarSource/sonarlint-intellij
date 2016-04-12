@@ -55,6 +55,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -384,7 +385,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         ((CollectionListModel) serverList.getModel()).add(newServer);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
-        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(newServer.getName()), newServer, null, false);
+        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(newServer.getName()), newServer, Collections.<String>emptySet(), false);
         ProgressManager.getInstance().run(task.asBackground());
       }
     }

@@ -43,7 +43,7 @@ public class ServerUpdateTask {
   private static final Logger LOGGER = Logger.getInstance(ServerUpdateTask.class);
   private final ConnectedSonarLintEngine engine;
   private final SonarQubeServer server;
-  private Set<String> projectKeys;
+  private final Set<String> projectKeys;
   private final boolean onlyModules;
   private final GlobalLogOutput log;
 
