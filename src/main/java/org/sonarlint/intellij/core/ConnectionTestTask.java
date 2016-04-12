@@ -24,10 +24,10 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.WsHelperImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
-import org.sonarsource.sonarlint.core.container.connected.WsHelperImpl;
 
 public class ConnectionTestTask extends com.intellij.openapi.progress.Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);

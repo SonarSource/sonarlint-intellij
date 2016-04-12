@@ -24,9 +24,9 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarApplication;
+import org.sonarsource.sonarlint.core.WsHelperImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
-import org.sonarsource.sonarlint.core.container.connected.WsHelperImpl;
 
 public class CreateTokenTask extends com.intellij.openapi.progress.Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
