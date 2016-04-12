@@ -71,7 +71,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
 
-    if(bindPanel.isBindingEnabled()) {
+    if (bindPanel.isBindingEnabled()) {
       projectSettings.setServerId(bindPanel.getSelectedStorageId());
       projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
     } else {
@@ -79,7 +79,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       projectSettings.setProjectKey(null);
     }
 
-    if(projectSettings.isBindingEnabled()) {
+    if (projectSettings.isBindingEnabled() && bindPanel.getSelectedProjectKey() != null && bindPanel.getSelectedStorageId() != null) {
       bindPanel.actionUpdateProjectTask();
     }
   }
@@ -89,11 +89,11 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       return true;
     }
 
-    if(projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
+    if (projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
       return true;
     }
 
-    if(bindPanel.isBindingEnabled()) {
+    if (bindPanel.isBindingEnabled()) {
       if (!StringUtils.equals(projectSettings.getServerId(), bindPanel.getSelectedStorageId())) {
         return true;
       }
@@ -107,14 +107,14 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   }
 
   @Override public void dispose() {
-    if(bindPanel != null) {
+    if (bindPanel != null) {
       bindPanel.dispose();
       bindPanel = null;
     }
   }
 
   public void serversChanged(List<SonarQubeServer> serverList) {
-    if(bindPanel != null) {
+    if (bindPanel != null) {
       bindPanel.serversChanged(serverList);
     }
   }

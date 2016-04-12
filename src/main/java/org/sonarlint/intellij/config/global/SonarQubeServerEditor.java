@@ -110,6 +110,15 @@ public class SonarQubeServerEditor extends DialogWrapper {
     super.init();
   }
 
+  @Override
+  public JComponent getPreferredFocusedComponent() {
+    if(isCreating) {
+      return nameText;
+    } else {
+      return urlText;
+    }
+  }
+
   @Nullable
   @Override
   protected ValidationInfo doValidate() {

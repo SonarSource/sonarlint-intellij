@@ -66,7 +66,7 @@ public class SonarLintServerManager implements ApplicationComponent {
   @Override
   public void initComponent() {
     configuredStorageIds = new HashSet<>();
-    reloadServerIds();
+    reloadServerNames();
     engines = new HashMap<>();
   }
 
@@ -74,7 +74,7 @@ public class SonarLintServerManager implements ApplicationComponent {
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
   public synchronized void reloadServers() {
-    reloadServerIds();
+    reloadServerNames();
     Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = engines.entrySet().iterator();
 
     while (it.hasNext()) {
@@ -137,7 +137,7 @@ public class SonarLintServerManager implements ApplicationComponent {
   private SonarLintFacade createConnectedFacade(Project project, String serverId, String projectKey) {
     if (!configuredStorageIds.contains(serverId)) {
       SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
-      throw new IllegalStateException("Invalid server id:" + serverId);
+      throw new IllegalStateException("Invalid server name: " + serverId);
     }
 
     ConnectedSonarLintEngine engine;
@@ -207,7 +207,7 @@ public class SonarLintServerManager implements ApplicationComponent {
     return pluginsUrls.toArray(new URL[pluginsUrls.size()]);
   }
 
-  private void reloadServerIds() {
+  private void reloadServerNames() {
     configuredStorageIds.clear();
     for (SonarQubeServer s : settings.getSonarQubeServers()) {
       configuredStorageIds.add(s.getName());

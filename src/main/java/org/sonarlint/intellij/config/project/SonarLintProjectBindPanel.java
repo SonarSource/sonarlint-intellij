@@ -87,7 +87,7 @@ public class SonarLintProjectBindPanel implements Disposable {
   // binding mgmt
   private JPanel bindPanel;
   private JComboBox<RemoteModule> projectComboBox;
-  private String selectedProjectKey;
+  private String lastSelectedProjectKey;
 
   public JPanel create() {
     rootPanel = new JPanel(new GridBagLayout());
@@ -103,7 +103,7 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   public void load(Collection<SonarQubeServer> servers, boolean enabled, @Nullable String selectedServerId, @Nullable String selectedProjectKey) {
     this.bindEnable.setSelected(enabled);
-    this.selectedProjectKey = selectedProjectKey;
+    this.lastSelectedProjectKey = selectedProjectKey;
 
     serverComboBox.removeAllItems();
     setServerList(servers, selectedServerId);
@@ -123,7 +123,14 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   @CheckForNull
   public String getSelectedProjectKey() {
-    return selectedProjectKey;
+    // do things in a type safe way
+    int idx = projectComboBox.getSelectedIndex();
+    if (idx < 0) {
+      return null;
+    } else {
+      RemoteModule module = projectComboBox.getModel().getElementAt(idx);
+      return module.getKey();
+    }
   }
 
   /**
@@ -177,12 +184,18 @@ public class SonarLintProjectBindPanel implements Disposable {
         // this won't call the change listener
         model.insertElementAt(mod, i);
         i++;
-        if (selectedProjectKey != null && selectedProjectKey.equals(mod.getKey())) {
+        if (lastSelectedProjectKey != null && lastSelectedProjectKey.equals(mod.getKey())) {
           selected = mod;
         }
       }
 
-      projectComboBox.setSelectedItem(selected);
+      if(selected != null) {
+        projectComboBox.setSelectedItem(selected);
+      } else if(projectComboBox.getItemCount() > 0) {
+        projectComboBox.setSelectedIndex(0);
+      } else {
+        projectComboBox.setSelectedItem(null);
+      }
       projectComboBox.setPrototypeDisplayValue(null);
       projectComboBox.setEnabled(bindEnable.isSelected());
     } else {
@@ -438,14 +451,7 @@ public class SonarLintProjectBindPanel implements Disposable {
     @Override
     public void itemStateChanged(ItemEvent event) {
       if (event.getStateChange() == ItemEvent.SELECTED) {
-        // do things in a type safe way
-        int idx = projectComboBox.getSelectedIndex();
-        if (idx < 0) {
-          selectedProjectKey = null;
-        } else {
-          RemoteModule module = projectComboBox.getModel().getElementAt(idx);
-          selectedProjectKey = module.getKey();
-        }
+       lastSelectedProjectKey = getSelectedProjectKey();
       }
     }
   }
