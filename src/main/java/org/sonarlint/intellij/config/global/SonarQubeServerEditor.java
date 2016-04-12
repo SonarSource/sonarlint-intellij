@@ -156,7 +156,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     authTypeComboBox.addItem(AUTH_TOKEN);
     authTypeComboBox.addItem(AUTH_PASSWORD);
 
-    loginLabel = new JBLabel("Login or token:", SwingConstants.RIGHT);
+    loginLabel = new JBLabel("Login:", SwingConstants.RIGHT);
     loginLabel.setDisplayedMnemonic('L');
     loginText = new JBTextField();
     loginText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
