@@ -325,7 +325,9 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         break;
       case UPDATING:
         builder.append("updating..");
-
+        break;
+      case NEED_UPDATE:
+        builder.append("needs update");
         break;
       case UNKNOW:
       default:

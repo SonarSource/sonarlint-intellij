@@ -51,7 +51,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ConnectionTestTask;
 import org.sonarlint.intellij.core.CreateTokenTask;
 import org.sonarlint.intellij.util.ResourceLoader;
-import org.sonarsource.sonarlint.core.client.api.connected.UnsupportedServerException;
+import org.sonarsource.sonarlint.core.client.api.exceptions.UnsupportedServerException;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class SonarQubeServerEditor extends DialogWrapper {
