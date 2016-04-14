@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
 import java.io.IOException;
@@ -155,8 +156,11 @@ public class SonarLintServerManager implements ApplicationComponent {
     }
     // Check if module is not updated
     //TODO is it too heavy?
-
     return new ConnectedSonarLintFacade(engine, project, projectKey);
+  }
+
+  private static Path getSonarLintHome() {
+    return Paths.get(PathManager.getConfigPath()).resolve("sonarlint");
   }
 
   private StandaloneSonarLintEngineImpl createEngine() {
@@ -172,6 +176,7 @@ public class SonarLintServerManager implements ApplicationComponent {
 
       StandaloneGlobalConfiguration globalConfiguration = StandaloneGlobalConfiguration.builder()
         .setLogOutput(globalLogOutput)
+        .setSonarLintUserHome(getSonarLintHome())
         .addPlugins(plugins)
         .build();
 
@@ -186,6 +191,7 @@ public class SonarLintServerManager implements ApplicationComponent {
   private ConnectedSonarLintEngine createEngine(String serverId) {
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
+      .setSonarLintUserHome(getSonarLintHome())
       .setServerId(serverId)
       .build();
 
