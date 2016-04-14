@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import java.nio.file.Path;
@@ -28,11 +27,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -85,11 +82,7 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
     props.putAll(additionalProps);
     props.putAll(projectSettings.getAdditionalProperties());
     StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props);
-
-    if (projectSettings.isVerboseEnabled()) {
-      SonarApplication sonarLint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
-      console.info(String.format("SonarLint [%s] additional properties:%n%s", sonarLint.getVersion(), SonarLintUtils.propsToString(props)));
-    }
+    console.debug("Starting analysis with configuration:\n" + config.toString());
 
     sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings));
   }
