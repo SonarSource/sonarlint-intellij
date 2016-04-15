@@ -27,6 +27,8 @@ import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
 public class SonarLintProjectNotifications extends AbstractProjectComponent {
@@ -71,6 +73,19 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
+  public void notifyServerNeedsUpdate(String serverId) {
+    if(shown) {
+      return;
+    }
+    Notification notification = new Notification(BINDING_PROBLEM,
+      "SonarLint - binding for SonarQube server '" + serverId + "' needs to be updated",
+      "Please update the SonarQube server in the <a href='#'>SonarLint General Settings</a>",
+      NotificationType.ERROR, new OpenGeneralSettingsNotificationListener(myProject));
+    notification.setImportant(true);
+    notification.notify(myProject);
+    shown = true;
+  }
+
   private static class OpenProjectSettingsNotificationListener extends NotificationListener.Adapter {
     private final Project project;
 
@@ -80,6 +95,22 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     @Override protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
       if(project != null && !project.isDisposed()) {
         SonarLintProjectConfigurable configurable = new SonarLintProjectConfigurable(project);
+        ShowSettingsUtil.getInstance().editConfigurable(project, configurable);
+      } else {
+        notification.expire();
+      }
+    }
+  }
+
+  private static class OpenGeneralSettingsNotificationListener extends NotificationListener.Adapter {
+    private final Project project;
+
+    public OpenGeneralSettingsNotificationListener(Project project) {
+      this.project = project;
+    }
+    @Override protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
+      if(project != null && !project.isDisposed()) {
+        SonarLintGlobalConfigurable configurable = new SonarLintGlobalConfigurable();
         ShowSettingsUtil.getInstance().editConfigurable(project, configurable);
       } else {
         notification.expire();

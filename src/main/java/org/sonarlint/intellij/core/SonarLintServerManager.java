@@ -150,9 +150,12 @@ public class SonarLintServerManager implements ApplicationComponent {
     } else {
       engine = createEngine(serverId);
       if (engine.getState() != ConnectedSonarLintEngine.State.UPDATED) {
+        if(engine.getState() != ConnectedSonarLintEngine.State.NEED_UPDATE)
         SonarLintProjectNotifications.get(project).notifyServerNotUpdated();
-        throw new IllegalStateException("Server not updated" + serverId);
+      } else if(engine.getState() != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
+        SonarLintProjectNotifications.get(project).notifyServerNeedsUpdate(serverId);
       }
+      throw new IllegalStateException("Server is not updated: " + serverId);
     }
     // Check if module is not updated
     //TODO is it too heavy?
