@@ -113,7 +113,7 @@ public class SonarLintServerManager implements ApplicationComponent {
   public synchronized SonarLintFacade getFacadeForAnalysis(Project project) {
     SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
     SonarLintConsole console = project.getComponent(SonarLintConsole.class);
-    if(projectSettings.isBindingEnabled()) {
+    if (projectSettings.isBindingEnabled()) {
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
 
@@ -149,14 +149,17 @@ public class SonarLintServerManager implements ApplicationComponent {
       engine = engines.get(serverId);
     } else {
       engine = createEngine(serverId);
-      if (engine.getState() != ConnectedSonarLintEngine.State.UPDATED) {
-        if(engine.getState() != ConnectedSonarLintEngine.State.NEED_UPDATE)
+    }
+
+    if (engine.getState() != ConnectedSonarLintEngine.State.UPDATED) {
+      if (engine.getState() != ConnectedSonarLintEngine.State.NEED_UPDATE) {
         SonarLintProjectNotifications.get(project).notifyServerNotUpdated();
-      } else if(engine.getState() != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
+      } else if (engine.getState() != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
         SonarLintProjectNotifications.get(project).notifyServerNeedsUpdate(serverId);
       }
       throw new IllegalStateException("Server is not updated: " + serverId);
     }
+
     // Check if module is not updated
     //TODO is it too heavy?
     return new ConnectedSonarLintFacade(engine, project, projectKey);

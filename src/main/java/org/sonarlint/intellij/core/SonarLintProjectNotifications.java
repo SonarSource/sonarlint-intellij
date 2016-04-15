@@ -28,7 +28,6 @@ import com.intellij.openapi.project.Project;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
 public class SonarLintProjectNotifications extends AbstractProjectComponent {
