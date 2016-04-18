@@ -46,6 +46,8 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
+import javax.swing.text.PlainDocument;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ConnectionTestTask;
@@ -154,7 +156,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     urlLabel = new JBLabel("Server URL:", SwingConstants.RIGHT);
     urlLabel.setDisplayedMnemonic('U');
     urlText = new JBTextField();
-    urlText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
+    urlText.setDocument(new PlainDocument());
     urlText.setText(server.getHostUrl());
     urlText.getEmptyText().setText("Example: http://localhost:9000");
     urlLabel.setLabelFor(urlText);
@@ -168,21 +170,21 @@ public class SonarQubeServerEditor extends DialogWrapper {
     loginLabel = new JBLabel("Login:", SwingConstants.RIGHT);
     loginLabel.setDisplayedMnemonic('L');
     loginText = new JBTextField();
-    loginText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
+    loginText.setDocument(new PlainDocument());
     loginText.setText(server.getLogin());
     loginText.getEmptyText().setText("");
     loginLabel.setLabelFor(loginText);
 
     passwordLabel = new JBLabel("Password:", SwingConstants.RIGHT);
     passwordText = new JBPasswordField();
-    passwordText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
+    passwordText.setDocument(new PlainDocument());
     passwordText.setText(server.getPassword());
     passwordText.getEmptyText().setText("");
     passwordLabel.setLabelFor(passwordText);
 
     tokenLabel = new JBLabel("Token:", SwingConstants.RIGHT);
     tokenText = new JBPasswordField();
-    tokenText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
+    tokenText.setDocument(new PlainDocument());
     tokenText.setColumns(TEXT_COLUMNS);
     tokenText.setText(server.getToken());
     tokenText.getEmptyText().setText("");
