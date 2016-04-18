@@ -58,7 +58,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class SonarQubeServerEditor extends DialogWrapper {
   private static final Logger LOGGER = Logger.getInstance(SonarQubeServerEditor.class);
-  private static final int MAX_LENGTH = 50;
+  private static final int NAME_MAX_LENGTH = 50;
   private static final int TEXT_COLUMNS = 30;
   private static final String AUTH_PASSWORD = "Password";
   private static final String AUTH_TOKEN = "Token";
@@ -145,7 +145,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     nameLabel = new JBLabel("Name:", SwingConstants.RIGHT);
     nameLabel.setDisplayedMnemonic('N');
     nameText = new JBTextField();
-    nameText.setDocument(new LengthRestrictedDocument(MAX_LENGTH));
+    nameText.setDocument(new LengthRestrictedDocument(NAME_MAX_LENGTH));
     nameText.setText(server.getName());
     if(!isCreating) {
       nameText.setFont(nameText.getFont().deriveFont(Font.BOLD));
