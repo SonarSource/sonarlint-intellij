@@ -74,7 +74,7 @@ public class SonarLintAnalysisConfigurator {
   public void analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintServerManager core = p.getComponent(SonarLintServerManager.class);
+    SonarLintServerManager core = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
 
     // Configure plugin properties
     Map<String, String> pluginProps = new HashMap<>();
