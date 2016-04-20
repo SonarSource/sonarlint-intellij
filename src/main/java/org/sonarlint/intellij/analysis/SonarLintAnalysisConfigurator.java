@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.compiler.CompilerConfiguration;
+import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.EffectiveLanguageLevelUtil;
 import com.intellij.openapi.module.Module;
@@ -74,7 +75,7 @@ public class SonarLintAnalysisConfigurator {
   public void analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintServerManager core = p.getComponent(SonarLintServerManager.class);
+    SonarLintServerManager core = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
 
     // Configure plugin properties
     Map<String, String> pluginProps = new HashMap<>();
