@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.compiler.CompilerConfiguration;
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.EffectiveLanguageLevelUtil;
 import com.intellij.openapi.module.Module;
