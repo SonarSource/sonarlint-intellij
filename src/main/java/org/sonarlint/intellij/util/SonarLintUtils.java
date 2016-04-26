@@ -46,6 +46,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
+import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -136,31 +138,46 @@ public class SonarLintUtils {
     }
 
     // file and module not null here
-    if ("java".equalsIgnoreCase(file.getFileType().getDefaultExtension()) && !isSource(file, module)) {
-      SonarLintConsole.get(module.getProject()).debug("Not automatically analysing java file outside source folder: " + file.getName());
-      return false;
-    }
-
-    return true;
-  }
-
-  public static boolean isSource(VirtualFile file, Module module) {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     ContentEntry[] entries = moduleRootManager.getContentEntries();
+
     for (ContentEntry e : entries) {
+      if (isExcludedOrUnderExcludedDirectory(file, e)) {
+        SonarLintConsole.get(module.getProject()).debug("Not automatically analysing excluded file: " + file.getName());
+        return false;
+      }
+
       SourceFolder[] sourceFolders = e.getSourceFolders();
       for (SourceFolder sourceFolder : sourceFolders) {
-        if (sourceFolder.getFile() == null) {
+        if (sourceFolder.getFile() == null || sourceFolder.isSynthetic()) {
           continue;
         }
+
         if (VfsUtil.isAncestor(sourceFolder.getFile(), file, false)) {
+          if (isJavaResource(sourceFolder)) {
+            SonarLintConsole.get(module.getProject()).debug("Not automatically analysing file under resources: " + file.getName());
+            return false;
+          } else if (isJavaGeneratedSource(sourceFolder)) {
+            SonarLintConsole.get(module.getProject()).debug("Not automatically analysing file belonging to generated source folder: " + file.getName());
+            return false;
+          }
+
           return true;
         }
       }
     }
 
-    return false;
+    // java must be in a source root. For other files, we always analyse them.
+    return !"java".equalsIgnoreCase(file.getFileType().getDefaultExtension());
+  }
 
+  public static boolean isExcludedOrUnderExcludedDirectory(final VirtualFile file, ContentEntry contentEntry) {
+    for (VirtualFile excludedDir : contentEntry.getExcludeFolderFiles()) {
+      if (VfsUtil.isAncestor(excludedDir, file, false)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public static boolean shouldAnalyze(@Nullable VirtualFile file, @Nullable Module module) {
@@ -210,6 +227,21 @@ public class SonarLintUtils {
     }
   }
 
+  public static boolean isJavaGeneratedSource(SourceFolder source) {
+    // only return non-null if source has root type in JavaModuleSourceRootTypes.SOURCES
+    JavaSourceRootProperties properties = source.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
+    if (properties != null) {
+      return properties.isForGeneratedSources();
+    } else {
+      // unknown
+      return false;
+    }
+  }
+
+  public static boolean isJavaResource(SourceFolder source) {
+    return JavaModuleSourceRootTypes.RESOURCES.contains(source.getRootType());
+  }
+
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
     SonarApplication sonarlint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
@@ -217,7 +249,7 @@ public class SonarLintUtils {
       .connectTimeoutMilliseconds(5000)
       .readTimeoutMilliseconds(5000)
       .url(server.getHostUrl());
-    if(server.getToken() != null) {
+    if (server.getToken() != null) {
       serverConfigBuilder.token(server.getToken());
     } else {
       serverConfigBuilder.credentials(server.getLogin(), server.getPassword());
