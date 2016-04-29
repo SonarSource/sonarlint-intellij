@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.impl.AnnotationHolderImpl;
+import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.annotation.AnnotationSession;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.Document;
@@ -65,6 +66,7 @@ public class SonarExternalAnnotatorTest {
     psiFileRange = new TextRange(0, 100);
     when(psiFile.getTextRange()).thenReturn(psiFileRange);
     when(psiFile.getVirtualFile()).thenReturn(virtualFile);
+    when(psiFile.getFileType()).thenReturn(JavaFileType.INSTANCE);
   }
 
   @Test
