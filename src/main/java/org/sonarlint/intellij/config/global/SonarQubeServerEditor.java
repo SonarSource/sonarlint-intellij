@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.ComboBox;
@@ -30,7 +31,6 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBPasswordField;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.net.HttpConfigurable;
-import com.intellij.util.ui.FormBuilder;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -51,9 +51,7 @@ import javax.swing.text.PlainDocument;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ConnectionTestTask;
-import org.sonarlint.intellij.core.CreateTokenTask;
 import org.sonarlint.intellij.util.ResourceLoader;
-import org.sonarsource.sonarlint.core.client.api.exceptions.UnsupportedServerException;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class SonarQubeServerEditor extends DialogWrapper {
@@ -196,6 +194,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
         generateToken();
       }
     });
+    tokenButton.setToolTipText("Opens a web browser, pointing to the user security page in the configured SonarQube server");
 
     proxySettingsButton = new JButton("Proxy settings");
     enableProxy = new JBCheckBox("Use proxy", server.enableProxy());
@@ -336,74 +335,24 @@ public class SonarQubeServerEditor extends DialogWrapper {
   }
 
   private void generateToken() {
-    CreateTokenDialog dialog = new CreateTokenDialog(urlText.getText());
-    if (!dialog.showAndGet()) {
+    if(StringUtils.isBlank(urlText.getText())) {
+      Messages.showErrorDialog(urlText, "Please fill the 'Server Url' field", "Invalid Server URL");
       return;
     }
-    String login = dialog.getLogin();
-    char[] password = dialog.getPassword();
-    CreateTokenTask createTokenTask = new CreateTokenTask(urlText.getText(), nameText.getText(), login, new String(password));
-    ProgressManager.getInstance().run(createTokenTask);
-
-    Exception ex = createTokenTask.getException();
-    String token = createTokenTask.getToken();
-
-    String title = "Create authentication token";
-    if (ex != null) {
-      if (ex instanceof UnsupportedServerException) {
-        Messages.showErrorDialog(rootPanel, "Failed to create token. Tokens are not supported in the SonarQube server. " + ex.getMessage(), title);
-      } else if (ex.getMessage() != null) {
-        Messages.showErrorDialog(rootPanel, "Failed to create token: " + ex.getMessage(), title);
-      } else {
-        Messages.showErrorDialog(rootPanel, "Failed to create token", title);
-        LOGGER.info(ex);
-      }
-    } else {
-      tokenText.setText(token);
-      Messages.showInfoMessage(rootPanel, "Token created successfully", title);
-    }
-  }
-
-  private class CreateTokenDialog extends DialogWrapper {
-    private static final int COLUMNS = 20;
-    private JBTextField login;
-    private JBPasswordField password;
-    private String hostUrl;
-
-    protected CreateTokenDialog(String hostUrl) {
-      super(rootPanel, true);
-      this.hostUrl = hostUrl;
-      super.setTitle("Credentials to create authentication token");
-      init();
+    if(!BrowserUtil.isAbsoluteURL(urlText.getText())) {
+      Messages.showErrorDialog(urlText, "Can't launch browser for URL: " + urlText.getText(), "Invalid Server URL");
+      return;
     }
 
-    @Nullable @Override protected JComponent createCenterPanel() {
-      JBTextField host = new JBTextField();
-      host.setText(hostUrl);
-      host.setEnabled(false);
-      host.setColumns(COLUMNS);
+    StringBuilder url = new StringBuilder(256);
+    url.append(urlText.getText());
 
-      JBLabel hostLabel = new JBLabel("Host URL:");
-
-      login = new JBTextField();
-      login.setColumns(COLUMNS);
-      password = new JBPasswordField();
-
-      JBLabel tokenLoginLabel = new JBLabel("Login:");
-      JBLabel tokenPasswordLabel = new JBLabel("Password:");
-      return new FormBuilder()
-        .addLabeledComponent(hostLabel, host)
-        .addLabeledComponent(tokenLoginLabel, login)
-        .addLabeledComponent(tokenPasswordLabel, password).getPanel();
+    if(!urlText.getText().endsWith("/")) {
+      url.append("/");
     }
 
-    public String getLogin() {
-      return login.getText();
-    }
-
-    public char[] getPassword() {
-      return password.getPassword();
-    }
+    url.append("account/security");
+    BrowserUtil.browse(url.toString());
   }
 
 }
