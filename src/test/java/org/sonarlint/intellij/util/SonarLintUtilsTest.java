@@ -126,4 +126,21 @@ public class SonarLintUtilsTest extends SonarTest {
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());
   }
+
+  @Test
+  public void testServerConfigurationTimeout() {
+    SonarApplication app = mock(SonarApplication.class);
+    when(app.getVersion()).thenReturn("1.0");
+    super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
+
+    SonarQubeServer server = new SonarQubeServer();
+    server.setHostUrl("http://myhost");
+    server.setLogin("token");
+    server.setPassword("pass");
+    server.setTimeout("1");
+    
+    ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
+    
+    assertThat(config.getReadTimeoutMs()).isEqualTo(new Integer(server.getTimeout()));
+  }
 }

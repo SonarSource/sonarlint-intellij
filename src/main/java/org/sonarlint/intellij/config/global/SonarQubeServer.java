@@ -35,6 +35,7 @@ public class SonarQubeServer {
   private String login;
   private String password;
   private boolean enableProxy;
+  private String timeout;
 
   public SonarQubeServer() {
     // no args
@@ -152,4 +153,11 @@ public class SonarQubeServer {
     return name;
   }
 
+  public String getTimeout() {
+      return timeout;
+  }
+
+  public void setTimeout(String timeout) {
+    this.timeout = timeout;
+  }
 }

@@ -248,7 +248,7 @@ public class SonarLintUtils {
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
       .connectTimeoutMilliseconds(5000)
-      .readTimeoutMilliseconds(DEFAULT_READ_TIMEOUT)
+      .readTimeoutMilliseconds(StringUtil.isEmptyOrSpaces(server.getTimeout()) ? DEFAULT_READ_TIMEOUT : new Integer(server.getTimeout()))
       .url(server.getHostUrl());
     if (server.getToken() != null) {
       serverConfigBuilder.token(server.getToken());
