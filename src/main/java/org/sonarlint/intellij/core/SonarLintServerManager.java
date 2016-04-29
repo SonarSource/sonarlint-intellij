@@ -221,7 +221,7 @@ public class SonarLintServerManager implements ApplicationComponent {
     }
 
     List<URL> pluginsUrls = new ArrayList<>();
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()))) {
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()), "*.jar")) {
       for (Path path : directoryStream) {
         globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
         pluginsUrls.add(path.toUri().toURL());

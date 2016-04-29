@@ -1,6 +1,7 @@
+src/main/resources/plugins/*.jar
+
 # ---- Sonar
 .sonar
-it-java/plugin/projects/java7/target
 
 # ---- IntelliJ IDEA
 *.iws

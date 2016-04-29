@@ -37,6 +37,10 @@ repositories {
   mavenCentral()
 }
 
+configurations {
+  sqplugin
+}
+
 dependencies {
   compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.2-SNAPSHOT'
   compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.2-SNAPSHOT'
@@ -46,6 +50,29 @@ dependencies {
   testCompile 'junit:junit:4.11'
   testCompile 'org.assertj:assertj-core:2.2.0'
   testCompile 'org.mockito:mockito-core:1.10.19'
+  sqplugin (
+    'org.sonarsource.java:sonar-java-plugin:3.12',
+    'org.sonarsource.javascript:sonar-javascript-plugin:2.11',
+    'org.sonarsource.php:sonar-php-plugin:2.8',
+    'org.codehaus.sonar-plugins.python:sonar-python-plugin:1.5'
+  )
+}
+
+task cleanSQPlugins(type: Delete) {
+  delete fileTree('src/main/resources/plugins').include('**/*.jar')
+}
+
+task downloadSQPlugins(type: Copy) {
+  from configurations.sqplugin.filter { it.name.matches('.*sonar-.*-plugin.*\\.jar') }
+  into 'src/main/resources/plugins'
+}
+
+task updateSQPlugins {
+  dependsOn cleanSQPlugins, downloadSQPlugins
+}
+
+project.afterEvaluate {
+  tasks.buildPlugin.dependsOn(updateSQPlugins)
 }
 
 release {
