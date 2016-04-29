@@ -151,6 +151,7 @@ public class SonarLintServerManager implements ApplicationComponent {
       engine = engines.get(serverId);
     } else {
       engine = createEngine(serverId);
+      engines.put(serverId, engine);
     }
 
     if (engine.getState() != ConnectedSonarLintEngine.State.UPDATED) {
