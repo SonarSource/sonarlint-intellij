@@ -34,6 +34,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.util.SonarLintUtils.DEFAULT_READ_TIMEOUT;
 
 public class SonarLintUtilsTest extends SonarTest {
   private VirtualFile testFile;
@@ -106,7 +107,7 @@ public class SonarLintUtilsTest extends SonarTest {
     assertThat(config.getLogin()).isEqualTo(server.getToken());
     assertThat(config.getPassword()).isNull();
     assertThat(config.getConnectTimeoutMs()).isEqualTo(5000);
-    assertThat(config.getReadTimeoutMs()).isEqualTo(5000);
+    assertThat(config.getReadTimeoutMs()).isEqualTo(DEFAULT_READ_TIMEOUT);
     assertThat(config.getUserAgent()).contains("SonarLint");
     assertThat(config.getUrl()).isEqualTo(server.getHostUrl());
   }
