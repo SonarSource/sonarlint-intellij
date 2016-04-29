@@ -24,6 +24,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.WsHelperImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
@@ -56,8 +57,8 @@ public class CreateTokenTask extends com.intellij.openapi.progress.Task.Modal {
     try {
       ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
         .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
-        .connectTimeoutMilliseconds(5000)
-        .readTimeoutMilliseconds(5000)
+        .connectTimeoutMilliseconds(SonarLintUtils.CONNECTION_TIMEOUT_MS)
+        .readTimeoutMilliseconds(SonarLintUtils.CONNECTION_TIMEOUT_MS)
         .url(host)
         .credentials(login, password);
       ServerConfiguration serverConfig = serverConfigBuilder.build();

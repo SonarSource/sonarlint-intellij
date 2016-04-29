@@ -105,8 +105,8 @@ public class SonarLintUtilsTest extends SonarTest {
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getToken());
     assertThat(config.getPassword()).isNull();
-    assertThat(config.getConnectTimeoutMs()).isEqualTo(5000);
-    assertThat(config.getReadTimeoutMs()).isEqualTo(5000);
+    assertThat(config.getConnectTimeoutMs()).isEqualTo(SonarLintUtils.CONNECTION_TIMEOUT_MS);
+    assertThat(config.getReadTimeoutMs()).isEqualTo(SonarLintUtils.CONNECTION_TIMEOUT_MS);
     assertThat(config.getUserAgent()).contains("SonarLint");
     assertThat(config.getUrl()).isEqualTo(server.getHostUrl());
   }

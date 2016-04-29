@@ -56,6 +56,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 public class SonarLintUtils {
 
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
+  public static final int CONNECTION_TIMEOUT_MS = 30_000;
 
   private SonarLintUtils() {
     // Utility class
@@ -246,8 +247,8 @@ public class SonarLintUtils {
     SonarApplication sonarlint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
-      .connectTimeoutMilliseconds(5000)
-      .readTimeoutMilliseconds(5000)
+      .connectTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
+      .readTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
       .url(server.getHostUrl());
     if (server.getToken() != null) {
       serverConfigBuilder.token(server.getToken());
