@@ -2,17 +2,17 @@
  * SonarLint for IntelliJ IDEA
  * Copyright (C) 2015 SonarSource
  * sonarlint@sonarsource.com
- *
+ * <p>
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 3 of the License, or (at your option) any later version.
- *
+ * <p>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
@@ -22,6 +22,7 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckForNull;
+
 import org.apache.http.annotation.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -169,6 +171,10 @@ public class SonarLintServerManager implements ApplicationComponent {
     return Paths.get(PathManager.getConfigPath()).resolve("sonarlint");
   }
 
+  private static Path getWorkDir() {
+    return Paths.get(PathManager.getTempPath()).resolve("sonarlint");
+  }
+
   private StandaloneSonarLintEngineImpl createEngine() {
     /*
      * Some components in the container use the context classloader to find resources. For example, the ServiceLoader uses it by default
@@ -183,6 +189,7 @@ public class SonarLintServerManager implements ApplicationComponent {
       StandaloneGlobalConfiguration globalConfiguration = StandaloneGlobalConfiguration.builder()
         .setLogOutput(globalLogOutput)
         .setSonarLintUserHome(getSonarLintHome())
+        .setWorkDir(getWorkDir())
         .addPlugins(plugins)
         .build();
 
@@ -198,6 +205,7 @@ public class SonarLintServerManager implements ApplicationComponent {
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
+      .setWorkDir(getWorkDir())
       .setServerId(serverId)
       .build();
 
