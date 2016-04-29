@@ -57,6 +57,11 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   @Override
   public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
+    // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
+    if ("html".equalsIgnoreCase(file.getFileType().getName())) {
+      return;
+    }
+
     Collection<IssuePointer> issues = annotationResult.store.getForFile(file.getVirtualFile());
     for (IssuePointer i : issues) {
       // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
