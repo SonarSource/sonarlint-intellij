@@ -34,6 +34,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.util.SonarLintUtils.DEFAULT_READ_TIMEOUT;
 
 public class SonarLintUtilsTest extends SonarTest {
   private VirtualFile testFile;
@@ -106,7 +107,7 @@ public class SonarLintUtilsTest extends SonarTest {
     assertThat(config.getLogin()).isEqualTo(server.getToken());
     assertThat(config.getPassword()).isNull();
     assertThat(config.getConnectTimeoutMs()).isEqualTo(5000);
-    assertThat(config.getReadTimeoutMs()).isEqualTo(5000);
+    assertThat(config.getReadTimeoutMs()).isEqualTo(DEFAULT_READ_TIMEOUT);
     assertThat(config.getUserAgent()).contains("SonarLint");
     assertThat(config.getUrl()).isEqualTo(server.getHostUrl());
   }
@@ -124,5 +125,22 @@ public class SonarLintUtilsTest extends SonarTest {
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());
+  }
+
+  @Test
+  public void testServerConfigurationTimeout() {
+    SonarApplication app = mock(SonarApplication.class);
+    when(app.getVersion()).thenReturn("1.0");
+    super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
+
+    SonarQubeServer server = new SonarQubeServer();
+    server.setHostUrl("http://myhost");
+    server.setLogin("token");
+    server.setPassword("pass");
+    server.setTimeout("1");
+    
+    ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
+    
+    assertThat(config.getReadTimeoutMs()).isEqualTo(new Integer(server.getTimeout()));
   }
 }

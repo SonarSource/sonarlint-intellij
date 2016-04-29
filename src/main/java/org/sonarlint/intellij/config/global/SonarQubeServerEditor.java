@@ -92,8 +92,11 @@ public class SonarQubeServerEditor extends DialogWrapper {
   private JButton proxySettingsButton;
 
   protected JButton testButton;
+    
+  private JBLabel timeoutLabel;
+  private JBTextField timeoutText;
 
-  protected SonarQubeServerEditor(JComponent parent, List<SonarQubeServer> serverList, SonarQubeServer server, boolean isCreating) {
+    protected SonarQubeServerEditor(JComponent parent, List<SonarQubeServer> serverList, SonarQubeServer server, boolean isCreating) {
     super(parent, true);
     this.isCreating = isCreating;
     this.server = server;
@@ -136,6 +139,10 @@ public class SonarQubeServerEditor extends DialogWrapper {
 
     if (StringUtils.isEmpty(urlText.getText())) {
       return new ValidationInfo("Servers must be configured with a host URL", urlText);
+    }
+
+    if (!StringUtils.isNumeric(timeoutText.getText())) {
+      return new ValidationInfo("Timeout must be a value in milliseconds", timeoutText);
     }
 
     return null;
@@ -202,6 +209,13 @@ public class SonarQubeServerEditor extends DialogWrapper {
     enableProxy.setMnemonic('y');
 
     enableProxy.setEnabled(HttpConfigurable.getInstance().USE_HTTP_PROXY);
+
+    timeoutLabel = new JBLabel("Read timeout:", SwingConstants.RIGHT);
+    timeoutText = new JBTextField();
+    timeoutText.setDocument(new PlainDocument());
+    timeoutText.setText(server.getTimeout());
+    timeoutText.getEmptyText().setText("");
+    timeoutLabel.setLabelFor(timeoutText);
 
     testButton = new JButton("Test connection");
     testButton.setFont(testButton.getFont().deriveFont(Font.BOLD));
@@ -287,6 +301,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
       .addLabeledComponentWithButton(tokenLabel, tokenText, tokenButton)
       .addLabeledComponent(loginLabel, loginText, true)
       .addLabeledComponent(passwordLabel, passwordText, true)
+      .addLabeledComponent(timeoutLabel, timeoutText, true)
       .addLabeledComponent(enableProxy, proxySettingsButton, false)
       .addSeparator(5);
 
@@ -333,6 +348,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
       server.setPassword(new String(passwordText.getPassword()));
     }
     server.setEnableProxy(enableProxy.isSelected());
+    server.setTimeout(timeoutText.getText().trim());
   }
 
   private void generateToken() {
