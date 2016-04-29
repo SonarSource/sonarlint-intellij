@@ -27,7 +27,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.messages.MessageBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -35,7 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
-import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -44,15 +42,15 @@ public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
   private final DaemonCodeAnalyzer codeAnalyzer;
+  private IssueStore store;
   private final SonarLintConsole console;
-  private final MessageBus messageBus;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer) {
+  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueStore store) {
     super(project);
     this.matcher = matcher;
     this.codeAnalyzer = codeAnalyzer;
+    this.store = store;
     this.console = SonarLintConsole.get(project);
-    this.messageBus = project.getMessageBus();
   }
 
   public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
@@ -61,8 +59,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     AccessToken token = ReadAction.start();
     try {
       map = transformIssues(issues, job.files());
-      messageBus.syncPublisher(AnalysisResultsListener.SONARLINT_ANALYSIS_DONE_TOPIC).analysisDone(map);
-
+      store.store(map);
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
       for (PsiFile psiFile : getPsi(job.files())) {
         codeAnalyzer.restart(psiFile);

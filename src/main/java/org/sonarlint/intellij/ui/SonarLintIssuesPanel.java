@@ -52,6 +52,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
@@ -69,7 +70,7 @@ import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
-import org.sonarlint.intellij.messages.AnalysisResultsListener;
+import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
@@ -118,11 +119,20 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     super.setContent(createSplitter(issuesPanel, scrollableRulePanel));
 
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(AnalysisResultsListener.SONARLINT_ANALYSIS_DONE_TOPIC, new AnalysisResultsListener() {
-      @Override public void analysisDone(final Map<VirtualFile, Collection<IssuePointer>> issuesPerFile) {
+    busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
+
+      @Override public void filesChanged(final Map<VirtualFile, Collection<IssuePointer>> map) {
         ApplicationManager.getApplication().invokeLater(new Runnable() {
           @Override public void run() {
-            treeBuilder.updateFiles(issuesPerFile);
+            treeBuilder.updateFiles(map);
+          }
+        });
+      }
+
+      @Override public void allChanged() {
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
+          @Override public void run() {
+            updateTree();
           }
         });
       }

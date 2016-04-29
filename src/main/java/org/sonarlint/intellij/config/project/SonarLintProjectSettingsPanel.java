@@ -28,6 +28,8 @@ import javax.swing.JPanel;
 import org.apache.commons.codec.binary.StringUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
@@ -68,6 +70,8 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   }
 
   public void save(SonarLintProjectSettings projectSettings) {
+    boolean bindingChanged = bindingChanged(projectSettings);
+
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
 
@@ -82,13 +86,18 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     if (projectSettings.isBindingEnabled() && bindPanel.getSelectedProjectKey() != null && bindPanel.getSelectedStorageId() != null) {
       bindPanel.actionUpdateProjectTask();
     }
-  }
 
-  public boolean isModified(SonarLintProjectSettings projectSettings) {
-    if (!propsPanel.getProperties().equals(projectSettings.getAdditionalProperties())) {
-      return true;
+    if(bindingChanged) {
+      SonarLintConsole console = SonarLintConsole.get(project);
+      IssueStore store = project.getComponent(IssueStore.class);
+
+      console.info("Clearing all issues because binding changed");
+      store.clear();
     }
 
+  }
+
+  private boolean bindingChanged(SonarLintProjectSettings projectSettings) {
     if (projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
       return true;
     }
@@ -104,6 +113,14 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     }
 
     return false;
+  }
+
+  public boolean isModified(SonarLintProjectSettings projectSettings) {
+    if (!propsPanel.getProperties().equals(projectSettings.getAdditionalProperties())) {
+      return true;
+    }
+
+    return bindingChanged(projectSettings);
   }
 
   @Override public void dispose() {

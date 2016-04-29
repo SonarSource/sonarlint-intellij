@@ -25,8 +25,10 @@ import java.util.Collection;
 import java.util.Map;
 import org.sonarlint.intellij.issue.IssuePointer;
 
-public interface AnalysisResultsListener {
-  Topic<AnalysisResultsListener> SONARLINT_ANALYSIS_DONE_TOPIC = Topic.create("SonarLint New Issues", AnalysisResultsListener.class);
+public interface IssueStoreListener {
+  Topic<IssueStoreListener> SONARLINT_ISSUE_STORE_TOPIC = Topic.create("Issue store changed", IssueStoreListener.class);
 
-  void analysisDone(Map<VirtualFile, Collection<IssuePointer>> issuesPerFile);
+  void filesChanged(Map<VirtualFile, Collection<IssuePointer>> map);
+
+  void allChanged();
 }
