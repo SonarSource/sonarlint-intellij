@@ -25,6 +25,8 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collection;
+import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -54,6 +56,16 @@ public class CurrentFileScope extends IssueTreeScope {
       for (ScopeListener l : listeners) {
         l.conditionChanged();
       }
+    }
+  }
+
+  @Override
+  public Collection<VirtualFile> getAll() {
+    VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
+    if(selectedFile != null) {
+      return Collections.singleton(selectedFile);
+    } else {
+      return Collections.emptySet();
     }
   }
 

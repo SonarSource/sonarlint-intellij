@@ -25,6 +25,7 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.application.ApplicationManager;
@@ -37,6 +38,7 @@ import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.switcher.QuickActionProvider;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
@@ -66,6 +68,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.issue.IssuePointer;
@@ -81,9 +85,9 @@ import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeCellRenderer;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 
-public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
+public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator, DataProvider {
   private static final String ID = "SonarLint";
-  private static final String GROUP_ID = "SonarLint.toolwindow";
+  private static final String GROUP_ID = "SonarLint.issuestoolwindow";
   private static final String SELECTED_SCOPE_KEY = "SONARLINT_ISSUES_VIEW_SCOPE";
   private static final String SPLIT_PROPORTION = "SONARLINT_ISSUES_SPLIT_PROPORTION";
 
@@ -275,6 +279,11 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
 
     EditSourceOnDoubleClickHandler.install(tree);
     EditSourceOnEnterKeyHandler.install(tree);
+  }
+
+  @Nullable
+  public Object getData(@NonNls String dataId) {
+    return IssueTreeScope.SCOPE_DATA_KEY.is(dataId) ? scope : null;
   }
 
   private OccurenceInfo occurrence(IssueNode node) {

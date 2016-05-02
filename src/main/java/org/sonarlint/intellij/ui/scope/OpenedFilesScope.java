@@ -25,20 +25,32 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collection;
+import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class OpenedFilesScope extends IssueTreeScope {
+  private final Project project;
 
   public OpenedFilesScope(Project project) {
+    this.project = project;
     project.getMessageBus().connect(project).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new EditorChangeListener());
   }
 
   @Override
   public String getDisplayName() {
     return "Opened files";
+  }
+
+  @Override
+  public Collection<VirtualFile> getAll() {
+    FileEditorManager editorManager = FileEditorManager.getInstance(project);
+    VirtualFile[] openFiles = editorManager.getOpenFiles();
+    return Arrays.asList(openFiles);
   }
 
   private class EditorChangeListener extends FileEditorManagerAdapter {

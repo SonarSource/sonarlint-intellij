@@ -44,7 +44,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
     Content toolContent = toolWindow.getContentManager().getFactory().createContent(
-      new SonarLintToolPanel(toolWindow, project),
+      new SonarLintLogPanel(toolWindow, project),
       "Log",
       false);
     toolWindow.getContentManager().addContent(toolContent);

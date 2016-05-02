@@ -97,7 +97,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
    * a write access (the pooled thread would dead lock if it needs read access). The listener for file editor events holds the write access, for example.
    * @see #submitAsync(Module, Collection)
    */
-  public void submit(Module m, Set<VirtualFile> files) {
+  public void submit(Module m, Collection<VirtualFile> files) {
     synchronized (lock) {
       if (myProject.isDisposed() || !status.tryRun()) {
         return;
@@ -113,7 +113,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
    * Runs SonarLint analysis asynchronously, in another thread.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of file being analyzed
    * might be changed with the editor at the same time, resulting in a bad placement of the issues in the editor.
-   * @see #submit(Module, Set)
+   * @see #submit(Module, Collection)
    */
   private void launchAsync(final SonarLintJob job) {
     final SonarLintTask task = SonarLintTask.createBackground(processor, job);

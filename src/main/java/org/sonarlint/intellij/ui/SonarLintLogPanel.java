@@ -36,16 +36,16 @@ import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.messages.StatusListener;
 
-public class SonarLintToolPanel extends SimpleToolWindowPanel {
+public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarLint";
-  private static final String GROUP_ID = "SonarLint.toolwindow";
+  private static final String GROUP_ID = "SonarLint.logtoolwindow";
 
   private final ToolWindow toolWindow;
   private final Project project;
 
   private ActionToolbar mainToolbar;
 
-  public SonarLintToolPanel(ToolWindow toolWindow, Project project) {
+  public SonarLintLogPanel(ToolWindow toolWindow, Project project) {
     super(false, true);
     this.toolWindow = toolWindow;
     this.project = project;

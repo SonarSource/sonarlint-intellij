@@ -114,7 +114,8 @@
     </extensions>
 
     <actions>
-        <group id="SonarLint.toolwindow" text="SonarLint" popup="true"/>
+        <group id="SonarLint.logtoolwindow" text="SonarLint" popup="true"/>
+        <group id="SonarLint.issuestoolwindow" text="SonarLint" popup="true"/>
 
         <action id="SonarLint.AnalyzeCurrentEditorFile"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
@@ -123,7 +124,16 @@
                 icon="/images/onde-sonar-16-execute.png">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-            <add-to-group group-id="SonarLint.toolwindow"/>
+            <add-to-group group-id="SonarLint.logtoolwindow"/>
+        </action>
+
+
+        <action id="SonarLint.SonarAnalyzeScopeAction"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeScopeAction"
+                text="Analyze this file with SonarLint"
+                description="Run SonarLint analysis on the file selected in the editor"
+                icon="/images/onde-sonar-16-execute.png">
+            <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.Cancel"
@@ -131,7 +141,8 @@
                 text="Cancel SonarLint analysis"
                 description="Cancel the SonarLint analysis running"
                 icon="/images/suspend.png">
-            <add-to-group group-id="SonarLint.toolwindow"/>
+            <add-to-group group-id="SonarLint.logtoolwindow"/>
+            <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
 
 
@@ -140,7 +151,8 @@
                 text="Configure SonarLint"
                 description="Configure SonarLint"
                 icon="/images/externalToolsSmall.png">
-            <add-to-group group-id="SonarLint.toolwindow"/>
+            <add-to-group group-id="SonarLint.logtoolwindow"/>
+            <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.CleanConsole"
@@ -148,7 +160,16 @@
                 text="Clear SonarLint console"
                 description="Clear SonarLint console"
                 icon="/images/clean.png">
-            <add-to-group group-id="SonarLint.toolwindow"/>
+            <add-to-group group-id="SonarLint.logtoolwindow"/>
+        </action>
+
+        <action id="SonarLint.toolwindow.ClearIssues"
+                class="org.sonarlint.intellij.actions.SonarClearIssues"
+                text="Clear SonarLint issues"
+                description="Clear SonarLint issues"
+                icon="/images/clean.png">
+            <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
     </actions>
+
 </idea-plugin>

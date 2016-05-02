@@ -19,51 +19,70 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collection;
 import java.util.Collections;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.ui.scope.IssueTreeScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
+public class SonarAnalyzeScopeAction extends AbstractSonarAction {
   @Override
   protected boolean isEnabled(Project project, SonarLintStatus status) {
     if (status.isRunning()) {
       return false;
     }
 
-    return SonarLintUtils.getSelectedFile(project) != null;
+    return true;
   }
 
   @Override
   public void actionPerformed(AnActionEvent e) {
+    System.out.println("SCOPE");
     Project p = e.getProject();
 
-    VirtualFile selectedFile = SonarLintUtils.getSelectedFile(p);
-    SonarLintConsole console = SonarLintConsole.get(p);
+    IssueTreeScope scope = e.getData(IssueTreeScope.SCOPE_DATA_KEY);
+    if (scope == null) {
+      return;
+    }
 
-    if (selectedFile == null) {
+    SonarLintConsole console = SonarLintConsole.get(p);
+    Collection<VirtualFile> files = scope.getAll();
+
+    if (files.isEmpty()) {
       console.error("No files for analysis");
       return;
     }
 
-    Module m = ModuleUtil.findModuleForFile(selectedFile, p);
-
-    if (SonarLintUtils.shouldAnalyze(selectedFile, m)) {
-      SonarLintAnalyzer analyzer = p.getComponent(SonarLintAnalyzer.class);
-      if (executeBackground(e)) {
-        analyzer.submitAsync(m, Collections.singleton(selectedFile));
-      } else {
-        analyzer.submit(m, Collections.singleton(selectedFile));
+    Multimap<Module, VirtualFile> filesByModule = HashMultimap.create();
+    for (VirtualFile file : files) {
+      Module m = ModuleUtil.findModuleForFile(file, p);
+      if (!SonarLintUtils.shouldAnalyze(file, m)) {
+        console.info("File '" + file + "' cannot be analyzed");
+        continue;
       }
-    } else {
-      console.error("File '" + selectedFile + "' cannot be analyzed");
+
+      filesByModule.put(m, file);
+    }
+
+    if (!filesByModule.isEmpty()) {
+      SonarLintAnalyzer analyzer = p.getComponent(SonarLintAnalyzer.class);
+      for (Module m : filesByModule.keySet()) {
+        if (executeBackground(e)) {
+          analyzer.submitAsync(m, filesByModule.get(m));
+        } else {
+          analyzer.submit(m, filesByModule.get(m));
+        }
+      }
     }
   }
 

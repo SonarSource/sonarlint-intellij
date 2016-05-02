@@ -27,6 +27,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -181,10 +182,15 @@ public class TreeModelBuilder {
   public DefaultTreeModel updateModel(Map<VirtualFile, Collection<IssuePointer>> map, @Nullable Condition<VirtualFile> condition) {
     this.condition = condition;
 
+    List<VirtualFile> toRemove = new LinkedList<>();
     for (VirtualFile f : index.getAllFiles()) {
       if (!map.containsKey(f)) {
-        removeFile(f);
+        toRemove.add(f);
       }
+    }
+
+    for (VirtualFile f : toRemove) {
+      removeFile(f);
     }
 
     for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {

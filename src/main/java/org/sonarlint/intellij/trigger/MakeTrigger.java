@@ -82,7 +82,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
     for (VirtualFile file : files) {
       Module m = ModuleUtil.findModuleForFile(file, myProject);
       if (!SonarLintUtils.shouldAnalyzeAutomatically(file, m)) {
-        return;
+        continue;
       }
 
       filesByModule.put(m, file);

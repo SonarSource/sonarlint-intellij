@@ -19,12 +19,15 @@
  */
 package org.sonarlint.intellij.ui.scope;
 
+import com.intellij.openapi.actionSystem.DataKey;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public abstract class IssueTreeScope {
+  public static final DataKey<IssueTreeScope> SCOPE_DATA_KEY = DataKey.create("SonarLintScope");
   protected List<ScopeListener> listeners = new ArrayList<>();
   protected Condition<VirtualFile> condition;
 
@@ -41,6 +44,8 @@ public abstract class IssueTreeScope {
   public Condition<VirtualFile> getCondition() {
     return condition;
   }
+
+  public abstract Collection<VirtualFile> getAll();
 
   public interface ScopeListener {
     void conditionChanged();
