@@ -28,6 +28,7 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import org.sonarlint.intellij.issue.IssueProcessor;
@@ -63,7 +64,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
     });
   }
 
-  public void submitAsync(Module m, Set<VirtualFile> files) {
+  public void submitAsync(Module m, Collection<VirtualFile> files) {
     SonarLintJob newJob = new SonarLintJob(m, files);
     SonarLintJob nextJob;
 
@@ -94,7 +95,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
    * The reason why we might want to queue the analysis instead of starting immediately is that the EDT might currently hold a write access.
    * If we hold a write lock, the ApplicationManager will not work as expected, because it won't start a pooled thread if we hold
    * a write access (the pooled thread would dead lock if it needs read access). The listener for file editor events holds the write access, for example.
-   * @see #submitAsync(Module, Set)
+   * @see #submitAsync(Module, Collection)
    */
   public void submit(Module m, Set<VirtualFile> files) {
     synchronized (lock) {
@@ -163,7 +164,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
     private final Set<VirtualFile> files;
     private final long creationTime;
 
-    SonarLintJob(Module m, Set<VirtualFile> files) {
+    SonarLintJob(Module m, Collection<VirtualFile> files) {
       this.m = m;
       // make sure that it is not immutable so that it can be changed later
       this.files = new HashSet<>();

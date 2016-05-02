@@ -52,8 +52,8 @@ public class OpenedFilesScope extends IssueTreeScope {
       refreshCondition(source);
     }
 
-    private void refreshCondition(@NotNull FileEditorManager source) {
-      VirtualFile[] openFiles = source.getOpenFiles();
+    private void refreshCondition(@NotNull FileEditorManager editorManager) {
+      VirtualFile[] openFiles = editorManager.getOpenFiles();
       condition = new OpenedFileCondition(Arrays.asList(openFiles));
 
       for (ScopeListener l : listeners) {
