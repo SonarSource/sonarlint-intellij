@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.ide.BrowserUtil;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.DialogWrapper;
@@ -55,7 +54,6 @@ import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class SonarQubeServerEditor extends DialogWrapper {
-  private static final Logger LOGGER = Logger.getInstance(SonarQubeServerEditor.class);
   private static final int NAME_MAX_LENGTH = 50;
   private static final int TEXT_COLUMNS = 30;
   private static final String AUTH_PASSWORD = "Password";

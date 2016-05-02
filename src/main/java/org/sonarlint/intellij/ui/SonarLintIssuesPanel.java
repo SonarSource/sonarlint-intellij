@@ -38,7 +38,6 @@ import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.ui.switcher.QuickActionProvider;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
@@ -54,7 +53,6 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
@@ -282,6 +280,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   }
 
   @Nullable
+  @Override
   public Object getData(@NonNls String dataId) {
     return IssueTreeScope.SCOPE_DATA_KEY.is(dataId) ? scope : null;
   }

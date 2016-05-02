@@ -26,12 +26,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.List;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class OpenedFilesScope extends IssueTreeScope {
   private final Project project;

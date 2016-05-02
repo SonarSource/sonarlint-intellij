@@ -44,7 +44,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
   private final SonarLintAnalyzer analyzer;
   private final SonarLintConsole console;
 
-  protected MakeTrigger(Project project, FileEditorManager editorManager, SonarLintAnalyzer analyzer, SonarLintConsole console) {
+  public MakeTrigger(Project project, FileEditorManager editorManager, SonarLintAnalyzer analyzer, SonarLintConsole console) {
     super(project);
     this.editorManager = editorManager;
     this.analyzer = analyzer;

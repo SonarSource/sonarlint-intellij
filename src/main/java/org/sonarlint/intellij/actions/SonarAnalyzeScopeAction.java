@@ -28,7 +28,6 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import java.util.Collections;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -47,7 +46,6 @@ public class SonarAnalyzeScopeAction extends AbstractSonarAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    System.out.println("SCOPE");
     Project p = e.getProject();
 
     IssueTreeScope scope = e.getData(IssueTreeScope.SCOPE_DATA_KEY);
