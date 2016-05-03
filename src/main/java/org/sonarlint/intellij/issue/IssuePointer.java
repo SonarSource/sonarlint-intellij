@@ -60,7 +60,7 @@ public class IssuePointer implements Trackable {
   }
 
   public boolean isValid() {
-    if (!psiFile.isValid()) {
+    if (psiFile != null && !psiFile.isValid()) {
       return false;
     }
 
@@ -73,7 +73,11 @@ public class IssuePointer implements Trackable {
 
   @Override
   public Integer getLine() {
-    return range != null ? range.getDocument().getLineNumber(range.getStartOffset()) : null;
+    if(range != null && isValid()) {
+      range.getDocument().getLineNumber(range.getStartOffset());
+    }
+
+    return null;
   }
 
   @Override

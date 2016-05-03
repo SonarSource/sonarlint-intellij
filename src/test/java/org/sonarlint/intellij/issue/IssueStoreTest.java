@@ -23,6 +23,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,6 +54,8 @@ public class IssueStoreTest extends SonarTest {
     super.setUp();
     file1 = mock(VirtualFile.class);
     file2 = mock(VirtualFile.class);
+    when(file1.isValid()).thenReturn(true);
+    when(file2.isValid()).thenReturn(true);
     store = new IssueStore(project);
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
@@ -142,12 +145,16 @@ public class IssueStoreTest extends SonarTest {
     assertThat(store.getForFile(file1)).containsExactly(issue1);
     assertThat(store.getForFile(file2)).containsExactly(issue2);
 
+
+    PsiFile psiFile = mock(PsiFile.class);
+    when(psiFile.isValid()).thenReturn(true);
+
     //add a lot of issues
     store.clear();
 
     List<IssuePointer> issueList = new ArrayList<>(10_001);
     for (int i = 0; i < 10_001; i++) {
-      issueList.add(new IssuePointer(SonarLintTestUtils.createIssue(i), null, null));
+      issueList.add(new IssuePointer(SonarLintTestUtils.createIssue(i), psiFile, null));
     }
 
     store.store(file1, issueList);
@@ -160,6 +167,7 @@ public class IssueStoreTest extends SonarTest {
     Issue issue = SonarLintTestUtils.createIssue(id);
     when(issue.getStartLine()).thenReturn(line);
     RangeMarker range = mock(RangeMarker.class);
+    when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
     return new IssuePointer(issue, null, range);

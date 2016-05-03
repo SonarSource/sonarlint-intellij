@@ -76,6 +76,7 @@ public class IssueNodeTest {
 
   private static IssuePointer createIssue(long date, String message) {
     PsiFile file = mock(PsiFile.class);
+    when(file.isValid()).thenReturn(true);
     Issue i = mock(Issue.class);
     when(i.getMessage()).thenReturn(message);
     IssuePointer issue = new IssuePointer(i, file);

@@ -105,7 +105,7 @@ public class IssueTree extends Tree implements DataProvider {
       return null;
     } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
       VirtualFile f = getSelectedFile();
-      return f != null ? new VirtualFile[] {f} : null;
+      return f != null ? (new VirtualFile[] {f}) : null;
     }
 
     return null;

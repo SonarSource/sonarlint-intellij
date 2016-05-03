@@ -103,13 +103,30 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   public void store(Map<VirtualFile, Collection<IssuePointer>> map) {
-    for(Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {
+    for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {
       store(e.getKey(), e.getValue());
     }
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
   }
 
+  private void cleanInvalid(VirtualFile file) {
+    Collection<IssuePointer> issues = storePerFile.get(file);
+    if (issues == null) {
+      return;
+    }
+
+    Iterator<IssuePointer> it = issues.iterator();
+    while (it.hasNext()) {
+      if (!it.next().isValid()) {
+        it.remove();
+      }
+    }
+  }
+
   void store(VirtualFile file, final Collection<IssuePointer> rawIssues) {
+    // clean before issue tracking
+    cleanInvalid(file);
+
     // this will also delete all existing issues in the file
     final Collection<IssuePointer> previousIssues = getForFile(file);
     Collection<IssuePointer> trackedIssues = new ArrayList<>();

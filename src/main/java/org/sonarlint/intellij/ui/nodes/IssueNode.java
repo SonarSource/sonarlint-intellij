@@ -40,6 +40,11 @@ public class IssueNode extends AbstractNode {
   }
 
   @Override public void render(ColoredTreeCellRenderer renderer) {
+    if(!issue.isValid()) {
+      renderer.append("Invalid", SimpleTextAttributes.ERROR_ATTRIBUTES);
+      return;
+    }
+
     String severity = issue.issue().getSeverity();
 
     if (severity != null) {
