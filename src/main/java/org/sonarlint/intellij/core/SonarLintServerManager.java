@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.CheckForNull;
 
 import org.apache.http.annotation.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
@@ -111,7 +110,6 @@ public class SonarLintServerManager implements ApplicationComponent {
    * Will create a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
    * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an IllegalStateException.
    */
-  @CheckForNull
   public synchronized SonarLintFacade getFacadeForAnalysis(Project project) {
     SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
     SonarLintConsole console = project.getComponent(SonarLintConsole.class);

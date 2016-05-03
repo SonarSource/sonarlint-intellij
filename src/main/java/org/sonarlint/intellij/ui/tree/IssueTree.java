@@ -19,22 +19,35 @@
  */
 package org.sonarlint.intellij.ui.tree;
 
+import com.intellij.ide.DefaultTreeExpander;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataProvider;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.actionSystem.IdeActions;
+import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiManager;
+import com.intellij.ui.PopupHandler;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.EditSourceOnDoubleClickHandler;
+import com.intellij.util.EditSourceOnEnterKeyHandler;
+import com.intellij.util.ui.UIUtil;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 
 /**
- * Extends {@link Tree} to provide context data for actions
+ * Extends {@link Tree} to provide context data for actions and initialize it
  */
 public class IssueTree extends Tree implements DataProvider {
   private final Project project;
@@ -42,15 +55,31 @@ public class IssueTree extends Tree implements DataProvider {
   public IssueTree(Project project, TreeModel model) {
     super(model);
     this.project = project;
+    init();
+  }
+
+  private void init() {
+    UIUtil.setLineStyleAngled(this);
+    this.setShowsRootHandles(true);
+    this.setRootVisible(true);
+    this.setCellRenderer(new IssueTreeCellRenderer());
+    this.expandRow(0);
+
+    DefaultActionGroup group = new DefaultActionGroup();
+    group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
+    group.addSeparator();
+    group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
+    group.addSeparator();
+    group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
+    PopupHandler.installPopupHandler(this, group, ActionPlaces.TODO_VIEW_POPUP, ActionManager.getInstance());
+
+    EditSourceOnDoubleClickHandler.install(this);
+    EditSourceOnEnterKeyHandler.install(this);
   }
 
   @Nullable @Override public Object getData(@NonNls String dataId) {
     if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
-      TreePath path = getSelectionPath();
-      if (path == null) {
-        return null;
-      }
-      DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+      DefaultMutableTreeNode node = getSelectedNode();
       if (!(node instanceof IssueNode)) {
         return null;
       }
@@ -64,8 +93,38 @@ public class IssueTree extends Tree implements DataProvider {
         offset = 0;
       }
       return new OpenFileDescriptor(project, issue.psiFile().getVirtualFile(), offset);
+    } else if (PlatformDataKeys.TREE_EXPANDER.is(dataId)) {
+      return new DefaultTreeExpander(this);
+    } else if (PlatformDataKeys.VIRTUAL_FILE.is(dataId)) {
+      return getSelectedFile();
+    } else if (PlatformDataKeys.PSI_FILE.is(dataId)) {
+      VirtualFile file = getSelectedFile();
+      if (file != null) {
+        return PsiManager.getInstance(project).findFile(file);
+      }
+      return null;
+    } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
+      VirtualFile f = getSelectedFile();
+      return f != null ? new VirtualFile[] {f} : null;
     }
 
     return null;
+  }
+
+  private VirtualFile getSelectedFile() {
+    DefaultMutableTreeNode node = getSelectedNode();
+    if (!(node instanceof FileNode)) {
+      return null;
+    }
+    FileNode fileNode = (FileNode) node;
+    return fileNode.file();
+  }
+
+  private DefaultMutableTreeNode getSelectedNode() {
+    TreePath path = getSelectionPath();
+    if (path == null) {
+      return null;
+    }
+    return (DefaultMutableTreeNode) path.getLastPathComponent();
   }
 }

@@ -47,13 +47,13 @@ public class SonarAnalyzeScopeAction extends AbstractSonarAction {
   @Override
   public void actionPerformed(AnActionEvent e) {
     Project p = e.getProject();
-
+    SonarLintConsole console = SonarLintConsole.get(p);
     IssueTreeScope scope = e.getData(IssueTreeScope.SCOPE_DATA_KEY);
     if (scope == null) {
+      console.error("No scope found");
       return;
     }
 
-    SonarLintConsole console = SonarLintConsole.get(p);
     Collection<VirtualFile> files = scope.getAll();
 
     if (files.isEmpty()) {

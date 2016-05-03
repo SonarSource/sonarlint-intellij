@@ -23,11 +23,8 @@ import com.intellij.ide.OccurenceNavigator;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
@@ -36,13 +33,9 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.PopupHandler;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
-import com.intellij.util.EditSourceOnDoubleClickHandler;
-import com.intellij.util.EditSourceOnEnterKeyHandler;
 import com.intellij.util.messages.MessageBusConnection;
-import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -80,7 +73,6 @@ import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 import org.sonarlint.intellij.ui.scope.IssueTreeScope;
 import org.sonarlint.intellij.ui.scope.OpenedFilesScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
-import org.sonarlint.intellij.ui.tree.IssueTreeCellRenderer;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 
 public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator, DataProvider {
@@ -229,7 +221,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   private void addToolbar() {
     ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
     mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
-
+    mainToolbar.setTargetComponent(this);
     Box toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
 
@@ -258,31 +250,21 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     treeBuilder = new TreeModelBuilder();
     DefaultTreeModel model = treeBuilder.createModel();
     tree = new IssueTree(project, model);
-    UIUtil.setLineStyleAngled(tree);
-    tree.setShowsRootHandles(true);
-    tree.setRootVisible(true);
-    tree.setCellRenderer(new IssueTreeCellRenderer());
-    tree.expandRow(0);
     tree.addTreeSelectionListener(new TreeSelectionListener() {
       @Override public void valueChanged(TreeSelectionEvent e) {
         issueTreeSelectionChanged();
       }
     });
-
-    DefaultActionGroup group = new DefaultActionGroup();
-    group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
-    group.addSeparator();
-    group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
-    PopupHandler.installPopupHandler(tree, group, ActionPlaces.TODO_VIEW_POPUP, ActionManager.getInstance());
-
-    EditSourceOnDoubleClickHandler.install(tree);
-    EditSourceOnEnterKeyHandler.install(tree);
   }
 
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
-    return IssueTreeScope.SCOPE_DATA_KEY.is(dataId) ? scope : null;
+    if(IssueTreeScope.SCOPE_DATA_KEY.is(dataId)) {
+      return scope;
+    }
+
+    return null;
   }
 
   private OccurenceInfo occurrence(IssueNode node) {
