@@ -31,6 +31,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.1 - Various improvements and bug fixes</li>
         <li>2.0.2 - Bug fix SLI-73</li>
         <li>2.0.1 - Bug fixes</li>
         <li>2.0 - Connect to a SonarQube server;</li>
