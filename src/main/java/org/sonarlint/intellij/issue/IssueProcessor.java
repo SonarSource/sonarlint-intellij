@@ -98,6 +98,10 @@ public class IssueProcessor extends AbstractProjectComponent {
       }
       try {
         VirtualFile vFile = inputFile.getClientObject();
+        if(!vFile.isValid()) {
+          // file might have been deleted meanwhile
+          continue;
+        }
         PsiFile psiFile = matcher.findFile(vFile);
         IssuePointer toStore = matcher.match(psiFile, i);
         map.get(psiFile.getVirtualFile()).add(toStore);
@@ -113,6 +117,9 @@ public class IssueProcessor extends AbstractProjectComponent {
     List<PsiFile> psiFiles = new LinkedList<>();
 
     for (VirtualFile f : files) {
+      if(!f.isValid()) {
+        continue;
+      }
       try {
         psiFiles.add(matcher.findFile(f));
       } catch (IssueMatcher.NoMatchException e) {

@@ -23,6 +23,7 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.AccessToken;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
@@ -42,6 +43,7 @@ public class SonarClearIssues extends AnAction {
   @Override
   public void actionPerformed(AnActionEvent e) {
     Project project = e.getProject();
+    ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
       IssueStore store = project.getComponent(IssueStore.class);
@@ -67,6 +69,9 @@ public class SonarClearIssues extends AnAction {
     List<PsiFile> psiFiles = new ArrayList<>(files.size());
 
     for (VirtualFile vFile : files) {
+      if(!vFile.isValid()) {
+        continue;
+      }
       PsiFile psiFile = psiManager.findFile(vFile);
       if (psiFile != null) {
         psiFiles.add(psiFile);
