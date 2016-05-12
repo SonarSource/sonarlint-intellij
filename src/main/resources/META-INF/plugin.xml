@@ -51,6 +51,7 @@
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.lang</depends>
+    <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
 
     <application-components>
         <component>
@@ -100,9 +101,6 @@
         </component>
         <component>
             <implementation-class>org.sonarlint.intellij.core.SonarLintProjectNotifications</implementation-class>
-        </component>
-        <component>
-            <implementation-class>org.sonarlint.intellij.trigger.MakeTrigger</implementation-class>
         </component>
     </project-components>
 

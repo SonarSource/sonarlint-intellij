@@ -12,7 +12,8 @@ env:
   matrix:
     - TARGET=CI
     - TARGET=IT IDEA_VERSION=14.1.6
-    - TARGET=IT IDEA_VERSION=15.0.3 
+    - TARGET=IT IDEA_VERSION=15.0.3
+    - TARGET=IT IDEA_VERSION=2016.1.2
 
 cache:
   directories:
