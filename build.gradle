@@ -51,8 +51,8 @@ dependencies {
   testCompile 'org.assertj:assertj-core:2.2.0'
   testCompile 'org.mockito:mockito-core:1.10.19'
   sqplugin (
-    'org.sonarsource.java:sonar-java-plugin:3.12',
-    'org.sonarsource.javascript:sonar-javascript-plugin:2.11',
+    'org.sonarsource.java:sonar-java-plugin:3.13.1',
+    'org.sonarsource.javascript:sonar-javascript-plugin:2.12',
     'org.sonarsource.php:sonar-php-plugin:2.8',
     'org.codehaus.sonar-plugins.python:sonar-python-plugin:1.5'
   )
