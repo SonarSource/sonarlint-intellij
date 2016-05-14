@@ -93,3 +93,11 @@ license {
 jacoco {
   toolVersion = "0.7.2.201409121644"
 }
+
+// Avoids IllegalStateException "Can't add different class with same name":
+jacocoTestReport.doFirst {
+  sourceDirectories = files('src/main/java')
+  classDirectories = files('build/classes/main')
+  additionalClassDirs = files()
+  additionalSourceDirs = files()
+}
