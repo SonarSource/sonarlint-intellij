@@ -90,8 +90,11 @@ license {
   strictCheck true
 }
 
-jacoco {
-  toolVersion = "0.7.2.201409121644"
+test {
+  jacoco {
+    // Workaround for https://github.com/JetBrains/gradle-intellij-plugin/issues/65
+    includeNoLocationClasses = true
+  }
 }
 
 // Avoids IllegalStateException "Can't add different class with same name":
