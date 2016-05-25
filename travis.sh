@@ -42,6 +42,24 @@ CI)
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN
 
+  elif [ "$TRAVIS_BRANCH" == "feature/cix" ]; then
+    strongEcho 'feature/cix: build analyse deploy on repox'
+    
+    # Analyze with SNAPSHOT version as long as SQ does not correctly handle
+    # purge of release data
+    CURRENT_VERSION=`cat gradle.properties | grep version | awk -F= '{print $2}'`
+    # Do not deploy a SNAPSHOT version but the release version related to this build
+    sed -i.bak "s/-SNAPSHOT/-build$TRAVIS_BUILD_NUMBER/g" gradle.properties
+    # set the build name with travis build number
+    echo buildInfo.build.name=sonarlint-intellij >> gradle.properties 
+    echo buildInfo.build.number=$TRAVIS_BUILD_NUMBER >> gradle.properties 
+
+
+    ./gradlew build check sonarqube artifactory \
+        -Dsonar.projectVersion=$CURRENT_VERSION \
+        -Dsonar.host.url=$SONAR_HOST_URL \
+        -Dsonar.login=$SONAR_TOKEN
+
   else
     strongEcho 'Build, no analysis'
     # Build branch, without any analysis
