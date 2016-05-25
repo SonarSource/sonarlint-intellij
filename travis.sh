@@ -69,10 +69,6 @@ CI)
   fi
   ;;
 
-IT)
-  ./gradlew buildPlugin check -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit -PijVersion=$IDEA_VERSION --stacktrace
-
-  ;;
 
 *)
   echo "Unexpected TARGET value: $TARGET"
