@@ -123,3 +123,17 @@ artifactory {
     }
   }  
 }
+
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            artifact buildPlugin {
+                classifier "plugin"
+                extension "zip"
+            }
+        }
+    }
+}
