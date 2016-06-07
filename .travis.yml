@@ -24,3 +24,11 @@ cache:
 
 notifications:
   email: false
+
+notifications:
+  email: false
+  webhooks:
+    urls:
+    # URL to QA hook, including credentials
+      - secure: "de1c8cBBGrR4qtjZVrf8m+aA3ADULZiEoXq9AMhLgsjRmYbix4YE9UagliNCPKwqKGjcyRVT+2tSZvlMlgFB/JJSZxUdvHEeoTV5QjKE/vbthhic/0ZIjuo32B0X9fATddKPgbDfpuozewLUzEB2FZaHCwJz/8y/kMr1xUhkD9Q="
+    on_start: always
