@@ -228,11 +228,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
       switchAuth(true);
     }
 
-    authTypeComboBox.addItemListener(new ItemListener() {
-      @Override public void itemStateChanged(ItemEvent e) {
-        switchAuth(e.getItem().equals(AUTH_TOKEN));
-      }
-    });
+    authTypeComboBox.addItemListener(e -> switchAuth(e.getItem().equals(AUTH_TOKEN)));
     setIcon();
 
     return rootPanel;

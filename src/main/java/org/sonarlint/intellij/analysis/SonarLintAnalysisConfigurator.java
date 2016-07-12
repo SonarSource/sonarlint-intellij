@@ -38,6 +38,7 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import com.intellij.pom.java.LanguageLevel;
+
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,12 +49,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
@@ -71,7 +74,7 @@ public class SonarLintAnalysisConfigurator {
   private static final String JAR_REGEXP = "(.*)!/";
   private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
 
-  public void analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
+  public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
     SonarLintServerManager core = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
@@ -90,18 +93,19 @@ public class SonarLintAnalysisConfigurator {
     SonarLintFacade facade = core.getFacadeForAnalysis(module.getProject());
     if (facade == null) {
       console.info("Failed to create SonarLint engine for module '" + module.getName() + "'");
-      return;
+      return null;
     }
 
     String what;
-    if(filesToAnalyze.size() == 1) {
+    if (filesToAnalyze.size() == 1) {
       what = "'" + filesToAnalyze.iterator().next().getName() + "'";
     } else {
       what = Integer.toString(filesToAnalyze.size()) + " files";
     }
     console.info("Analysing " + what + "...");
-    facade.startAnalysis(inputFiles, listener, pluginProps);
+    AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps);
     console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
+    return result;
   }
 
   private static Charset getEncoding(Project p, @Nullable VirtualFile f) {

@@ -14,8 +14,8 @@ apply plugin: 'jacoco'
 group = 'org.sonarsource.sonarlint.intellij'
 description = 'SonarLint for IntelliJ IDEA'
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 intellij {
 
@@ -42,8 +42,8 @@ configurations {
 }
 
 dependencies {
-  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.3.2'
-  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.3.2'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.4-SNAPSHOT'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.4-SNAPSHOT'
   compile 'commons-lang:commons-lang:2.4'
   compile 'commons-io:commons-io:2.4'
   compile 'com.google.code.findbugs:jsr305:2.0.2'

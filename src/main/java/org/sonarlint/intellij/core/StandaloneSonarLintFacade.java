@@ -31,6 +31,7 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
@@ -72,7 +73,7 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
   }
 
   @Override
-  public synchronized void startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
+  public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
     SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
     SonarLintConsole console = project.getComponent(SonarLintConsole.class);
 
@@ -84,6 +85,6 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
     StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props);
     console.debug("Starting analysis with configuration:\n" + config.toString());
 
-    sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings));
+    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings));
   }
 }

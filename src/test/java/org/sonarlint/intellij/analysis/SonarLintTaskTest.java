@@ -29,6 +29,7 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
@@ -80,7 +81,7 @@ public class SonarLintTaskTest extends SonarTest {
     task.run(progress);
 
     verify(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
-    verify(processor).process(job, new ArrayList<Issue>());
+    verify(processor).process(job, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
     verifyNoMoreInteractions(configurator);
