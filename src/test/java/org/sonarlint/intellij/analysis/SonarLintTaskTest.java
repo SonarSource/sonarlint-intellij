@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
@@ -29,11 +30,12 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -49,6 +51,7 @@ public class SonarLintTaskTest extends SonarTest {
   private ProgressIndicator progress;
   private SonarLintAnalyzer.SonarLintJob job;
   private SonarLintAnalysisConfigurator configurator;
+  private AnalysisResults analysisResults;
 
   @Before
   public void setUp() {
@@ -58,11 +61,13 @@ public class SonarLintTaskTest extends SonarTest {
     files.add(testFile);
     job = createJob();
     progress = mock(ProgressIndicator.class);
+    analysisResults = mock(AnalysisResults.class);
     when(progress.isCanceled()).thenReturn(false);
     processor = mock(IssueProcessor.class);
     SonarLintConsole console = mock(SonarLintConsole.class);
     task = SonarLintTask.createBackground(processor, job);
     configurator = mock(SonarLintAnalysisConfigurator.class);
+    when(configurator.analyzeModule(any(Module.class), anyListOf(VirtualFile.class), any(IssueListener.class))).thenReturn(analysisResults);
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
     super.register(SonarLintAnalysisConfigurator.class, configurator);
     super.register(SonarLintConsole.class, console);
@@ -80,7 +85,7 @@ public class SonarLintTaskTest extends SonarTest {
     task.run(progress);
 
     verify(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
-    verify(processor).process(job, new ArrayList<Issue>());
+    verify(processor).process(job, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
     verifyNoMoreInteractions(configurator);

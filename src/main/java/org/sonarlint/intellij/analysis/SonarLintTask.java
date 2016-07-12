@@ -28,6 +28,7 @@ import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintAnalyzer.class);
@@ -88,9 +89,11 @@ public class SonarLintTask extends Task.Backgroundable {
       LOGGER.info(indicator.getText());
 
       CancelMonitor monitor = new CancelMonitor(indicator, status, Thread.currentThread());
+      AnalysisResults result;
+
       try {
         monitor.start();
-        configurator.analyzeModule(job.module(), job.files(), listener);
+        result = configurator.analyzeModule(job.module(), job.files(), listener);
         indicator.startNonCancelableSection();
       } finally {
         monitor.stopMonitor();
@@ -107,7 +110,7 @@ public class SonarLintTask extends Task.Backgroundable {
       indicator.setFraction(.9);
       indicator.setText("Creating SonarLint issues: " + listener.getIssues().size());
 
-      processor.process(job, listener.getIssues());
+      processor.process(job, listener.getIssues(), result.failedAnalysisFiles());
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {

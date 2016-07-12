@@ -31,6 +31,7 @@ import com.intellij.util.messages.impl.MessageBusImpl;
 import org.junit.After;
 import org.junit.Before;
 
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -89,6 +90,6 @@ public abstract class SonarTest {
   }
 
   protected void register(ComponentManager comp, Class<?> clazz, Object instance) {
-    when(comp.getComponent(clazz)).thenReturn(instance);
+    doReturn(instance).when(comp).getComponent(clazz);
   }
 }

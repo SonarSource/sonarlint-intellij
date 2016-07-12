@@ -116,30 +116,16 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
 
       @Override public void filesChanged(final Map<VirtualFile, Collection<IssuePointer>> map) {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-          @Override public void run() {
-            treeBuilder.updateFiles(map);
-          }
-        });
+        ApplicationManager.getApplication().invokeLater(() -> treeBuilder.updateFiles(map));
       }
 
       @Override public void allChanged() {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-          @Override public void run() {
-            updateTree();
-          }
-        });
+        ApplicationManager.getApplication().invokeLater(() -> updateTree());
       }
     });
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, new StatusListener() {
       @Override public void changed(SonarLintStatus.Status newStatus) {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            // activate/deactivate icons as soon as SonarLint status changes
-            mainToolbar.updateActionsImmediately();
-          }
-        });
+        ApplicationManager.getApplication().invokeLater(() -> mainToolbar.updateActionsImmediately());
       }
     });
     updateTree();
@@ -153,11 +139,8 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     splitter.setSecondComponent(c2);
     splitter.setProportion(savedProportion);
     splitter.setHonorComponentsMinimumSize(true);
-    splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION, new PropertyChangeListener() {
-      @Override public void propertyChange(PropertyChangeEvent evt) {
-        PropertiesComponent.getInstance(project).setValue(SPLIT_PROPORTION, Float.toString(splitter.getProportion()));
-      }
-    });
+    splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION,
+      evt -> PropertiesComponent.getInstance(project).setValue(SPLIT_PROPORTION, Float.toString(splitter.getProportion())));
 
     return splitter;
   }
@@ -168,11 +151,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     }
 
     scope = newScope;
-    scope.addListener(new IssueTreeScope.ScopeListener() {
-      @Override public void conditionChanged() {
-        updateTree();
-      }
-    });
+    scope.addListener(() -> updateTree());
   }
 
   private JComponent createScopePanel() {
@@ -250,11 +229,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     treeBuilder = new TreeModelBuilder();
     DefaultTreeModel model = treeBuilder.createModel();
     tree = new IssueTree(project, model);
-    tree.addTreeSelectionListener(new TreeSelectionListener() {
-      @Override public void valueChanged(TreeSelectionEvent e) {
-        issueTreeSelectionChanged();
-      }
-    });
+    tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
   }
 
   @Nullable

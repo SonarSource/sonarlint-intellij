@@ -294,11 +294,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       engine = serverManager.getConnectedEngine(server.getName());
       engineListener = new StateListener() {
         @Override public void stateChanged(final ConnectedSonarLintEngine.State newState) {
-          ApplicationManager.getApplication().invokeLater(new Runnable() {
-            @Override public void run() {
-              setStatus(newState);
-            }
-          });
+          ApplicationManager.getApplication().invokeLater(() -> setStatus(newState));
         }
       };
 
