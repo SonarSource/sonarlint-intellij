@@ -27,12 +27,10 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+import java.util.stream.Collectors;
+
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -53,12 +51,12 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.console = SonarLintConsole.get(project);
   }
 
-  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues) {
+  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<IssuePointer>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
-      map = transformIssues(issues, job.files());
+      map = transformIssues(issues, job.files(), failedAnalysisFiles);
       store.store(map);
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
       for (PsiFile psiFile : getPsi(job.files())) {
@@ -83,22 +81,27 @@ public class IssueProcessor extends AbstractProjectComponent {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed) {
+  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
+    Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> ((VirtualFile) f.getClientObject())).collect(Collectors.toSet());
 
-    for (VirtualFile f : analysed) {
-      map.put(f, new ArrayList<IssuePointer>());
+    for(VirtualFile f : analysed) {
+      if(failedVirtualFiles.contains(f)) {
+        console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
+      } else {
+        map.put(f, new ArrayList<>());
+      }
     }
 
     for (Issue i : issues) {
       ClientInputFile inputFile = i.getInputFile();
-      if (inputFile == null || inputFile.getPath() == null) {
-        // ignore project level issues
+      if (inputFile == null || inputFile.getPath() == null || failedAnalysisFiles.contains(inputFile)) {
+        // ignore project level issues and files that had errors
         continue;
       }
       try {
         VirtualFile vFile = inputFile.getClientObject();
-        if(!vFile.isValid()) {
+        if (!vFile.isValid()) {
           // file might have been deleted meanwhile
           continue;
         }
@@ -117,7 +120,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     List<PsiFile> psiFiles = new LinkedList<>();
 
     for (VirtualFile f : files) {
-      if(!f.isValid()) {
+      if (!f.isValid()) {
         continue;
       }
       try {

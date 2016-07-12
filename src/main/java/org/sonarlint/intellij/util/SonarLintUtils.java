@@ -119,14 +119,7 @@ public class SonarLintUtils {
     if (fileDocumentManager.isFileModified(virtualFile)) {
       final Document document = fileDocumentManager.getDocument(virtualFile);
       if (document != null) {
-        ApplicationManager.getApplication().invokeAndWait(
-          new Runnable() {
-            @Override
-            public void run() {
-              fileDocumentManager.saveDocument(document);
-            }
-          }, ModalityState.any()
-        );
+        ApplicationManager.getApplication().invokeAndWait(() -> fileDocumentManager.saveDocument(document), ModalityState.any());
         return true;
       }
     }

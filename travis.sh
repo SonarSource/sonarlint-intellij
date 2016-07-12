@@ -15,6 +15,7 @@ function strongEcho {
   echo "================ $1 ================="
 }
 
+build_snapshot "SonarSource/sonarlint-core"
 unset DISPLAY
 
 case "$TARGET" in
