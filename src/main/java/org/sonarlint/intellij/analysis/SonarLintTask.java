@@ -28,6 +28,7 @@ import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 
 public class SonarLintTask extends Task.Backgroundable {
@@ -71,7 +72,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
     SonarLintStatus status = SonarLintStatus.get(p);
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintAnalysisConfigurator configurator = p.getComponent(SonarLintAnalysisConfigurator.class);
+    SonarLintAnalysisConfigurator configurator = SonarLintUtils.get(p, SonarLintAnalysisConfigurator.class);
 
     try {
       if (indicator.isCanceled() || status.isCanceled()) {

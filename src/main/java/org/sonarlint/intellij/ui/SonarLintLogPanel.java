@@ -35,6 +35,7 @@ import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarLint";
@@ -57,13 +58,8 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, new StatusListener() {
       @Override public void changed(SonarLintStatus.Status newStatus) {
-        ApplicationManager.getApplication().invokeLater(new Runnable() {
-          @Override
-          public void run() {
-            // activate/deactivate icons as soon as SonarLint status changes
-            mainToolbar.updateActionsImmediately();
-          }
-        });
+        // activate/deactivate icons as soon as SonarLint status changes
+        ApplicationManager.getApplication().invokeLater(() -> mainToolbar.updateActionsImmediately());
       }
     });
   }
@@ -87,7 +83,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   }
 
   private void addConsole() {
-    ConsoleView consoleView = project.getComponent(SonarLintConsole.class).getConsoleView();
+    ConsoleView consoleView = SonarLintUtils.get(project, SonarLintConsole.class).getConsoleView();
     super.setContent(consoleView.getComponent());
   }
 }

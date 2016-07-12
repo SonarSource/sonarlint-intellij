@@ -37,11 +37,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class SonarAnalyzeScopeAction extends AbstractSonarAction {
   @Override
   protected boolean isEnabled(Project project, SonarLintStatus status) {
-    if (status.isRunning()) {
-      return false;
-    }
-
-    return true;
+    return !status.isRunning();
   }
 
   @Override
@@ -73,7 +69,7 @@ public class SonarAnalyzeScopeAction extends AbstractSonarAction {
     }
 
     if (!filesByModule.isEmpty()) {
-      SonarLintAnalyzer analyzer = p.getComponent(SonarLintAnalyzer.class);
+      SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
       for (Module m : filesByModule.keySet()) {
         if (executeBackground(e)) {
           analyzer.submitAsync(m, filesByModule.get(m));

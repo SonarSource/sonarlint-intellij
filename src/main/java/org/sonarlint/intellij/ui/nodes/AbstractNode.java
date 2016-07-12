@@ -81,7 +81,7 @@ public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutabl
       insert(newChild, 0);
       return 0;
     }
-    int i = Collections.<T>binarySearch(children, newChild, comparator);
+    int i = Collections.binarySearch(children, newChild, comparator);
     if (i >= 0) {
       throw new IllegalArgumentException("Child already exists");
     }

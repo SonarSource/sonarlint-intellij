@@ -30,6 +30,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
@@ -89,7 +90,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
     if(bindingChanged) {
       SonarLintConsole console = SonarLintConsole.get(project);
-      IssueStore store = project.getComponent(IssueStore.class);
+      IssueStore store = SonarLintUtils.get(project, IssueStore.class);
 
       console.info("Clearing all issues because binding changed");
       store.clear();

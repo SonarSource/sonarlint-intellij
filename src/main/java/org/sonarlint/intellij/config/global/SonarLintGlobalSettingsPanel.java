@@ -21,8 +21,6 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -68,12 +66,7 @@ public class SonarLintGlobalSettingsPanel {
   private JPanel createTopPanel() {
     autoTrigger = new JCheckBox("Automatically trigger analysis");
     autoTrigger.setFocusable(false);
-    autoTrigger.addActionListener(new ActionListener() {
-      @Override public void actionPerformed(ActionEvent e) {
-        isDirty = true;
-      }
-    });
-
+    autoTrigger.addActionListener(evt -> isDirty = true);
     JPanel tickOptions = new JPanel(new VerticalFlowLayout());
     tickOptions.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
     tickOptions.add(autoTrigger);

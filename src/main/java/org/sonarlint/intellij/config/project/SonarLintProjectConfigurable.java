@@ -32,6 +32,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.
@@ -98,7 +99,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   public void reset() {
     if (panel != null) {
       // global settings might have been changed
-      SonarLintGlobalSettings globalSettings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
+      SonarLintGlobalSettings globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
       panel.load(globalSettings, projectSettings);
     }
   }

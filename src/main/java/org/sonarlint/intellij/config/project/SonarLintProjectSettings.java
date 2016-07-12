@@ -30,6 +30,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
+
 @State(
   name = "SonarLintProjectSettings",
   storages = {
@@ -79,11 +82,12 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
     this.verboseEnabled = verboseEnabled;
   }
 
+  @CheckForNull
   public String getProjectKey() {
     return projectKey;
   }
 
-  public void setProjectKey(String projectKey) {
+  public void setProjectKey(@Nullable String projectKey) {
     this.projectKey = projectKey;
   }
 
@@ -96,11 +100,12 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
     this.additionalProperties.putAll(additionalProperties);
   }
 
+  @CheckForNull
   public String getServerId() {
     return serverId;
   }
 
-  public void setServerId(String serverId) {
+  public void setServerId(@Nullable String serverId) {
     this.serverId = serverId;
   }
 

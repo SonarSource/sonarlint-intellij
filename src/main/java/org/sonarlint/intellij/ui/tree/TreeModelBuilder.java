@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.tree;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
@@ -321,8 +322,11 @@ public class TreeModelBuilder {
         return severityCompare;
       }
 
-      int rangeStart1 = (o1.range() == null) ? -1 : o1.range().getStartOffset();
-      int rangeStart2 = (o2.range() == null) ? -1 : o2.range().getStartOffset();
+      RangeMarker r1 = o1.range();
+      RangeMarker r2 = o2.range();
+
+      int rangeStart1 = (r1 == null) ? -1 : r1.getStartOffset();
+      int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
         .compare(o1.issue().getRuleName(), o2.issue().getRuleName())

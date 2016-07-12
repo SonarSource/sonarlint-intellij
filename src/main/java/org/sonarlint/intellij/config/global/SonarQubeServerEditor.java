@@ -33,10 +33,6 @@ import com.intellij.util.net.HttpConfigurable;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -187,11 +183,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     tokenLabel.setLabelFor(tokenText);
 
     tokenButton = new JButton("Create token");
-    tokenButton.addActionListener(new ActionListener() {
-      @Override public void actionPerformed(ActionEvent e) {
-        generateToken();
-      }
-    });
+    tokenButton.addActionListener(evt -> generateToken());
     tokenButton.setToolTipText("Opens a web browser, pointing to the user security page in the configured SonarQube server");
 
     proxySettingsButton = new JButton("Proxy settings");
@@ -202,20 +194,11 @@ public class SonarQubeServerEditor extends DialogWrapper {
 
     testButton = new JButton("Test connection");
     testButton.setFont(testButton.getFont().deriveFont(Font.BOLD));
-    testButton.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        testConnection();
-      }
-    });
-
+    testButton.addActionListener(evt -> testConnection());
     rootPanel = new JPanel(new GridBagLayout());
-    proxySettingsButton.addActionListener(new ActionListener() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        HttpConfigurable.editConfigurable(rootPanel);
-        enableProxy.setEnabled(HttpConfigurable.getInstance().USE_HTTP_PROXY);
-      }
+    proxySettingsButton.addActionListener(evt -> {
+      HttpConfigurable.editConfigurable(rootPanel);
+      enableProxy.setEnabled(HttpConfigurable.getInstance().USE_HTTP_PROXY);
     });
 
     createRootPanel();

@@ -56,6 +56,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -77,7 +78,7 @@ public class SonarLintAnalysisConfigurator {
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintServerManager core = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
+    SonarLintServerManager core = SonarLintUtils.get(SonarLintServerManager.class);
 
     // Configure plugin properties
     Map<String, String> pluginProps = new HashMap<>();

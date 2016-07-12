@@ -56,7 +56,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
     Module m = ModuleUtil.findModuleForFile(selectedFile, p);
 
     if (SonarLintUtils.shouldAnalyze(selectedFile, m)) {
-      SonarLintAnalyzer analyzer = p.getComponent(SonarLintAnalyzer.class);
+      SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
       if (executeBackground(e)) {
         analyzer.submitAsync(m, Collections.singleton(selectedFile));
       } else {

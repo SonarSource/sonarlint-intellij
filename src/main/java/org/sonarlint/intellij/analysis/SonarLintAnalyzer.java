@@ -123,18 +123,15 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
   private void saveAndRun(final SonarLintTask task, final SonarLintJob job) {
     final Application app = ApplicationManager.getApplication();
     if (!app.isDispatchThread() || app.isWriteAccessAllowed()) {
-      app.invokeLater(new Runnable() {
-        @Override
-        public void run() {
-          // check again is we are being closed
-          if (job.module().getProject().isDisposed()) {
-            return;
-          }
-          // we save as late as possible, even if job was queued up for a while to get the most up-to-date results
-          SonarLintUtils.saveFiles(job.files());
-          notifyStart(job);
-          ProgressManager.getInstance().run(task);
+      app.invokeLater(() -> {
+        // check again is we are being closed
+        if (job.module().getProject().isDisposed()) {
+          return;
         }
+        // we save as late as possible, even if job was queued up for a while to get the most up-to-date results
+        SonarLintUtils.saveFiles(job.files());
+        notifyStart(job);
+        ProgressManager.getInstance().run(task);
       });
     } else {
       SonarLintUtils.saveFiles(job.files());

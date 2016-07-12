@@ -20,18 +20,18 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.highlighting.TooltipLinkHandler;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.core.SonarLintServerManager;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLinkHandler extends TooltipLinkHandler {
   @Nullable
   @Override
   public String getDescription(@NotNull String refSuffix, @NotNull Editor editor) {
-    SonarLintServerManager serverManager = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
+    SonarLintServerManager serverManager = SonarLintUtils.get(SonarLintServerManager.class);
     SonarLintFacade sonarlint = serverManager.getFacadeForAnalysis(editor.getProject());
     String description = sonarlint.getDescription(refSuffix);
     String name = sonarlint.getRuleName(refSuffix);

@@ -81,13 +81,12 @@ public class IssueStore extends AbstractProjectComponent {
 
   public Collection<IssuePointer> getForFile(VirtualFile file) {
     Collection<IssuePointer> issues = storePerFile.get(file);
-    return issues == null ? Collections.<IssuePointer>emptyList() : issues;
+    return issues == null ? Collections.emptyList() : issues;
   }
 
   public void clearFile(VirtualFile file) {
     storePerFile.remove(file);
-    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(Collections.singletonMap(file,
-      (Collection<IssuePointer>) Collections.<IssuePointer>emptyList()));
+    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(Collections.singletonMap(file, Collections.emptyList()));
   }
 
   /**
@@ -131,18 +130,8 @@ public class IssueStore extends AbstractProjectComponent {
     final Collection<IssuePointer> previousIssues = getForFile(file);
     Collection<IssuePointer> trackedIssues = new ArrayList<>();
 
-    Input<IssuePointer> baseInput = new Input<IssuePointer>() {
-      @Override
-      public Collection<IssuePointer> getIssues() {
-        return previousIssues;
-      }
-    };
-    Input<IssuePointer> rawInput = new Input<IssuePointer>() {
-      @Override
-      public Collection<IssuePointer> getIssues() {
-        return rawIssues;
-      }
-    };
+    Input<IssuePointer> baseInput = () -> previousIssues;
+    Input<IssuePointer> rawInput = () -> rawIssues;
     Tracking<IssuePointer, IssuePointer> tracking = new Tracker<IssuePointer, IssuePointer>().track(rawInput, baseInput);
     for (Map.Entry<IssuePointer, IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
       IssuePointer rawMatched = entry.getKey();

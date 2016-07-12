@@ -40,10 +40,6 @@ import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.Collection;
 import java.util.Map;
 import javax.swing.Box;
@@ -53,15 +49,12 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
@@ -74,6 +67,7 @@ import org.sonarlint.intellij.ui.scope.IssueTreeScope;
 import org.sonarlint.intellij.ui.scope.OpenedFilesScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator, DataProvider {
   private static final String ID = "SonarLint";
@@ -93,7 +87,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     super(false, true);
     this.project = project;
     this.issueStore = project.getComponent(IssueStore.class);
-    SonarLintServerManager manager = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
+    SonarLintServerManager manager = SonarLintUtils.get(SonarLintServerManager.class);
 
     addToolbar();
 
@@ -123,11 +117,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
         ApplicationManager.getApplication().invokeLater(() -> updateTree());
       }
     });
-    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, new StatusListener() {
-      @Override public void changed(SonarLintStatus.Status newStatus) {
-        ApplicationManager.getApplication().invokeLater(() -> mainToolbar.updateActionsImmediately());
-      }
-    });
+    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(() -> mainToolbar.updateActionsImmediately()));
     updateTree();
   }
 
@@ -172,12 +162,10 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     }
 
     final ComboBox scopeComboBox = new ComboBox(comboModel);
-    scopeComboBox.addActionListener(new ActionListener() {
-      @Override public void actionPerformed(ActionEvent e) {
-        switchScope((IssueTreeScope) scopeComboBox.getSelectedItem());
-        updateTree();
-        PropertiesComponent.getInstance(project).setValue(SELECTED_SCOPE_KEY, scopeComboBox.getSelectedItem().toString());
-      }
+    scopeComboBox.addActionListener(evt -> {
+      switchScope((IssueTreeScope) scopeComboBox.getSelectedItem());
+      updateTree();
+      PropertiesComponent.getInstance(project).setValue(SELECTED_SCOPE_KEY, scopeComboBox.getSelectedItem().toString());
     });
     switchScope((IssueTreeScope) scopeComboBox.getSelectedItem());
     JPanel scopePanel = new JPanel(new GridBagLayout());

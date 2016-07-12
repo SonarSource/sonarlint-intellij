@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarClearIssues extends AnAction {
   private static final Logger LOGGER = Logger.getInstance(SonarClearIssues.class);
@@ -46,8 +47,8 @@ public class SonarClearIssues extends AnAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      IssueStore store = project.getComponent(IssueStore.class);
-      DaemonCodeAnalyzer codeAnalyzer = project.getComponent(DaemonCodeAnalyzer.class);
+      IssueStore store = SonarLintUtils.get(project, IssueStore.class);
+      DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.get(project, DaemonCodeAnalyzer.class);
 
       Set<VirtualFile> files = new HashSet<>(store.getAll().keySet());
       AccessToken token = ReadAction.start();

@@ -59,6 +59,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -68,8 +69,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -122,11 +121,9 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         }
       }
     });
-    serverList.addListSelectionListener(new ListSelectionListener() {
-      @Override public void valueChanged(ListSelectionEvent e) {
-        if (!e.getValueIsAdjusting()) {
-          onServerSelect();
-        }
+    serverList.addListSelectionListener(e -> {
+      if (!e.getValueIsAdjusting()) {
+        onServerSelect();
       }
     });
 
@@ -134,11 +131,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
     ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(serverList)
       .setEditActionName("Edit")
-      .setEditAction(new AnActionButtonRunnable() {
-        @Override public void run(AnActionButton anActionButton) {
-          editServer();
-        }
-      })
+      .setEditAction(e -> editServer())
       .disableUpDownActions();
 
     toolbarDecorator.setAddAction(new AddServerAction());
@@ -227,7 +220,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
     for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = p.getComponent(SonarLintProjectSettings.class);
+      SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
       if (projectSettings.getServerId() != null && deletedServerIds.contains(projectSettings.getServerId())) {
         projectSettings.setBindingEnabled(false);
         projectSettings.setServerId(null);
@@ -244,11 +237,8 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     return !servers.equals(settings.getSonarQubeServers());
   }
 
-  public void save(SonarLintGlobalSettings settings) throws ConfigurationException {
-    List<SonarQubeServer> copyList = new LinkedList<>();
-    for (SonarQubeServer s : servers) {
-      copyList.add(new SonarQubeServer(s));
-    }
+  public void save(SonarLintGlobalSettings settings) {
+    List<SonarQubeServer> copyList = servers.stream().map(s -> new SonarQubeServer(s)).collect(Collectors.toList());
     settings.setSonarQubeServers(copyList);
 
     //remove them even if a server with the same name was later added
@@ -292,12 +282,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
     if (server != null) {
       engine = serverManager.getConnectedEngine(server.getName());
-      engineListener = new StateListener() {
-        @Override public void stateChanged(final ConnectedSonarLintEngine.State newState) {
-          ApplicationManager.getApplication().invokeLater(() -> setStatus(newState));
-        }
-      };
-
+      engineListener = newState -> ApplicationManager.getApplication().invokeLater(() -> setStatus(newState));
       ConnectedSonarLintEngine.State state = engine.getState();
       setStatus(state);
       engine.addStateListener(engineListener);
@@ -344,7 +329,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     Set<String> projectKeys = new HashSet<>();
 
     for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = p.getComponent(SonarLintProjectSettings.class);
+      SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
       if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && projectSettings.getProjectKey() != null) {
         projectKeys.add(projectSettings.getProjectKey());
       }
@@ -382,7 +367,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         ((CollectionListModel) serverList.getModel()).add(newServer);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
-        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(newServer.getName()), newServer, Collections.<String>emptySet(), false);
+        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(newServer.getName()), newServer, Collections.emptySet(), false);
         ProgressManager.getInstance().run(task.asBackground());
       }
     }
@@ -402,7 +387,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       List<String> projectsUsingNames = new LinkedList<>();
 
       for (Project p : openProjects) {
-        SonarLintProjectSettings projectSettings = p.getComponent(SonarLintProjectSettings.class);
+        SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
         if (projectSettings.getServerId() != null && projectSettings.getServerId().equals(server.getName())) {
           projectsUsingNames.add(p.getName());
         }

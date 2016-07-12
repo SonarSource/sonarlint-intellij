@@ -25,6 +25,8 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
+
+import javax.annotation.Nullable;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
@@ -88,7 +90,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
   private static class OpenProjectSettingsNotificationListener extends NotificationListener.Adapter {
     private final Project project;
 
-    public OpenProjectSettingsNotificationListener(Project project) {
+    public OpenProjectSettingsNotificationListener(@Nullable Project project) {
       this.project = project;
     }
     @Override protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {
@@ -104,7 +106,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
   private static class OpenGeneralSettingsNotificationListener extends NotificationListener.Adapter {
     private final Project project;
 
-    public OpenGeneralSettingsNotificationListener(Project project) {
+    public OpenGeneralSettingsNotificationListener(@Nullable Project project) {
       this.project = project;
     }
     @Override protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent e) {

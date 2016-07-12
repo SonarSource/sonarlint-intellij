@@ -31,8 +31,7 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintTestUtils {
   static {
-    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-    System.out.println("headless mode: " + ge.isHeadless());
+    System.out.println("headless mode: " + GraphicsEnvironment.isHeadless());
   }
 
   private SonarLintTestUtils() {

@@ -64,7 +64,7 @@ public class JobQueueTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void dontAnalyzeEmpty() throws JobQueue.NoCapacityException {
-    queue.queue(new SonarLintAnalyzer.SonarLintJob(module, Collections.<VirtualFile>emptySet()));
+    queue.queue(new SonarLintAnalyzer.SonarLintJob(module, Collections.emptySet()));
   }
 
   @Test

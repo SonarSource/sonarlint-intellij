@@ -30,6 +30,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -51,9 +52,6 @@ public class ConnectedSonarLintFacade implements SonarLintFacade {
   @Nullable
   @Override
   public synchronized String getDescription(String ruleKey) {
-    if (sonarlint == null) {
-      return null;
-    }
     RuleDetails details = sonarlint.getRuleDetails(ruleKey);
     if (details == null) {
       return null;
@@ -64,9 +62,6 @@ public class ConnectedSonarLintFacade implements SonarLintFacade {
   @Nullable
   @Override
   public synchronized String getRuleName(String ruleKey) {
-    if (sonarlint == null) {
-      return null;
-    }
     RuleDetails details = sonarlint.getRuleDetails(ruleKey);
     if (details == null) {
       return null;
@@ -76,8 +71,8 @@ public class ConnectedSonarLintFacade implements SonarLintFacade {
 
   @Override
   public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
-    SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
-    SonarLintConsole console = project.getComponent(SonarLintConsole.class);
+    SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
+    SonarLintConsole console = SonarLintUtils.get(project, SonarLintConsole.class);
 
     Path baseDir = Paths.get(project.getBasePath());
     Path workDir = baseDir.resolve(ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR).resolve("sonarlint").toAbsolutePath();

@@ -64,17 +64,13 @@ public class IssuePointer implements Trackable {
       return false;
     }
 
-    if (range != null) {
-      return range.isValid();
-    }
-
-    return true;
+    return range == null || range.isValid();
   }
 
   @Override
   public Integer getLine() {
     if(range != null && isValid()) {
-      range.getDocument().getLineNumber(range.getStartOffset());
+      return range.getDocument().getLineNumber(range.getStartOffset());
     }
 
     return null;

@@ -63,6 +63,7 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.util.ResourceLoader;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteModule;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
@@ -139,7 +140,7 @@ public class SonarLintProjectBindPanel implements Disposable {
    */
   private void onServerSelected() {
     String selectedId = getSelectedStorageId();
-    SonarLintServerManager core = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
+    SonarLintServerManager core = SonarLintUtils.get(SonarLintServerManager.class);
 
     if (engine != null) {
       engine.removeStateListener(serverStateListener);
@@ -451,18 +452,16 @@ public class SonarLintProjectBindPanel implements Disposable {
     @Override
     public void itemStateChanged(ItemEvent event) {
       if (event.getStateChange() == ItemEvent.SELECTED) {
-       lastSelectedProjectKey = getSelectedProjectKey();
+        lastSelectedProjectKey = getSelectedProjectKey();
       }
     }
   }
 
   private class ServerStateListener implements StateListener {
     @Override public void stateChanged(State newState) {
-      ApplicationManager.getApplication().invokeLater(new Runnable() {
-        @Override public void run() {
-          if (engine.getState() == State.UPDATED) {
-            setProjects();
-          }
+      ApplicationManager.getApplication().invokeLater(() -> {
+        if (engine.getState() == State.UPDATED) {
+          setProjects();
         }
       });
     }

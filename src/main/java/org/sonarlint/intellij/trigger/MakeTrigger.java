@@ -67,7 +67,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
       return;
     }
 
-    SonarLintGlobalSettings globalSettings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
     if (!globalSettings.isAutoTrigger()) {
       return;
     }
@@ -101,7 +101,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
    * Does not get called for Automake
    */
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
-    SonarLintGlobalSettings globalSettings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
     if (!globalSettings.isAutoTrigger()) {
       return;
     }

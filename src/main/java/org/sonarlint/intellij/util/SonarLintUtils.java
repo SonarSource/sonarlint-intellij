@@ -21,6 +21,7 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -85,6 +86,20 @@ public class SonarLintUtils {
     return builder.toString();
   }
 
+  public static <T> T get(ComponentManager container, Class<T> clazz) {
+    T t = container.getComponent(clazz);
+    if(t == null) {
+      LOG.error("Could not find class in container: {}", clazz.getName());
+      throw new NullPointerException("Class not found: " + clazz.getName());
+    }
+
+    return t;
+  }
+
+  public static <T> T get(Class<T> clazz) {
+    return get(ApplicationManager.getApplication(), clazz);
+  }
+
   public static boolean saveFiles(final Collection<VirtualFile> virtualFiles) {
     boolean success = true;
     for (VirtualFile file : virtualFiles) {
@@ -127,7 +142,7 @@ public class SonarLintUtils {
   }
 
   public static boolean shouldAnalyzeAutomatically(@Nullable VirtualFile file, @Nullable Module module) {
-    if (!shouldAnalyze(file, module)) {
+    if (!shouldAnalyze(file, module) || file == null || module == null) {
       return false;
     }
 
@@ -224,12 +239,7 @@ public class SonarLintUtils {
   public static boolean isJavaGeneratedSource(SourceFolder source) {
     // only return non-null if source has root type in JavaModuleSourceRootTypes.SOURCES
     JavaSourceRootProperties properties = source.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
-    if (properties != null) {
-      return properties.isForGeneratedSources();
-    } else {
-      // unknown
-      return false;
-    }
+    return properties != null && properties.isForGeneratedSources();
   }
 
   public static boolean isJavaResource(SourceFolder source) {
@@ -237,7 +247,7 @@ public class SonarLintUtils {
   }
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
-    SonarApplication sonarlint = ApplicationManager.getApplication().getComponent(SonarApplication.class);
+    SonarApplication sonarlint = get(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
       .connectTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
@@ -258,7 +268,7 @@ public class SonarLintUtils {
   /**
    * Copy of {@link HttpConfigurable#isHttpProxyEnabledForUrl(String)}, which doesn't exist in IDEA 14.
    */
-  public static boolean isHttpProxyEnabledForUrl(HttpConfigurable httpConfigurable, String url) {
+  public static boolean isHttpProxyEnabledForUrl(HttpConfigurable httpConfigurable, @Nullable String url) {
     if (!httpConfigurable.USE_HTTP_PROXY) {
       return false;
     }

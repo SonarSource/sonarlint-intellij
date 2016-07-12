@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue.tracking;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -56,7 +57,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     for (BASE base : tracking.getUnmatchedBases()) {
       SearchKey searchKey = factory.create(base);
       if (!baseSearch.containsKey(searchKey)) {
-        baseSearch.put(searchKey, new ArrayList<BASE>());
+        baseSearch.put(searchKey, new ArrayList<>());
       }
       baseSearch.get(searchKey).add(base);
     }
@@ -93,7 +94,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
       if (this == o) {
         return true;
       }
@@ -140,7 +141,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
       if (this == o) {
         return true;
       }
@@ -187,7 +188,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
       if (this == o) {
         return true;
       }
@@ -232,7 +233,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
       if (this == o) {
         return true;
       }

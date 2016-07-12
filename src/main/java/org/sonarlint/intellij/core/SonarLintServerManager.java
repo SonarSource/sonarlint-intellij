@@ -45,6 +45,7 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
@@ -111,8 +112,8 @@ public class SonarLintServerManager implements ApplicationComponent {
    * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an IllegalStateException.
    */
   public synchronized SonarLintFacade getFacadeForAnalysis(Project project) {
-    SonarLintProjectSettings projectSettings = project.getComponent(SonarLintProjectSettings.class);
-    SonarLintConsole console = project.getComponent(SonarLintConsole.class);
+    SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
+    SonarLintConsole console = SonarLintUtils.get(project, SonarLintConsole.class);
     if (projectSettings.isBindingEnabled()) {
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
