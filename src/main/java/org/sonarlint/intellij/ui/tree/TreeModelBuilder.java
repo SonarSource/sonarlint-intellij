@@ -304,7 +304,7 @@ public class TreeModelBuilder {
         return c;
       }
 
-      return o1.file().getCanonicalPath().compareTo(o2.file().getCanonicalPath());
+      return o1.file().getPath().compareTo(o2.file().getPath());
     }
   }
 

@@ -27,7 +27,7 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 
 public class IssueTreeIndex {
-  private Map<VirtualFile, FileNode> fileNodes = new HashMap<>();
+  private final Map<VirtualFile, FileNode> fileNodes = new HashMap<>();
 
   @CheckForNull
   public FileNode getFileNode(VirtualFile file) {

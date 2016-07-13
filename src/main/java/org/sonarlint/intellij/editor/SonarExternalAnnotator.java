@@ -195,7 +195,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   public static class AnnotationContext {
-    IssueStore store;
+    final IssueStore store;
 
     AnnotationContext(IssueStore store) {
       this.store = store;

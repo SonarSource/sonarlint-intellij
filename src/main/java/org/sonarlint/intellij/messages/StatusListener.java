@@ -22,6 +22,7 @@ package org.sonarlint.intellij.messages;
 import com.intellij.util.messages.Topic;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 
+@FunctionalInterface
 public interface StatusListener {
   Topic<StatusListener> SONARLINT_STATUS_TOPIC = Topic.create("SonarLint Analyzer Status", StatusListener.class);
 

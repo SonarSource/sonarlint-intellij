@@ -141,7 +141,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     }
 
     scope = newScope;
-    scope.addListener(() -> updateTree());
+    scope.addListener(this::updateTree);
   }
 
   private JComponent createScopePanel() {

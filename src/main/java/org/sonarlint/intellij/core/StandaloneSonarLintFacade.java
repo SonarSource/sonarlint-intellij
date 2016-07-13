@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectCoreUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -39,8 +38,8 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisCo
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public final class StandaloneSonarLintFacade implements SonarLintFacade {
-  private StandaloneSonarLintEngine sonarlint;
-  private Project project;
+  private final StandaloneSonarLintEngine sonarlint;
+  private final Project project;
 
   public StandaloneSonarLintFacade(Project project, StandaloneSonarLintEngine engine) {
     this.project = project;
@@ -79,7 +78,7 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
     SonarLintConsole console = SonarLintUtils.get(project, SonarLintConsole.class);
 
     Path baseDir = Paths.get(project.getBasePath());
-    Path workDir = baseDir.resolve(ProjectCoreUtil.DIRECTORY_BASED_PROJECT_DIR).resolve("sonarlint").toAbsolutePath();
+    Path workDir = baseDir.resolve(project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
     Map<String, String> props = new HashMap<>();
     props.putAll(additionalProps);
     props.putAll(projectSettings.getAdditionalProperties());

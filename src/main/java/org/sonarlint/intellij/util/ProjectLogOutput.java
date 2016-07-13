@@ -24,8 +24,8 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 public class ProjectLogOutput implements LogOutput {
-  private SonarLintConsole console;
-  private SonarLintProjectSettings settings;
+  private final SonarLintConsole console;
+  private final SonarLintProjectSettings settings;
 
   public ProjectLogOutput(SonarLintConsole console, SonarLintProjectSettings settings) {
     this.console = console;

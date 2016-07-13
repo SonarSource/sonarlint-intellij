@@ -60,6 +60,7 @@ public class SonarClearIssues extends AnAction {
           codeAnalyzer.restart(psiFile);
         }
       } finally {
+        // closeable only introduced in 2016.2
         token.finish();
       }
     }

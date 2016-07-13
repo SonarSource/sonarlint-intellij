@@ -37,7 +37,7 @@ public class ResourceLoader {
   public static final String ICON_SONARLINT_16 = "ico-sonarlint-16.png";
   public static final String ICON_SONARLINT_32 = "ico-sonarlint-32.png";
 
-  private static Map<String, ImageIcon> iconCache = new ConcurrentHashMap<>();
+  private static final Map<String, ImageIcon> iconCache = new ConcurrentHashMap<>();
 
   private ResourceLoader() {
     // only static

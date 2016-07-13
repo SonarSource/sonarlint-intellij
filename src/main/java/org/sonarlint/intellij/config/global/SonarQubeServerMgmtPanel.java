@@ -26,7 +26,6 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -238,7 +237,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   }
 
   public void save(SonarLintGlobalSettings settings) {
-    List<SonarQubeServer> copyList = servers.stream().map(s -> new SonarQubeServer(s)).collect(Collectors.toList());
+    List<SonarQubeServer> copyList = servers.stream().map(SonarQubeServer::new).collect(Collectors.toList());
     settings.setSonarQubeServers(copyList);
 
     //remove them even if a server with the same name was later added

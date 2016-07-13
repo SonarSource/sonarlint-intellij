@@ -43,7 +43,6 @@ import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -164,15 +163,13 @@ public class SonarLintProjectBindPanel implements Disposable {
 
     if (engine != null && engine.getState() == State.UPDATED) {
       Map<String, RemoteModule> moduleMap = engine.allModulesByKey();
-      Set<RemoteModule> orderedSet = new TreeSet<>(new Comparator<RemoteModule>() {
-        @Override public int compare(RemoteModule o1, RemoteModule o2) {
-          int c1 = o1.getName().compareTo(o2.getName());
-          if (c1 != 0) {
-            return c1;
-          }
-
-          return o1.getKey().compareTo(o2.getKey());
+      Set<RemoteModule> orderedSet = new TreeSet<>((o1, o2) -> {
+        int c1 = o1.getName().compareTo(o2.getName());
+        if (c1 != 0) {
+          return c1;
         }
+
+        return o1.getKey().compareTo(o2.getKey());
       });
       orderedSet.addAll(moduleMap.values());
 

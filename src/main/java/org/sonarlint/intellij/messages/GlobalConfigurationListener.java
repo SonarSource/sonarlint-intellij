@@ -23,6 +23,7 @@ import com.intellij.util.messages.Topic;
 import java.util.List;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
+@FunctionalInterface
 public interface GlobalConfigurationListener {
   Topic<GlobalConfigurationListener> SONARLINT_GLOBAL_CONFIG_TOPIC = Topic.create("Global configuration changed", GlobalConfigurationListener.class);
 

@@ -31,12 +31,11 @@ import org.jetbrains.annotations.Nullable;
 public class JobQueue {
   public static final int CAPACITY = 5;
   private final Project project;
-
-  private Deque<SonarLintAnalyzer.SonarLintJob> queue;
+  private final Deque<SonarLintAnalyzer.SonarLintJob> queue;
 
   public JobQueue(Project project) {
     this.project = project;
-    queue = new LinkedList<>();
+    this.queue = new LinkedList<>();
   }
 
   public void queue(SonarLintAnalyzer.SonarLintJob job, boolean optimize) throws NoCapacityException {

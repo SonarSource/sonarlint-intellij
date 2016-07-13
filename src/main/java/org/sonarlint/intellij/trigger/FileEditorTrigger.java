@@ -85,6 +85,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
     try {
       store.clean(file);
     } finally {
+      // closeable only introduced in 2016.2
       token.finish();
     }
   }

@@ -23,7 +23,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 
 public class TaskProgressMonitor extends ProgressMonitor {
-  private ProgressIndicator indicator;
+  private final ProgressIndicator indicator;
 
   public TaskProgressMonitor(ProgressIndicator indicator) {
     this.indicator = indicator;
