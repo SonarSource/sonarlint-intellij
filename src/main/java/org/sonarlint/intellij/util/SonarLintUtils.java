@@ -93,7 +93,7 @@ public class SonarLintUtils {
     T t = container.getComponent(clazz);
     if(t == null) {
       LOG.error("Could not find class in container: {}", clazz.getName());
-      throw new NullPointerException("Class not found: " + clazz.getName());
+      throw new IllegalArgumentException("Class not found: " + clazz.getName());
     }
 
     return t;

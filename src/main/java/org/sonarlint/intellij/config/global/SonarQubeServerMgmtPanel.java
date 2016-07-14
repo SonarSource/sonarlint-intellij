@@ -387,7 +387,8 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
       for (Project p : openProjects) {
         SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
-        if (projectSettings.getServerId() != null && projectSettings.getServerId().equals(server.getName())) {
+        String serverId = projectSettings.getServerId();
+        if (projectSettings.getServerId() != null && serverId != null && serverId.equals(server.getName())) {
           projectsUsingNames.add(p.getName());
         }
       }
