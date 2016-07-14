@@ -383,7 +383,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       }
 
       Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-      List<String> projectsUsingNames = getOpenProjectNames(openProjects);
+      List<String> projectsUsingNames = getOpenProjectNames(openProjects, server);
 
       if (!projectsUsingNames.isEmpty()) {
         int response = Messages.showYesNoDialog(serversPanel,
@@ -406,7 +406,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       }
     }
 
-    private List<String> getOpenProjectNames(Project[] openProjects) {
+    private List<String> getOpenProjectNames(Project[] openProjects, SonarQubeServer server) {
       List<String> projectsUsingNames = new LinkedList<>();
 
       for (Project p : openProjects) {
