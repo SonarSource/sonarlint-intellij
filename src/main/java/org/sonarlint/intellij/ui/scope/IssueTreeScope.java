@@ -47,6 +47,7 @@ public abstract class IssueTreeScope {
 
   public abstract Collection<VirtualFile> getAll();
 
+  @FunctionalInterface
   public interface ScopeListener {
     void conditionChanged();
   }

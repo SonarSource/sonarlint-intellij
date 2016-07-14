@@ -34,7 +34,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import org.jetbrains.annotations.Nullable;
@@ -119,15 +118,13 @@ public class SonarLintRulePanel {
     newEditor.setBorder(new EmptyBorder(10, 10, 10, 10));
     newEditor.setEditable(false);
     newEditor.setContentType("text/html");
-    newEditor.addHyperlinkListener(new HyperlinkListener() {
-      @Override public void hyperlinkUpdate(HyperlinkEvent e) {
-        if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-          Desktop desktop = Desktop.getDesktop();
-          try {
-            desktop.browse(e.getURL().toURI());
-          } catch (Exception ex) {
-            SonarLintConsole.get(project).error("Error opening browser: " + e.getURL(), ex);
-          }
+    newEditor.addHyperlinkListener((e) -> {
+      if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+        Desktop desktop = Desktop.getDesktop();
+        try {
+          desktop.browse(e.getURL().toURI());
+        } catch (Exception ex) {
+          SonarLintConsole.get(project).error("Error opening browser: " + e.getURL(), ex);
         }
       }
     });

@@ -33,7 +33,6 @@ import com.intellij.util.messages.MessageBusConnection;
 import javax.swing.Box;
 import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -56,12 +55,8 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     addConsole();
 
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, new StatusListener() {
-      @Override public void changed(SonarLintStatus.Status newStatus) {
-        // activate/deactivate icons as soon as SonarLint status changes
-        ApplicationManager.getApplication().invokeLater(() -> mainToolbar.updateActionsImmediately());
-      }
-    });
+    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
+      ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
   }
 
   private void addToolbar() {

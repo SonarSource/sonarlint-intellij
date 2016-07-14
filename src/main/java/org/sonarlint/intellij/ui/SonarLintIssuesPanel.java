@@ -114,10 +114,10 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
       }
 
       @Override public void allChanged() {
-        ApplicationManager.getApplication().invokeLater(() -> updateTree());
+        ApplicationManager.getApplication().invokeLater(SonarLintIssuesPanel.this::updateTree);
       }
     });
-    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(() -> mainToolbar.updateActionsImmediately()));
+    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
     updateTree();
   }
 

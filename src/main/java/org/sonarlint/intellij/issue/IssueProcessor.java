@@ -89,7 +89,7 @@ public class IssueProcessor extends AbstractProjectComponent {
    */
   private Map<VirtualFile, Collection<IssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
-    Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> ((VirtualFile) f.getClientObject())).collect(Collectors.toSet());
+    Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
     for(VirtualFile f : analysed) {
       if(failedVirtualFiles.contains(f)) {

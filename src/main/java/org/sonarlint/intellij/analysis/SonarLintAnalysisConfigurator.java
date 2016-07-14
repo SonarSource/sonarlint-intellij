@@ -150,12 +150,8 @@ public class SonarLintAnalysisConfigurator {
 
   private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
     try {
-      final String languageLevel = getLanguageLevelOption(ApplicationManager.getApplication().runReadAction(new Computable<LanguageLevel>() {
-        @Override
-        public LanguageLevel compute() {
-          return EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule);
-        }
-      }));
+      final String languageLevel = getLanguageLevelOption(ApplicationManager.getApplication()
+        .runReadAction((Computable<LanguageLevel>) () -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule)));
       String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
       if (StringUtil.isEmpty(bytecodeTarget)) {
         // according to IDEA rule: if not specified explicitly, set target to be the same as source language level

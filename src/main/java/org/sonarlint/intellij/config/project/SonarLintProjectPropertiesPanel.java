@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.config.project;
 
-import com.intellij.ui.AnActionButton;
-import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.TableUtil;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
@@ -57,17 +55,14 @@ public class SonarLintProjectPropertiesPanel {
     JPanel tablePanel = ToolbarDecorator.createDecorator(table)
       .disableUpAction()
       .disableDownAction()
-      .setAddAction(new AnActionButtonRunnable() {
-        @Override
-        public void run(AnActionButton anActionButton) {
-          final TableCellEditor cellEditor = table.getCellEditor();
-          if (cellEditor != null) {
-            cellEditor.stopCellEditing();
-          }
-          final TableModel model = table.getModel();
-          ((EditableModel) model).addRow();
-          TableUtil.editCellAt(table, model.getRowCount() - 1, 0);
+      .setAddAction(anActionButton -> {
+        final TableCellEditor cellEditor = table.getCellEditor();
+        if (cellEditor != null) {
+          cellEditor.stopCellEditing();
         }
+        final TableModel model = table.getModel();
+        ((EditableModel) model).addRow();
+        TableUtil.editCellAt(table, model.getRowCount() - 1, 0);
       })
       .createPanel();
 
