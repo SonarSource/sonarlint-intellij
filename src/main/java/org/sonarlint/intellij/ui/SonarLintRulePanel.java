@@ -118,7 +118,7 @@ public class SonarLintRulePanel {
     newEditor.setBorder(new EmptyBorder(10, 10, 10, 10));
     newEditor.setEditable(false);
     newEditor.setContentType("text/html");
-    newEditor.addHyperlinkListener((e) -> {
+    newEditor.addHyperlinkListener(e -> {
       if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
         Desktop desktop = Desktop.getDesktop();
         try {

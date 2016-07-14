@@ -383,15 +383,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       }
 
       Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-      List<String> projectsUsingNames = new LinkedList<>();
-
-      for (Project p : openProjects) {
-        SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
-        String serverId = projectSettings.getServerId();
-        if (projectSettings.getServerId() != null && serverId != null && serverId.equals(server.getName())) {
-          projectsUsingNames.add(p.getName());
-        }
-      }
+      List<String> projectsUsingNames = getOpenProjectNames(openProjects);
 
       if (!projectsUsingNames.isEmpty()) {
         int response = Messages.showYesNoDialog(serversPanel,
@@ -412,6 +404,19 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         int newIndex = Math.min(model.getSize() - 1, Math.max(selectedIndex - 1, 0));
         serverList.setSelectedValue(model.getElementAt(newIndex), true);
       }
+    }
+
+    private List<String> getOpenProjectNames(Project[] openProjects) {
+      List<String> projectsUsingNames = new LinkedList<>();
+
+      for (Project p : openProjects) {
+        SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
+        String serverId = projectSettings.getServerId();
+        if (projectSettings.getServerId() != null && serverId != null && serverId.equals(server.getName())) {
+          projectsUsingNames.add(p.getName());
+        }
+      }
+      return projectsUsingNames;
     }
   }
 }
