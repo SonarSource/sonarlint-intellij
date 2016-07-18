@@ -43,6 +43,7 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
+
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -68,6 +69,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.event.HyperlinkEvent;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -195,8 +197,8 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     flow2.add(updateServerButton);
     flow2.add(link);
 
-    serverStatusPanel.add(flow1, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0,0,0,0), 0,0));
-    serverStatusPanel.add(flow2, new GridBagConstraints(1, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0,0,0,0), 0,0));
+    serverStatusPanel.add(flow1, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0, 0, 0, 0), 0, 0));
+    serverStatusPanel.add(flow2, new GridBagConstraints(1, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0, 0, 0, 0), 0, 0));
 
     updateServerButton.setAction(new AbstractAction() {
       @Override public void actionPerformed(ActionEvent e) {
@@ -281,7 +283,13 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
     if (server != null) {
       engine = serverManager.getConnectedEngine(server.getName());
-      engineListener = newState -> ApplicationManager.getApplication().invokeLater(() -> setStatus(newState));
+      engineListener = newState -> ApplicationManager.getApplication().invokeLater(() -> {
+        // re-fetch state, as some time might have passed until it was assigned to the EDT and things might have changed
+        if (engine == null) {
+          return;
+        }
+        setStatus(engine.getState());
+      });
       ConnectedSonarLintEngine.State state = engine.getState();
       setStatus(state);
       engine.addStateListener(engineListener);
@@ -292,16 +300,20 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   }
 
   private void setStatus(ConnectedSonarLintEngine.State state) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-
+    ConnectedSonarLintEngine.State currentState = engine.getState();
     StringBuilder builder = new StringBuilder();
-    switch (state) {
+
+    switch (currentState) {
       case NEVER_UPDATED:
         builder.append("never updated");
         break;
       case UPDATED:
         GlobalUpdateStatus updateStatus = engine.getUpdateStatus();
-        builder.append(SonarLintUtils.age(updateStatus.getLastUpdateDate().getTime()));
+        if (updateStatus != null) {
+          builder.append(SonarLintUtils.age(updateStatus.getLastUpdateDate().getTime()));
+        } else {
+          builder.append("up to date");
+        }
         break;
       case UPDATING:
         builder.append("updating..");
