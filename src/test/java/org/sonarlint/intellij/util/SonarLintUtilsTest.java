@@ -69,11 +69,6 @@ public class SonarLintUtilsTest extends SonarTest {
   }
 
   @Test
-  public void testGetModuleRoot() {
-    assertThat(SonarLintUtils.getModuleRootPath(module)).isEqualTo("/src");
-  }
-
-  @Test
   public void testShouldAnalyzeDisposed() {
     Project disposed = mock(Project.class);
     Module module = mock(Module.class);

@@ -34,4 +34,5 @@ $RECYCLE.BIN/
 
 # Gradle
 .gradle
+classes
 build

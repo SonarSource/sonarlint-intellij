@@ -45,7 +45,6 @@ import java.net.URI;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
@@ -64,29 +63,6 @@ public class SonarLintUtils {
 
   private SonarLintUtils() {
     // Utility class
-  }
-
-  public static String getModuleRootPath(Module module) {
-    VirtualFile moduleRoot = getModuleRoot(module);
-    return moduleRoot.getPath();
-  }
-
-  public static VirtualFile getModuleRoot(Module module) {
-    ModuleRootManager rootManager = ModuleRootManager.getInstance(module);
-    VirtualFile[] contentRoots = rootManager.getContentRoots();
-    if (contentRoots.length != 1) {
-      LOG.error("Module " + module + " contains " + contentRoots.length + " content roots and this is not supported");
-      throw new IllegalStateException("No basedir for module " + module);
-    }
-    return contentRoots[0];
-  }
-
-  public static String propsToString(Map<String, String> props) {
-    StringBuilder builder = new StringBuilder();
-    for (Object key : props.keySet()) {
-      builder.append(key).append("=").append(props.get(key.toString())).append("\n");
-    }
-    return builder.toString();
   }
 
   public static <T> T get(ComponentManager container, Class<T> clazz) {
@@ -209,17 +185,6 @@ public class SonarLintUtils {
     // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
     if ("html".equalsIgnoreCase(file.getFileType().getName())) {
       return false;
-    }
-
-    final VirtualFile baseDir = SonarLintUtils.getModuleRoot(module);
-
-    if (baseDir == null) {
-      throw new IllegalStateException("No basedir for module " + module);
-    }
-
-    String baseDirPath = baseDir.getCanonicalPath();
-    if (baseDirPath == null) {
-      throw new IllegalStateException("No basedir path for module " + module);
     }
 
     return true;
