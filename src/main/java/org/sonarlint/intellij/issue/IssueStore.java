@@ -123,25 +123,33 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   void store(VirtualFile file, final Collection<IssuePointer> rawIssues) {
+    boolean firstAnalysis = !storePerFile.containsKey(file);
+
     // clean before issue tracking
     cleanInvalid(file);
 
     // this will also delete all existing issues in the file
-    final Collection<IssuePointer> previousIssues = getForFile(file);
-    Collection<IssuePointer> trackedIssues = new ArrayList<>();
+    if(firstAnalysis) {
+      // don't set creation date, as we don't know when the issue was actually created (SLI-86)
+      storePerFile.put(file, rawIssues);
+    } else {
+      final Collection<IssuePointer> previousIssues = getForFile(file);
+      Collection<IssuePointer> trackedIssues = new ArrayList<>();
 
-    Input<IssuePointer> baseInput = () -> previousIssues;
-    Input<IssuePointer> rawInput = () -> rawIssues;
-    Tracking<IssuePointer, IssuePointer> tracking = new Tracker<IssuePointer, IssuePointer>().track(rawInput, baseInput);
-    for (Map.Entry<IssuePointer, IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
-      IssuePointer rawMatched = entry.getKey();
-      IssuePointer previousMatched = entry.getValue();
-      rawMatched.setCreationDate(previousMatched.creationDate());
-      trackedIssues.add(rawMatched);
+      Input<IssuePointer> baseInput = () -> previousIssues;
+      Input<IssuePointer> rawInput = () -> rawIssues;
+      Tracking<IssuePointer, IssuePointer> tracking = new Tracker<IssuePointer, IssuePointer>().track(rawInput, baseInput);
+      for (Map.Entry<IssuePointer, IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
+        IssuePointer rawMatched = entry.getKey();
+        IssuePointer previousMatched = entry.getValue();
+        rawMatched.setCreationDate(previousMatched.creationDate());
+        trackedIssues.add(rawMatched);
+      }
+      for (IssuePointer newIssue : tracking.getUnmatchedRaws()) {
+        newIssue.setCreationDate(System.currentTimeMillis());
+        trackedIssues.add(newIssue);
+      }
+      storePerFile.put(file, trackedIssues);
     }
-    for (IssuePointer newIssue : tracking.getUnmatchedRaws()) {
-      trackedIssues.add(newIssue);
-    }
-    storePerFile.put(file, trackedIssues);
   }
 }

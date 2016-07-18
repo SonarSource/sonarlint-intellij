@@ -35,7 +35,7 @@ public class IssuePointer implements Trackable {
   private final RangeMarker range;
   private final Issue issue;
   private final PsiFile psiFile;
-  private long creationDate;
+  private Long creationDate;
   private final Integer checksum;
 
   public IssuePointer(Issue issue, PsiFile psiFile) {
@@ -43,7 +43,6 @@ public class IssuePointer implements Trackable {
   }
 
   public IssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
-    this.creationDate = System.currentTimeMillis();
     this.range = range;
     this.issue = issue;
     this.psiFile = psiFile;
@@ -109,11 +108,12 @@ public class IssuePointer implements Trackable {
     return psiFile;
   }
 
-  public long creationDate() {
+  @CheckForNull
+  public Long creationDate() {
     return creationDate;
   }
 
-  public void setCreationDate(long creationDate) {
+  public void setCreationDate(@Nullable Long creationDate) {
     this.creationDate = creationDate;
   }
 }

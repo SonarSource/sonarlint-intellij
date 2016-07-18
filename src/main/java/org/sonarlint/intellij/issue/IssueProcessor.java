@@ -95,6 +95,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       if(failedVirtualFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
+        // it's important to store all files, even without issues, to correctly track the leak period (SLI-86)
         map.put(f, new ArrayList<>());
       }
     }

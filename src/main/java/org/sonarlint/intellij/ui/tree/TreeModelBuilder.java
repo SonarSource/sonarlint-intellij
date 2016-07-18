@@ -290,13 +290,6 @@ public class TreeModelBuilder {
     return condition.value(file);
   }
 
-  public void updateFile(VirtualFile file) {
-    FileNode node = index.getFileNode(file);
-    if (node != null) {
-      model.nodeStructureChanged(node);
-    }
-  }
-
   private static class FileNodeComparator implements Comparator<FileNode> {
     @Override public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());
@@ -308,12 +301,13 @@ public class TreeModelBuilder {
     }
   }
 
-  private static class IssueComparator implements Comparator<IssuePointer> {
+  static class IssueComparator implements Comparator<IssuePointer> {
     @Override public int compare(@Nonnull IssuePointer o1, @Nonnull IssuePointer o2) {
-      int dateCompare = Long.compare(o1.creationDate(), o2.creationDate());
+      Ordering<Long> creationDateOrdering = Ordering.natural().reverse().nullsLast();
+      int dateCompare = creationDateOrdering.compare(o1.creationDate(), o2.creationDate());
 
       if (dateCompare != 0) {
-        return -dateCompare;
+        return dateCompare;
       }
 
       int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.issue().getSeverity(), o2.issue().getSeverity());

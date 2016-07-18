@@ -76,11 +76,11 @@ public class IssueStoreTest extends SonarTest {
     // tracking based on ruleKey / line number
     store.clear();
     IssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
-    i1.setCreationDate(1000);
+    i1.setCreationDate(1000L);
     store.store(file1, Collections.singletonList(i1));
 
     IssuePointer i2 = createRangeStoredIssue(1, "issue 1", 10);
-    i2.setCreationDate(2000);
+    i2.setCreationDate(2000L);
     store.store(file1, Collections.singletonList(i2));
 
     Collection<IssuePointer> fileIssues = store.getForFile(file1);
@@ -93,11 +93,11 @@ public class IssueStoreTest extends SonarTest {
     // tracking based on checksum
     store.clear();
     IssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
-    i1.setCreationDate(1000);
+    i1.setCreationDate(1000L);
     store.store(file1, Collections.singletonList(i1));
 
     IssuePointer i2 = createRangeStoredIssue(1, "issue 1", 11);
-    i2.setCreationDate(2000);
+    i2.setCreationDate(2000L);
     store.store(file1, Collections.singletonList(i2));
 
     Collection<IssuePointer> fileIssues = store.getForFile(file1);
