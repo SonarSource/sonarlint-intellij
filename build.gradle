@@ -38,6 +38,9 @@ repositories {
   jcenter()
   mavenLocal()
   mavenCentral()
+  maven {
+    url "https://repox.sonarsource.com/sonarsource"
+  }
 }
 
 configurations {
@@ -45,8 +48,8 @@ configurations {
 }
 
 dependencies {
-  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.4-SNAPSHOT'
-  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.4-SNAPSHOT'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.4-build569'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.4-build569'
   compile 'commons-lang:commons-lang:2.4'
   compile 'commons-io:commons-io:2.4'
   compile 'com.google.code.findbugs:jsr305:2.0.2'
