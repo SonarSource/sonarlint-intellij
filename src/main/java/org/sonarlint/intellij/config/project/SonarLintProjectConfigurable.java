@@ -19,14 +19,21 @@
  */
 package org.sonarlint.intellij.config.project;
 
+import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurableProvider;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.openapi.options.ShowSettingsUtil;
+import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
+
 import javax.swing.JComponent;
+
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -44,12 +51,12 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   private SonarLintProjectSettingsPanel panel;
 
-  public SonarLintProjectConfigurable(Project p) {
-    this.project = p;
+  public SonarLintProjectConfigurable(Project project) {
+    this.project = project;
     this.projectSettings = project.getComponent(SonarLintProjectSettings.class);
     this.bus = ApplicationManager.getApplication().getMessageBus().connect();
     this.bus.subscribe(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC, newServerList -> {
-      if(panel != null) {
+      if (panel != null) {
         panel.serversChanged(newServerList);
       }
     });
@@ -94,9 +101,22 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public void reset() {
     if (panel != null) {
-      // global settings might have been changed
-      SonarLintGlobalSettings globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-      panel.load(globalSettings, projectSettings);
+      SonarLintGlobalSettings globalSettings = null;
+
+      // try get the global settings that are currently being configured in the configurable, if it is open
+      Settings allSettings = Settings.KEY.getData(DataManager.getInstance().getDataContextFromFocus().getResult());
+      if (allSettings != null) {
+        final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+        if (globalConfigurable != null) {
+          globalSettings = globalConfigurable.getCurrentSettings();
+        }
+      }
+
+      // get saved settings if needed
+      if (globalSettings == null) {
+        globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
+      }
+      panel.load(globalSettings.getSonarQubeServers(), projectSettings);
     }
   }
 
@@ -104,7 +124,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   public void disposeUIResources() {
     SonarLintProjectNotifications.get(project).reset();
     bus.disconnect();
-    panel.dispose();
-    panel = null;
+    if (panel != null) {
+      panel.dispose();
+      panel = null;
+    }
   }
 }

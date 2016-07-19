@@ -26,7 +26,6 @@ import java.awt.BorderLayout;
 import java.util.List;
 import javax.swing.JPanel;
 import org.apache.commons.codec.binary.StringUtils;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -65,9 +64,9 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     return root;
   }
 
-  public void load(SonarLintGlobalSettings globalSettings, SonarLintProjectSettings projectSettings) {
+  public void load(List<SonarQubeServer> servers, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(globalSettings.getSonarQubeServers(), projectSettings.isBindingEnabled(), projectSettings.getServerId(), projectSettings.getProjectKey());
+    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getServerId(), projectSettings.getProjectKey());
   }
 
   public void save(SonarLintProjectSettings projectSettings) {

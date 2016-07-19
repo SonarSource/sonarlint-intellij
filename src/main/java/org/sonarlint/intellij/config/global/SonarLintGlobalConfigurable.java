@@ -23,9 +23,13 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
+
 import java.awt.BorderLayout;
+import java.util.List;
+import javax.annotation.CheckForNull;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
@@ -57,7 +61,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @Override public boolean isModified() {
-    return  serversPanel.isModified(globalSettings) || globalPanel.isModified();
+    return serversPanel.isModified(globalSettings) || globalPanel.isModified();
   }
 
   @Override public void apply() throws ConfigurationException {
@@ -67,11 +71,22 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     serverManager.reloadServers();
   }
 
+  @CheckForNull
+  public SonarLintGlobalSettings getCurrentSettings() {
+    if (serversPanel != null) {
+      SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+      serversPanel.save(settings);
+      return settings;
+    }
+
+    return null;
+  }
+
   @Override public void reset() {
-    if(serversPanel != null) {
+    if (serversPanel != null) {
       serversPanel.load(globalSettings);
     }
-    if(globalPanel != null) {
+    if (globalPanel != null) {
       globalPanel.load(globalSettings);
     }
   }
@@ -81,7 +96,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       rootPanel.setVisible(false);
       rootPanel = null;
     }
-    if(serversPanel != null) {
+    if (serversPanel != null) {
       serversPanel.dispose();
       serversPanel = null;
     }
