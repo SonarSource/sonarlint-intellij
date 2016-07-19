@@ -27,9 +27,12 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collection;
+
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.ui.scope.IssueTreeScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -72,9 +75,9 @@ public class SonarAnalyzeScopeAction extends AbstractSonarAction {
       SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
       for (Module m : filesByModule.keySet()) {
         if (executeBackground(e)) {
-          analyzer.submitAsync(m, filesByModule.get(m));
+          analyzer.submitAsync(m, filesByModule.get(m), TriggerType.ACTION);
         } else {
-          analyzer.submit(m, filesByModule.get(m));
+          analyzer.submit(m, filesByModule.get(m), TriggerType.ACTION);
         }
       }
     }

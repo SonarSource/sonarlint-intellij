@@ -32,7 +32,9 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.UUID;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -92,7 +94,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
       console.debug("Trigger: " + trigger);
 
       for (Module m : filesByModule.keySet()) {
-        analyzer.submitAsync(m, filesByModule.get(m));
+        analyzer.submitAsync(m, filesByModule.get(m), TriggerType.COMPILATION);
       }
     }
   }

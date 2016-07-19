@@ -30,12 +30,14 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
+
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -154,7 +156,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
         return;
       }
 
-      analyzer.submitAsync(m, Collections.singleton(file));
+      analyzer.submitAsync(m, Collections.singleton(file), TriggerType.EDITOR_CHANGE);
     }
 
     private void checkTimers() {

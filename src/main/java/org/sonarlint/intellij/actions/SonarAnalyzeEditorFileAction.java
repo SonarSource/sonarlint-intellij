@@ -25,9 +25,12 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collections;
+
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -58,9 +61,9 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
     if (SonarLintUtils.shouldAnalyze(selectedFile, m)) {
       SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
       if (executeBackground(e)) {
-        analyzer.submitAsync(m, Collections.singleton(selectedFile));
+        analyzer.submitAsync(m, Collections.singleton(selectedFile), TriggerType.ACTION);
       } else {
-        analyzer.submit(m, Collections.singleton(selectedFile));
+        analyzer.submit(m, Collections.singleton(selectedFile), TriggerType.ACTION);
       }
     } else {
       console.error("File '" + selectedFile + "' cannot be analyzed");

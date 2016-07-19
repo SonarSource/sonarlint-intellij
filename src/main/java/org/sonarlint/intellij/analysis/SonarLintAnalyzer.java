@@ -28,11 +28,14 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -44,6 +47,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
   // used to synchronize the handling of queue and running status together
   private final Object lock;
   private final SonarLintStatus status;
+  private final SonarLintConsole console;
 
   public SonarLintAnalyzer(Project project, IssueProcessor processor) {
     super(project);
@@ -52,6 +56,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
     this.queue = new JobQueue(project);
     this.lock = new Object();
     this.status = SonarLintStatus.get(this.myProject);
+    this.console = SonarLintConsole.get(myProject);
 
     messageBus.connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener() {
       @Override public void started(SonarLintJob job) {
@@ -64,7 +69,11 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
     });
   }
 
-  public void submitAsync(Module m, Collection<VirtualFile> files) {
+  public void submitAsync(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+    if (console.debugEnabled()) {
+      SonarLintConsole.get(myProject).debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
+    }
+
     SonarLintJob newJob = new SonarLintJob(m, files);
     SonarLintJob nextJob;
 
@@ -95,9 +104,12 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
    * The reason why we might want to queue the analysis instead of starting immediately is that the EDT might currently hold a write access.
    * If we hold a write lock, the ApplicationManager will not work as expected, because it won't start a pooled thread if we hold
    * a write access (the pooled thread would dead lock if it needs read access). The listener for file editor events holds the write access, for example.
-   * @see #submitAsync(Module, Collection)
+   * @see #submitAsync(Module, Collection, TriggerType)
    */
-  public void submit(Module m, Collection<VirtualFile> files) {
+  public void submit(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+    if (console.debugEnabled()) {
+      SonarLintConsole.get(myProject).debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
+    }
     synchronized (lock) {
       if (myProject.isDisposed() || !status.tryRun()) {
         return;
@@ -113,7 +125,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
    * Runs SonarLint analysis asynchronously, in another thread.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of file being analyzed
    * might be changed with the editor at the same time, resulting in a bad placement of the issues in the editor.
-   * @see #submit(Module, Collection)
+   * @see #submit(Module, Collection, TriggerType)
    */
   private void launchAsync(final SonarLintJob job) {
     final SonarLintTask task = SonarLintTask.createBackground(processor, job);

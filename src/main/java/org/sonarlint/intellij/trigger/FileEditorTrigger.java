@@ -30,12 +30,13 @@ import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
+
 import java.util.Collections;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.IssueStore;
-import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
@@ -69,7 +70,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
       return;
     }
 
-    analyzer.submitAsync(m, Collections.singleton(file));
+    analyzer.submitAsync(m, Collections.singleton(file), TriggerType.EDITOR_OPEN);
   }
 
   @Override
