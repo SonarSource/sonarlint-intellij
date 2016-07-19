@@ -25,7 +25,6 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 
 import java.awt.BorderLayout;
-import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
