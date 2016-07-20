@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -48,18 +48,18 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   private static final int DEFAULT_TIMER_MS = 2000;
 
   private final SonarLintGlobalSettings globalSettings;
-  private final SonarLintAnalyzer analyzer;
+  private final SonarLintJobManager analyzer;
 
   // entries in this map mean that the file is "dirty"
   private final Map<VirtualFile, Long> eventMap;
   private final EventWatcher watcher;
   private final int timerMs;
 
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintAnalyzer analyzer, EditorFactory editorFactory) {
+  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer, EditorFactory editorFactory) {
     this(project, globalSettings, analyzer, editorFactory, DEFAULT_TIMER_MS);
   }
 
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintAnalyzer analyzer, EditorFactory editorFactory, int timerMs) {
+  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer, EditorFactory editorFactory, int timerMs) {
     super(project);
     this.analyzer = analyzer;
     this.eventMap = new ConcurrentHashMap<>();
@@ -70,11 +70,11 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     editorFactory.getEventMulticaster().addDocumentListener(this);
 
     project.getMessageBus().connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener() {
-      @Override public void started(SonarLintAnalyzer.SonarLintJob job) {
+      @Override public void started(SonarLintJobManager.SonarLintJob job) {
         removeFiles(job.files());
       }
 
-      @Override public void ended(SonarLintAnalyzer.SonarLintJob job) {
+      @Override public void ended(SonarLintJobManager.SonarLintJob job) {
         // nothing to do
       }
     });

@@ -64,12 +64,12 @@ public class JobQueueTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void dontAnalyzeEmpty() throws JobQueue.NoCapacityException {
-    queue.queue(new SonarLintAnalyzer.SonarLintJob(module, Collections.emptySet()));
+    queue.queue(new SonarLintJobManager.SonarLintJob(module, Collections.emptySet()));
   }
 
   @Test
   public void dontOptimize() throws JobQueue.NoCapacityException {
-    SonarLintAnalyzer.SonarLintJob job = createJob();
+    SonarLintJobManager.SonarLintJob job = createJob();
 
     for (int i = 0; i < 3; i++) {
       queue.queue(job, false);
@@ -77,7 +77,7 @@ public class JobQueueTest {
 
     assertThat(queue.size()).isEqualTo(3);
 
-    SonarLintAnalyzer.SonarLintJob j;
+    SonarLintJobManager.SonarLintJob j;
 
     while ((j = queue.get()) != null) {
       assertThat(j).isEqualTo(job);
@@ -114,23 +114,23 @@ public class JobQueueTest {
     assertThat(queue.get().files()).hasSize(1);
   }
 
-  private SonarLintAnalyzer.SonarLintJob createJobNewFiles(int numFiles) {
+  private SonarLintJobManager.SonarLintJob createJobNewFiles(int numFiles) {
     Set<VirtualFile> files = new HashSet<>(numFiles);
 
     for (int i = 0; i < numFiles; i++) {
       files.add(mock(VirtualFile.class));
     }
 
-    return new SonarLintAnalyzer.SonarLintJob(module, files);
+    return new SonarLintJobManager.SonarLintJob(module, files);
   }
 
-  private SonarLintAnalyzer.SonarLintJob createJobNewModule() {
+  private SonarLintJobManager.SonarLintJob createJobNewModule() {
     Module module = mock(Module.class);
     when(module.getProject()).thenReturn(project);
-    return new SonarLintAnalyzer.SonarLintJob(module, files);
+    return new SonarLintJobManager.SonarLintJob(module, files);
   }
 
-  private SonarLintAnalyzer.SonarLintJob createJob() {
-    return new SonarLintAnalyzer.SonarLintJob(module, files);
+  private SonarLintJobManager.SonarLintJob createJob() {
+    return new SonarLintJobManager.SonarLintJob(module, files);
   }
 }

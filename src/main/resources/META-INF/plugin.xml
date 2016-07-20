@@ -79,7 +79,7 @@
             <implementation-class>org.sonarlint.intellij.config.project.SonarLintProjectSettings</implementation-class>
         </component>
         <component>
-            <implementation-class>org.sonarlint.intellij.analysis.SonarLintAnalyzer</implementation-class>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintJobManager</implementation-class>
         </component>
         <component>
             <implementation-class>org.sonarlint.intellij.issue.IssueMatcher</implementation-class>
@@ -100,7 +100,7 @@
             <implementation-class>org.sonarlint.intellij.trigger.SonarDocumentListener</implementation-class>
         </component>
         <component>
-            <implementation-class>org.sonarlint.intellij.analysis.SonarLintAnalysisConfigurator</implementation-class>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintAnalyzer</implementation-class>
         </component>
         <component>
             <implementation-class>org.sonarlint.intellij.core.SonarLintProjectNotifications</implementation-class>

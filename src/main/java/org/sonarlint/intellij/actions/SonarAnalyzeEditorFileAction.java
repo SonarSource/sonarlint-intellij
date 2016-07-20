@@ -28,7 +28,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 
 import java.util.Collections;
 
-import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -59,7 +59,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
     Module m = ModuleUtil.findModuleForFile(selectedFile, p);
 
     if (SonarLintUtils.shouldAnalyze(selectedFile, m)) {
-      SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
+      SonarLintJobManager analyzer = SonarLintUtils.get(p, SonarLintJobManager.class);
       if (executeBackground(e)) {
         analyzer.submitAsync(m, Collections.singleton(selectedFile), TriggerType.ACTION);
       } else {

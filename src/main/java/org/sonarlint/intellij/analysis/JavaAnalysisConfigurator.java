@@ -23,25 +23,22 @@ import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.EffectiveLanguageLevelUtil;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.CompilerModuleExtension;
-import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
-import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import com.intellij.pom.java.LanguageLevel;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -50,118 +47,43 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.core.SonarLintFacade;
-import org.sonarlint.intellij.core.SonarLintServerManager;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-
-public class SonarLintAnalysisConfigurator {
-
-  public static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
-  public static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
-  public static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
-  public static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
-  public static final String JAVA_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
-  public static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
+public class JavaAnalysisConfigurator implements AnalysisConfigurator {
+  static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
+  static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
+  static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
+  static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
+  static final String JAVA_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
+  static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
 
   private static final char SEPARATOR = ',';
 
   private static final String JAR_REGEXP = "(.*)!/";
   private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
 
-  public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
-    Project p = module.getProject();
-    SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintServerManager core = SonarLintUtils.get(SonarLintServerManager.class);
-
-    // Configure plugin properties
-    Map<String, String> pluginProps = new HashMap<>();
-    configureModuleSettings(module, pluginProps);
-
-    // configure files
-    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-    List<ClientInputFile> inputFiles = getInputFiles(p, moduleRootManager, filesToAnalyze);
-
-    // Analyze
-    long start = System.currentTimeMillis();
-
-    SonarLintFacade facade = core.getFacadeForAnalysis(module.getProject());
-    if (facade == null) {
-      console.info("Failed to create SonarLint engine for module '" + module.getName() + "'");
-      return null;
-    }
-
-    String what;
-    if (filesToAnalyze.size() == 1) {
-      what = "'" + filesToAnalyze.iterator().next().getName() + "'";
-    } else {
-      what = Integer.toString(filesToAnalyze.size()) + " files";
-    }
-
-    console.info("Analysing " + what + "...");
-    AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps);
-    console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
-    return result;
-  }
-
-  private static Charset getEncoding(Project p, @Nullable VirtualFile f) {
-    if (f != null) {
-      Charset encoding = EncodingProjectManager.getInstance(p).getEncoding(f, true);
-      if (encoding != null) {
-        return encoding;
-      }
-    }
-    return Charset.defaultCharset();
-  }
-
-  private static List<ClientInputFile> getInputFiles(Project p, ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
-    Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
-    List<ClientInputFile> inputFiles = new LinkedList<>();
-
-    for (VirtualFile f : filesToAnalyze) {
-      boolean test = isTestFile(testFolderPrefix, f);
-      Charset charset = getEncoding(p, f);
-      inputFiles.add(new DefaultInputFile(f, test, charset));
-    }
-
-    return inputFiles;
-  }
-
-  private static boolean isTestFile(Collection<String> testFolderPrefix, VirtualFile f) {
-    String filePath = f.getPath();
-    for (String testPrefix : testFolderPrefix) {
-      if (filePath.startsWith(testPrefix)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private static void configureModuleSettings(@NotNull Module ijModule, @NotNull Map<String, String> properties) {
+  @Override
+  public Map<String, String> configure(@NotNull Module ijModule) {
+    Map<String, String> properties = new HashMap<>();
     configureLibraries(ijModule, properties);
     configureBinaries(ijModule, properties);
     configureJavaSourceTarget(ijModule, properties);
+    return properties;
   }
 
   private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
     try {
-      final String languageLevel = getLanguageLevelOption(ApplicationManager.getApplication()
-        .runReadAction((Computable<LanguageLevel>) () -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule)));
+      LanguageLevel languageLevel = ApplicationManager.getApplication()
+        .runReadAction((Computable<LanguageLevel>) () -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
+      final String languageLevelStr = getLanguageLevelOption(languageLevel);
       String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
       if (StringUtil.isEmpty(bytecodeTarget)) {
         // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
-        bytecodeTarget = languageLevel;
+        bytecodeTarget = languageLevelStr;
       }
-      properties.put(JAVA_SOURCE_PROPERTY, languageLevel);
+      properties.put(JAVA_SOURCE_PROPERTY, languageLevelStr);
       properties.put(JAVA_TARGET_PROPERTY, bytecodeTarget);
-    } catch (NoClassDefFoundError e) {
-      // CompilerConfiguration not available for example in PHP Storm
+    } catch (BootstrapMethodError | NoClassDefFoundError e) {
+      // (DM): some components are not available in some flavours, for example ConpilerConfiguration and Language Level in PHP storm or CLion.
+      // Even though this class should now only be loaded when the Java extensions are available, I leave this to be safe
     }
   }
 
@@ -217,23 +139,7 @@ public class SonarLintAnalysisConfigurator {
   }
 
   @NotNull
-  private static Collection<String> findTestFolderPrefixes(ModuleRootManager moduleRootManager) {
-    Collection<String> testFolderPrefix = new ArrayList<>();
-    for (ContentEntry contentEntry : moduleRootManager.getContentEntries()) {
-      final SourceFolder[] sourceFolders = contentEntry.getSourceFolders();
-      for (SourceFolder sourceFolder : sourceFolders) {
-        final VirtualFile file = sourceFolder.getFile();
-        if (file != null && sourceFolder.isTestSource()) {
-          testFolderPrefix.add(file.getPath());
-        }
-      }
-    }
-
-    return testFolderPrefix;
-  }
-
-  @NotNull
-  public static VirtualFile[] getProjectClasspath(@Nullable final Module module) {
+  private static VirtualFile[] getProjectClasspath(@Nullable final Module module) {
     if (module == null) {
       return new VirtualFile[0];
     }

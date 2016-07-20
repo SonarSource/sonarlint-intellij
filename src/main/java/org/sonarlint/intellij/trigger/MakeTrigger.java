@@ -36,17 +36,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class MakeTrigger extends AbstractProjectComponent implements BuildManagerListener, CompilationStatusListener {
   private final FileEditorManager editorManager;
-  private final SonarLintAnalyzer analyzer;
+  private final SonarLintJobManager analyzer;
   private final SonarLintConsole console;
 
-  public MakeTrigger(Project project, FileEditorManager editorManager, SonarLintAnalyzer analyzer, SonarLintConsole console) {
+  public MakeTrigger(Project project, FileEditorManager editorManager, SonarLintJobManager analyzer, SonarLintConsole console) {
     super(project);
     this.editorManager = editorManager;
     this.analyzer = analyzer;

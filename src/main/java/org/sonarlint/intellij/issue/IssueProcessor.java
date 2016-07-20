@@ -27,7 +27,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -56,7 +56,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.console = SonarLintConsole.get(project);
   }
 
-  public void process(final SonarLintAnalyzer.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles) {
+  public void process(final SonarLintJobManager.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<IssuePointer>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();

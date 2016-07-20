@@ -17,15 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages;
+package org.sonarlint.intellij.analysis;
 
-import com.intellij.util.messages.Topic;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
+import com.intellij.openapi.module.Module;
 
-public interface TaskListener {
-  Topic<TaskListener> SONARLINT_TASK_TOPIC = Topic.create("SonarLint task start and finish", TaskListener.class);
+import java.util.Map;
 
-  void started(SonarLintJobManager.SonarLintJob job);
-
-  void ended(SonarLintJobManager.SonarLintJob job);
+public interface AnalysisConfigurator {
+  Map<String, String> configure(Module module);
 }

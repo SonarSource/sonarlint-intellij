@@ -31,14 +31,14 @@ import org.jetbrains.annotations.Nullable;
 public class JobQueue {
   public static final int CAPACITY = 5;
   private final Project project;
-  private final Deque<SonarLintAnalyzer.SonarLintJob> queue;
+  private final Deque<SonarLintJobManager.SonarLintJob> queue;
 
   public JobQueue(Project project) {
     this.project = project;
     this.queue = new LinkedList<>();
   }
 
-  public void queue(SonarLintAnalyzer.SonarLintJob job, boolean optimize) throws NoCapacityException {
+  public void queue(SonarLintJobManager.SonarLintJob job, boolean optimize) throws NoCapacityException {
     Preconditions.checkArgument(job.module().getProject().equals(project), "job belongs to a different project");
     Preconditions.checkArgument(!job.files().isEmpty(), "no files to analyze");
 
@@ -52,12 +52,12 @@ public class JobQueue {
     queue.addLast(job);
   }
 
-  private boolean tryAddToExisting(SonarLintAnalyzer.SonarLintJob job) {
+  private boolean tryAddToExisting(SonarLintJobManager.SonarLintJob job) {
     if (queue.isEmpty()) {
       return false;
     }
 
-    for (SonarLintAnalyzer.SonarLintJob j : queue) {
+    for (SonarLintJobManager.SonarLintJob j : queue) {
       if (!j.module().equals(job.module())) {
         continue;
       }
@@ -73,12 +73,12 @@ public class JobQueue {
     return queue.size();
   }
 
-  public void queue(SonarLintAnalyzer.SonarLintJob job) throws NoCapacityException {
+  public void queue(SonarLintJobManager.SonarLintJob job) throws NoCapacityException {
     queue(job, true);
   }
 
   @Nullable
-  public SonarLintAnalyzer.SonarLintJob get() {
+  public SonarLintJobManager.SonarLintJob get() {
     if (queue.isEmpty()) {
       return null;
     }

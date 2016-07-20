@@ -32,23 +32,23 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 
 public class SonarLintTask extends Task.Backgroundable {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintAnalyzer.class);
+  private static final Logger LOGGER = Logger.getInstance(SonarLintJobManager.class);
   private final IssueProcessor processor;
-  private final SonarLintAnalyzer.SonarLintJob job;
+  private final SonarLintJobManager.SonarLintJob job;
   private final boolean startInBackground;
 
-  private SonarLintTask(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job, boolean background) {
+  private SonarLintTask(IssueProcessor processor, SonarLintJobManager.SonarLintJob job, boolean background) {
     super(job.module().getProject(), "SonarLint Analysis", true);
     this.processor = processor;
     this.job = job;
     this.startInBackground = background;
   }
 
-  public static SonarLintTask createBackground(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job) {
+  public static SonarLintTask createBackground(IssueProcessor processor, SonarLintJobManager.SonarLintJob job) {
     return new SonarLintTask(processor, job, true);
   }
 
-  public static SonarLintTask createForeground(IssueProcessor processor, SonarLintAnalyzer.SonarLintJob job) {
+  public static SonarLintTask createForeground(IssueProcessor processor, SonarLintJobManager.SonarLintJob job) {
     return new SonarLintTask(processor, job, false);
   }
 
@@ -57,7 +57,7 @@ public class SonarLintTask extends Task.Backgroundable {
     return startInBackground;
   }
 
-  private static void stopRun(SonarLintAnalyzer.SonarLintJob job) {
+  private static void stopRun(SonarLintJobManager.SonarLintJob job) {
     TaskListener taskListener = job.module().getProject().getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
     taskListener.ended(job);
   }
@@ -72,7 +72,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
     SonarLintStatus status = SonarLintStatus.get(p);
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintAnalysisConfigurator configurator = SonarLintUtils.get(p, SonarLintAnalysisConfigurator.class);
+    SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
 
     try {
       if (indicator.isCanceled() || status.isCanceled()) {
@@ -94,7 +94,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
       try {
         monitor.start();
-        result = configurator.analyzeModule(job.module(), job.files(), listener);
+        result = analyzer.analyzeModule(job.module(), job.files(), listener);
         indicator.startNonCancelableSection();
       } finally {
         monitor.stopMonitor();

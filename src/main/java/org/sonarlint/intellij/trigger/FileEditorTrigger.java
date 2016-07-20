@@ -34,18 +34,18 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collections;
 
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.analysis.SonarLintAnalyzer;
+import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final IssueStore store;
-  private final SonarLintAnalyzer analyzer;
+  private final SonarLintJobManager analyzer;
   private final SonarLintGlobalSettings globalSettings;
   private final MessageBusConnection busConnection;
 
-  public FileEditorTrigger(Project project, IssueStore store, SonarLintAnalyzer analyzer, SonarLintGlobalSettings globalSettings) {
+  public FileEditorTrigger(Project project, IssueStore store, SonarLintJobManager analyzer, SonarLintGlobalSettings globalSettings) {
     super(project);
     this.store = store;
     this.analyzer = analyzer;

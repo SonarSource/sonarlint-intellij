@@ -49,8 +49,8 @@ public class SonarLintTaskTest extends SonarTest {
   private IssueProcessor processor;
   private HashSet<VirtualFile> files;
   private ProgressIndicator progress;
-  private SonarLintAnalyzer.SonarLintJob job;
-  private SonarLintAnalysisConfigurator configurator;
+  private SonarLintJobManager.SonarLintJob job;
+  private SonarLintAnalyzer configurator;
   private AnalysisResults analysisResults;
 
   @Before
@@ -66,10 +66,10 @@ public class SonarLintTaskTest extends SonarTest {
     processor = mock(IssueProcessor.class);
     SonarLintConsole console = mock(SonarLintConsole.class);
     task = SonarLintTask.createBackground(processor, job);
-    configurator = mock(SonarLintAnalysisConfigurator.class);
+    configurator = mock(SonarLintAnalyzer.class);
     when(configurator.analyzeModule(any(Module.class), anyListOf(VirtualFile.class), any(IssueListener.class))).thenReturn(analysisResults);
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
-    super.register(SonarLintAnalysisConfigurator.class, configurator);
+    super.register(SonarLintAnalyzer.class, configurator);
     super.register(SonarLintConsole.class, console);
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
@@ -109,7 +109,7 @@ public class SonarLintTaskTest extends SonarTest {
     verifyNoMoreInteractions(listener);
   }
 
-  private SonarLintAnalyzer.SonarLintJob createJob() {
-    return new SonarLintAnalyzer.SonarLintJob(module, files);
+  private SonarLintJobManager.SonarLintJob createJob() {
+    return new SonarLintJobManager.SonarLintJob(module, files);
   }
 }
