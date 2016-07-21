@@ -28,7 +28,9 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+
 import java.util.Set;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -101,8 +103,18 @@ public class ServerUpdateTask {
   }
 
   private void updateModule(ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, String key) {
-    engine.updateModule(serverConfiguration, key);
-    log.log("Module '" + key + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+    try {
+      engine.updateModule(serverConfiguration, key);
+      log.log("Module '" + key + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+    } catch (Exception e) {
+      // in case of error, show a message box and keep updating other modules
+      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
+      ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
+        @Override public void doRun() throws Exception {
+          Messages.showErrorDialog((Project) null, msg, "Update failed");
+        }
+      }, ModalityState.any());
+    }
   }
 
 }

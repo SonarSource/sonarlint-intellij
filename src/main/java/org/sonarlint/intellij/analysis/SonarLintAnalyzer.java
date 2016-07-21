@@ -70,10 +70,6 @@ public class SonarLintAnalyzer {
     long start = System.currentTimeMillis();
 
     SonarLintFacade facade = core.getFacadeForAnalysis(module.getProject());
-    if (facade == null) {
-      console.info("Failed to create SonarLint engine for module '" + module.getName() + "'");
-      return null;
-    }
 
     String what;
     if (filesToAnalyze.size() == 1) {

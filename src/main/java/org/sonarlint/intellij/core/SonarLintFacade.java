@@ -27,10 +27,12 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
+import javax.annotation.CheckForNull;
+
 public interface SonarLintFacade {
   AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps);
 
-  @Nullable String getDescription(String ruleKey);
+  @CheckForNull String getDescription(String ruleKey);
 
-  @Nullable String getRuleName(String ruleKey);
+  @CheckForNull String getRuleName(String ruleKey);
 }

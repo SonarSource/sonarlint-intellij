@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.google.common.base.Preconditions;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
@@ -51,6 +52,7 @@ import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.ModuleUpdateStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -140,6 +142,9 @@ public class SonarLintServerManager implements ApplicationComponent {
   }
 
   private SonarLintFacade createConnectedFacade(Project project, String serverId, String projectKey) {
+    Preconditions.checkNotNull(serverId, "serverId");
+    Preconditions.checkNotNull(projectKey, "projectKey");
+
     if (!configuredStorageIds.contains(serverId)) {
       SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
       throw new IllegalStateException("Invalid server name: " + serverId);
@@ -153,17 +158,30 @@ public class SonarLintServerManager implements ApplicationComponent {
       engines.put(serverId, engine);
     }
 
-    if (engine.getState() != ConnectedSonarLintEngine.State.UPDATED) {
-      if (engine.getState() != ConnectedSonarLintEngine.State.NEED_UPDATE) {
+    // Check if engine's global storage is OK
+    ConnectedSonarLintEngine.State state = engine.getState();
+    if (state != ConnectedSonarLintEngine.State.UPDATED) {
+      if (state != ConnectedSonarLintEngine.State.NEED_UPDATE) {
         SonarLintProjectNotifications.get(project).notifyServerNotUpdated();
-      } else if (engine.getState() != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
+      } else if (state != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
         SonarLintProjectNotifications.get(project).notifyServerNeedsUpdate(serverId);
       }
       throw new IllegalStateException("Server is not updated: " + serverId);
     }
 
-    // Check if module is not updated
-    //TODO is it too heavy?
+    // Check if module's storage is OK. Global storage was updated and all project's binding that were open too,
+    // but we might have now opened a new project with a different binding.
+    ModuleUpdateStatus moduleUpdateStatus = engine.getModuleUpdateStatus(projectKey);
+
+    if (moduleUpdateStatus == null) {
+      // update probably failed
+      SonarLintProjectNotifications.get(project).notifyModuleInvalid();
+      throw new IllegalStateException("Project is bound to a module that doesn't exist: " + projectKey);
+    } else if (moduleUpdateStatus.isStale()) {
+      SonarLintProjectNotifications.get(project).notifyModuleStale();
+      throw new IllegalStateException("Stale module's storage: " + projectKey);
+    }
+
     return new ConnectedSonarLintFacade(engine, project, projectKey);
   }
 

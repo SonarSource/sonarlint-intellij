@@ -61,6 +61,32 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
+  public void notifyModuleInvalid() {
+    if(shown) {
+      return;
+    }
+    Notification notification = new Notification(BINDING_PROBLEM,
+      "SonarLint - Project bound to an invalid remote module",
+      "Please check the <a href='#'>SonarLint project configuration</a>",
+      NotificationType.ERROR, new OpenProjectSettingsNotificationListener(myProject));
+    notification.setImportant(true);
+    notification.notify(myProject);
+    shown = true;
+  }
+
+  public void notifyModuleStale() {
+    if(shown) {
+      return;
+    }
+    Notification notification = new Notification(BINDING_PROBLEM,
+      "SonarLint - Project's binding data is invalid",
+      "Please check the <a href='#'>SonarLint project configuration</a>",
+      NotificationType.ERROR, new OpenProjectSettingsNotificationListener(myProject));
+    notification.setImportant(true);
+    notification.notify(myProject);
+    shown = true;
+  }
+
   public void notifyServerNotUpdated() {
     if(shown) {
       return;
