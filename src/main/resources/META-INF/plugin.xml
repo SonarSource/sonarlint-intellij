@@ -32,6 +32,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.3 - Support of exclusions in connected mode; Numerous bug fixes</li>
         <li>2.2 - Support of SonarQube LTS (4.5) and commercial plugins</li>
         <li>2.1.1 - Bug fix for PHPStorm</li>
         <li>2.1 - Various improvements and bug fixes</li>
