@@ -61,7 +61,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @Override public boolean isModified() {
-    return serversPanel.isModified(globalSettings) || globalPanel.isModified();
+    return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings);
   }
 
   @Override public void apply() throws ConfigurationException {

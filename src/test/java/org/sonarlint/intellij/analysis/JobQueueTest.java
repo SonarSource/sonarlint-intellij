@@ -22,9 +22,11 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -79,7 +81,8 @@ public class JobQueueTest {
 
     SonarLintJobManager.SonarLintJob j;
 
-    while ((j = queue.get()) != null) {
+    for (int i = 0; i < 3; i++) {
+      j = queue.get();
       assertThat(j).isEqualTo(job);
     }
   }
