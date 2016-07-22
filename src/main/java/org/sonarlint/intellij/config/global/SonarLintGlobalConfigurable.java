@@ -25,6 +25,7 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 
 import java.awt.BorderLayout;
+import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -71,11 +72,11 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @CheckForNull
-  public SonarLintGlobalSettings getCurrentSettings() {
+  public List<SonarQubeServer> getCurrentSettings() {
     if (serversPanel != null) {
       SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
       serversPanel.save(settings);
-      return settings;
+      return settings.getSonarQubeServers();
     }
 
     return null;

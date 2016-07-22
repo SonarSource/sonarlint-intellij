@@ -33,9 +33,12 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import java.util.List;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.
@@ -99,22 +102,22 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public void reset() {
     if (panel != null) {
-      SonarLintGlobalSettings globalSettings = null;
+      List<SonarQubeServer> currentServers = null;
 
       // try get the global settings that are currently being configured in the configurable, if it is open
       Settings allSettings = Settings.KEY.getData(DataManager.getInstance().getDataContextFromFocus().getResult());
       if (allSettings != null) {
         final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
         if (globalConfigurable != null) {
-          globalSettings = globalConfigurable.getCurrentSettings();
+          currentServers = globalConfigurable.getCurrentSettings();
         }
       }
 
       // get saved settings if needed
-      if (globalSettings == null) {
-        globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
+      if (currentServers == null) {
+        currentServers = SonarLintUtils.get(SonarLintGlobalSettings.class).getSonarQubeServers();
       }
-      panel.load(globalSettings.getSonarQubeServers(), projectSettings);
+      panel.load(currentServers, projectSettings);
     }
   }
 

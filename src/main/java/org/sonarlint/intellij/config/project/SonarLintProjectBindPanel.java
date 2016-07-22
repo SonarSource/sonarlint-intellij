@@ -141,6 +141,8 @@ public class SonarLintProjectBindPanel implements Disposable {
    * Should be called when selected Server changes.
    */
   private void onServerSelected() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+
     String selectedStorageId = getSelectedStorageId();
     SonarLintServerManager core = SonarLintUtils.get(SonarLintServerManager.class);
 
@@ -161,45 +163,53 @@ public class SonarLintProjectBindPanel implements Disposable {
   }
 
   private void setProjects() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+
     DefaultComboBoxModel<RemoteModule> model = (DefaultComboBoxModel) projectComboBox.getModel();
     projectComboBox.removeAllItems();
 
     if (engine != null && engine.getState() == State.UPDATED) {
       Map<String, RemoteModule> moduleMap = engine.allModulesByKey();
-      Set<RemoteModule> orderedSet = new TreeSet<>((o1, o2) -> {
-        int c1 = o1.getName().compareTo(o2.getName());
-        if (c1 != 0) {
-          return c1;
+      if (!moduleMap.isEmpty()) {
+        Set<RemoteModule> orderedSet = new TreeSet<>((o1, o2) -> {
+          int c1 = o1.getName().compareTo(o2.getName());
+          if (c1 != 0) {
+            return c1;
+          }
+
+          return o1.getKey().compareTo(o2.getKey());
+        });
+        orderedSet.addAll(moduleMap.values());
+
+        RemoteModule selected = null;
+        int i = 0;
+        for (RemoteModule mod : orderedSet) {
+          if (!mod.isRoot()) {
+            continue;
+          }
+          // this won't call the change listener
+          model.insertElementAt(mod, i);
+          i++;
+          if (lastSelectedProjectKey != null && lastSelectedProjectKey.equals(mod.getKey())) {
+            selected = mod;
+          }
         }
 
-        return o1.getKey().compareTo(o2.getKey());
-      });
-      orderedSet.addAll(moduleMap.values());
+        if (selected != null) {
+          projectComboBox.setSelectedItem(selected);
+        } else if (projectComboBox.getItemCount() > 0) {
+          projectComboBox.setSelectedIndex(0);
+        } else {
+          projectComboBox.setSelectedItem(null);
+        }
 
-      RemoteModule selected = null;
-      int i = 0;
-      for (RemoteModule mod : orderedSet) {
-        if (!mod.isRoot()) {
-          continue;
-        }
-        // this won't call the change listener
-        model.insertElementAt(mod, i);
-        i++;
-        if (lastSelectedProjectKey != null && lastSelectedProjectKey.equals(mod.getKey())) {
-          selected = mod;
-        }
+        projectComboBox.setPrototypeDisplayValue(null);
+        projectComboBox.setEnabled(bindEnable.isSelected());
       }
+    }
 
-      if (selected != null) {
-        projectComboBox.setSelectedItem(selected);
-      } else if (projectComboBox.getItemCount() > 0) {
-        projectComboBox.setSelectedIndex(0);
-      } else {
-        projectComboBox.setSelectedItem(null);
-      }
-      projectComboBox.setPrototypeDisplayValue(null);
-      projectComboBox.setEnabled(bindEnable.isSelected());
-    } else {
+    // it can be happen because server has no projects, no server selected, or server not updated
+    if (projectComboBox.getItemCount() == 0) {
       final String fMsg = getProjectEmptyText();
       RemoteModule empty = new RemoteModule() {
         @Override public String getKey() {
@@ -221,10 +231,12 @@ public class SonarLintProjectBindPanel implements Disposable {
   }
 
   public void serversChanged(List<SonarQubeServer> serverList) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+
     // keep selection if possible
-    String selectedStorageId = getSelectedStorageId();
+    String previousSelectedStorageId = getSelectedStorageId();
     serverComboBox.removeAllItems();
-    setServerList(serverList, selectedStorageId);
+    setServerList(serverList, previousSelectedStorageId);
   }
 
   private String getProjectEmptyText() {
@@ -246,7 +258,7 @@ public class SonarLintProjectBindPanel implements Disposable {
    * Sets new servers in the combo box, or disable it if there aren't any.
    * Will also enable or disable other components.
    */
-  private void setServerList(Collection<SonarQubeServer> servers, @Nullable String selectedId) {
+  private void setServerList(Collection<SonarQubeServer> servers, @Nullable String previousSelectedStorageId) {
     DefaultComboBoxModel<SonarQubeServer> model = (DefaultComboBoxModel<SonarQubeServer>) serverComboBox.getModel();
 
     if (servers.isEmpty()) {
@@ -260,7 +272,7 @@ public class SonarLintProjectBindPanel implements Disposable {
       int i = 0;
       int selectedIndex = -1;
       for (SonarQubeServer s : servers) {
-        if (selectedId != null && s.getName() != null && selectedId.equals(s.getName())) {
+        if (previousSelectedStorageId != null && s.getName() != null && previousSelectedStorageId.equals(s.getName())) {
           selectedIndex = i;
         }
         serverComboBox.setPrototypeDisplayValue(null);
@@ -465,8 +477,9 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   private class ServerStateListener implements StateListener {
     @Override public void stateChanged(State newState) {
+      // invoke in EDT
       ApplicationManager.getApplication().invokeLater(() -> {
-        if (engine.getState() == State.UPDATED) {
+        if (engine == null || engine.getState() == State.UPDATED) {
           setProjects();
         }
       });

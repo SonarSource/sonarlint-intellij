@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.ui.VerticalFlowLayout;
+
 import java.awt.BorderLayout;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
@@ -46,7 +47,6 @@ import javax.swing.JPanel;
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 public class SonarLintGlobalSettingsPanel {
-  private boolean isDirty;
   private JPanel rootPane;
   private JCheckBox autoTrigger;
 
@@ -66,7 +66,6 @@ public class SonarLintGlobalSettingsPanel {
   private JPanel createTopPanel() {
     autoTrigger = new JCheckBox("Automatically trigger analysis");
     autoTrigger.setFocusable(false);
-    autoTrigger.addActionListener(evt -> isDirty = true);
     JPanel tickOptions = new JPanel(new VerticalFlowLayout());
     tickOptions.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
     tickOptions.add(autoTrigger);
@@ -74,20 +73,19 @@ public class SonarLintGlobalSettingsPanel {
     return tickOptions;
   }
 
-  public boolean isModified() {
-    return isDirty;
+  public boolean isModified(SonarLintGlobalSettings model) {
+    getComponent();
+    return model.isAutoTrigger() == autoTrigger.isSelected();
   }
 
   public void load(SonarLintGlobalSettings model) {
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
-    isDirty = false;
   }
 
   public void save(SonarLintGlobalSettings model) {
     getComponent();
     model.setAutoTrigger(autoTrigger.isSelected());
-    isDirty = false;
   }
 }
 

@@ -142,6 +142,7 @@ public class SonarLintServerManager implements ApplicationComponent {
   }
 
   private SonarLintFacade createConnectedFacade(Project project, String serverId, String projectKey) {
+    Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(serverId, "serverId");
     Preconditions.checkNotNull(projectKey, "projectKey");
 
