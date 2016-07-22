@@ -357,8 +357,11 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   }
 
   private void editServer() {
-    SonarQubeServerEditor serverEditor = new SonarQubeServerEditor(panel, servers, getSelectedServer(), false);
-    serverEditor.show();
+    SonarQubeServer selectedServer = getSelectedServer();
+    if (selectedServer != null) {
+      SonarQubeServerEditor serverEditor = new SonarQubeServerEditor(panel, servers, selectedServer, false);
+      serverEditor.show();
+    }
   }
 
   @Override public void dispose() {

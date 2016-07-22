@@ -53,7 +53,7 @@ public class SonarLintAnalyzer {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     Map<String, String> pluginProps = new HashMap<>();
     AnalysisConfigurator[] analysisConfigurators = module.getComponents(AnalysisConfigurator.class);
-    if (analysisConfigurators != null && analysisConfigurators.length > 0) {
+    if (analysisConfigurators.length > 0) {
       for (AnalysisConfigurator config : analysisConfigurators) {
         console.debug("Configuring analysis with " + config.getClass().getName());
         pluginProps.putAll(config.configure(module));

@@ -19,12 +19,15 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.google.common.base.Preconditions;
 import com.intellij.openapi.project.Project;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -42,6 +45,9 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
   private final Project project;
 
   public StandaloneSonarLintFacade(Project project, StandaloneSonarLintEngine engine) {
+    Preconditions.checkNotNull(project, "project");
+    Preconditions.checkNotNull(project.getBasePath(), "project base path");
+    Preconditions.checkNotNull(engine, "engine");
     this.project = project;
     this.sonarlint = engine;
   }
@@ -49,9 +55,6 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
   @Nullable
   @Override
   public synchronized String getDescription(String ruleKey) {
-    if (sonarlint == null) {
-      return null;
-    }
     RuleDetails details = sonarlint.getRuleDetails(ruleKey);
     if (details == null) {
       return null;
@@ -62,9 +65,6 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
   @Nullable
   @Override
   public synchronized String getRuleName(String ruleKey) {
-    if (sonarlint == null) {
-      return null;
-    }
     RuleDetails details = sonarlint.getRuleDetails(ruleKey);
     if (details == null) {
       return null;

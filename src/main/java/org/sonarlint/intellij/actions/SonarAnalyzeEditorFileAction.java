@@ -48,6 +48,10 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
   public void actionPerformed(AnActionEvent e) {
     Project p = e.getProject();
 
+    if (p == null) {
+      return;
+    }
+
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(p);
     SonarLintConsole console = SonarLintConsole.get(p);
 

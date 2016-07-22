@@ -22,7 +22,6 @@ package org.sonarlint.intellij.core;
 import java.util.List;
 import java.util.Map;
 
-import org.jetbrains.annotations.Nullable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;

@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
@@ -67,6 +68,7 @@ public class TreeModelBuilder {
     model.nodeChanged(summary);
   }
 
+  @CheckForNull
   public IssueNode getNextIssue(AbstractNode<?> startNode) {
     if (!(startNode instanceof IssueNode)) {
       return firstIssueDown((AbstractNode) startNode);
@@ -86,6 +88,7 @@ public class TreeModelBuilder {
     return firstIssueDown((AbstractNode) next);
   }
 
+  @CheckForNull
   public IssueNode getPreviousIssue(AbstractNode<?> startNode) {
     Object next = getPreviousNode(startNode);
 
@@ -104,6 +107,7 @@ public class TreeModelBuilder {
   /**
    * Finds the first issue node which is child of a given node.
    */
+  @CheckForNull
   private static IssueNode firstIssueDown(AbstractNode node) {
     if (node instanceof IssueNode) {
       return (IssueNode) node;
@@ -120,6 +124,7 @@ public class TreeModelBuilder {
   /**
    * Finds the first issue node which is child of a given node.
    */
+  @CheckForNull
   private static IssueNode lastIssueDown(AbstractNode node) {
     if (node instanceof IssueNode) {
       return (IssueNode) node;
@@ -134,6 +139,7 @@ public class TreeModelBuilder {
     return lastIssueDown((AbstractNode) lastChild);
   }
 
+  @CheckForNull
   private static AbstractNode getPreviousNode(AbstractNode startNode) {
     AbstractNode parent = (AbstractNode) startNode.getParent();
 
@@ -151,6 +157,7 @@ public class TreeModelBuilder {
   /**
    * Next node, either the sibling if it exists, or the sibling of the parent
    */
+  @CheckForNull
   private static AbstractNode getNextNode(AbstractNode startNode) {
     AbstractNode parent = (AbstractNode) startNode.getParent();
 
@@ -190,9 +197,8 @@ public class TreeModelBuilder {
       }
     }
 
-    for (VirtualFile f : toRemove) {
-      removeFile(f);
-    }
+
+    toRemove.forEach(this::removeFile);
 
     for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), condition);

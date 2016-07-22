@@ -36,12 +36,14 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.messages.MessageBusConnection;
+
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.Collection;
 import java.util.Map;
+import javax.annotation.CheckForNull;
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
@@ -53,6 +55,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
@@ -223,14 +226,15 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
-    if(IssueTreeScope.SCOPE_DATA_KEY.is(dataId)) {
+    if (IssueTreeScope.SCOPE_DATA_KEY.is(dataId)) {
       return scope;
     }
 
     return null;
   }
 
-  private OccurenceInfo occurrence(IssueNode node) {
+  @CheckForNull
+  private OccurenceInfo occurrence(@Nullable IssueNode node) {
     if (node == null) {
       return null;
     }
@@ -275,7 +279,9 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     return parent == null || (parent.getIndex(node) == 0 && isFirst(parent));
   }
 
-  @Override public OccurenceInfo goNextOccurence() {
+  @CheckForNull
+  @Override
+  public OccurenceInfo goNextOccurence() {
     TreePath path = tree.getSelectionPath();
     if (path == null) {
       return null;
@@ -283,7 +289,9 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     return occurrence(treeBuilder.getNextIssue((AbstractNode<?>) path.getLastPathComponent()));
   }
 
-  @Override public OccurenceInfo goPreviousOccurence() {
+  @CheckForNull
+  @Override
+  public OccurenceInfo goPreviousOccurence() {
     TreePath path = tree.getSelectionPath();
     if (path == null) {
       return null;

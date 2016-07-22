@@ -21,9 +21,10 @@ package org.sonarlint.intellij.analysis;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.project.Project;
+
 import java.util.Deque;
 import java.util.LinkedList;
-import org.jetbrains.annotations.Nullable;
+import java.util.NoSuchElementException;
 
 /**
  * NOT thread safe
@@ -77,11 +78,12 @@ public class JobQueue {
     queue(job, true);
   }
 
-  @Nullable
+  /**
+   * It's callers responsibility to check if there is an element in the queue
+   * @return Next queued job
+   * @throws NoSuchElementException if the queue is empty
+   */
   public SonarLintJobManager.SonarLintJob get() {
-    if (queue.isEmpty()) {
-      return null;
-    }
     return queue.removeFirst();
   }
 

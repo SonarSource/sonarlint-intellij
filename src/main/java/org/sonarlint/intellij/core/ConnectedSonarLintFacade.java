@@ -19,12 +19,15 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.google.common.base.Preconditions;
 import com.intellij.openapi.project.Project;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -43,6 +46,9 @@ public class ConnectedSonarLintFacade implements SonarLintFacade {
   private final String moduleKey;
 
   public ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, Project project, String moduleKey) {
+    Preconditions.checkNotNull(project, "project");
+    Preconditions.checkNotNull(project.getBasePath(), "project base path");
+    Preconditions.checkNotNull(engine, "engine");
     this.sonarlint = engine;
     this.project = project;
     this.moduleKey = moduleKey;

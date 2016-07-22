@@ -31,6 +31,8 @@ public class SonarCancel extends AbstractSonarAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    SonarLintStatus.get(e.getProject()).cancel();
+    if (e.getProject() != null) {
+      SonarLintStatus.get(e.getProject()).cancel();
+    }
   }
 }

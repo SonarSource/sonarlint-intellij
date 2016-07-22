@@ -46,6 +46,9 @@ public class SonarAnalyzeScopeAction extends AbstractSonarAction {
   @Override
   public void actionPerformed(AnActionEvent e) {
     Project p = e.getProject();
+    if (p == null) {
+      return;
+    }
     SonarLintConsole console = SonarLintConsole.get(p);
     IssueTreeScope scope = e.getData(IssueTreeScope.SCOPE_DATA_KEY);
     if (scope == null) {

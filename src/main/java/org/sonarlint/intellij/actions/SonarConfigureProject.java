@@ -33,7 +33,9 @@ public class SonarConfigureProject extends AbstractSonarAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    SonarLintProjectConfigurable configurable = new SonarLintProjectConfigurable(e.getProject());
-    ShowSettingsUtil.getInstance().editConfigurable(e.getProject(), configurable);
+    if (e.getProject() != null) {
+      SonarLintProjectConfigurable configurable = new SonarLintProjectConfigurable(e.getProject());
+      ShowSettingsUtil.getInstance().editConfigurable(e.getProject(), configurable);
+    }
   }
 }

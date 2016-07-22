@@ -96,4 +96,9 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
   public void selectionChanged(@NotNull FileEditorManagerEvent event) {
     // nothing to do
   }
+
+  @Override
+  public void disposeComponent() {
+    busConnection.disconnect();
+  }
 }

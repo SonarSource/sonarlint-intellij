@@ -44,7 +44,7 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   private boolean verboseEnabled = false;
 
   private boolean analysisLogsEnabled = false;
-  private Map<String, String> additionalProperties = new LinkedHashMap<>();
+  private final Map<String, String> additionalProperties = new LinkedHashMap<>();
 
   private boolean bindingEnabled = false;
   private String serverId = null;

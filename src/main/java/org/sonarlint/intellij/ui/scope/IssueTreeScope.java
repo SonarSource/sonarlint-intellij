@@ -28,7 +28,7 @@ import java.util.List;
 
 public abstract class IssueTreeScope {
   public static final DataKey<IssueTreeScope> SCOPE_DATA_KEY = DataKey.create("SonarLintScope");
-  protected List<ScopeListener> listeners = new ArrayList<>();
+  protected final List<ScopeListener> listeners = new ArrayList<>();
   protected Condition<VirtualFile> condition;
 
   public abstract String getDisplayName();
