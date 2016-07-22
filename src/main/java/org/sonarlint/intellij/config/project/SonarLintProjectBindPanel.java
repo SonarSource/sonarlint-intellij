@@ -34,6 +34,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -56,6 +57,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -72,7 +74,8 @@ import static org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonar
 public class SonarLintProjectBindPanel implements Disposable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintProjectBindPanel.class);
   private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
-  private static final String PROJECT_EMPTY_TEXT = "<No server selected>";
+  private static final String PROJECT_NO_SERVER = "<No server selected>";
+  private static final String PROJECT_EMPTY = "<No projects to display>";
   private static final String PROJECT_NO_LOCAL_CONFIG = "<Update server binding first>";
 
   private JPanel rootPanel;
@@ -138,19 +141,19 @@ public class SonarLintProjectBindPanel implements Disposable {
    * Should be called when selected Server changes.
    */
   private void onServerSelected() {
-    String selectedId = getSelectedStorageId();
+    String selectedStorageId = getSelectedStorageId();
     SonarLintServerManager core = SonarLintUtils.get(SonarLintServerManager.class);
 
     if (engine != null) {
       engine.removeStateListener(serverStateListener);
     }
 
-    if (selectedId == null) {
+    if (selectedStorageId == null) {
       engine = null;
       serverStateListener = null;
     } else {
       // assuming that server ID is valid!
-      engine = core.getConnectedEngine(selectedId);
+      engine = core.getConnectedEngine(selectedStorageId);
       serverStateListener = new ServerStateListener();
       engine.addStateListener(serverStateListener);
     }
@@ -187,9 +190,9 @@ public class SonarLintProjectBindPanel implements Disposable {
         }
       }
 
-      if(selected != null) {
+      if (selected != null) {
         projectComboBox.setSelectedItem(selected);
-      } else if(projectComboBox.getItemCount() > 0) {
+      } else if (projectComboBox.getItemCount() > 0) {
         projectComboBox.setSelectedIndex(0);
       } else {
         projectComboBox.setSelectedItem(null);
@@ -226,10 +229,16 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   private String getProjectEmptyText() {
     if (getSelectedStorageId() != null) {
-      // not updated
-      return PROJECT_NO_LOCAL_CONFIG;
+      if (engine.getState() != State.UPDATED)
+        // not updated
+        return PROJECT_NO_LOCAL_CONFIG;
+      else {
+        // there are no projects in the server
+        return PROJECT_EMPTY;
+      }
     } else {
-      return PROJECT_EMPTY_TEXT;
+      // no project selected
+      return PROJECT_NO_SERVER;
     }
   }
 
