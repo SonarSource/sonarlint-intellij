@@ -241,10 +241,10 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   private String getProjectEmptyText() {
     if (getSelectedStorageId() != null) {
-      if (engine.getState() != State.UPDATED)
+      if (engine.getState() != State.UPDATED) {
         // not updated
         return PROJECT_NO_LOCAL_CONFIG;
-      else {
+      } else {
         // there are no projects in the server
         return PROJECT_EMPTY;
       }
