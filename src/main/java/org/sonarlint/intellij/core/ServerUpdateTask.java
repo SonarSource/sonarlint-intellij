@@ -85,8 +85,13 @@ public class ServerUpdateTask {
         log.log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       }
 
+      //here we assume that server is updated, or this won't work
+      Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
+
       for (String key : projectKeys) {
-        updateModule(engine, serverConfiguration, key);
+        if (existingProjectKeys.contains(key)) {
+          updateModule(engine, serverConfiguration, key);
+        }
       }
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + server.getName() + "' was cancelled");

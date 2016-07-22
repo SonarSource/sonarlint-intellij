@@ -337,13 +337,12 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     }
 
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-    Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
     Set<String> projectKeys = new HashSet<>();
 
     for (Project p : openProjects) {
       SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
       if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId())
-        && projectSettings.getProjectKey() != null && existingProjectKeys.contains(projectSettings.getProjectKey())) {
+        && projectSettings.getProjectKey() != null) {
         projectKeys.add(projectSettings.getProjectKey());
       }
     }
