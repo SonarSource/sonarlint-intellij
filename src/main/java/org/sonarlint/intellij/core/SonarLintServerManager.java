@@ -120,15 +120,17 @@ public class SonarLintServerManager implements ApplicationComponent {
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
 
-      if (projectKey != null && serverId != null) {
-        console.info(String.format("Using configuration of '%s' in server '%s'", projectSettings.getProjectKey(), projectSettings.getServerId()));
-        return createConnectedFacade(project, serverId, projectKey);
-      } else {
+      if (serverId == null) {
         SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
         throw new IllegalStateException("Project as an invalid binding");
+      } else if (projectKey == null) {
+        SonarLintProjectNotifications.get(project).notifyModuleInvalid();
+        throw new IllegalStateException("Project as an invalid binding");
+      } else {
+        console.info(String.format("Using configuration of '%s' in server '%s'", projectSettings.getProjectKey(), projectSettings.getServerId()));
+        return createConnectedFacade(project, serverId, projectKey);
       }
     }
-
     return new StandaloneSonarLintFacade(project, getStandaloneEngine());
   }
 
@@ -175,7 +177,6 @@ public class SonarLintServerManager implements ApplicationComponent {
     ModuleUpdateStatus moduleUpdateStatus = engine.getModuleUpdateStatus(projectKey);
 
     if (moduleUpdateStatus == null) {
-      // update probably failed
       SonarLintProjectNotifications.get(project).notifyModuleInvalid();
       throw new IllegalStateException("Project is bound to a module that doesn't exist: " + projectKey);
     } else if (moduleUpdateStatus.isStale()) {
