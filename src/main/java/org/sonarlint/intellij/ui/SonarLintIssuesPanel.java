@@ -56,6 +56,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
+import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
@@ -113,7 +114,10 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
 
       @Override public void filesChanged(final Map<VirtualFile, Collection<IssuePointer>> map) {
-        ApplicationManager.getApplication().invokeLater(() -> treeBuilder.updateFiles(map));
+        ApplicationManager.getApplication().invokeLater(() -> {
+          treeBuilder.updateFiles(map);
+          expandTree();
+        });
       }
 
       @Override public void allChanged() {
@@ -201,9 +205,17 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
 
   public void updateTree() {
     treeBuilder.updateModel(issueStore.getAll(), scope.getCondition());
-    tree.expandRow(0);
-    if (tree.getRowCount() > 1) {
-      tree.expandRow(1);
+    expandTree();
+  }
+
+  private void expandTree() {
+    if (tree.getRowCount() < 30) {
+      TreeUtil.expandAll(tree);
+    } else {
+      tree.expandRow(0);
+      if (tree.getRowCount() > 1) {
+        tree.expandRow(1);
+      }
     }
   }
 

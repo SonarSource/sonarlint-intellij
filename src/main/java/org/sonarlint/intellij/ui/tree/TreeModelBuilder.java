@@ -197,7 +197,6 @@ public class TreeModelBuilder {
       }
     }
 
-
     toRemove.forEach(this::removeFile);
 
     for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {
