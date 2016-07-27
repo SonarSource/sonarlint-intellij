@@ -29,6 +29,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
@@ -87,12 +88,25 @@ public class ServerUpdateTask {
 
       //here we assume that server is updated, or this won't work
       Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
+      Set<String> invalidModules = new HashSet<>();
 
       for (String key : projectKeys) {
         if (existingProjectKeys.contains(key)) {
           updateModule(engine, serverConfiguration, key);
+        } else {
+          invalidModules.add(key);
         }
       }
+
+      if (!projectKeys.isEmpty() && !invalidModules.isEmpty()) {
+        ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
+          @Override public void doRun() throws Exception {
+            Messages.showWarningDialog((Project) null,
+              "The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), "Modules not updated");
+          }
+        }, ModalityState.any());
+      }
+
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + server.getName() + "' was cancelled");
       log.log("Update of server '" + server.getName() + "' was cancelled", LogOutput.Level.INFO);
