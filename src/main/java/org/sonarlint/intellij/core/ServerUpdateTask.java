@@ -86,26 +86,7 @@ public class ServerUpdateTask {
         log.log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       }
 
-      //here we assume that server is updated, or this won't work
-      Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
-      Set<String> invalidModules = new HashSet<>();
-
-      for (String key : projectKeys) {
-        if (existingProjectKeys.contains(key)) {
-          updateModule(engine, serverConfiguration, key);
-        } else {
-          invalidModules.add(key);
-        }
-      }
-
-      if (!projectKeys.isEmpty() && !invalidModules.isEmpty()) {
-        ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
-          @Override public void doRun() throws Exception {
-            Messages.showWarningDialog((Project) null,
-              "The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), "Modules not updated");
-          }
-        }, ModalityState.any());
-      }
+      updateModules(serverConfiguration);
 
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + server.getName() + "' was cancelled");
@@ -121,7 +102,30 @@ public class ServerUpdateTask {
     }
   }
 
-  private void updateModule(ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, String key) {
+  private void updateModules(ServerConfiguration serverConfiguration) {
+    //here we assume that server is updated, or this won't work
+    Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
+    Set<String> invalidModules = new HashSet<>();
+
+    for (String key : projectKeys) {
+      if (existingProjectKeys.contains(key)) {
+        updateModule(serverConfiguration, key);
+      } else {
+        invalidModules.add(key);
+      }
+    }
+
+    if (!projectKeys.isEmpty() && !invalidModules.isEmpty()) {
+      ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
+        @Override public void doRun() throws Exception {
+          Messages.showWarningDialog((Project) null,
+            "The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), "Modules not updated");
+        }
+      }, ModalityState.any());
+    }
+  }
+
+  private void updateModule(ServerConfiguration serverConfiguration, String key) {
     try {
       engine.updateModule(serverConfiguration, key);
       log.log("Module '" + key + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
