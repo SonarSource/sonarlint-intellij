@@ -60,14 +60,10 @@ public class IssueNode extends AbstractNode {
 
     renderer.append(" ");
 
-    String creationDate;
     if(issue.creationDate() == null) {
-      creationDate = "-";
-    } else {
-      creationDate = SonarLintUtils.age(issue.creationDate());
+      String creationDate = SonarLintUtils.age(issue.creationDate());
+      renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
-    renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
-
   }
 
   @Override public int getIssueCount() {
