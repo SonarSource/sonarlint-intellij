@@ -60,7 +60,7 @@ public class IssueNode extends AbstractNode {
 
     renderer.append(" ");
 
-    if(issue.creationDate() == null) {
+    if(issue.creationDate() != null) {
       String creationDate = SonarLintUtils.age(issue.creationDate());
       renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
