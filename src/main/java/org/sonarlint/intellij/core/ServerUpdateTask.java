@@ -96,7 +96,7 @@ public class ServerUpdateTask {
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
         @Override public void doRun() throws Exception {
-          Messages.showErrorDialog((Project) null, msg, "Update failed");
+          Messages.showErrorDialog((Project) null, msg, "Update Failed");
         }
       }, ModalityState.any());
     }
@@ -104,8 +104,8 @@ public class ServerUpdateTask {
 
   private void updateModules(ServerConfiguration serverConfiguration) {
     //here we assume that server is updated, or this won't work
-    Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
-    Set<String> invalidModules = new HashSet<>();
+    final Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
+    final Set<String> invalidModules = new HashSet<>();
 
     for (String key : projectKeys) {
       if (existingProjectKeys.contains(key)) {
@@ -116,10 +116,12 @@ public class ServerUpdateTask {
     }
 
     if (!projectKeys.isEmpty() && !invalidModules.isEmpty()) {
+      log.log("The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), LogOutput.Level.WARN);
+
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override public void doRun() throws Exception {
           Messages.showWarningDialog((Project) null,
-            "The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), "Modules not updated");
+            "The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), "Modules Not Updated");
         }
       }, ModalityState.any());
     }
@@ -134,7 +136,7 @@ public class ServerUpdateTask {
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override public void doRun() throws Exception {
-          Messages.showErrorDialog((Project) null, msg, "Update failed");
+          Messages.showErrorDialog((Project) null, msg, "Update Failed");
         }
       }, ModalityState.any());
     }
