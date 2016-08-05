@@ -197,7 +197,7 @@ public class SonarLintProjectBindPanel implements Disposable {
 
         if (selected != null) {
           projectComboBox.setSelectedItem(selected);
-        } else if (projectComboBox.getItemCount() > 0) {
+        } else if (projectComboBox.getItemCount() > 0 && lastSelectedProjectKey == null) {
           projectComboBox.setSelectedIndex(0);
         } else {
           projectComboBox.setSelectedItem(null);
