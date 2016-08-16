@@ -6,7 +6,7 @@ plugins {
   id "org.sonarqube" version "1.2-rc1"
   id "com.github.hierynomus.license" version "0.11.0"
   id "net.researchgate.release" version "2.2.2"
-  id "com.jfrog.artifactory" version "4.0.0"
+  id "com.jfrog.artifactory" version "4.4.0"
 }
 
 apply plugin: 'org.jetbrains.intellij'
@@ -121,15 +121,3 @@ artifactory {
 }
 
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            artifact buildPlugin {
-                classifier "plugin"
-                extension "zip"
-            }
-        }
-    }
-}
