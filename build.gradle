@@ -12,7 +12,7 @@ plugins {
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven-publish'
+apply plugin: 'maven'
 
 group = 'org.sonarsource.sonarlint.intellij'
 description = 'SonarLint for IntelliJ IDEA'
@@ -113,11 +113,10 @@ artifactory {
       password = System.getenv('ARTIFACTORY_DEPLOY_PASSWORD')      
     }
     defaults {
-      publishConfigs('archives', 'published')
+      publishConfigs('archives')
       publishPom = true // Publish generated POM files to Artifactory (true by default)
       publishIvy = false // Publish generated Ivy descriptor files to Artifactory (true by default)
     }
   }  
 }
-
 
