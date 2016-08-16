@@ -6,13 +6,13 @@ plugins {
   id "org.sonarqube" version "1.2-rc1"
   id "com.github.hierynomus.license" version "0.11.0"
   id "net.researchgate.release" version "2.2.2"
-  id "com.jfrog.artifactory" version "4.0.0"
+  id "com.jfrog.artifactory" version "4.4.0"
 }
 
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven-publish'
+apply plugin: 'maven'
 
 group = 'org.sonarsource.sonarlint.intellij'
 description = 'SonarLint for IntelliJ IDEA'
@@ -113,23 +113,10 @@ artifactory {
       password = System.getenv('ARTIFACTORY_DEPLOY_PASSWORD')      
     }
     defaults {
-      publishConfigs('archives', 'published')
+      publishConfigs('archives')
       publishPom = true // Publish generated POM files to Artifactory (true by default)
       publishIvy = false // Publish generated Ivy descriptor files to Artifactory (true by default)
     }
   }  
 }
 
-
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-
-            artifact buildPlugin {
-                classifier "plugin"
-                extension "zip"
-            }
-        }
-    }
-}
