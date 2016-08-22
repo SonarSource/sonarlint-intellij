@@ -117,6 +117,10 @@
         <colorSettingsPage implementation="org.sonarlint.intellij.config.SonarLintColorSettingsPage"/>
     </extensions>
 
+    <extensionPoints>
+        <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator" />
+    </extensionPoints>
+
     <actions>
         <group id="SonarLint.logtoolwindow" text="SonarLint" popup="true"/>
         <group id="SonarLint.issuestoolwindow" text="SonarLint" popup="true"/>
