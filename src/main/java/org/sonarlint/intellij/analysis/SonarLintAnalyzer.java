@@ -45,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 
 public class SonarLintAnalyzer {
+
+
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
@@ -52,14 +54,14 @@ public class SonarLintAnalyzer {
 
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     Map<String, String> pluginProps = new HashMap<>();
-    AnalysisConfigurator[] analysisConfigurators = module.getComponents(AnalysisConfigurator.class);
+    AnalysisConfigurator[] analysisConfigurators = AnalysisConfigurator.EP_NAME.getExtensions();
     if (analysisConfigurators.length > 0) {
       for (AnalysisConfigurator config : analysisConfigurators) {
         console.debug("Configuring analysis with " + config.getClass().getName());
         pluginProps.putAll(config.configure(module));
       }
     } else {
-      console.debug("No analysis configurator found");
+      console.info("No analysis configurator found");
     }
 
     // configure files

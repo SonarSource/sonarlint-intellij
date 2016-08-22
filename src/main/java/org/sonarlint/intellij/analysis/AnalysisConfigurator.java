@@ -19,10 +19,14 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 
 import java.util.Map;
 
 public interface AnalysisConfigurator {
+  // Name is constructed from plugin-id.extension-point-name
+  ExtensionPointName<AnalysisConfigurator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.AnalysisConfiguration");
+
   Map<String, String> configure(Module module);
 }

@@ -24,9 +24,10 @@
     <component>
         <implementation-class>org.sonarlint.intellij.trigger.MakeTrigger</implementation-class>
     </component>
-      <component>
-          <implementation-class>org.sonarlint.intellij.analysis.JavaAnalysisConfigurator</implementation-class>
-          <interface-class>org.sonarlint.intellij.analysis.AnalysisConfigurator</interface-class>
-      </component>
   </project-components>
+
+  <extensions defaultExtensionNs="org.sonarlint.idea">
+    <AnalysisConfiguration implementation="org.sonarlint.intellij.analysis.JavaAnalysisConfigurator" />
+  </extensions>
+
 </idea-plugin>
