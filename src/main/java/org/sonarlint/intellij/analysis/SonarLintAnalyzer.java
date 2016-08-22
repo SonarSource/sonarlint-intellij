@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
@@ -45,6 +46,11 @@ import java.util.List;
 import java.util.Map;
 
 public class SonarLintAnalyzer {
+
+  // Name is constructed from plugin-id.extension-point-name
+  private static ExtensionPointName<AnalysisConfigurator> EP_NAME
+    = ExtensionPointName.create("org.sonarlint.idea.AnalysisConfiguration");
+
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
@@ -52,7 +58,7 @@ public class SonarLintAnalyzer {
 
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     Map<String, String> pluginProps = new HashMap<>();
-    AnalysisConfigurator[] analysisConfigurators = module.getComponents(AnalysisConfigurator.class);
+    AnalysisConfigurator[] analysisConfigurators = EP_NAME.getExtensions();
     if (analysisConfigurators.length > 0) {
       for (AnalysisConfigurator config : analysisConfigurators) {
         console.debug("Configuring analysis with " + config.getClass().getName());
