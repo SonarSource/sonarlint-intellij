@@ -240,6 +240,7 @@ public class SonarLintProjectBindPanel implements Disposable {
   }
 
   private String getProjectEmptyText() {
+    // a server is selected
     if (getSelectedStorageId() != null) {
       if (engine.getState() != State.UPDATED) {
         // not updated
@@ -249,7 +250,7 @@ public class SonarLintProjectBindPanel implements Disposable {
         return PROJECT_EMPTY;
       }
     } else {
-      // no project selected
+      // no server selected
       return PROJECT_NO_SERVER;
     }
   }
