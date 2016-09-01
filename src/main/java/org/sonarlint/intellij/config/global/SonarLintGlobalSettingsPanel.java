@@ -75,7 +75,7 @@ public class SonarLintGlobalSettingsPanel {
 
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
-    return model.isAutoTrigger() == autoTrigger.isSelected();
+    return model.isAutoTrigger() != autoTrigger.isSelected();
   }
 
   public void load(SonarLintGlobalSettings model) {
