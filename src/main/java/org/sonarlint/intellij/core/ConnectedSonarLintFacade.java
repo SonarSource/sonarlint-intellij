@@ -61,7 +61,10 @@ public class ConnectedSonarLintFacade implements SonarLintFacade {
     if (details == null) {
       return null;
     }
-    return details.getHtmlDescription();
+    if (details.getExtendedDescription().isEmpty()) {
+      return details.getHtmlDescription();
+    }
+    return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
   }
 
   @Nullable
