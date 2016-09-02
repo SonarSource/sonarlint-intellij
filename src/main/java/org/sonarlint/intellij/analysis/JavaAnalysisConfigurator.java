@@ -170,7 +170,11 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static VirtualFile getCompilerOutputPath(final Module module) {
     final CompilerModuleExtension compilerModuleExtension = CompilerModuleExtension.getInstance(module);
     if (compilerModuleExtension != null) {
-      return compilerModuleExtension.getCompilerOutputPath();
+      VirtualFile file = compilerModuleExtension.getCompilerOutputPath();
+      // see SLI-107
+      if (exists(file)) {
+        return file;
+      }
     }
     return null;
   }
@@ -179,9 +183,26 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static VirtualFile getCompilerTestOutputPath(final Module module) {
     final CompilerModuleExtension compilerModuleExtension = CompilerModuleExtension.getInstance(module);
     if (compilerModuleExtension != null) {
-      return compilerModuleExtension.getCompilerOutputPathForTests();
+      VirtualFile file = compilerModuleExtension.getCompilerOutputPathForTests();
+      if (exists(file)) {
+        return file;
+      }
     }
     return null;
+  }
+
+  /**
+   * Checks if the file exists in the physical FS. It doesn't rely on the automatic refresh of the virtual FS, because
+   * sometimes it's status is out of date, and the file doesn't actually exist in the FS.
+   * It will trigger a refresh of the virtual file, which means to refresh it's status and attributes, and calling all listeners.
+   */
+  private static boolean exists(@Nullable VirtualFile file) {
+    if (file == null) {
+      return false;
+    }
+
+    file.refresh(false, false);
+    return file.exists();
   }
 
   private static String toFile(String path) {
