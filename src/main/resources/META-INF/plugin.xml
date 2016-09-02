@@ -33,6 +33,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.3.2 - Fix configuration of automatic trigger of analysis</li>
         <li>2.3.1 - Bug fix for analysis configuration and performance improvements</li>
         <li>2.3 - Support of exclusions in connected mode; Numerous bug fixes. Java 8 is now required to run SonarLint.</li>
         <li>2.2 - Support of SonarQube LTS (4.5) and commercial plugins</li>
