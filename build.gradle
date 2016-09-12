@@ -105,6 +105,8 @@ jacocoTestReport.doFirst {
 }
 
 artifactory {
+  clientConfig.setIncludeEnvVars(true)
+  clientConfig.setEnvVarsExcludePatterns('*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*')
   contextUrl = System.getenv('ARTIFACTORY_URL')
   publish {    
     repository {
