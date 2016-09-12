@@ -113,7 +113,7 @@ artifactory {
       password = System.getenv('ARTIFACTORY_DEPLOY_PASSWORD')      
     }
     defaults {
-      properties [
+      properties = [
         'vcs.revision': (System.getenv('GIT_COMMIT') ?: System.getenv('TRAVIS_COMMIT')),
         'vcs.branch': (System.getenv('GIT_BRANCH') ?: System.getenv('TRAVIS_BRANCH')),
         'build.name': 'sonarlint-intellij',
