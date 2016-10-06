@@ -34,19 +34,22 @@ import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final IssueStore store;
   private final SonarLintJobManager analyzer;
+  private final ServerIssueUpdater serverIssueUpdater;
   private final SonarLintGlobalSettings globalSettings;
   private final MessageBusConnection busConnection;
 
-  public FileEditorTrigger(Project project, IssueStore store, SonarLintJobManager analyzer, SonarLintGlobalSettings globalSettings) {
+  public FileEditorTrigger(Project project, IssueStore store, SonarLintJobManager analyzer, ServerIssueUpdater serverIssueUpdater, SonarLintGlobalSettings globalSettings) {
     super(project);
     this.store = store;
     this.analyzer = analyzer;
+    this.serverIssueUpdater = serverIssueUpdater;
     this.globalSettings = globalSettings;
     this.busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
@@ -69,6 +72,8 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
     }
 
     analyzer.submitAsync(m, Collections.singleton(file), TriggerType.EDITOR_OPEN);
+
+    serverIssueUpdater.trackServerIssues(Collections.singleton(file));
   }
 
   @Override
