@@ -155,6 +155,6 @@ public class IssueStore extends AbstractProjectComponent {
 
   private void copyFromPrevious(IssuePointer rawMatched, IssuePointer previousMatched) {
     rawMatched.setCreationDate(previousMatched.creationDate());
-    // TODO track link to remote issue when exists
+    rawMatched.setServerIssue(previousMatched.getServerIssue());
   }
 }
