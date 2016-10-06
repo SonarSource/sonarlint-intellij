@@ -142,7 +142,7 @@ public class IssueStore extends AbstractProjectComponent {
       for (Map.Entry<IssuePointer, IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
         IssuePointer rawMatched = entry.getKey();
         IssuePointer previousMatched = entry.getValue();
-        rawMatched.setCreationDate(previousMatched.creationDate());
+        copyFromPrevious(rawMatched, previousMatched);
         trackedIssues.add(rawMatched);
       }
       for (IssuePointer newIssue : tracking.getUnmatchedRaws()) {
@@ -151,5 +151,10 @@ public class IssueStore extends AbstractProjectComponent {
       }
       storePerFile.put(file, trackedIssues);
     }
+  }
+
+  private void copyFromPrevious(IssuePointer rawMatched, IssuePointer previousMatched) {
+    rawMatched.setCreationDate(previousMatched.creationDate());
+    // TODO track link to remote issue when exists
   }
 }
