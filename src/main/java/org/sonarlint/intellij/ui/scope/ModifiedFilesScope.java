@@ -1,6 +1,6 @@
 /**
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2016 SonarSource
+ * Copyright (C) 2015 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
