@@ -155,6 +155,7 @@ public class IssueStore extends AbstractProjectComponent {
 
   private void copyFromPrevious(IssuePointer rawMatched, IssuePointer previousMatched) {
     rawMatched.setCreationDate(previousMatched.creationDate());
-    rawMatched.setServerIssue(previousMatched.getServerIssue());
+    rawMatched.setServerIssueKey(previousMatched.getServerIssueKey());
+    rawMatched.setResolved(previousMatched.isResolved());
   }
 }

@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import org.sonar.scanner.protocol.input.ScannerInput;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
@@ -40,7 +39,8 @@ public class IssuePointer implements Trackable {
 
   // tracked fields (mutable)
   private Long creationDate;
-  private ScannerInput.ServerIssue serverIssue;
+  private String serverIssueKey;
+  private boolean resolved;
 
   public IssuePointer(Issue issue, PsiFile psiFile) {
     this(issue, psiFile, null);
@@ -121,11 +121,19 @@ public class IssuePointer implements Trackable {
     this.creationDate = creationDate;
   }
 
-  public ScannerInput.ServerIssue getServerIssue() {
-    return serverIssue;
+  public String getServerIssueKey() {
+    return serverIssueKey;
   }
 
-  public void setServerIssue(ScannerInput.ServerIssue serverIssue) {
-    this.serverIssue = serverIssue;
+  public void setServerIssueKey(String serverIssueKey) {
+    this.serverIssueKey = serverIssueKey;
+  }
+
+  public boolean isResolved() {
+    return resolved;
+  }
+
+  public void setResolved(boolean resolved) {
+    this.resolved = resolved;
   }
 }
