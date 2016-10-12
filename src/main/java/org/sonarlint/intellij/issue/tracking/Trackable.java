@@ -36,4 +36,7 @@ public interface Trackable {
   Integer getLineHash();
 
   String getRuleKey();
+
+  @CheckForNull
+  String getServerIssueKey();
 }

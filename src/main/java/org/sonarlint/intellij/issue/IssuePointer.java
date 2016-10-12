@@ -121,6 +121,7 @@ public class IssuePointer implements Trackable {
     this.creationDate = creationDate;
   }
 
+  @Override
   public String getServerIssueKey() {
     return serverIssueKey;
   }
