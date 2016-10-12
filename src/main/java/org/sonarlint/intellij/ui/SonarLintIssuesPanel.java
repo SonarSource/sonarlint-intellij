@@ -68,6 +68,7 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 import org.sonarlint.intellij.ui.scope.IssueTreeScope;
+import org.sonarlint.intellij.ui.scope.ModifiedFilesScope;
 import org.sonarlint.intellij.ui.scope.OpenedFilesScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
@@ -155,6 +156,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     DefaultComboBoxModel comboModel = new DefaultComboBoxModel();
     comboModel.addElement(new CurrentFileScope(project));
     comboModel.addElement(new OpenedFilesScope(project));
+    comboModel.addElement(new ModifiedFilesScope(project));
 
     // set selected element that was last saved, if any
     String savedSelectedScope = PropertiesComponent.getInstance(project).getValue(SELECTED_SCOPE_KEY);
