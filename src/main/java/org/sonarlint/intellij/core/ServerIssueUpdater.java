@@ -84,11 +84,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
       Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
 
-      if (serverIssuePointers.isEmpty()) {
-        return;
+      if (!serverIssuePointers.isEmpty()) {
+        store.storeServerIssues(virtualFile, serverIssuePointers);
       }
-
-      store.storeServerIssues(virtualFile, serverIssuePointers);
     });
   }
 
