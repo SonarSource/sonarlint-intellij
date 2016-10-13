@@ -24,13 +24,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.ServerIssuePointer;
@@ -57,14 +57,21 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private void trackServerIssues(VirtualFile virtualFile) {
-    Optional<ConnectedSonarLintEngine> connectedEngineOptional = SonarLintUtils.get(SonarLintServerManager.class).getConnectedEngine(this.myProject);
-    if (!connectedEngineOptional.isPresent()) {
+    SonarLintProjectSettings projectSettings = SonarLintUtils.get(myProject, SonarLintProjectSettings.class);
+    if (!projectSettings.isBindingEnabled()) {
+      // not in connected mode
       return;
     }
 
-    ConnectedSonarLintEngine engine = connectedEngineOptional.get();
+    String serverId = projectSettings.getServerId();
+    String moduleKey = projectSettings.getProjectKey();
+    if (serverId == null || moduleKey == null) {
+      // not bound to SQ project
+      return;
+    }
 
-    String moduleKey = getModuleKey();
+    ConnectedSonarLintEngine engine = SonarLintUtils.get(SonarLintServerManager.class).getConnectedEngine(serverId);
+
     String relativePath = getRelativePath(virtualFile);
 
     fetchAndMatchServerIssues(virtualFile, engine, moduleKey, relativePath);
@@ -104,11 +111,6 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       throw new IllegalStateException("no base path in default project");
     }
     return virtualFile.getPath().substring(myProject.getBasePath().length());
-  }
-
-  private String getModuleKey() {
-    // TODO
-    return myProject.getBasePath();
   }
 
   @Override
