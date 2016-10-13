@@ -23,7 +23,6 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
@@ -38,6 +37,7 @@ import org.sonarlint.intellij.issue.ServerIssuePointer;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
+import org.sonarsource.sonarlint.core.client.api.exceptions.SonarLintWrappedException;
 
 public class ServerIssueUpdater extends AbstractProjectComponent {
 
@@ -67,13 +67,13 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     String moduleKey = getModuleKey();
     String relativePath = getRelativePath(virtualFile);
 
-    fetchAndMatchServerIssues(virtualFile, moduleKey, relativePath);
+    fetchAndMatchServerIssues(virtualFile, engine, moduleKey, relativePath);
   }
 
-  private void fetchAndMatchServerIssues(VirtualFile virtualFile, String moduleKey, String relativePath) {
+  private void fetchAndMatchServerIssues(VirtualFile virtualFile, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
     // TODO make it possible to cancel
     this.executorService.submit(() -> {
-      Iterator<ServerIssue> serverIssues = fetchServerIssues(moduleKey, relativePath);
+      Iterator<ServerIssue> serverIssues = fetchServerIssues(engine, moduleKey, relativePath);
 
       Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
 
@@ -90,10 +90,13 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
-  private Iterator<ServerIssue> fetchServerIssues(String moduleKey, String relativePath) {
-    // TODO download the issues for the file
-    // TODO if download fails -> log it; get issues from local store
-    return Collections.emptyIterator();
+  private Iterator<ServerIssue> fetchServerIssues(ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
+    try {
+      return engine.downloadServerIssues(moduleKey, relativePath);
+    } catch (SonarLintWrappedException e) {
+      // download failed, fall back to local storage, if exists
+      return engine.getServerIssues(moduleKey, relativePath);
+    }
   }
 
   private String getRelativePath(VirtualFile virtualFile) {
