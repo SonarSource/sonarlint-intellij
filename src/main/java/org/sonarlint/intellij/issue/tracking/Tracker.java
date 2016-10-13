@@ -19,20 +19,23 @@
  */
 package org.sonarlint.intellij.issue.tracking;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import javax.annotation.Nullable;
 
 public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
   public Tracking<RAW, BASE> track(Input<RAW> rawInput, Input<BASE> baseInput) {
     Tracking<RAW, BASE> tracking = new Tracking<>(rawInput, baseInput);
 
-    // 1. match issues with same rule, same line and same line hash, but not necessarily with same message
+    // 1. match issues with same server issue key
+    match(tracking, ServerIssueKeyFactory.INSTANCE);
+
+    // 2. match issues with same rule, same line and same line hash, but not necessarily with same message
     match(tracking, LineAndLineHashKeyFactory.INSTANCE);
 
     // 3. match issues with same rule, same message and same line hash
@@ -263,6 +266,42 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     @Override
     public SearchKey create(Trackable t) {
       return new LineHashKey(t);
+    }
+  }
+
+  private static class ServerIssueKey implements SearchKey {
+    private final String serverIssueKey;
+
+    ServerIssueKey(Trackable trackable) {
+      serverIssueKey = trackable.getServerIssueKey();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null || getClass() != o.getClass()) {
+        return false;
+      }
+
+      ServerIssueKey that = (ServerIssueKey) o;
+
+      return Objects.equals(serverIssueKey, that.serverIssueKey);
+    }
+
+    @Override
+    public int hashCode() {
+      return serverIssueKey != null ? serverIssueKey.hashCode() : 0;
+    }
+  }
+
+  private enum ServerIssueKeyFactory implements SearchKeyFactory {
+    INSTANCE;
+
+    @Override
+    public SearchKey create(Trackable trackable) {
+      return new ServerIssueKey(trackable);
     }
   }
 }
