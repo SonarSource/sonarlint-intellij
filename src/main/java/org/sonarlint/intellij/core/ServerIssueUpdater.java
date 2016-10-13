@@ -22,11 +22,14 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -34,6 +37,7 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.ServerIssuePointer;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
@@ -101,6 +105,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     } catch (SonarLintWrappedException e) {
       // download failed, fall back to local storage, if exists
       return engine.getServerIssues(moduleKey, relativePath);
+    } catch (Throwable t) {
+      SonarLintConsole.get(myProject).error("could not get server issues", t);
+      return Collections.emptyIterator();
     }
   }
 
