@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.apache.http.annotation.ThreadSafe;
@@ -132,6 +133,19 @@ public class SonarLintServerManager implements ApplicationComponent {
       }
     }
     return new StandaloneSonarLintFacade(project, getStandaloneEngine());
+  }
+
+  public synchronized Optional<ConnectedSonarLintEngine> getConnectedEngine(Project project) {
+    SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
+    if (projectSettings.isBindingEnabled()) {
+      String serverId = projectSettings.getServerId();
+      String projectKey = projectSettings.getProjectKey();
+
+      if (serverId != null && projectKey != null) {
+        return Optional.of(getConnectedEngine(serverId));
+      }
+    }
+    return Optional.empty();
   }
 
   private static void stopInThread(final ConnectedSonarLintEngine engine) {

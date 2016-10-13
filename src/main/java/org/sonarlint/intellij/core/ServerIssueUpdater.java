@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,6 +33,8 @@ import java.util.stream.StreamSupport;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.ServerIssuePointer;
+import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 
 public class ServerIssueUpdater extends AbstractProjectComponent {
@@ -48,9 +51,12 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private void trackServerIssues(VirtualFile virtualFile) {
-    if (!isConnectedMode()) {
+    Optional<ConnectedSonarLintEngine> connectedEngineOptional = SonarLintUtils.get(SonarLintServerManager.class).getConnectedEngine(this.myProject);
+    if (!connectedEngineOptional.isPresent()) {
       return;
     }
+
+    ConnectedSonarLintEngine engine = connectedEngineOptional.get();
 
     String moduleKey = getModuleKey();
     String relativePath = getRelativePath(virtualFile);
@@ -93,10 +99,5 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private String getModuleKey() {
     // TODO
     return myProject.getBasePath();
-  }
-
-  private boolean isConnectedMode() {
-    // TODO
-    return false;
   }
 }
