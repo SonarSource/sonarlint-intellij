@@ -48,8 +48,8 @@ configurations {
 }
 
 dependencies {
-  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5-build644'
-  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5-build644'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5-SNAPSHOT'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5-SNAPSHOT'
   compile 'commons-lang:commons-lang:2.6'
   compile 'commons-io:commons-io:2.4'
   compile 'com.google.code.findbugs:jsr305:2.0.2'
