@@ -28,14 +28,15 @@ import com.intellij.ui.SimpleTextAttributes;
 import java.io.IOException;
 import javax.annotation.Nonnull;
 import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(IssueNode.class);
-  private final IssuePointer issue;
+  private final LocalIssuePointer issue;
 
-  public IssueNode(IssuePointer issue) {
+  public IssueNode(LocalIssuePointer issue) {
     this.issue = issue;
   }
 
@@ -60,8 +61,8 @@ public class IssueNode extends AbstractNode {
 
     renderer.append(" ");
 
-    if(issue.creationDate() != null) {
-      String creationDate = SonarLintUtils.age(issue.creationDate());
+    if(issue.getCreationDate() != null) {
+      String creationDate = SonarLintUtils.age(issue.getCreationDate());
       renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
   }
@@ -74,11 +75,11 @@ public class IssueNode extends AbstractNode {
     return 0;
   }
 
-  public IssuePointer issue() {
+  public LocalIssuePointer issue() {
     return issue;
   }
 
-  private static String issueCoordinates(@Nonnull IssuePointer issue) {
+  private static String issueCoordinates(@Nonnull LocalIssuePointer issue) {
     RangeMarker range = issue.range();
     if (range == null) {
       return "(0, 0) ";

@@ -57,7 +57,7 @@ public class IssueProcessor extends AbstractProjectComponent {
   }
 
   public void process(final SonarLintJobManager.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<IssuePointer>> map;
+    Map<VirtualFile, Collection<LocalIssuePointer>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
@@ -87,8 +87,8 @@ public class IssueProcessor extends AbstractProjectComponent {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
+  private Map<VirtualFile, Collection<LocalIssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
+    Map<VirtualFile, Collection<LocalIssuePointer>> map = new HashMap<>();
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
     for(VirtualFile f : analysed) {
@@ -113,7 +113,7 @@ public class IssueProcessor extends AbstractProjectComponent {
           continue;
         }
         PsiFile psiFile = matcher.findFile(vFile);
-        IssuePointer toStore = matcher.match(psiFile, i);
+        LocalIssuePointer toStore = matcher.match(psiFile, i);
         map.get(psiFile.getVirtualFile()).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue", e);

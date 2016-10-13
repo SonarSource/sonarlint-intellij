@@ -45,8 +45,8 @@ public class IssueStoreTest extends SonarTest {
   private VirtualFile file1;
   private VirtualFile file2;
 
-  private IssuePointer issue1;
-  private IssuePointer issue2;
+  private LocalIssuePointer issue1;
+  private LocalIssuePointer issue2;
   private Document document = mock(Document.class);
 
   @Before
@@ -75,34 +75,34 @@ public class IssueStoreTest extends SonarTest {
   public void testTracking() {
     // tracking based on ruleKey / line number
     store.clear();
-    IssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
+    LocalIssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
     i1.setCreationDate(1000L);
     store.store(file1, Collections.singletonList(i1));
 
-    IssuePointer i2 = createRangeStoredIssue(1, "issue 1", 10);
+    LocalIssuePointer i2 = createRangeStoredIssue(1, "issue 1", 10);
     i2.setCreationDate(2000L);
     store.store(file1, Collections.singletonList(i2));
 
-    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
-    assertThat(fileIssues.iterator().next().creationDate()).isEqualTo(1000);
+    assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(1000);
   }
 
   @Test
   public void testTrackingChecksum() {
     // tracking based on checksum
     store.clear();
-    IssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
+    LocalIssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
     i1.setCreationDate(1000L);
     store.store(file1, Collections.singletonList(i1));
 
-    IssuePointer i2 = createRangeStoredIssue(1, "issue 1", 11);
+    LocalIssuePointer i2 = createRangeStoredIssue(1, "issue 1", 11);
     i2.setCreationDate(2000L);
     store.store(file1, Collections.singletonList(i2));
 
-    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
-    assertThat(fileIssues.iterator().next().creationDate()).isEqualTo(1000);
+    assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(1000);
   }
 
   @Test
@@ -111,17 +111,17 @@ public class IssueStoreTest extends SonarTest {
 
     String serverIssueKey = "dummyServerIssueKey";
 
-    IssuePointer localIssue = createRangeStoredIssue(1, "issue 1", 10);
+    LocalIssuePointer localIssue = createRangeStoredIssue(1, "issue 1", 10);
     store.store(file1, Collections.singletonList(localIssue));
 
-    IssuePointer serverIssue = createRangeStoredIssue(1, "issue 1", 10);
+    LocalIssuePointer serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setServerIssueKey(serverIssueKey);
     store.storeServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
-    IssuePointer issuePointer = fileIssues.iterator().next();
+    LocalIssuePointer issuePointer = fileIssues.iterator().next();
     assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
     assertThat(issuePointer.getServerIssueKey()).isEqualTo(serverIssueKey);
   }
@@ -132,19 +132,19 @@ public class IssueStoreTest extends SonarTest {
 
     String serverIssueKey = "dummyServerIssueKey";
 
-    IssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
+    LocalIssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
     localIssue.setServerIssueKey(serverIssueKey);
     store.store(file1, Collections.singletonList(localIssue));
 
-    IssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
+    LocalIssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setResolved(true);
     store.storeServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
-    IssuePointer issuePointer = fileIssues.iterator().next();
+    LocalIssuePointer issuePointer = fileIssues.iterator().next();
     // the local issue is preserved ...
     assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
     assertThat(issuePointer.getLine()).isEqualTo(localIssue.getLine());
@@ -156,17 +156,17 @@ public class IssueStoreTest extends SonarTest {
   public void testTracking_should_ignore_server_issue_if_not_matched() {
     store.clear();
 
-    IssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
+    LocalIssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
     store.store(file1, Collections.singletonList(localIssue));
 
-    IssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
+    LocalIssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
     serverIssue.setServerIssueKey("dummyServerIssueKey");
     store.storeServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
-    IssuePointer issuePointer = fileIssues.iterator().next();
+    LocalIssuePointer issuePointer = fileIssues.iterator().next();
     assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
   }
@@ -175,16 +175,16 @@ public class IssueStoreTest extends SonarTest {
   public void testTracking_should_drop_server_issue_reference_if_gone() {
     store.clear();
 
-    IssuePointer issue = createRangeStoredIssue(1, "issue 1", 10);
+    LocalIssuePointer issue = createRangeStoredIssue(1, "issue 1", 10);
     issue.setServerIssueKey("dummyServerIssueKey");
     store.store(file1, Collections.singletonList(issue));
 
     store.storeServerIssues(file1, Collections.emptyList());
 
-    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
-    IssuePointer issuePointer = fileIssues.iterator().next();
+    LocalIssuePointer issuePointer = fileIssues.iterator().next();
     assertThat(issuePointer.uid()).isEqualTo(issue.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
   }
@@ -236,9 +236,9 @@ public class IssueStoreTest extends SonarTest {
     //add a lot of issues
     store.clear();
 
-    List<IssuePointer> issueList = new ArrayList<>(10_001);
+    List<LocalIssuePointer> issueList = new ArrayList<>(10_001);
     for (int i = 0; i < 10_001; i++) {
-      issueList.add(new IssuePointer(SonarLintTestUtils.createIssue(i), psiFile, null));
+      issueList.add(new LocalIssuePointer(SonarLintTestUtils.createIssue(i), psiFile, null));
     }
 
     store.store(file1, issueList);
@@ -247,13 +247,13 @@ public class IssueStoreTest extends SonarTest {
     assertThat(store.getForFile(file1)).isEmpty();
   }
 
-  private IssuePointer createRangeStoredIssue(int id, String rangeContent, int line) {
+  private LocalIssuePointer createRangeStoredIssue(int id, String rangeContent, int line) {
     Issue issue = SonarLintTestUtils.createIssue(id);
     when(issue.getStartLine()).thenReturn(line);
     RangeMarker range = mock(RangeMarker.class);
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
-    return new IssuePointer(issue, null, range);
+    return new LocalIssuePointer(issue, null, range);
   }
 }

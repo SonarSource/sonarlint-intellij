@@ -24,11 +24,12 @@ import com.intellij.util.messages.Topic;
 import java.util.Collection;
 import java.util.Map;
 import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.issue.LocalIssuePointer;
 
 public interface IssueStoreListener {
   Topic<IssueStoreListener> SONARLINT_ISSUE_STORE_TOPIC = Topic.create("Issue store changed", IssueStoreListener.class);
 
-  void filesChanged(Map<VirtualFile, Collection<IssuePointer>> map);
+  void filesChanged(Map<VirtualFile, Collection<LocalIssuePointer>> map);
 
   void allChanged();
 }

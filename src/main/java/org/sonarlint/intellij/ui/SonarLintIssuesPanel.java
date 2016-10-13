@@ -62,6 +62,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
@@ -113,7 +114,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
 
-      @Override public void filesChanged(final Map<VirtualFile, Collection<IssuePointer>> map) {
+      @Override public void filesChanged(final Map<VirtualFile, Collection<LocalIssuePointer>> map) {
         ApplicationManager.getApplication().invokeLater(() -> {
           treeBuilder.updateFiles(map);
           expandTree();

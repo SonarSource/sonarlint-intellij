@@ -39,8 +39,8 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -63,8 +63,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       return;
     }
 
-    Collection<IssuePointer> issues = annotationResult.store.getForFile(file.getVirtualFile());
-    for (IssuePointer i : issues) {
+    Collection<LocalIssuePointer> issues = annotationResult.store.getForFile(file.getVirtualFile());
+    for (LocalIssuePointer i : issues) {
       // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
       RangeMarker range = i.range();
       if (range == null || range.isValid()) {
@@ -91,7 +91,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private void addAnnotation(IssuePointer i, AnnotationHolder annotationHolder) {
+  private void addAnnotation(LocalIssuePointer i, AnnotationHolder annotationHolder) {
     Issue issue = i.issue();
     TextRange textRange;
 

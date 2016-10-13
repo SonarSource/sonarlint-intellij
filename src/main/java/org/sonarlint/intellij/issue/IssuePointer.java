@@ -19,122 +19,13 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.util.TextRange;
-import com.intellij.psi.PsiFile;
-import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
-public class IssuePointer implements Trackable {
-  private static final AtomicLong UID_GEN = new AtomicLong();
-  private final long uid;
-  private final RangeMarker range;
-  private final Issue issue;
-  private final PsiFile psiFile;
-  private final Integer checksum;
-
-  // tracked fields (mutable)
-  private Long creationDate;
-  private String serverIssueKey;
-  private boolean resolved;
-
-  public IssuePointer(Issue issue, PsiFile psiFile) {
-    this(issue, psiFile, null);
-  }
-
-  public IssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
-    this.range = range;
-    this.issue = issue;
-    this.psiFile = psiFile;
-    this.uid = UID_GEN.getAndIncrement();
-    if (range != null) {
-      this.checksum = checksum(range.getDocument().getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
-    } else {
-      this.checksum = null;
-    }
-  }
-
-  public static int checksum(String content) {
-    return content.replaceAll("[\\s]", "").hashCode();
-  }
-
-  public boolean isValid() {
-    if (psiFile != null && !psiFile.isValid()) {
-      return false;
-    }
-
-    return range == null || range.isValid();
-  }
-
-  @Override
-  public Integer getLine() {
-    if(range != null && isValid()) {
-      return range.getDocument().getLineNumber(range.getStartOffset());
-    }
-
-    return null;
-  }
-
-  @Override
-  public String getMessage() {
-    return issue.getMessage();
-  }
-
-  @Override
-  public Integer getLineHash() {
-    return checksum;
-  }
-
-  @Override
-  public String getRuleKey() {
-    return issue.getRuleKey();
-  }
-
-  public long uid() {
-    return uid;
-  }
-
-  @Nonnull
-  public Issue issue() {
-    return issue;
-  }
+public interface IssuePointer extends Trackable {
 
   @CheckForNull
-  public RangeMarker range() {
-    return range;
-  }
+  Long getCreationDate();
 
-  public PsiFile psiFile() {
-    return psiFile;
-  }
-
-  @CheckForNull
-  public Long creationDate() {
-    return creationDate;
-  }
-
-  public void setCreationDate(@Nullable Long creationDate) {
-    this.creationDate = creationDate;
-  }
-
-  @Override
-  public String getServerIssueKey() {
-    return serverIssueKey;
-  }
-
-  public void setServerIssueKey(String serverIssueKey) {
-    this.serverIssueKey = serverIssueKey;
-  }
-
-  public boolean isResolved() {
-    return resolved;
-  }
-
-  public void setResolved(boolean resolved) {
-    this.resolved = resolved;
-  }
+  boolean isResolved();
 }

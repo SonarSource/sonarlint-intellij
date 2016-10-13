@@ -35,8 +35,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,7 +100,7 @@ public class SonarExternalAnnotatorTest {
   }
 
   private void createFileIssues(int number) {
-    Collection<IssuePointer> issues = new LinkedList<>();
+    Collection<LocalIssuePointer> issues = new LinkedList<>();
 
     for (int i = 0; i < number; i++) {
       issues.add(createFileStoredIssue(i, psiFile));
@@ -110,7 +110,7 @@ public class SonarExternalAnnotatorTest {
   }
 
   private void createStoredIssues(int number) {
-    Collection<IssuePointer> issues = new LinkedList<>();
+    Collection<LocalIssuePointer> issues = new LinkedList<>();
 
     for (int i = 0; i < number; i++) {
       issues.add(createRangeStoredIssue(i, i, i + 10, "foo " + i));
@@ -119,12 +119,12 @@ public class SonarExternalAnnotatorTest {
     when(store.getForFile(virtualFile)).thenReturn(issues);
   }
 
-  private static IssuePointer createFileStoredIssue(int id, PsiFile file) {
+  private static LocalIssuePointer createFileStoredIssue(int id, PsiFile file) {
     Issue issue = SonarLintTestUtils.createIssue(id);
-    return new IssuePointer(issue, file, null);
+    return new LocalIssuePointer(issue, file, null);
   }
 
-  private IssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
+  private LocalIssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
     Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
 
@@ -133,6 +133,6 @@ public class SonarExternalAnnotatorTest {
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(text);
-    return new IssuePointer(issue, null, range);
+    return new LocalIssuePointer(issue, null, range);
   }
 }
