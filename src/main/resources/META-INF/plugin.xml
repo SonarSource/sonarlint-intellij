@@ -109,6 +109,9 @@
         <component>
             <implementation-class>org.sonarlint.intellij.core.SonarLintProjectNotifications</implementation-class>
         </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.ServerIssueUpdater</implementation-class>
+        </component>
     </project-components>
 
     <extensions defaultExtensionNs="com.intellij">
