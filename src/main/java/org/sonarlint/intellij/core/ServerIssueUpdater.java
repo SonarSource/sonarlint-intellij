@@ -27,6 +27,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -38,6 +40,10 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 
 public class ServerIssueUpdater extends AbstractProjectComponent {
+
+  private static final int THREADS_NUM = 5;
+
+  private ExecutorService executorService;
 
   private final IssueStore store;
 
@@ -65,17 +71,18 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private void fetchAndMatchServerIssues(VirtualFile virtualFile, String moduleKey, String relativePath) {
-    // TODO do all this in a thread
+    // TODO make it possible to cancel
+    this.executorService.submit(() -> {
+      Iterator<ServerIssue> serverIssues = fetchServerIssues(moduleKey, relativePath);
 
-    Iterator<ServerIssue> serverIssues = fetchServerIssues(moduleKey, relativePath);
+      Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
 
-    Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
+      if (serverIssuePointers.isEmpty()) {
+        return;
+      }
 
-    if (serverIssuePointers.isEmpty()) {
-      return;
-    }
-
-    store.storeServerIssues(virtualFile, serverIssuePointers);
+      store.storeServerIssues(virtualFile, serverIssuePointers);
+    });
   }
 
   private <T> Stream<T> toStream(Iterator<T> iterator) {
@@ -99,5 +106,15 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private String getModuleKey() {
     // TODO
     return myProject.getBasePath();
+  }
+
+  @Override
+  public void initComponent() {
+    this.executorService = Executors.newFixedThreadPool(THREADS_NUM);
+  }
+
+  @Override
+  public void disposeComponent() {
+    executorService.shutdown();
   }
 }
