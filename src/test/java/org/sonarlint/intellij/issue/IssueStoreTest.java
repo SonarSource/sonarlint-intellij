@@ -106,6 +106,90 @@ public class IssueStoreTest extends SonarTest {
   }
 
   @Test
+  public void testTracking_should_copy_server_issue_on_match() {
+    store.clear();
+
+    String serverIssueKey = "dummyServerIssueKey";
+
+    IssuePointer localIssue = createRangeStoredIssue(1, "issue 1", 10);
+    store.store(file1, Collections.singletonList(localIssue));
+
+    IssuePointer serverIssue = createRangeStoredIssue(1, "issue 1", 10);
+    serverIssue.setServerIssueKey(serverIssueKey);
+    store.storeServerIssues(file1, Collections.singletonList(serverIssue));
+
+    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+
+    IssuePointer issuePointer = fileIssues.iterator().next();
+    assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
+    assertThat(issuePointer.getServerIssueKey()).isEqualTo(serverIssueKey);
+  }
+
+  @Test
+  public void testTracking_should_preserve_server_issue_if_moved_locally() {
+    store.clear();
+
+    String serverIssueKey = "dummyServerIssueKey";
+
+    IssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
+    localIssue.setServerIssueKey(serverIssueKey);
+    store.store(file1, Collections.singletonList(localIssue));
+
+    IssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
+    serverIssue.setServerIssueKey(serverIssueKey);
+    serverIssue.setResolved(true);
+    store.storeServerIssues(file1, Collections.singletonList(serverIssue));
+
+    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+
+    IssuePointer issuePointer = fileIssues.iterator().next();
+    // the local issue is preserved ...
+    assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
+    assertThat(issuePointer.getLine()).isEqualTo(localIssue.getLine());
+    // ... + the change from the server is copied
+    assertThat(issuePointer.isResolved()).isTrue();
+  }
+
+  @Test
+  public void testTracking_should_ignore_server_issue_if_not_matched() {
+    store.clear();
+
+    IssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
+    store.store(file1, Collections.singletonList(localIssue));
+
+    IssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
+    serverIssue.setServerIssueKey("dummyServerIssueKey");
+    store.storeServerIssues(file1, Collections.singletonList(serverIssue));
+
+    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+
+    IssuePointer issuePointer = fileIssues.iterator().next();
+    assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
+    assertThat(issuePointer.getServerIssueKey()).isNull();
+  }
+
+  @Test
+  public void testTracking_should_drop_server_issue_reference_if_gone() {
+    store.clear();
+
+    IssuePointer issue = createRangeStoredIssue(1, "issue 1", 10);
+    issue.setServerIssueKey("dummyServerIssueKey");
+    store.store(file1, Collections.singletonList(issue));
+
+    store.storeServerIssues(file1, Collections.emptyList());
+
+    Collection<IssuePointer> fileIssues = store.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+
+    IssuePointer issuePointer = fileIssues.iterator().next();
+    assertThat(issuePointer.uid()).isEqualTo(issue.uid());
+    assertThat(issuePointer.getServerIssueKey()).isNull();
+  }
+
+  @Test
   public void testClearFile() {
     store.clearFile(file1);
 

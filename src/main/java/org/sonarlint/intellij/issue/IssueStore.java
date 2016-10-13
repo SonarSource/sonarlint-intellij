@@ -25,13 +25,17 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.containers.hash.HashSet;
 import com.intellij.util.messages.MessageBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.issue.tracking.Input;
 import org.sonarlint.intellij.issue.tracking.Tracker;
@@ -47,6 +51,8 @@ public class IssueStore extends AbstractProjectComponent {
   private static final long THRESHOLD = 10_000;
   private final Map<VirtualFile, Collection<IssuePointer>> storePerFile;
   private final MessageBus messageBus;
+
+  private final Lock matchingInProgress = new ReentrantLock();
 
   public IssueStore(Project project) {
     super(project);
@@ -129,33 +135,67 @@ public class IssueStore extends AbstractProjectComponent {
     cleanInvalid(file);
 
     // this will also delete all existing issues in the file
-    if(firstAnalysis) {
+    if (firstAnalysis) {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
       storePerFile.put(file, rawIssues);
     } else {
-      final Collection<IssuePointer> previousIssues = getForFile(file);
+      matchingInProgress.lock();
+      Collection<IssuePointer> previousIssues = getForFile(file);
       Collection<IssuePointer> trackedIssues = new ArrayList<>();
 
       Input<IssuePointer> baseInput = () -> previousIssues;
       Input<IssuePointer> rawInput = () -> rawIssues;
-      Tracking<IssuePointer, IssuePointer> tracking = new Tracker<IssuePointer, IssuePointer>().track(rawInput, baseInput);
-      for (Map.Entry<IssuePointer, IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
-        IssuePointer rawMatched = entry.getKey();
-        IssuePointer previousMatched = entry.getValue();
-        copyFromPrevious(rawMatched, previousMatched);
-        trackedIssues.add(rawMatched);
-      }
-      for (IssuePointer newIssue : tracking.getUnmatchedRaws()) {
-        newIssue.setCreationDate(System.currentTimeMillis());
-        trackedIssues.add(newIssue);
-      }
-      storePerFile.put(file, trackedIssues);
+      updateTrackedIssues(file, trackedIssues, baseInput, rawInput);
+      matchingInProgress.unlock();
     }
+  }
+
+  public void storeServerIssues(VirtualFile file, final Collection<IssuePointer> serverIssues) {
+    if (!storePerFile.containsKey(file)) {
+      // server issue gone, or file was renamed locally
+      // TODO add support to track renamed files (or explain why not)
+      return;
+    }
+
+    // clean before issue tracking
+    cleanInvalid(file);
+
+    matchingInProgress.lock();
+    Collection<IssuePointer> previousIssues = getForFile(file);
+    Collection<IssuePointer> trackedIssues = new ArrayList<>();
+
+    Input<IssuePointer> baseInput = () -> serverIssues;
+    Input<IssuePointer> rawInput = () -> previousIssues;
+    updateTrackedIssues(file, trackedIssues, baseInput, rawInput);
+    matchingInProgress.unlock();
+  }
+
+  private void updateTrackedIssues(VirtualFile file, Collection<IssuePointer> trackedIssues, Input<IssuePointer> baseInput, Input<IssuePointer> rawInput) {
+    Tracking<IssuePointer, IssuePointer> tracking = new Tracker<IssuePointer, IssuePointer>().track(rawInput, baseInput);
+    for (Map.Entry<IssuePointer, IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
+      IssuePointer rawMatched = entry.getKey();
+      IssuePointer previousMatched = entry.getValue();
+      copyFromPrevious(rawMatched, previousMatched);
+      trackedIssues.add(rawMatched);
+    }
+    for (IssuePointer newIssue : tracking.getUnmatchedRaws()) {
+      if (newIssue.getServerIssueKey() != null) {
+        wipeServerIssueDetails(newIssue);
+      }
+      newIssue.setCreationDate(System.currentTimeMillis());
+      trackedIssues.add(newIssue);
+    }
+    storePerFile.put(file, trackedIssues);
   }
 
   private void copyFromPrevious(IssuePointer rawMatched, IssuePointer previousMatched) {
     rawMatched.setCreationDate(previousMatched.creationDate());
     rawMatched.setServerIssueKey(previousMatched.getServerIssueKey());
     rawMatched.setResolved(previousMatched.isResolved());
+  }
+
+  private void wipeServerIssueDetails(IssuePointer issue) {
+    issue.setServerIssueKey(null);
+    issue.setResolved(false);
   }
 }
