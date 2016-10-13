@@ -1,22 +1,30 @@
 # SonarLint IntelliJ Plugin
 
-
 [![Build Status](https://travis-ci.org/SonarSource/sonarlint-intellij.svg?branch=master)](https://travis-ci.org/SonarSource/sonarlint-intellij)
 
 ## How to build
 
-./gradlew buildPlugin
+    ./gradlew buildPlugin
+
+Note that the above won't run tests and checks. To do that too, run:
+
+    ./gradlew check test buildPlugin
+
+For the complete list of tasks, see:
+
+    ./gradlew tasks
 
 ## How to develop in IntelliJ
 
-  - import project as Gradle project
-  - for debugging simply execute Gradle task runIdea
+- Import the project as a Gradle project
+- For debugging, simply execute the Gradle task `runIdea`
 
 ## How to release
 
-./gradlew release
+    ./gradlew release
 
-Deploy on Jetbrains plugin repository (todo try to use publish task)
+Deploy on Jetbrains plugin repository (todo try to use publish task).
 
 ## More information
-<b><a href="http://www.sonarlint.org/intellij/">SonarLint for IntelliJ</a></b>
+
+**[SonarLint for IntelliJ](http://www.sonarlint.org/intellij/)**
