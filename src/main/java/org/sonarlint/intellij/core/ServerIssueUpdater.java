@@ -115,7 +115,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     if (myProject.getBasePath() == null) {
       throw new IllegalStateException("no base path in default project");
     }
-    return virtualFile.getPath().substring(myProject.getBasePath().length());
+    return Paths.get(myProject.getBasePath()).relativize(Paths.get(virtualFile.getPath())).toString();
   }
 
   @Override
