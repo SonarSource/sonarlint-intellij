@@ -72,7 +72,7 @@ public class LocalIssuePointer implements IssuePointer {
   @Override
   public Integer getLine() {
     if(range != null && isValid()) {
-      return range.getDocument().getLineNumber(range.getStartOffset());
+      return range.getDocument().getLineNumber(range.getStartOffset()) + 1;
     }
 
     return null;
