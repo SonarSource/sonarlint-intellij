@@ -8,7 +8,7 @@
 
 Note that the above won't run tests and checks. To do that too, run:
 
-    ./gradlew check test buildPlugin
+    ./gradlew check buildPlugin
 
 For the complete list of tasks, see:
 
