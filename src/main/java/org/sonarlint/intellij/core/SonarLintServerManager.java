@@ -122,10 +122,10 @@ public class SonarLintServerManager implements ApplicationComponent {
 
       if (serverId == null) {
         SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
-        throw new IllegalStateException("Project as an invalid binding");
+        throw new IllegalStateException("Project has an invalid binding");
       } else if (projectKey == null) {
         SonarLintProjectNotifications.get(project).notifyModuleInvalid();
-        throw new IllegalStateException("Project as an invalid binding");
+        throw new IllegalStateException("Project has an invalid binding");
       } else {
         console.info(String.format("Using configuration of '%s' in server '%s'", projectSettings.getProjectKey(), projectSettings.getServerId()));
         return createConnectedFacade(project, serverId, projectKey);
