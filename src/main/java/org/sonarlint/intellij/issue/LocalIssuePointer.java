@@ -26,7 +26,6 @@ import com.intellij.psi.PsiFile;
 import java.security.MessageDigest;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -42,7 +41,6 @@ public class LocalIssuePointer implements IssuePointer {
 
   private final long uid;
   private final RangeMarker range;
-  private final Issue issue;
   private final PsiFile psiFile;
   private final Integer textRangeHash;
   private final Integer lineHash;
@@ -52,6 +50,10 @@ public class LocalIssuePointer implements IssuePointer {
   private String serverIssueKey;
   private boolean resolved;
   private String assignee;
+  private String severity;
+  private String ruleKey;
+  private String ruleName;
+  private String message;
 
   public LocalIssuePointer(Issue issue, PsiFile psiFile) {
     this(issue, psiFile, null);
@@ -59,7 +61,10 @@ public class LocalIssuePointer implements IssuePointer {
 
   public LocalIssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
     this.range = range;
-    this.issue = issue;
+    this.message = issue.getMessage();
+    this.ruleKey = issue.getRuleKey();
+    this.ruleName = issue.getRuleName();
+    this.severity = issue.getSeverity();
     this.psiFile = psiFile;
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
@@ -92,7 +97,7 @@ public class LocalIssuePointer implements IssuePointer {
 
   @Override
   public Integer getLine() {
-    if(range != null && isValid()) {
+    if (range != null && isValid()) {
       return range.getDocument().getLineNumber(range.getStartOffset()) + 1;
     }
 
@@ -106,7 +111,7 @@ public class LocalIssuePointer implements IssuePointer {
 
   @Override
   public String getMessage() {
-    return issue.getMessage();
+    return message;
   }
 
   @Override
@@ -121,16 +126,11 @@ public class LocalIssuePointer implements IssuePointer {
 
   @Override
   public String getRuleKey() {
-    return issue.getRuleKey();
+    return ruleKey;
   }
 
   public long uid() {
     return uid;
-  }
-
-  @Nonnull
-  public Issue issue() {
-    return issue;
   }
 
   @CheckForNull
@@ -140,6 +140,26 @@ public class LocalIssuePointer implements IssuePointer {
 
   public PsiFile psiFile() {
     return psiFile;
+  }
+
+  public String severity() {
+    return severity;
+  }
+
+  public void severity(String severity) {
+    this.severity = severity;
+  }
+
+  public void ruleKey(String ruleKey) {
+    this.ruleKey = ruleKey;
+  }
+
+  public void ruleName(String ruleName) {
+    this.ruleName = ruleName;
+  }
+
+  public String ruleName() {
+    return ruleName;
   }
 
   @Override

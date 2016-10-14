@@ -106,7 +106,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
 
   @Override
   public JComponent getPreferredFocusedComponent() {
-    if(isCreating) {
+    if (isCreating) {
       return nameText;
     } else {
       return urlText;
@@ -139,7 +139,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     nameText = new JBTextField();
     nameText.setDocument(new LengthRestrictedDocument(NAME_MAX_LENGTH));
     nameText.setText(server.getName());
-    if(!isCreating) {
+    if (!isCreating) {
       nameText.setFont(nameText.getFont().deriveFont(Font.BOLD));
     }
     nameText.setEditable(isCreating);
@@ -312,11 +312,11 @@ public class SonarQubeServerEditor extends DialogWrapper {
   }
 
   private void generateToken() {
-    if(StringUtils.isBlank(urlText.getText())) {
+    if (StringUtils.isBlank(urlText.getText())) {
       Messages.showErrorDialog(urlText, "Please fill the 'Server Url' field", "Invalid Server URL");
       return;
     }
-    if(!BrowserUtil.isAbsoluteURL(urlText.getText())) {
+    if (!BrowserUtil.isAbsoluteURL(urlText.getText())) {
       Messages.showErrorDialog(urlText, "Can't launch browser for URL: " + urlText.getText(), "Invalid Server URL");
       return;
     }
@@ -324,7 +324,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     StringBuilder url = new StringBuilder(256);
     url.append(urlText.getText());
 
-    if(!urlText.getText().endsWith("/")) {
+    if (!urlText.getText().endsWith("/")) {
       url.append("/");
     }
 

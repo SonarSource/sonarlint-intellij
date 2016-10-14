@@ -29,12 +29,11 @@ import com.intellij.util.messages.MessageBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.annotation.concurrent.ThreadSafe;
+import org.sonarlint.intellij.issue.persistence.IssueCache;
 import org.sonarlint.intellij.issue.tracking.Input;
 import org.sonarlint.intellij.issue.tracking.Tracker;
 import org.sonarlint.intellij.issue.tracking.Tracking;
@@ -46,35 +45,20 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
  */
 @ThreadSafe
 public class IssueStore extends AbstractProjectComponent {
-  private static final long THRESHOLD = 10_000;
-  private final Map<VirtualFile, Collection<LocalIssuePointer>> storePerFile;
   private final MessageBus messageBus;
+  private IssueCache cache;
 
   private final Lock matchingInProgress = new ReentrantLock();
 
-  public IssueStore(Project project) {
+  public IssueStore(Project project, IssueCache cache) {
     super(project);
-    this.storePerFile = new ConcurrentHashMap<>();
+    this.cache = cache;
     this.messageBus = project.getMessageBus();
   }
 
   public void clear() {
-    storePerFile.clear();
+    cache.clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
-  }
-
-  private long getNumberIssues() {
-    long count = 0;
-
-    for (Collection<LocalIssuePointer> issuePointers : storePerFile.values()) {
-      count += issuePointers.size();
-    }
-
-    return count;
-  }
-
-  public Map<VirtualFile, Collection<LocalIssuePointer>> getAll() {
-    return Collections.unmodifiableMap(storePerFile);
   }
 
   @Override
@@ -83,29 +67,12 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   public Collection<LocalIssuePointer> getForFile(VirtualFile file) {
-    Collection<LocalIssuePointer> issues = storePerFile.get(file);
-    return issues == null ? Collections.emptyList() : issues;
+    Collection<LocalIssuePointer> issues = cache.read(file);
+    return issues != null ? issues : Collections.emptyList();
   }
 
   boolean containsFile(VirtualFile file) {
-    return storePerFile.containsKey(file);
-  }
-
-  void clearFile(VirtualFile file) {
-    storePerFile.remove(file);
-    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(Collections.singletonMap(file, Collections.emptyList()));
-  }
-
-  /**
-   * Clears issues in the File if the threshold of issues per project as been passed.
-   * It could be improved by being fully synchronized and deleting the oldest file closed.
-   */
-  public void clean(VirtualFile file) {
-    long numIssues = getNumberIssues();
-
-    if (numIssues > THRESHOLD) {
-      clearFile(file);
-    }
+    return cache.contains(file);
   }
 
   public void store(Map<VirtualFile, Collection<LocalIssuePointer>> map) {
@@ -116,21 +83,12 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   private void cleanInvalid(VirtualFile file) {
-    Collection<LocalIssuePointer> issues = storePerFile.get(file);
-    if (issues == null) {
-      return;
-    }
-
-    Iterator<LocalIssuePointer> it = issues.iterator();
-    while (it.hasNext()) {
-      if (!it.next().isValid()) {
-        it.remove();
-      }
-    }
+    Collection<LocalIssuePointer> issues = cache.read(file);
+    issues.removeIf(f -> !f.isValid());
   }
 
   void store(VirtualFile file, final Collection<LocalIssuePointer> rawIssues) {
-    boolean firstAnalysis = !storePerFile.containsKey(file);
+    boolean firstAnalysis = !cache.contains(file);
 
     // clean before issue tracking
     cleanInvalid(file);
@@ -138,7 +96,7 @@ public class IssueStore extends AbstractProjectComponent {
     // this will also delete all existing issues in the file
     if (firstAnalysis) {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
-      storePerFile.put(file, rawIssues);
+      cache.save(file, rawIssues);
     } else {
       matchWithPreviousIssues(file, rawIssues);
     }
@@ -161,7 +119,7 @@ public class IssueStore extends AbstractProjectComponent {
     updateTrackedIssues(file, baseInput, rawInput);
     matchingInProgress.unlock();
 
-    Map<VirtualFile, Collection<LocalIssuePointer>> map = Collections.singletonMap(file, storePerFile.get(file));
+    Map<VirtualFile, Collection<LocalIssuePointer>> map = Collections.singletonMap(file, cache.read(file));
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
   }
 
@@ -181,7 +139,7 @@ public class IssueStore extends AbstractProjectComponent {
       newIssue.setCreationDate(System.currentTimeMillis());
       trackedIssues.add(newIssue);
     }
-    storePerFile.put(file, trackedIssues);
+    cache.save(file, trackedIssues);
   }
 
   private static void copyFromPrevious(LocalIssuePointer rawMatched, IssuePointer previousMatched) {

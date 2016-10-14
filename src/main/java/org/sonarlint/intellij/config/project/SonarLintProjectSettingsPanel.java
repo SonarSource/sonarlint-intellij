@@ -87,7 +87,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       bindPanel.actionUpdateProjectTask();
     }
 
-    if(bindingChanged) {
+    if (bindingChanged) {
       SonarLintConsole console = SonarLintConsole.get(project);
       IssueStore store = SonarLintUtils.get(project, IssueStore.class);
 

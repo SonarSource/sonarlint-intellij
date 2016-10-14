@@ -262,7 +262,7 @@ public class TreeModelBuilder {
   }
 
   private static List<LocalIssuePointer> filter(Iterable<LocalIssuePointer> issues) {
-    return StreamSupport.stream(issues.spliterator(),false)
+    return StreamSupport.stream(issues.spliterator(), false)
       .filter(TreeModelBuilder::accept)
       .collect(Collectors.toList());
   }
@@ -295,7 +295,7 @@ public class TreeModelBuilder {
         return dateCompare;
       }
 
-      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.issue().getSeverity(), o2.issue().getSeverity());
+      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.severity(), o2.severity());
 
       if (severityCompare != 0) {
         return severityCompare;
@@ -308,7 +308,7 @@ public class TreeModelBuilder {
       int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
-        .compare(o1.issue().getRuleName(), o2.issue().getRuleName())
+        .compare(o1.ruleName(), o2.ruleName())
         .compare(rangeStart1, rangeStart2)
         .compare(o1.uid(), o2.uid())
         .result();

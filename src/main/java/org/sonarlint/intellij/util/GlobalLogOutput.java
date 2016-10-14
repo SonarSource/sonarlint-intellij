@@ -31,7 +31,7 @@ import java.util.List;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-public class GlobalLogOutput  extends ApplicationComponent.Adapter implements LogOutput, Disposable {
+public class GlobalLogOutput extends ApplicationComponent.Adapter implements LogOutput, Disposable {
   private final ProjectManager projectManager;
   private final List<SonarLintConsole> consoles;
 
@@ -54,19 +54,19 @@ public class GlobalLogOutput  extends ApplicationComponent.Adapter implements Lo
     switch (level) {
       case TRACE:
       case DEBUG:
-        for(SonarLintConsole c : consoles) {
+        for (SonarLintConsole c : consoles) {
           c.debug(msg);
         }
         break;
       case ERROR:
-        for(SonarLintConsole c : consoles) {
+        for (SonarLintConsole c : consoles) {
           c.error(msg);
         }
         break;
       case INFO:
       case WARN:
       default:
-        for(SonarLintConsole c : consoles) {
+        for (SonarLintConsole c : consoles) {
           c.info(msg);
         }
     }

@@ -68,7 +68,7 @@ public class SonarLintUtils {
 
   public static <T> T get(ComponentManager container, Class<T> clazz) {
     T t = container.getComponent(clazz);
-    if(t == null) {
+    if (t == null) {
       LOG.error("Could not find class in container: {}", clazz.getName());
       throw new IllegalArgumentException("Class not found: " + clazz.getName());
     }
@@ -203,7 +203,7 @@ public class SonarLintUtils {
         // Different ways to fetch login based on runtime version (SLI-95)
         try {
           Object proxyLogin = tryGetProxyLogin(httpConfigurable);
-          if(proxyLogin != null) {
+          if (proxyLogin != null) {
             builder.proxyCredentials(proxyLogin.toString(), httpConfigurable.getPlainProxyPassword());
           }
         } catch (Exception ex) {
