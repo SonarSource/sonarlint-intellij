@@ -88,7 +88,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     });
   }
 
-  private <T> Stream<T> toStream(Iterator<T> iterator) {
+  private static <T> Stream<T> toStream(Iterator<T> iterator) {
     Iterable<T> iterable = () -> iterator;
     return StreamSupport.stream(iterable.spliterator(), false);
   }
