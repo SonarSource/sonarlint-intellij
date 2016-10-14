@@ -30,6 +30,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -195,7 +196,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
      * Set of files is not protected. It can be modified.
      */
     public Set<VirtualFile> files() {
-      return files;
+      return Collections.unmodifiableSet(files);
     }
 
     public TriggerType trigger() {

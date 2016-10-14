@@ -15,7 +15,10 @@ apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven'
+<<<<<<< 5e2c2c023548fdf38275413fbc011cdc2f76d496
 apply plugin: 'java'
+=======
+>>>>>>> Add protobuf dep, compilation and integration in IDEA
 apply plugin: 'com.google.protobuf'
 apply plugin: 'idea'
 
@@ -42,7 +45,11 @@ intellij {
 protobuf {
   // Configure the protoc executable
   protoc {
+<<<<<<< 5e2c2c023548fdf38275413fbc011cdc2f76d496
     // Download from repositories. Must be the same as the one used in sonarlint-core
+=======
+    // Download from repositories
+>>>>>>> Add protobuf dep, compilation and integration in IDEA
     artifact = 'com.google.protobuf:protoc:3.1.0'
   }
 }
@@ -68,8 +75,8 @@ configurations {
 }
 
 dependencies {
-  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5.0.763'
-  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5.0.763'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5-SNAPSHOT'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5-SNAPSHOT'
   compile 'commons-lang:commons-lang:2.6'
   compile 'commons-io:commons-io:2.4'
   compile 'com.google.code.findbugs:jsr305:2.0.2'

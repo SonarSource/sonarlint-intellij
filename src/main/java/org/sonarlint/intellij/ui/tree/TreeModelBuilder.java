@@ -26,7 +26,6 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -190,14 +189,9 @@ public class TreeModelBuilder {
   public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LocalIssuePointer>> map, Predicate<VirtualFile> filePredicate) {
     this.filePredicate = filePredicate;
 
-    List<VirtualFile> toRemove = new LinkedList<>();
-    for (VirtualFile f : index.getAllFiles()) {
-      if (!map.containsKey(f)) {
-        toRemove.add(f);
-      }
-    }
-
-    toRemove.forEach(this::removeFile);
+    index.getAllFiles().stream()
+      .filter(f -> !map.containsKey(f))
+      .forEach(this::removeFile);
 
     for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : map.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), filePredicate);
