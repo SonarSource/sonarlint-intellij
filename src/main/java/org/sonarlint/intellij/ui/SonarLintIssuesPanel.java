@@ -35,6 +35,7 @@ import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.containers.HashMap;
 import com.intellij.util.messages.MessageBusConnection;
 
 import java.awt.BorderLayout;
@@ -124,6 +125,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
         ApplicationManager.getApplication().invokeLater(SonarLintIssuesPanel.this::updateTree);
       }
     });
+
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
     updateTree();
   }
@@ -204,7 +206,13 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   }
 
   public void updateTree() {
-    treeBuilder.updateModel(issueStore.getAll(), scope.getCondition());
+    Map<VirtualFile, Collection<LocalIssuePointer>> issuesPerFile = new HashMap<>();
+    Collection<VirtualFile> all = scope.getAll();
+    for(VirtualFile f : all) {
+      issuesPerFile.put(f, issueStore.getForFile(f));
+    }
+
+    treeBuilder.updateModel(issuesPerFile, scope.getCondition());
     expandTree();
   }
 
@@ -222,7 +230,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   private void issueTreeSelectionChanged() {
     IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
-      rulePanel.setRuleKey(selectedNodes[0].issue().issue());
+      rulePanel.setRuleKey(selectedNodes[0].issue());
     } else {
       rulePanel.setRuleKey(null);
     }

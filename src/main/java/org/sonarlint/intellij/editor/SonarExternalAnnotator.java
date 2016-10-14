@@ -43,7 +43,6 @@ import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
   private final boolean unitTest;
@@ -92,7 +91,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private void addAnnotation(LocalIssuePointer i, AnnotationHolder annotationHolder) {
-    Issue issue = i.issue();
     TextRange textRange;
 
     if (i.range() != null) {
@@ -101,15 +99,14 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       textRange = i.psiFile().getTextRange();
     }
 
-    String msg = getMessage(issue);
-    String htmlMsg = getHtmlMessage(issue);
+    String htmlMsg = getHtmlMessage(i);
 
-    Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.getSeverity()), textRange, msg, htmlMsg);
+    Annotation annotation = annotationHolder.createAnnotation(getSeverity(i.severity()), textRange, i.getMessage(), htmlMsg);
 
     if (i.range() == null) {
       annotation.setFileLevelAnnotation(true);
     } else {
-      annotation.setTextAttributes(getTextAttrsKey(issue.getSeverity()));
+      annotation.setTextAttributes(getTextAttrsKey(i.severity()));
     }
 
     /**
@@ -120,7 +117,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      * key ({@link SonarLintTextAttributes} to {@link Annotation#setTextAttributes}
      * - let {@link Annotation#getTextAttributes} decide it based on highlight type and severity.
      */
-    annotation.setHighlightType(getType(issue.getSeverity()));
+    annotation.setHighlightType(getType(i.severity()));
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
@@ -147,7 +144,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    * {@link InspectionDescriptionLinkHandler}
    * {@link com.intellij.openapi.editor.colors.CodeInsightColors}
    */
-  private String getHtmlMessage(Issue issue) {
+  private String getHtmlMessage(LocalIssuePointer issue) {
     @NonNls
     final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
@@ -160,10 +157,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     // in unit tests on a system without gui (like travis) UIUtil will fail, and Application is not available in simple tests
     return unitTest || ApplicationManager.getApplication().isUnitTestMode() ||
       UIUtil.isUnderDarcula();
-  }
-
-  private static String getMessage(Issue issue) {
-    return issue.getMessage();
   }
 
   /**

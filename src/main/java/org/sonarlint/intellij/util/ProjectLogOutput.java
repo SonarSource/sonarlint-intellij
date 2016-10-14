@@ -34,7 +34,7 @@ public class ProjectLogOutput implements LogOutput {
 
   @Override
   public void log(String msg, Level level) {
-    if(!settings.isAnalysisLogsEnabled()) {
+    if (!settings.isAnalysisLogsEnabled()) {
       return;
     }
     switch (level) {

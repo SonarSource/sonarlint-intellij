@@ -50,11 +50,11 @@ public class SonarQubeServer {
   }
 
   @Override
-  public boolean equals(Object o){
+  public boolean equals(Object o) {
     if (!(o instanceof SonarQubeServer)) {
       return false;
     }
-    SonarQubeServer other = (SonarQubeServer)o;
+    SonarQubeServer other = (SonarQubeServer) o;
 
     return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
       Comparing.equal(getPassword(), other.getPassword()) &&

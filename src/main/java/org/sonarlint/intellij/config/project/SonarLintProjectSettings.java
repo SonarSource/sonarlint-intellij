@@ -109,7 +109,6 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
     this.serverId = serverId;
   }
 
-
   public boolean isBindingEnabled() {
     return bindingEnabled;
   }

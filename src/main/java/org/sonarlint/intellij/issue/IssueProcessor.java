@@ -111,8 +111,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     Map<VirtualFile, Collection<LocalIssuePointer>> map = new HashMap<>();
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
-    for(VirtualFile f : analysed) {
-      if(failedVirtualFiles.contains(f)) {
+    for (VirtualFile f : analysed) {
+      if (failedVirtualFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
         // it's important to store all files, even without issues, to correctly track the leak period (SLI-86)

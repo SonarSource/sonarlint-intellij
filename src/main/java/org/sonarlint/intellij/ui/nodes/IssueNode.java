@@ -40,30 +40,30 @@ public class IssueNode extends AbstractNode {
   }
 
   @Override public void render(ColoredTreeCellRenderer renderer) {
-    if(!issue.isValid()) {
+    if (!issue.isValid()) {
       renderer.append("Invalid", SimpleTextAttributes.ERROR_ATTRIBUTES);
       return;
     }
 
-    String severity = issue.issue().getSeverity();
+    String severity = issue.severity();
 
     if (severity != null) {
       try {
-        renderer.setIcon(ResourceLoader.getSeverityIcon(issue.issue().getSeverity()));
+        renderer.setIcon(ResourceLoader.getSeverityIcon(issue.severity()));
       } catch (IOException e) {
         LOGGER.error("Couldn't load icon for severity: " + severity, e);
       }
     }
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
 
-    renderer.append(issue.issue().getMessage());
+    renderer.append(issue.getMessage());
 
     renderer.append(" ");
 
-    if(issue.getCreationDate() != null) {
+    if (issue.getCreationDate() != null) {
       String creationDate = SonarLintUtils.age(issue.getCreationDate());
       renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
-      if(!issue.getAssignee().isEmpty()) {
+      if (!issue.getAssignee().isEmpty()) {
         renderer.append("  [" + issue.getAssignee() + "]", SimpleTextAttributes.GRAY_ATTRIBUTES);
       }
     }

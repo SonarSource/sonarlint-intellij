@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package sonarlint.intellij;
+
+// The java package can be changed without breaking compatibility.
+// it impacts only the generated Java code.
+option java_package = "org.sonarlint.intellij.proto";
+option optimize_for = SPEED;
+
+message Issues {
+    repeated Issue issue = 1;
+
+    message Issue {
+        string serverIssueKey = 1;
+        string ruleKey = 2;
+        int32 startLine = 3;
+        int32 endLine = 4;
+        int32 startLineOffset = 5;
+        int32 endLineOffset = 6;
+        string message = 7;
+        string checksum = 8;
+        string assignee = 9;
+        int64 creationDate = 10;
+        string severity = 11;
+        string ruleName = 12;
+        bool resolved = 13;
+    }
+}
+
+message StorageIndex {
+    map<string,string> mapped_path_by_key = 1;
+}
