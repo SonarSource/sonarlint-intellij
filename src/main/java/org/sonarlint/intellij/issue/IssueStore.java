@@ -193,6 +193,7 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   private static void wipeServerIssueDetails(LocalIssuePointer issue) {
+    issue.setCreationDate(null);
     issue.setServerIssueKey(null);
     issue.setResolved(false);
     issue.setAssignee("");
