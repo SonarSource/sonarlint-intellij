@@ -29,5 +29,5 @@ public interface IssuePointer extends Trackable {
 
   boolean isResolved();
 
-  String assignee();
+  String getAssignee();
 }
