@@ -81,7 +81,7 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   @Override
-  public String assignee() { return assignee; }
+  public String getAssignee() { return assignee; }
 
   @Override
   public String getMessage() {

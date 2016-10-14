@@ -189,7 +189,7 @@ public class IssueStore extends AbstractProjectComponent {
     rawMatched.setCreationDate(previousMatched.getCreationDate());
     rawMatched.setServerIssueKey(previousMatched.getServerIssueKey());
     rawMatched.setResolved(previousMatched.isResolved());
-    rawMatched.setAssignee(previousMatched.assignee());
+    rawMatched.setAssignee(previousMatched.getAssignee());
   }
 
   private static void wipeServerIssueDetails(LocalIssuePointer issue) {
