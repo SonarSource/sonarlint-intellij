@@ -120,6 +120,8 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   @Override
   public void disposeComponent() {
-    executorService.shutdown();
+    // interrupt running tasks, return scheduled tasks (which we simply drop)
+    // TODO make the tasks responsive to interrupts and abort gracefully
+    executorService.shutdownNow();
   }
 }
