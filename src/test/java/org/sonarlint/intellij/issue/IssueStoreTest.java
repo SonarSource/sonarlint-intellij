@@ -116,7 +116,7 @@ public class IssueStoreTest extends SonarTest {
 
     LocalIssuePointer serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setServerIssueKey(serverIssueKey);
-    store.storeServerIssues(file1, Collections.singletonList(serverIssue));
+    store.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
     Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
@@ -139,7 +139,7 @@ public class IssueStoreTest extends SonarTest {
     LocalIssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setResolved(true);
-    store.storeServerIssues(file1, Collections.singletonList(serverIssue));
+    store.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
     Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
@@ -161,7 +161,7 @@ public class IssueStoreTest extends SonarTest {
 
     LocalIssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
     serverIssue.setServerIssueKey("dummyServerIssueKey");
-    store.storeServerIssues(file1, Collections.singletonList(serverIssue));
+    store.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
     Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
@@ -179,7 +179,7 @@ public class IssueStoreTest extends SonarTest {
     issue.setServerIssueKey("dummyServerIssueKey");
     store.store(file1, Collections.singletonList(issue));
 
-    store.storeServerIssues(file1, Collections.emptyList());
+    store.matchWithServerIssues(file1, Collections.emptyList());
 
     Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
     assertThat(fileIssues).hasSize(1);

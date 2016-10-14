@@ -27,7 +27,6 @@ import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import java.io.IOException;
 import javax.annotation.Nonnull;
-import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;

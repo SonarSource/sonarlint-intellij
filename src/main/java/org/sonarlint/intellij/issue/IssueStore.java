@@ -78,7 +78,7 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   public Map<VirtualFile, Collection<LocalIssuePointer>> getAll() {
-    return storePerFile;
+    return Collections.unmodifiableMap(storePerFile);
   }
 
   @Override
@@ -140,18 +140,20 @@ public class IssueStore extends AbstractProjectComponent {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
       storePerFile.put(file, rawIssues);
     } else {
-      matchingInProgress.lock();
-      Collection<LocalIssuePointer> previousIssues = getForFile(file);
-      Collection<LocalIssuePointer> trackedIssues = new ArrayList<>();
-
-      Input<LocalIssuePointer> baseInput = () -> previousIssues;
-      Input<LocalIssuePointer> rawInput = () -> rawIssues;
-      updateTrackedIssues(file, trackedIssues, baseInput, rawInput);
-      matchingInProgress.unlock();
+      matchWithPreviousIssues(file, rawIssues);
     }
   }
 
-  public void storeServerIssues(VirtualFile file, final Collection<IssuePointer> serverIssues) {
+  public void matchWithPreviousIssues(VirtualFile file, Collection<LocalIssuePointer> rawIssues) {
+    matchingInProgress.lock();
+    Collection<LocalIssuePointer> previousIssues = getForFile(file);
+    Input<LocalIssuePointer> baseInput = () -> previousIssues;
+    Input<LocalIssuePointer> rawInput = () -> rawIssues;
+    updateTrackedIssues(file, baseInput, rawInput);
+    matchingInProgress.unlock();
+  }
+
+  public void matchWithServerIssues(VirtualFile file, final Collection<IssuePointer> serverIssues) {
     if (!storePerFile.containsKey(file)) {
       // server issue gone, or file was renamed locally
       // TODO add support to track renamed files (or explain why not)
@@ -160,15 +162,14 @@ public class IssueStore extends AbstractProjectComponent {
 
     matchingInProgress.lock();
     Collection<LocalIssuePointer> previousIssues = getForFile(file);
-    Collection<LocalIssuePointer> trackedIssues = new ArrayList<>();
-
     Input<IssuePointer> baseInput = () -> serverIssues;
     Input<LocalIssuePointer> rawInput = () -> previousIssues;
-    updateTrackedIssues(file, trackedIssues, baseInput, rawInput);
+    updateTrackedIssues(file, baseInput, rawInput);
     matchingInProgress.unlock();
   }
 
-  private <T extends IssuePointer> void updateTrackedIssues(VirtualFile file, Collection<LocalIssuePointer> trackedIssues, Input<T> baseInput, Input<LocalIssuePointer> rawInput) {
+  private <T extends IssuePointer> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LocalIssuePointer> rawInput) {
+    Collection<LocalIssuePointer> trackedIssues = new ArrayList<>();
     Tracking<LocalIssuePointer, T> tracking = new Tracker<LocalIssuePointer, T>().track(rawInput, baseInput);
     for (Map.Entry<LocalIssuePointer, ? extends IssuePointer> entry : tracking.getMatchedRaws().entrySet()) {
       LocalIssuePointer rawMatched = entry.getKey();

@@ -59,7 +59,7 @@ public class LocalIssuePointer implements IssuePointer {
     }
   }
 
-  public static int checksum(String content) {
+  private static int checksum(String content) {
     return content.replaceAll("[\\s]", "").hashCode();
   }
 
@@ -130,10 +130,11 @@ public class LocalIssuePointer implements IssuePointer {
     return serverIssueKey;
   }
 
-  public void setServerIssueKey(String serverIssueKey) {
+  public void setServerIssueKey(@Nullable String serverIssueKey) {
     this.serverIssueKey = serverIssueKey;
   }
 
+  @Override
   public boolean isResolved() {
     return resolved;
   }

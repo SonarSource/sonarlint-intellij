@@ -29,7 +29,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -89,7 +88,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
 
       if (!serverIssuePointers.isEmpty()) {
-        store.storeServerIssues(virtualFile, serverIssuePointers);
+        store.matchWithServerIssues(virtualFile, serverIssuePointers);
       }
     });
   }
