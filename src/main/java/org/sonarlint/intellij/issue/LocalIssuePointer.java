@@ -40,6 +40,7 @@ public class LocalIssuePointer implements IssuePointer {
   private Long creationDate;
   private String serverIssueKey;
   private boolean resolved;
+  public String assignee;
 
   public LocalIssuePointer(Issue issue, PsiFile psiFile) {
     this(issue, psiFile, null);
@@ -49,6 +50,7 @@ public class LocalIssuePointer implements IssuePointer {
     this.range = range;
     this.issue = issue;
     this.psiFile = psiFile;
+    this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
     if (range != null) {
       this.checksum = checksum(range.getDocument().getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
@@ -77,6 +79,9 @@ public class LocalIssuePointer implements IssuePointer {
 
     return null;
   }
+
+  @Override
+  public String assignee() { return assignee; }
 
   @Override
   public String getMessage() {
@@ -135,5 +140,9 @@ public class LocalIssuePointer implements IssuePointer {
 
   public void setResolved(boolean resolved) {
     this.resolved = resolved;
+  }
+
+  public void setAssignee(String assignee) {
+    this.assignee = assignee;
   }
 }

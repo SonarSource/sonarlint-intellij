@@ -28,4 +28,6 @@ public interface IssuePointer extends Trackable {
   Long getCreationDate();
 
   boolean isResolved();
+
+  String assignee();
 }

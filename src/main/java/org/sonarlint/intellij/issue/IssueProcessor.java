@@ -64,9 +64,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       map = transformIssues(issues, job.files(), failedAnalysisFiles);
       store.store(map);
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
-      for (PsiFile psiFile : getPsi(job.files())) {
-        codeAnalyzer.restart(psiFile);
-      }
+      getPsi(job.files()).forEach(codeAnalyzer::restart);
     } finally {
       // closeable only introduced in 2016.2
       token.finish();

@@ -112,6 +112,7 @@ public class SonarLintTask extends Task.Backgroundable {
       indicator.setText("Creating SonarLint issues: " + listener.getIssues().size());
 
       processor.process(job, listener.getIssues(), result.failedAnalysisFiles());
+
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {

@@ -20,16 +20,16 @@
 package org.sonarlint.intellij.ui.scope;
 
 import com.intellij.openapi.actionSystem.DataKey;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 public abstract class IssueTreeScope {
   public static final DataKey<IssueTreeScope> SCOPE_DATA_KEY = DataKey.create("SonarLintScope");
   protected final List<ScopeListener> listeners = new ArrayList<>();
-  protected Condition<VirtualFile> condition;
+  protected Predicate<VirtualFile> filePredicate = f -> true;
 
   public abstract String getDisplayName();
 
@@ -41,8 +41,8 @@ public abstract class IssueTreeScope {
     listeners.clear();
   }
 
-  public Condition<VirtualFile> getCondition() {
-    return condition;
+  public Predicate<VirtualFile> getCondition() {
+    return filePredicate;
   }
 
   public abstract Collection<VirtualFile> getAll();
@@ -55,5 +55,6 @@ public abstract class IssueTreeScope {
   @Override
   public String toString() {
     return getDisplayName();
+
   }
 }

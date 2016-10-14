@@ -23,10 +23,10 @@ import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -35,7 +35,7 @@ public class CurrentFileScope extends IssueTreeScope {
 
   public CurrentFileScope(Project project) {
     this.project = project;
-    this.condition = selectedFileCondition();
+    this.filePredicate = selectedFileCondition();
     initEventHandling();
   }
 
@@ -51,11 +51,8 @@ public class CurrentFileScope extends IssueTreeScope {
   private class EditorChangeListener extends FileEditorManagerAdapter {
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-      condition = selectedFileCondition();
-
-      for (ScopeListener l : listeners) {
-        l.conditionChanged();
-      }
+      filePredicate = selectedFileCondition();
+      listeners.forEach(ScopeListener::conditionChanged);
     }
   }
 
@@ -69,31 +66,25 @@ public class CurrentFileScope extends IssueTreeScope {
     }
   }
 
-  private Condition<VirtualFile> selectedFileCondition() {
+  private Predicate<VirtualFile> selectedFileCondition() {
     VirtualFile file = SonarLintUtils.getSelectedFile(project);
 
     if (file == null) {
-      return new RejectAllCondition();
+      return f -> false;
     }
 
-    return new AcceptFileCondition(file);
+    return new AcceptFilePredicate(file);
   }
 
-  private static class AcceptFileCondition implements Condition<VirtualFile> {
+  private static class AcceptFilePredicate implements Predicate<VirtualFile> {
     private final VirtualFile file;
 
-    AcceptFileCondition(VirtualFile file) {
+    AcceptFilePredicate(VirtualFile file) {
       this.file = file;
     }
 
-    @Override public boolean value(VirtualFile virtualFile) {
+    @Override public boolean test(VirtualFile virtualFile) {
       return file.equals(virtualFile);
-    }
-  }
-
-  private static class RejectAllCondition implements Condition<VirtualFile> {
-    @Override public boolean value(VirtualFile virtualFile) {
-      return false;
     }
   }
 }

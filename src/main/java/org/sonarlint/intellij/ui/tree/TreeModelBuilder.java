@@ -23,18 +23,18 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
@@ -54,7 +54,7 @@ public class TreeModelBuilder {
   private DefaultTreeModel model;
   private SummaryNode summary;
   private IssueTreeIndex index;
-  private Condition<VirtualFile> condition;
+  private Predicate<VirtualFile> filePredicate;
 
   public TreeModelBuilder() {
     this.index = new IssueTreeIndex();
@@ -62,7 +62,7 @@ public class TreeModelBuilder {
 
   public void updateFiles(Map<VirtualFile, Collection<LocalIssuePointer>> issuesPerFile) {
     for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : issuesPerFile.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue(), condition);
+      setFileIssues(e.getKey(), e.getValue(), filePredicate);
     }
 
     model.nodeChanged(summary);
@@ -187,8 +187,8 @@ public class TreeModelBuilder {
     return summary;
   }
 
-  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LocalIssuePointer>> map, @Nullable Condition<VirtualFile> condition) {
-    this.condition = condition;
+  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LocalIssuePointer>> map, Predicate<VirtualFile> filePredicate) {
+    this.filePredicate = filePredicate;
 
     List<VirtualFile> toRemove = new LinkedList<>();
     for (VirtualFile f : index.getAllFiles()) {
@@ -200,13 +200,14 @@ public class TreeModelBuilder {
     toRemove.forEach(this::removeFile);
 
     for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : map.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue(), condition);
+      setFileIssues(e.getKey(), e.getValue(), filePredicate);
     }
 
     return model;
   }
 
-  private FileNode setFileIssues(VirtualFile file, Iterable<LocalIssuePointer> issues, @Nullable Condition<VirtualFile> condition) {
+  @CheckForNull
+  private FileNode setFileIssues(VirtualFile file, Iterable<LocalIssuePointer> issues, Predicate<VirtualFile> condition) {
     if (!accept(file, condition)) {
       removeFile(file);
       return null;
@@ -267,32 +268,17 @@ public class TreeModelBuilder {
   }
 
   private static List<LocalIssuePointer> filter(Iterable<LocalIssuePointer> issues) {
-    List<LocalIssuePointer> filtered = new ArrayList<>();
-    for (LocalIssuePointer ip : issues) {
-      if (!accept(ip)) {
-        continue;
-      }
-
-      filtered.add(ip);
-    }
-
-    return filtered;
+    return StreamSupport.stream(issues.spliterator(),false)
+      .filter(TreeModelBuilder::accept)
+      .collect(Collectors.toList());
   }
 
   private static boolean accept(LocalIssuePointer issue) {
-    return issue.isValid();
+    return !issue.isResolved() && issue.isValid();
   }
 
-  private static boolean accept(VirtualFile file, @Nullable Condition<VirtualFile> condition) {
-    if (!file.isValid()) {
-      return false;
-    }
-
-    if (condition == null) {
-      return true;
-    }
-
-    return condition.value(file);
+  private static boolean accept(VirtualFile file, Predicate<VirtualFile> condition) {
+    return file.isValid() && condition.test(file);
   }
 
   private static class FileNodeComparator implements Comparator<FileNode> {

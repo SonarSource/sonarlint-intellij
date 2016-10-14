@@ -63,4 +63,8 @@ public class ServerIssuePointer implements IssuePointer {
   public boolean isResolved() {
     return !serverIssue.resolution().isEmpty();
   }
+
+  @Override public String assignee() {
+    return serverIssue.assigneeLogin();
+  }
 }
