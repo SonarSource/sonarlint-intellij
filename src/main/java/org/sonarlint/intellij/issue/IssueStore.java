@@ -25,18 +25,15 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.containers.hash.HashSet;
 import com.intellij.util.messages.MessageBus;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.issue.tracking.Input;
 import org.sonarlint.intellij.issue.tracking.Tracker;
@@ -51,6 +48,7 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
 public class IssueStore extends AbstractProjectComponent {
   private static final long THRESHOLD = 10_000;
   private final Map<VirtualFile, Collection<LocalIssuePointer>> storePerFile;
+  private final Map<VirtualFile, Boolean> firstAnalysis;
   private final MessageBus messageBus;
 
   private final Lock matchingInProgress = new ReentrantLock();
@@ -58,6 +56,7 @@ public class IssueStore extends AbstractProjectComponent {
   public IssueStore(Project project) {
     super(project);
     this.storePerFile = new ConcurrentHashMap<>();
+    this.firstAnalysis = new ConcurrentHashMap<>();
     this.messageBus = project.getMessageBus();
   }
 
@@ -130,18 +129,24 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   void store(VirtualFile file, final Collection<LocalIssuePointer> rawIssues) {
-    boolean firstAnalysis = !storePerFile.containsKey(file);
+    boolean isFirstAnalysis = !storePerFile.containsKey(file);
 
     // clean before issue tracking
     cleanInvalid(file);
 
     // this will also delete all existing issues in the file
-    if (firstAnalysis) {
+    if (isFirstAnalysis) {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
       storePerFile.put(file, rawIssues);
+      firstAnalysis.put(file, true);
     } else {
       matchWithPreviousIssues(file, rawIssues);
+      firstAnalysis.remove(file);
     }
+  }
+
+  public boolean isFirstAnalysis(VirtualFile file) {
+    return firstAnalysis.containsKey(file);
   }
 
   public void matchWithPreviousIssues(VirtualFile file, Collection<LocalIssuePointer> rawIssues) {
@@ -154,12 +159,6 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   public void matchWithServerIssues(VirtualFile file, final Collection<IssuePointer> serverIssues) {
-    if (!storePerFile.containsKey(file)) {
-      // server issue gone, or file was renamed locally
-      // TODO add support to track renamed files (or explain why not)
-      return;
-    }
-
     matchingInProgress.lock();
     Collection<LocalIssuePointer> previousIssues = getForFile(file);
     Input<IssuePointer> baseInput = () -> serverIssues;

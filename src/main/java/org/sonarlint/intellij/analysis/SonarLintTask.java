@@ -24,12 +24,17 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.List;
+import java.util.Set;
+import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintJobManager.class);
@@ -109,10 +114,13 @@ public class SonarLintTask extends Task.Backgroundable {
 
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);
-      indicator.setText("Creating SonarLint issues: " + listener.getIssues().size());
 
-      processor.process(job, listener.getIssues(), result.failedAnalysisFiles());
+      List<Issue> issues = listener.getIssues();
+      indicator.setText("Creating SonarLint issues: " + issues.size());
 
+      processor.process(job, issues, result.failedAnalysisFiles());
+
+      trackServerIssues(job.files());
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {
@@ -122,6 +130,18 @@ public class SonarLintTask extends Task.Backgroundable {
       }
     } finally {
       stopRun(job);
+    }
+  }
+
+  private void trackServerIssues(Set<VirtualFile> files) {
+    Project project = job.module().getProject();
+    ServerIssueUpdater serverIssueUpdater = SonarLintUtils.get(project, ServerIssueUpdater.class);
+    IssueStore issueStore = SonarLintUtils.get(project, IssueStore.class);
+
+    for (VirtualFile file : files) {
+      if (issueStore.isFirstAnalysis(file)) {
+        serverIssueUpdater.trackServerIssues(file);
+      }
     }
   }
 

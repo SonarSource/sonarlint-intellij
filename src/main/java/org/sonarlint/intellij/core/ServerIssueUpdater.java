@@ -55,11 +55,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     this.store = store;
   }
 
-  public void trackServerIssues(Set<VirtualFile> virtualFiles) {
-    virtualFiles.forEach(this::trackServerIssues);
-  }
-
-  private void trackServerIssues(VirtualFile virtualFile) {
+  public void trackServerIssues(VirtualFile virtualFile) {
     SonarLintProjectSettings projectSettings = SonarLintUtils.get(myProject, SonarLintProjectSettings.class);
     if (!projectSettings.isBindingEnabled()) {
       // not in connected mode
