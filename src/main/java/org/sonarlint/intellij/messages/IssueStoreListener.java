@@ -23,7 +23,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
 import java.util.Collection;
 import java.util.Map;
-import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 
 public interface IssueStoreListener {

@@ -60,7 +60,6 @@ import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
-import org.sonarlint.intellij.issue.IssuePointer;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.messages.IssueStoreListener;
