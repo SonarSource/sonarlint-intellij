@@ -97,6 +97,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     try {
       return engine.downloadServerIssues(moduleKey, relativePath);
     } catch (SonarLintWrappedException e) {
+      SonarLintConsole.get(myProject).error("could not download server issues", e);
       // download failed, fall back to local storage, if exists
       return engine.getServerIssues(moduleKey, relativePath);
     } catch (Throwable t) {
