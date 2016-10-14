@@ -56,7 +56,7 @@ public class ServerIssuePointer implements IssuePointer {
 
   @Override
   public Long getCreationDate() {
-    return serverIssue.creationDate().getEpochSecond();
+    return serverIssue.creationDate().getEpochSecond() * 1000;
   }
 
   @Override
