@@ -62,6 +62,7 @@ public class IssueStore extends AbstractProjectComponent {
 
   public void clear() {
     storePerFile.clear();
+    firstAnalysis.clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
   }
 
@@ -91,6 +92,7 @@ public class IssueStore extends AbstractProjectComponent {
 
   public void clearFile(VirtualFile file) {
     storePerFile.remove(file);
+    firstAnalysis.remove(file);
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(Collections.singletonMap(file, Collections.emptyList()));
   }
 
