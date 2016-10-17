@@ -190,6 +190,27 @@ public class IssueStoreTest extends SonarTest {
   }
 
   @Test
+  public void testTracking_should_update_server_issue() {
+    store.clear();
+
+    LocalIssuePointer issue = createRangeStoredIssue(1, "issue 1", 10);
+    issue.setServerIssueKey("dummyServerIssueKey");
+    store.store(file1, Collections.singletonList(issue));
+
+    issue.setResolved(true);
+    String newAssignee = "newAssignee";
+    issue.setAssignee(newAssignee);
+    store.store(file1, Collections.singletonList(issue));
+
+    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+
+    LocalIssuePointer issuePointer = fileIssues.iterator().next();
+    assertThat(issuePointer.isResolved()).isTrue();
+    assertThat(issuePointer.getAssignee()).isEqualTo(newAssignee);
+  }
+
+  @Test
   public void testClearFile() {
     store.clearFile(file1);
 
