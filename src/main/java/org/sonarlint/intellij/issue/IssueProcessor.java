@@ -28,6 +28,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
+import org.sonarlint.intellij.core.ServerIssueUpdater;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -47,26 +49,37 @@ public class IssueProcessor extends AbstractProjectComponent {
   private final DaemonCodeAnalyzer codeAnalyzer;
   private final IssueStore store;
   private final SonarLintConsole console;
+  private final ServerIssueUpdater serverIssueUpdater;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueStore store) {
+  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueStore store, ServerIssueUpdater serverIssueUpdater) {
     super(project);
     this.matcher = matcher;
     this.codeAnalyzer = codeAnalyzer;
     this.store = store;
     this.console = SonarLintConsole.get(project);
+    this.serverIssueUpdater = serverIssueUpdater;
   }
 
-  public void process(final SonarLintJobManager.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<IssuePointer>> map;
+  public void process(final SonarLintJobManager.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles, TriggerType trigger) {
+    Map<VirtualFile, Collection<LocalIssuePointer>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
       map = transformIssues(issues, job.files(), failedAnalysisFiles);
+
+      Set<VirtualFile> notAnalyzed =
+        job.files().stream().filter(store::containsFile).collect(Collectors.toSet());
+
       store.store(map);
-      // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
-      for (PsiFile psiFile : getPsi(job.files())) {
-        codeAnalyzer.restart(psiFile);
+
+      for (VirtualFile file : job.files()) {
+        if (shouldUpdateServerIssues(file, trigger, notAnalyzed)) {
+          serverIssueUpdater.fetchAndMatchServerIssues(file);
+        }
       }
+
+      // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
+      getPsi(job.files()).forEach(codeAnalyzer::restart);
     } finally {
       // closeable only introduced in 2016.2
       token.finish();
@@ -84,11 +97,19 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.info("Found " + issues.size() + end);
   }
 
+  private boolean shouldUpdateServerIssues(VirtualFile file, TriggerType trigger, Set<VirtualFile> notAnalyzed) {
+    return trigger == TriggerType.EDITOR_OPEN
+      || trigger == TriggerType.ACTION
+      || (!store.getForFile(file).isEmpty() && notAnalyzed.contains(file));
+  }
+
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<IssuePointer>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<IssuePointer>> map = new HashMap<>();
+  private Map<VirtualFile, Collection<LocalIssuePointer>> transformIssues(
+    Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
+
+    Map<VirtualFile, Collection<LocalIssuePointer>> map = new HashMap<>();
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
     for(VirtualFile f : analysed) {
@@ -113,7 +134,7 @@ public class IssueProcessor extends AbstractProjectComponent {
           continue;
         }
         PsiFile psiFile = matcher.findFile(vFile);
-        IssuePointer toStore = matcher.match(psiFile, i);
+        LocalIssuePointer toStore = matcher.match(psiFile, i);
         map.get(psiFile.getVirtualFile()).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue", e);

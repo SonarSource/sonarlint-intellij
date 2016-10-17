@@ -23,21 +23,21 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
@@ -49,20 +49,20 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
  */
 public class TreeModelBuilder {
   private static final List<String> SEVERITY_ORDER = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
-  private static final Comparator<IssuePointer> ISSUE_COMPARATOR = new IssueComparator();
+  private static final Comparator<LocalIssuePointer> ISSUE_COMPARATOR = new IssueComparator();
 
   private DefaultTreeModel model;
   private SummaryNode summary;
   private IssueTreeIndex index;
-  private Condition<VirtualFile> condition;
+  private Predicate<VirtualFile> filePredicate;
 
   public TreeModelBuilder() {
     this.index = new IssueTreeIndex();
   }
 
-  public void updateFiles(Map<VirtualFile, Collection<IssuePointer>> issuesPerFile) {
-    for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : issuesPerFile.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue(), condition);
+  public void updateFiles(Map<VirtualFile, Collection<LocalIssuePointer>> issuesPerFile) {
+    for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : issuesPerFile.entrySet()) {
+      setFileIssues(e.getKey(), e.getValue(), filePredicate);
     }
 
     model.nodeChanged(summary);
@@ -187,8 +187,8 @@ public class TreeModelBuilder {
     return summary;
   }
 
-  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<IssuePointer>> map, @Nullable Condition<VirtualFile> condition) {
-    this.condition = condition;
+  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LocalIssuePointer>> map, Predicate<VirtualFile> filePredicate) {
+    this.filePredicate = filePredicate;
 
     List<VirtualFile> toRemove = new LinkedList<>();
     for (VirtualFile f : index.getAllFiles()) {
@@ -199,20 +199,21 @@ public class TreeModelBuilder {
 
     toRemove.forEach(this::removeFile);
 
-    for (Map.Entry<VirtualFile, Collection<IssuePointer>> e : map.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue(), condition);
+    for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : map.entrySet()) {
+      setFileIssues(e.getKey(), e.getValue(), filePredicate);
     }
 
     return model;
   }
 
-  private FileNode setFileIssues(VirtualFile file, Iterable<IssuePointer> issues, @Nullable Condition<VirtualFile> condition) {
+  @CheckForNull
+  private FileNode setFileIssues(VirtualFile file, Iterable<LocalIssuePointer> issues, Predicate<VirtualFile> condition) {
     if (!accept(file, condition)) {
       removeFile(file);
       return null;
     }
 
-    List<IssuePointer> filtered = filter(issues);
+    List<LocalIssuePointer> filtered = filter(issues);
     if (filtered.isEmpty()) {
       removeFile(file);
       return null;
@@ -250,49 +251,34 @@ public class TreeModelBuilder {
     }
   }
 
-  private static void setIssues(FileNode node, Iterable<IssuePointer> issuePointers) {
+  private static void setIssues(FileNode node, Iterable<LocalIssuePointer> issuePointers) {
     node.removeAllChildren();
 
     // 15ms for 500 issues -> to improve?
-    TreeSet<IssuePointer> set = new TreeSet<>(ISSUE_COMPARATOR);
+    TreeSet<LocalIssuePointer> set = new TreeSet<>(ISSUE_COMPARATOR);
 
-    for (IssuePointer issue : issuePointers) {
+    for (LocalIssuePointer issue : issuePointers) {
       set.add(issue);
     }
 
-    for (IssuePointer issue : set) {
+    for (LocalIssuePointer issue : set) {
       IssueNode iNode = new IssueNode(issue);
       node.add(iNode);
     }
   }
 
-  private static List<IssuePointer> filter(Iterable<IssuePointer> issues) {
-    List<IssuePointer> filtered = new ArrayList<>();
-    for (IssuePointer ip : issues) {
-      if (!accept(ip)) {
-        continue;
-      }
-
-      filtered.add(ip);
-    }
-
-    return filtered;
+  private static List<LocalIssuePointer> filter(Iterable<LocalIssuePointer> issues) {
+    return StreamSupport.stream(issues.spliterator(),false)
+      .filter(TreeModelBuilder::accept)
+      .collect(Collectors.toList());
   }
 
-  private static boolean accept(IssuePointer issue) {
-    return issue.isValid();
+  private static boolean accept(LocalIssuePointer issue) {
+    return !issue.isResolved() && issue.isValid();
   }
 
-  private static boolean accept(VirtualFile file, @Nullable Condition<VirtualFile> condition) {
-    if (!file.isValid()) {
-      return false;
-    }
-
-    if (condition == null) {
-      return true;
-    }
-
-    return condition.value(file);
+  private static boolean accept(VirtualFile file, Predicate<VirtualFile> condition) {
+    return file.isValid() && condition.test(file);
   }
 
   private static class FileNodeComparator implements Comparator<FileNode> {
@@ -306,10 +292,10 @@ public class TreeModelBuilder {
     }
   }
 
-  static class IssueComparator implements Comparator<IssuePointer> {
-    @Override public int compare(@Nonnull IssuePointer o1, @Nonnull IssuePointer o2) {
+  static class IssueComparator implements Comparator<LocalIssuePointer> {
+    @Override public int compare(@Nonnull LocalIssuePointer o1, @Nonnull LocalIssuePointer o2) {
       Ordering<Long> creationDateOrdering = Ordering.natural().reverse().nullsLast();
-      int dateCompare = creationDateOrdering.compare(o1.creationDate(), o2.creationDate());
+      int dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
 
       if (dateCompare != 0) {
         return dateCompare;

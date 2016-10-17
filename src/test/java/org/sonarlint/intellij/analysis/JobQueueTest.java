@@ -29,6 +29,7 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -66,7 +67,7 @@ public class JobQueueTest {
 
   @Test(expected = IllegalArgumentException.class)
   public void dontAnalyzeEmpty() throws JobQueue.NoCapacityException {
-    queue.queue(new SonarLintJobManager.SonarLintJob(module, Collections.emptySet()));
+    queue.queue(new SonarLintJobManager.SonarLintJob(module, Collections.emptySet(), TriggerType.ACTION));
   }
 
   @Test
@@ -124,16 +125,16 @@ public class JobQueueTest {
       files.add(mock(VirtualFile.class));
     }
 
-    return new SonarLintJobManager.SonarLintJob(module, files);
+    return new SonarLintJobManager.SonarLintJob(module, files, TriggerType.ACTION);
   }
 
   private SonarLintJobManager.SonarLintJob createJobNewModule() {
     Module module = mock(Module.class);
     when(module.getProject()).thenReturn(project);
-    return new SonarLintJobManager.SonarLintJob(module, files);
+    return new SonarLintJobManager.SonarLintJob(module, files, TriggerType.ACTION);
   }
 
   private SonarLintJobManager.SonarLintJob createJob() {
-    return new SonarLintJobManager.SonarLintJob(module, files);
+    return new SonarLintJobManager.SonarLintJob(module, files, TriggerType.ACTION);
   }
 }

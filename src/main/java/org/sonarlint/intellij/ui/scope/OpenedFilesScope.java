@@ -23,9 +23,9 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
+import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -64,23 +64,20 @@ public class OpenedFilesScope extends IssueTreeScope {
 
     private void refreshCondition(@NotNull FileEditorManager editorManager) {
       VirtualFile[] openFiles = editorManager.getOpenFiles();
-      condition = new OpenedFileCondition(Arrays.asList(openFiles));
-
-      for (ScopeListener l : listeners) {
-        l.conditionChanged();
-      }
+      filePredicate = new OpenedFilePredicate(Arrays.asList(openFiles));
+      listeners.forEach(ScopeListener::conditionChanged);
     }
   }
 
-  private static class OpenedFileCondition implements Condition<VirtualFile> {
+  private static class OpenedFilePredicate implements Predicate<VirtualFile> {
     private final List<VirtualFile> openedFiles;
 
-    OpenedFileCondition(List<VirtualFile> openedFiles) {
+    OpenedFilePredicate(List<VirtualFile> openedFiles) {
       this.openedFiles = openedFiles;
     }
 
     @Override
-    public boolean value(VirtualFile virtualFile) {
+    public boolean test(VirtualFile virtualFile) {
       return openedFiles.contains(virtualFile);
     }
   }

@@ -74,7 +74,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
       SonarLintConsole.get(myProject).debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     }
 
-    SonarLintJob newJob = new SonarLintJob(m, files);
+    SonarLintJob newJob = new SonarLintJob(m, files, trigger);
     SonarLintJob nextJob;
 
     synchronized (lock) {
@@ -116,7 +116,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
       }
     }
 
-    final SonarLintJob job = new SonarLintJob(m, files);
+    final SonarLintJob job = new SonarLintJob(m, files, trigger);
     final SonarLintTask task = SonarLintTask.createForeground(processor, job);
     saveAndRun(task, job);
   }
@@ -171,13 +171,15 @@ public class SonarLintJobManager extends AbstractProjectComponent {
   public static class SonarLintJob {
     private final Module m;
     private final Set<VirtualFile> files;
+    private final TriggerType trigger;
     private final long creationTime;
 
-    SonarLintJob(Module m, Collection<VirtualFile> files) {
+    SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger) {
       this.m = m;
       // make sure that it is not immutable so that it can be changed later
       this.files = new HashSet<>();
       this.files.addAll(files);
+      this.trigger = trigger;
       this.creationTime = System.currentTimeMillis();
     }
 
@@ -194,6 +196,10 @@ public class SonarLintJobManager extends AbstractProjectComponent {
      */
     public Set<VirtualFile> files() {
       return files;
+    }
+
+    public TriggerType trigger() {
+      return trigger;
     }
   }
 }

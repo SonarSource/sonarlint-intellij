@@ -24,7 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.issue.IssuePointer;
+import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -64,7 +64,7 @@ public class TreeModelBuilderTest {
 
   @Test
   public void testNavigation() {
-    Map<VirtualFile, Collection<IssuePointer>> data = new HashMap<>();
+    Map<VirtualFile, Collection<LocalIssuePointer>> data = new HashMap<>();
 
     // ordering of files: name
     // ordering of issues: creation date (inverse), severity, ruleName, startLine
@@ -72,7 +72,7 @@ public class TreeModelBuilderTest {
     addFile(data, "file2", 2);
     addFile(data, "file3", 2);
 
-    treeBuilder.updateModel(data, null);
+    treeBuilder.updateModel(data, file -> true);
     IssueNode first = treeBuilder.getNextIssue((AbstractNode<?>) model.getRoot());
     assertNode(first, "file1", 1);
 
@@ -89,7 +89,7 @@ public class TreeModelBuilderTest {
 
   @Test
   public void testIssueComparator() {
-    List<IssuePointer> list = new ArrayList<>();
+    List<LocalIssuePointer> list = new ArrayList<>();
 
     list.add(mockIssuePointer("f1", 100, "rule1", "MAJOR", null));
     list.add(mockIssuePointer("f1", 100, "rule2", "MAJOR", 1000L));
@@ -97,7 +97,7 @@ public class TreeModelBuilderTest {
     list.add(mockIssuePointer("f1", 50, "rule4", "MINOR", null));
     list.add(mockIssuePointer("f1", 100, "rule5", "MAJOR", null));
 
-    List<IssuePointer> sorted = new ArrayList<>();
+    List<LocalIssuePointer> sorted = new ArrayList<>();
     sorted.addAll(list);
     Collections.sort(sorted, new TreeModelBuilder.IssueComparator());
 
@@ -111,14 +111,14 @@ public class TreeModelBuilderTest {
     assertThat(node.issue().issue().getRuleName()).isEqualTo("rule" + number);
   }
 
-  private void addFile(Map<VirtualFile, Collection<IssuePointer>> data, String fileName, int numIssues) {
+  private void addFile(Map<VirtualFile, Collection<LocalIssuePointer>> data, String fileName, int numIssues) {
     VirtualFile file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(fileName);
     when(file.isValid()).thenReturn(true);
 
     PsiFile psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
-    List<IssuePointer> issueList = new LinkedList<>();
+    List<LocalIssuePointer> issueList = new LinkedList<>();
 
     for (int i = 0; i < numIssues; i++) {
       issueList.add(mockIssuePointer(fileName, i, "rule" + i, "MAJOR", (long) i));
@@ -127,7 +127,7 @@ public class TreeModelBuilderTest {
     data.put(file, issueList);
   }
 
-  private static IssuePointer mockIssuePointer(String path, int startOffset, String rule, String severity, @Nullable Long creationDate) {
+  private static LocalIssuePointer mockIssuePointer(String path, int startOffset, String rule, String severity, @Nullable Long creationDate) {
     Issue issue = mock(Issue.class);
     PsiFile psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
@@ -138,7 +138,7 @@ public class TreeModelBuilderTest {
     when(issue.getSeverity()).thenReturn(severity);
     RangeMarker marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
-    IssuePointer ip = new IssuePointer(issue, psiFile);
+    LocalIssuePointer ip = new LocalIssuePointer(issue, psiFile);
     ip.setCreationDate(creationDate);
     return ip;
   }

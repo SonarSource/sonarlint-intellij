@@ -24,12 +24,14 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.List;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintJobManager.class);
@@ -109,9 +111,11 @@ public class SonarLintTask extends Task.Backgroundable {
 
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);
-      indicator.setText("Creating SonarLint issues: " + listener.getIssues().size());
 
-      processor.process(job, listener.getIssues(), result.failedAnalysisFiles());
+      List<Issue> issues = listener.getIssues();
+      indicator.setText("Creating SonarLint issues: " + issues.size());
+
+      processor.process(job, issues, result.failedAnalysisFiles(), job.trigger());
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {

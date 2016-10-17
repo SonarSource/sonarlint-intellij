@@ -42,6 +42,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -303,6 +304,13 @@ public class SonarLintUtils {
       return "1 " + singular + " ago";
     }
     return strictlyPositiveCount + " " + plural + " ago";
+  }
+
+  public static String getRelativePath(Project project, VirtualFile virtualFile) {
+    if (project.getBasePath() == null) {
+      throw new IllegalStateException("no base path in default project");
+    }
+    return Paths.get(project.getBasePath()).relativize(Paths.get(virtualFile.getPath())).toString();
   }
 
 }
