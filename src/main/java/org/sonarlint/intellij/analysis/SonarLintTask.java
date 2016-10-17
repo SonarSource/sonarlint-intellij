@@ -141,7 +141,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
     for (VirtualFile file : files) {
       if (issueStore.isFirstAnalysis(file) || trigger == TriggerType.EDITOR_OPEN) {
-        serverIssueUpdater.trackServerIssues(file);
+        serverIssueUpdater.fetchAndMatchServerIssues(file);
       }
     }
   }
