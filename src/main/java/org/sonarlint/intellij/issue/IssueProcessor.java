@@ -100,7 +100,7 @@ public class IssueProcessor extends AbstractProjectComponent {
   private boolean shouldTrackServerIssues(VirtualFile file, TriggerType trigger, Set<VirtualFile> notAnalyzed) {
     return trigger == TriggerType.EDITOR_OPEN
       || trigger == TriggerType.ACTION
-      || !store.getForFile(file).isEmpty() && notAnalyzed.contains(file);
+      || (!store.getForFile(file).isEmpty() && notAnalyzed.contains(file));
   }
 
   /**
