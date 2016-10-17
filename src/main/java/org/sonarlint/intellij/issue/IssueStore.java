@@ -150,7 +150,7 @@ public class IssueStore extends AbstractProjectComponent {
     return firstAnalysis.containsKey(file);
   }
 
-  public void matchWithPreviousIssues(VirtualFile file, Collection<LocalIssuePointer> rawIssues) {
+  private void matchWithPreviousIssues(VirtualFile file, Collection<LocalIssuePointer> rawIssues) {
     matchingInProgress.lock();
     Collection<LocalIssuePointer> previousIssues = getForFile(file);
     Input<LocalIssuePointer> baseInput = () -> previousIssues;
