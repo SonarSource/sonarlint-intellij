@@ -28,9 +28,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -49,6 +52,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(ServerIssueUpdater.class);
 
   private static final int THREADS_NUM = 5;
+  private static final int QUEUE_LIMIT = 20;
 
   private ExecutorService executorService;
 
@@ -124,7 +128,12 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   @Override
   public void initComponent() {
-    this.executorService = Executors.newFixedThreadPool(THREADS_NUM);
+    // Equivalent to Executors.newFixedThreadPool(THREADS_NUM), but instead of the default unlimited LinkedBlockingQueue,
+    // we use ArrayBlockingQueue with a cap. This means that if QUEUE_LIMIT tasks are already queued (and THREADS_NUM being executed),
+    // new tasks will be rejected with RejectedExecutionException.
+    // http://www.nurkiewicz.com/2014/11/executorservice-10-tips-and-tricks.html
+    final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_LIMIT);
+    this.executorService = new ThreadPoolExecutor(THREADS_NUM, THREADS_NUM, 0L, TimeUnit.MILLISECONDS, queue);
   }
 
   @Override
