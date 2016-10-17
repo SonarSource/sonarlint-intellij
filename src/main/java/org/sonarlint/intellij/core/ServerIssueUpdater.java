@@ -23,7 +23,6 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -79,7 +78,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
     ConnectedSonarLintEngine engine = SonarLintUtils.get(SonarLintServerManager.class).getConnectedEngine(serverId);
 
-    String relativePath = getRelativePath(virtualFile);
+    String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
 
     fetchAndMatchServerIssues(virtualFile, engine, moduleKey, relativePath);
   }
@@ -117,13 +116,6 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       SonarLintConsole.get(myProject).error("could not get server issues", t);
       return Collections.emptyIterator();
     }
-  }
-
-  private String getRelativePath(VirtualFile virtualFile) {
-    if (myProject.getBasePath() == null) {
-      throw new IllegalStateException("no base path in default project");
-    }
-    return Paths.get(myProject.getBasePath()).relativize(Paths.get(virtualFile.getPath())).toString();
   }
 
   @Override
