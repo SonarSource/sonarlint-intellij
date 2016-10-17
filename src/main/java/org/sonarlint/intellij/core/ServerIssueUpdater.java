@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
@@ -123,8 +124,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   @Override
   public void disposeComponent() {
-    // interrupt running tasks, return scheduled tasks (which we simply drop)
-    // TODO make the tasks responsive to interrupts and abort gracefully
-    executorService.shutdownNow();
+    List<Runnable> rejected = executorService.shutdownNow();
+    if (!rejected.isEmpty()) {
+      LOGGER.debug("rejected " + rejected.size() + " pending tasks");
+    }
   }
 }
