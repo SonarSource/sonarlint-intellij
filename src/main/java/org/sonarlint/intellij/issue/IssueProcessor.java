@@ -73,7 +73,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       store.store(map);
 
       for (VirtualFile file : job.files()) {
-        if (shouldTrackServerIssues(file, trigger, notAnalyzed)) {
+        if (shouldUpdateServerIssues(file, trigger, notAnalyzed)) {
           serverIssueUpdater.fetchAndMatchServerIssues(file);
         }
       }
@@ -97,7 +97,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.info("Found " + issues.size() + end);
   }
 
-  private boolean shouldTrackServerIssues(VirtualFile file, TriggerType trigger, Set<VirtualFile> notAnalyzed) {
+  private boolean shouldUpdateServerIssues(VirtualFile file, TriggerType trigger, Set<VirtualFile> notAnalyzed) {
     return trigger == TriggerType.EDITOR_OPEN
       || trigger == TriggerType.ACTION
       || (!store.getForFile(file).isEmpty() && notAnalyzed.contains(file));
