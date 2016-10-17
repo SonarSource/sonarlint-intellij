@@ -79,7 +79,6 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private void fetchAndMatchServerIssues(VirtualFile virtualFile, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
-    // TODO make it possible to cancel
     this.executorService.submit(() -> {
       Iterator<ServerIssue> serverIssues = fetchServerIssues(engine, moduleKey, relativePath);
 
