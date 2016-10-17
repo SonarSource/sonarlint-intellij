@@ -90,7 +90,7 @@ public class SonarLintTaskTest extends SonarTest {
     task.run(progress);
 
     verify(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
-    verify(processor).process(job, new ArrayList<>(), new ArrayList<>());
+    verify(processor).process(job, new ArrayList<>(), new ArrayList<>(), job.trigger());
     verify(listener).ended(job);
 
     verifyNoMoreInteractions(configurator);

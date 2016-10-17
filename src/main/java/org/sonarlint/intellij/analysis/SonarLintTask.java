@@ -25,12 +25,9 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
-import java.util.Set;
-import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
-import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -118,9 +115,7 @@ public class SonarLintTask extends Task.Backgroundable {
       List<Issue> issues = listener.getIssues();
       indicator.setText("Creating SonarLint issues: " + issues.size());
 
-      processor.process(job, issues, result.failedAnalysisFiles());
-
-      trackServerIssues(job.files(), job.trigger());
+      processor.process(job, issues, result.failedAnalysisFiles(), job.trigger());
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {
@@ -130,17 +125,6 @@ public class SonarLintTask extends Task.Backgroundable {
       }
     } finally {
       stopRun(job);
-    }
-  }
-
-  private void trackServerIssues(Set<VirtualFile> files, TriggerType trigger) {
-    Project project = job.module().getProject();
-    ServerIssueUpdater serverIssueUpdater = SonarLintUtils.get(project, ServerIssueUpdater.class);
-
-    for (VirtualFile file : files) {
-      if (trigger == TriggerType.ACTION || trigger == TriggerType.EDITOR_OPEN) {
-        serverIssueUpdater.fetchAndMatchServerIssues(file);
-      }
     }
   }
 
