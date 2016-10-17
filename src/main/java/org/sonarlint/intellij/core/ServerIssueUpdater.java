@@ -71,8 +71,13 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
     String serverId = projectSettings.getServerId();
     String moduleKey = projectSettings.getProjectKey();
-    if (serverId == null || moduleKey == null) {
-      // not bound to SQ project
+    if (serverId == null) {
+      SonarLintProjectNotifications.get(myProject).notifyServerIdInvalid();
+      return;
+    }
+
+    if (moduleKey == null) {
+      SonarLintProjectNotifications.get(myProject).notifyModuleInvalid();
       return;
     }
 
