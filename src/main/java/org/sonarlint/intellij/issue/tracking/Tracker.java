@@ -33,7 +33,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     Tracking<RAW, BASE> tracking = new Tracking<>(rawInput, baseInput);
 
     // 1. match issues with same server issue key
-    match(tracking, ServerIssueKeyFactory.INSTANCE);
+    match(tracking, ServerIssueSearchKeyFactory.INSTANCE);
 
     // 2. match issues with same rule, same line and same line hash, but not necessarily with same message
     match(tracking, LineAndLineHashKeyFactory.INSTANCE);
@@ -269,10 +269,10 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
   }
 
-  private static class ServerIssueKey implements SearchKey {
+  private static class ServerIssueSearchKey implements SearchKey {
     private final String serverIssueKey;
 
-    ServerIssueKey(Trackable trackable) {
+    ServerIssueSearchKey(Trackable trackable) {
       serverIssueKey = trackable.getServerIssueKey();
     }
 
@@ -285,7 +285,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
         return false;
       }
 
-      ServerIssueKey that = (ServerIssueKey) o;
+      ServerIssueSearchKey that = (ServerIssueSearchKey) o;
 
       return Objects.equals(serverIssueKey, that.serverIssueKey);
     }
@@ -296,12 +296,12 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
   }
 
-  private enum ServerIssueKeyFactory implements SearchKeyFactory {
+  private enum ServerIssueSearchKeyFactory implements SearchKeyFactory {
     INSTANCE;
 
     @Override
     public SearchKey create(Trackable trackable) {
-      return new ServerIssueKey(trackable);
+      return new ServerIssueSearchKey(trackable);
     }
   }
 }
