@@ -40,7 +40,7 @@ public class LocalIssuePointer implements IssuePointer {
   private Long creationDate;
   private String serverIssueKey;
   private boolean resolved;
-  public String assignee;
+  private String assignee;
 
   public LocalIssuePointer(Issue issue, PsiFile psiFile) {
     this(issue, psiFile, null);
@@ -81,7 +81,9 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   @Override
-  public String getAssignee() { return assignee; }
+  public String getAssignee() {
+    return assignee;
+  }
 
   @Override
   public String getMessage() {
