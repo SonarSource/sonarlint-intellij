@@ -27,7 +27,9 @@ import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueProcessor;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -71,6 +73,8 @@ public class SonarLintTaskTest extends SonarTest {
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
     super.register(SonarLintAnalyzer.class, configurator);
     super.register(SonarLintConsole.class, console);
+    super.register(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
+    super.register(IssueStore.class, mock(IssueStore.class));
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();
