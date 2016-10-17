@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -80,7 +81,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private void fetchAndMatchServerIssues(VirtualFile virtualFile, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
-    this.executorService.submit(() -> {
+    Runnable task = () -> {
       Iterator<ServerIssue> serverIssues = fetchServerIssues(engine, moduleKey, relativePath);
 
       Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
@@ -88,7 +89,12 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       if (!serverIssuePointers.isEmpty()) {
         store.matchWithServerIssues(virtualFile, serverIssuePointers);
       }
-    });
+    };
+    try {
+      this.executorService.submit(task);
+    } catch (RejectedExecutionException e) {
+      LOGGER.debug("fetch and match server issues rejected for moduleKey=" + moduleKey + ", filepath=" + relativePath, e);
+    }
   }
 
   private static <T> Stream<T> toStream(Iterator<T> iterator) {
