@@ -66,8 +66,8 @@ public class IssueStore extends AbstractProjectComponent {
   private long getNumberIssues() {
     long count = 0;
 
-    for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> entry : storePerFile.entrySet()) {
-      count += entry.getValue().size();
+    for (Collection<LocalIssuePointer> issuePointers : storePerFile.values()) {
+      count += issuePointers.size();
     }
 
     return count;
