@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Paths;
@@ -42,6 +43,8 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 import org.sonarsource.sonarlint.core.client.api.exceptions.SonarLintWrappedException;
 
 public class ServerIssueUpdater extends AbstractProjectComponent {
+
+  private static final Logger LOGGER = Logger.getInstance(ServerIssueUpdater.class);
 
   private static final int THREADS_NUM = 5;
 
@@ -95,6 +98,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   private Iterator<ServerIssue> fetchServerIssues(ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
     try {
+      LOGGER.debug("fetchServerIssues moduleKey=" + moduleKey + ", filepath=" + relativePath);
       return engine.downloadServerIssues(moduleKey, relativePath);
     } catch (SonarLintWrappedException e) {
       SonarLintConsole.get(myProject).error("could not download server issues", e);
