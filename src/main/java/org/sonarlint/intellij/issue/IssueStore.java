@@ -48,7 +48,6 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
 public class IssueStore extends AbstractProjectComponent {
   private static final long THRESHOLD = 10_000;
   private final Map<VirtualFile, Collection<LocalIssuePointer>> storePerFile;
-  private final Map<VirtualFile, Boolean> firstAnalysis;
   private final MessageBus messageBus;
 
   private final Lock matchingInProgress = new ReentrantLock();
@@ -56,13 +55,11 @@ public class IssueStore extends AbstractProjectComponent {
   public IssueStore(Project project) {
     super(project);
     this.storePerFile = new ConcurrentHashMap<>();
-    this.firstAnalysis = new ConcurrentHashMap<>();
     this.messageBus = project.getMessageBus();
   }
 
   public void clear() {
     storePerFile.clear();
-    firstAnalysis.clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
   }
 
@@ -92,7 +89,6 @@ public class IssueStore extends AbstractProjectComponent {
 
   void clearFile(VirtualFile file) {
     storePerFile.remove(file);
-    firstAnalysis.remove(file);
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(Collections.singletonMap(file, Collections.emptyList()));
   }
 
@@ -130,24 +126,18 @@ public class IssueStore extends AbstractProjectComponent {
   }
 
   void store(VirtualFile file, final Collection<LocalIssuePointer> rawIssues) {
-    boolean isFirstAnalysis = !storePerFile.containsKey(file);
+    boolean firstAnalysis = !storePerFile.containsKey(file);
 
     // clean before issue tracking
     cleanInvalid(file);
 
     // this will also delete all existing issues in the file
-    if (isFirstAnalysis) {
+    if (firstAnalysis) {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
       storePerFile.put(file, rawIssues);
-      firstAnalysis.put(file, true);
     } else {
       matchWithPreviousIssues(file, rawIssues);
-      firstAnalysis.remove(file);
     }
-  }
-
-  public boolean isFirstAnalysis(VirtualFile file) {
-    return firstAnalysis.containsKey(file);
   }
 
   private void matchWithPreviousIssues(VirtualFile file, Collection<LocalIssuePointer> rawIssues) {

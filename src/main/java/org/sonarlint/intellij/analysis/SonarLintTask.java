@@ -29,7 +29,6 @@ import java.util.Set;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
-import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -137,10 +136,9 @@ public class SonarLintTask extends Task.Backgroundable {
   private void trackServerIssues(Set<VirtualFile> files, TriggerType trigger) {
     Project project = job.module().getProject();
     ServerIssueUpdater serverIssueUpdater = SonarLintUtils.get(project, ServerIssueUpdater.class);
-    IssueStore issueStore = SonarLintUtils.get(project, IssueStore.class);
 
     for (VirtualFile file : files) {
-      if (issueStore.isFirstAnalysis(file) || trigger == TriggerType.EDITOR_OPEN) {
+      if (trigger == TriggerType.ACTION || trigger == TriggerType.EDITOR_OPEN) {
         serverIssueUpdater.fetchAndMatchServerIssues(file);
       }
     }
