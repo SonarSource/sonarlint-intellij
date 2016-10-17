@@ -31,6 +31,7 @@ import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -114,6 +115,6 @@ public class SonarLintTaskTest extends SonarTest {
   }
 
   private SonarLintJobManager.SonarLintJob createJob() {
-    return new SonarLintJobManager.SonarLintJob(module, files);
+    return new SonarLintJobManager.SonarLintJob(module, files, TriggerType.ACTION);
   }
 }

@@ -31,6 +31,7 @@ import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -120,7 +121,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
       processor.process(job, issues, result.failedAnalysisFiles());
 
-      trackServerIssues(job.files());
+      trackServerIssues(job.files(), job.trigger());
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {
@@ -133,13 +134,13 @@ public class SonarLintTask extends Task.Backgroundable {
     }
   }
 
-  private void trackServerIssues(Set<VirtualFile> files) {
+  private void trackServerIssues(Set<VirtualFile> files, TriggerType trigger) {
     Project project = job.module().getProject();
     ServerIssueUpdater serverIssueUpdater = SonarLintUtils.get(project, ServerIssueUpdater.class);
     IssueStore issueStore = SonarLintUtils.get(project, IssueStore.class);
 
     for (VirtualFile file : files) {
-      if (issueStore.isFirstAnalysis(file)) {
+      if (issueStore.isFirstAnalysis(file) || trigger == TriggerType.EDITOR_OPEN) {
         serverIssueUpdater.trackServerIssues(file);
       }
     }
