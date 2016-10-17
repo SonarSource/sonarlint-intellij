@@ -166,6 +166,9 @@ public class IssueStore extends AbstractProjectComponent {
     Input<LocalIssuePointer> rawInput = () -> previousIssues;
     updateTrackedIssues(file, baseInput, rawInput);
     matchingInProgress.unlock();
+
+    Map<VirtualFile, Collection<LocalIssuePointer>> map = Collections.singletonMap(file, storePerFile.get(file));
+    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
   }
 
   private <T extends IssuePointer> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LocalIssuePointer> rawInput) {
