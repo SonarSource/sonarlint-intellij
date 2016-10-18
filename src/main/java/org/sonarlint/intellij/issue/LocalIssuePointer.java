@@ -63,18 +63,15 @@ public class LocalIssuePointer implements IssuePointer {
     this.psiFile = psiFile;
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
+
     if (range != null) {
       Document document = range.getDocument();
       this.textRangeHash = checksum(document.getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
-      Integer line = getLine();
-      if (line != null) {
-        line--;
-        int lineStartOffset = document.getLineStartOffset(line);
-        int lineEndOffset = document.getLineEndOffset(line);
-        this.lineHash = checksum(document.getText(new TextRange(lineStartOffset, lineEndOffset)));
-      } else {
-        this.lineHash = null;
-      }
+
+      int line = range.getDocument().getLineNumber(range.getStartOffset());
+      int lineStartOffset = document.getLineStartOffset(line);
+      int lineEndOffset = document.getLineEndOffset(line);
+      this.lineHash = checksum(document.getText(new TextRange(lineStartOffset, lineEndOffset)));
     } else {
       this.textRangeHash = null;
       this.lineHash = null;
