@@ -24,7 +24,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -90,12 +89,17 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   private void fetchAndMatchServerIssues(VirtualFile virtualFile, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
     Runnable task = () -> {
-      Iterator<ServerIssue> serverIssues = fetchServerIssues(engine, moduleKey, relativePath);
+      try {
+        Iterator<ServerIssue> serverIssues = fetchServerIssues(engine, moduleKey, relativePath);
 
-      Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
+        Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
 
-      if (!serverIssuePointers.isEmpty()) {
-        store.matchWithServerIssues(virtualFile, serverIssuePointers);
+        if (!serverIssuePointers.isEmpty()) {
+          store.matchWithServerIssues(virtualFile, serverIssuePointers);
+        }
+      } catch (Throwable t) {
+        // note: without catching Throwable, any exceptions raised in the thread will not be visible
+        SonarLintConsole.get(myProject).error("error while fetching and matching server issues", t);
       }
     };
     try {
@@ -117,9 +121,6 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     } catch (SonarLintWrappedException e) {
       SonarLintConsole.get(myProject).error("could not download server issues", e);
       return engine.getServerIssues(moduleKey, relativePath);
-    } catch (Throwable t) {
-      SonarLintConsole.get(myProject).error("could not get server issues", t);
-      return Collections.emptyIterator();
     }
   }
 
