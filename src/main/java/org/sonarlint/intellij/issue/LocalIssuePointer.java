@@ -34,7 +34,7 @@ public class LocalIssuePointer implements IssuePointer {
   private final RangeMarker range;
   private final Issue issue;
   private final PsiFile psiFile;
-  private final Integer checksum;
+  private final Integer textRangeHash;
 
   // tracked fields (mutable)
   private Long creationDate;
@@ -53,9 +53,9 @@ public class LocalIssuePointer implements IssuePointer {
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
     if (range != null) {
-      this.checksum = checksum(range.getDocument().getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
+      this.textRangeHash = checksum(range.getDocument().getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
     } else {
-      this.checksum = null;
+      this.textRangeHash = null;
     }
   }
 
@@ -91,8 +91,8 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   @Override
-  public Integer getLineHash() {
-    return checksum;
+  public Integer getTextRangeHash() {
+    return textRangeHash;
   }
 
   @Override

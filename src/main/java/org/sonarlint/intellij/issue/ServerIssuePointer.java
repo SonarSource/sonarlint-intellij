@@ -40,8 +40,8 @@ public class ServerIssuePointer implements IssuePointer {
   }
 
   @Override
-  public Integer getLineHash() {
-    return serverIssue.checksum().hashCode();
+  public Integer getTextRangeHash() {
+    return null;
   }
 
   @Override

@@ -93,7 +93,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     LineAndLineHashKey(Trackable trackable) {
       this.ruleKey = trackable.getRuleKey();
       this.line = trackable.getLine();
-      this.lineHash = trackable.getLineHash();
+      this.lineHash = trackable.getTextRangeHash();
     }
 
     @Override
@@ -140,7 +140,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     LineHashAndMessageKey(Trackable trackable) {
       this.ruleKey = trackable.getRuleKey();
       this.message = trackable.getMessage();
-      this.lineHash = trackable.getLineHash();
+      this.lineHash = trackable.getTextRangeHash();
     }
 
     @Override
@@ -232,7 +232,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
     LineHashKey(Trackable trackable) {
       this.ruleKey = trackable.getRuleKey();
-      this.lineHash = trackable.getLineHash();
+      this.lineHash = trackable.getTextRangeHash();
     }
 
     @Override
