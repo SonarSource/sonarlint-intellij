@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import javax.annotation.Nullable;
 
 public class Tracker<RAW extends Trackable, BASE extends Trackable> {
@@ -64,7 +65,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
     Map<SearchKey, List<BASE>> baseSearch = new HashMap<>();
     for (BASE base : tracking.getUnmatchedBases()) {
-      SearchKey searchKey = factory.create(base);
+      SearchKey searchKey = factory.apply(base);
       if (!baseSearch.containsKey(searchKey)) {
         baseSearch.put(searchKey, new ArrayList<>());
       }
@@ -72,7 +73,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
 
     for (RAW raw : tracking.getUnmatchedRaws()) {
-      SearchKey rawKey = factory.create(raw);
+      SearchKey rawKey = factory.apply(raw);
       Collection<BASE> bases = baseSearch.get(rawKey);
       if (bases != null && !bases.isEmpty()) {
         // TODO taking the first one. Could be improved if there are more than 2 issues on the same line.
@@ -87,8 +88,10 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
   private interface SearchKey {
   }
 
-  private interface SearchKeyFactory {
-    SearchKey create(Trackable trackable);
+  @FunctionalInterface
+  private interface SearchKeyFactory extends Function<Trackable, SearchKey> {
+    @Override
+    SearchKey apply(Trackable trackable);
   }
 
   private static class LineAndTextRangeHashKey implements SearchKey {
@@ -133,7 +136,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     INSTANCE;
 
     @Override
-    public SearchKey create(Trackable t) {
+    public SearchKey apply(Trackable t) {
       return new LineAndTextRangeHashKey(t);
     }
   }
@@ -180,7 +183,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     INSTANCE;
 
     @Override
-    public SearchKey create(Trackable t) {
+    public SearchKey apply(Trackable t) {
       return new LineAndLineHashKey(t);
     }
   }
@@ -223,7 +226,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     INSTANCE;
 
     @Override
-    public SearchKey create(Trackable t) {
+    public SearchKey apply(Trackable t) {
       return new LineHashKey(t);
     }
   }
@@ -270,7 +273,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     INSTANCE;
 
     @Override
-    public SearchKey create(Trackable t) {
+    public SearchKey apply(Trackable t) {
       return new TextRangeHashAndMessageKey(t);
     }
   }
@@ -317,7 +320,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     INSTANCE;
 
     @Override
-    public SearchKey create(Trackable t) {
+    public SearchKey apply(Trackable t) {
       return new LineAndMessageKey(t);
     }
   }
@@ -360,7 +363,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     INSTANCE;
 
     @Override
-    public SearchKey create(Trackable t) {
+    public SearchKey apply(Trackable t) {
       return new TextRangeHashKey(t);
     }
   }
@@ -396,7 +399,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     INSTANCE;
 
     @Override
-    public SearchKey create(Trackable trackable) {
+    public SearchKey apply(Trackable trackable) {
       return new ServerIssueSearchKey(trackable);
     }
   }
