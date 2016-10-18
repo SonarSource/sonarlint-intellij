@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -23,10 +22,10 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueCache extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueCache.class);
-  private final static int MAX_ENTRIES = 100;
-  private Map<VirtualFile, Collection<LocalIssuePointer>> cache;
-  private IssuePersistence store;
-  private IssueMatcher matcher;
+  final static int MAX_ENTRIES = 100;
+  private final Map<VirtualFile, Collection<LocalIssuePointer>> cache;
+  private final IssuePersistence store;
+  private final IssueMatcher matcher;
 
   public IssueCache(Project project, IssuePersistence store, IssueMatcher matcher) {
     super(project);
@@ -46,6 +45,10 @@ public class IssueCache extends AbstractProjectComponent {
 
     @Override
     protected boolean removeEldestEntry(Map.Entry<VirtualFile, Collection<LocalIssuePointer>> eldest) {
+      if(size() <= MAX_ENTRIES) {
+        return false;
+      }
+
       Sonarlint.Issues issues = transform(eldest.getValue());
       String key = createKey(eldest.getKey());
       try {
@@ -64,11 +67,16 @@ public class IssueCache extends AbstractProjectComponent {
    */
   @CheckForNull
   public Collection<LocalIssuePointer> read(VirtualFile virtualFile) {
-    return cache.getOrDefault(virtualFile, loadToCache(virtualFile));
+    Collection<LocalIssuePointer> issues = cache.get(virtualFile);
+    if (issues != null) {
+      return issues;
+    }
+
+    return loadToCache(virtualFile);
   }
 
   public void save(VirtualFile virtualFile, Collection<LocalIssuePointer> issues) {
-    cache.put(virtualFile, issues);
+    cache.put(virtualFile, Collections.unmodifiableCollection(issues));
   }
 
   /**
@@ -154,19 +162,19 @@ public class IssueCache extends AbstractProjectComponent {
 
   @CheckForNull
   private LocalIssuePointer transform(PsiFile file, Sonarlint.Issues.Issue issue) {
-    DefaultIssue i = new DefaultIssue();
-    i.setEndLine(issue.getEndLine());
-    i.setStartLine(issue.getStartLine());
-    i.setStartLineOffset(issue.getStartLineOffset());
-    i.setEndLineOffset(issue.getEndLineOffset());
+    DefaultIssue newIssue = new DefaultIssue();
+    newIssue.setEndLine(issue.getEndLine());
+    newIssue.setStartLine(issue.getStartLine());
+    newIssue.setStartLineOffset(issue.getStartLineOffset());
+    newIssue.setEndLineOffset(issue.getEndLineOffset());
 
-    i.setSeverity(issue.getSeverity());
-    i.setRuleKey(issue.getRuleKey());
-    i.setRuleName(issue.getRuleName());
-    i.setMessage(issue.getMessage());
+    newIssue.setSeverity(issue.getSeverity());
+    newIssue.setRuleKey(issue.getRuleKey());
+    newIssue.setRuleName(issue.getRuleName());
+    newIssue.setMessage(issue.getMessage());
 
     try {
-      LocalIssuePointer localIssue = matcher.match(file, i);
+      LocalIssuePointer localIssue = matcher.match(file, newIssue);
 
       localIssue.setAssignee(issue.getAssignee());
       localIssue.setResolved(issue.getResolved());
@@ -184,21 +192,30 @@ public class IssueCache extends AbstractProjectComponent {
       .setRuleKey(localIssue.getRuleKey())
       .setRuleName(localIssue.ruleName())
       .setAssignee(localIssue.getAssignee())
-      .setCreationDate(localIssue.getCreationDate())
       .setMessage(localIssue.getMessage())
       .setResolved(localIssue.isResolved())
       .setSeverity(localIssue.severity());
 
+    if(localIssue.getCreationDate() != null) {
+      builder.setCreationDate(localIssue.getCreationDate());
+    }
+    if(localIssue.getLineHash() != null) {
+      //TODO
+    }
+    if(localIssue.getServerIssueKey() != null) {
+      builder.setServerIssueKey(localIssue.getServerIssueKey());
+    }
+
     RangeMarker range = localIssue.range();
     if (range != null) {
-      Document doc = localIssue.range().getDocument();
+      Document doc = range.getDocument();
 
-      int startLine = doc.getLineNumber(localIssue.range().getStartOffset());
-      int endLine = doc.getLineNumber(localIssue.range().getEndOffset());
+      int startLine = doc.getLineNumber(range.getStartOffset());
+      int endLine = doc.getLineNumber(range.getEndOffset());
       builder.setStartLine(startLine)
         .setEndLine(endLine)
-        .setStartLineOffset(localIssue.range().getStartOffset() - doc.getLineStartOffset(startLine))
-        .setEndLineOffset(localIssue.range().getStartOffset() - doc.getLineStartOffset(startLine));
+        .setStartLineOffset(range.getStartOffset() - doc.getLineStartOffset(startLine))
+        .setEndLineOffset(range.getStartOffset() - doc.getLineStartOffset(startLine));
     }
     return builder.build();
   }

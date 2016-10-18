@@ -23,15 +23,13 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.issue.persistence.IssueCache;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -56,7 +54,8 @@ public class IssueStoreTest extends SonarTest {
     file2 = mock(VirtualFile.class);
     when(file1.isValid()).thenReturn(true);
     when(file2.isValid()).thenReturn(true);
-    store = new IssueStore(project);
+    IssueCache cache = mock(IssueCache.class);
+    store = new IssueStore(project, cache);
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
     issue2 = createRangeStoredIssue(2, "issue 2", 10);
@@ -211,14 +210,6 @@ public class IssueStoreTest extends SonarTest {
   }
 
   @Test
-  public void testClearFile() {
-    store.clearFile(file1);
-
-    assertThat(store.getForFile(file1)).isEmpty();
-    assertThat(store.getForFile(file2)).containsExactly(issue2);
-  }
-
-  @Test
   public void testClearAll() {
     store.clear();
 
@@ -241,31 +232,6 @@ public class IssueStoreTest extends SonarTest {
 
     assertThat(store.getForFile(file1)).containsExactly(issue2);
     assertThat(store.getForFile(file2)).containsExactly(issue1);
-  }
-
-  @Test
-  public void testClean() {
-    store.clean(file1);
-    //nothing should be removed
-    assertThat(store.getForFile(file1)).containsExactly(issue1);
-    assertThat(store.getForFile(file2)).containsExactly(issue2);
-
-
-    PsiFile psiFile = mock(PsiFile.class);
-    when(psiFile.isValid()).thenReturn(true);
-
-    //add a lot of issues
-    store.clear();
-
-    List<LocalIssuePointer> issueList = new ArrayList<>(10_001);
-    for (int i = 0; i < 10_001; i++) {
-      issueList.add(new LocalIssuePointer(SonarLintTestUtils.createIssue(i), psiFile, null));
-    }
-
-    store.store(file1, issueList);
-
-    store.clean(file1);
-    assertThat(store.getForFile(file1)).isEmpty();
   }
 
   private LocalIssuePointer createRangeStoredIssue(int id, String rangeContent, int line) {

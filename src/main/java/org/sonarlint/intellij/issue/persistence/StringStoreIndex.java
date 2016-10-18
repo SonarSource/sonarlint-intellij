@@ -10,10 +10,10 @@ import java.util.Collections;
 import java.util.Map;
 import org.sonarlint.intellij.proto.Sonarlint;
 
-public class StringStoreIndex implements StoreIndex<String> {
+class StringStoreIndex implements StoreIndex<String> {
   public static final String INDEX_FILENAME = "index.json";
   private final Path storeBasePath;
-  private Path indexFilePath;
+  private final Path indexFilePath;
 
   public StringStoreIndex(Path storeBasePath) {
     this.storeBasePath = storeBasePath;
@@ -21,7 +21,7 @@ public class StringStoreIndex implements StoreIndex<String> {
   }
 
   @Override
-  public Collection<String> allStorageKeys() {
+  public Collection<String> keys() {
     return load().keySet();
   }
 
@@ -37,8 +37,8 @@ public class StringStoreIndex implements StoreIndex<String> {
   }
 
   @Override
-  public void save(Path absoluteMappedPath, String storageKey) {
-    String relativeMappedPath = storeBasePath.relativize(absoluteMappedPath).toString();
+  public void save(String storageKey, Path path) {
+    String relativeMappedPath = storeBasePath.relativize(path).toString();
     Sonarlint.StorageIndex.Builder builder = Sonarlint.StorageIndex.newBuilder();
     builder.putAllMappedPathByKey(load());
     builder.putMappedPathByKey(storageKey, relativeMappedPath);

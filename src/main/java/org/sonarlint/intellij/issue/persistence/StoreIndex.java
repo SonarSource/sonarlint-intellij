@@ -3,10 +3,10 @@ package org.sonarlint.intellij.issue.persistence;
 import java.nio.file.Path;
 import java.util.Collection;
 
-public interface StoreIndex<T> {
-  Collection<T> allStorageKeys();
+interface StoreIndex<T> {
+  Collection<T> keys();
 
-  void save(Path absoluteMappedPath, T key);
+  void save(T key, Path path);
 
   void delete(T key);
 }

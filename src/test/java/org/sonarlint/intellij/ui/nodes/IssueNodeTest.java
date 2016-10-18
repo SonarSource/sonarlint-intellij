@@ -56,7 +56,7 @@ public class IssueNodeTest {
   @Test
   public void testHoursAndSeverity() throws IOException {
     LocalIssuePointer i = createIssue(System.currentTimeMillis() - 3600 * 1000, "rule");
-    when(i.issue().getSeverity()).thenReturn("MAJOR");
+    when(i.severity()).thenReturn("MAJOR");
     node = new IssueNode(i);
     node.render(renderer);
 

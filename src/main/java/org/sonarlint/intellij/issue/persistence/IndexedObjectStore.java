@@ -19,10 +19,13 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Optional;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.ObjectStore;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
@@ -36,17 +39,19 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
  * @param <V> type of the value to store
  */
 public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
-
+  private static final Logger LOGGER = Logger.getInstance(IndexedObjectStore.class);
   private final StoreIndex<K> index;
   private final PathMapper<K> pathMapper;
   private final Reader<V> reader;
   private final Writer<V> writer;
+  private final StoreKeyValidator<K> validator;
 
-  public IndexedObjectStore(StoreIndex<K> index, PathMapper<K> pathMapper, Reader<V> reader, Writer<V> writer) {
+  public IndexedObjectStore(StoreIndex<K> index, PathMapper<K> pathMapper, Reader<V> reader, Writer<V> writer, StoreKeyValidator<K> validator) {
     this.index = index;
     this.pathMapper = pathMapper;
     this.reader = reader;
     this.writer = writer;
+    this.validator = validator;
   }
 
   @Override
@@ -56,6 +61,26 @@ public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
       return Optional.empty();
     }
     return Optional.of(reader.apply(Files.newInputStream(path)));
+  }
+
+  /**
+   * Deletes all entries in the index are no longer valid.
+   */
+  public void clean() {
+    int counter = 0;
+    Collection<K> keys = index.keys();
+
+    for (K k : keys) {
+      if(!validator.apply(k)) {
+        try {
+          counter++;
+          delete(k);
+        } catch (IOException e) {
+          LOGGER.warn("Failed to delete file in the store", e);
+        }
+      }
+    }
+    LOGGER.debug(String.format("%d entries removed from the store", counter));
   }
 
   @Override
@@ -68,7 +93,7 @@ public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   @Override
   public void write(K key, V value) throws IOException {
     Path path = pathMapper.apply(key);
-    index.save(path, key);
+    index.save(key, path);
     Path parent = path.getParent();
     if (!parent.toFile().exists()) {
       Files.createDirectories(parent);

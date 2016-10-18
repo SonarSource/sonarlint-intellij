@@ -16,13 +16,13 @@ import org.sonarsource.sonarlint.core.util.FileUtils;
 public class IssuePersistence extends AbstractProjectComponent {
   private Path storeBasePath;
   private IndexedObjectStore<String, Sonarlint.Issues> store;
-  private IssuePersistentStoreCleaner cleaner;
 
   protected IssuePersistence(Project project) {
     super(project);
     storeBasePath = getBasePath();
     StoreIndex<String> index = new StringStoreIndex(storeBasePath);
     PathMapper<String> mapper = new HashingPathMapper(storeBasePath, 2);
+    StoreKeyValidator<String> validator = new PathValidator(project);
     Reader<Sonarlint.Issues> reader = is -> {
       try {
         return Sonarlint.Issues.parseFrom(is);
@@ -37,9 +37,8 @@ public class IssuePersistence extends AbstractProjectComponent {
         throw new IllegalStateException("Failed to read issues", e);
       }
     };
-    store = new IndexedObjectStore<>(index, mapper, reader, writer);
-    cleaner = new IssuePersistentStoreCleaner(store, index, p -> project.getBaseDir().findFileByRelativePath(p));
-    cleaner.clean();
+    store = new IndexedObjectStore<>(index, mapper, reader, writer, validator);
+    store.clean();
   }
 
   public void save(String key, Sonarlint.Issues issues) throws IOException {
@@ -57,7 +56,7 @@ public class IssuePersistence extends AbstractProjectComponent {
   }
 
   public void clean() {
-    cleaner.clean();
+    store.clean();
   }
 
   public void clear() {

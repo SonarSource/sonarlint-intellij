@@ -24,20 +24,20 @@ public class StringStoreIndexTest {
   @Test
   public void testSave() {
     Path test1 = baseDir.resolve("p1").resolve("file1");
-    index.save(test1, "key1");
+    index.save("key1", test1);
 
     assertThat(baseDir.resolve(StringStoreIndex.INDEX_FILENAME)).exists();
-    assertThat(index.allStorageKeys()).containsOnly("key1");
+    assertThat(index.keys()).containsOnly("key1");
   }
 
   @Test
   public void testDelete() {
     Path test1 = baseDir.resolve("p1").resolve("file1");
-    index.save(test1, "key1");
+    index.save("key1", test1);
     index.delete("key1");
     index.delete("key2");
 
     assertThat(baseDir.resolve(StringStoreIndex.INDEX_FILENAME)).exists();
-    assertThat(index.allStorageKeys()).isEmpty();
+    assertThat(index.keys()).isEmpty();
   }
 }
