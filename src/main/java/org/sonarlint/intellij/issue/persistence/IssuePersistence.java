@@ -17,7 +17,6 @@ public class IssuePersistence extends AbstractProjectComponent {
   private Path storeBasePath;
   private IndexedObjectStore<String, Sonarlint.Issues> store;
   private IssuePersistentStoreCleaner cleaner;
-  private static final Sonarlint.Issues EMPTY_ISSUES = Sonarlint.Issues.newBuilder().build();
 
   protected IssuePersistence(Project project) {
     super(project);

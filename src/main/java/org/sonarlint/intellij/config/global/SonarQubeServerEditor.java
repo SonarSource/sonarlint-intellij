@@ -43,11 +43,13 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.text.PlainDocument;
 
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ConnectionTestTask;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
+
+import static org.sonarlint.intellij.util.SonarLintUtils.isBlank;
+import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
 public class SonarQubeServerEditor extends DialogWrapper {
   private static final int NAME_MAX_LENGTH = 50;
@@ -117,7 +119,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
   @Override
   protected ValidationInfo doValidate() {
     if (isCreating) {
-      if (StringUtils.isEmpty(nameText.getText())) {
+      if (isEmpty(nameText.getText())) {
         return new ValidationInfo("Servers must be configured with a name", nameText);
       }
 
@@ -126,7 +128,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
       }
     }
 
-    if (StringUtils.isEmpty(urlText.getText())) {
+    if (isEmpty(urlText.getText())) {
       return new ValidationInfo("Servers must be configured with a host URL", urlText);
     }
 
@@ -312,7 +314,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
   }
 
   private void generateToken() {
-    if (StringUtils.isBlank(urlText.getText())) {
+    if (isBlank(urlText.getText())) {
       Messages.showErrorDialog(urlText, "Please fill the 'Server Url' field", "Invalid Server URL");
       return;
     }

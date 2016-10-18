@@ -80,6 +80,9 @@
             <implementation-class>org.sonarlint.intellij.issue.persistence.IssueCache</implementation-class>
         </component>
         <component>
+            <implementation-class>org.sonarlint.intellij.issue.persistence.IssuePersistence</implementation-class>
+        </component>
+        <component>
             <implementation-class>org.sonarlint.intellij.ui.SonarLintConsole</implementation-class>
         </component>
         <component>

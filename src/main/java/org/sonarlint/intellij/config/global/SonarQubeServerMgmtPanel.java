@@ -70,7 +70,6 @@ import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.event.HyperlinkEvent;
 
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ServerUpdateTask;
@@ -402,9 +401,10 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       List<String> projectsUsingNames = getOpenProjectNames(openProjects, server);
 
       if (!projectsUsingNames.isEmpty()) {
+        String projects = projectsUsingNames.stream().collect(Collectors.joining("<br>"));
         int response = Messages.showYesNoDialog(serversPanel,
           "<html>The following opened projects are bound to this server configuration:<br><b>" +
-            StringUtils.join(projectsUsingNames, "<br>") + "</b><br>Delete the server?</html>", "Server configuration in use", Messages.getWarningIcon());
+            projects + "</b><br>Delete the server?</html>", "Server configuration in use", Messages.getWarningIcon());
         if (response == Messages.NO) {
           return;
         }

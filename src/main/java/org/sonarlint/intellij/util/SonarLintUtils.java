@@ -76,6 +76,14 @@ public class SonarLintUtils {
     return t;
   }
 
+  public static boolean isEmpty(@Nullable String str) {
+    return str == null || str.isEmpty();
+  }
+
+  public static boolean isBlank(@Nullable String str) {
+    return str == null || str.trim().isEmpty();
+  }
+
   public static <T> T get(Class<T> clazz) {
     return get(ApplicationManager.getApplication(), clazz);
   }
