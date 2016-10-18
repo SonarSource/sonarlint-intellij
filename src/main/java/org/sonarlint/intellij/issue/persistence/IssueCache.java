@@ -41,7 +41,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueCache extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueCache.class);
-  final static int MAX_ENTRIES = 100;
+  static final int MAX_ENTRIES = 100;
   private final Map<VirtualFile, Collection<LocalIssuePointer>> cache;
   private final IssuePersistence store;
   private final IssueMatcher matcher;
@@ -85,7 +85,7 @@ public class IssueCache extends AbstractProjectComponent {
    * If no issue is found in disk for the given file, an empty list is returned and also cached
    */
   @CheckForNull
-  public Collection<LocalIssuePointer> read(VirtualFile virtualFile) {
+  public synchronized Collection<LocalIssuePointer> read(VirtualFile virtualFile) {
     Collection<LocalIssuePointer> issues = cache.get(virtualFile);
     if (issues != null) {
       return issues;
@@ -94,7 +94,7 @@ public class IssueCache extends AbstractProjectComponent {
     return loadToCache(virtualFile);
   }
 
-  public void save(VirtualFile virtualFile, Collection<LocalIssuePointer> issues) {
+  public synchronized void save(VirtualFile virtualFile, Collection<LocalIssuePointer> issues) {
     cache.put(virtualFile, Collections.unmodifiableCollection(issues));
   }
 
@@ -102,7 +102,7 @@ public class IssueCache extends AbstractProjectComponent {
    * Flushes all cached entries to disk.
    * It does not clear the cache.
    */
-  public void flushAll() {
+  public synchronized void flushAll() {
     LOGGER.debug("Persisting all issues");
     cache.forEach((virtualFile, localIssuePointers) -> {
       String key = createKey(virtualFile);
@@ -115,11 +115,11 @@ public class IssueCache extends AbstractProjectComponent {
   }
 
   @Override
-  public void projectClosed() {
+  public synchronized void projectClosed() {
     flushAll();
   }
 
-  public void clear() {
+  public synchronized void clear() {
     store.clear();
     cache.clear();
   }
@@ -152,7 +152,7 @@ public class IssueCache extends AbstractProjectComponent {
     }
   }
 
-  public boolean contains(VirtualFile virtualFile) {
+  public synchronized boolean contains(VirtualFile virtualFile) {
     return read(virtualFile) != null;
   }
 
@@ -172,7 +172,7 @@ public class IssueCache extends AbstractProjectComponent {
   private Sonarlint.Issues transform(Collection<LocalIssuePointer> localIssues) {
     Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
     localIssues.stream()
-      .map(this::transform)
+      .map(IssueCache::transform)
       .filter(i -> i != null)
       .forEach(builder::addIssue);
 
@@ -182,6 +182,7 @@ public class IssueCache extends AbstractProjectComponent {
   @CheckForNull
   private LocalIssuePointer transform(PsiFile file, Sonarlint.Issues.Issue issue) {
     DefaultIssue newIssue = new DefaultIssue();
+
     newIssue.setEndLine(issue.getEndLine());
     newIssue.setStartLine(issue.getStartLine());
     newIssue.setStartLineOffset(issue.getStartLineOffset());
@@ -208,7 +209,7 @@ public class IssueCache extends AbstractProjectComponent {
   }
 
   @CheckForNull
-  private Sonarlint.Issues.Issue transform(LocalIssuePointer localIssue) {
+  private static Sonarlint.Issues.Issue transform(LocalIssuePointer localIssue) {
     Sonarlint.Issues.Issue.Builder builder = Sonarlint.Issues.Issue.newBuilder()
       .setRuleKey(localIssue.getRuleKey())
       .setRuleName(localIssue.ruleName())

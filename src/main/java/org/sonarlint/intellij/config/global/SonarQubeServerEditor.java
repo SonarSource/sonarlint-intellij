@@ -33,7 +33,6 @@ import com.intellij.util.net.HttpConfigurable;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -287,7 +286,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     } else if (r.success()) {
       Messages.showMessageDialog(testButton, r.message(), "Connection", Messages.getInformationIcon());
     } else {
-      Messages.showErrorDialog(testButton, r.message(), "Connection failed");
+      Messages.showErrorDialog(testButton, r.message(), "Connection Failed");
     }
   }
 

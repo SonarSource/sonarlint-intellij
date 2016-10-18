@@ -47,7 +47,7 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
 @ThreadSafe
 public class IssueManager extends AbstractProjectComponent {
   private final MessageBus messageBus;
-  private IssueCache cache;
+  private final IssueCache cache;
 
   private final Lock matchingInProgress = new ReentrantLock();
 
