@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue;
 
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
@@ -35,6 +36,7 @@ public class LocalIssuePointer implements IssuePointer {
   private final Issue issue;
   private final PsiFile psiFile;
   private final Integer textRangeHash;
+  private final Integer lineHash;
 
   // tracked fields (mutable)
   private Long creationDate;
@@ -53,9 +55,19 @@ public class LocalIssuePointer implements IssuePointer {
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
     if (range != null) {
-      this.textRangeHash = checksum(range.getDocument().getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
+      Document document = range.getDocument();
+      this.textRangeHash = checksum(document.getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
+      Integer line = getLine();
+      if (line != null) {
+        int lineStartOffset = document.getLineStartOffset(line);
+        int lineEndOffset = document.getLineEndOffset(line);
+        this.lineHash = checksum(document.getText(new TextRange(lineStartOffset, lineEndOffset)));
+      } else {
+        this.lineHash = null;
+      }
     } else {
       this.textRangeHash = null;
+      this.lineHash = null;
     }
   }
 
@@ -93,6 +105,11 @@ public class LocalIssuePointer implements IssuePointer {
   @Override
   public Integer getTextRangeHash() {
     return textRangeHash;
+  }
+
+  @Override
+  public Integer getLineHash() {
+    return lineHash;
   }
 
   @Override

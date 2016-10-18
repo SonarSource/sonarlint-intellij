@@ -48,6 +48,9 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     // See SONAR-2812
     match(tracking, TextRangeHashKeyFactory.INSTANCE);
 
+    // 6. match issues with same rule, same line and same line hash
+    match(tracking, LineAndLineHashKeyFactory.INSTANCE);
+
     return tracking;
   }
 
@@ -129,6 +132,53 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     @Override
     public SearchKey create(Trackable t) {
       return new LineAndTextRangeHashKey(t);
+    }
+  }
+
+  private static class LineAndLineHashKey implements SearchKey {
+    private final String ruleKey;
+    private final Integer line;
+    private final Integer lineHash;
+
+    LineAndLineHashKey(Trackable trackable) {
+      this.ruleKey = trackable.getRuleKey();
+      this.line = trackable.getLine();
+      this.lineHash = trackable.getLineHash();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null) {
+        return false;
+      }
+      if (this.getClass() != o.getClass()) {
+        return false;
+      }
+      LineAndLineHashKey that = (LineAndLineHashKey) o;
+      // start with most discriminant field
+      return Objects.equals(line, that.line)
+        && Objects.equals(lineHash, that.lineHash)
+        && ruleKey.equals(that.ruleKey);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = ruleKey.hashCode();
+      result = 31 * result + (lineHash != null ? lineHash.hashCode() : 0);
+      result = 31 * result + (line != null ? line.hashCode() : 0);
+      return result;
+    }
+  }
+
+  private enum LineAndLineHashKeyFactory implements SearchKeyFactory {
+    INSTANCE;
+
+    @Override
+    public SearchKey create(Trackable t) {
+      return new LineAndLineHashKey(t);
     }
   }
 

@@ -45,6 +45,11 @@ public class ServerIssuePointer implements IssuePointer {
   }
 
   @Override
+  public Integer getLineHash() {
+    return serverIssue.checksum().hashCode();
+  }
+
+  @Override
   public String getRuleKey() {
     return serverIssue.ruleKey();
   }
