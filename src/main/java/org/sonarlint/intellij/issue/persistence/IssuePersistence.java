@@ -57,7 +57,7 @@ public class IssuePersistence extends AbstractProjectComponent {
       }
     };
     store = new IndexedObjectStore<>(index, mapper, reader, writer, validator);
-    store.clean();
+    store.deleteInvalid();
   }
 
   public void save(String key, Sonarlint.Issues issues) throws IOException {
@@ -75,7 +75,7 @@ public class IssuePersistence extends AbstractProjectComponent {
   }
 
   public void clean() {
-    store.clean();
+    store.deleteInvalid();
   }
 
   public void clear() {

@@ -38,11 +38,11 @@ public class ResourceLoaderTest {
 
   @Test
   public void loadIcon() throws IOException {
-    Icon icon = ResourceLoader.getIcon("clean.png");
+    Icon icon = ResourceLoader.getIcon("deleteInvalid.png");
     assertThat(icon).isNotNull();
 
     // second time from cache
-    assertThat(ResourceLoader.getIcon("clean.png")).isEqualTo(icon);
+    assertThat(ResourceLoader.getIcon("deleteInvalid.png")).isEqualTo(icon);
   }
 
   @Test

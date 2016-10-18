@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
@@ -38,7 +37,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
  * @param <K> type of the key to store by and used when reading back; must be hashable
  * @param <V> type of the value to store
  */
-public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
+class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   private static final Logger LOGGER = Logger.getInstance(IndexedObjectStore.class);
   private final StoreIndex<K> index;
   private final PathMapper<K> pathMapper;
@@ -46,7 +45,7 @@ public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   private final Writer<V> writer;
   private final StoreKeyValidator<K> validator;
 
-  public IndexedObjectStore(StoreIndex<K> index, PathMapper<K> pathMapper, Reader<V> reader, Writer<V> writer, StoreKeyValidator<K> validator) {
+  IndexedObjectStore(StoreIndex<K> index, PathMapper<K> pathMapper, Reader<V> reader, Writer<V> writer, StoreKeyValidator<K> validator) {
     this.index = index;
     this.pathMapper = pathMapper;
     this.reader = reader;
@@ -66,7 +65,7 @@ public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   /**
    * Deletes all entries in the index are no longer valid.
    */
-  public void clean() {
+  public void deleteInvalid() {
     int counter = 0;
     Collection<K> keys = index.keys();
 
