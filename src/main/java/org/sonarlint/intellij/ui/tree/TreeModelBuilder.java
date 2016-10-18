@@ -189,9 +189,7 @@ public class TreeModelBuilder {
   public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LocalIssuePointer>> map, Predicate<VirtualFile> filePredicate) {
     this.filePredicate = filePredicate;
 
-    index.getAllFiles().stream()
-      .filter(f -> !map.containsKey(f))
-      .forEach(this::removeFile);
+    index.getAllFiles().removeIf(f -> !map.containsKey(f));
 
     for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : map.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), filePredicate);

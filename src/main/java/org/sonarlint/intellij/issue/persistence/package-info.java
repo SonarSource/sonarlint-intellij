@@ -17,15 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
+@ParametersAreNonnullByDefault
 package org.sonarlint.intellij.issue.persistence;
 
-import java.nio.file.Path;
-import java.util.Collection;
-
-interface StoreIndex<T> {
-  Collection<T> keys();
-
-  void save(T key, Path path);
-
-  void delete(T key);
-}
+import javax.annotation.ParametersAreNonnullByDefault;

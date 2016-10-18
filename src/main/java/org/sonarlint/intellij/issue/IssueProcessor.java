@@ -47,11 +47,11 @@ public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
   private final DaemonCodeAnalyzer codeAnalyzer;
-  private final IssueStore store;
+  private final IssueManager store;
   private final SonarLintConsole console;
   private final ServerIssueUpdater serverIssueUpdater;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueStore store, ServerIssueUpdater serverIssueUpdater) {
+  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueManager store, ServerIssueUpdater serverIssueUpdater) {
     super(project);
     this.matcher = matcher;
     this.codeAnalyzer = codeAnalyzer;

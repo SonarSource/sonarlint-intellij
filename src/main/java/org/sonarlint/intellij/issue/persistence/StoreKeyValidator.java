@@ -19,13 +19,7 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import java.nio.file.Path;
-import java.util.Collection;
+import java.util.function.Function;
 
-interface StoreIndex<T> {
-  Collection<T> keys();
-
-  void save(T key, Path path);
-
-  void delete(T key);
+interface StoreKeyValidator<K> extends Function<K, Boolean> {
 }

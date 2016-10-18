@@ -19,13 +19,8 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import java.nio.file.Path;
-import java.util.Collection;
-
-interface StoreIndex<T> {
-  Collection<T> keys();
-
-  void save(T key, Path path);
-
-  void delete(T key);
+/**
+ * Created by meneses on 18.10.16.
+ */
+public class PathValidatorTest {
 }

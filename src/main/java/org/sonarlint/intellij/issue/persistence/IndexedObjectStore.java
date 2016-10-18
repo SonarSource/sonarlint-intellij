@@ -1,7 +1,7 @@
 /*
- * SonarLint Core - Client API
- * Copyright (C) 2009-2016 SonarSource SA
- * mailto:contact AT sonarsource DOT com
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015 SonarSource
+ * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -13,16 +13,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 package org.sonarlint.intellij.issue.persistence;
 
+import com.intellij.openapi.diagnostic.Logger;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Optional;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.ObjectStore;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
@@ -35,18 +37,20 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
  * @param <K> type of the key to store by and used when reading back; must be hashable
  * @param <V> type of the value to store
  */
-public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
-
+class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
+  private static final Logger LOGGER = Logger.getInstance(IndexedObjectStore.class);
   private final StoreIndex<K> index;
   private final PathMapper<K> pathMapper;
   private final Reader<V> reader;
   private final Writer<V> writer;
+  private final StoreKeyValidator<K> validator;
 
-  public IndexedObjectStore(StoreIndex<K> index, PathMapper<K> pathMapper, Reader<V> reader, Writer<V> writer) {
+  IndexedObjectStore(StoreIndex<K> index, PathMapper<K> pathMapper, Reader<V> reader, Writer<V> writer, StoreKeyValidator<K> validator) {
     this.index = index;
     this.pathMapper = pathMapper;
     this.reader = reader;
     this.writer = writer;
+    this.validator = validator;
   }
 
   @Override
@@ -56,6 +60,26 @@ public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
       return Optional.empty();
     }
     return Optional.of(reader.apply(Files.newInputStream(path)));
+  }
+
+  /**
+   * Deletes all entries in the index are no longer valid.
+   */
+  public void deleteInvalid() {
+    int counter = 0;
+    Collection<K> keys = index.keys();
+
+    for (K k : keys) {
+      if(!validator.apply(k)) {
+        try {
+          counter++;
+          delete(k);
+        } catch (IOException e) {
+          LOGGER.warn("Failed to delete file in the store", e);
+        }
+      }
+    }
+    LOGGER.debug(String.format("%d entries removed from the store", counter));
   }
 
   @Override
@@ -68,7 +92,7 @@ public class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   @Override
   public void write(K key, V value) throws IOException {
     Path path = pathMapper.apply(key);
-    index.save(path, key);
+    index.save(key, path);
     Path parent = path.getParent();
     if (!parent.toFile().exists()) {
       Files.createDirectories(parent);

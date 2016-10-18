@@ -1,3 +1,22 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
 package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
@@ -8,7 +27,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -23,10 +41,10 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueCache extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueCache.class);
-  private final static int MAX_ENTRIES = 100;
-  private Map<VirtualFile, Collection<LocalIssuePointer>> cache;
-  private IssuePersistence store;
-  private IssueMatcher matcher;
+  static final int MAX_ENTRIES = 100;
+  private final Map<VirtualFile, Collection<LocalIssuePointer>> cache;
+  private final IssuePersistence store;
+  private final IssueMatcher matcher;
 
   public IssueCache(Project project, IssuePersistence store, IssueMatcher matcher) {
     super(project);
@@ -46,6 +64,10 @@ public class IssueCache extends AbstractProjectComponent {
 
     @Override
     protected boolean removeEldestEntry(Map.Entry<VirtualFile, Collection<LocalIssuePointer>> eldest) {
+      if(size() <= MAX_ENTRIES) {
+        return false;
+      }
+
       Sonarlint.Issues issues = transform(eldest.getValue());
       String key = createKey(eldest.getKey());
       try {
@@ -63,19 +85,24 @@ public class IssueCache extends AbstractProjectComponent {
    * If no issue is found in disk for the given file, an empty list is returned and also cached
    */
   @CheckForNull
-  public Collection<LocalIssuePointer> read(VirtualFile virtualFile) {
-    return cache.getOrDefault(virtualFile, loadToCache(virtualFile));
+  public synchronized Collection<LocalIssuePointer> read(VirtualFile virtualFile) {
+    Collection<LocalIssuePointer> issues = cache.get(virtualFile);
+    if (issues != null) {
+      return issues;
+    }
+
+    return loadToCache(virtualFile);
   }
 
-  public void save(VirtualFile virtualFile, Collection<LocalIssuePointer> issues) {
-    cache.put(virtualFile, issues);
+  public synchronized void save(VirtualFile virtualFile, Collection<LocalIssuePointer> issues) {
+    cache.put(virtualFile, Collections.unmodifiableCollection(issues));
   }
 
   /**
    * Flushes all cached entries to disk.
    * It does not clear the cache.
    */
-  public void flushAll() {
+  public synchronized void flushAll() {
     LOGGER.debug("Persisting all issues");
     cache.forEach((virtualFile, localIssuePointers) -> {
       String key = createKey(virtualFile);
@@ -88,11 +115,11 @@ public class IssueCache extends AbstractProjectComponent {
   }
 
   @Override
-  public void projectClosed() {
+  public synchronized void projectClosed() {
     flushAll();
   }
 
-  public void clear() {
+  public synchronized void clear() {
     store.clear();
     cache.clear();
   }
@@ -125,7 +152,7 @@ public class IssueCache extends AbstractProjectComponent {
     }
   }
 
-  public boolean contains(VirtualFile virtualFile) {
+  public synchronized boolean contains(VirtualFile virtualFile) {
     return read(virtualFile) != null;
   }
 
@@ -145,7 +172,7 @@ public class IssueCache extends AbstractProjectComponent {
   private Sonarlint.Issues transform(Collection<LocalIssuePointer> localIssues) {
     Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
     localIssues.stream()
-      .map(this::transform)
+      .map(IssueCache::transform)
       .filter(i -> i != null)
       .forEach(builder::addIssue);
 
@@ -154,20 +181,23 @@ public class IssueCache extends AbstractProjectComponent {
 
   @CheckForNull
   private LocalIssuePointer transform(PsiFile file, Sonarlint.Issues.Issue issue) {
-    DefaultIssue i = new DefaultIssue();
-    i.setEndLine(issue.getEndLine());
-    i.setStartLine(issue.getStartLine());
-    i.setStartLineOffset(issue.getStartLineOffset());
-    i.setEndLineOffset(issue.getEndLineOffset());
+    DefaultIssue newIssue = new DefaultIssue();
 
-    i.setSeverity(issue.getSeverity());
-    i.setRuleKey(issue.getRuleKey());
-    i.setRuleName(issue.getRuleName());
-    i.setMessage(issue.getMessage());
+    newIssue.setEndLine(issue.getEndLine());
+    newIssue.setStartLine(issue.getStartLine());
+    newIssue.setStartLineOffset(issue.getStartLineOffset());
+    newIssue.setEndLineOffset(issue.getEndLineOffset());
+
+    newIssue.setSeverity(issue.getSeverity());
+    newIssue.setRuleKey(issue.getRuleKey());
+    newIssue.setRuleName(issue.getRuleName());
+    newIssue.setMessage(issue.getMessage());
 
     try {
-      LocalIssuePointer localIssue = matcher.match(file, i);
+      LocalIssuePointer localIssue = matcher.match(file, newIssue);
 
+      localIssue.setServerIssueKey(issue.getServerIssueKey());
+      localIssue.setLineHash(issue.getChecksum());
       localIssue.setAssignee(issue.getAssignee());
       localIssue.setResolved(issue.getResolved());
       localIssue.setCreationDate(issue.getCreationDate());
@@ -179,26 +209,35 @@ public class IssueCache extends AbstractProjectComponent {
   }
 
   @CheckForNull
-  private Sonarlint.Issues.Issue transform(LocalIssuePointer localIssue) {
+  private static Sonarlint.Issues.Issue transform(LocalIssuePointer localIssue) {
     Sonarlint.Issues.Issue.Builder builder = Sonarlint.Issues.Issue.newBuilder()
       .setRuleKey(localIssue.getRuleKey())
       .setRuleName(localIssue.ruleName())
       .setAssignee(localIssue.getAssignee())
-      .setCreationDate(localIssue.getCreationDate())
       .setMessage(localIssue.getMessage())
       .setResolved(localIssue.isResolved())
       .setSeverity(localIssue.severity());
 
+    if(localIssue.getCreationDate() != null) {
+      builder.setCreationDate(localIssue.getCreationDate());
+    }
+    if(localIssue.getLineHash() != null) {
+      builder.setChecksum(localIssue.getLineHash());
+    }
+    if(localIssue.getServerIssueKey() != null) {
+      builder.setServerIssueKey(localIssue.getServerIssueKey());
+    }
+
     RangeMarker range = localIssue.range();
     if (range != null) {
-      Document doc = localIssue.range().getDocument();
+      Document doc = range.getDocument();
 
-      int startLine = doc.getLineNumber(localIssue.range().getStartOffset());
-      int endLine = doc.getLineNumber(localIssue.range().getEndOffset());
+      int startLine = doc.getLineNumber(range.getStartOffset());
+      int endLine = doc.getLineNumber(range.getEndOffset());
       builder.setStartLine(startLine)
         .setEndLine(endLine)
-        .setStartLineOffset(localIssue.range().getStartOffset() - doc.getLineStartOffset(startLine))
-        .setEndLineOffset(localIssue.range().getStartOffset() - doc.getLineStartOffset(startLine));
+        .setStartLineOffset(range.getStartOffset() - doc.getLineStartOffset(startLine))
+        .setEndLineOffset(range.getStartOffset() - doc.getLineStartOffset(startLine));
     }
     return builder.build();
   }

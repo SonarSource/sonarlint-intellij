@@ -61,7 +61,7 @@ import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
-import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
@@ -81,7 +81,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   private static final String SPLIT_PROPORTION = "SONARLINT_ISSUES_SPLIT_PROPORTION";
 
   private final Project project;
-  private final IssueStore issueStore;
+  private final IssueManager issueManager;
   private Tree tree;
   private ActionToolbar mainToolbar;
   private IssueTreeScope scope;
@@ -91,7 +91,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   public SonarLintIssuesPanel(Project project) {
     super(false, true);
     this.project = project;
-    this.issueStore = project.getComponent(IssueStore.class);
+    this.issueManager = project.getComponent(IssueManager.class);
     SonarLintServerManager manager = SonarLintUtils.get(SonarLintServerManager.class);
 
     addToolbar();
@@ -209,7 +209,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     Map<VirtualFile, Collection<LocalIssuePointer>> issuesPerFile = new HashMap<>();
     Collection<VirtualFile> all = scope.getAll();
     for(VirtualFile f : all) {
-      issuesPerFile.put(f, issueStore.getForFile(f));
+      issuesPerFile.put(f, issueManager.getForFile(f));
     }
 
     treeBuilder.updateModel(issuesPerFile, scope.getCondition());

@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.http.annotation.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -249,10 +250,9 @@ public class SonarLintServerManager implements ApplicationComponent {
   }
 
   private void reloadServerNames() {
-    configuredStorageIds.clear();
-    for (SonarQubeServer s : settings.getSonarQubeServers()) {
-      configuredStorageIds.add(s.getName());
-    }
+    configuredStorageIds = settings.getSonarQubeServers().stream()
+      .map(SonarQubeServer::getName)
+      .collect(Collectors.toSet());
   }
 
   @Override

@@ -43,7 +43,7 @@ public class LocalIssuePointer implements IssuePointer {
   private final RangeMarker range;
   private final PsiFile psiFile;
   private final Integer textRangeHash;
-  private final Integer lineHash;
+  private Integer lineHash;
 
   // tracked fields (mutable)
   private Long creationDate;
@@ -88,7 +88,7 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   public boolean isValid() {
-    if (psiFile != null && !psiFile.isValid()) {
+    if (!psiFile.isValid()) {
       return false;
     }
 
@@ -122,6 +122,10 @@ public class LocalIssuePointer implements IssuePointer {
   @Override
   public Integer getLineHash() {
     return lineHash;
+  }
+
+  public void setLineHash(Integer hash) {
+    this.lineHash = hash;
   }
 
   @Override

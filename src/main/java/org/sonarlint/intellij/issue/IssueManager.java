@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.issue.persistence.IssueCache;
 import org.sonarlint.intellij.issue.tracking.Input;
@@ -44,13 +45,13 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
  * Issues can then be displayed as annotations at any time.
  */
 @ThreadSafe
-public class IssueStore extends AbstractProjectComponent {
+public class IssueManager extends AbstractProjectComponent {
   private final MessageBus messageBus;
-  private IssueCache cache;
+  private final IssueCache cache;
 
   private final Lock matchingInProgress = new ReentrantLock();
 
-  public IssueStore(Project project, IssueCache cache) {
+  public IssueManager(Project project, IssueCache cache) {
     super(project);
     this.cache = cache;
     this.messageBus = project.getMessageBus();
@@ -59,11 +60,6 @@ public class IssueStore extends AbstractProjectComponent {
   public void clear() {
     cache.clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
-  }
-
-  @Override
-  public void disposeComponent() {
-    clear();
   }
 
   public Collection<LocalIssuePointer> getForFile(VirtualFile file) {
@@ -82,16 +78,8 @@ public class IssueStore extends AbstractProjectComponent {
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
   }
 
-  private void cleanInvalid(VirtualFile file) {
-    Collection<LocalIssuePointer> issues = cache.read(file);
-    issues.removeIf(f -> !f.isValid());
-  }
-
   void store(VirtualFile file, final Collection<LocalIssuePointer> rawIssues) {
     boolean firstAnalysis = !cache.contains(file);
-
-    // clean before issue tracking
-    cleanInvalid(file);
 
     // this will also delete all existing issues in the file
     if (firstAnalysis) {
@@ -104,7 +92,7 @@ public class IssueStore extends AbstractProjectComponent {
 
   private void matchWithPreviousIssues(VirtualFile file, Collection<LocalIssuePointer> rawIssues) {
     matchingInProgress.lock();
-    Collection<LocalIssuePointer> previousIssues = getForFile(file);
+    Collection<LocalIssuePointer> previousIssues = getForFile(file).stream().filter(LocalIssuePointer::isValid).collect(Collectors.toList());
     Input<LocalIssuePointer> baseInput = () -> previousIssues;
     Input<LocalIssuePointer> rawInput = () -> rawIssues;
     updateTrackedIssues(file, baseInput, rawInput);

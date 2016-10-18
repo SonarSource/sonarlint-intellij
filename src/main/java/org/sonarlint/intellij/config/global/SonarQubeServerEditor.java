@@ -33,9 +33,9 @@ import com.intellij.util.net.HttpConfigurable;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -91,10 +91,9 @@ public class SonarQubeServerEditor extends DialogWrapper {
     super(parent, true);
     this.isCreating = isCreating;
     this.server = server;
-    this.serverNames = new HashSet<>();
-    for (SonarQubeServer s : serverList) {
-      serverNames.add(s.getName());
-    }
+    this.serverNames = serverList.stream()
+      .map(SonarQubeServer::getName)
+      .collect(Collectors.toSet());
 
     if (isCreating) {
       super.setTitle("Create SonarQube server configuration");
@@ -287,7 +286,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     } else if (r.success()) {
       Messages.showMessageDialog(testButton, r.message(), "Connection", Messages.getInformationIcon());
     } else {
-      Messages.showErrorDialog(testButton, r.message(), "Connection failed");
+      Messages.showErrorDialog(testButton, r.message(), "Connection Failed");
     }
   }
 
