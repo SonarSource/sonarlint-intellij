@@ -49,7 +49,7 @@ public class IssueNode extends AbstractNode {
 
     if (severity != null) {
       try {
-        renderer.setIcon(ResourceLoader.getSeverityIcon(issue.severity()));
+        renderer.setIcon(ResourceLoader.getSeverityIcon(severity));
       } catch (IOException e) {
         LOGGER.error("Couldn't load icon for severity: " + severity, e);
       }

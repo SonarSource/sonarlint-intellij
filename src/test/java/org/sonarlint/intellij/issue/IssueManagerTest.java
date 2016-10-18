@@ -23,10 +23,15 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import java.util.Collection;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.persistence.IssueCache;
@@ -34,90 +39,98 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class IssueStoreTest extends SonarTest {
-  private IssueStore store;
+public class IssueManagerTest extends SonarTest {
+  private IssueManager manager;
 
+  @Mock
+  private IssueCache cache;
+  @Mock
   private VirtualFile file1;
+  @Mock
   private VirtualFile file2;
+  @Mock
+  private Document document;
 
   private LocalIssuePointer issue1;
   private LocalIssuePointer issue2;
-  private Document document = mock(Document.class);
+
+  @Captor
+  private ArgumentCaptor<Collection<LocalIssuePointer>> issueCollectionCaptor;
 
   @Before
   public void setUp() {
     super.setUp();
-    file1 = mock(VirtualFile.class);
-    file2 = mock(VirtualFile.class);
+    MockitoAnnotations.initMocks(this);
     when(file1.isValid()).thenReturn(true);
     when(file2.isValid()).thenReturn(true);
-    IssueCache cache = mock(IssueCache.class);
-    store = new IssueStore(project, cache);
+    manager = new IssueManager(project, cache);
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
     issue2 = createRangeStoredIssue(2, "issue 2", 10);
 
-    store.store(file1, Collections.singletonList(issue1));
-    store.store(file2, Collections.singletonList(issue2));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(issue1));
+    when(cache.read(file2)).thenReturn(Collections.singletonList(issue2));
   }
 
   @Test
-  public void testStore() {
-    assertThat(store.getForFile(file1)).containsExactly(issue1);
-    assertThat(store.getForFile(file2)).containsExactly(issue2);
+  public void should_return_file_issues() {
+    assertThat(manager.getForFile(file1)).containsExactly(issue1);
+    assertThat(manager.getForFile(file2)).containsExactly(issue2);
   }
 
   @Test
   public void testTracking() {
     // tracking based on ruleKey / line number
-    store.clear();
+    manager.clear();
     LocalIssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
     i1.setCreationDate(1000L);
-    store.store(file1, Collections.singletonList(i1));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(i1));
 
     LocalIssuePointer i2 = createRangeStoredIssue(1, "issue 1", 10);
     i2.setCreationDate(2000L);
-    store.store(file1, Collections.singletonList(i2));
+    manager.store(file1, Collections.singletonList(i2));
 
-    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = manager.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
     assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(1000);
   }
 
   @Test
-  public void testTrackingChecksum() {
+  public void testTracking_checksum() {
     // tracking based on checksum
-    store.clear();
     LocalIssuePointer i1 = createRangeStoredIssue(1, "issue 1", 10);
     i1.setCreationDate(1000L);
-    store.store(file1, Collections.singletonList(i1));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(i1));
+    when(cache.contains(file1)).thenReturn(true);
 
     LocalIssuePointer i2 = createRangeStoredIssue(1, "issue 1", 11);
     i2.setCreationDate(2000L);
-    store.store(file1, Collections.singletonList(i2));
+    manager.store(file1, Collections.singletonList(i2));
 
-    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
-    assertThat(fileIssues).hasSize(1);
-    assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(1000);
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+
+    Collection<LocalIssuePointer> issues = issueCollectionCaptor.getValue();
+    assertThat(issues).hasSize(1);
+    assertThat(issues.iterator().next().getCreationDate()).isEqualTo(1000);
   }
 
   @Test
   public void testTracking_should_copy_server_issue_on_match() {
-    store.clear();
-
     String serverIssueKey = "dummyServerIssueKey";
 
     LocalIssuePointer localIssue = createRangeStoredIssue(1, "issue 1", 10);
-    store.store(file1, Collections.singletonList(localIssue));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(localIssue));
 
     LocalIssuePointer serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setServerIssueKey(serverIssueKey);
-    store.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
+    manager.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = manager.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
     LocalIssuePointer issuePointer = fileIssues.iterator().next();
@@ -127,20 +140,18 @@ public class IssueStoreTest extends SonarTest {
 
   @Test
   public void testTracking_should_preserve_server_issue_if_moved_locally() {
-    store.clear();
-
     String serverIssueKey = "dummyServerIssueKey";
 
     LocalIssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
     localIssue.setServerIssueKey(serverIssueKey);
-    store.store(file1, Collections.singletonList(localIssue));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(localIssue));
 
     LocalIssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setResolved(true);
-    store.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
+    manager.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = manager.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
     LocalIssuePointer issuePointer = fileIssues.iterator().next();
@@ -153,16 +164,14 @@ public class IssueStoreTest extends SonarTest {
 
   @Test
   public void testTracking_should_ignore_server_issue_if_not_matched() {
-    store.clear();
-
     LocalIssuePointer localIssue = createRangeStoredIssue(1, "local issue", 10);
-    store.store(file1, Collections.singletonList(localIssue));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(localIssue));
 
     LocalIssuePointer serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
     serverIssue.setServerIssueKey("dummyServerIssueKey");
-    store.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
+    manager.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = manager.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
     LocalIssuePointer issuePointer = fileIssues.iterator().next();
@@ -172,15 +181,13 @@ public class IssueStoreTest extends SonarTest {
 
   @Test
   public void testTracking_should_drop_server_issue_reference_if_gone() {
-    store.clear();
-
     LocalIssuePointer issue = createRangeStoredIssue(1, "issue 1", 10);
     issue.setServerIssueKey("dummyServerIssueKey");
-    store.store(file1, Collections.singletonList(issue));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(issue));
 
-    store.matchWithServerIssues(file1, Collections.emptyList());
+    manager.matchWithServerIssues(file1, Collections.emptyList());
 
-    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = manager.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
     LocalIssuePointer issuePointer = fileIssues.iterator().next();
@@ -190,18 +197,16 @@ public class IssueStoreTest extends SonarTest {
 
   @Test
   public void testTracking_should_update_server_issue() {
-    store.clear();
-
     LocalIssuePointer issue = createRangeStoredIssue(1, "issue 1", 10);
     issue.setServerIssueKey("dummyServerIssueKey");
-    store.store(file1, Collections.singletonList(issue));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(issue));
 
     issue.setResolved(true);
     String newAssignee = "newAssignee";
     issue.setAssignee(newAssignee);
-    store.store(file1, Collections.singletonList(issue));
+    when(cache.read(file1)).thenReturn(Collections.singletonList(issue));
 
-    Collection<LocalIssuePointer> fileIssues = store.getForFile(file1);
+    Collection<LocalIssuePointer> fileIssues = manager.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
     LocalIssuePointer issuePointer = fileIssues.iterator().next();
@@ -210,28 +215,9 @@ public class IssueStoreTest extends SonarTest {
   }
 
   @Test
-  public void testClearAll() {
-    store.clear();
-
-    assertThat(store.getForFile(file1)).isEmpty();
-    assertThat(store.getForFile(file2)).isEmpty();
-  }
-
-  @Test
-  public void testDispose() {
-    store.disposeComponent();
-
-    assertThat(store.getForFile(file1)).isEmpty();
-    assertThat(store.getForFile(file2)).isEmpty();
-  }
-
-  @Test
-  public void testStoreShouldOverride() {
-    store.store(file1, Collections.singletonList(issue2));
-    store.store(file2, Collections.singletonList(issue1));
-
-    assertThat(store.getForFile(file1)).containsExactly(issue2);
-    assertThat(store.getForFile(file2)).containsExactly(issue1);
+  public void testClear() {
+    manager.clear();
+    verify(cache).clear();
   }
 
   private LocalIssuePointer createRangeStoredIssue(int id, String rangeContent, int line) {
@@ -241,6 +227,8 @@ public class IssueStoreTest extends SonarTest {
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
-    return new LocalIssuePointer(issue, null, range);
+    PsiFile psiFile = mock(PsiFile.class);
+    when(psiFile.isValid()).thenReturn(true);
+    return new LocalIssuePointer(issue, psiFile, range);
   }
 }

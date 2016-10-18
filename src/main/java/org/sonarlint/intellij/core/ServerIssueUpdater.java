@@ -36,8 +36,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssuePointer;
-import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.ServerIssuePointer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -54,9 +54,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   private ExecutorService executorService;
 
-  private final IssueStore store;
+  private final IssueManager store;
 
-  public ServerIssueUpdater(Project project, IssueStore store) {
+  public ServerIssueUpdater(Project project, IssueManager store) {
     super(project);
     this.store = store;
   }

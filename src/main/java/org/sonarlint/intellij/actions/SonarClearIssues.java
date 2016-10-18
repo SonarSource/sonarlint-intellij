@@ -34,7 +34,7 @@ import com.intellij.psi.PsiManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarClearIssues extends AnAction {
@@ -46,7 +46,7 @@ public class SonarClearIssues extends AnAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      IssueStore store = SonarLintUtils.get(project, IssueStore.class);
+      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
       DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.get(project, DaemonCodeAnalyzer.class);
 
       AccessToken token = ReadAction.start();

@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -80,7 +80,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   @Override
   public AnnotationContext collectInformation(@NotNull PsiFile file) {
     Project project = file.getProject();
-    IssueStore store = SonarLintUtils.get(project, IssueStore.class);
+    IssueManager store = SonarLintUtils.get(project, IssueManager.class);
     return new AnnotationContext(store);
   }
 
@@ -188,9 +188,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   public static class AnnotationContext {
-    final IssueStore store;
+    final IssueManager store;
 
-    AnnotationContext(IssueStore store) {
+    AnnotationContext(IssueManager store) {
       this.store = store;
     }
   }

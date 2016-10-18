@@ -56,7 +56,6 @@ public class IssueNodeTest {
   @Test
   public void testHoursAndSeverity() throws IOException {
     LocalIssuePointer i = createIssue(System.currentTimeMillis() - 3600 * 1000, "rule");
-    when(i.severity()).thenReturn("MAJOR");
     node = new IssueNode(i);
     node.render(renderer);
 
@@ -77,10 +76,11 @@ public class IssueNodeTest {
   private static LocalIssuePointer createIssue(long date, String message) {
     PsiFile file = mock(PsiFile.class);
     when(file.isValid()).thenReturn(true);
-    Issue i = mock(Issue.class);
-    when(i.getMessage()).thenReturn(message);
-    LocalIssuePointer issue = new LocalIssuePointer(i, file);
-    issue.setCreationDate(date);
-    return issue;
+    Issue issue = mock(Issue.class);
+    when(issue.getMessage()).thenReturn(message);
+    when(issue.getSeverity()).thenReturn("MAJOR");
+    LocalIssuePointer issuePointer = new LocalIssuePointer(issue, file);
+    issuePointer.setCreationDate(date);
+    return issuePointer;
   }
 }

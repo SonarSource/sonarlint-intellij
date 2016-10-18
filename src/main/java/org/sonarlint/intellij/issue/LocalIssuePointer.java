@@ -69,7 +69,7 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   public boolean isValid() {
-    if (psiFile != null && !psiFile.isValid()) {
+    if (!psiFile.isValid()) {
       return false;
     }
 

@@ -6,7 +6,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 class PathValidator implements StoreKeyValidator<String> {
   private final Project project;
 
-  public PathValidator(Project project) {
+  PathValidator(Project project) {
     this.project = project;
   }
 

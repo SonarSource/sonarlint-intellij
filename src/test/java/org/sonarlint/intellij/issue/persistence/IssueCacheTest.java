@@ -43,15 +43,28 @@ public class IssueCacheTest {
   }
 
   @Test
-  public void should_save_and_read_cache_only() {
+  public void should_save_and_read_cache_only() throws IOException {
     VirtualFile file = createTestFile("file1");
-    LocalIssuePointer issue1 = createTestIssue("r1");
+    LocalIssuePointer issue1 = createTestIssue("will be overwritten");
+    LocalIssuePointer issue2 = createTestIssue("r1");
     cache.save(file, Collections.singleton(issue1));
+    cache.save(file, Collections.singleton(issue2));
 
-    assertThat(cache.read(file)).containsOnly(issue1);
+    assertThat(cache.contains(file)).isTrue();
+    assertThat(cache.read(file)).containsOnly(issue2);
 
-    verifyZeroInteractions(store);
+    assertThat(cache.contains(createTestFile("file2"))).isFalse();
+
+    verify(store).read("file2");
+    verifyNoMoreInteractions(store);
     verifyZeroInteractions(matcher);
+  }
+
+  @Test
+  public void should_return_contains_even_if_empty() throws IOException {
+    when(store.read("file1")).thenReturn(Sonarlint.Issues.newBuilder().build());
+    assertThat(cache.contains(createTestFile("file1"))).isTrue();
+    assertThat(cache.read(createTestFile("file1"))).isEmpty();
   }
 
   @Test
