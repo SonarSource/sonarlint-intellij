@@ -51,6 +51,9 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     // 6. match issues with same rule, same line and same line hash
     match(tracking, LineAndLineHashKeyFactory.INSTANCE);
 
+    // 7. match issues with same rule and same same line hash
+    match(tracking, LineHashKeyFactory.INSTANCE);
+
     return tracking;
   }
 
@@ -179,6 +182,49 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     @Override
     public SearchKey create(Trackable t) {
       return new LineAndLineHashKey(t);
+    }
+  }
+
+  private static class LineHashKey implements SearchKey {
+    private final String ruleKey;
+    private final Integer lineHash;
+
+    LineHashKey(Trackable trackable) {
+      this.ruleKey = trackable.getRuleKey();
+      this.lineHash = trackable.getLineHash();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (o == null) {
+        return false;
+      }
+      if (this.getClass() != o.getClass()) {
+        return false;
+      }
+      LineHashKey that = (LineHashKey) o;
+      // start with most discriminant field
+      return Objects.equals(lineHash, that.lineHash)
+        && ruleKey.equals(that.ruleKey);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = ruleKey.hashCode();
+      result = 31 * result + (lineHash != null ? lineHash.hashCode() : 0);
+      return result;
+    }
+  }
+
+  private enum LineHashKeyFactory implements SearchKeyFactory {
+    INSTANCE;
+
+    @Override
+    public SearchKey create(Trackable t) {
+      return new LineHashKey(t);
     }
   }
 
