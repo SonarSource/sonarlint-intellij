@@ -32,7 +32,7 @@ public class LocalIssuePointer implements IssuePointer {
   private final long uid;
   private final RangeMarker range;
   private final PsiFile psiFile;
-  private final Integer checksum;
+  private Integer checksum;
 
   // tracked fields (mutable)
   private Long creationDate;
@@ -98,6 +98,10 @@ public class LocalIssuePointer implements IssuePointer {
   @Override
   public Integer getLineHash() {
     return checksum;
+  }
+
+  public void setLineHash(Integer hash) {
+    this.checksum = hash;
   }
 
   @Override
