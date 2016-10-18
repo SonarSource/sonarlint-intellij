@@ -45,6 +45,7 @@ CI)
     ./gradlew buildPlugin check sonarqube artifactory \
         -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace --info \
         -Dsonar.host.url=$SONAR_HOST_URL \
+        -Dsonar.projectVersion=$CURRENT_VERSION \
         -Dsonar.login=$SONAR_TOKEN
 
   elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN-}" ]; then
