@@ -196,7 +196,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
      * Set of files is not protected. It can be modified.
      */
     public Set<VirtualFile> files() {
-      return Collections.unmodifiableSet(files);
+      return files;
     }
 
     public TriggerType trigger() {

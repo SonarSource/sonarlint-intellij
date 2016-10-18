@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
+
 public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
   static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
@@ -75,7 +77,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
         .runReadAction((Computable<LanguageLevel>) () -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
       final String languageLevelStr = getLanguageLevelOption(languageLevel);
       String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
-      if (StringUtil.isEmpty(bytecodeTarget)) {
+      if (isEmpty(bytecodeTarget)) {
         // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
         bytecodeTarget = languageLevelStr;
       }

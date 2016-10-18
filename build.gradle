@@ -68,10 +68,9 @@ configurations {
 }
 
 dependencies {
-  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5.0.763'
-  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5.0.763'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5.0.772'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5.0.772'
   compile 'commons-lang:commons-lang:2.6'
-  compile 'commons-io:commons-io:2.4'
   compile 'com.google.code.findbugs:jsr305:2.0.2'
   // provided by the core:
   //compile 'com.google.protobuf:protobuf-java:3.1.0'

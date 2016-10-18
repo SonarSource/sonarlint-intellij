@@ -90,23 +90,23 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private void addAnnotation(LocalIssuePointer i, AnnotationHolder annotationHolder) {
+  private void addAnnotation(LocalIssuePointer issue, AnnotationHolder annotationHolder) {
     TextRange textRange;
 
-    if (i.range() != null) {
-      textRange = createTextRange(i.range());
+    if (issue.range() != null) {
+      textRange = createTextRange(issue.range());
     } else {
-      textRange = i.psiFile().getTextRange();
+      textRange = issue.psiFile().getTextRange();
     }
 
-    String htmlMsg = getHtmlMessage(i);
+    String htmlMsg = getHtmlMessage(issue);
 
-    Annotation annotation = annotationHolder.createAnnotation(getSeverity(i.severity()), textRange, i.getMessage(), htmlMsg);
+    Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.severity()), textRange, issue.getMessage(), htmlMsg);
 
-    if (i.range() == null) {
+    if (issue.range() == null) {
       annotation.setFileLevelAnnotation(true);
     } else {
-      annotation.setTextAttributes(getTextAttrsKey(i.severity()));
+      annotation.setTextAttributes(getTextAttrsKey(issue.severity()));
     }
 
     /**
@@ -117,7 +117,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      * key ({@link SonarLintTextAttributes} to {@link Annotation#setTextAttributes}
      * - let {@link Annotation#getTextAttributes} decide it based on highlight type and severity.
      */
-    annotation.setHighlightType(getType(i.severity()));
+    annotation.setHighlightType(getType(issue.severity()));
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
