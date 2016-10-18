@@ -35,18 +35,18 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     // 1. match issues with same server issue key
     match(tracking, ServerIssueSearchKeyFactory.INSTANCE);
 
-    // 2. match issues with same rule, same line and same line hash, but not necessarily with same message
-    match(tracking, LineAndLineHashKeyFactory.INSTANCE);
+    // 2. match issues with same rule, same line and same text range hash, but not necessarily with same message
+    match(tracking, LineAndTextRangeHashKeyFactory.INSTANCE);
 
-    // 3. match issues with same rule, same message and same line hash
-    match(tracking, LineHashAndMessageKeyFactory.INSTANCE);
+    // 3. match issues with same rule, same message and same text range hash
+    match(tracking, TextRangeHashAndMessageKeyFactory.INSTANCE);
 
     // 4. match issues with same rule, same line and same message
     match(tracking, LineAndMessageKeyFactory.INSTANCE);
 
-    // 5. match issues with same rule and same line hash but different line and different message.
+    // 5. match issues with same rule and same text range hash but different line and different message.
     // See SONAR-2812
-    match(tracking, LineHashKeyFactory.INSTANCE);
+    match(tracking, TextRangeHashKeyFactory.INSTANCE);
 
     return tracking;
   }
@@ -85,15 +85,15 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     SearchKey create(Trackable trackable);
   }
 
-  private static class LineAndLineHashKey implements SearchKey {
+  private static class LineAndTextRangeHashKey implements SearchKey {
     private final String ruleKey;
-    private final Integer lineHash;
+    private final Integer textRangeHash;
     private final Integer line;
 
-    LineAndLineHashKey(Trackable trackable) {
+    LineAndTextRangeHashKey(Trackable trackable) {
       this.ruleKey = trackable.getRuleKey();
       this.line = trackable.getLine();
-      this.lineHash = trackable.getTextRangeHash();
+      this.textRangeHash = trackable.getTextRangeHash();
     }
 
     @Override
@@ -107,40 +107,40 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      LineAndLineHashKey that = (LineAndLineHashKey) o;
+      LineAndTextRangeHashKey that = (LineAndTextRangeHashKey) o;
       // start with most discriminant field
       return Objects.equals(line, that.line)
-        && Objects.equals(lineHash, that.lineHash)
+        && Objects.equals(textRangeHash, that.textRangeHash)
         && ruleKey.equals(that.ruleKey);
     }
 
     @Override
     public int hashCode() {
       int result = ruleKey.hashCode();
-      result = 31 * result + (lineHash != null ? lineHash.hashCode() : 0);
+      result = 31 * result + (textRangeHash != null ? textRangeHash.hashCode() : 0);
       result = 31 * result + (line != null ? line.hashCode() : 0);
       return result;
     }
   }
 
-  private enum LineAndLineHashKeyFactory implements SearchKeyFactory {
+  private enum LineAndTextRangeHashKeyFactory implements SearchKeyFactory {
     INSTANCE;
 
     @Override
     public SearchKey create(Trackable t) {
-      return new LineAndLineHashKey(t);
+      return new LineAndTextRangeHashKey(t);
     }
   }
 
-  private static class LineHashAndMessageKey implements SearchKey {
+  private static class TextRangeHashAndMessageKey implements SearchKey {
     private final String ruleKey;
     private final String message;
-    private final Integer lineHash;
+    private final Integer textRangeHash;
 
-    LineHashAndMessageKey(Trackable trackable) {
+    TextRangeHashAndMessageKey(Trackable trackable) {
       this.ruleKey = trackable.getRuleKey();
       this.message = trackable.getMessage();
-      this.lineHash = trackable.getTextRangeHash();
+      this.textRangeHash = trackable.getTextRangeHash();
     }
 
     @Override
@@ -154,9 +154,9 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      LineHashAndMessageKey that = (LineHashAndMessageKey) o;
+      TextRangeHashAndMessageKey that = (TextRangeHashAndMessageKey) o;
       // start with most discriminant field
-      return Objects.equals(lineHash, that.lineHash)
+      return Objects.equals(textRangeHash, that.textRangeHash)
         && message.equals(that.message)
         && ruleKey.equals(that.ruleKey);
     }
@@ -165,17 +165,17 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     public int hashCode() {
       int result = ruleKey.hashCode();
       result = 31 * result + message.hashCode();
-      result = 31 * result + (lineHash != null ? lineHash.hashCode() : 0);
+      result = 31 * result + (textRangeHash != null ? textRangeHash.hashCode() : 0);
       return result;
     }
   }
 
-  private enum LineHashAndMessageKeyFactory implements SearchKeyFactory {
+  private enum TextRangeHashAndMessageKeyFactory implements SearchKeyFactory {
     INSTANCE;
 
     @Override
     public SearchKey create(Trackable t) {
-      return new LineHashAndMessageKey(t);
+      return new TextRangeHashAndMessageKey(t);
     }
   }
 
@@ -226,13 +226,13 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     }
   }
 
-  private static class LineHashKey implements SearchKey {
+  private static class TextRangeHashKey implements SearchKey {
     private final String ruleKey;
-    private final Integer lineHash;
+    private final Integer textRangeHash;
 
-    LineHashKey(Trackable trackable) {
+    TextRangeHashKey(Trackable trackable) {
       this.ruleKey = trackable.getRuleKey();
-      this.lineHash = trackable.getTextRangeHash();
+      this.textRangeHash = trackable.getTextRangeHash();
     }
 
     @Override
@@ -246,26 +246,26 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      LineHashKey that = (LineHashKey) o;
+      TextRangeHashKey that = (TextRangeHashKey) o;
       // start with most discriminant field
-      return Objects.equals(lineHash, that.lineHash)
+      return Objects.equals(textRangeHash, that.textRangeHash)
         && ruleKey.equals(that.ruleKey);
     }
 
     @Override
     public int hashCode() {
       int result = ruleKey.hashCode();
-      result = 31 * result + (lineHash != null ? lineHash.hashCode() : 0);
+      result = 31 * result + (textRangeHash != null ? textRangeHash.hashCode() : 0);
       return result;
     }
   }
 
-  private enum LineHashKeyFactory implements SearchKeyFactory {
+  private enum TextRangeHashKeyFactory implements SearchKeyFactory {
     INSTANCE;
 
     @Override
     public SearchKey create(Trackable t) {
-      return new LineHashKey(t);
+      return new TextRangeHashKey(t);
     }
   }
 
