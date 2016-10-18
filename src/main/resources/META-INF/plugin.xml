@@ -77,6 +77,12 @@
 
     <project-components>
         <component>
+            <implementation-class>org.sonarlint.intellij.issue.persistence.IssueCache</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.persistence.IssuePersistence</implementation-class>
+        </component>
+        <component>
             <implementation-class>org.sonarlint.intellij.ui.SonarLintConsole</implementation-class>
         </component>
         <component>
@@ -89,7 +95,7 @@
             <implementation-class>org.sonarlint.intellij.issue.IssueMatcher</implementation-class>
         </component>
         <component>
-            <implementation-class>org.sonarlint.intellij.issue.IssueStore</implementation-class>
+            <implementation-class>org.sonarlint.intellij.issue.IssueManager</implementation-class>
         </component>
         <component>
             <implementation-class>org.sonarlint.intellij.issue.IssueProcessor</implementation-class>

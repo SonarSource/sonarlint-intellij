@@ -46,7 +46,6 @@ import java.util.Map;
 
 public class SonarLintAnalyzer {
 
-
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);

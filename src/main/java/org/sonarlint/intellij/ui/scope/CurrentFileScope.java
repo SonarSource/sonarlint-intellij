@@ -59,7 +59,7 @@ public class CurrentFileScope extends IssueTreeScope {
   @Override
   public Collection<VirtualFile> getAll() {
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
-    if(selectedFile != null) {
+    if (selectedFile != null) {
       return Collections.singleton(selectedFile);
     } else {
       return Collections.emptySet();

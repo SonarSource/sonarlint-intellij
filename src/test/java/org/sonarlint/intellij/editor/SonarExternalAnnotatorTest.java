@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
@@ -50,7 +50,7 @@ public class SonarExternalAnnotatorTest {
   @Mock
   private VirtualFile virtualFile;
   @Mock
-  private IssueStore store;
+  private IssueManager store;
   private AnnotationHolderImpl holder;
   private SonarExternalAnnotator.AnnotationContext ctx;
   private TextRange psiFileRange;

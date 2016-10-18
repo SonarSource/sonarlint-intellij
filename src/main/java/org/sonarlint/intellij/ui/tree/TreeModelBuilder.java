@@ -26,7 +26,6 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
@@ -190,14 +189,7 @@ public class TreeModelBuilder {
   public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LocalIssuePointer>> map, Predicate<VirtualFile> filePredicate) {
     this.filePredicate = filePredicate;
 
-    List<VirtualFile> toRemove = new LinkedList<>();
-    for (VirtualFile f : index.getAllFiles()) {
-      if (!map.containsKey(f)) {
-        toRemove.add(f);
-      }
-    }
-
-    toRemove.forEach(this::removeFile);
+    index.getAllFiles().removeIf(f -> !map.containsKey(f));
 
     for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : map.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), filePredicate);
@@ -268,7 +260,7 @@ public class TreeModelBuilder {
   }
 
   private static List<LocalIssuePointer> filter(Iterable<LocalIssuePointer> issues) {
-    return StreamSupport.stream(issues.spliterator(),false)
+    return StreamSupport.stream(issues.spliterator(), false)
       .filter(TreeModelBuilder::accept)
       .collect(Collectors.toList());
   }
@@ -301,7 +293,7 @@ public class TreeModelBuilder {
         return dateCompare;
       }
 
-      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.issue().getSeverity(), o2.issue().getSeverity());
+      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.severity(), o2.severity());
 
       if (severityCompare != 0) {
         return severityCompare;
@@ -314,7 +306,7 @@ public class TreeModelBuilder {
       int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
-        .compare(o1.issue().getRuleName(), o2.issue().getRuleName())
+        .compare(o1.ruleName(), o2.ruleName())
         .compare(rangeStart1, rangeStart2)
         .compare(o1.uid(), o2.uid())
         .result();

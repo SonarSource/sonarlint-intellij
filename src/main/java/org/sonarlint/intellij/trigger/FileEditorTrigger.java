@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.intellij.openapi.application.AccessToken;
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
@@ -34,18 +32,15 @@ import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
-  private final IssueStore store;
   private final SonarLintJobManager analyzer;
   private final SonarLintGlobalSettings globalSettings;
   private final MessageBusConnection busConnection;
 
-  public FileEditorTrigger(Project project, IssueStore store, SonarLintJobManager analyzer, SonarLintGlobalSettings globalSettings) {
+  public FileEditorTrigger(Project project,SonarLintJobManager analyzer, SonarLintGlobalSettings globalSettings) {
     super(project);
-    this.store = store;
     this.analyzer = analyzer;
     this.globalSettings = globalSettings;
     this.busConnection = project.getMessageBus().connect(project);
@@ -72,22 +67,8 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
   }
 
   @Override
-  /**
-   * Removes issues from the store that are located in the file that was closed.
-   */
   public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    if (myProject.isDisposed()) {
-      // don't risk do anything here, the store will be gone anyway
-      return;
-    }
-
-    AccessToken token = ReadAction.start();
-    try {
-      store.clean(file);
-    } finally {
-      // closeable only introduced in 2016.2
-      token.finish();
-    }
+    // nothing to do
   }
 
   @Override

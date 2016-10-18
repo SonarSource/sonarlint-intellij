@@ -47,11 +47,11 @@ public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
   private final DaemonCodeAnalyzer codeAnalyzer;
-  private final IssueStore store;
+  private final IssueManager store;
   private final SonarLintConsole console;
   private final ServerIssueUpdater serverIssueUpdater;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueStore store, ServerIssueUpdater serverIssueUpdater) {
+  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueManager store, ServerIssueUpdater serverIssueUpdater) {
     super(project);
     this.matcher = matcher;
     this.codeAnalyzer = codeAnalyzer;
@@ -108,12 +108,11 @@ public class IssueProcessor extends AbstractProjectComponent {
    */
   private Map<VirtualFile, Collection<LocalIssuePointer>> transformIssues(
     Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
-
     Map<VirtualFile, Collection<LocalIssuePointer>> map = new HashMap<>();
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
-    for(VirtualFile f : analysed) {
-      if(failedVirtualFiles.contains(f)) {
+    for (VirtualFile f : analysed) {
+      if (failedVirtualFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
         // it's important to store all files, even without issues, to correctly track the leak period (SLI-86)

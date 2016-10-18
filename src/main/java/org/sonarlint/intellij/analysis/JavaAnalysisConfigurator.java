@@ -31,7 +31,6 @@ import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.Computable;
-import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
 import org.apache.commons.lang.StringUtils;
@@ -46,6 +45,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
 public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
@@ -75,7 +76,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
         .runReadAction((Computable<LanguageLevel>) () -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
       final String languageLevelStr = getLanguageLevelOption(languageLevel);
       String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
-      if (StringUtil.isEmpty(bytecodeTarget)) {
+      if (isEmpty(bytecodeTarget)) {
         // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
         bytecodeTarget = languageLevelStr;
       }

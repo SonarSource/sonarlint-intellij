@@ -116,9 +116,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
    * Marks a file as launched, resetting its state to unchanged
    */
   public void removeFiles(Collection<VirtualFile> files) {
-    for (VirtualFile f : files) {
-      eventMap.remove(f);
-    }
+    files.forEach(eventMap::remove);
   }
 
   private class EventWatcher extends Thread {

@@ -26,16 +26,15 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarClearIssues extends AnAction {
@@ -47,18 +46,18 @@ public class SonarClearIssues extends AnAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      IssueStore store = SonarLintUtils.get(project, IssueStore.class);
+      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
       DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.get(project, DaemonCodeAnalyzer.class);
 
-      Set<VirtualFile> files = new HashSet<>(store.getAll().keySet());
       AccessToken token = ReadAction.start();
       try {
         store.clear();
 
         // run annotator to remove highlighting of issues
-        for (PsiFile psiFile : findFiles(project, files)) {
-          codeAnalyzer.restart(psiFile);
-        }
+        FileEditorManager editorManager = FileEditorManager.getInstance(project);
+        VirtualFile[] openFiles = editorManager.getOpenFiles();
+        Collection<PsiFile> psiFiles = findFiles(project, openFiles);
+        psiFiles.forEach(codeAnalyzer::restart);
       } finally {
         // closeable only introduced in 2016.2
         token.finish();
@@ -66,12 +65,12 @@ public class SonarClearIssues extends AnAction {
     }
   }
 
-  public Collection<PsiFile> findFiles(Project project, Collection<VirtualFile> files) {
+  public Collection<PsiFile> findFiles(Project project, VirtualFile[] files) {
     PsiManager psiManager = PsiManager.getInstance(project);
-    List<PsiFile> psiFiles = new ArrayList<>(files.size());
+    List<PsiFile> psiFiles = new ArrayList<>(files.length);
 
     for (VirtualFile vFile : files) {
-      if(!vFile.isValid()) {
+      if (!vFile.isValid()) {
         continue;
       }
       PsiFile psiFile = psiManager.findFile(vFile);

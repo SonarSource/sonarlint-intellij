@@ -39,11 +39,10 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LocalIssuePointer;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
   private final boolean unitTest;
@@ -81,7 +80,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   @Override
   public AnnotationContext collectInformation(@NotNull PsiFile file) {
     Project project = file.getProject();
-    IssueStore store = SonarLintUtils.get(project, IssueStore.class);
+    IssueManager store = SonarLintUtils.get(project, IssueManager.class);
     return new AnnotationContext(store);
   }
 
@@ -91,25 +90,23 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private void addAnnotation(LocalIssuePointer i, AnnotationHolder annotationHolder) {
-    Issue issue = i.issue();
+  private void addAnnotation(LocalIssuePointer issue, AnnotationHolder annotationHolder) {
     TextRange textRange;
 
-    if (i.range() != null) {
-      textRange = createTextRange(i.range());
+    if (issue.range() != null) {
+      textRange = createTextRange(issue.range());
     } else {
-      textRange = i.psiFile().getTextRange();
+      textRange = issue.psiFile().getTextRange();
     }
 
-    String msg = getMessage(issue);
     String htmlMsg = getHtmlMessage(issue);
 
-    Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.getSeverity()), textRange, msg, htmlMsg);
+    Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.severity()), textRange, issue.getMessage(), htmlMsg);
 
-    if (i.range() == null) {
+    if (issue.range() == null) {
       annotation.setFileLevelAnnotation(true);
     } else {
-      annotation.setTextAttributes(getTextAttrsKey(issue.getSeverity()));
+      annotation.setTextAttributes(getTextAttrsKey(issue.severity()));
     }
 
     /**
@@ -120,7 +117,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      * key ({@link SonarLintTextAttributes} to {@link Annotation#setTextAttributes}
      * - let {@link Annotation#getTextAttributes} decide it based on highlight type and severity.
      */
-    annotation.setHighlightType(getType(issue.getSeverity()));
+    annotation.setHighlightType(getType(issue.severity()));
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
@@ -147,7 +144,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    * {@link InspectionDescriptionLinkHandler}
    * {@link com.intellij.openapi.editor.colors.CodeInsightColors}
    */
-  private String getHtmlMessage(Issue issue) {
+  private String getHtmlMessage(LocalIssuePointer issue) {
     @NonNls
     final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
@@ -160,10 +157,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     // in unit tests on a system without gui (like travis) UIUtil will fail, and Application is not available in simple tests
     return unitTest || ApplicationManager.getApplication().isUnitTestMode() ||
       UIUtil.isUnderDarcula();
-  }
-
-  private static String getMessage(Issue issue) {
-    return issue.getMessage();
   }
 
   /**
@@ -195,9 +188,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   public static class AnnotationContext {
-    final IssueStore store;
+    final IssueManager store;
 
-    AnnotationContext(IssueStore store) {
+    AnnotationContext(IssueManager store) {
       this.store = store;
     }
   }

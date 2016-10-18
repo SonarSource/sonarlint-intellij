@@ -33,9 +33,9 @@ import com.intellij.util.net.HttpConfigurable;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -43,11 +43,13 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.text.PlainDocument;
 
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ConnectionTestTask;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
+
+import static org.sonarlint.intellij.util.SonarLintUtils.isBlank;
+import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
 public class SonarQubeServerEditor extends DialogWrapper {
   private static final int NAME_MAX_LENGTH = 50;
@@ -89,10 +91,9 @@ public class SonarQubeServerEditor extends DialogWrapper {
     super(parent, true);
     this.isCreating = isCreating;
     this.server = server;
-    this.serverNames = new HashSet<>();
-    for (SonarQubeServer s : serverList) {
-      serverNames.add(s.getName());
-    }
+    this.serverNames = serverList.stream()
+      .map(SonarQubeServer::getName)
+      .collect(Collectors.toSet());
 
     if (isCreating) {
       super.setTitle("Create SonarQube server configuration");
@@ -106,7 +107,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
 
   @Override
   public JComponent getPreferredFocusedComponent() {
-    if(isCreating) {
+    if (isCreating) {
       return nameText;
     } else {
       return urlText;
@@ -117,7 +118,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
   @Override
   protected ValidationInfo doValidate() {
     if (isCreating) {
-      if (StringUtils.isEmpty(nameText.getText())) {
+      if (isEmpty(nameText.getText())) {
         return new ValidationInfo("Servers must be configured with a name", nameText);
       }
 
@@ -126,7 +127,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
       }
     }
 
-    if (StringUtils.isEmpty(urlText.getText())) {
+    if (isEmpty(urlText.getText())) {
       return new ValidationInfo("Servers must be configured with a host URL", urlText);
     }
 
@@ -139,7 +140,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     nameText = new JBTextField();
     nameText.setDocument(new LengthRestrictedDocument(NAME_MAX_LENGTH));
     nameText.setText(server.getName());
-    if(!isCreating) {
+    if (!isCreating) {
       nameText.setFont(nameText.getFont().deriveFont(Font.BOLD));
     }
     nameText.setEditable(isCreating);
@@ -285,7 +286,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     } else if (r.success()) {
       Messages.showMessageDialog(testButton, r.message(), "Connection", Messages.getInformationIcon());
     } else {
-      Messages.showErrorDialog(testButton, r.message(), "Connection failed");
+      Messages.showErrorDialog(testButton, r.message(), "Connection Failed");
     }
   }
 
@@ -312,11 +313,11 @@ public class SonarQubeServerEditor extends DialogWrapper {
   }
 
   private void generateToken() {
-    if(StringUtils.isBlank(urlText.getText())) {
+    if (isBlank(urlText.getText())) {
       Messages.showErrorDialog(urlText, "Please fill the 'Server Url' field", "Invalid Server URL");
       return;
     }
-    if(!BrowserUtil.isAbsoluteURL(urlText.getText())) {
+    if (!BrowserUtil.isAbsoluteURL(urlText.getText())) {
       Messages.showErrorDialog(urlText, "Can't launch browser for URL: " + urlText.getText(), "Invalid Server URL");
       return;
     }
@@ -324,7 +325,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     StringBuilder url = new StringBuilder(256);
     url.append(urlText.getText());
 
-    if(!urlText.getText().endsWith("/")) {
+    if (!urlText.getText().endsWith("/")) {
       url.append("/");
     }
 

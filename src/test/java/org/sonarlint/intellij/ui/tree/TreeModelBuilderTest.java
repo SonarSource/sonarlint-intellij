@@ -107,8 +107,7 @@ public class TreeModelBuilderTest {
 
   private void assertNode(IssueNode node, String file, int number) {
     assertThat(node).isNotNull();
-    assertThat(node.issue().issue().getInputFile().getPath()).isEqualTo(Paths.get(file));
-    assertThat(node.issue().issue().getRuleName()).isEqualTo("rule" + number);
+    assertThat(node.issue().ruleName()).isEqualTo("rule" + number);
   }
 
   private void addFile(Map<VirtualFile, Collection<LocalIssuePointer>> data, String fileName, int numIssues) {

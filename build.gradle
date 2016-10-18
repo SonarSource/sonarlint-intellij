@@ -4,15 +4,20 @@
 plugins {
   id "org.jetbrains.intellij" version "0.1.10"
   id "org.sonarqube" version "1.2-rc1"
+  id "java"
   id "com.github.hierynomus.license" version "0.11.0"
   id "net.researchgate.release" version "2.2.2"
   id "com.jfrog.artifactory" version "4.4.0"
+  id 'com.google.protobuf' version "0.8.0"
 }
 
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.artifactory'
 apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'com.google.protobuf'
+apply plugin: 'idea'
 
 group = 'org.sonarsource.sonarlint.intellij'
 description = 'SonarLint for IntelliJ IDEA'
@@ -34,6 +39,21 @@ intellij {
   }
 }
 
+protobuf {
+  // Configure the protoc executable
+  protoc {
+    // Download from repositories. Must be the same as the one used in sonarlint-core
+    artifact = 'com.google.protobuf:protoc:3.1.0'
+  }
+}
+
+idea {
+  module {
+    sourceDirs += file('build/generated/source/proto/main/java')
+    generatedSourceDirs += file('build/generated/source/proto/main/java')
+  }
+}
+
 repositories {
   jcenter()
   mavenLocal()
@@ -48,11 +68,12 @@ configurations {
 }
 
 dependencies {
-  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5.0.763'
-  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5.0.763'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-client-api:2.5.0.772'
+  compile 'org.sonarsource.sonarlint.core:sonarlint-core:2.5.0.772'
   compile 'commons-lang:commons-lang:2.6'
-  compile 'commons-io:commons-io:2.4'
   compile 'com.google.code.findbugs:jsr305:2.0.2'
+  // provided by the core:
+  //compile 'com.google.protobuf:protobuf-java:3.1.0'
   testCompile 'junit:junit:4.11'
   testCompile 'org.assertj:assertj-core:2.2.0'
   testCompile 'org.mockito:mockito-core:1.10.19'
