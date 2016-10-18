@@ -36,6 +36,7 @@ import java.awt.GridBagLayout;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -91,10 +92,9 @@ public class SonarQubeServerEditor extends DialogWrapper {
     super(parent, true);
     this.isCreating = isCreating;
     this.server = server;
-    this.serverNames = new HashSet<>();
-    for (SonarQubeServer s : serverList) {
-      serverNames.add(s.getName());
-    }
+    this.serverNames = serverList.stream()
+      .map(SonarQubeServer::getName)
+      .collect(Collectors.toSet());
 
     if (isCreating) {
       super.setTitle("Create SonarQube server configuration");

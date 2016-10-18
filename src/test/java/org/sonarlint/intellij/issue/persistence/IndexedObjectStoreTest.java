@@ -69,7 +69,7 @@ public class IndexedObjectStoreTest {
     store.write("mykey", "myvalue");
     store.write("mykey2", "myvalue2");
 
-    when(index.keys()).thenReturn(Arrays.asList(new String[] {"mykey", "mykey2"}));
+    when(index.keys()).thenReturn(Arrays.asList("mykey", "mykey2"));
     when(validator.apply("mykey")).thenReturn(Boolean.FALSE);
     when(validator.apply("mykey2")).thenReturn(Boolean.TRUE);
 

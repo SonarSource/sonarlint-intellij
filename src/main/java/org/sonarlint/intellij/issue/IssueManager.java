@@ -92,7 +92,7 @@ public class IssueManager extends AbstractProjectComponent {
 
   private void matchWithPreviousIssues(VirtualFile file, Collection<LocalIssuePointer> rawIssues) {
     matchingInProgress.lock();
-    Collection<LocalIssuePointer> previousIssues = getForFile(file).stream().filter(issue -> issue.isValid()).collect(Collectors.toList());
+    Collection<LocalIssuePointer> previousIssues = getForFile(file).stream().filter(LocalIssuePointer::isValid).collect(Collectors.toList());
     Input<LocalIssuePointer> baseInput = () -> previousIssues;
     Input<LocalIssuePointer> rawInput = () -> rawIssues;
     updateTrackedIssues(file, baseInput, rawInput);
