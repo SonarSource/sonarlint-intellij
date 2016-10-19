@@ -33,6 +33,9 @@ public interface Trackable {
   String getMessage();
 
   @CheckForNull
+  Integer getTextRangeHash();
+
+  @CheckForNull
   Integer getLineHash();
 
   String getRuleKey();

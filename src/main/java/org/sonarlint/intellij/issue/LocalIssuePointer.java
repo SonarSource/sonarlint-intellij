@@ -19,22 +19,33 @@
  */
 package org.sonarlint.intellij.issue;
 
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
+import java.security.MessageDigest;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 public class LocalIssuePointer implements IssuePointer {
+
   private static final AtomicLong UID_GEN = new AtomicLong();
+
+  private static final MessageDigest MD5_DIGEST = DigestUtils.getMd5Digest();
+
   private final long uid;
   private final RangeMarker range;
   private final Issue issue;
   private final PsiFile psiFile;
-  private final Integer checksum;
+  private final Integer textRangeHash;
+  private final Integer lineHash;
 
   // tracked fields (mutable)
   private Long creationDate;
@@ -52,15 +63,23 @@ public class LocalIssuePointer implements IssuePointer {
     this.psiFile = psiFile;
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
+
     if (range != null) {
-      this.checksum = checksum(range.getDocument().getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
+      Document document = range.getDocument();
+      this.textRangeHash = checksum(document.getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
+
+      int line = range.getDocument().getLineNumber(range.getStartOffset());
+      int lineStartOffset = document.getLineStartOffset(line);
+      int lineEndOffset = document.getLineEndOffset(line);
+      this.lineHash = checksum(document.getText(new TextRange(lineStartOffset, lineEndOffset)));
     } else {
-      this.checksum = null;
+      this.textRangeHash = null;
+      this.lineHash = null;
     }
   }
 
   private static int checksum(String content) {
-    return content.replaceAll("[\\s]", "").hashCode();
+    return Hex.encodeHexString(MD5_DIGEST.digest(content.replaceAll("[\\s]", "").getBytes(UTF_8))).hashCode();
   }
 
   public boolean isValid() {
@@ -91,8 +110,13 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   @Override
+  public Integer getTextRangeHash() {
+    return textRangeHash;
+  }
+
+  @Override
   public Integer getLineHash() {
-    return checksum;
+    return lineHash;
   }
 
   @Override
