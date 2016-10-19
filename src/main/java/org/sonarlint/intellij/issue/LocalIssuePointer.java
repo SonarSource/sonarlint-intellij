@@ -38,7 +38,7 @@ public class LocalIssuePointer implements IssuePointer {
 
   private static final AtomicLong UID_GEN = new AtomicLong();
 
-  private static final MessageDigest md5Digest = DigestUtils.getMd5Digest();
+  private static final MessageDigest MD5_DIGEST = DigestUtils.getMd5Digest();
 
   private final long uid;
   private final RangeMarker range;
@@ -79,7 +79,7 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   private static int checksum(String content) {
-    return Hex.encodeHexString(md5Digest.digest(content.replaceAll("[\\s]", "").getBytes(UTF_8))).hashCode();
+    return Hex.encodeHexString(MD5_DIGEST.digest(content.replaceAll("[\\s]", "").getBytes(UTF_8))).hashCode();
   }
 
   public boolean isValid() {
