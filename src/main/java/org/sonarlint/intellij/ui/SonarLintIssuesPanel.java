@@ -60,7 +60,7 @@ import javax.swing.tree.TreePath;
 import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.core.SonarLintServerManager;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
@@ -92,7 +92,8 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     super(false, true);
     this.project = project;
     this.issueManager = project.getComponent(IssueManager.class);
-    SonarLintServerManager manager = SonarLintUtils.get(SonarLintServerManager.class);
+
+    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
 
     addToolbar();
 
@@ -101,7 +102,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     issuesPanel.add(createScopePanel(), BorderLayout.NORTH);
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
 
-    rulePanel = new SonarLintRulePanel(project, manager);
+    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
 
     JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
       rulePanel.getPanel(),

@@ -73,7 +73,7 @@ import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ServerUpdateTask;
-import org.sonarlint.intellij.core.SonarLintServerManager;
+import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -97,7 +97,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
   // Model
   private GlobalConfigurationListener serverChangeListener;
-  private SonarLintServerManager serverManager;
+  private SonarLintEngineManager serverManager;
   private List<SonarQubeServer> servers = new ArrayList<>();
   private Set<String> deletedServerIds = new HashSet<>();
   private ConnectedSonarLintEngine engine = null;
@@ -109,7 +109,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
   public void create() {
     Application app = ApplicationManager.getApplication();
-    serverManager = app.getComponent(SonarLintServerManager.class);
+    serverManager = app.getComponent(SonarLintEngineManager.class);
     serverChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC);
     serverList = new JBList();
     serverList.getEmptyText().setText(LABEL_NO_SERVERS);

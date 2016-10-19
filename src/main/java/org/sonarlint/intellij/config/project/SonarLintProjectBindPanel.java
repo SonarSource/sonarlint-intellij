@@ -62,7 +62,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.ServerUpdateTask;
-import org.sonarlint.intellij.core.SonarLintServerManager;
+import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -144,7 +144,7 @@ public class SonarLintProjectBindPanel implements Disposable {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     String selectedStorageId = getSelectedStorageId();
-    SonarLintServerManager core = SonarLintUtils.get(SonarLintServerManager.class);
+    SonarLintEngineManager core = SonarLintUtils.get(SonarLintEngineManager.class);
 
     if (engine != null) {
       engine.removeStateListener(serverStateListener);

@@ -19,17 +19,14 @@
  */
 package org.sonarlint.intellij.editor;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.project.Project;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
-import org.sonarlint.intellij.core.SonarLintServerManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,16 +40,16 @@ public class SonarLinkHandlerTest extends SonarTest {
   @Before
   public void setUp() {
     super.setUp();
-    SonarLintServerManager serverManager = mock(SonarLintServerManager.class);
+    ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
     sonarlint = mock(SonarLintFacade.class);
     editor = mock(Editor.class);
     handler = new SonarLinkHandler();
 
-    when(serverManager.getFacadeForAnalysis(any(Project.class))).thenReturn(sonarlint);
+    when(projectBindingManager.getFacadeForAnalysis()).thenReturn(sonarlint);
     when(editor.getProject()).thenReturn(project);
     when(sonarlint.getDescription(RULE_KEY)).thenReturn("description");
     when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name");
-    register(ApplicationManager.getApplication(), SonarLintServerManager.class, serverManager);
+    register(ProjectBindingManager.class, projectBindingManager);
   }
 
   @Test

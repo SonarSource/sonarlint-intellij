@@ -24,21 +24,21 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
-import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLinkHandler extends TooltipLinkHandler {
   @Nullable
   @Override
   public String getDescription(@NotNull String refSuffix, @NotNull Editor editor) {
-    SonarLintServerManager serverManager = SonarLintUtils.get(SonarLintServerManager.class);
     Project project = editor.getProject();
     if(project == null) {
       return null;
     }
 
-    SonarLintFacade sonarlint = serverManager.getFacadeForAnalysis(project);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    SonarLintFacade sonarlint = projectBindingManager.getFacadeForAnalysis();
     String description = sonarlint.getDescription(refSuffix);
     String name = sonarlint.getRuleName(refSuffix);
     return transform(refSuffix, name, description);

@@ -80,7 +80,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       return;
     }
 
-    ConnectedSonarLintEngine engine = SonarLintUtils.get(SonarLintServerManager.class).getConnectedEngine(serverId);
+    ConnectedSonarLintEngine engine = SonarLintUtils.get(SonarLintEngineManager.class).getConnectedEngine(serverId);
 
     String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
 

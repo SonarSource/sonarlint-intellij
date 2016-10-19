@@ -37,19 +37,19 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.core.SonarLintServerManager;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 public class SonarLintRulePanel {
   private final Project project;
-  private final SonarLintServerManager serverManager;
+  private final ProjectBindingManager projectBindingManager;
   private JPanel panel;
   private JEditorPane editor;
   private HTMLEditorKit kit;
 
-  public SonarLintRulePanel(Project project, SonarLintServerManager serverManager) {
+  public SonarLintRulePanel(Project project, ProjectBindingManager projectBindingManager) {
     this.project = project;
-    this.serverManager = serverManager;
+    this.projectBindingManager = projectBindingManager;
     this.kit = new HTMLEditorKit();
     StyleSheet styleSheet = kit.getStyleSheet();
     EditorColorsScheme scheme = EditorColorsManager.getInstance().getGlobalScheme();
@@ -65,7 +65,8 @@ public class SonarLintRulePanel {
     if (issue == null) {
       nothingToDisplay(false);
     } else {
-      String description = serverManager.getFacadeForAnalysis(project).getDescription(issue.getRuleKey());
+
+      String description = projectBindingManager.getFacadeForAnalysis().getDescription(issue.getRuleKey());
       if (description == null) {
         nothingToDisplay(true);
         return;

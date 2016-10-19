@@ -32,10 +32,10 @@ import javax.swing.JPanel;
 
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.core.SonarLintServerManager;
+import org.sonarlint.intellij.core.SonarLintEngineManager;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
-  private final SonarLintServerManager serverManager;
+  private final SonarLintEngineManager serverManager;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
   private SonarLintGlobalSettingsPanel globalPanel;
@@ -45,7 +45,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   public SonarLintGlobalConfigurable() {
     Application app = ApplicationManager.getApplication();
     this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
-    this.serverManager = ApplicationManager.getApplication().getComponent(SonarLintServerManager.class);
+    this.serverManager = ApplicationManager.getApplication().getComponent(SonarLintEngineManager.class);
   }
 
   @Nls @Override public String getDisplayName() {

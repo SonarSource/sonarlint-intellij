@@ -28,6 +28,7 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.io.File;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.jetbrains.annotations.NonNls;
@@ -92,7 +93,7 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
   }
 
   public void setSonarQubeServers(List<SonarQubeServer> servers) {
-    this.servers = servers;
+    this.servers = Collections.unmodifiableList(servers);
   }
 
   public List<SonarQubeServer> getSonarQubeServers() {

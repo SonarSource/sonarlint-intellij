@@ -28,8 +28,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
-import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -49,7 +49,7 @@ public class SonarLintAnalyzer {
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
     Project p = module.getProject();
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintServerManager core = SonarLintUtils.get(SonarLintServerManager.class);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.get(p, ProjectBindingManager.class);
 
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     Map<String, String> pluginProps = new HashMap<>();
@@ -70,7 +70,7 @@ public class SonarLintAnalyzer {
     // Analyze
     long start = System.currentTimeMillis();
 
-    SonarLintFacade facade = core.getFacadeForAnalysis(module.getProject());
+    SonarLintFacade facade = projectBindingManager.getFacadeForAnalysis();
 
     String what;
     if (filesToAnalyze.size() == 1) {
