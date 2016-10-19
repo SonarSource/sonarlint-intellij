@@ -71,6 +71,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       manager.store(map);
 
       if (shouldUpdateServerIssues(trigger)) {
+        console.debug("Fetching server issues");
         job.files().forEach(serverIssueUpdater::fetchAndMatchServerIssues);
       }
 
@@ -81,7 +82,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       token.finish();
     }
 
-    console.debug("Stored matched issues in " + (System.currentTimeMillis() - start) + " ms");
+    console.debug("Processed issues in " + (System.currentTimeMillis() - start) + " ms");
 
     String end;
     if (issues.size() == 1) {
