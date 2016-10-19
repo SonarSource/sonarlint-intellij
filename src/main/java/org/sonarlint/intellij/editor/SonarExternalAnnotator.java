@@ -40,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -62,12 +62,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       return;
     }
 
-    Collection<LocalIssuePointer> issues = annotationResult.store.getForFile(file.getVirtualFile());
-    for (LocalIssuePointer i : issues) {
+    Collection<LiveIssue> issues = annotationResult.store.getForFile(file.getVirtualFile());
+    for (LiveIssue issue : issues) {
       // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
-      RangeMarker range = i.range();
+      RangeMarker range = issue.getRange();
       if (range == null || range.isValid()) {
-        addAnnotation(i, holder);
+        addAnnotation(issue, holder);
       }
     }
   }
@@ -90,23 +90,23 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private void addAnnotation(LocalIssuePointer issue, AnnotationHolder annotationHolder) {
+  private void addAnnotation(LiveIssue issue, AnnotationHolder annotationHolder) {
     TextRange textRange;
 
-    if (issue.range() != null) {
-      textRange = createTextRange(issue.range());
+    if (issue.getRange() != null) {
+      textRange = createTextRange(issue.getRange());
     } else {
       textRange = issue.psiFile().getTextRange();
     }
 
     String htmlMsg = getHtmlMessage(issue);
 
-    Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.severity()), textRange, issue.getMessage(), htmlMsg);
+    Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.getSeverity()), textRange, issue.getMessage(), htmlMsg);
 
-    if (issue.range() == null) {
+    if (issue.getRange() == null) {
       annotation.setFileLevelAnnotation(true);
     } else {
-      annotation.setTextAttributes(getTextAttrsKey(issue.severity()));
+      annotation.setTextAttributes(getTextAttrsKey(issue.getSeverity()));
     }
 
     /**
@@ -117,7 +117,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      * key ({@link SonarLintTextAttributes} to {@link Annotation#setTextAttributes}
      * - let {@link Annotation#getTextAttributes} decide it based on highlight type and severity.
      */
-    annotation.setHighlightType(getType(issue.severity()));
+    annotation.setHighlightType(getType(issue.getSeverity()));
   }
 
   private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
@@ -144,7 +144,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    * {@link InspectionDescriptionLinkHandler}
    * {@link com.intellij.openapi.editor.colors.CodeInsightColors}
    */
-  private String getHtmlMessage(LocalIssuePointer issue) {
+  private String getHtmlMessage(LiveIssue issue) {
     @NonNls
     final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""

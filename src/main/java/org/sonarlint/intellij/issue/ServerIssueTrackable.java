@@ -19,13 +19,14 @@
  */
 package org.sonarlint.intellij.issue;
 
+import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 
-public class ServerIssuePointer implements IssuePointer {
+public class ServerIssueTrackable implements Trackable {
 
   private final ServerIssue serverIssue;
 
-  public ServerIssuePointer(ServerIssue serverIssue) {
+  public ServerIssueTrackable(ServerIssue serverIssue) {
     this.serverIssue = serverIssue;
   }
 

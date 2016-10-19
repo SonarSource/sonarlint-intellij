@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue;
 
+import com.google.common.base.Preconditions;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.Document;
@@ -32,7 +33,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 public class IssueMatcher extends AbstractProjectComponent {
   private final PsiManager psiManager;
@@ -53,54 +54,37 @@ public class IssueMatcher extends AbstractProjectComponent {
   }
 
   /**
-   * Tries to match an SQ issue to an IntelliJ file, by either:
-   * - Attaching to the file with a dynamic {@link RangeMarker} (see {@link #createRangeIssue})
-   * - Create a file-level issue (see {@link #createFileIssue})
+   * Tries to match an SQ issue to an IntelliJ file.
    *
-   * <b>Can only be called with read access</b>.
+   * <b>Can only be called with getLive access</b>.
    */
-  public LocalIssuePointer match(PsiFile file, Issue issue) throws NoMatchException {
+  public RangeMarker match(PsiFile file, IssueLocation issueLocation) throws NoMatchException {
     ApplicationManager.getApplication().assertReadAccessAllowed();
+    Preconditions.checkArgument(issueLocation.getStartLine() != null);
 
     Document doc = docManager.getDocument(file);
     if (doc == null) {
       throw new NoMatchException("No document found for file: " + file.getName());
     }
 
-    if (issue.getStartLine() != null) {
-      TextRange issueRange = getIssueTextRange(file, doc, issue);
-      return createRangeIssue(file, doc, issue, issueRange);
-    } else {
-      // no start line, so it's probably a file issue
-      return createFileIssue(file, issue);
-    }
+    TextRange range = getIssueTextRange(file, doc, issueLocation);
+    return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
-  private static LocalIssuePointer createRangeIssue(PsiFile file, Document doc, Issue issue, TextRange issueRange) {
-    RangeMarker range = doc.createRangeMarker(issueRange.getStartOffset(), issueRange.getEndOffset());
-    return new LocalIssuePointer(issue, file, range);
-  }
-
-  private static LocalIssuePointer createFileIssue(PsiFile file, Issue issue) {
-    return new LocalIssuePointer(issue, file);
-  }
-
-  private static TextRange getIssueTextRange(PsiFile file, Document doc, Issue issue) throws NoMatchException {
-    int ijStartLine = issue.getStartLine() - 1;
-    int ijEndLine = issue.getEndLine() - 1;
+  private static TextRange getIssueTextRange(PsiFile file, Document doc, IssueLocation issueLocation) throws NoMatchException {
+    int ijStartLine = issueLocation.getStartLine() - 1;
+    int ijEndLine = issueLocation.getEndLine() - 1;
     int lineCount = doc.getLineCount();
 
     if (ijStartLine >= doc.getLineCount()) {
-      throw new NoMatchException("Start line number (" + ijStartLine + ") larger than lines in file: " + lineCount
-        + " " + issue.getRuleKey());
+      throw new NoMatchException("Start line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
     }
     if (ijEndLine >= doc.getLineCount()) {
-      throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount
-        + " " + issue.getRuleKey());
+      throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
     }
 
-    int rangeStart = findStartLineOffset(file, doc, ijStartLine, issue.getStartLineOffset());
-    int rangeEnd = findEndLineOffset(doc, ijEndLine, issue.getEndLineOffset());
+    int rangeStart = findStartLineOffset(file, doc, ijStartLine, issueLocation.getStartLineOffset());
+    int rangeEnd = findEndLineOffset(doc, ijEndLine, issueLocation.getEndLineOffset());
 
     if (rangeEnd < rangeStart) {
       throw new NoMatchException("Invalid Text Range");

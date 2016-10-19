@@ -36,7 +36,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -100,7 +100,7 @@ public class SonarExternalAnnotatorTest {
   }
 
   private void createFileIssues(int number) {
-    Collection<LocalIssuePointer> issues = new LinkedList<>();
+    Collection<LiveIssue> issues = new LinkedList<>();
 
     for (int i = 0; i < number; i++) {
       issues.add(createFileStoredIssue(i, psiFile));
@@ -110,7 +110,7 @@ public class SonarExternalAnnotatorTest {
   }
 
   private void createStoredIssues(int number) {
-    Collection<LocalIssuePointer> issues = new LinkedList<>();
+    Collection<LiveIssue> issues = new LinkedList<>();
 
     for (int i = 0; i < number; i++) {
       issues.add(createRangeStoredIssue(i, i, i + 10, "foo " + i));
@@ -119,12 +119,12 @@ public class SonarExternalAnnotatorTest {
     when(store.getForFile(virtualFile)).thenReturn(issues);
   }
 
-  private static LocalIssuePointer createFileStoredIssue(int id, PsiFile file) {
+  private static LiveIssue createFileStoredIssue(int id, PsiFile file) {
     Issue issue = SonarLintTestUtils.createIssue(id);
-    return new LocalIssuePointer(issue, file, null);
+    return new LiveIssue(issue, file, null);
   }
 
-  private LocalIssuePointer createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
+  private LiveIssue createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
     Issue issue = SonarLintTestUtils.createIssue(id);
     RangeMarker range = mock(RangeMarker.class);
 
@@ -133,6 +133,6 @@ public class SonarExternalAnnotatorTest {
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(text);
-    return new LocalIssuePointer(issue, null, range);
+    return new LiveIssue(issue, null, range);
   }
 }

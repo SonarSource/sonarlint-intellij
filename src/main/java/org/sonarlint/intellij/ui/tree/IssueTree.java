@@ -42,7 +42,7 @@ import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 
@@ -83,10 +83,10 @@ public class IssueTree extends Tree implements DataProvider {
       if (!(node instanceof IssueNode)) {
         return null;
       }
-      LocalIssuePointer issue = ((IssueNode) node).issue();
+      LiveIssue issue = ((IssueNode) node).issue();
       int offset;
 
-      RangeMarker range = issue.range();
+      RangeMarker range = issue.getRange();
       if (range != null) {
         offset = range.getStartOffset();
       } else {

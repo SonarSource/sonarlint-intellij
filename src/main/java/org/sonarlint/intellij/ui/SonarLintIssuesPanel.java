@@ -62,7 +62,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
@@ -114,7 +114,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
 
-      @Override public void filesChanged(final Map<VirtualFile, Collection<LocalIssuePointer>> map) {
+      @Override public void filesChanged(final Map<VirtualFile, Collection<LiveIssue>> map) {
         ApplicationManager.getApplication().invokeLater(() -> {
           treeBuilder.updateFiles(map);
           expandTree();
@@ -206,7 +206,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   }
 
   public void updateTree() {
-    Map<VirtualFile, Collection<LocalIssuePointer>> issuesPerFile = new HashMap<>();
+    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new HashMap<>();
     Collection<VirtualFile> all = scope.getAll();
     for(VirtualFile f : all) {
       issuesPerFile.put(f, issueManager.getForFile(f));
@@ -263,7 +263,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     tree.getSelectionModel().setSelectionPath(path);
     tree.scrollPathToVisible(path);
 
-    RangeMarker range = node.issue().range();
+    RangeMarker range = node.issue().getRange();
     int startOffset = (range != null) ? range.getStartOffset() : 0;
     return new OccurenceInfo(
       new OpenFileDescriptor(project, node.issue().psiFile().getVirtualFile(), startOffset),

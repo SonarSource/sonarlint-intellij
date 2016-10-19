@@ -29,37 +29,37 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class LocalIssuePointer implements IssuePointer {
-
+public class LiveIssue implements Trackable {
   private static final AtomicLong UID_GEN = new AtomicLong();
-
   private static final MessageDigest MD5_DIGEST = DigestUtils.getMd5Digest();
 
   private final long uid;
   private final RangeMarker range;
   private final PsiFile psiFile;
   private final Integer textRangeHash;
-  private Integer lineHash;
+  private final Integer lineHash;
+  private final String severity;
+  private final String ruleName;
+  private final String message;
+  private final String ruleKey;
+
 
   // tracked fields (mutable)
   private Long creationDate;
   private String serverIssueKey;
   private boolean resolved;
   private String assignee;
-  private String severity;
-  private String ruleKey;
-  private String ruleName;
-  private String message;
 
-  public LocalIssuePointer(Issue issue, PsiFile psiFile) {
+  public LiveIssue(Issue issue, PsiFile psiFile) {
     this(issue, psiFile, null);
   }
 
-  public LocalIssuePointer(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
+  public LiveIssue(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
@@ -124,10 +124,6 @@ public class LocalIssuePointer implements IssuePointer {
     return lineHash;
   }
 
-  public void setLineHash(Integer hash) {
-    this.lineHash = hash;
-  }
-
   @Override
   public String getRuleKey() {
     return ruleKey;
@@ -138,7 +134,7 @@ public class LocalIssuePointer implements IssuePointer {
   }
 
   @CheckForNull
-  public RangeMarker range() {
+  public RangeMarker getRange() {
     return range;
   }
 
@@ -146,23 +142,11 @@ public class LocalIssuePointer implements IssuePointer {
     return psiFile;
   }
 
-  public String severity() {
+  public String getSeverity() {
     return severity;
   }
 
-  public void severity(String severity) {
-    this.severity = severity;
-  }
-
-  public void ruleKey(String ruleKey) {
-    this.ruleKey = ruleKey;
-  }
-
-  public void ruleName(String ruleName) {
-    this.ruleName = ruleName;
-  }
-
-  public String ruleName() {
+  public String getRuleName() {
     return ruleName;
   }
 
@@ -171,22 +155,23 @@ public class LocalIssuePointer implements IssuePointer {
     return creationDate;
   }
 
-  public void setCreationDate(@Nullable Long creationDate) {
-    this.creationDate = creationDate;
-  }
-
   @Override
   public String getServerIssueKey() {
     return serverIssueKey;
   }
 
+  @Override
+  public boolean isResolved() {
+    return resolved;
+  }
+
+  // mutable fields
   public void setServerIssueKey(@Nullable String serverIssueKey) {
     this.serverIssueKey = serverIssueKey;
   }
 
-  @Override
-  public boolean isResolved() {
-    return resolved;
+  public void setCreationDate(@Nullable Long creationDate) {
+    this.creationDate = creationDate;
   }
 
   public void setResolved(boolean resolved) {

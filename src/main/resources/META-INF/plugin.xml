@@ -77,7 +77,7 @@
 
     <project-components>
         <component>
-            <implementation-class>org.sonarlint.intellij.issue.persistence.IssueCache</implementation-class>
+            <implementation-class>org.sonarlint.intellij.issue.persistence.LiveIssueCache</implementation-class>
         </component>
         <component>
             <implementation-class>org.sonarlint.intellij.issue.persistence.IssuePersistence</implementation-class>

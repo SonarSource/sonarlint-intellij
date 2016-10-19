@@ -25,7 +25,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
@@ -45,7 +45,7 @@ public class IssueNodeTest {
 
   @Test
   public void testAge() {
-    LocalIssuePointer i = createIssue(System.currentTimeMillis(), "rule");
+    LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
     node = new IssueNode(i);
     node.render(renderer);
 
@@ -55,7 +55,7 @@ public class IssueNodeTest {
 
   @Test
   public void testHoursAndSeverity() throws IOException {
-    LocalIssuePointer i = createIssue(System.currentTimeMillis() - 3600 * 1000, "rule");
+    LiveIssue i = createIssue(System.currentTimeMillis() - 3600 * 1000, "rule");
     node = new IssueNode(i);
     node.render(renderer);
 
@@ -66,20 +66,20 @@ public class IssueNodeTest {
 
   @Test
   public void testCount() {
-    LocalIssuePointer i = createIssue(System.currentTimeMillis(), "rule");
+    LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
     node = new IssueNode(i);
     assertThat(node.getFileCount()).isZero();
     assertThat(node.getIssueCount()).isEqualTo(1);
     assertThat(node.issue()).isEqualTo(i);
   }
 
-  private static LocalIssuePointer createIssue(long date, String message) {
+  private static LiveIssue createIssue(long date, String message) {
     PsiFile file = mock(PsiFile.class);
     when(file.isValid()).thenReturn(true);
     Issue issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn("MAJOR");
-    LocalIssuePointer issuePointer = new LocalIssuePointer(issue, file);
+    LiveIssue issuePointer = new LiveIssue(issue, file);
     issuePointer.setCreationDate(date);
     return issuePointer;
   }

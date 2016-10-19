@@ -24,6 +24,7 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -47,27 +48,27 @@ public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
   private final DaemonCodeAnalyzer codeAnalyzer;
-  private final IssueManager store;
+  private final IssueManager manager;
   private final SonarLintConsole console;
   private final ServerIssueUpdater serverIssueUpdater;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueManager store, ServerIssueUpdater serverIssueUpdater) {
+  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueManager manager, ServerIssueUpdater serverIssueUpdater) {
     super(project);
     this.matcher = matcher;
     this.codeAnalyzer = codeAnalyzer;
-    this.store = store;
+    this.manager = manager;
     this.console = SonarLintConsole.get(project);
     this.serverIssueUpdater = serverIssueUpdater;
   }
 
   public void process(final SonarLintJobManager.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles, TriggerType trigger) {
-    Map<VirtualFile, Collection<LocalIssuePointer>> map;
+    Map<VirtualFile, Collection<LiveIssue>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
       map = transformIssues(issues, job.files(), failedAnalysisFiles);
 
-      store.store(map);
+      manager.store(map);
 
       if (shouldUpdateServerIssues(trigger)) {
         job.files().forEach(serverIssueUpdater::fetchAndMatchServerIssues);
@@ -99,22 +100,22 @@ public class IssueProcessor extends AbstractProjectComponent {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<LocalIssuePointer>> transformIssues(
+  private Map<VirtualFile, Collection<LiveIssue>> transformIssues(
     Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<LocalIssuePointer>> map = new HashMap<>();
+    Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
     for (VirtualFile f : analysed) {
       if (failedVirtualFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
-        // it's important to store all files, even without issues, to correctly track the leak period (SLI-86)
+        // it's important to manager all files, even without issues, to correctly track the leak period (SLI-86)
         map.put(f, new ArrayList<>());
       }
     }
 
-    for (Issue i : issues) {
-      ClientInputFile inputFile = i.getInputFile();
+    for (Issue issue : issues) {
+      ClientInputFile inputFile = issue.getInputFile();
       if (inputFile == null || inputFile.getPath() == null || failedAnalysisFiles.contains(inputFile)) {
         // ignore project level issues and files that had errors
         continue;
@@ -126,7 +127,8 @@ public class IssueProcessor extends AbstractProjectComponent {
           continue;
         }
         PsiFile psiFile = matcher.findFile(vFile);
-        LocalIssuePointer toStore = matcher.match(psiFile, i);
+        RangeMarker rangeMarker = matcher.match(psiFile, issue);
+        LiveIssue toStore = createIssuePointer(rangeMarker, psiFile, issue);
         map.get(psiFile.getVirtualFile()).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue", e);
@@ -150,5 +152,9 @@ public class IssueProcessor extends AbstractProjectComponent {
       }
     }
     return psiFiles;
+  }
+
+  private static LiveIssue createIssuePointer(RangeMarker rangeMarker, PsiFile file, Issue issue) {
+    return new LiveIssue(issue, file, rangeMarker);
   }
 }

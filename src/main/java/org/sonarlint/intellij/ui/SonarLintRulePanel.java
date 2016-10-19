@@ -38,7 +38,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintServerManager;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 
 public class SonarLintRulePanel {
   private final Project project;
@@ -61,7 +61,7 @@ public class SonarLintRulePanel {
     show();
   }
 
-  public void setRuleKey(@Nullable LocalIssuePointer issue) {
+  public void setRuleKey(@Nullable LiveIssue issue) {
     if (issue == null) {
       nothingToDisplay(false);
     } else {
@@ -74,7 +74,7 @@ public class SonarLintRulePanel {
       StringBuilder builder = new StringBuilder(description.length() + 64);
 
       builder.append("<h2>")
-        .append(issue.ruleName())
+        .append(issue.getRuleName())
         .append("</h2>")
         .append(issue.getRuleKey())
         .append("<br />")

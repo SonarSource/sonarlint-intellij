@@ -24,7 +24,12 @@ import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.issue.LocalIssueTrackable;
+import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.proto.Sonarlint;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.HashingPathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
@@ -53,20 +58,28 @@ public class IssuePersistence extends AbstractProjectComponent {
       try {
         issues.writeTo(os);
       } catch (IOException e) {
-        throw new IllegalStateException("Failed to read issues", e);
+        throw new IllegalStateException("Failed to save issues", e);
       }
     };
     store = new IndexedObjectStore<>(index, mapper, reader, writer, validator);
     store.deleteInvalid();
   }
 
-  public void save(String key, Sonarlint.Issues issues) throws IOException {
-    store.write(key, issues);
+  public boolean contains(String key) {
+    return store.contains(key);
+  }
+
+  public void save(String key, Collection<? extends Trackable> issues) throws IOException {
+    store.write(key, transform(issues));
   }
 
   @CheckForNull
-  public Sonarlint.Issues read(String key) throws IOException {
-    return store.read(key).orElse(null);
+  public Collection<LocalIssueTrackable> read(String key) throws IOException {
+    Optional<Sonarlint.Issues> issues = store.read(key);
+    if(issues.isPresent()) {
+      return transform(issues.get());
+    }
+    return null;
   }
 
   private Path getBasePath() {
@@ -81,5 +94,50 @@ public class IssuePersistence extends AbstractProjectComponent {
   public void clear() {
     FileUtils.deleteDirectory(storeBasePath);
     FileUtils.forceMkDirs(storeBasePath);
+  }
+
+  private Collection<LocalIssueTrackable> transform(Sonarlint.Issues protoIssues) {
+    return protoIssues.getIssueList().stream()
+      .map(IssuePersistence::transform)
+      .filter(i -> i != null)
+      .collect(Collectors.toList());
+  }
+
+  private Sonarlint.Issues transform(Collection<? extends Trackable> localIssues) {
+    Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
+    localIssues.stream()
+      .map(IssuePersistence::transform)
+      .filter(i -> i != null)
+      .forEach(builder::addIssue);
+
+    return builder.build();
+  }
+
+  private static LocalIssueTrackable transform(Sonarlint.Issues.Issue issue) {
+    return new LocalIssueTrackable(issue);
+  }
+
+  @CheckForNull
+  private static Sonarlint.Issues.Issue transform(Trackable localIssue) {
+    Sonarlint.Issues.Issue.Builder builder = Sonarlint.Issues.Issue.newBuilder()
+      .setRuleKey(localIssue.getRuleKey())
+      .setAssignee(localIssue.getAssignee())
+      .setMessage(localIssue.getMessage())
+      .setResolved(localIssue.isResolved());
+
+    //TODO what happens otherwise??
+    if(localIssue.getCreationDate() != null) {
+      builder.setCreationDate(localIssue.getCreationDate());
+    }
+    if(localIssue.getLineHash() != null) {
+      builder.setChecksum(localIssue.getLineHash());
+    }
+    if(localIssue.getServerIssueKey() != null) {
+      builder.setServerIssueKey(localIssue.getServerIssueKey());
+    }
+    if (localIssue.getLine() != null) {
+      builder.setLine(localIssue.getLine());
+    }
+    return builder.build();
   }
 }

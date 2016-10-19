@@ -35,7 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarLinkHandlerTest extends SonarTest {
-  private static final String RULE_KEY = "ruleKey";
+  private static final String RULE_KEY = "setRuleKey";
   private SonarLinkHandler handler;
   private Editor editor;
   private SonarLintFacade sonarlint;

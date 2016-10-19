@@ -37,8 +37,8 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.IssuePointer;
-import org.sonarlint.intellij.issue.ServerIssuePointer;
+import org.sonarlint.intellij.issue.ServerIssueTrackable;
+import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -92,10 +92,10 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       try {
         Iterator<ServerIssue> serverIssues = fetchServerIssues(engine, moduleKey, relativePath);
 
-        Collection<IssuePointer> serverIssuePointers = toStream(serverIssues).map(ServerIssuePointer::new).collect(Collectors.toList());
+        Collection<Trackable> serverIssuesTrackable = toStream(serverIssues).map(ServerIssueTrackable::new).collect(Collectors.toList());
 
-        if (!serverIssuePointers.isEmpty()) {
-          store.matchWithServerIssues(virtualFile, serverIssuePointers);
+        if (!serverIssuesTrackable.isEmpty()) {
+          store.matchWithServerIssues(virtualFile, serverIssuesTrackable);
         }
       } catch (Throwable t) {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible

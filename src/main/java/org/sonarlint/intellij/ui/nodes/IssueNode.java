@@ -27,15 +27,15 @@ import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import java.io.IOException;
 import javax.annotation.Nonnull;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(IssueNode.class);
-  private final LocalIssuePointer issue;
+  private final LiveIssue issue;
 
-  public IssueNode(LocalIssuePointer issue) {
+  public IssueNode(LiveIssue issue) {
     this.issue = issue;
   }
 
@@ -45,13 +45,13 @@ public class IssueNode extends AbstractNode {
       return;
     }
 
-    String severity = issue.severity();
+    String severity = issue.getSeverity();
 
     if (severity != null) {
       try {
         renderer.setIcon(ResourceLoader.getSeverityIcon(severity));
       } catch (IOException e) {
-        LOGGER.error("Couldn't load icon for severity: " + severity, e);
+        LOGGER.error("Couldn't load icon for getSeverity: " + severity, e);
       }
     }
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
@@ -77,12 +77,12 @@ public class IssueNode extends AbstractNode {
     return 0;
   }
 
-  public LocalIssuePointer issue() {
+  public LiveIssue issue() {
     return issue;
   }
 
-  private static String issueCoordinates(@Nonnull LocalIssuePointer issue) {
-    RangeMarker range = issue.range();
+  private static String issueCoordinates(@Nonnull LiveIssue issue) {
+    RangeMarker range = issue.getRange();
     if (range == null) {
       return "(0, 0) ";
     }

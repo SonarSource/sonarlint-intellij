@@ -36,7 +36,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-import org.sonarlint.intellij.issue.LocalIssuePointer;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
@@ -48,7 +48,7 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
  */
 public class TreeModelBuilder {
   private static final List<String> SEVERITY_ORDER = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
-  private static final Comparator<LocalIssuePointer> ISSUE_COMPARATOR = new IssueComparator();
+  private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private DefaultTreeModel model;
   private SummaryNode summary;
@@ -59,8 +59,8 @@ public class TreeModelBuilder {
     this.index = new IssueTreeIndex();
   }
 
-  public void updateFiles(Map<VirtualFile, Collection<LocalIssuePointer>> issuesPerFile) {
-    for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : issuesPerFile.entrySet()) {
+  public void updateFiles(Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
+    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : issuesPerFile.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), filePredicate);
     }
 
@@ -186,12 +186,12 @@ public class TreeModelBuilder {
     return summary;
   }
 
-  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LocalIssuePointer>> map, Predicate<VirtualFile> filePredicate) {
+  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LiveIssue>> map, Predicate<VirtualFile> filePredicate) {
     this.filePredicate = filePredicate;
 
     index.getAllFiles().removeIf(f -> !map.containsKey(f));
 
-    for (Map.Entry<VirtualFile, Collection<LocalIssuePointer>> e : map.entrySet()) {
+    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
       setFileIssues(e.getKey(), e.getValue(), filePredicate);
     }
 
@@ -199,13 +199,13 @@ public class TreeModelBuilder {
   }
 
   @CheckForNull
-  private FileNode setFileIssues(VirtualFile file, Iterable<LocalIssuePointer> issues, Predicate<VirtualFile> condition) {
+  private FileNode setFileIssues(VirtualFile file, Iterable<LiveIssue> issues, Predicate<VirtualFile> condition) {
     if (!accept(file, condition)) {
       removeFile(file);
       return null;
     }
 
-    List<LocalIssuePointer> filtered = filter(issues);
+    List<LiveIssue> filtered = filter(issues);
     if (filtered.isEmpty()) {
       removeFile(file);
       return null;
@@ -243,29 +243,29 @@ public class TreeModelBuilder {
     }
   }
 
-  private static void setIssues(FileNode node, Iterable<LocalIssuePointer> issuePointers) {
+  private static void setIssues(FileNode node, Iterable<LiveIssue> issuePointers) {
     node.removeAllChildren();
 
     // 15ms for 500 issues -> to improve?
-    TreeSet<LocalIssuePointer> set = new TreeSet<>(ISSUE_COMPARATOR);
+    TreeSet<LiveIssue> set = new TreeSet<>(ISSUE_COMPARATOR);
 
-    for (LocalIssuePointer issue : issuePointers) {
+    for (LiveIssue issue : issuePointers) {
       set.add(issue);
     }
 
-    for (LocalIssuePointer issue : set) {
+    for (LiveIssue issue : set) {
       IssueNode iNode = new IssueNode(issue);
       node.add(iNode);
     }
   }
 
-  private static List<LocalIssuePointer> filter(Iterable<LocalIssuePointer> issues) {
+  private static List<LiveIssue> filter(Iterable<LiveIssue> issues) {
     return StreamSupport.stream(issues.spliterator(), false)
       .filter(TreeModelBuilder::accept)
       .collect(Collectors.toList());
   }
 
-  private static boolean accept(LocalIssuePointer issue) {
+  private static boolean accept(LiveIssue issue) {
     return !issue.isResolved() && issue.isValid();
   }
 
@@ -284,8 +284,8 @@ public class TreeModelBuilder {
     }
   }
 
-  static class IssueComparator implements Comparator<LocalIssuePointer> {
-    @Override public int compare(@Nonnull LocalIssuePointer o1, @Nonnull LocalIssuePointer o2) {
+  static class IssueComparator implements Comparator<LiveIssue> {
+    @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
       Ordering<Long> creationDateOrdering = Ordering.natural().reverse().nullsLast();
       int dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
 
@@ -293,20 +293,20 @@ public class TreeModelBuilder {
         return dateCompare;
       }
 
-      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.severity(), o2.severity());
+      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getSeverity(), o2.getSeverity());
 
       if (severityCompare != 0) {
         return severityCompare;
       }
 
-      RangeMarker r1 = o1.range();
-      RangeMarker r2 = o2.range();
+      RangeMarker r1 = o1.getRange();
+      RangeMarker r2 = o2.getRange();
 
       int rangeStart1 = (r1 == null) ? -1 : r1.getStartOffset();
       int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
-        .compare(o1.ruleName(), o2.ruleName())
+        .compare(o1.getRuleName(), o2.getRuleName())
         .compare(rangeStart1, rangeStart2)
         .compare(o1.uid(), o2.uid())
         .result();

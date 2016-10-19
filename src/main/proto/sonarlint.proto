@@ -11,19 +11,17 @@ message Issues {
     repeated Issue issue = 1;
 
     message Issue {
+        // used for matching
         string serverIssueKey = 1;
         string ruleKey = 2;
-        int32 startLine = 3;
-        int32 endLine = 4;
-        int32 startLineOffset = 5;
-        int32 endLineOffset = 6;
-        string message = 7;
-        int32 checksum = 8;
-        string assignee = 9;
-        int64 creationDate = 10;
-        string severity = 11;
-        string ruleName = 12;
-        bool resolved = 13;
+        int32 line = 3;
+        string message = 4;
+        int32 checksum = 5;
+
+        // values carried forward
+        string assignee = 6;
+        int64 creationDate = 7;
+        bool resolved = 8;
     }
 }
 

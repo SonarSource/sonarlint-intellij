@@ -62,6 +62,11 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
     return Optional.of(reader.apply(Files.newInputStream(path)));
   }
 
+  public boolean contains(K key) {
+    Path path = pathMapper.apply(key);
+    return path.toFile().exists();
+  }
+
   /**
    * Deletes all entries in the index are no longer valid.
    */

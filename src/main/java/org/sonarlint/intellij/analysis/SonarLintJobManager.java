@@ -103,7 +103,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
    * The reason why we might want to queue the analysis instead of starting immediately is that the EDT might currently hold a write access.
    * If we hold a write lock, the ApplicationManager will not work as expected, because it won't start a pooled thread if we hold
-   * a write access (the pooled thread would dead lock if it needs read access). The listener for file editor events holds the write access, for example.
+   * a write access (the pooled thread would dead lock if it needs getLive access). The listener for file editor events holds the write access, for example.
    * @see #submitAsync(Module, Collection, TriggerType)
    */
   public void submit(Module m, Collection<VirtualFile> files, TriggerType trigger) {
