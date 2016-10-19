@@ -67,15 +67,10 @@ public class IssueProcessor extends AbstractProjectComponent {
     try {
       map = transformIssues(issues, job.files(), failedAnalysisFiles);
 
-      Set<VirtualFile> notAnalyzed =
-        job.files().stream().filter(store::containsFile).collect(Collectors.toSet());
-
       store.store(map);
 
-      for (VirtualFile file : job.files()) {
-        if (shouldUpdateServerIssues(file, trigger, notAnalyzed)) {
-          serverIssueUpdater.fetchAndMatchServerIssues(file);
-        }
+      if (shouldUpdateServerIssues(trigger)) {
+        job.files().forEach(serverIssueUpdater::fetchAndMatchServerIssues);
       }
 
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
@@ -97,10 +92,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.info("Found " + issues.size() + end);
   }
 
-  private boolean shouldUpdateServerIssues(VirtualFile file, TriggerType trigger, Set<VirtualFile> notAnalyzed) {
-    return trigger == TriggerType.EDITOR_OPEN
-      || trigger == TriggerType.ACTION
-      || (!store.getForFile(file).isEmpty() && notAnalyzed.contains(file));
+  private static boolean shouldUpdateServerIssues(TriggerType trigger) {
+    return trigger == TriggerType.EDITOR_OPEN || trigger == TriggerType.ACTION;
   }
 
   /**
