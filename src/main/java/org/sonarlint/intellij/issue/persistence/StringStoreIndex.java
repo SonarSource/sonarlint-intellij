@@ -45,13 +45,13 @@ class StringStoreIndex implements StoreIndex<String> {
   }
 
   private Map<String, String> load() {
-    if (!Files.exists(indexFilePath)) {
+    if (!indexFilePath.toFile().exists()) {
       return Collections.emptyMap();
     }
     try (InputStream stream = Files.newInputStream(indexFilePath)) {
       return Sonarlint.StorageIndex.parseFrom(stream).getMappedPathByKeyMap();
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to getLive local issue store index", e);
+      throw new IllegalStateException("Failed to read local issue store index", e);
     }
   }
 

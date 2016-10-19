@@ -50,7 +50,7 @@ public class IndexedObjectStoreTest {
     root = temp.getRoot().toPath();
     index = mock(StoreIndex.class);
     validator = mock(StoreKeyValidator.class);
-    PathMapper<String> mapper = str -> root.resolve(str);
+    PathMapper<String> mapper = str -> root.resolve("a").resolve(str);
     Reader<String> reader = (stream) -> new Scanner(stream).next();
     Writer<String> writer = (stream, str) -> {
       try {
@@ -63,23 +63,35 @@ public class IndexedObjectStoreTest {
     store = new IndexedObjectStore<>(index, mapper, reader, writer, validator);
   }
 
+  private Path getPath(String key) {
+    return root.resolve("a").resolve(key);
+  }
+
   @Test
   public void testWrite() throws IOException {
     store.write("mykey", "myvalue");
-    assertThat(root.resolve("mykey")).hasContent("myvalue");
-    Mockito.verify(index).save("mykey", root.resolve("mykey"));
+    assertThat(getPath("mykey")).hasContent("myvalue");
+    Mockito.verify(index).save("mykey", getPath("mykey"));
 
     assertThat(store.read("mykey").get()).isEqualTo("myvalue");
   }
 
   @Test
+  public void testContains() throws IOException {
+    store.write("mykey", "myvalue");
+    assertThat(getPath("mykey")).hasContent("myvalue");
+    assertThat(store.contains("mykey")).isTrue();
+    assertThat(store.contains("random")).isFalse();
+  }
+
+  @Test
   public void testDelete() throws IOException {
     store.write("mykey", "myvalue");
-    assertThat(root.resolve("mykey")).hasContent("myvalue");
+    assertThat(getPath("mykey")).hasContent("myvalue");
 
     store.delete("mykey");
     assertThat(store.read("mykey").isPresent()).isFalse();
-    assertThat(root.resolve("mykey")).doesNotExist();
+    assertThat(getPath("mykey")).doesNotExist();
     Mockito.verify(index).delete("mykey");
   }
 
@@ -93,8 +105,8 @@ public class IndexedObjectStoreTest {
     when(validator.apply("mykey2")).thenReturn(Boolean.TRUE);
 
     store.deleteInvalid();
-    assertThat(root.resolve("mykey")).doesNotExist();
-    assertThat(root.resolve("mykey2")).exists();
+    assertThat(getPath("mykey")).doesNotExist();
+    assertThat(getPath("mykey2")).exists();
     Mockito.verify(index).delete("mykey");
   }
 }

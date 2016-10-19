@@ -77,7 +77,7 @@ public class IssueManager extends AbstractProjectComponent {
 
   private Collection<Trackable> getPreviousIssues(VirtualFile file) {
     Collection<LiveIssue> liveIssues = cache.getLive(file);
-    if(liveIssues != null) {
+    if (liveIssues != null) {
       return liveIssues.stream().filter(LiveIssue::isValid).collect(Collectors.toList());
     }
 
@@ -92,7 +92,7 @@ public class IssueManager extends AbstractProjectComponent {
   }
 
   private boolean wasAnalyzed(VirtualFile file) {
-    if(cache.contains(file)) {
+    if (cache.contains(file)) {
       return true;
     }
     String storeKey = SonarLintUtils.getRelativePath(myProject, file);
@@ -106,7 +106,8 @@ public class IssueManager extends AbstractProjectComponent {
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
   }
 
-  void store(VirtualFile file, final Collection<LiveIssue> rawIssues) {boolean firstAnalysis = !wasAnalyzed(file);
+  void store(VirtualFile file, final Collection<LiveIssue> rawIssues) {
+    boolean firstAnalysis = !wasAnalyzed(file);
 
     // this will also delete all existing issues in the file
     if (firstAnalysis) {

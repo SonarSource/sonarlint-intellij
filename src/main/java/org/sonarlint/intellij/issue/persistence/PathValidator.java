@@ -19,18 +19,17 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
 class PathValidator implements StoreKeyValidator<String> {
-  private final Project project;
+  private final VirtualFile projectBaseDir;
 
-  PathValidator(Project project) {
-    this.project = project;
+  PathValidator(VirtualFile projectBaseDir) {
+    this.projectBaseDir = projectBaseDir;
   }
 
   @Override public Boolean apply(String relativeFilePath) {
-    VirtualFile virtualFile = project.getBaseDir().findFileByRelativePath(relativeFilePath);
+    VirtualFile virtualFile = projectBaseDir.findFileByRelativePath(relativeFilePath);
     return virtualFile != null && virtualFile.isValid();
   }
 }

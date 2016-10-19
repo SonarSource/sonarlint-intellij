@@ -19,8 +19,41 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-/**
- * Created by meneses on 18.10.16.
- */
+import com.intellij.openapi.vfs.VirtualFile;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class PathValidatorTest {
+  public PathValidator validator;
+  private VirtualFile projectBaseDir;
+  private VirtualFile file;
+
+  @Before
+  public void setUp() {
+    projectBaseDir = mock(VirtualFile.class);
+    file = mock(VirtualFile.class);
+    validator = new PathValidator(projectBaseDir);
+    when(projectBaseDir.findFileByRelativePath("file1")).thenReturn(file);
+  }
+
+  @Test
+  public void should_validate_if_file_valid() {
+    when(file.isValid()).thenReturn(true);
+    assertThat(validator.apply("file1")).isTrue();
+  }
+
+  @Test
+  public void should_not_validate_if_file_invalid() {
+    when(file.isValid()).thenReturn(false);
+    assertThat(validator.apply("file1")).isFalse();
+  }
+
+  @Test
+  public void should_not_validate_if_file_not_found() {
+    assertThat(validator.apply("file2")).isFalse();
+  }
 }

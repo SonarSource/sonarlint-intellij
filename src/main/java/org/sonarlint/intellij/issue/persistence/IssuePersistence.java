@@ -23,6 +23,7 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
@@ -44,9 +45,10 @@ public class IssuePersistence extends AbstractProjectComponent {
   protected IssuePersistence(Project project) {
     super(project);
     storeBasePath = getBasePath();
+    FileUtils.forceMkDirs(storeBasePath);
     StoreIndex<String> index = new StringStoreIndex(storeBasePath);
     PathMapper<String> mapper = new HashingPathMapper(storeBasePath, 2);
-    StoreKeyValidator<String> validator = new PathValidator(project);
+    StoreKeyValidator<String> validator = new PathValidator(project.getBaseDir());
     Reader<Sonarlint.Issues> reader = is -> {
       try {
         return Sonarlint.Issues.parseFrom(is);
@@ -96,14 +98,14 @@ public class IssuePersistence extends AbstractProjectComponent {
     FileUtils.forceMkDirs(storeBasePath);
   }
 
-  private Collection<LocalIssueTrackable> transform(Sonarlint.Issues protoIssues) {
+  private static Collection<LocalIssueTrackable> transform(Sonarlint.Issues protoIssues) {
     return protoIssues.getIssueList().stream()
       .map(IssuePersistence::transform)
       .filter(i -> i != null)
       .collect(Collectors.toList());
   }
 
-  private Sonarlint.Issues transform(Collection<? extends Trackable> localIssues) {
+  private static Sonarlint.Issues transform(Collection<? extends Trackable> localIssues) {
     Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
     localIssues.stream()
       .map(IssuePersistence::transform)
@@ -121,11 +123,12 @@ public class IssuePersistence extends AbstractProjectComponent {
   private static Sonarlint.Issues.Issue transform(Trackable localIssue) {
     Sonarlint.Issues.Issue.Builder builder = Sonarlint.Issues.Issue.newBuilder()
       .setRuleKey(localIssue.getRuleKey())
-      .setAssignee(localIssue.getAssignee())
       .setMessage(localIssue.getMessage())
       .setResolved(localIssue.isResolved());
 
-    //TODO what happens otherwise??
+    if(localIssue.getAssignee() != null) {
+      builder.setAssignee(localIssue.getAssignee());
+    }
     if(localIssue.getCreationDate() != null) {
       builder.setCreationDate(localIssue.getCreationDate());
     }
