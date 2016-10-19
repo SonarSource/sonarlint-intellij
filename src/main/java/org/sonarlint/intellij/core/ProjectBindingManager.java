@@ -58,7 +58,7 @@ public class ProjectBindingManager extends AbstractProjectComponent {
     return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());
   }
 
-  private void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) {
+  private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) {
     if (serverId == null) {
       notifications.notifyServerIdInvalid();
       throw new IllegalStateException("Project has an invalid binding");

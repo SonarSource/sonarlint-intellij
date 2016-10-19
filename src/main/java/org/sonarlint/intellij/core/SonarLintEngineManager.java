@@ -111,7 +111,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
     }.start();
   }
 
-  private void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey) {
+  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey) {
     // Check if engine's global storage is OK
     ConnectedSonarLintEngine.State state = engine.getState();
     if (state != ConnectedSonarLintEngine.State.UPDATED) {

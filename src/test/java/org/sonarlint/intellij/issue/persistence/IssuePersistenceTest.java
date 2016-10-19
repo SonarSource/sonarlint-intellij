@@ -81,13 +81,13 @@ public class IssuePersistenceTest {
     assertThat(issues).hasSize(1);
 
     LocalIssueTrackable issue = issues.iterator().next();
-    assertThat(issue.getAssignee()).isEmpty();
+    assertThat(issue.getAssignee()).isEqualTo("assignee");
     assertThat(issue.getRuleKey()).isEqualTo("ruleKey");
     assertThat(issue.getMessage()).isEqualTo("msg");
     assertThat(issue.getLine()).isEqualTo(5);
     assertThat(issue.getTextRangeHash()).isNull();
     assertThat(issue.getLineHash()).isEqualTo(3);
-
+    assertThat(issue.getServerIssueKey()).isEqualTo("serverKey");
   }
 
   private Trackable testTrackable = new Trackable() {
@@ -112,11 +112,11 @@ public class IssuePersistenceTest {
     }
 
     @Override public String getServerIssueKey() {
-      return null;
+      return "serverKey";
     }
 
     @Override public Long getCreationDate() {
-      return null;
+      return 1000L;
     }
 
     @Override public boolean isResolved() {
@@ -124,7 +124,7 @@ public class IssuePersistenceTest {
     }
 
     @Override public String getAssignee() {
-      return null;
+      return "assignee";
     }
   };
 }

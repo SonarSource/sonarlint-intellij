@@ -62,7 +62,7 @@ public class ServerIssueTrackable implements Trackable {
 
   @Override
   public Long getCreationDate() {
-    return serverIssue.creationDate().getEpochSecond() * 1000;
+    return serverIssue.creationDate().toEpochMilli();
   }
 
   @Override

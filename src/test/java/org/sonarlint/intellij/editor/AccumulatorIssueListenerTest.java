@@ -26,6 +26,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.sonarlint.intellij.SonarLintTestUtils.createIssue;
 
 public class AccumulatorIssueListenerTest {
   private AccumulatorIssueListener listener;
@@ -42,12 +43,6 @@ public class AccumulatorIssueListenerTest {
     }
 
     assertThat(listener.getIssues()).hasSize(5);
-    assertThat(listener.getIssues().get(0).getRuleKey()).isEqualTo("rule0");
-  }
-
-  private static Issue createIssue(int n) {
-    Issue issue = mock(Issue.class);
-    when(issue.getRuleKey()).thenReturn("rule" + n);
-    return issue;
+    assertThat(listener.getIssues().get(0).getRuleKey()).isEqualTo("0");
   }
 }
