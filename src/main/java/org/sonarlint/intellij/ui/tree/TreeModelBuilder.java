@@ -306,8 +306,8 @@ public class TreeModelBuilder {
       int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
-        .compare(o1.getRuleName(), o2.getRuleName())
         .compare(rangeStart1, rangeStart2)
+        .compare(o1.getRuleName(), o2.getRuleName())
         .compare(o1.uid(), o2.uid())
         .result();
     }
