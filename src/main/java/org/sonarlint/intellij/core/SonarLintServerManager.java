@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.apache.http.annotation.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -94,7 +95,6 @@ public class SonarLintServerManager implements ApplicationComponent {
   public synchronized ConnectedSonarLintEngine getConnectedEngine(String serverId) {
     if (!engines.containsKey(serverId)) {
       ConnectedSonarLintEngine engine = createEngine(serverId);
-
       engines.put(serverId, engine);
     }
 
@@ -108,27 +108,36 @@ public class SonarLintServerManager implements ApplicationComponent {
     return standalone;
   }
 
+  public synchronized ConnectedSonarLintEngine getConnectedEngine(Project project, String serverId, String projectKey) {
+      Preconditions.checkNotNull(project, "project");
+      Preconditions.checkNotNull(serverId, "serverId");
+      Preconditions.checkNotNull(projectKey, "projectKey");
+
+      if (!configuredStorageIds.contains(serverId)) {
+        SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
+        throw new IllegalStateException("Invalid server name: " + serverId);
+      }
+
+      ConnectedSonarLintEngine engine = getConnectedEngine(serverId);
+      checkConnectedEngineStatus(engine, project, serverId, projectKey);
+    return engine;
+  }
+
   /**
    * Will create a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
    * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an IllegalStateException.
    */
   public synchronized SonarLintFacade getFacadeForAnalysis(Project project) {
     SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
-    SonarLintConsole console = SonarLintUtils.get(project, SonarLintConsole.class);
     if (projectSettings.isBindingEnabled()) {
+      SonarLintConsole console = SonarLintUtils.get(project, SonarLintConsole.class);
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
+      checkBindingStatus(project, serverId, projectKey);
+      console.info(String.format("Using configuration of '%s' in server '%s'", projectSettings.getProjectKey(), projectSettings.getServerId()));
 
-      if (serverId == null) {
-        SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
-        throw new IllegalStateException("Project has an invalid binding");
-      } else if (projectKey == null) {
-        SonarLintProjectNotifications.get(project).notifyModuleInvalid();
-        throw new IllegalStateException("Project has an invalid binding");
-      } else {
-        console.info(String.format("Using configuration of '%s' in server '%s'", projectSettings.getProjectKey(), projectSettings.getServerId()));
-        return createConnectedFacade(project, serverId, projectKey);
-      }
+      ConnectedSonarLintEngine engine = getConnectedEngine(project, serverId, projectKey);
+      return new ConnectedSonarLintFacade(engine, project, projectKey);
     }
     return new StandaloneSonarLintFacade(project, getStandaloneEngine());
   }
@@ -142,24 +151,17 @@ public class SonarLintServerManager implements ApplicationComponent {
     }.start();
   }
 
-  private SonarLintFacade createConnectedFacade(Project project, String serverId, String projectKey) {
-    Preconditions.checkNotNull(project, "project");
-    Preconditions.checkNotNull(serverId, "serverId");
-    Preconditions.checkNotNull(projectKey, "projectKey");
-
-    if (!configuredStorageIds.contains(serverId)) {
+  private void checkBindingStatus(Project project, @Nullable String serverId, @Nullable String projectKey) {
+    if (serverId == null) {
       SonarLintProjectNotifications.get(project).notifyServerIdInvalid();
-      throw new IllegalStateException("Invalid server name: " + serverId);
+      throw new IllegalStateException("Project has an invalid binding");
+    } else if (projectKey == null) {
+      SonarLintProjectNotifications.get(project).notifyModuleInvalid();
+      throw new IllegalStateException("Project has an invalid binding");
     }
+  }
 
-    ConnectedSonarLintEngine engine;
-    if (engines.containsKey(serverId)) {
-      engine = engines.get(serverId);
-    } else {
-      engine = createEngine(serverId);
-      engines.put(serverId, engine);
-    }
-
+  private void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, Project project, String serverId, String projectKey) {
     // Check if engine's global storage is OK
     ConnectedSonarLintEngine.State state = engine.getState();
     if (state != ConnectedSonarLintEngine.State.UPDATED) {
@@ -182,8 +184,6 @@ public class SonarLintServerManager implements ApplicationComponent {
       SonarLintProjectNotifications.get(project).notifyModuleStale();
       throw new IllegalStateException("Stale module's storage: " + projectKey);
     }
-
-    return new ConnectedSonarLintFacade(engine, project, projectKey);
   }
 
   private static Path getSonarLintHome() {

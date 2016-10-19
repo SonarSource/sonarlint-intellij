@@ -21,10 +21,10 @@ package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.vfs.VirtualFile;
 
-class PathValidator implements StoreKeyValidator<String> {
+class PathStoreKeyValidator implements StoreKeyValidator<String> {
   private final VirtualFile projectBaseDir;
 
-  PathValidator(VirtualFile projectBaseDir) {
+  PathStoreKeyValidator(VirtualFile projectBaseDir) {
     this.projectBaseDir = projectBaseDir;
   }
 

@@ -27,8 +27,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class PathValidatorTest {
-  public PathValidator validator;
+public class PathStoreKeyValidatorTest {
+  public PathStoreKeyValidator validator;
   private VirtualFile projectBaseDir;
   private VirtualFile file;
 
@@ -36,7 +36,7 @@ public class PathValidatorTest {
   public void setUp() {
     projectBaseDir = mock(VirtualFile.class);
     file = mock(VirtualFile.class);
-    validator = new PathValidator(projectBaseDir);
+    validator = new PathStoreKeyValidator(projectBaseDir);
     when(projectBaseDir.findFileByRelativePath("file1")).thenReturn(file);
   }
 

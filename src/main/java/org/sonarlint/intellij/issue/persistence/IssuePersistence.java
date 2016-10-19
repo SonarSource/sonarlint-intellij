@@ -23,7 +23,6 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
@@ -48,7 +47,7 @@ public class IssuePersistence extends AbstractProjectComponent {
     FileUtils.forceMkDirs(storeBasePath);
     StoreIndex<String> index = new StringStoreIndex(storeBasePath);
     PathMapper<String> mapper = new HashingPathMapper(storeBasePath, 2);
-    StoreKeyValidator<String> validator = new PathValidator(project.getBaseDir());
+    StoreKeyValidator<String> validator = new PathStoreKeyValidator(project.getBaseDir());
     Reader<Sonarlint.Issues> reader = is -> {
       try {
         return Sonarlint.Issues.parseFrom(is);
