@@ -72,7 +72,7 @@ public class IssueProcessor extends AbstractProjectComponent {
 
       if (shouldUpdateServerIssues(trigger)) {
         console.debug("Fetching server issues");
-        job.files().forEach(serverIssueUpdater::fetchAndMatchServerIssues);
+        serverIssueUpdater.fetchAndMatchServerIssues(job.files());
       }
 
       // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called

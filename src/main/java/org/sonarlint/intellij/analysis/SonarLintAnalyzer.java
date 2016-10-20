@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
@@ -31,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -45,12 +43,17 @@ import java.util.List;
 import java.util.Map;
 
 public class SonarLintAnalyzer {
+  private final ProjectBindingManager projectBindingManager;
+  private final EncodingProjectManager encodingProjectManager;
+  private final SonarLintConsole console;
+
+  public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager, SonarLintConsole console) {
+    this.projectBindingManager = projectBindingManager;
+    this.encodingProjectManager = encodingProjectManager;
+    this.console = console;
+  }
 
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
-    Project p = module.getProject();
-    SonarLintConsole console = SonarLintConsole.get(p);
-    ProjectBindingManager projectBindingManager = SonarLintUtils.get(p, ProjectBindingManager.class);
-
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     Map<String, String> pluginProps = new HashMap<>();
     AnalysisConfigurator[] analysisConfigurators = AnalysisConfigurator.EP_NAME.getExtensions();
@@ -65,7 +68,7 @@ public class SonarLintAnalyzer {
 
     // configure files
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-    List<ClientInputFile> inputFiles = getInputFiles(p, moduleRootManager, filesToAnalyze);
+    List<ClientInputFile> inputFiles = getInputFiles(moduleRootManager, filesToAnalyze);
 
     // Analyze
     long start = System.currentTimeMillis();
@@ -85,13 +88,13 @@ public class SonarLintAnalyzer {
     return result;
   }
 
-  private static List<ClientInputFile> getInputFiles(Project p, ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
+  private List<ClientInputFile> getInputFiles(ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
     Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
     List<ClientInputFile> inputFiles = new LinkedList<>();
 
     for (VirtualFile f : filesToAnalyze) {
       boolean test = isTestFile(testFolderPrefix, f);
-      Charset charset = getEncoding(p, f);
+      Charset charset = getEncoding(f);
       inputFiles.add(new DefaultInputFile(f, test, charset));
     }
 
@@ -114,9 +117,9 @@ public class SonarLintAnalyzer {
     return testFolderPrefix;
   }
 
-  private static Charset getEncoding(Project p, @Nullable VirtualFile f) {
+  private Charset getEncoding(@Nullable VirtualFile f) {
     if (f != null) {
-      Charset encoding = EncodingProjectManager.getInstance(p).getEncoding(f, true);
+      Charset encoding = encodingProjectManager.getEncoding(f, true);
       if (encoding != null) {
         return encoding;
       }

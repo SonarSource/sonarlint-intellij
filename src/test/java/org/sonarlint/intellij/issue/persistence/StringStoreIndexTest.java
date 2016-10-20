@@ -19,10 +19,12 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,6 +32,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class StringStoreIndexTest {
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
+
+  @Rule
+  public ExpectedException exception = ExpectedException.none();
 
   private Path baseDir;
   private StringStoreIndex index;
@@ -58,5 +63,14 @@ public class StringStoreIndexTest {
 
     assertThat(baseDir.resolve(StringStoreIndex.INDEX_FILENAME)).exists();
     assertThat(index.keys()).isEmpty();
+  }
+
+  @Test
+  public void testErrorSave() throws IOException {
+    baseDir.toFile().setReadOnly();
+
+    Path test1 = baseDir.resolve("p1").resolve("file1");
+    exception.expect(IllegalStateException.class);
+    index.save("key1", test1);
   }
 }

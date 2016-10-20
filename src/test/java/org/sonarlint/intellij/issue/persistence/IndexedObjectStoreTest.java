@@ -26,6 +26,7 @@ import java.util.Scanner;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
@@ -33,7 +34,13 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class IndexedObjectStoreTest {
@@ -71,7 +78,7 @@ public class IndexedObjectStoreTest {
   public void testWrite() throws IOException {
     store.write("mykey", "myvalue");
     assertThat(getPath("mykey")).hasContent("myvalue");
-    Mockito.verify(index).save("mykey", getPath("mykey"));
+    verify(index).save("mykey", getPath("mykey"));
 
     assertThat(store.read("mykey").get()).isEqualTo("myvalue");
   }
@@ -92,7 +99,21 @@ public class IndexedObjectStoreTest {
     store.delete("mykey");
     assertThat(store.read("mykey").isPresent()).isFalse();
     assertThat(getPath("mykey")).doesNotExist();
-    Mockito.verify(index).delete("mykey");
+    verify(index).delete("mykey");
+  }
+
+  @Test
+  public void testErrorCleanInvalid() throws IOException {
+    store.write("mykey", "myvalue");
+
+    getPath("mykey").getParent().toFile().setReadOnly();
+    when(index.keys()).thenReturn(Arrays.asList("mykey"));
+    when(validator.apply(anyString())).thenReturn(Boolean.FALSE);
+
+    store.deleteInvalid();
+    assertThat(getPath("mykey")).exists();
+
+    verify(index, never()).delete(anyString());
   }
 
   @Test
@@ -107,6 +128,6 @@ public class IndexedObjectStoreTest {
     store.deleteInvalid();
     assertThat(getPath("mykey")).doesNotExist();
     assertThat(getPath("mykey2")).exists();
-    Mockito.verify(index).delete("mykey");
+    verify(index).delete("mykey");
   }
 }

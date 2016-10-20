@@ -21,7 +21,12 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
+import java.util.List;
+import java.util.Optional;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -29,14 +34,16 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 public class ProjectBindingManager extends AbstractProjectComponent {
   private final SonarLintEngineManager engineManager;
   private final SonarLintProjectSettings projectSettings;
+  private final SonarLintGlobalSettings globalSettings;
   private final SonarLintProjectNotifications notifications;
   private final SonarLintConsole console;
 
   public ProjectBindingManager(Project project, SonarLintEngineManager engineManager, SonarLintProjectSettings projectSettings,
-    SonarLintProjectNotifications notifications, SonarLintConsole console) {
+    SonarLintGlobalSettings globalSettings, SonarLintProjectNotifications notifications, SonarLintConsole console) {
     super(project);
     this.engineManager = engineManager;
     this.projectSettings = projectSettings;
+    this.globalSettings = globalSettings;
     this.notifications = notifications;
     this.console = console;
   }
@@ -50,12 +57,32 @@ public class ProjectBindingManager extends AbstractProjectComponent {
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
       checkBindingStatus(notifications, serverId, projectKey);
-      console.info(String.format("Using configuration of '%s' in server '%s'", projectSettings.getProjectKey(), projectSettings.getServerId()));
+      console.info(String.format("Using configuration of '%s' in server '%s'", projectKey, serverId));
 
       ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, serverId, projectKey);
       return new ConnectedSonarLintFacade(engine, myProject, projectKey);
     }
     return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());
+  }
+
+  public synchronized ConnectedSonarLintEngine getConnectedEngine() {
+    if(!projectSettings.isBindingEnabled()) {
+      throw new IllegalStateException("Project is not bound to a SonarQube project");
+    }
+
+    String serverId = projectSettings.getServerId();
+    String projectKey = projectSettings.getProjectKey();
+    checkBindingStatus(notifications, serverId, projectKey);
+
+    return engineManager.getConnectedEngine(notifications, serverId, projectKey);
+  }
+
+  public synchronized SonarQubeServer getSonarQubeServer() {
+    String serverId = projectSettings.getServerId();
+    List<SonarQubeServer> servers = globalSettings.getSonarQubeServers();
+
+    Optional<SonarQubeServer> server = servers.stream().filter(s -> s.getName().equals(serverId)).findAny();
+    return server.orElseThrow(() -> new IllegalStateException("SonarQube server configuration does not exist for server id: " + serverId));
   }
 
   private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) {

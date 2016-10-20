@@ -20,10 +20,13 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.project.Project;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -38,6 +41,7 @@ import static org.mockito.Mockito.when;
 public class ProjectBindingManagerTest {
   private ProjectBindingManager projectBindingManager;
   private SonarLintProjectSettings settings;
+  private SonarLintGlobalSettings globalSettings;
 
   private StandaloneSonarLintEngine standaloneEngine;
   private ConnectedSonarLintEngine connectedEngine;
@@ -56,10 +60,11 @@ public class ProjectBindingManagerTest {
     connectedEngine = mock(ConnectedSonarLintEngine.class);
 
     settings = new SonarLintProjectSettings();
+    globalSettings = new SonarLintGlobalSettings();
     when(engineManager.getStandaloneEngine()).thenReturn(standaloneEngine);
     when(engineManager.getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), anyString())).thenReturn(connectedEngine);
     when(project.getBasePath()).thenReturn("");
-    projectBindingManager = new ProjectBindingManager(project, engineManager, settings, notifications, console);
+    projectBindingManager = new ProjectBindingManager(project, engineManager, settings, globalSettings, notifications, console);
   }
 
   @Test
@@ -73,6 +78,31 @@ public class ProjectBindingManagerTest {
     settings.setProjectKey("project1");
     settings.setServerId("server1");
     assertThat(projectBindingManager.getFacadeForAnalysis()).isNotNull();
+  }
+
+  @Test
+  public void should_find_sq_server() {
+    settings.setBindingEnabled(true);
+    settings.setProjectKey("project1");
+    settings.setServerId("server1");
+
+    SonarQubeServer server = new SonarQubeServer();
+    server.setName("server1");
+    globalSettings.setSonarQubeServers(Collections.singletonList(server));
+    assertThat(projectBindingManager.getSonarQubeServer()).isEqualTo(server);
+  }
+
+  @Test
+  public void fail_if_cant_find_server() {
+    settings.setBindingEnabled(true);
+    settings.setProjectKey("project1");
+    settings.setServerId("server1");
+
+    SonarQubeServer server = new SonarQubeServer();
+    server.setName("server2");
+    globalSettings.setSonarQubeServers(Collections.singletonList(server));
+    exception.expect(IllegalStateException.class);
+    projectBindingManager.getSonarQubeServer();
   }
 
   @Test

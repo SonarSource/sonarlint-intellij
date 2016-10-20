@@ -154,6 +154,20 @@ public class LiveIssueCacheTest {
   }
 
   @Test
+  public void error_remove_eldest() throws IOException {
+    doThrow(new IOException()).when(store).save(anyString(), anyCollectionOf(Trackable.class));
+
+    LiveIssue issue1 = createTestIssue("r1");
+    for(int i = 0; i< LiveIssueCache.MAX_ENTRIES; i++) {
+      VirtualFile file = createTestFile("file" + i);
+      cache.save(file, Collections.singleton(issue1));
+    }
+
+    exception.expect(IllegalStateException.class);
+    cache.save(createTestFile("anotherfile"), Collections.singleton(issue1));
+  }
+
+  @Test
   public void should_flush_on_project_closed() throws IOException {
     LiveIssue issue1 = createTestIssue("r1");
     VirtualFile file0 = createTestFile("file0");

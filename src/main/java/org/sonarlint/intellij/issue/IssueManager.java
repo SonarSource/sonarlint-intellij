@@ -131,6 +131,7 @@ public class IssueManager extends AbstractProjectComponent {
     Collection<LiveIssue> previousIssues = getForFile(file);
     Input<Trackable> baseInput = () -> serverIssues;
     Input<LiveIssue> rawInput = () -> previousIssues;
+
     updateTrackedIssues(file, baseInput, rawInput);
     matchingInProgress.unlock();
 

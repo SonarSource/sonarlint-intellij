@@ -23,11 +23,16 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
+import com.intellij.openapi.extensions.ExtensionPoint;
+import com.intellij.openapi.extensions.ExtensionPointName;
+import com.intellij.openapi.extensions.Extensions;
+import com.intellij.openapi.extensions.ExtensionsArea;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.impl.MessageBusImpl;
+import java.lang.reflect.Modifier;
 import org.junit.After;
 import org.junit.Before;
 
@@ -91,5 +96,14 @@ public abstract class SonarTest {
 
   protected void register(ComponentManager comp, Class<?> clazz, Object instance) {
     doReturn(instance).when(comp).getComponent(clazz);
+  }
+
+  protected <T> void registerEP(final ExtensionPointName<T> extensionPointName, final Class<T> clazz) {
+    ExtensionsArea area = Extensions.getRootArea();
+    final String name = extensionPointName.getName();
+    if (!area.hasExtensionPoint(name)) {
+      ExtensionPoint.Kind kind = clazz.isInterface() || (clazz.getModifiers() & Modifier.ABSTRACT) != 0 ? ExtensionPoint.Kind.INTERFACE : ExtensionPoint.Kind.BEAN_CLASS;
+      area.registerExtensionPoint(name, clazz.getName(), kind);
+    }
   }
 }

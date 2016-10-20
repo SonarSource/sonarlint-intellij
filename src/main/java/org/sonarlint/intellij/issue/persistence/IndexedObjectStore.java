@@ -90,8 +90,8 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   @Override
   public void delete(K key) throws IOException {
     Path path = pathMapper.apply(key);
-    index.delete(key);
     Files.deleteIfExists(path);
+    index.delete(key);
   }
 
   @Override

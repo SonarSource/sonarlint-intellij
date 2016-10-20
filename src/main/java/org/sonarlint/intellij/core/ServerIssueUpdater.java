@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.ServerIssueTrackable;
@@ -42,8 +43,9 @@ import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
-import org.sonarsource.sonarlint.core.client.api.exceptions.SonarLintWrappedException;
+import org.sonarsource.sonarlint.core.client.api.exceptions.DownloadException;
 
 public class ServerIssueUpdater extends AbstractProjectComponent {
 
@@ -55,43 +57,39 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private ExecutorService executorService;
 
   private final IssueManager store;
+  private final SonarLintProjectSettings projectSettings;
+  private final ProjectBindingManager projectBindingManager;
+  private final SonarLintConsole console;
 
-  public ServerIssueUpdater(Project project, IssueManager store) {
+  public ServerIssueUpdater(Project project, IssueManager store, SonarLintProjectSettings projectSettings,
+    ProjectBindingManager projectBindingManager, SonarLintConsole console) {
     super(project);
     this.store = store;
+    this.projectSettings = projectSettings;
+    this.projectBindingManager = projectBindingManager;
+    this.console = console;
   }
 
-  public void fetchAndMatchServerIssues(VirtualFile virtualFile) {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.get(myProject, SonarLintProjectSettings.class);
+  public void fetchAndMatchServerIssues(Collection<VirtualFile> virtualFiles) {
     if (!projectSettings.isBindingEnabled()) {
       // not in connected mode
       return;
     }
 
-    String serverId = projectSettings.getServerId();
+    SonarQubeServer server = projectBindingManager.getSonarQubeServer();
+    ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
     String moduleKey = projectSettings.getProjectKey();
-    if (serverId == null) {
-      SonarLintProjectNotifications.get(myProject).notifyServerIdInvalid();
-      return;
+
+    for(VirtualFile virtualFile : virtualFiles) {
+      String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
+      fetchAndMatchServerIssues(virtualFile, server, engine, moduleKey, relativePath);
     }
-
-    if (moduleKey == null) {
-      SonarLintProjectNotifications.get(myProject).notifyModuleInvalid();
-      return;
-    }
-
-    ConnectedSonarLintEngine engine = SonarLintUtils.get(SonarLintEngineManager.class).getConnectedEngine(serverId);
-
-    String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
-
-    fetchAndMatchServerIssues(virtualFile, engine, moduleKey, relativePath);
   }
 
-  private void fetchAndMatchServerIssues(VirtualFile virtualFile, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
+  private void fetchAndMatchServerIssues(VirtualFile virtualFile, SonarQubeServer server, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
     Runnable task = () -> {
       try {
-        Iterator<ServerIssue> serverIssues = fetchServerIssues(engine, moduleKey, relativePath);
-
+        Iterator<ServerIssue> serverIssues = fetchServerIssues(server, engine, moduleKey, relativePath);
         Collection<Trackable> serverIssuesTrackable = toStream(serverIssues).map(ServerIssueTrackable::new).collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
@@ -99,7 +97,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
         }
       } catch (Throwable t) {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible
-        SonarLintConsole.get(myProject).error("error while fetching and matching server issues", t);
+        console.error("error while fetching and matching server issues", t);
       }
     };
     try {
@@ -114,12 +112,13 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     return StreamSupport.stream(iterable.spliterator(), false);
   }
 
-  private Iterator<ServerIssue> fetchServerIssues(ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
+  private Iterator<ServerIssue> fetchServerIssues(SonarQubeServer server, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
     try {
+      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       LOGGER.debug("fetchServerIssues moduleKey=" + moduleKey + ", filepath=" + relativePath);
-      return engine.downloadServerIssues(moduleKey, relativePath);
-    } catch (SonarLintWrappedException e) {
-      SonarLintConsole.get(myProject).error("could not download server issues", e);
+      return engine.downloadServerIssues(serverConfiguration, moduleKey, relativePath);
+    } catch (DownloadException e) {
+      SonarLintConsole.get(myProject).info(e.getMessage());
       return engine.getServerIssues(moduleKey, relativePath);
     }
   }
