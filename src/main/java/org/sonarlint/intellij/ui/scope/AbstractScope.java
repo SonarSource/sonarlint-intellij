@@ -26,10 +26,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
-public abstract class IssueTreeScope {
-  public static final DataKey<IssueTreeScope> SCOPE_DATA_KEY = DataKey.create("SonarLintScope");
-  protected final List<ScopeListener> listeners = new ArrayList<>();
-  protected Predicate<VirtualFile> filePredicate = f -> true;
+public abstract class AbstractScope {
+  public static final DataKey<AbstractScope> SCOPE_DATA_KEY = DataKey.create("SonarLintScope");
+  private final List<ScopeListener> listeners = new ArrayList<>();
+  private Predicate<VirtualFile> filePredicate = f -> true;
 
   public abstract String getDisplayName();
 
@@ -46,6 +46,11 @@ public abstract class IssueTreeScope {
   }
 
   public abstract Collection<VirtualFile> getAll();
+
+  protected void updateCondition(Predicate<VirtualFile> filePredicate) {
+    this.filePredicate = filePredicate;
+    listeners.forEach(ScopeListener::conditionChanged);
+  }
 
   @FunctionalInterface
   public interface ScopeListener {

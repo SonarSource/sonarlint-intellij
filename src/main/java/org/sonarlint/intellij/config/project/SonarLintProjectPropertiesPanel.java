@@ -27,12 +27,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableModel;
-import org.jetbrains.annotations.Nullable;
 
 public class SonarLintProjectPropertiesPanel {
   private PropertiesTableModel tableModel;

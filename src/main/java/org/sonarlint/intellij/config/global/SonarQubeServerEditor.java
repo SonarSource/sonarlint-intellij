@@ -36,6 +36,7 @@ import java.awt.GridBagLayout;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -43,7 +44,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.text.PlainDocument;
 
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ConnectionTestTask;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;

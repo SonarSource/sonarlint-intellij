@@ -31,7 +31,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Arrays;
 import java.util.List;
 
-public class OpenedFilesScope extends IssueTreeScope {
+public class OpenedFilesScope extends AbstractScope {
   private final Project project;
 
   public OpenedFilesScope(Project project) {
@@ -64,8 +64,7 @@ public class OpenedFilesScope extends IssueTreeScope {
 
     private void refreshCondition(@NotNull FileEditorManager editorManager) {
       VirtualFile[] openFiles = editorManager.getOpenFiles();
-      filePredicate = new OpenedFilePredicate(Arrays.asList(openFiles));
-      listeners.forEach(ScopeListener::conditionChanged);
+      updateCondition(new OpenedFilePredicate(Arrays.asList(openFiles)));
     }
   }
 

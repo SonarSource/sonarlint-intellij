@@ -45,6 +45,7 @@ import java.awt.Insets;
 import java.util.Collection;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
@@ -59,7 +60,6 @@ import javax.swing.tree.TreePath;
 
 import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -68,7 +68,7 @@ import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.scope.CurrentFileScope;
-import org.sonarlint.intellij.ui.scope.IssueTreeScope;
+import org.sonarlint.intellij.ui.scope.AbstractScope;
 import org.sonarlint.intellij.ui.scope.OpenedFilesScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
@@ -84,7 +84,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   private final IssueManager issueManager;
   private Tree tree;
   private ActionToolbar mainToolbar;
-  private IssueTreeScope scope;
+  private AbstractScope scope;
   private TreeModelBuilder treeBuilder;
   private SonarLintRulePanel rulePanel;
 
@@ -145,7 +145,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     return splitter;
   }
 
-  private void switchScope(IssueTreeScope newScope) {
+  private void switchScope(AbstractScope newScope) {
     if (scope != null) {
       scope.removeListeners();
     }
@@ -173,11 +173,11 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
 
     final ComboBox scopeComboBox = new ComboBox(comboModel);
     scopeComboBox.addActionListener(evt -> {
-      switchScope((IssueTreeScope) scopeComboBox.getSelectedItem());
+      switchScope((AbstractScope) scopeComboBox.getSelectedItem());
       updateTree();
       PropertiesComponent.getInstance(project).setValue(SELECTED_SCOPE_KEY, scopeComboBox.getSelectedItem().toString());
     });
-    switchScope((IssueTreeScope) scopeComboBox.getSelectedItem());
+    switchScope((AbstractScope) scopeComboBox.getSelectedItem());
     JPanel scopePanel = new JPanel(new GridBagLayout());
     final JLabel scopesLabel = new JLabel("Scope:");
     scopesLabel.setDisplayedMnemonic('S');
@@ -247,7 +247,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
-    if (IssueTreeScope.SCOPE_DATA_KEY.is(dataId)) {
+    if (AbstractScope.SCOPE_DATA_KEY.is(dataId)) {
       return scope;
     }
 

@@ -27,11 +27,11 @@ import com.intellij.openapi.options.ConfigurationException;
 import java.awt.BorderLayout;
 import java.util.List;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {

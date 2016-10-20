@@ -34,7 +34,7 @@ import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.ui.scope.IssueTreeScope;
+import org.sonarlint.intellij.ui.scope.AbstractScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeScopeAction extends AbstractSonarAction {
@@ -50,7 +50,7 @@ public class SonarAnalyzeScopeAction extends AbstractSonarAction {
       return;
     }
     SonarLintConsole console = SonarLintConsole.get(p);
-    IssueTreeScope scope = e.getData(IssueTreeScope.SCOPE_DATA_KEY);
+    AbstractScope scope = e.getData(AbstractScope.SCOPE_DATA_KEY);
     if (scope == null) {
       console.error("No scope found");
       return;

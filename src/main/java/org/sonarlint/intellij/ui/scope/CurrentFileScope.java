@@ -30,12 +30,11 @@ import java.util.function.Predicate;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class CurrentFileScope extends IssueTreeScope {
+public class CurrentFileScope extends AbstractScope {
   private final Project project;
 
   public CurrentFileScope(Project project) {
     this.project = project;
-    this.filePredicate = selectedFileCondition();
     initEventHandling();
   }
 
@@ -51,8 +50,7 @@ public class CurrentFileScope extends IssueTreeScope {
   private class EditorChangeListener extends FileEditorManagerAdapter {
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-      filePredicate = selectedFileCondition();
-      listeners.forEach(ScopeListener::conditionChanged);
+      updateCondition(selectedFileCondition());
     }
   }
 
