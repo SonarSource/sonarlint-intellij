@@ -40,7 +40,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
-public class SonarLintEngineFactory implements ApplicationComponent {
+public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
   private GlobalLogOutput globalLogOutput;
 
   public SonarLintEngineFactory(GlobalLogOutput globalLogOutput) {
@@ -108,14 +108,6 @@ public class SonarLintEngineFactory implements ApplicationComponent {
 
   private static Path getWorkDir() {
     return Paths.get(PathManager.getTempPath()).resolve("sonarlint");
-  }
-
-  @Override public void initComponent() {
-    //nothing to do
-  }
-
-  @Override public void disposeComponent() {
-    //nothing to do
   }
 
   @NotNull @Override public String getComponentName() {

@@ -19,11 +19,9 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -38,24 +36,19 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class IssueProcessor extends AbstractProjectComponent {
-  private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
-  private final DaemonCodeAnalyzer codeAnalyzer;
   private final IssueManager manager;
   private final SonarLintConsole console;
   private final ServerIssueUpdater serverIssueUpdater;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, DaemonCodeAnalyzer codeAnalyzer, IssueManager manager, ServerIssueUpdater serverIssueUpdater) {
+  public IssueProcessor(Project project, IssueMatcher matcher, IssueManager manager, ServerIssueUpdater serverIssueUpdater) {
     super(project);
     this.matcher = matcher;
-    this.codeAnalyzer = codeAnalyzer;
     this.manager = manager;
     this.console = SonarLintConsole.get(project);
     this.serverIssueUpdater = serverIssueUpdater;
@@ -75,8 +68,6 @@ public class IssueProcessor extends AbstractProjectComponent {
         serverIssueUpdater.fetchAndMatchServerIssues(job.files());
       }
 
-      // restart analyzer for all files analyzed (even the ones without issues) so that our external annotator is called
-      getPsi(job.files()).forEach(codeAnalyzer::restart);
     } finally {
       // closeable only introduced in 2016.2
       token.finish();
@@ -137,22 +128,6 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     return map;
-  }
-
-  private Collection<PsiFile> getPsi(Collection<VirtualFile> files) {
-    List<PsiFile> psiFiles = new LinkedList<>();
-
-    for (VirtualFile f : files) {
-      if (!f.isValid()) {
-        continue;
-      }
-      try {
-        psiFiles.add(matcher.findFile(f));
-      } catch (IssueMatcher.NoMatchException e) {
-        LOGGER.error("Couldn't find PSI for file: " + f.getPath(), e);
-      }
-    }
-    return psiFiles;
   }
 
   private static LiveIssue createIssuePointer(RangeMarker rangeMarker, PsiFile file, Issue issue) {

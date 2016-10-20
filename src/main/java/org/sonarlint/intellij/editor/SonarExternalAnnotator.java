@@ -63,13 +63,15 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     Collection<LiveIssue> issues = annotationResult.store.getForFile(file.getVirtualFile());
-    for (LiveIssue issue : issues) {
-      // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
-      RangeMarker range = issue.getRange();
-      if (range == null || range.isValid()) {
-        addAnnotation(issue, holder);
-      }
-    }
+    issues.stream()
+      .filter(issue -> !issue.isResolved())
+      .forEach(issue -> {
+        // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
+        RangeMarker range = issue.getRange();
+        if (range == null || range.isValid()) {
+          addAnnotation(issue, holder);
+        }
+      });
   }
 
   @Override

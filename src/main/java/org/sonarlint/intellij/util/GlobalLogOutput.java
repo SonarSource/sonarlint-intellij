@@ -72,6 +72,14 @@ public class GlobalLogOutput extends ApplicationComponent.Adapter implements Log
     }
   }
 
+  void addConsole(SonarLintConsole console) {
+    this.consoles.add(console);
+  }
+
+  void removeConsole(SonarLintConsole console) {
+    this.consoles.remove(console);
+  }
+
   @Override public void dispose() {
     // should remove listener in ProjectManager
     Disposer.dispose(this);
@@ -80,7 +88,7 @@ public class GlobalLogOutput extends ApplicationComponent.Adapter implements Log
   private class ProjectListener implements ProjectManagerListener {
 
     @Override public void projectOpened(Project project) {
-      consoles.add(project.getComponent(SonarLintConsole.class));
+      addConsole(project.getComponent(SonarLintConsole.class));
     }
 
     @Override public boolean canCloseProject(Project project) {
@@ -92,7 +100,7 @@ public class GlobalLogOutput extends ApplicationComponent.Adapter implements Log
     }
 
     @Override public void projectClosing(Project project) {
-      consoles.remove(project.getComponent(SonarLintConsole.class));
+      removeConsole(project.getComponent(SonarLintConsole.class));
     }
   }
 }

@@ -244,8 +244,9 @@ public class SonarLintUtils {
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
     SonarApplication sonarlint = get(SonarApplication.class);
+    String version = sonarlint != null ? sonarlint.getVersion() : "";
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
-      .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
+      .userAgent("SonarLint IntelliJ " + version)
       .connectTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
       .readTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
       .url(server.getHostUrl());

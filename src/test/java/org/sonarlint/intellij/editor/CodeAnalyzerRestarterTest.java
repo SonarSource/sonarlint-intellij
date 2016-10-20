@@ -1,0 +1,103 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
+package org.sonarlint.intellij.editor;
+
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
+import com.intellij.util.messages.MessageBus;
+import com.intellij.util.messages.MessageBusConnection;
+import java.util.Arrays;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.sonarlint.intellij.SonarTest;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+public class CodeAnalyzerRestarterTest extends SonarTest {
+  @Mock
+  private Project project;
+  @Mock
+  private PsiManager psiManager;
+  @Mock
+  private DaemonCodeAnalyzer codeAnalyzer;
+  @Mock
+  private FileEditorManager fileEditorManager;
+  @Mock
+  private MessageBus bus;
+
+  private CodeAnalyzerRestarter analyzerRestarter;
+
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    super.setUp();
+    MessageBusConnection connection = mock(MessageBusConnection.class);
+    when(bus.connect(project)).thenReturn(connection);
+    analyzerRestarter = new CodeAnalyzerRestarter(project, fileEditorManager, codeAnalyzer, psiManager, bus);
+  }
+
+  @Test
+  public void should_restart_all_open() {
+    VirtualFile vFile1 = mock(VirtualFile.class);
+    when(vFile1.isValid()).thenReturn(true);
+    PsiFile psiFile1 = mock(PsiFile.class);
+    VirtualFile vFile2 = mock(VirtualFile.class);
+    when(vFile2.isValid()).thenReturn(true);
+    PsiFile psiFile2 = mock(PsiFile.class);
+
+    when(psiManager.findFile(vFile1)).thenReturn(psiFile1);
+    when(psiManager.findFile(vFile2)).thenReturn(psiFile2);
+
+    when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {vFile1, vFile2});
+
+    analyzerRestarter.refreshAllFiles();
+    verify(codeAnalyzer).restart(psiFile1);
+    verify(codeAnalyzer).restart(psiFile2);
+    verifyNoMoreInteractions(codeAnalyzer);
+  }
+
+  @Test
+  public void should_restart_files() {
+    VirtualFile vFile1 = mock(VirtualFile.class);
+    when(vFile1.isValid()).thenReturn(true);
+    PsiFile psiFile1 = mock(PsiFile.class);
+    VirtualFile vFile2 = mock(VirtualFile.class);
+    when(vFile2.isValid()).thenReturn(true);
+    PsiFile psiFile2 = mock(PsiFile.class);
+
+    when(psiManager.findFile(vFile1)).thenReturn(psiFile1);
+    when(psiManager.findFile(vFile2)).thenReturn(psiFile2);
+
+    when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {vFile1});
+
+    analyzerRestarter.refreshFiles(Arrays.asList(new VirtualFile[] {vFile1, vFile2}));
+    verify(codeAnalyzer).restart(psiFile1);
+    verifyNoMoreInteractions(codeAnalyzer);
+  }
+}
