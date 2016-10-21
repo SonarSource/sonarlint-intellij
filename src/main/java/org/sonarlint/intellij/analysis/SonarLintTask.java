@@ -36,21 +36,21 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintJobManager.class);
   private final IssueProcessor processor;
-  private final SonarLintJobManager.SonarLintJob job;
+  private final SonarLintJob job;
   private final boolean startInBackground;
 
-  private SonarLintTask(IssueProcessor processor, SonarLintJobManager.SonarLintJob job, boolean background) {
+  private SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background) {
     super(job.module().getProject(), "SonarLint Analysis", true);
     this.processor = processor;
     this.job = job;
     this.startInBackground = background;
   }
 
-  public static SonarLintTask createBackground(IssueProcessor processor, SonarLintJobManager.SonarLintJob job) {
+  public static SonarLintTask createBackground(IssueProcessor processor, SonarLintJob job) {
     return new SonarLintTask(processor, job, true);
   }
 
-  public static SonarLintTask createForeground(IssueProcessor processor, SonarLintJobManager.SonarLintJob job) {
+  public static SonarLintTask createForeground(IssueProcessor processor, SonarLintJob job) {
     return new SonarLintTask(processor, job, false);
   }
 
@@ -59,7 +59,7 @@ public class SonarLintTask extends Task.Backgroundable {
     return startInBackground;
   }
 
-  private static void stopRun(SonarLintJobManager.SonarLintJob job) {
+  private static void stopRun(SonarLintJob job) {
     TaskListener taskListener = job.module().getProject().getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
     taskListener.ended(job);
   }

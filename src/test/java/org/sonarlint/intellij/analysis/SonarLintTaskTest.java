@@ -52,7 +52,7 @@ public class SonarLintTaskTest extends SonarTest {
   private IssueProcessor processor;
   private HashSet<VirtualFile> files;
   private ProgressIndicator progress;
-  private SonarLintJobManager.SonarLintJob job;
+  private SonarLintJob job;
   private SonarLintAnalyzer configurator;
   private AnalysisResults analysisResults;
 
@@ -114,7 +114,7 @@ public class SonarLintTaskTest extends SonarTest {
     verifyNoMoreInteractions(listener);
   }
 
-  private SonarLintJobManager.SonarLintJob createJob() {
-    return new SonarLintJobManager.SonarLintJob(module, files, TriggerType.ACTION);
+  private SonarLintJob createJob() {
+    return new SonarLintJob(module, files, TriggerType.ACTION);
   }
 }

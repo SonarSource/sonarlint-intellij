@@ -26,6 +26,7 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -54,7 +55,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.serverIssueUpdater = serverIssueUpdater;
   }
 
-  public void process(final SonarLintJobManager.SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles, TriggerType trigger) {
+  public void process(final SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles, TriggerType trigger) {
     Map<VirtualFile, Collection<LiveIssue>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();

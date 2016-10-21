@@ -30,8 +30,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -166,40 +164,5 @@ public class SonarLintJobManager extends AbstractProjectComponent {
 
   private void notifyStart(SonarLintJob job) {
     messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).started(job);
-  }
-
-  public static class SonarLintJob {
-    private final Module m;
-    private final Set<VirtualFile> files;
-    private final TriggerType trigger;
-    private final long creationTime;
-
-    SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger) {
-      this.m = m;
-      // make sure that it is not immutable so that it can be changed later
-      this.files = new HashSet<>();
-      this.files.addAll(files);
-      this.trigger = trigger;
-      this.creationTime = System.currentTimeMillis();
-    }
-
-    public long creationTime() {
-      return creationTime;
-    }
-
-    public Module module() {
-      return m;
-    }
-
-    /**
-     * Set of files is not protected. It can be modified.
-     */
-    public Set<VirtualFile> files() {
-      return files;
-    }
-
-    public TriggerType trigger() {
-      return trigger;
-    }
   }
 }

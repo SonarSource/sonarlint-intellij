@@ -22,8 +22,8 @@ package org.sonarlint.intellij.analysis;
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.project.Project;
 
-import java.util.Deque;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -32,14 +32,14 @@ import java.util.NoSuchElementException;
 public class JobQueue {
   public static final int CAPACITY = 5;
   private final Project project;
-  private final Deque<SonarLintJobManager.SonarLintJob> queue;
+  private final LinkedList<SonarLintJob> queue;
 
   public JobQueue(Project project) {
     this.project = project;
     this.queue = new LinkedList<>();
   }
 
-  public void queue(SonarLintJobManager.SonarLintJob job, boolean optimize) throws NoCapacityException {
+  public void queue(SonarLintJob job, boolean optimize) throws NoCapacityException {
     Preconditions.checkArgument(job.module().getProject().equals(project), "job belongs to a different project");
     Preconditions.checkArgument(!job.files().isEmpty(), "no files to analyze");
 
@@ -53,17 +53,21 @@ public class JobQueue {
     queue.addLast(job);
   }
 
-  private boolean tryAddToExisting(SonarLintJobManager.SonarLintJob job) {
+  private boolean tryAddToExisting(SonarLintJob job) {
     if (queue.isEmpty()) {
       return false;
     }
 
-    for (SonarLintJobManager.SonarLintJob j : queue) {
+    ListIterator<SonarLintJob> it = queue.listIterator();
+    while(it.hasNext()) {
+      SonarLintJob j = it.next();
       if (!j.module().equals(job.module())) {
         continue;
       }
 
-      j.files().addAll(job.files());
+
+      SonarLintJob combined = new SonarLintJob(job, j);
+      it.set(combined);
       return true;
     }
 
@@ -74,7 +78,7 @@ public class JobQueue {
     return queue.size();
   }
 
-  public void queue(SonarLintJobManager.SonarLintJob job) throws NoCapacityException {
+  public void queue(SonarLintJob job) throws NoCapacityException {
     queue(job, true);
   }
 
@@ -83,7 +87,7 @@ public class JobQueue {
    * @return Next queued job
    * @throws NoSuchElementException if the queue is empty
    */
-  public SonarLintJobManager.SonarLintJob get() {
+  public SonarLintJob get() {
     return queue.removeFirst();
   }
 

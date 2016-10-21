@@ -47,15 +47,15 @@ public class SonarQubeServerTest {
       .setPassword("pass")
       .setToken("token");
 
-    String encodedPass = builder.getEncodedPassword();
-    String encodedToken = builder.getEncodedToken();
+    String encodedPass = builder.build().getEncodedPassword();
+    String encodedToken = builder.build().getEncodedToken();
     builder.setEncodedPassword(encodedPass);
     builder.setEncodedToken(encodedToken);
 
-    assertThat(builder.getEncodedPassword()).isEqualTo(encodedPass);
-    assertThat(builder.getEncodedToken()).isEqualTo(encodedToken);
+    assertThat(builder.build().getEncodedPassword()).isEqualTo(encodedPass);
+    assertThat(builder.build().getEncodedToken()).isEqualTo(encodedToken);
 
-    assertThat(builder.getPassword()).isEqualTo("pass");
-    assertThat(builder.getToken()).isEqualTo("token");
+    assertThat(builder.build().getPassword()).isEqualTo("pass");
+    assertThat(builder.build().getToken()).isEqualTo("token");
   }
 }

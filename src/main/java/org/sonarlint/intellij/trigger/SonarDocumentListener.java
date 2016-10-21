@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -70,11 +71,11 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     editorFactory.getEventMulticaster().addDocumentListener(this);
 
     project.getMessageBus().connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener() {
-      @Override public void started(SonarLintJobManager.SonarLintJob job) {
+      @Override public void started(SonarLintJob job) {
         removeFiles(job.files());
       }
 
-      @Override public void ended(SonarLintJobManager.SonarLintJob job) {
+      @Override public void ended(SonarLintJob job) {
         // nothing to do
       }
     });

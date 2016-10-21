@@ -39,12 +39,12 @@ public class SonarQubeServer {
   private final boolean enableProxy;
 
   private SonarQubeServer(Builder builder) {
-    this.hostUrl = builder.getHostUrl();
-    this.token = builder.getToken();
-    this.name = builder.getName();
-    this.login = builder.getLogin();
-    this.password = builder.getPassword();
-    this.enableProxy = builder.enableProxy();
+    this.hostUrl = builder.hostUrl;
+    this.token = builder.token;
+    this.name = builder.name;
+    this.login = builder.login;
+    this.password = builder.password;
+    this.enableProxy = builder.enableProxy;
   }
 
   @Override
@@ -131,33 +131,14 @@ public class SonarQubeServer {
       return new SonarQubeServer(this);
     }
 
-    @CheckForNull
-    public String getLogin() {
-      return login;
-    }
-
     public Builder setLogin(@Nullable String login) {
       this.login = login;
       return this;
     }
 
-    public String getHostUrl() {
-      return hostUrl;
-    }
-
     public Builder setHostUrl(String hostUrl) {
       this.hostUrl = hostUrl;
       return this;
-    }
-
-    @Transient
-    public String getToken() {
-      return token;
-    }
-
-    @Tag("token")
-    public String getEncodedToken() {
-      return PasswordUtil.encodePassword(getToken());
     }
 
     public Builder setEncodedToken(String token) {
@@ -169,24 +150,9 @@ public class SonarQubeServer {
       return this;
     }
 
-    public boolean enableProxy() {
-      return enableProxy;
-    }
-
     public Builder setEnableProxy(boolean enableProxy) {
       this.enableProxy = enableProxy;
       return this;
-    }
-
-    @CheckForNull
-    @Transient
-    public String getPassword() {
-      return password;
-    }
-
-    @Tag("password")
-    public String getEncodedPassword() {
-      return PasswordUtil.encodePassword(getPassword());
     }
 
     public Builder setEncodedPassword(String password) {
@@ -206,10 +172,6 @@ public class SonarQubeServer {
     public Builder setPassword(@Nullable String password) {
       this.password = password;
       return this;
-    }
-
-    public String getName() {
-      return name;
     }
 
     public Builder setName(String name) {
