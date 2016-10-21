@@ -93,10 +93,11 @@ public class SonarLintUtilsTest extends SonarTest {
     when(app.getVersion()).thenReturn("1.0");
     super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
 
-    SonarQubeServer server = new SonarQubeServer();
-    server.setHostUrl("http://myhost");
-    server.setEnableProxy(false);
-    server.setToken("token");
+    SonarQubeServer server = SonarQubeServer.newBuilder()
+      .setHostUrl("http://myhost")
+      .setEnableProxy(false)
+      .setToken("token")
+      .build();
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getToken());
     assertThat(config.getPassword()).isNull();
@@ -112,10 +113,11 @@ public class SonarLintUtilsTest extends SonarTest {
     when(app.getVersion()).thenReturn("1.0");
     super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
 
-    SonarQubeServer server = new SonarQubeServer();
-    server.setHostUrl("http://myhost");
-    server.setLogin("token");
-    server.setPassword("pass");
+    SonarQubeServer server = SonarQubeServer.newBuilder()
+      .setHostUrl("http://myhost")
+      .setLogin("token")
+      .setPassword("pass")
+      .build();
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());

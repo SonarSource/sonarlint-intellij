@@ -26,27 +26,25 @@ import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.Transient;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 
+@Immutable
 public class SonarQubeServer {
-  private String hostUrl;
-  private String token;
+  private final String hostUrl;
+  private final String token;
 
-  private String name;
-  private String login;
-  private String password;
-  private boolean enableProxy;
+  private final String name;
+  private final String login;
+  private final String password;
+  private final boolean enableProxy;
 
-  public SonarQubeServer() {
-    // no args
-  }
-
-  public SonarQubeServer(SonarQubeServer toCopy) {
-    setHostUrl(toCopy.getHostUrl());
-    setPassword(toCopy.getPassword());
-    setToken(toCopy.getToken());
-    setLogin(toCopy.getLogin());
-    setName(toCopy.getName());
-    setEnableProxy(toCopy.enableProxy());
+  private SonarQubeServer(Builder builder) {
+    this.hostUrl = builder.getHostUrl();
+    this.token = builder.getToken();
+    this.name = builder.getName();
+    this.login = builder.getLogin();
+    this.password = builder.getPassword();
+    this.enableProxy = builder.enableProxy();
   }
 
   @Override
@@ -74,16 +72,8 @@ public class SonarQubeServer {
     return login;
   }
 
-  public void setLogin(@Nullable String login) {
-    this.login = login;
-  }
-
   public String getHostUrl() {
     return hostUrl;
-  }
-
-  public void setHostUrl(String hostUrl) {
-    this.hostUrl = hostUrl;
   }
 
   @Transient
@@ -96,20 +86,8 @@ public class SonarQubeServer {
     return PasswordUtil.encodePassword(getToken());
   }
 
-  public void setEncodedToken(String token) {
-    try {
-      setToken(PasswordUtil.decodePassword(token));
-    } catch (NumberFormatException e) {
-      // do nothing
-    }
-  }
-
   public boolean enableProxy() {
     return enableProxy;
-  }
-
-  public void setEnableProxy(boolean enableProxy) {
-    this.enableProxy = enableProxy;
   }
 
   @CheckForNull
@@ -123,33 +101,122 @@ public class SonarQubeServer {
     return PasswordUtil.encodePassword(getPassword());
   }
 
-  public void setEncodedPassword(String password) {
-    try {
-      setPassword(PasswordUtil.decodePassword(password));
-    } catch (NumberFormatException e) {
-      // do nothing
-    }
-  }
-
-  public void setToken(@Nullable String token) {
-    this.token = token;
-  }
-
-  public void setPassword(@Nullable String password) {
-    this.password = password;
-  }
-
   public String getName() {
     return name;
-  }
-
-  public void setName(String name) {
-    this.name = name;
   }
 
   @Override
   public String toString() {
     return name;
+  }
+
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  public static class Builder {
+    private String hostUrl;
+    private String token;
+
+    private String name;
+    private String login;
+    private String password;
+    private boolean enableProxy;
+
+    private Builder() {
+      // no args
+    }
+
+    public SonarQubeServer build() {
+      return new SonarQubeServer(this);
+    }
+
+    @CheckForNull
+    public String getLogin() {
+      return login;
+    }
+
+    public Builder setLogin(@Nullable String login) {
+      this.login = login;
+      return this;
+    }
+
+    public String getHostUrl() {
+      return hostUrl;
+    }
+
+    public Builder setHostUrl(String hostUrl) {
+      this.hostUrl = hostUrl;
+      return this;
+    }
+
+    @Transient
+    public String getToken() {
+      return token;
+    }
+
+    @Tag("token")
+    public String getEncodedToken() {
+      return PasswordUtil.encodePassword(getToken());
+    }
+
+    public Builder setEncodedToken(String token) {
+      try {
+        setToken(PasswordUtil.decodePassword(token));
+      } catch (NumberFormatException e) {
+        // do nothing
+      }
+      return this;
+    }
+
+    public boolean enableProxy() {
+      return enableProxy;
+    }
+
+    public Builder setEnableProxy(boolean enableProxy) {
+      this.enableProxy = enableProxy;
+      return this;
+    }
+
+    @CheckForNull
+    @Transient
+    public String getPassword() {
+      return password;
+    }
+
+    @Tag("password")
+    public String getEncodedPassword() {
+      return PasswordUtil.encodePassword(getPassword());
+    }
+
+    public Builder setEncodedPassword(String password) {
+      try {
+        setPassword(PasswordUtil.decodePassword(password));
+      } catch (NumberFormatException e) {
+        // do nothing
+      }
+      return this;
+    }
+
+    public Builder setToken(@Nullable String token) {
+      this.token = token;
+      return this;
+    }
+
+    public Builder setPassword(@Nullable String password) {
+      this.password = password;
+      return this;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public Builder setName(String name) {
+      this.name = name;
+      return this;
+    }
+
   }
 
 }

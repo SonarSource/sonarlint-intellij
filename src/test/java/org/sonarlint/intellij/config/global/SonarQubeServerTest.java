@@ -19,26 +19,20 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SonarQubeServerTest {
-  private SonarQubeServer server;
-
-  @Before
-  public void setUp() {
-    server = new SonarQubeServer();
-  }
-
   @Test
   public void testRoundTrip() {
-    server.setHostUrl("host");
-    server.setPassword("pass");
-    server.setToken("token");
-    server.setName("name");
-    server.setLogin("login");
+    SonarQubeServer server = SonarQubeServer.newBuilder()
+      .setHostUrl("host")
+      .setPassword("pass")
+      .setToken("token")
+      .setName("name")
+      .setLogin("login")
+      .build();
 
     assertThat(server.getName()).isEqualTo("name");
     assertThat(server.getToken()).isEqualTo("token");
@@ -49,18 +43,19 @@ public class SonarQubeServerTest {
 
   @Test
   public void testEncoded() {
-    server.setPassword("pass");
-    server.setToken("token");
+    SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
+      .setPassword("pass")
+      .setToken("token");
 
-    String encodedPass = server.getEncodedPassword();
-    String encodedToken = server.getEncodedToken();
-    server.setEncodedPassword(encodedPass);
-    server.setEncodedToken(encodedToken);
+    String encodedPass = builder.getEncodedPassword();
+    String encodedToken = builder.getEncodedToken();
+    builder.setEncodedPassword(encodedPass);
+    builder.setEncodedToken(encodedToken);
 
-    assertThat(server.getEncodedPassword()).isEqualTo(encodedPass);
-    assertThat(server.getEncodedToken()).isEqualTo(encodedToken);
+    assertThat(builder.getEncodedPassword()).isEqualTo(encodedPass);
+    assertThat(builder.getEncodedToken()).isEqualTo(encodedToken);
 
-    assertThat(server.getPassword()).isEqualTo("pass");
-    assertThat(server.getToken()).isEqualTo("token");
+    assertThat(builder.getPassword()).isEqualTo("pass");
+    assertThat(builder.getToken()).isEqualTo("token");
   }
 }

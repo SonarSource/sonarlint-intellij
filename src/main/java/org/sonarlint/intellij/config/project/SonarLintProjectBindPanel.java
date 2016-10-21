@@ -264,8 +264,9 @@ public class SonarLintProjectBindPanel implements Disposable {
 
     if (servers.isEmpty()) {
       serverComboBox.setEnabled(false);
-      SonarQubeServer s = new SonarQubeServer();
-      s.setName(SERVER_EMPTY_TEXT);
+      SonarQubeServer s = SonarQubeServer.newBuilder()
+        .setName(SERVER_EMPTY_TEXT)
+        .build();
       serverComboBox.setPrototypeDisplayValue(s);
       // ensure this is called, even when nothing is selected
     } else {

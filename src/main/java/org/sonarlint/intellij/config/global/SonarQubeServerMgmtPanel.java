@@ -238,7 +238,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   }
 
   public void save(SonarLintGlobalSettings settings) {
-    List<SonarQubeServer> copyList = servers.stream().map(SonarQubeServer::new).collect(Collectors.toList());
+    List<SonarQubeServer> copyList = new ArrayList<>(servers);
     settings.setSonarQubeServers(copyList);
 
     //remove them even if a server with the same name was later added
@@ -250,13 +250,8 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     deletedServerIds.clear();
 
     CollectionListModel<SonarQubeServer> listModel = new CollectionListModel<>(new ArrayList<SonarQubeServer>());
-
-    for (SonarQubeServer s : settings.getSonarQubeServers()) {
-      SonarQubeServer copy = new SonarQubeServer(s);
-      listModel.add(copy);
-      servers.add(copy);
-    }
-
+    listModel.add(settings.getSonarQubeServers());
+    servers.addAll(settings.getSonarQubeServers());
     serverList.setModel(listModel);
 
     if (!servers.isEmpty()) {
@@ -356,9 +351,15 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
   private void editServer() {
     SonarQubeServer selectedServer = getSelectedServer();
+    int selectedIndex = serverList.getSelectedIndex();
+
     if (selectedServer != null) {
       SonarQubeServerEditor serverEditor = new SonarQubeServerEditor(panel, servers, selectedServer, false);
-      serverEditor.show();
+      if(serverEditor.showAndGet()) {
+        SonarQubeServer newServer = serverEditor.getServer();
+        ((CollectionListModel) serverList.getModel()).setElementAt(newServer, selectedIndex);
+        servers.set(servers.indexOf(selectedServer), newServer);
+      }
     }
   }
 
@@ -373,15 +374,16 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   private class AddServerAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      SonarQubeServer newServer = new SonarQubeServer();
+      SonarQubeServer newServer = SonarQubeServer.newBuilder().build();
       SonarQubeServerEditor serverEditor = new SonarQubeServerEditor(panel, servers, newServer, true);
 
       if (serverEditor.showAndGet()) {
-        servers.add(newServer);
-        ((CollectionListModel) serverList.getModel()).add(newServer);
+        SonarQubeServer created = serverEditor.getServer();
+        servers.add(created);
+        ((CollectionListModel) serverList.getModel()).add(created);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
-        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(newServer.getName()), newServer, Collections.emptySet(), false);
+        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptySet(), false);
         ProgressManager.getInstance().run(task.asBackground());
       }
     }

@@ -57,7 +57,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
   private static final String AUTH_PASSWORD = "Password";
   private static final String AUTH_TOKEN = "Token";
 
-  private final SonarQubeServer server;
+  private SonarQubeServer server;
   private final boolean isCreating;
   private final Set<String> serverNames;
 
@@ -271,8 +271,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
   }
 
   private void testConnection() {
-    SonarQubeServer tmpServer = new SonarQubeServer();
-    setServer(tmpServer);
+    SonarQubeServer tmpServer = createServer();
     ConnectionTestTask test = new ConnectionTestTask(tmpServer);
     ProgressManager.getInstance().run(test);
     ValidationResult r = test.result();
@@ -290,26 +289,32 @@ public class SonarQubeServerEditor extends DialogWrapper {
     }
   }
 
+  public SonarQubeServer getServer() {
+    return server;
+  }
+
   @Override
   protected void doOKAction() {
     super.doOKAction();
-    setServer(server);
+    server = createServer();
   }
 
-  private void setServer(SonarQubeServer server) {
-    server.setName(nameText.getText().trim());
-    server.setHostUrl(urlText.getText().trim());
+  private SonarQubeServer createServer() {
+    SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
+      .setName(nameText.getText().trim())
+      .setHostUrl(urlText.getText().trim());
 
     if (AUTH_TOKEN.equals(authTypeComboBox.getSelectedItem())) {
-      server.setToken(new String(tokenText.getPassword()));
-      server.setLogin(null);
-      server.setPassword(null);
+      builder.setToken(new String(tokenText.getPassword()))
+        .setLogin(null)
+        .setPassword(null);
     } else {
-      server.setToken(null);
-      server.setLogin(loginText.getText().trim());
-      server.setPassword(new String(passwordText.getPassword()));
+      builder.setToken(null)
+        .setLogin(loginText.getText().trim())
+        .setPassword(new String(passwordText.getPassword()));
     }
-    server.setEnableProxy(enableProxy.isSelected());
+    builder.setEnableProxy(enableProxy.isSelected());
+    return builder.build();
   }
 
   private void generateToken() {

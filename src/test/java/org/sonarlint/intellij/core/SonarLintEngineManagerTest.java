@@ -114,9 +114,7 @@ public class SonarLintEngineManagerTest {
   }
 
   private static SonarQubeServer createServer(String name) {
-    SonarQubeServer server = new SonarQubeServer();
-    server.setName(name);
-    return server;
+    return SonarQubeServer.newBuilder().setName(name).build();
   }
 
   private static ModuleUpdateStatus moduleOk = new ModuleUpdateStatus() {
