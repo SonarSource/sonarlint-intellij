@@ -44,7 +44,10 @@ public class CurrentFileScope extends AbstractScope {
 
   private void initEventHandling() {
     EditorChangeListener editorChangeListener = new EditorChangeListener();
-    project.getMessageBus().connect(project).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, editorChangeListener);
+    project.getMessageBus()
+      .connect(project)
+      .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, editorChangeListener);
+    updateCondition(selectedFileCondition());
   }
 
   private class EditorChangeListener extends FileEditorManagerAdapter {

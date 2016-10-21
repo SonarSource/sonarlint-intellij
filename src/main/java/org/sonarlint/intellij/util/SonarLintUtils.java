@@ -69,7 +69,7 @@ public class SonarLintUtils {
   public static <T> T get(ComponentManager container, Class<T> clazz) {
     T t = container.getComponent(clazz);
     if (t == null) {
-      LOG.error("Could not find class in container: {}", clazz.getName());
+      LOG.error("Could not find class in container: " + clazz.getName());
       throw new IllegalArgumentException("Class not found: " + clazz.getName());
     }
 
@@ -106,11 +106,11 @@ public class SonarLintUtils {
   @Nullable
   public static VirtualFile getSelectedFile(Project project) {
     FileEditorManager editorManager = FileEditorManager.getInstance(project);
-    FileDocumentManager docManager = FileDocumentManager.getInstance();
 
     Editor editor = editorManager.getSelectedTextEditor();
     if (editor != null) {
       Document doc = editor.getDocument();
+      FileDocumentManager docManager = FileDocumentManager.getInstance();
       return docManager.getFile(doc);
     }
 
