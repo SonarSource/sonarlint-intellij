@@ -103,7 +103,7 @@ public class LiveIssueCache extends AbstractProjectComponent {
   }
 
   @Override
-  public synchronized void projectClosed() {
+  public synchronized void disposeComponent() {
     flushAll();
   }
 

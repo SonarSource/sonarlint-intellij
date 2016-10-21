@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue;
 
+import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.proto.Sonarlint;
 
@@ -29,18 +30,21 @@ public class LocalIssueTrackable implements Trackable {
     this.issue = issue;
   }
 
+  @CheckForNull
   @Override public Integer getLine() {
-    return issue.getLine();
+    return issue.getLine() != 0 ? issue.getLine() : null;
   }
 
   @Override public String getMessage() {
     return issue.getMessage();
   }
 
+  @CheckForNull
   @Override public Integer getTextRangeHash() {
     return null;
   }
 
+  @CheckForNull
   @Override public Integer getLineHash() {
     return issue.getChecksum();
   }
@@ -49,12 +53,14 @@ public class LocalIssueTrackable implements Trackable {
     return issue.getRuleKey();
   }
 
+  @CheckForNull
   @Override public String getServerIssueKey() {
-    return issue.getServerIssueKey();
+    return !issue.getServerIssueKey().isEmpty() ? issue.getServerIssueKey() : null;
   }
 
+  @CheckForNull
   @Override public Long getCreationDate() {
-    return issue.getCreationDate();
+    return issue.getCreationDate() != 0 ? issue.getCreationDate() : null;
   }
 
   @Override public boolean isResolved() {

@@ -27,8 +27,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ServerIssueTrackableTest {
   @Test
+  public void testNulls() {
+    ServerIssueTrackable trackable = new ServerIssueTrackable(new NullTestIssue());
+
+    assertThat(trackable.getServerIssueKey()).isNull();
+    assertThat(trackable.getLine()).isNull();
+  }
+
+  @Test
   public void testWrapping() {
-    ServerIssueTrackable trackable = new ServerIssueTrackable(createIssue());
+    ServerIssueTrackable trackable = new ServerIssueTrackable(new TestIssue());
 
     assertThat(trackable.getAssignee()).isEqualTo("assigneeLogin");
     assertThat(trackable.isResolved()).isTrue();
@@ -40,55 +48,63 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getLine()).isEqualTo(100);
   }
 
-  private ServerIssue createIssue() {
-    return new ServerIssue() {
-      @Override public String key() {
-        return "key";
-      }
+  private class NullTestIssue extends TestIssue {
+    @Override public String key() {
+      return "";
+    }
 
-      @Override public String resolution() {
-        return "resolution";
-      }
+    @Override public int line() {
+      return 0;
+    }
+  }
 
-      @Override public String ruleKey() {
-        return "ruleKey";
-      }
+  private class TestIssue implements ServerIssue {
+    @Override public String key() {
+      return "key";
+    }
 
-      @Override public int line() {
-        return 100;
-      }
+    @Override public String resolution() {
+      return "resolution";
+    }
 
-      @Override public String message() {
-        return "message";
-      }
+    @Override public String ruleKey() {
+      return "ruleKey";
+    }
 
-      @Override public String checksum() {
-        return "checksum";
-      }
+    @Override public int line() {
+      return 100;
+    }
 
-      @Override public String assigneeLogin() {
-        return "assigneeLogin";
-      }
+    @Override public String message() {
+      return "message";
+    }
 
-      @Override public String moduleKey() {
-        return "moduleKey";
-      }
+    @Override public String checksum() {
+      return "checksum";
+    }
 
-      @Override public String filePath() {
-        return "filePath";
-      }
+    @Override public String assigneeLogin() {
+      return "assigneeLogin";
+    }
 
-      @Override public String severity() {
-        return "severity";
-      }
+    @Override public String moduleKey() {
+      return "moduleKey";
+    }
 
-      @Override public boolean manualSeverity() {
-        return false;
-      }
+    @Override public String filePath() {
+      return "filePath";
+    }
 
-      @Override public Instant creationDate() {
-        return Instant.ofEpochMilli(1_000_000);
-      }
-    };
+    @Override public String severity() {
+      return "severity";
+    }
+
+    @Override public boolean manualSeverity() {
+      return false;
+    }
+
+    @Override public Instant creationDate() {
+      return Instant.ofEpochMilli(1_000_000);
+    }
   }
 }
