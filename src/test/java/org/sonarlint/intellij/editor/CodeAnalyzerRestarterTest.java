@@ -37,6 +37,7 @@ import org.sonarlint.intellij.SonarTest;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class CodeAnalyzerRestarterTest extends SonarTest {
@@ -60,6 +61,24 @@ public class CodeAnalyzerRestarterTest extends SonarTest {
     MessageBusConnection connection = mock(MessageBusConnection.class);
     when(bus.connect(project)).thenReturn(connection);
     analyzerRestarter = new CodeAnalyzerRestarter(project, fileEditorManager, codeAnalyzer, psiManager, bus);
+  }
+
+  @Test
+  public void should_not_restart_invalid() {
+    VirtualFile vFile1 = mock(VirtualFile.class);
+    when(vFile1.isValid()).thenReturn(false);
+
+    when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {vFile1});
+
+    analyzerRestarter.refreshAllFiles();
+    verifyZeroInteractions(codeAnalyzer);
+    verifyZeroInteractions(psiManager);
+  }
+
+  @Test
+  public void should_subscribe_on_init() {
+    analyzerRestarter.initComponent();
+    verify(bus).connect(project);
   }
 
   @Test
@@ -96,7 +115,7 @@ public class CodeAnalyzerRestarterTest extends SonarTest {
 
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {vFile1});
 
-    analyzerRestarter.refreshFiles(Arrays.asList(new VirtualFile[] {vFile1, vFile2}));
+    analyzerRestarter.refreshFiles(Arrays.asList(vFile1, vFile2));
     verify(codeAnalyzer).restart(psiFile1);
     verifyNoMoreInteractions(codeAnalyzer);
   }

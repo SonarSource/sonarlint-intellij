@@ -53,6 +53,11 @@ public class SonarLintColorSettingsPageTest {
   }
 
   @Test
+  public void testIcon() {
+    assertThat(colorSettingsPage.getIcon()).isNotNull();
+  }
+
+  @Test
   public void testDemo() {
     for (String txt : SEVERITIES) {
       assertThat(colorSettingsPage.getDemoText()).containsIgnoringCase(txt);

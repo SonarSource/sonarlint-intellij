@@ -175,7 +175,7 @@ public class LiveIssueCacheTest {
     VirtualFile file1 = createTestFile("file1");
     cache.save(file1, Collections.singleton(issue1));
 
-    cache.projectClosed();
+    cache.disposeComponent();
 
     verify(store).save(eq("file0"), anyCollectionOf(Trackable.class));
     verify(store).save(eq("file1"), anyCollectionOf(Trackable.class));

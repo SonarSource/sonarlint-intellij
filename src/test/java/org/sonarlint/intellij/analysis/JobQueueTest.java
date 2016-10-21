@@ -89,13 +89,16 @@ public class JobQueueTest {
   }
 
   @Test
-  public void optimize() throws JobQueue.NoCapacityException {
+  public void optimize_by_default() throws JobQueue.NoCapacityException {
     for (int i = 0; i < 3; i++) {
-      queue.queue(createJobNewFiles(2), true);
+      queue.queue(createJobNewFiles(2));
     }
 
     assertThat(queue.size()).isEqualTo(1);
     assertThat(queue.get().files()).hasSize(6);
+
+    queue.clear();
+    assertThat(queue.size()).isEqualTo(0);
   }
 
   @Test

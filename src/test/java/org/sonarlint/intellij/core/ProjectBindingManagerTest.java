@@ -35,7 +35,9 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ProjectBindingManagerTest {
@@ -45,6 +47,7 @@ public class ProjectBindingManagerTest {
 
   private StandaloneSonarLintEngine standaloneEngine;
   private ConnectedSonarLintEngine connectedEngine;
+  private SonarLintEngineManager engineManager;
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
@@ -53,7 +56,7 @@ public class ProjectBindingManagerTest {
   public void setUp() {
     SonarLintConsole console = mock(SonarLintConsole.class);
     Project project = mock(Project.class);
-    SonarLintEngineManager engineManager = mock(SonarLintEngineManager.class);
+    engineManager = mock(SonarLintEngineManager.class);
     SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
 
     standaloneEngine = mock(StandaloneSonarLintEngine.class);
@@ -69,7 +72,23 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void should_create_facade_standalone() {
-    assertThat(projectBindingManager.getFacadeForAnalysis()).isNotNull();
+    assertThat(projectBindingManager.getFacadeForAnalysis()).isInstanceOf(StandaloneSonarLintFacade.class);
+  }
+
+  @Test
+  public void should_get_connected_engine() {
+    settings.setBindingEnabled(true);
+    settings.setProjectKey("project1");
+    settings.setServerId("server1");
+
+    assertThat(projectBindingManager.getConnectedEngine()).isNotNull();
+    verify(engineManager).getConnectedEngine(any(SonarLintProjectNotifications.class), eq("server1"), eq("project1"));
+  }
+
+  @Test
+  public void fail_get_connected_engine_if_not_connected() {
+    exception.expect(IllegalStateException.class);
+    projectBindingManager.getConnectedEngine();
   }
 
   @Test
@@ -77,7 +96,7 @@ public class ProjectBindingManagerTest {
     settings.setBindingEnabled(true);
     settings.setProjectKey("project1");
     settings.setServerId("server1");
-    assertThat(projectBindingManager.getFacadeForAnalysis()).isNotNull();
+    assertThat(projectBindingManager.getFacadeForAnalysis()).isInstanceOf(ConnectedSonarLintFacade.class);
   }
 
   @Test

@@ -19,6 +19,9 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.codeInspection.ProblemHighlightType;
+import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.editor.colors.CodeInsightColors;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,7 +34,13 @@ public class SonarLintSeverityTest {
     assertThat(SonarLintSeverity.byName("MINOR")).isNotNull();
     assertThat(SonarLintSeverity.byName("INFO")).isNotNull();
     assertThat(SonarLintSeverity.byName("CRITICAL")).isNotNull();
-
     assertThat(SonarLintSeverity.byName("RANDOM")).isNull();
+  }
+
+  @Test
+  public void testBlockerSeverity() {
+    assertThat(SonarLintSeverity.BLOCKER.highlightSeverity()).isEqualTo(HighlightSeverity.ERROR);
+    assertThat(SonarLintSeverity.BLOCKER.highlightType()).isEqualTo(ProblemHighlightType.GENERIC_ERROR_OR_WARNING);
+    assertThat(SonarLintSeverity.BLOCKER.defaultTextAttributes()).isEqualTo(CodeInsightColors.ERRORS_ATTRIBUTES);
   }
 }
