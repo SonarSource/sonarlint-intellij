@@ -64,7 +64,7 @@ repositories {
 }
 
 configurations {
-  sqplugin
+  sqplugins { transitive = false } 
 }
 
 dependencies {
@@ -77,7 +77,7 @@ dependencies {
   testCompile 'junit:junit:4.11'
   testCompile 'org.assertj:assertj-core:2.2.0'
   testCompile 'org.mockito:mockito-core:1.10.19'
-  sqplugin (
+  sqplugins (
     'org.sonarsource.java:sonar-java-plugin:4.2',
     'org.sonarsource.javascript:sonar-javascript-plugin:2.15',
     'org.sonarsource.php:sonar-php-plugin:2.8',
@@ -89,18 +89,14 @@ task cleanSQPlugins(type: Delete) {
   delete fileTree('src/main/resources/plugins').include('**/*.jar')
 }
 
-task downloadSQPlugins(type: Copy) {
-  from configurations.sqplugin.filter { it.name.matches('.*sonar-.*-plugin.*\\.jar') }
+task downloadSQPlugins(type: Copy, dependsOn: cleanSQPlugins) {
+  outputs.upToDateWhen { false }
+  from configurations.sqplugins
   into 'src/main/resources/plugins'
 }
 
-task updateSQPlugins {
-  dependsOn cleanSQPlugins, downloadSQPlugins
-}
 
-project.afterEvaluate {
-  tasks.buildPlugin.dependsOn(updateSQPlugins)
-}
+classes.dependsOn downloadSQPlugins
 
 release {
   failOnSnapshotDependencies = false
