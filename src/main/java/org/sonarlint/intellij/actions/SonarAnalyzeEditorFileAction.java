@@ -22,7 +22,6 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
@@ -32,6 +31,7 @@ import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
@@ -41,7 +41,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return false;
     }
 
-    return SonarLintUtils.getSelectedFile(project) != null;
+    return SonarLintUtils.get(SonarLintAppUtils.class).getSelectedFile(project) != null;
   }
 
   @Override
@@ -52,7 +52,8 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    VirtualFile selectedFile = SonarLintUtils.getSelectedFile(p);
+    SonarLintAppUtils utils = SonarLintUtils.get(SonarLintAppUtils.class);
+    VirtualFile selectedFile = utils.getSelectedFile(p);
     SonarLintConsole console = SonarLintConsole.get(p);
 
     if (selectedFile == null) {
@@ -60,14 +61,14 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    Module m = ModuleUtil.findModuleForFile(selectedFile, p);
+    Module m = utils.findModuleForFile(selectedFile, p);
 
-    if (SonarLintUtils.shouldAnalyze(selectedFile, m)) {
-      SonarLintJobManager analyzer = SonarLintUtils.get(p, SonarLintJobManager.class);
+    if (utils.shouldAnalyze(selectedFile, m)) {
+      SonarLintJobManager jobManager = SonarLintUtils.get(p, SonarLintJobManager.class);
       if (executeBackground(e)) {
-        analyzer.submitAsync(m, Collections.singleton(selectedFile), TriggerType.ACTION);
+        jobManager.submitAsync(m, Collections.singleton(selectedFile), TriggerType.ACTION);
       } else {
-        analyzer.submit(m, Collections.singleton(selectedFile), TriggerType.ACTION);
+        jobManager.submit(m, Collections.singleton(selectedFile), TriggerType.ACTION);
       }
     } else {
       console.error("File '" + selectedFile + "' cannot be analyzed");
