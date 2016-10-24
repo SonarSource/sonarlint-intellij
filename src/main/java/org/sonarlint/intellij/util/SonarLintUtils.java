@@ -49,7 +49,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarApplication;
@@ -123,7 +122,7 @@ public class SonarLintUtils {
     return null;
   }
 
-  private static boolean saveFile(@NotNull final VirtualFile virtualFile) {
+  private static boolean saveFile(final VirtualFile virtualFile) {
     final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
     if (fileDocumentManager.isFileModified(virtualFile)) {
       final Document document = fileDocumentManager.getDocument(virtualFile);
@@ -135,8 +134,8 @@ public class SonarLintUtils {
     return false;
   }
 
-  public static boolean shouldAnalyzeAutomatically(@Nullable VirtualFile file, @Nullable Module module) {
-    if (!shouldAnalyze(file, module) || file == null || module == null) {
+  public static boolean shouldAnalyzeAutomatically(VirtualFile file, @Nullable Module module) {
+    if (!shouldAnalyze(file, module) || module == null) {
       return false;
     }
 
@@ -183,8 +182,8 @@ public class SonarLintUtils {
     return false;
   }
 
-  public static boolean shouldAnalyze(@Nullable VirtualFile file, @Nullable Module module) {
-    if (file == null || module == null) {
+  public static boolean shouldAnalyze(VirtualFile file, @Nullable Module module) {
+    if (module == null) {
       return false;
     }
 
