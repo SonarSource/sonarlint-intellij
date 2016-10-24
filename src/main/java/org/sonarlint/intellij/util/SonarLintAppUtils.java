@@ -44,4 +44,9 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   public Module findModuleForFile(VirtualFile file, Project project) {
     return ModuleUtil.findModuleForFile(file, project);
   }
+
+  @CheckForNull
+  public VirtualFile getSelectedFile(Project project) {
+    return SonarLintUtils.getSelectedFile(project);
+  }
 }

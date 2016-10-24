@@ -61,7 +61,6 @@ public class SonarLintUtilsTest extends SonarTest {
   public void testShouldAnalyze() {
     assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isTrue();
 
-    assertThat(SonarLintUtils.shouldAnalyze(null, module)).isFalse();
     assertThat(SonarLintUtils.shouldAnalyze(testFile, null)).isFalse();
 
     when(testFile.getFileType()).thenReturn(binary);
