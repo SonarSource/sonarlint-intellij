@@ -24,8 +24,6 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.MessageBus;
-import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -75,8 +73,9 @@ public class FileEditorTriggerTest {
   @Test
   public void should_do_nothing_closed() {
     VirtualFile f1 = mock(VirtualFile.class);
-    editorTrigger.fileClosed(mock(FileEditorManager.class), f1);
-    editorTrigger.selectionChanged(mock(FileEditorManagerEvent.class));
+    FileEditorManager mock = mock(FileEditorManager.class);
+    editorTrigger.fileClosed(mock, f1);
+    editorTrigger.selectionChanged(new FileEditorManagerEvent(mock, null, null, null, null));
     verifyZeroInteractions(jobManager);
   }
 

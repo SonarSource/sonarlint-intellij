@@ -61,7 +61,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
   private static void stopRun(SonarLintJob job) {
     Project project = job.module().getProject();
-    if(!project.isDisposed()) {
+    if (!project.isDisposed()) {
       TaskListener taskListener = project.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
       taskListener.ended(job);
     }

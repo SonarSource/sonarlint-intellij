@@ -68,7 +68,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
    * Does not get called for Automake
    */
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
-    if(compileContext.getProject().equals(myProject)) {
+    if (compileContext.getProject().equals(myProject)) {
       console.debug("compilation finished");
       submitter.submitIfAutoEnabled(TriggerType.COMPILATION);
     }

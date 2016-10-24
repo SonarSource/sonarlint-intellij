@@ -34,7 +34,7 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public Integer getLine() {
-    return serverIssue.line() != 0 ?  serverIssue.line() : null;
+    return serverIssue.line() != 0 ? serverIssue.line() : null;
   }
 
   @Override

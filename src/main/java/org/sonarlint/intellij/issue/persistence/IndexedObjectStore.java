@@ -75,7 +75,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
     Collection<K> keys = index.keys();
 
     for (K k : keys) {
-      if(!validator.apply(k)) {
+      if (!validator.apply(k)) {
         try {
           counter++;
           delete(k);

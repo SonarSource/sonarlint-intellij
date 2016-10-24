@@ -59,12 +59,11 @@ public class JobQueue {
     }
 
     ListIterator<SonarLintJob> it = queue.listIterator();
-    while(it.hasNext()) {
+    while (it.hasNext()) {
       SonarLintJob j = it.next();
       if (!j.module().equals(job.module())) {
         continue;
       }
-
 
       SonarLintJob combined = new SonarLintJob(job, j);
       it.set(combined);

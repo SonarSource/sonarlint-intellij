@@ -39,7 +39,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
   private final MessageBusConnection busConnection;
   private final SonarLintAppUtils utils;
 
-  public FileEditorTrigger(Project project,SonarLintJobManager jobManager, SonarLintGlobalSettings globalSettings,
+  public FileEditorTrigger(Project project, SonarLintJobManager jobManager, SonarLintGlobalSettings globalSettings,
     SonarLintAppUtils utils) {
     super(project);
     this.jobManager = jobManager;

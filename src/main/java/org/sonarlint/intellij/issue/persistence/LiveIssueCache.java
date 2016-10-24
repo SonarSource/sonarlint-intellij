@@ -59,7 +59,7 @@ public class LiveIssueCache extends AbstractProjectComponent {
         return false;
       }
 
-      if(eldest.getKey().isValid()) {
+      if (eldest.getKey().isValid()) {
         String key = createKey(eldest.getKey());
         try {
           LOGGER.debug("Persisting issues for " + key);
@@ -91,7 +91,7 @@ public class LiveIssueCache extends AbstractProjectComponent {
   public synchronized void flushAll() {
     LOGGER.debug("Persisting all issues");
     cache.forEach((virtualFile, trackableIssues) -> {
-      if(virtualFile.isValid()) {
+      if (virtualFile.isValid()) {
         String key = createKey(virtualFile);
         try {
           store.save(key, trackableIssues);

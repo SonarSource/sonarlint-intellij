@@ -77,7 +77,7 @@ public class IssuePersistence extends AbstractProjectComponent {
   @CheckForNull
   public Collection<LocalIssueTrackable> read(String key) throws IOException {
     Optional<Sonarlint.Issues> issues = store.read(key);
-    if(issues.isPresent()) {
+    if (issues.isPresent()) {
       return transform(issues.get());
     }
     return null;
@@ -125,16 +125,16 @@ public class IssuePersistence extends AbstractProjectComponent {
       .setMessage(localIssue.getMessage())
       .setResolved(localIssue.isResolved());
 
-    if(localIssue.getAssignee() != null) {
+    if (localIssue.getAssignee() != null) {
       builder.setAssignee(localIssue.getAssignee());
     }
-    if(localIssue.getCreationDate() != null) {
+    if (localIssue.getCreationDate() != null) {
       builder.setCreationDate(localIssue.getCreationDate());
     }
-    if(localIssue.getLineHash() != null) {
+    if (localIssue.getLineHash() != null) {
       builder.setChecksum(localIssue.getLineHash());
     }
-    if(localIssue.getServerIssueKey() != null) {
+    if (localIssue.getServerIssueKey() != null) {
       builder.setServerIssueKey(localIssue.getServerIssueKey());
     }
     if (localIssue.getLine() != null) {

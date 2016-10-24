@@ -48,7 +48,6 @@ public class LiveIssue implements Trackable {
   private final String message;
   private final String ruleKey;
 
-
   // tracked fields (mutable)
   private Long creationDate;
   private String serverIssueKey;

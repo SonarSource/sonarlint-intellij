@@ -355,7 +355,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
     if (selectedServer != null) {
       SonarQubeServerEditor serverEditor = new SonarQubeServerEditor(panel, servers, selectedServer, false);
-      if(serverEditor.showAndGet()) {
+      if (serverEditor.showAndGet()) {
         SonarQubeServer newServer = serverEditor.getServer();
         ((CollectionListModel) serverList.getModel()).setElementAt(newServer, selectedIndex);
         servers.set(servers.indexOf(selectedServer), newServer);

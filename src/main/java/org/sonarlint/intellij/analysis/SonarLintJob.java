@@ -40,7 +40,7 @@ public class SonarLintJob {
     Preconditions.checkNotNull(m);
     Preconditions.checkNotNull(trigger);
     Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
-    
+
     this.m = m;
     Set<VirtualFile> fileSet = new HashSet<>();
     fileSet.addAll(files);

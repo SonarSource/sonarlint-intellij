@@ -88,7 +88,7 @@ public class IssueNode extends AbstractNode {
     }
 
     Document doc = FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile());
-    if(doc == null) {
+    if (doc == null) {
       return "(?, ?)";
     }
     int line = doc.getLineNumber(range.getStartOffset());

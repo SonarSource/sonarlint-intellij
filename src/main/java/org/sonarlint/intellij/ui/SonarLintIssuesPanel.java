@@ -209,7 +209,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   public void updateTree() {
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new HashMap<>();
     Collection<VirtualFile> all = scope.getAll();
-    for(VirtualFile f : all) {
+    for (VirtualFile f : all) {
       issuesPerFile.put(f, issueManager.getForFile(f));
     }
 

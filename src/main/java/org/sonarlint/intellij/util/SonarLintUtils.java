@@ -91,7 +91,7 @@ public class SonarLintUtils {
    * Must be called from EDT
    */
   public static boolean saveFiles(final Collection<VirtualFile> virtualFiles) {
-    boolean[] success = new boolean[] { true };
+    boolean[] success = new boolean[] {true};
 
     ApplicationManager.getApplication().runWriteAction(() -> {
       for (VirtualFile file : virtualFiles) {

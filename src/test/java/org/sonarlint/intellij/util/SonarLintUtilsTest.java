@@ -58,6 +58,22 @@ public class SonarLintUtilsTest extends SonarTest {
   }
 
   @Test
+  public void testIsBlank() {
+    assertThat(SonarLintUtils.isBlank("")).isTrue();
+    assertThat(SonarLintUtils.isBlank("  ")).isTrue();
+    assertThat(SonarLintUtils.isBlank(null)).isTrue();
+    assertThat(SonarLintUtils.isBlank(" s ")).isFalse();
+  }
+
+  @Test
+  public void testIsEmpty() {
+    assertThat(SonarLintUtils.isEmpty("")).isTrue();
+    assertThat(SonarLintUtils.isEmpty("  ")).isFalse();
+    assertThat(SonarLintUtils.isEmpty(null)).isTrue();
+    assertThat(SonarLintUtils.isEmpty(" s ")).isFalse();
+  }
+
+  @Test
   public void testShouldAnalyze() {
     assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isTrue();
 
@@ -120,5 +136,14 @@ public class SonarLintUtilsTest extends SonarTest {
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());
+  }
+
+  @Test
+  public void testAge() {
+    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 100)).isEqualTo("few seconds ago");
+    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 65_000)).isEqualTo("1 minute ago");
+    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 3_600_000-100_000)).isEqualTo("1 hour ago");
+    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 2*3_600_000-100_000)).isEqualTo("2 hours ago");
+    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 24*3_600_000-100_000)).isEqualTo("1 day ago");
   }
 }
