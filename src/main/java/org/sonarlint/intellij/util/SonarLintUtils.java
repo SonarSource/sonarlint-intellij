@@ -88,14 +88,20 @@ public class SonarLintUtils {
     return get(ApplicationManager.getApplication(), clazz);
   }
 
+  /**
+   * Must be called from EDT
+   */
   public static boolean saveFiles(final Collection<VirtualFile> virtualFiles) {
-    boolean success = true;
-    for (VirtualFile file : virtualFiles) {
-      if (!saveFile(file)) {
-        success = false;
+    boolean[] success = new boolean[] { true };
+
+    ApplicationManager.getApplication().runWriteAction(() -> {
+      for (VirtualFile file : virtualFiles) {
+        if (!saveFile(file)) {
+          success[0] = false;
+        }
       }
-    }
-    return success;
+    });
+    return success[0];
   }
 
   /**
@@ -117,7 +123,7 @@ public class SonarLintUtils {
     return null;
   }
 
-  public static boolean saveFile(@NotNull final VirtualFile virtualFile) {
+  private static boolean saveFile(@NotNull final VirtualFile virtualFile) {
     final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
     if (fileDocumentManager.isFileModified(virtualFile)) {
       final Document document = fileDocumentManager.getDocument(virtualFile);
