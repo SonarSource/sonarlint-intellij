@@ -24,7 +24,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
@@ -32,18 +31,21 @@ import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
-  private final SonarLintJobManager analyzer;
+  private final SonarLintJobManager jobManager;
   private final SonarLintGlobalSettings globalSettings;
   private final MessageBusConnection busConnection;
+  private final SonarLintAppUtils utils;
 
-  public FileEditorTrigger(Project project,SonarLintJobManager analyzer, SonarLintGlobalSettings globalSettings) {
+  public FileEditorTrigger(Project project,SonarLintJobManager jobManager, SonarLintGlobalSettings globalSettings,
+    SonarLintAppUtils utils) {
     super(project);
-    this.analyzer = analyzer;
+    this.jobManager = jobManager;
     this.globalSettings = globalSettings;
     this.busConnection = project.getMessageBus().connect(project);
+    this.utils = utils;
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
   }
 
@@ -58,12 +60,12 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
       return;
     }
 
-    Module m = ModuleUtil.findModuleForFile(file, myProject);
-    if (m == null || !SonarLintUtils.shouldAnalyzeAutomatically(file, m)) {
+    Module m = utils.findModuleForFile(file, myProject);
+    if (m == null || !utils.shouldAnalyzeAutomatically(file, m)) {
       return;
     }
 
-    analyzer.submitAsync(m, Collections.singleton(file), TriggerType.EDITOR_OPEN);
+    jobManager.submitAsync(m, Collections.singleton(file), TriggerType.EDITOR_OPEN);
   }
 
   @Override
