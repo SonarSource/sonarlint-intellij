@@ -32,7 +32,6 @@ import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -43,11 +42,15 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 public final class StandaloneSonarLintFacade implements SonarLintFacade {
   private final StandaloneSonarLintEngine sonarlint;
   private final Project project;
+  private final SonarLintProjectSettings projectSettings;
+  private final SonarLintConsole console;
 
-  public StandaloneSonarLintFacade(Project project, StandaloneSonarLintEngine engine) {
+  public StandaloneSonarLintFacade(SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, StandaloneSonarLintEngine engine) {
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
+    this.projectSettings = projectSettings;
+    this.console = console;
     this.project = project;
     this.sonarlint = engine;
   }
@@ -59,7 +62,10 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
     if (details == null) {
       return null;
     }
-    return details.getHtmlDescription();
+    if (details.getExtendedDescription().isEmpty()) {
+      return details.getHtmlDescription();
+    }
+    return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
   }
 
   @Nullable
@@ -74,9 +80,6 @@ public final class StandaloneSonarLintFacade implements SonarLintFacade {
 
   @Override
   public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
-    SonarLintConsole console = SonarLintUtils.get(project, SonarLintConsole.class);
-
     Path baseDir = Paths.get(project.getBasePath());
     Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
     Map<String, String> props = new HashMap<>();

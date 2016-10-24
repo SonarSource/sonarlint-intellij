@@ -59,9 +59,9 @@ public class ProjectBindingManager extends AbstractProjectComponent {
       console.info(String.format("Using configuration of '%s' in server '%s'", projectKey, serverId));
 
       ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, serverId, projectKey);
-      return new ConnectedSonarLintFacade(engine, myProject, projectKey);
+      return new ConnectedSonarLintFacade(engine, projectSettings, console, myProject, projectKey);
     }
-    return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());
+    return new StandaloneSonarLintFacade(projectSettings, console, myProject, engineManager.getStandaloneEngine());
   }
 
   public synchronized ConnectedSonarLintEngine getConnectedEngine() {

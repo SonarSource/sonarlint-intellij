@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -30,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -54,9 +56,7 @@ public class FileEditorTriggerTest {
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     globalSettings = new SonarLintGlobalSettings();
-    MessageBus bus = mock(MessageBus.class);
-    when(bus.connect(project)).thenReturn(mock(MessageBusConnection.class));
-    when(project.getMessageBus()).thenReturn(bus);
+    SonarLintTestUtils.mockMessageBus(project);
     editorTrigger = new FileEditorTrigger(project, jobManager, globalSettings, utils);
   }
 
@@ -70,6 +70,14 @@ public class FileEditorTriggerTest {
 
     editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
     verify(jobManager).submitAsync(m1, Collections.singleton(f1), TriggerType.EDITOR_OPEN);
+  }
+
+  @Test
+  public void should_do_nothing_closed() {
+    VirtualFile f1 = mock(VirtualFile.class);
+    editorTrigger.fileClosed(mock(FileEditorManager.class), f1);
+    editorTrigger.selectionChanged(mock(FileEditorManagerEvent.class));
+    verifyZeroInteractions(jobManager);
   }
 
   @Test

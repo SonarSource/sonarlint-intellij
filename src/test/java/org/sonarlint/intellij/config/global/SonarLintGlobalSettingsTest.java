@@ -19,12 +19,20 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import java.io.File;
 import java.util.Collections;
+import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.SonarTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SonarLintGlobalSettingsTest {
+public class SonarLintGlobalSettingsTest extends SonarTest {
+  @Before
+  public void setUp() {
+    super.setUp();
+  }
+
   @Test
   public void testRoundTrip() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
@@ -38,6 +46,17 @@ public class SonarLintGlobalSettingsTest {
 
     assertThat(settings.getComponentName()).isEqualTo("SonarLintGlobalSettings");
     assertThat(settings.getPresentableName()).isEqualTo("SonarLint settings");
+
+    assertThat(settings.getState()).isEqualTo(settings);
+    assertThat(settings.getExportFiles()).isNotEmpty();
+  }
+
+  @Test
+  public void testGetInstance() {
+    SonarLintGlobalSettings instance = new SonarLintGlobalSettings();
+    super.register(app, SonarLintGlobalSettings.class, instance);
+    assertThat(SonarLintGlobalSettings.getInstance()).isEqualTo(instance);
+
   }
 
 }

@@ -44,11 +44,15 @@ public class ConnectedSonarLintFacade implements SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
   private final Project project;
   private final String moduleKey;
+  private final SonarLintProjectSettings projectSettings;
+  private final SonarLintConsole console;
 
-  public ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, Project project, String moduleKey) {
+  public ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, String moduleKey) {
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
+    this.projectSettings = projectSettings;
+    this.console = console;
     this.sonarlint = engine;
     this.project = project;
     this.moduleKey = moduleKey;
@@ -79,9 +83,6 @@ public class ConnectedSonarLintFacade implements SonarLintFacade {
 
   @Override
   public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
-    SonarLintConsole console = SonarLintUtils.get(project, SonarLintConsole.class);
-
     Path baseDir = Paths.get(project.getBasePath());
     Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
     Map<String, String> props = new HashMap<>();

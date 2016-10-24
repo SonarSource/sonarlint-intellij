@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.components.ExportableApplicationComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
@@ -36,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintBundle;
 
 @State(name = "SonarLintGlobalSettings", storages = {@Storage(id = "sonarlint", file = StoragePathMacros.APP_CONFIG + "/sonarlint.xml")})
-public final class SonarLintGlobalSettings implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
+public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private boolean autoTrigger = true;
   private List<SonarQubeServer> servers = new LinkedList<>();
@@ -72,16 +73,6 @@ public final class SonarLintGlobalSettings implements PersistentStateComponent<S
   @NonNls
   public String getComponentName() {
     return "SonarLintGlobalSettings";
-  }
-
-  @Override
-  public void initComponent() {
-    // Nothing to do
-  }
-
-  @Override
-  public void disposeComponent() {
-    // Nothing to do
   }
 
   public boolean isAutoTrigger() {

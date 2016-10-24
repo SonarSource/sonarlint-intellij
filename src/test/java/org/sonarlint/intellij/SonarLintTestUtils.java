@@ -20,8 +20,11 @@
 package org.sonarlint.intellij;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.components.impl.ComponentManagerImpl;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBus;
+import com.intellij.util.messages.MessageBusConnection;
 import java.awt.GraphicsEnvironment;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -47,6 +50,15 @@ public class SonarLintTestUtils {
     ComponentManagerImpl compManager = (ComponentManagerImpl) project;
     compManager.registerComponentInstance(clazz, mocked);
     return mocked;
+  }
+
+  public static MessageBusConnection mockMessageBus(ComponentManager mockedComponentManager) {
+    MessageBusConnection connection = mock(MessageBusConnection.class);
+    MessageBus bus = mock(MessageBus.class);
+    when(bus.connect(mockedComponentManager)).thenReturn(connection);
+    when(bus.connect()).thenReturn(connection);
+    when(mockedComponentManager.getMessageBus()).thenReturn(bus);
+    return connection;
   }
 
   public static AnActionEvent createAnActionEvent(Project project) {

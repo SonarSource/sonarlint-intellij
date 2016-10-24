@@ -34,12 +34,14 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class MakeTrigger extends AbstractProjectComponent implements BuildManagerListener, CompilationStatusListener {
   private final SonarLintConsole console;
+  private final CompilerManager compilerManager;
   private final OpenFilesSubmitter submitter;
 
-  public MakeTrigger(Project project, OpenFilesSubmitter submitter, SonarLintConsole console) {
+  public MakeTrigger(Project project, OpenFilesSubmitter submitter, SonarLintConsole console, CompilerManager compilerManager) {
     super(project);
     this.submitter = submitter;
     this.console = console;
+    this.compilerManager = compilerManager;
     ApplicationManager.getApplication().getMessageBus().connect().subscribe(BuildManagerListener.TOPIC, this);
   }
 
@@ -53,7 +55,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
   }
 
   @Override public void buildFinished(Project project, UUID sessionId, boolean isAutomake) {
-    if (!isAutomake) {
+    if (!project.equals(myProject) || !isAutomake) {
       // covered by compilationFinished
       return;
     }
@@ -66,8 +68,10 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
    * Does not get called for Automake
    */
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
-    console.debug("compilation finished");
-    submitter.submitIfAutoEnabled(TriggerType.COMPILATION);
+    if(compileContext.getProject().equals(myProject)) {
+      console.debug("compilation finished");
+      submitter.submitIfAutoEnabled(TriggerType.COMPILATION);
+    }
   }
 
   @Override public void fileGenerated(String outputRoot, String relativePath) {
@@ -82,12 +86,12 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
 
   @Override
   public void projectOpened() {
-    CompilerManager.getInstance(super.myProject).addCompilationStatusListener(this);
+    compilerManager.addCompilationStatusListener(this);
   }
 
   @Override
   public void projectClosed() {
-    CompilerManager.getInstance(super.myProject).removeCompilationStatusListener(this);
+    compilerManager.removeCompilationStatusListener(this);
   }
 
 }
