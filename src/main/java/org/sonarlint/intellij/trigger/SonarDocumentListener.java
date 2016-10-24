@@ -42,6 +42,7 @@ import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 @ThreadSafe
@@ -49,20 +50,30 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   private static final int DEFAULT_TIMER_MS = 2000;
 
   private final SonarLintGlobalSettings globalSettings;
+  private final Project project;
   private final SonarLintJobManager analyzer;
+  private final EditorFactory editorFactory;
+  private final SonarLintAppUtils utils;
+  private final FileDocumentManager docManager;
 
   // entries in this map mean that the file is "dirty"
   private final Map<VirtualFile, Long> eventMap;
   private final EventWatcher watcher;
   private final int timerMs;
 
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer, EditorFactory editorFactory) {
-    this(project, globalSettings, analyzer, editorFactory, DEFAULT_TIMER_MS);
+  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer,
+    EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager) {
+    this(project, globalSettings, analyzer, editorFactory, utils, docManager, DEFAULT_TIMER_MS);
   }
 
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer, EditorFactory editorFactory, int timerMs) {
+  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer,
+    EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
     super(project);
+    this.project = project;
     this.analyzer = analyzer;
+    this.editorFactory = editorFactory;
+    this.utils = utils;
+    this.docManager = docManager;
     this.eventMap = new ConcurrentHashMap<>();
     this.globalSettings = globalSettings;
     this.watcher = new EventWatcher();
@@ -86,10 +97,6 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     watcher.start();
   }
 
-  public boolean hasEvents() {
-    return !eventMap.isEmpty();
-  }
-
   @Override public void beforeDocumentChange(DocumentEvent event) {
     //nothing to do
   }
@@ -99,17 +106,16 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
       return;
     }
 
-    VirtualFile file = FileDocumentManager.getInstance().getFile(event.getDocument());
-    Project project = ProjectUtil.guessProjectForFile(file);
+    VirtualFile file = docManager.getFile(event.getDocument());
+    if(file == null) {
+      return;
+    }
+    Project project = utils.guessProjectForFile(file);
 
-    if (file == null || project == null || !project.equals(myProject)) {
+    if (project == null || !project.equals(myProject)) {
       return;
     }
 
-    postEvent(file);
-  }
-
-  @VisibleForTesting void postEvent(VirtualFile file) {
     eventMap.put(file, System.currentTimeMillis());
   }
 
@@ -118,6 +124,10 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
    */
   public void removeFiles(Collection<VirtualFile> files) {
     files.forEach(eventMap::remove);
+  }
+
+  Map<VirtualFile, Long> getEvents() {
+    return Collections.unmodifiableMap(eventMap);
   }
 
   private class EventWatcher extends Thread {
@@ -150,8 +160,8 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
         return;
       }
 
-      Module m = ModuleUtil.findModuleForFile(file, myProject);
-      if (m == null || !SonarLintUtils.shouldAnalyzeAutomatically(file, m)) {
+      Module m = utils.findModuleForFile(file, myProject);
+      if (m == null || !utils.shouldAnalyzeAutomatically(file, m)) {
         return;
       }
 

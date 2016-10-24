@@ -23,6 +23,7 @@ import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.vfs.VirtualFile;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -48,5 +49,10 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   @CheckForNull
   public VirtualFile getSelectedFile(Project project) {
     return SonarLintUtils.getSelectedFile(project);
+  }
+
+  @CheckForNull
+  public Project guessProjectForFile(VirtualFile file) {
+    return ProjectLocator.getInstance().guessProjectForFile(file);
   }
 }
