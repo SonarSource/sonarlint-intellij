@@ -62,7 +62,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private void addToolbar() {
     ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
     mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
-
+    mainToolbar.setTargetComponent(this);
     Box toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
 

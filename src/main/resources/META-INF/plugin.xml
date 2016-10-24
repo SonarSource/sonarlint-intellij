@@ -83,6 +83,9 @@
 
     <project-components>
         <component>
+            <implementation-class>org.sonarlint.intellij.trigger.OpenFilesSubmitter</implementation-class>
+        </component>
+        <component>
             <implementation-class>org.sonarlint.intellij.editor.CodeAnalyzerRestarter</implementation-class>
         </component>
         <component>
@@ -155,16 +158,16 @@
                 icon="/images/onde-sonar-16-execute.png">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
-            <add-to-group group-id="SonarLint.logtoolwindow"/>
         </action>
 
 
         <action id="SonarLint.SonarAnalyzeScopeAction"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeScopeAction"
-                text="Analyze this file with SonarLint"
-                description="Run SonarLint analysis on the file selected in the editor"
+                text="Analyze files in the selected scope"
+                description="Run SonarLint analysis on the files in the selected scope"
                 icon="/images/onde-sonar-16-execute.png">
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
+            <add-to-group group-id="SonarLint.logtoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.Cancel"

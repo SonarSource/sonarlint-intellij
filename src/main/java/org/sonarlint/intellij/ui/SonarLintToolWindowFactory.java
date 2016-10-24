@@ -34,11 +34,13 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addIssuesTab(Project project, ToolWindow toolWindow) {
+    SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project);
     Content logContent = toolWindow.getContentManager().getFactory()
       .createContent(
-        new SonarLintIssuesPanel(project),
+        issuesPanel,
         "Issues",
         false);
+    toolWindow.getContentManager().addDataProvider(issuesPanel::getData);
     toolWindow.getContentManager().addContent(logContent);
   }
 
