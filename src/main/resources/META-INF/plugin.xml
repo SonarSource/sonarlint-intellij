@@ -68,6 +68,9 @@
             <implementation-class>org.sonarlint.intellij.SonarApplication</implementation-class>
         </component>
         <component>
+            <implementation-class>org.sonarlint.intellij.util.SonarLintAppUtils</implementation-class>
+        </component>
+        <component>
             <implementation-class>org.sonarlint.intellij.core.SonarLintEngineManager</implementation-class>
         </component>
         <component>

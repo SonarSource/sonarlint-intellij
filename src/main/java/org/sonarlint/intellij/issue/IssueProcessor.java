@@ -27,7 +27,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import org.sonarlint.intellij.analysis.SonarLintJob;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;

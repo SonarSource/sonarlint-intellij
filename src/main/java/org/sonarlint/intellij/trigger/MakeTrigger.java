@@ -19,37 +19,26 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.intellij.compiler.server.BuildManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 
 import java.util.UUID;
 
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class MakeTrigger extends AbstractProjectComponent implements BuildManagerListener, CompilationStatusListener {
-  private final FileEditorManager editorManager;
-  private final SonarLintJobManager analyzer;
   private final SonarLintConsole console;
+  private final OpenFilesSubmitter submitter;
 
-  public MakeTrigger(Project project, FileEditorManager editorManager, SonarLintJobManager analyzer, SonarLintConsole console) {
+  public MakeTrigger(Project project, OpenFilesSubmitter submitter, SonarLintConsole console) {
     super(project);
-    this.editorManager = editorManager;
-    this.analyzer = analyzer;
+    this.submitter = submitter;
     this.console = console;
     ApplicationManager.getApplication().getMessageBus().connect().subscribe(BuildManagerListener.TOPIC, this);
   }
@@ -69,47 +58,16 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
       return;
     }
 
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-    if (!globalSettings.isAutoTrigger()) {
-      return;
-    }
-
-    VirtualFile[] openFiles = editorManager.getOpenFiles();
-    submitFiles(openFiles, "project build");
-  }
-
-  private void submitFiles(VirtualFile[] files, String trigger) {
-    Multimap<Module, VirtualFile> filesByModule = HashMultimap.create();
-
-    for (VirtualFile file : files) {
-      Module m = ModuleUtil.findModuleForFile(file, myProject);
-      if (!SonarLintUtils.shouldAnalyzeAutomatically(file, m)) {
-        continue;
-      }
-
-      filesByModule.put(m, file);
-    }
-
-    if (!filesByModule.isEmpty()) {
-      console.debug("Trigger: " + trigger);
-
-      for (Module m : filesByModule.keySet()) {
-        analyzer.submitAsync(m, filesByModule.get(m), TriggerType.COMPILATION);
-      }
-    }
+    console.debug("build finished");
+    submitter.submitIfAutoEnabled(TriggerType.COMPILATION);
   }
 
   /**
    * Does not get called for Automake
    */
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-    if (!globalSettings.isAutoTrigger()) {
-      return;
-    }
-
-    VirtualFile[] openFiles = editorManager.getOpenFiles();
-    submitFiles(openFiles, "compilation");
+    console.debug("compilation finished");
+    submitter.submitIfAutoEnabled(TriggerType.COMPILATION);
   }
 
   @Override public void fileGenerated(String outputRoot, String relativePath) {

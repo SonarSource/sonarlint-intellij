@@ -23,7 +23,8 @@ public enum TriggerType {
   EDITOR_OPEN("Editor open"),
   ACTION("Action"),
   COMPILATION("Compilation"),
-  EDITOR_CHANGE("Editor change");
+  EDITOR_CHANGE("Editor change"),
+  BINDING_CHANGE("Binding change");
 
   private final String name;
 

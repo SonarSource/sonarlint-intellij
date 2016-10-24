@@ -21,7 +21,6 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.util.messages.Topic;
 import org.sonarlint.intellij.analysis.SonarLintJob;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
 
 public interface TaskListener {
   Topic<TaskListener> SONARLINT_TASK_TOPIC = Topic.create("SonarLint task start and finish", TaskListener.class);

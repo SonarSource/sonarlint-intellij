@@ -28,6 +28,8 @@ import javax.swing.JPanel;
 import org.apache.commons.codec.binary.StringUtils;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.trigger.OpenFilesSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -90,11 +92,12 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     if (bindingChanged) {
       SonarLintConsole console = SonarLintConsole.get(project);
       IssueManager store = SonarLintUtils.get(project, IssueManager.class);
+      OpenFilesSubmitter submitter = SonarLintUtils.get(project, OpenFilesSubmitter.class);
 
       console.info("Clearing all issues because binding changed");
       store.clear();
+      submitter.submitIfAutoEnabled(TriggerType.BINDING_CHANGE);
     }
-
   }
 
   private boolean bindingChanged(SonarLintProjectSettings projectSettings) {
