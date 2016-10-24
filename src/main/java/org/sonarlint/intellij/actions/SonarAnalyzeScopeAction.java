@@ -31,7 +31,6 @@ import java.util.Collection;
 
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.trigger.OpenFilesSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.ui.scope.AbstractScope;

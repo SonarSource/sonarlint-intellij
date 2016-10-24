@@ -19,16 +19,13 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 
 import java.util.Collection;
@@ -43,16 +40,13 @@ import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 @ThreadSafe
 public class SonarDocumentListener extends AbstractProjectComponent implements DocumentListener {
   private static final int DEFAULT_TIMER_MS = 2000;
 
   private final SonarLintGlobalSettings globalSettings;
-  private final Project project;
   private final SonarLintJobManager analyzer;
-  private final EditorFactory editorFactory;
   private final SonarLintAppUtils utils;
   private final FileDocumentManager docManager;
 
@@ -69,9 +63,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer,
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
     super(project);
-    this.project = project;
     this.analyzer = analyzer;
-    this.editorFactory = editorFactory;
     this.utils = utils;
     this.docManager = docManager;
     this.eventMap = new ConcurrentHashMap<>();
