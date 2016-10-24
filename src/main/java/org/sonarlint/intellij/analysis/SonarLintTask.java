@@ -60,8 +60,11 @@ public class SonarLintTask extends Task.Backgroundable {
   }
 
   private static void stopRun(SonarLintJob job) {
-    TaskListener taskListener = job.module().getProject().getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
-    taskListener.ended(job);
+    Project project = job.module().getProject();
+    if(!project.isDisposed()) {
+      TaskListener taskListener = project.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
+      taskListener.ended(job);
+    }
   }
 
   private static String getFileName(VirtualFile file) {
@@ -103,7 +106,7 @@ public class SonarLintTask extends Task.Backgroundable {
       }
 
       //last chance to cancel (to avoid the possibility of having interrupt flag set)
-      if (indicator.isCanceled() || status.isCanceled()) {
+      if (indicator.isCanceled() || status.isCanceled() || p.isDisposed()) {
         return;
       }
 
