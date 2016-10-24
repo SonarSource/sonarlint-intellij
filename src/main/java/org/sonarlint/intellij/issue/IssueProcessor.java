@@ -119,8 +119,13 @@ public class IssueProcessor extends AbstractProjectComponent {
           continue;
         }
         PsiFile psiFile = matcher.findFile(vFile);
-        RangeMarker rangeMarker = matcher.match(psiFile, issue);
-        LiveIssue toStore = createIssuePointer(rangeMarker, psiFile, issue);
+        LiveIssue toStore;
+        if(issue.getStartLine() == null) {
+          RangeMarker rangeMarker = matcher.match(psiFile, issue);
+          toStore = new LiveIssue(issue, psiFile, rangeMarker);
+        } else {
+          toStore = new LiveIssue(issue, psiFile);
+        }
         map.get(psiFile.getVirtualFile()).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue", e);
@@ -128,9 +133,5 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     return map;
-  }
-
-  private static LiveIssue createIssuePointer(RangeMarker rangeMarker, PsiFile file, Issue issue) {
-    return new LiveIssue(issue, file, rangeMarker);
   }
 }
