@@ -46,12 +46,12 @@ public class SonarClearIssues extends AnAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
+      IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
       DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.get(project, DaemonCodeAnalyzer.class);
 
       AccessToken token = ReadAction.start();
       try {
-        store.clear();
+        issueManager.clear();
 
         // run annotator to remove highlighting of issues
         FileEditorManager editorManager = FileEditorManager.getInstance(project);
