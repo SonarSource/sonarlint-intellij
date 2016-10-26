@@ -86,6 +86,9 @@ public class SonarQubeServer {
 
   @CheckForNull
   public String getToken() {
+    if(token == null) {
+      return null;
+    }
     try {
       return PasswordUtil.decodePassword(token);
     } catch (NumberFormatException e) {
@@ -99,6 +102,9 @@ public class SonarQubeServer {
 
   @CheckForNull
   public String getPassword() {
+    if(password == null) {
+      return null;
+    }
     try {
       return PasswordUtil.decodePassword(password);
     } catch (NumberFormatException e) {
