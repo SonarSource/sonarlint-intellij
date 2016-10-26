@@ -27,11 +27,6 @@ import java.util.List;
 import javax.swing.JPanel;
 import org.apache.commons.codec.binary.StringUtils;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.trigger.OpenFilesSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
@@ -72,8 +67,6 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   }
 
   public void save(SonarLintProjectSettings projectSettings) {
-    boolean bindingChanged = bindingChanged(projectSettings);
-
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
 
@@ -83,20 +76,6 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     } else {
       projectSettings.setServerId(null);
       projectSettings.setProjectKey(null);
-    }
-
-    if (projectSettings.isBindingEnabled() && bindPanel.getSelectedProjectKey() != null && bindPanel.getSelectedStorageId() != null) {
-      bindPanel.actionUpdateProjectTask();
-    }
-
-    if (bindingChanged) {
-      SonarLintConsole console = SonarLintConsole.get(project);
-      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
-      OpenFilesSubmitter submitter = SonarLintUtils.get(project, OpenFilesSubmitter.class);
-
-      console.info("Clearing all issues because binding changed");
-      store.clear();
-      submitter.submitIfAutoEnabled(TriggerType.BINDING_CHANGE);
     }
   }
 

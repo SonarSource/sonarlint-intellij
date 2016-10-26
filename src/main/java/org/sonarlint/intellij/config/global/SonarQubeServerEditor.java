@@ -49,7 +49,6 @@ import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isBlank;
-import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
 public class SonarQubeServerEditor extends DialogWrapper {
   private static final int NAME_MAX_LENGTH = 50;
@@ -118,7 +117,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
   @Override
   protected ValidationInfo doValidate() {
     if (isCreating) {
-      if (isEmpty(nameText.getText())) {
+      if (isBlank(nameText.getText())) {
         return new ValidationInfo("Servers must be configured with a name", nameText);
       }
 
@@ -127,7 +126,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
       }
     }
 
-    if (isEmpty(urlText.getText())) {
+    if (isBlank(urlText.getText())) {
       return new ValidationInfo("Servers must be configured with a host URL", urlText);
     }
 

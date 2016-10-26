@@ -23,20 +23,28 @@ import com.google.common.base.Objects;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.Tag;
-import com.intellij.util.xmlb.annotations.Transient;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
 public class SonarQubeServer {
-  private final String hostUrl;
-  private final String token;
+  @Tag
+  private String hostUrl;
+  @Tag
+  private String token;
+  @Tag
+  private String name;
+  @Tag
+  private String login;
+  @Tag
+  private String password;
+  @Tag
+  private boolean enableProxy;
 
-  private final String name;
-  private final String login;
-  private final String password;
-  private final boolean enableProxy;
+  private SonarQubeServer() {
+    // necessary for XML deserialization
+  }
 
   private SonarQubeServer(Builder builder) {
     this.hostUrl = builder.hostUrl;
@@ -76,14 +84,13 @@ public class SonarQubeServer {
     return hostUrl;
   }
 
-  @Transient
+  @CheckForNull
   public String getToken() {
-    return token;
-  }
-
-  @Tag("token")
-  public String getEncodedToken() {
-    return PasswordUtil.encodePassword(getToken());
+    try {
+      return PasswordUtil.decodePassword(token);
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   public boolean enableProxy() {
@@ -91,14 +98,12 @@ public class SonarQubeServer {
   }
 
   @CheckForNull
-  @Transient
   public String getPassword() {
-    return password;
-  }
-
-  @Tag("password")
-  public String getEncodedPassword() {
-    return PasswordUtil.encodePassword(getPassword());
+    try {
+      return PasswordUtil.decodePassword(password);
+    } catch (NumberFormatException e) {
+      return null;
+    }
   }
 
   public String getName() {
@@ -141,36 +146,18 @@ public class SonarQubeServer {
       return this;
     }
 
-    public Builder setEncodedToken(String token) {
-      try {
-        setToken(PasswordUtil.decodePassword(token));
-      } catch (NumberFormatException e) {
-        // do nothing
-      }
-      return this;
-    }
-
     public Builder setEnableProxy(boolean enableProxy) {
       this.enableProxy = enableProxy;
       return this;
     }
 
-    public Builder setEncodedPassword(String password) {
-      try {
-        setPassword(PasswordUtil.decodePassword(password));
-      } catch (NumberFormatException e) {
-        // do nothing
-      }
-      return this;
-    }
-
     public Builder setToken(@Nullable String token) {
-      this.token = token;
+      this.token = PasswordUtil.encodePassword(token);
       return this;
     }
 
     public Builder setPassword(@Nullable String password) {
-      this.password = password;
+      this.password = PasswordUtil.encodePassword(password);
       return this;
     }
 

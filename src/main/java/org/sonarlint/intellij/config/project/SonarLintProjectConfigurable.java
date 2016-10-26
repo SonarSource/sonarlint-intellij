@@ -24,9 +24,11 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.ex.Settings;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 
+import java.util.Collections;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 
@@ -34,11 +36,18 @@ import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.core.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.trigger.OpenFilesSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import java.util.List;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.
@@ -95,7 +104,37 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public void apply() throws ConfigurationException {
     if (panel != null) {
+      boolean modified = panel.isModified(projectSettings);
       panel.save(projectSettings);
+      onSave(modified);
+    }
+  }
+
+  /**
+   * When we save the binding, we need to:
+   * - If we are bound to a module, update it (even if we detected no changes)
+   * - If the binding changed in any way, clear all issues and submit an analysis on all open files
+   */
+  private void onSave(boolean modified) {
+    if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getServerId() != null) {
+      ProjectBindingManager bindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+
+      SonarQubeServer server = bindingManager.getSonarQubeServer();
+      ConnectedSonarLintEngine engine = bindingManager.getConnectedEngine();
+      String projectKey = projectSettings.getProjectKey();
+
+      ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singleton(projectKey), true);
+      ProgressManager.getInstance().run(task.asModal());
+    }
+
+    if (modified) {
+      SonarLintConsole console = SonarLintConsole.get(project);
+      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
+      OpenFilesSubmitter submitter = SonarLintUtils.get(project, OpenFilesSubmitter.class);
+
+      console.info("Clearing all issues because binding changed");
+      store.clear();
+      submitter.submitIfAutoEnabled(TriggerType.BINDING_CHANGE);
     }
   }
 

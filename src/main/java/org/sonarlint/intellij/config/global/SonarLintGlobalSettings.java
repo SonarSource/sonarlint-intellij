@@ -32,9 +32,11 @@ import java.io.File;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintBundle;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 @State(name = "SonarLintGlobalSettings", storages = {@Storage(id = "sonarlint", file = StoragePathMacros.APP_CONFIG + "/sonarlint.xml")})
 public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
@@ -84,7 +86,8 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public void setSonarQubeServers(List<SonarQubeServer> servers) {
-    this.servers = Collections.unmodifiableList(servers);
+    this.servers = servers.stream().filter(s -> !SonarLintUtils.isBlank(s.getName())).collect(Collectors.toList());
+    this.servers = Collections.unmodifiableList(this.servers);
   }
 
   public List<SonarQubeServer> getSonarQubeServers() {

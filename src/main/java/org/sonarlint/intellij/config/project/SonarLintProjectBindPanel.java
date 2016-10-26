@@ -25,7 +25,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.ComboBoxWithWidePopup;
 import com.intellij.ui.ColoredListCellRenderer;
@@ -43,7 +42,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -61,7 +59,6 @@ import javax.swing.border.Border;
 
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.core.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -346,23 +343,6 @@ public class SonarLintProjectBindPanel implements Disposable {
       SonarLintGlobalConfigurable globalConfigurable = new SonarLintGlobalConfigurable();
       ShowSettingsUtil.getInstance().editConfigurable(rootPanel, globalConfigurable);
     }
-  }
-
-  public void actionUpdateProjectTask() {
-    if (engine == null) {
-      // should mean that no server is selected
-      return;
-    }
-    // do things in a type safe way
-    int idx = serverComboBox.getSelectedIndex();
-    if (idx < 0) {
-      return;
-    }
-
-    SonarQubeServer server = serverComboBox.getModel().getElementAt(idx);
-    String projectKey = getSelectedProjectKey();
-    ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singleton(projectKey), true);
-    ProgressManager.getInstance().run(task.asBackground());
   }
 
   public boolean isBindingEnabled() {
