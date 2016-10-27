@@ -64,6 +64,10 @@ public class ProjectBindingManager extends AbstractProjectComponent {
     return new StandaloneSonarLintFacade(projectSettings, console, myProject, engineManager.getStandaloneEngine());
   }
 
+  public synchronized ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
+    return engineManager.getConnectedEngine(projectSettings.getServerId());
+  }
+
   public synchronized ConnectedSonarLintEngine getConnectedEngine() {
     if (!projectSettings.isBindingEnabled()) {
       throw new IllegalStateException("Project is not bound to a SonarQube project");
