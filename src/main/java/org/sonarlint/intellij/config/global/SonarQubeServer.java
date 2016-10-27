@@ -86,7 +86,7 @@ public class SonarQubeServer {
 
   @CheckForNull
   public String getToken() {
-    if(token == null) {
+    if (token == null) {
       return null;
     }
     try {
@@ -102,7 +102,7 @@ public class SonarQubeServer {
 
   @CheckForNull
   public String getPassword() {
-    if(password == null) {
+    if (password == null) {
       return null;
     }
     try {

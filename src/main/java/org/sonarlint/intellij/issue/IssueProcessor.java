@@ -120,7 +120,7 @@ public class IssueProcessor extends AbstractProjectComponent {
         }
         PsiFile psiFile = matcher.findFile(vFile);
         LiveIssue toStore;
-        if(issue.getStartLine() != null) {
+        if (issue.getStartLine() != null) {
           RangeMarker rangeMarker = matcher.match(psiFile, issue);
           toStore = new LiveIssue(issue, psiFile, rangeMarker);
         } else {

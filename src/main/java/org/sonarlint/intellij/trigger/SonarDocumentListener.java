@@ -99,7 +99,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
 
     VirtualFile file = docManager.getFile(event.getDocument());
-    if(file == null) {
+    if (file == null) {
       return;
     }
     Project project = utils.guessProjectForFile(file);

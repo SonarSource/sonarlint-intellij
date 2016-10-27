@@ -19,6 +19,10 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.application.AccessToken;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -46,11 +50,16 @@ public class SonarLintAnalyzer {
   private final ProjectBindingManager projectBindingManager;
   private final EncodingProjectManager encodingProjectManager;
   private final SonarLintConsole console;
+  private final FileDocumentManager fileDocumentManager;
+  private final Application app;
 
-  public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager, SonarLintConsole console) {
+  public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
+    SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app) {
     this.projectBindingManager = projectBindingManager;
     this.encodingProjectManager = encodingProjectManager;
     this.console = console;
+    this.fileDocumentManager = fileDocumentManager;
+    this.app = app;
   }
 
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener) {
@@ -92,10 +101,19 @@ public class SonarLintAnalyzer {
     Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
     List<ClientInputFile> inputFiles = new LinkedList<>();
 
-    for (VirtualFile f : filesToAnalyze) {
-      boolean test = isTestFile(testFolderPrefix, f);
-      Charset charset = getEncoding(f);
-      inputFiles.add(new DefaultInputFile(f, test, charset));
+    AccessToken token = app.acquireReadActionLock();
+    try {
+      for (VirtualFile f : filesToAnalyze) {
+        boolean test = isTestFile(testFolderPrefix, f);
+        Charset charset = getEncoding(f);
+        if (fileDocumentManager.isFileModified(f)) {
+          inputFiles.add(new DefaultClientInputFile(f, test, charset, fileDocumentManager.getDocument(f)));
+        } else {
+          inputFiles.add(new DefaultClientInputFile(f, test, charset));
+        }
+      }
+    } finally {
+      token.close();
     }
 
     return inputFiles;

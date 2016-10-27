@@ -19,17 +19,16 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.application.AccessToken;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
@@ -61,14 +60,18 @@ public class SonarLintAnalyzerTest extends SonarTest {
   private Module module;
   @Mock
   private SonarLintFacade facade;
+  @Mock
+  private FileDocumentManager fileDocumentManager;
 
   private SonarLintAnalyzer analyzer;
 
   @Before
   public void setUp() {
+    super.setUp();
     MockitoAnnotations.initMocks(this);
-    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console);
+    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app);
 
+    when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(projectBindingManager.getFacadeForAnalysis()).thenReturn(facade);
     when(moduleRootManager.getContentEntries()).thenReturn(new ContentEntry[0]);
 

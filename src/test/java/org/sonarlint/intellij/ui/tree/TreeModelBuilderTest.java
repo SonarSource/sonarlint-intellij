@@ -144,7 +144,7 @@ public class TreeModelBuilderTest {
 
   private static ClientInputFile mockFile(String path) {
     ClientInputFile file = mock(ClientInputFile.class);
-    when(file.getPath()).thenReturn(Paths.get(path));
+    when(file.getPath()).thenReturn(path);
     when(file.getCharset()).thenReturn(Charset.defaultCharset());
     when(file.isTest()).thenReturn(false);
     return file;
