@@ -113,7 +113,7 @@ public class SonarLintAnalyzer {
         }
       }
     } finally {
-      token.close();
+      token.finish();
     }
 
     return inputFiles;

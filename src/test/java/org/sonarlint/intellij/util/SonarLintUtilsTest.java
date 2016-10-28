@@ -25,7 +25,9 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -36,6 +38,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SonarLintUtilsTest extends SonarTest {
+  @Rule
+  public ExpectedException exception = ExpectedException.none();
+
   private VirtualFile testFile;
 
   private FileType binary;
@@ -55,6 +60,13 @@ public class SonarLintUtilsTest extends SonarTest {
     when(testFile.isValid()).thenReturn(true);
     when(testFile.isInLocalFileSystem()).thenReturn(true);
     when(testFile.getFileType()).thenReturn(notBinary);
+  }
+
+  @Test
+  public void testFailGetComponent() {
+    exception.expect(AssertionError.class);
+    exception.expectMessage("Could not find class in container");
+    SonarLintUtils.get(project, SonarLintUtilsTest.class);
   }
 
   @Test
