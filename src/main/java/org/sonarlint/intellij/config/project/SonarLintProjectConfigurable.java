@@ -88,7 +88,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public JComponent createComponent() {
     if (panel == null) {
-      panel = new SonarLintProjectSettingsPanel(project);
+      panel = new SonarLintProjectSettingsPanel();
     }
     return panel.getRootPane();
   }

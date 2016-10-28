@@ -32,6 +32,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
@@ -70,7 +71,7 @@ public class CodeAnalyzerRestarter extends AbstractProjectComponent implements I
     Arrays.stream(openFiles)
       .filter(changedFiles::contains)
       .map(this::getPsi)
-      .filter(f -> f != null)
+      .filter(Objects::nonNull)
       .forEach(codeAnalyzer::restart);
   }
 

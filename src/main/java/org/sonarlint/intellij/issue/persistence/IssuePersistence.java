@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
@@ -100,7 +101,7 @@ public class IssuePersistence extends AbstractProjectComponent {
   private static Collection<LocalIssueTrackable> transform(Sonarlint.Issues protoIssues) {
     return protoIssues.getIssueList().stream()
       .map(IssuePersistence::transform)
-      .filter(i -> i != null)
+      .filter(Objects::nonNull)
       .collect(Collectors.toList());
   }
 
@@ -108,7 +109,7 @@ public class IssuePersistence extends AbstractProjectComponent {
     Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
     localIssues.stream()
       .map(IssuePersistence::transform)
-      .filter(i -> i != null)
+      .filter(Objects::nonNull)
       .forEach(builder::addIssue);
 
     return builder.build();
