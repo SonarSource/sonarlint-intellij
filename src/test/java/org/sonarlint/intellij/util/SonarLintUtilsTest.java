@@ -65,7 +65,6 @@ public class SonarLintUtilsTest extends SonarTest {
   @Test
   public void testFailGetComponent() {
     exception.expect(Throwable.class);
-    exception.expectMessage("Could not find class in container");
     SonarLintUtils.get(project, SonarLintUtilsTest.class);
   }
 
