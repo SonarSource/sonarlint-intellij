@@ -38,9 +38,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SonarLintUtilsTest extends SonarTest {
-  @Rule
-  public ExpectedException exception = ExpectedException.none();
-
   private VirtualFile testFile;
 
   private FileType binary;
@@ -62,9 +59,9 @@ public class SonarLintUtilsTest extends SonarTest {
     when(testFile.getFileType()).thenReturn(notBinary);
   }
 
-  @Test
+  @Test(expected = Throwable.class)
   public void testFailGetComponent() {
-    exception.expect(Throwable.class);
+    // in intellij 14, container.getComponent will throw an exception itself, so we can't assert the exact exception type and message
     SonarLintUtils.get(project, SonarLintUtilsTest.class);
   }
 
