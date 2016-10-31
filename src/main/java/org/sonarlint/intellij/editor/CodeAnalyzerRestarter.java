@@ -62,7 +62,7 @@ public class CodeAnalyzerRestarter extends AbstractProjectComponent implements I
     VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
     Arrays.stream(openFiles)
       .map(this::getPsi)
-      .filter(f -> f != null)
+      .filter(Objects::nonNull)
       .forEach(codeAnalyzer::restart);
   }
 

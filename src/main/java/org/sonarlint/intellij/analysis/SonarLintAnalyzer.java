@@ -21,7 +21,6 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ContentEntry;
@@ -30,7 +29,6 @@ import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -119,7 +117,6 @@ public class SonarLintAnalyzer {
     return inputFiles;
   }
 
-  @NotNull
   private static Collection<String> findTestFolderPrefixes(ModuleRootManager moduleRootManager) {
     Collection<String> testFolderPrefix = new ArrayList<>();
     for (ContentEntry contentEntry : moduleRootManager.getContentEntries()) {
