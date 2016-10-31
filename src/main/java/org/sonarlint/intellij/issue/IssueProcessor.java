@@ -101,7 +101,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       if (failedVirtualFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
-        // it's important to manager all files, even without issues, to correctly track the leak period (SLI-86)
+        // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
         map.put(f, new ArrayList<>());
       }
     }
@@ -112,10 +112,11 @@ public class IssueProcessor extends AbstractProjectComponent {
         // ignore project level issues and files that had errors
         continue;
       }
+      VirtualFile vFile = inputFile.getClientObject();
+
       try {
-        VirtualFile vFile = inputFile.getClientObject();
-        if (!vFile.isValid()) {
-          // file might have been deleted meanwhile
+        if (!vFile.isValid() || !map.containsKey(vFile)) {
+          // file is no longer valid (might have been deleted meanwhile) or there has been an error matching an issue in it
           continue;
         }
         PsiFile psiFile = matcher.findFile(vFile);
@@ -126,9 +127,10 @@ public class IssueProcessor extends AbstractProjectComponent {
         } else {
           toStore = new LiveIssue(issue, psiFile);
         }
-        map.get(psiFile.getVirtualFile()).add(toStore);
+        map.get(vFile).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
-        console.error("Failed to find location of issue", e);
+        console.error("Failed to find location of issue for file: '" + vFile.getName()+ "'. The file won't be refreshed - " + e.getMessage());
+        map.remove(vFile);
       }
     }
 

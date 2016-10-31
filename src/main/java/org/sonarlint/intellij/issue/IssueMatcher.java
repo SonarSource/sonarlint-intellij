@@ -87,7 +87,7 @@ public class IssueMatcher extends AbstractProjectComponent {
     int rangeEnd = findEndLineOffset(doc, ijEndLine, issueLocation.getEndLineOffset());
 
     if (rangeEnd < rangeStart) {
-      throw new NoMatchException("Invalid Text Range");
+      throw new NoMatchException("Invalid text range  (start: " + rangeStart + ", end: " + rangeEnd);
     }
     return new TextRange(rangeStart, rangeEnd);
   }
