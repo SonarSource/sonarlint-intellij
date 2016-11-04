@@ -67,16 +67,16 @@ public class IssuePersistence extends AbstractProjectComponent {
     store.deleteInvalid();
   }
 
-  public boolean contains(String key) {
+  public synchronized boolean contains(String key) {
     return store.contains(key);
   }
 
-  public void save(String key, Collection<? extends Trackable> issues) throws IOException {
+  public synchronized void save(String key, Collection<? extends Trackable> issues) throws IOException {
     store.write(key, transform(issues));
   }
 
   @CheckForNull
-  public Collection<LocalIssueTrackable> read(String key) throws IOException {
+  public synchronized Collection<LocalIssueTrackable> read(String key) throws IOException {
     Optional<Sonarlint.Issues> issues = store.read(key);
     if (issues.isPresent()) {
       return transform(issues.get());
@@ -89,11 +89,11 @@ public class IssuePersistence extends AbstractProjectComponent {
     return ideaDir.resolve("sonarlint").resolve("issuestore");
   }
 
-  public void clean() {
+  public synchronized void clean() {
     store.deleteInvalid();
   }
 
-  public void clear() {
+  public synchronized void clear() {
     FileUtils.deleteDirectory(storeBasePath);
     FileUtils.forceMkDirs(storeBasePath);
   }

@@ -30,7 +30,7 @@ import java.util.Map;
 import org.sonarlint.intellij.proto.Sonarlint;
 
 class StringStoreIndex implements StoreIndex<String> {
-  public static final String INDEX_FILENAME = "index.json";
+  public static final String INDEX_FILENAME = "index.pb";
   private final Path storeBasePath;
   private final Path indexFilePath;
 
