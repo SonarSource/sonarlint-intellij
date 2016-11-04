@@ -22,24 +22,36 @@ package org.sonarlint.intellij.config.global;
 import com.google.common.base.Objects;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
+import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
+/**
+ * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
+ * By default, it will serialize data when there are public setters and getters for a field or when the field is public.
+ * As this class is immutable, there are no setters and the fields are private, so nothing will be serialized by default.
+ * Therefore, we must add the appropriate annotations for the fields we want to annotate.
+ * Note that we use both {@link OptionTag} and {@link Tag} (which will result in 2 different ways of serializing the fields) to remain
+ * backward-compatible with existing serialized configurations.
+ *
+ * @see com.intellij.util.xmlb.annotations.Tag
+ * @see com.intellij.util.xmlb.annotations.OptionTag
+ */
 public class SonarQubeServer {
-  @Tag
+  @OptionTag
   private String hostUrl;
   @Tag
   private String token;
-  @Tag
+  @OptionTag
   private String name;
-  @Tag
+  @OptionTag
   private String login;
   @Tag
   private String password;
-  @Tag
+  @OptionTag
   private boolean enableProxy;
 
   private SonarQubeServer() {
