@@ -36,7 +36,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.HashingPa
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
-import org.sonarsource.sonarlint.core.util.FileUtils;
+import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
 public class IssuePersistence extends AbstractProjectComponent {
   private Path storeBasePath;
