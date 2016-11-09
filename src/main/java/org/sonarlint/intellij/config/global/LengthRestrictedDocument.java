@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import javax.annotation.Nullable;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -31,7 +32,7 @@ public class LengthRestrictedDocument extends PlainDocument {
   }
 
   @Override
-  public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+  public void insertString(int offs, @Nullable String str, AttributeSet a) throws BadLocationException {
     if (str == null) {
       return;
     }

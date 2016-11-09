@@ -359,7 +359,7 @@ public class SonarLintProjectBindPanel implements Disposable {
    * Render SonarQube server in combo box
    */
   private class ServerComboBoxRenderer extends ColoredListCellRenderer<SonarQubeServer> {
-    @Override protected void customizeCellRenderer(JList list, SonarQubeServer value, int index, boolean selected, boolean hasFocus) {
+    @Override protected void customizeCellRenderer(JList list, @Nullable SonarQubeServer value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
         if (serverComboBox.isEnabled()) {
           append(SERVER_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
@@ -394,7 +394,7 @@ public class SonarLintProjectBindPanel implements Disposable {
    * Render modules in combo box
    */
   private class ProjectComboBoxRenderer extends ColoredListCellRenderer<RemoteModule> {
-    @Override protected void customizeCellRenderer(JList list, RemoteModule value, int index, boolean selected, boolean hasFocus) {
+    @Override protected void customizeCellRenderer(JList list, @Nullable RemoteModule value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
         if (bindEnable.isSelected()) {
           append(getProjectEmptyText(), SimpleTextAttributes.ERROR_ATTRIBUTES);
