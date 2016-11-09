@@ -47,7 +47,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     this.globalLogOutput = globalLogOutput;
   }
 
-  public ConnectedSonarLintEngine createEngine(String serverId) {
+  ConnectedSonarLintEngine createEngine(String serverId) {
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
@@ -59,7 +59,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     return new ConnectedSonarLintEngineImpl(config);
   }
 
-  public StandaloneSonarLintEngine createEngine() {
+  StandaloneSonarLintEngine createEngine() {
     /*
      * Some components in the container use the context classloader to find resources. For example, the ServiceLoader uses it by default
      * to find services declared by some libs.

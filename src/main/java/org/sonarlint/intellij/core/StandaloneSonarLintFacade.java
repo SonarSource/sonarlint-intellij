@@ -39,13 +39,13 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
-public final class StandaloneSonarLintFacade implements SonarLintFacade {
+final class StandaloneSonarLintFacade implements SonarLintFacade {
   private final StandaloneSonarLintEngine sonarlint;
   private final Project project;
   private final SonarLintProjectSettings projectSettings;
   private final SonarLintConsole console;
 
-  public StandaloneSonarLintFacade(SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, StandaloneSonarLintEngine engine) {
+  StandaloneSonarLintFacade(SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, StandaloneSonarLintEngine engine) {
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");

@@ -61,7 +61,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
     if (!path.toFile().exists()) {
       return Optional.empty();
     }
-    try(InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
+    try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
       return Optional.of(reader.apply(is));
     }
   }

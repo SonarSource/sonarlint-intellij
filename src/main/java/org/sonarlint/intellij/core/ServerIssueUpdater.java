@@ -61,7 +61,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private final ProjectBindingManager projectBindingManager;
   private final SonarLintConsole console;
 
-  public ServerIssueUpdater(Project project, IssueManager issueManager, SonarLintProjectSettings projectSettings,
+  ServerIssueUpdater(Project project, IssueManager issueManager, SonarLintProjectSettings projectSettings,
     ProjectBindingManager projectBindingManager, SonarLintConsole console) {
     super(project);
     this.issueManager = issueManager;

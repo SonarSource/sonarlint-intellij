@@ -39,14 +39,14 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 
-public class ConnectedSonarLintFacade implements SonarLintFacade {
+class ConnectedSonarLintFacade implements SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
   private final Project project;
   private final String moduleKey;
   private final SonarLintProjectSettings projectSettings;
   private final SonarLintConsole console;
 
-  public ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, String moduleKey) {
+  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, String moduleKey) {
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");

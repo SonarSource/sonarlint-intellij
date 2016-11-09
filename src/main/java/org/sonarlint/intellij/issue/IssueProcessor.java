@@ -54,7 +54,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.serverIssueUpdater = serverIssueUpdater;
   }
 
-  public void process(final SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles, TriggerType trigger) {
+  public void process(final SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles, Collection<TriggerType> triggers) {
     Map<VirtualFile, Collection<LiveIssue>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
@@ -63,7 +63,7 @@ public class IssueProcessor extends AbstractProjectComponent {
 
       manager.store(map);
 
-      if (shouldUpdateServerIssues(trigger)) {
+      if (shouldUpdateServerIssues(triggers)) {
         console.debug("Fetching server issues");
         serverIssueUpdater.fetchAndMatchServerIssues(job.files());
       }
@@ -85,8 +85,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.info("Found " + issues.size() + end);
   }
 
-  private static boolean shouldUpdateServerIssues(TriggerType trigger) {
-    return trigger == TriggerType.EDITOR_OPEN || trigger == TriggerType.ACTION;
+  private static boolean shouldUpdateServerIssues(Collection<TriggerType> triggers) {
+    return triggers.contains(TriggerType.EDITOR_OPEN) || triggers.contains(TriggerType.ACTION) || triggers.contains(TriggerType.BINDING_CHANGE);
   }
 
   /**
@@ -129,7 +129,7 @@ public class IssueProcessor extends AbstractProjectComponent {
         }
         map.get(vFile).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
-        console.error("Failed to find location of issue for file: '" + vFile.getName()+ "'. The file won't be refreshed - " + e.getMessage());
+        console.error("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
         map.remove(vFile);
       }
     }
