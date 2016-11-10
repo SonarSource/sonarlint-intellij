@@ -159,49 +159,56 @@ public class SonarLintProjectBindPanel implements Disposable {
     setProjects();
   }
 
+  private void setProjectsInComboBox(Map<String, RemoteModule> moduleMap) {
+    Set<RemoteModule> orderedSet = new TreeSet<>((o1, o2) -> {
+      int c1 = o1.getName().compareTo(o2.getName());
+      if (c1 != 0) {
+        return c1;
+      }
+
+      return o1.getKey().compareTo(o2.getKey());
+    });
+    orderedSet.addAll(moduleMap.values());
+
+    RemoteModule selected = null;
+    int i = 0;
+    for (RemoteModule mod : orderedSet) {
+      if (!mod.isRoot()) {
+        continue;
+      }
+      // this won't call the change listener
+      DefaultComboBoxModel<RemoteModule> model = (DefaultComboBoxModel) projectComboBox.getModel();
+      model.insertElementAt(mod, i);
+      i++;
+      if (lastSelectedProjectKey != null && lastSelectedProjectKey.equals(mod.getKey())) {
+        selected = mod;
+      }
+    }
+
+    setSelectedProject(selected);
+    projectComboBox.setPrototypeDisplayValue(null);
+    projectComboBox.setEnabled(bindEnable.isSelected());
+  }
+
+  private void setSelectedProject(@Nullable RemoteModule selected) {
+    if (selected != null) {
+      projectComboBox.setSelectedItem(selected);
+    } else if (projectComboBox.getItemCount() > 0 && lastSelectedProjectKey == null) {
+      projectComboBox.setSelectedIndex(0);
+    } else {
+      projectComboBox.setSelectedItem(null);
+    }
+  }
+
   private void setProjects() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    DefaultComboBoxModel<RemoteModule> model = (DefaultComboBoxModel) projectComboBox.getModel();
     projectComboBox.removeAllItems();
 
     if (engine != null && engine.getState() == State.UPDATED) {
       Map<String, RemoteModule> moduleMap = engine.allModulesByKey();
       if (!moduleMap.isEmpty()) {
-        Set<RemoteModule> orderedSet = new TreeSet<>((o1, o2) -> {
-          int c1 = o1.getName().compareTo(o2.getName());
-          if (c1 != 0) {
-            return c1;
-          }
-
-          return o1.getKey().compareTo(o2.getKey());
-        });
-        orderedSet.addAll(moduleMap.values());
-
-        RemoteModule selected = null;
-        int i = 0;
-        for (RemoteModule mod : orderedSet) {
-          if (!mod.isRoot()) {
-            continue;
-          }
-          // this won't call the change listener
-          model.insertElementAt(mod, i);
-          i++;
-          if (lastSelectedProjectKey != null && lastSelectedProjectKey.equals(mod.getKey())) {
-            selected = mod;
-          }
-        }
-
-        if (selected != null) {
-          projectComboBox.setSelectedItem(selected);
-        } else if (projectComboBox.getItemCount() > 0 && lastSelectedProjectKey == null) {
-          projectComboBox.setSelectedIndex(0);
-        } else {
-          projectComboBox.setSelectedItem(null);
-        }
-
-        projectComboBox.setPrototypeDisplayValue(null);
-        projectComboBox.setEnabled(bindEnable.isSelected());
+        setProjectsInComboBox(moduleMap);
       }
     }
 

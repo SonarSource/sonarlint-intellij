@@ -89,13 +89,9 @@ public class IssueProcessor extends AbstractProjectComponent {
     return triggers.contains(TriggerType.EDITOR_OPEN) || triggers.contains(TriggerType.ACTION) || triggers.contains(TriggerType.BINDING_CHANGE);
   }
 
-  /**
-   * Transforms issues and organizes them per file
-   */
-  private Map<VirtualFile, Collection<LiveIssue>> transformIssues(
-    Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
+  private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
+    Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
 
     for (VirtualFile f : analysed) {
       if (failedVirtualFiles.contains(f)) {
@@ -105,6 +101,16 @@ public class IssueProcessor extends AbstractProjectComponent {
         map.put(f, new ArrayList<>());
       }
     }
+    return map;
+  }
+
+  /**
+   * Transforms issues and organizes them per file
+   */
+  private Map<VirtualFile, Collection<LiveIssue>> transformIssues(
+    Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
+
+    Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analysed, failedAnalysisFiles);
 
     for (Issue issue : issues) {
       ClientInputFile inputFile = issue.getInputFile();
@@ -113,20 +119,12 @@ public class IssueProcessor extends AbstractProjectComponent {
         continue;
       }
       VirtualFile vFile = inputFile.getClientObject();
-
+      if (!vFile.isValid() || !map.containsKey(vFile)) {
+        // file is no longer valid (might have been deleted meanwhile) or there has been an error matching an issue in it
+        continue;
+      }
       try {
-        if (!vFile.isValid() || !map.containsKey(vFile)) {
-          // file is no longer valid (might have been deleted meanwhile) or there has been an error matching an issue in it
-          continue;
-        }
-        PsiFile psiFile = matcher.findFile(vFile);
-        LiveIssue toStore;
-        if (issue.getStartLine() != null) {
-          RangeMarker rangeMarker = matcher.match(psiFile, issue);
-          toStore = new LiveIssue(issue, psiFile, rangeMarker);
-        } else {
-          toStore = new LiveIssue(issue, psiFile);
-        }
+        LiveIssue toStore = transformIssue(issue, vFile);
         map.get(vFile).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
@@ -135,5 +133,15 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     return map;
+  }
+
+  private LiveIssue transformIssue(Issue issue, VirtualFile vFile) throws IssueMatcher.NoMatchException {
+    PsiFile psiFile = matcher.findFile(vFile);
+    if (issue.getStartLine() != null) {
+      RangeMarker rangeMarker = matcher.match(psiFile, issue);
+      return new LiveIssue(issue, psiFile, rangeMarker);
+    } else {
+      return new LiveIssue(issue, psiFile);
+    }
   }
 }

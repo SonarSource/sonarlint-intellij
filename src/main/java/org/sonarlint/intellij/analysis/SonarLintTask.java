@@ -77,36 +77,17 @@ public class SonarLintTask extends Task.Backgroundable {
 
     SonarLintStatus status = SonarLintStatus.get(p);
     SonarLintConsole console = SonarLintConsole.get(p);
-    SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
+    AccumulatorIssueListener listener = new AccumulatorIssueListener();
 
     try {
-      if (indicator.isCanceled() || status.isCanceled()) {
+      if (isCanceled(indicator, status, p)) {
         return;
       }
 
-      indicator.setIndeterminate(true);
-      if (job.files().size() > 1) {
-        indicator.setText("Running SonarLint Analysis for " + job.files().size() + " files");
-      } else {
-        indicator.setText("Running SonarLint Analysis for '" + getFileName(job.files().iterator().next()) + "'");
-      }
-
-      final AccumulatorIssueListener listener = new AccumulatorIssueListener();
-      LOGGER.info(indicator.getText());
-
-      CancelMonitor monitor = new CancelMonitor(indicator, status, Thread.currentThread());
-      AnalysisResults result;
-
-      try {
-        monitor.start();
-        result = analyzer.analyzeModule(job.module(), job.files(), listener);
-        indicator.startNonCancelableSection();
-      } finally {
-        monitor.stopMonitor();
-      }
+      AnalysisResults results = analyze(p, indicator, status, listener);
 
       //last chance to cancel (to avoid the possibility of having interrupt flag set)
-      if (indicator.isCanceled() || status.isCanceled() || p.isDisposed()) {
+      if (isCanceled(indicator, status, p)) {
         return;
       }
 
@@ -118,7 +99,7 @@ public class SonarLintTask extends Task.Backgroundable {
       List<Issue> issues = listener.getIssues();
       indicator.setText("Creating SonarLint issues: " + issues.size());
 
-      processor.process(job, issues, result.failedAnalysisFiles(), job.triggers());
+      processor.process(job, issues, results.failedAnalysisFiles(), job.triggers());
     } catch (RuntimeException e) {
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
       if (!indicator.isCanceled() && !status.isCanceled()) {
@@ -131,13 +112,42 @@ public class SonarLintTask extends Task.Backgroundable {
     }
   }
 
+  private static boolean isCanceled(ProgressIndicator indicator, SonarLintStatus status, Project project) {
+    return indicator.isCanceled() || status.isCanceled() || project.isDisposed();
+  }
+
+  private AnalysisResults analyze(Project p, ProgressIndicator indicator, SonarLintStatus status, AccumulatorIssueListener listener) {
+    SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
+
+    indicator.setIndeterminate(true);
+    if (job.files().size() > 1) {
+      indicator.setText("Running SonarLint Analysis for " + job.files().size() + " files");
+    } else {
+      indicator.setText("Running SonarLint Analysis for '" + getFileName(job.files().iterator().next()) + "'");
+    }
+
+    LOGGER.info(indicator.getText());
+
+    CancelMonitor monitor = new CancelMonitor(indicator, status, Thread.currentThread());
+    AnalysisResults result;
+
+    try {
+      monitor.start();
+      result = analyzer.analyzeModule(job.module(), job.files(), listener);
+      indicator.startNonCancelableSection();
+    } finally {
+      monitor.stopMonitor();
+    }
+    return result;
+  }
+
   private class CancelMonitor extends Thread {
     private final ProgressIndicator indicator;
     private final SonarLintStatus status;
     private final Thread t;
     private boolean stop = false;
 
-    public CancelMonitor(ProgressIndicator indicator, SonarLintStatus status, Thread t) {
+    private CancelMonitor(ProgressIndicator indicator, SonarLintStatus status, Thread t) {
       this.indicator = indicator;
       this.status = status;
       this.t = t;
@@ -145,7 +155,7 @@ public class SonarLintTask extends Task.Backgroundable {
       this.setDaemon(true);
     }
 
-    public synchronized void stopMonitor() {
+    private synchronized void stopMonitor() {
       stop = true;
     }
 
@@ -155,7 +165,7 @@ public class SonarLintTask extends Task.Backgroundable {
         synchronized (this) {
           // don't trust too much in isAlive: thread is probably pooled in a executor
           if (stop || !t.isAlive() || !status.isRunning()) {
-            break;
+            return;
           }
         }
         if (indicator.isCanceled() || status.isCanceled()) {
@@ -166,13 +176,13 @@ public class SonarLintTask extends Task.Backgroundable {
 
           SonarLintConsole.get(myProject).info("Canceling...");
           t.interrupt();
-          break;
+          return;
         }
 
         try {
           Thread.sleep(100);
         } catch (InterruptedException e) {
-          break;
+          return;
         }
       }
     }
