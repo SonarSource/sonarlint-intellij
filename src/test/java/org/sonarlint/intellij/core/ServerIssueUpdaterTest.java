@@ -106,7 +106,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     updater.initComponent();
     updater.fetchAndMatchServerIssues(Collections.singletonList(file));
 
-    verify(issueManager, timeout(1000).times(1)).matchWithServerIssues(eq(file), argThat(new CustomMatcher<Collection<Trackable>>("one trackable") {
+    verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(new CustomMatcher<Collection<Trackable>>("one trackable") {
       @Override public boolean matches(Object o) {
         Collection<Trackable> issues = (Collection<Trackable>) o;
         return issues.size() == 1;
