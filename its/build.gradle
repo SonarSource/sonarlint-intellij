@@ -1,0 +1,52 @@
+#!groovy
+// The above triggers groovy syntax highlighting in vim
+
+plugins {
+  id "java"
+  id "com.github.hierynomus.license" version "0.11.0"
+}
+
+apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'license'
+
+group = 'org.sonarsource.sonarlint.intellij.its'
+description = 'ITs for SonarLint IntelliJ'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+  jcenter()
+  mavenLocal()
+  mavenCentral()
+  maven {
+    url "https://repox.sonarsource.com/sonarsource"
+  }
+}
+
+def props = new Properties()
+props.load(new FileInputStream("$project.rootDir/../gradle.properties"))
+props.each { prop ->
+  println prop.key
+  project.ext.set(prop.key, prop.value)
+}
+
+
+dependencies {
+  testCompile "org.sonarsource.sonarlint.core:sonarlint-client-api:$sonarlintCoreVersion"
+  testCompile "org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion"
+  testCompile 'org.sonarsource.orchestrator:sonar-orchestrator:3.12'
+  testCompile 'org.assertj:assertj-core:2.3.0'
+  testCompile 'junit:junit:4.11'
+  testCompile 'org.mockito:mockito-core:1.10.19'
+}
+
+license {
+  mapping {
+    java = 'SLASHSTAR_STYLE'
+  }
+  strictCheck true
+}
+
+
