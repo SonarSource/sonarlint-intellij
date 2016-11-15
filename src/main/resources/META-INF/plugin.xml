@@ -33,6 +33,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.4.1 - Bug fix of Javascript in standalone mode.</li>
         <li>2.4 - Hide issues that are resolved in SonarQube. Numerous bug fixes.</li>
         <li>2.3.2 - Fix configuration of automatic trigger of analysis</li>
         <li>2.3.1 - Bug fix for analysis configuration and performance improvements</li>
