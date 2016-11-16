@@ -26,6 +26,7 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -54,7 +55,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.serverIssueUpdater = serverIssueUpdater;
   }
 
-  public void process(final SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles, Collection<TriggerType> triggers) {
+  public void process(final SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
@@ -63,7 +64,7 @@ public class IssueProcessor extends AbstractProjectComponent {
 
       manager.store(map);
 
-      if (shouldUpdateServerIssues(triggers)) {
+      if (shouldUpdateServerIssues(job.trigger())) {
         console.debug("Fetching server issues");
         serverIssueUpdater.fetchAndMatchServerIssues(job.files());
       }
@@ -83,10 +84,11 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     console.info("Found " + issues.size() + end);
+    job.future().complete(new AnalysisResult(job.files().size(), issues.size()));
   }
 
-  private static boolean shouldUpdateServerIssues(Collection<TriggerType> triggers) {
-    return triggers.contains(TriggerType.EDITOR_OPEN) || triggers.contains(TriggerType.ACTION) || triggers.contains(TriggerType.BINDING_CHANGE);
+  private static boolean shouldUpdateServerIssues(TriggerType trigger) {
+    return trigger == TriggerType.EDITOR_OPEN || trigger == TriggerType.ACTION || trigger == TriggerType.BINDING_CHANGE;
   }
 
   private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {

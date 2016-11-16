@@ -21,14 +21,10 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
-import java.util.Collections;
-
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -46,33 +42,21 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    Project p = e.getProject();
+    Project project = e.getProject();
 
-    if (p == null) {
+    if (project == null) {
       return;
     }
 
-    SonarLintAppUtils utils = SonarLintUtils.get(SonarLintAppUtils.class);
-    VirtualFile selectedFile = utils.getSelectedFile(p);
-    SonarLintConsole console = SonarLintConsole.get(p);
+    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+    VirtualFile selectedFile = SonarLintUtils.get(SonarLintAppUtils.class).getSelectedFile(project);
 
     if (selectedFile == null) {
-      console.error("No files for analysis");
+      SonarLintUtils.get(project, SonarLintConsole.class).error("No files for analysis");
       return;
     }
 
-    Module m = utils.findModuleForFile(selectedFile, p);
-
-    if (utils.shouldAnalyze(selectedFile, m)) {
-      SonarLintJobManager jobManager = SonarLintUtils.get(p, SonarLintJobManager.class);
-      if (executeBackground(e)) {
-        jobManager.submitAsync(m, Collections.singleton(selectedFile), TriggerType.ACTION);
-      } else {
-        jobManager.submit(m, Collections.singleton(selectedFile), TriggerType.ACTION);
-      }
-    } else {
-      console.error("File '" + selectedFile + "' cannot be analyzed");
-    }
+    submitter.submitFiles(new VirtualFile[] {selectedFile}, TriggerType.ACTION, false, executeBackground(e));
   }
 
   /**

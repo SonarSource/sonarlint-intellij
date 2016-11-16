@@ -35,9 +35,9 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 public class MakeTrigger extends AbstractProjectComponent implements BuildManagerListener, CompilationStatusListener {
   private final SonarLintConsole console;
   private final CompilerManager compilerManager;
-  private final OpenFilesSubmitter submitter;
+  private final SonarLintSubmitter submitter;
 
-  public MakeTrigger(Project project, OpenFilesSubmitter submitter, SonarLintConsole console, CompilerManager compilerManager) {
+  public MakeTrigger(Project project, SonarLintSubmitter submitter, SonarLintConsole console, CompilerManager compilerManager) {
     super(project);
     this.submitter = submitter;
     this.console = console;
@@ -61,7 +61,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
     }
 
     console.debug("build finished");
-    submitter.submitIfAutoEnabled(TriggerType.COMPILATION);
+    submitter.submitOpenFilesAuto(TriggerType.COMPILATION);
   }
 
   /**
@@ -70,7 +70,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
     if (compileContext.getProject().equals(myProject)) {
       console.debug("compilation finished");
-      submitter.submitIfAutoEnabled(TriggerType.COMPILATION);
+      submitter.submitOpenFilesAuto(TriggerType.COMPILATION);
     }
   }
 

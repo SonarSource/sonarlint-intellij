@@ -34,7 +34,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LiveIssueCache extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(LiveIssueCache.class);
-  static final int MAX_ENTRIES = 100;
+  static final int MAX_ENTRIES = 1000;
   private final Map<VirtualFile, Collection<LiveIssue>> cache;
   private final IssuePersistence store;
 

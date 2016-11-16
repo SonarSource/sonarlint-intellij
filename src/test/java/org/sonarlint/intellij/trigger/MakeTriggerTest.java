@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 
 public class MakeTriggerTest extends SonarTest {
   @Mock
-  OpenFilesSubmitter submitter;
+  SonarLintSubmitter submitter;
   @Mock
   private Project project;
   @Mock
@@ -65,14 +65,14 @@ public class MakeTriggerTest extends SonarTest {
   @Test
   public void should_trigger_on_compilation() {
     trigger.compilationFinished(false, 0, 0, context);
-    verify(submitter).submitIfAutoEnabled(TriggerType.COMPILATION);
+    verify(submitter).submitOpenFilesAuto(TriggerType.COMPILATION);
   }
 
   @Test
   public void should_trigger_automake() {
     when(context.getProject()).thenReturn(mock(Project.class));
     trigger.buildFinished(project, UUID.randomUUID(), true);
-    verify(submitter).submitIfAutoEnabled(TriggerType.COMPILATION);
+    verify(submitter).submitOpenFilesAuto(TriggerType.COMPILATION);
   }
 
   @Test

@@ -137,10 +137,6 @@ public class IssueMatcher extends AbstractProjectComponent {
   }
 
   public static class NoMatchException extends Exception {
-    public NoMatchException() {
-      super();
-    }
-
     public NoMatchException(String msg) {
       super(msg);
     }

@@ -17,23 +17,29 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.trigger;
+package org.sonarlint.intellij.analysis;
 
-public enum TriggerType {
-  EDITOR_OPEN("Editor open"),
-  ACTION("Action"),
-  COMPILATION("Compilation"),
-  EDITOR_CHANGE("Editor change"),
-  CHECK_IN("Pre-commit check"),
-  BINDING_CHANGE("Binding change");
+import com.intellij.openapi.progress.ProgressIndicator;
+import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.issue.IssueProcessor;
 
-  private final String name;
+class SonarLintUserTask extends SonarLintTask {
+  private final SonarLintStatus status;
 
-  TriggerType(String name) {
-    this.name = name;
+  SonarLintUserTask(IssueProcessor processor, SonarLintJob job, SonarLintStatus status) {
+    super(processor, job, false);
+    this.status = status;
   }
 
-  public String getName() {
-    return name;
+  @Override public void run(@NotNull ProgressIndicator indicator) {
+    try {
+      super.run(indicator);
+    } finally {
+      stopRun();
+    }
+  }
+
+  private void stopRun() {
+    status.stopRun();
   }
 }

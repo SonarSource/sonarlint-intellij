@@ -24,7 +24,6 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
@@ -36,7 +35,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.sonarlint.intellij.analysis.SonarLintJob;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -46,7 +44,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   private static final int DEFAULT_TIMER_MS = 2000;
 
   private final SonarLintGlobalSettings globalSettings;
-  private final SonarLintJobManager analyzer;
+  private final SonarLintSubmitter submitter;
   private final SonarLintAppUtils utils;
   private final FileDocumentManager docManager;
 
@@ -55,15 +53,15 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   private final EventWatcher watcher;
   private final int timerMs;
 
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer,
+  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager) {
-    this(project, globalSettings, analyzer, editorFactory, utils, docManager, DEFAULT_TIMER_MS);
+    this(project, globalSettings, submitter, editorFactory, utils, docManager, DEFAULT_TIMER_MS);
   }
 
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintJobManager analyzer,
+  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
     super(project);
-    this.analyzer = analyzer;
+    this.submitter = submitter;
     this.utils = utils;
     this.docManager = docManager;
     this.eventMap = new ConcurrentHashMap<>();
@@ -73,13 +71,9 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
 
     editorFactory.getEventMulticaster().addDocumentListener(this);
 
-    project.getMessageBus().connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener() {
+    project.getMessageBus().connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
       @Override public void started(SonarLintJob job) {
         removeFiles(job.files());
-      }
-
-      @Override public void ended(SonarLintJob job) {
-        // nothing to do
       }
     });
   }
@@ -148,16 +142,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
 
     private void triggerFile(VirtualFile file) {
-      if (!globalSettings.isAutoTrigger() || myProject.isDisposed()) {
-        return;
-      }
-
-      Module m = utils.findModuleForFile(file, myProject);
-      if (m == null || !utils.shouldAnalyzeAutomatically(file, m)) {
-        return;
-      }
-
-      analyzer.submitAsync(m, Collections.singleton(file), TriggerType.EDITOR_CHANGE);
+      submitter.submitFiles(new VirtualFile[] {file}, TriggerType.EDITOR_CHANGE, true, true);
     }
 
     private void checkTimers() {

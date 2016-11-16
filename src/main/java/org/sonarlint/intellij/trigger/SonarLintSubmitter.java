@@ -26,6 +26,9 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -48,36 +51,53 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     this.utils = utils;
   }
 
-  public void submit(TriggerType trigger) {
-    VirtualFile[] openFiles = editorManager.getOpenFiles();
-    submitFiles(openFiles, trigger);
-  }
-
-  public void submitIfAutoEnabled(TriggerType trigger) {
+  public void submitOpenFilesAuto(TriggerType trigger) {
     if (!globalSettings.isAutoTrigger()) {
       return;
     }
-    submit(trigger);
+    VirtualFile[] openFiles = editorManager.getOpenFiles();
+    submitFiles(openFiles, trigger, true, true);
   }
 
-  private void submitFiles(VirtualFile[] files, TriggerType trigger) {
-    Multimap<Module, VirtualFile> filesByModule = HashMultimap.create();
-
-    for (VirtualFile file : files) {
-      Module m = utils.findModuleForFile(file, myProject);
-      if (!utils.shouldAnalyzeAutomatically(file, m)) {
-        continue;
-      }
-
-      filesByModule.put(m, file);
-    }
+  public Future<AnalysisResult> submitFiles(VirtualFile[] files, TriggerType trigger, boolean autoTrigger, boolean background) {
+    Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, autoTrigger);
 
     if (!filesByModule.isEmpty()) {
       console.debug("Trigger: " + trigger);
 
       for (Module m : filesByModule.keySet()) {
-        sonarLintJobManager.submitAsync(m, filesByModule.get(m), trigger);
+        if (background) {
+          return sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger);
+        } else {
+          return sonarLintJobManager.submit(m, filesByModule.get(m), trigger);
+        }
       }
     }
+
+    CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
+    future.complete(new AnalysisResult(0,0));
+    return future;
+  }
+
+  private Multimap<Module, VirtualFile> filterAndgetByModule(VirtualFile[] files, boolean autoTrigger) {
+    Multimap<Module, VirtualFile> filesByModule = HashMultimap.create();
+
+    for (VirtualFile file : files) {
+      Module m = utils.findModuleForFile(file, myProject);
+      if (autoTrigger) {
+        if (!utils.shouldAnalyzeAutomatically(file, m)) {
+          continue;
+        }
+      } else {
+        if (!utils.shouldAnalyze(file, m)) {
+          console.info("File can't be analyzed. Skipping: " + file.getPath());
+          continue;
+        }
+      }
+
+      filesByModule.put(m, file);
+    }
+
+    return filesByModule;
   }
 }

@@ -41,7 +41,7 @@ import org.sonarlint.intellij.core.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.trigger.OpenFilesSubmitter;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -130,11 +130,11 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     if (modified) {
       SonarLintConsole console = SonarLintConsole.get(project);
       IssueManager store = SonarLintUtils.get(project, IssueManager.class);
-      OpenFilesSubmitter submitter = SonarLintUtils.get(project, OpenFilesSubmitter.class);
+      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
 
       console.info("Clearing all issues because binding changed");
       store.clear();
-      submitter.submitIfAutoEnabled(TriggerType.BINDING_CHANGE);
+      submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     }
   }
 

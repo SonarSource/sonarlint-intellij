@@ -27,31 +27,22 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
-import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 public class SonarLintTask extends Task.Backgroundable {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintJobManager.class);
+  private static final Logger LOGGER = Logger.getInstance(SonarLintTask.class);
   private final IssueProcessor processor;
   private final SonarLintJob job;
   private final boolean startInBackground;
 
-  private SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background) {
+  public SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background) {
     super(job.module().getProject(), "SonarLint Analysis", true);
     this.processor = processor;
     this.job = job;
     this.startInBackground = background;
-  }
-
-  public static SonarLintTask createBackground(IssueProcessor processor, SonarLintJob job) {
-    return new SonarLintTask(processor, job, true);
-  }
-
-  public static SonarLintTask createForeground(IssueProcessor processor, SonarLintJob job) {
-    return new SonarLintTask(processor, job, false);
   }
 
   @Override
@@ -59,35 +50,28 @@ public class SonarLintTask extends Task.Backgroundable {
     return startInBackground;
   }
 
-  private static void stopRun(SonarLintJob job) {
-    Project project = job.module().getProject();
-    if (!project.isDisposed()) {
-      TaskListener taskListener = project.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC);
-      taskListener.ended(job);
-    }
-  }
-
   private static String getFileName(VirtualFile file) {
     return file.getName();
   }
 
+  public SonarLintJob getJob() {
+    return job;
+  }
+
   @Override
   public void run(ProgressIndicator indicator) {
-    Project p = job.module().getProject();
-
-    SonarLintStatus status = SonarLintStatus.get(p);
-    SonarLintConsole console = SonarLintConsole.get(p);
+    SonarLintConsole console = SonarLintConsole.get(myProject);
     AccumulatorIssueListener listener = new AccumulatorIssueListener();
 
     try {
-      if (isCanceled(indicator, status, p)) {
+      if (isCanceled(indicator, myProject)) {
         return;
       }
 
-      AnalysisResults results = analyze(p, indicator, status, listener);
+      AnalysisResults results = analyze(myProject, indicator, listener);
 
       //last chance to cancel (to avoid the possibility of having interrupt flag set)
-      if (isCanceled(indicator, status, p)) {
+      if (isCanceled(indicator, myProject)) {
         return;
       }
 
@@ -99,25 +83,24 @@ public class SonarLintTask extends Task.Backgroundable {
       List<Issue> issues = listener.getIssues();
       indicator.setText("Creating SonarLint issues: " + issues.size());
 
-      processor.process(job, issues, results.failedAnalysisFiles(), job.triggers());
+      processor.process(job, issues, results.failedAnalysisFiles());
     } catch (RuntimeException e) {
+      job.future().completeExceptionally(e);
       // if cancelled, ignore any errors since they were most likely caused by the interrupt
-      if (!indicator.isCanceled() && !status.isCanceled()) {
+      if (!indicator.isCanceled()) {
         String msg = "Error running SonarLint analysis";
         console.error(msg, e);
         LOGGER.warn(msg, e);
       }
-    } finally {
-      stopRun(job);
     }
   }
 
-  private static boolean isCanceled(ProgressIndicator indicator, SonarLintStatus status, Project project) {
-    return indicator.isCanceled() || status.isCanceled() || project.isDisposed();
+  private static boolean isCanceled(ProgressIndicator indicator, Project project) {
+    return indicator.isCanceled() || project.isDisposed();
   }
 
-  private AnalysisResults analyze(Project p, ProgressIndicator indicator, SonarLintStatus status, AccumulatorIssueListener listener) {
-    SonarLintAnalyzer analyzer = SonarLintUtils.get(p, SonarLintAnalyzer.class);
+  private AnalysisResults analyze(Project project, ProgressIndicator indicator, AccumulatorIssueListener listener) {
+    SonarLintAnalyzer analyzer = SonarLintUtils.get(project, SonarLintAnalyzer.class);
 
     indicator.setIndeterminate(true);
     if (job.files().size() > 1) {
@@ -128,7 +111,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
     LOGGER.info(indicator.getText());
 
-    CancelMonitor monitor = new CancelMonitor(indicator, status, Thread.currentThread());
+    CancelMonitor monitor = new CancelMonitor(indicator, Thread.currentThread());
     AnalysisResults result;
 
     try {
@@ -143,13 +126,11 @@ public class SonarLintTask extends Task.Backgroundable {
 
   private class CancelMonitor extends Thread {
     private final ProgressIndicator indicator;
-    private final SonarLintStatus status;
     private final Thread t;
     private boolean stop = false;
 
-    private CancelMonitor(ProgressIndicator indicator, SonarLintStatus status, Thread t) {
+    private CancelMonitor(ProgressIndicator indicator, Thread t) {
       this.indicator = indicator;
-      this.status = status;
       this.t = t;
       this.setName("sonarlint-cancel-monitor");
       this.setDaemon(true);
@@ -164,11 +145,11 @@ public class SonarLintTask extends Task.Backgroundable {
       while (true) {
         synchronized (this) {
           // don't trust too much in isAlive: thread is probably pooled in a executor
-          if (stop || !t.isAlive() || !status.isRunning()) {
+          if (stop || !t.isAlive()) {
             return;
           }
         }
-        if (indicator.isCanceled() || status.isCanceled()) {
+        if (indicator.isCanceled()) {
           // ensure that UI is canceled
           if (!indicator.isCanceled()) {
             indicator.cancel();

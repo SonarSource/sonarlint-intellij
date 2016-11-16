@@ -20,16 +20,14 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -46,7 +44,7 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
   @Mock
   private SonarLintConsole console;
   @Mock
-  private SonarLintJobManager jobManager;
+  private SonarLintSubmitter submitter;
 
   private SonarAnalyzeEditorFileAction editorFileAction;
   private AnActionEvent event;
@@ -56,8 +54,8 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
     MockitoAnnotations.initMocks(this);
     super.setUp();
     super.register(app, SonarLintAppUtils.class, utils);
-    super.register(SonarLintJobManager.class, jobManager);
-    super.register(SonarLintConsole.class, console);
+    super.register(project, SonarLintConsole.class, console);
+    super.register(project, SonarLintSubmitter.class, submitter);
 
     editorFileAction = new SonarAnalyzeEditorFileAction();
     event = mock(AnActionEvent.class);
@@ -67,13 +65,10 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
   @Test
   public void should_submit() {
     VirtualFile f1 = mock(VirtualFile.class);
-    Module m1 = mock(Module.class);
     when(utils.getSelectedFile(project)).thenReturn(f1);
-    when(utils.findModuleForFile(f1, project)).thenReturn(m1);
-    when(utils.shouldAnalyze(f1, m1)).thenReturn(true);
 
     editorFileAction.actionPerformed(event);
-    verify(jobManager).submit(m1, Collections.singleton(f1), TriggerType.ACTION);
+    verify(submitter).submitFiles(new VirtualFile[] {f1}, TriggerType.ACTION, false, false);
   }
 
   @Test
@@ -81,14 +76,14 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
     when(utils.getSelectedFile(project)).thenReturn(null);
 
     editorFileAction.actionPerformed(event);
-    verifyZeroInteractions(jobManager);
+    verifyZeroInteractions(submitter);
   }
 
   @Test
   public void should_do_nothing_if_no_project() {
     when(event.getProject()).thenReturn(null);
     editorFileAction.actionPerformed(event);
-    verifyZeroInteractions(jobManager);
+    verifyZeroInteractions(submitter);
   }
 
   @Test

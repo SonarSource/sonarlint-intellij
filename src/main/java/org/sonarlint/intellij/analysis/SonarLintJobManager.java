@@ -21,8 +21,8 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.components.AbstractProjectComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
@@ -31,6 +31,8 @@ import com.intellij.util.messages.MessageBus;
 
 import java.util.Collection;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -38,10 +40,8 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintJobManager extends AbstractProjectComponent {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintJobManager.class);
   private final IssueProcessor processor;
   private final MessageBus messageBus;
-  private final JobQueue queue;
   // used to synchronize the handling of queue and running status together
   private final Object lock;
   private final SonarLintStatus status;
@@ -51,48 +51,23 @@ public class SonarLintJobManager extends AbstractProjectComponent {
     super(project);
     this.processor = processor;
     this.messageBus = project.getMessageBus();
-    this.queue = new JobQueue(project);
     this.lock = new Object();
     this.status = SonarLintStatus.get(this.myProject);
     this.console = SonarLintConsole.get(myProject);
-
-    messageBus.connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener() {
-      @Override public void started(SonarLintJob job) {
-        //nothing to do
-      }
-
-      @Override public void ended(SonarLintJob job) {
-        taskFinished();
-      }
-    });
   }
 
-  public void submitAsync(Module m, Collection<VirtualFile> files, TriggerType trigger) {
-    if (console.debugEnabled()) {
-      SonarLintConsole.get(myProject).debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
-    }
-
-    SonarLintJob newJob = new SonarLintJob(m, files, trigger);
-    SonarLintJob nextJob;
-
-    synchronized (lock) {
-      try {
-        queue.queue(newJob);
-      } catch (JobQueue.NoCapacityException e) {
-        String msg = "Not submitting SonarLint analysis because job queue is full";
-        SonarLintConsole.get(myProject).info(msg);
-        LOGGER.warn(msg);
-        return;
-      }
-
-      if (!status.tryRun()) {
-        return;
-      }
-
-      nextJob = queue.get();
-    }
-
-    launchAsync(nextJob);
+  /**
+   * Runs SonarLint analysis asynchronously, as a background task, in the application worker thread.
+   * It won't block the current thread (in most cases, the event dispatch thread), but the contents of file being analyzed
+   * might be changed with the editor at the same time, resulting in a bad placement of the issues in the editor.
+   */
+  public Future<AnalysisResult> submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
+    CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
+    SonarLintJob newJob = new SonarLintJob(m, files, trigger, future);
+    SonarLintTask task = new SonarLintTask(processor, newJob, true);
+    runBackground(task);
+    return future;
   }
 
   /**
@@ -102,64 +77,49 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * The reason why we might want to queue the analysis instead of starting immediately is that the EDT might currently hold a write access.
    * If we hold a write lock, the ApplicationManager will not work as expected, because it won't start a pooled thread if we hold
    * a write access (the pooled thread would dead lock if it needs getLive access). The listener for file editor events holds the write access, for example.
-   * @see #submitAsync(Module, Collection, TriggerType)
+   * @see #submitBackground(Module, Collection, TriggerType)
    */
-  public void submit(Module m, Collection<VirtualFile> files, TriggerType trigger) {
-    if (console.debugEnabled()) {
-      SonarLintConsole.get(myProject).debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
-    }
+  public Future<AnalysisResult> submit(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
+    CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
+
     synchronized (lock) {
       if (myProject.isDisposed() || !status.tryRun()) {
-        return;
+        future.complete(new AnalysisResult(0, 0));
+        return future;
       }
     }
+    SonarLintJob job = new SonarLintJob(m, files, trigger, future);
+    SonarLintUserTask task = new SonarLintUserTask(processor, job, status);
+    runTask(task);
+    return future;
+  }
 
-    final SonarLintJob job = new SonarLintJob(m, files, trigger);
-    final SonarLintTask task = SonarLintTask.createForeground(processor, job);
-    saveAndRun(task, job);
+  private void runBackground(SonarLintTask task) {
+    final Application app = ApplicationManager.getApplication();
+    // task needs to be submitted in the EDT because progress manager will create the related UI
+    if (!app.isDispatchThread() || app.isWriteAccessAllowed()) {
+      app.invokeLater(() -> runTask(task));
+    } else {
+      runTask(task);
+    }
   }
 
   /**
-   * Runs SonarLint analysis asynchronously, in another thread.
-   * It won't block the current thread (in most cases, the event dispatch thread), but the contents of file being analyzed
-   * might be changed with the editor at the same time, resulting in a bad placement of the issues in the editor.
-   * @see #submit(Module, Collection, TriggerType)
+   * Runs task through the ProgressManager.
+   * Depending on the type of task (Modal or Backgroundable), it will prepare related UI and execute the task in the current thread
+   * or on the Application thread pool.
    */
-  private void launchAsync(final SonarLintJob job) {
-    final SonarLintTask task = SonarLintTask.createBackground(processor, job);
-    saveAndRun(task, job);
+  private void runTask(SonarLintTask task) {
+    notifyStart(task.getJob());
+    // Save files. Needs to be ran in EDT to have write access so we need to do it now to avoid a possible dead lock inside the task
+    ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(task.getJob().files()), ModalityState.NON_MODAL);
+    ProgressManager.getInstance().run(task);
+    notifyEnd(task.getJob());
   }
 
-  private void saveAndRun(final SonarLintTask task, final SonarLintJob job) {
-    final Application app = ApplicationManager.getApplication();
-    if (!app.isDispatchThread() || app.isWriteAccessAllowed()) {
-      app.invokeLater(() -> {
-        // check again is we are being closed
-        if (job.module().getProject().isDisposed()) {
-          return;
-        }
-        // we save as late as possible, even if job was queued up for a while to get the most up-to-date results
-        SonarLintUtils.saveFiles(job.files());
-        notifyStart(job);
-        ProgressManager.getInstance().run(task);
-      });
-    } else {
-      SonarLintUtils.saveFiles(job.files());
-      notifyStart(job);
-      ProgressManager.getInstance().run(task);
-    }
-  }
-
-  public void taskFinished() {
-    synchronized (lock) {
-      if (queue.size() > 0) {
-        // try launch next, if there is any, without changing running status
-        SonarLintJob job = queue.get();
-        launchAsync(job);
-      } else {
-        status.stopRun();
-      }
-    }
+  private void notifyEnd(SonarLintJob job) {
+    messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
   }
 
   private void notifyStart(SonarLintJob job) {

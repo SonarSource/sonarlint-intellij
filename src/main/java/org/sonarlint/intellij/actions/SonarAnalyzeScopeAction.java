@@ -80,7 +80,7 @@ public class SonarAnalyzeScopeAction extends AbstractSonarAction {
       SonarLintJobManager analyzer = SonarLintUtils.get(p, SonarLintJobManager.class);
       for (Module m : filesByModule.keySet()) {
         if (executeBackground(e)) {
-          analyzer.submitAsync(m, filesByModule.get(m), TriggerType.ACTION);
+          analyzer.submitBackground(m, filesByModule.get(m), TriggerType.ACTION);
         } else {
           analyzer.submit(m, filesByModule.get(m), TriggerType.ACTION);
         }

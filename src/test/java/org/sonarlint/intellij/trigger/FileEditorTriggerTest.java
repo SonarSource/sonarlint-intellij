@@ -21,53 +21,37 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
 
 public class FileEditorTriggerTest {
   @Mock
   private Project project;
   @Mock
-  private SonarLintJobManager jobManager;
-  @Mock
-  private SonarLintAppUtils utils;
+  private SonarLintSubmitter submitter;
 
-  private SonarLintGlobalSettings globalSettings;
   private FileEditorTrigger editorTrigger;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    globalSettings = new SonarLintGlobalSettings();
     SonarLintTestUtils.mockMessageBus(project);
-    editorTrigger = new FileEditorTrigger(project, jobManager, globalSettings, utils);
+    editorTrigger = new FileEditorTrigger(project, submitter);
   }
 
   @Test
   public void should_trigger() {
-    globalSettings.setAutoTrigger(true);
     VirtualFile f1 = mock(VirtualFile.class);
-    Module m1 = mock(Module.class);
-    when(utils.findModuleForFile(f1, project)).thenReturn(m1);
-    when(utils.shouldAnalyzeAutomatically(f1, m1)).thenReturn(true);
-
     editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
-    verify(jobManager).submitAsync(m1, Collections.singleton(f1), TriggerType.EDITOR_OPEN);
+    verify(submitter).submitFiles(new VirtualFile[] {f1}, TriggerType.EDITOR_OPEN, true, true);
   }
 
   @Test
@@ -76,24 +60,5 @@ public class FileEditorTriggerTest {
     FileEditorManager mock = mock(FileEditorManager.class);
     editorTrigger.fileClosed(mock, f1);
     editorTrigger.selectionChanged(new FileEditorManagerEvent(mock, null, null, null, null));
-    verifyZeroInteractions(jobManager);
-  }
-
-  @Test
-  public void should_not_trigger_if_fail_checks() {
-    globalSettings.setAutoTrigger(true);
-    VirtualFile f1 = mock(VirtualFile.class);
-    Module m1 = mock(Module.class);
-    when(utils.findModuleForFile(f1, project)).thenReturn(m1);
-    when(utils.shouldAnalyzeAutomatically(f1, m1)).thenReturn(false);
-
-    editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
-    verifyZeroInteractions(jobManager);
-  }
-
-  @Test
-  public void should_not_trigger_if_disabled() {
-    globalSettings.setAutoTrigger(false);
-    verifyZeroInteractions(jobManager);
   }
 }

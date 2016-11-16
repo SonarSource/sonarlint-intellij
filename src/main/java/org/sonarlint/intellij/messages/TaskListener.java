@@ -22,10 +22,25 @@ package org.sonarlint.intellij.messages;
 import com.intellij.util.messages.Topic;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 
+/**
+ * Notifies about analysis tasks starting and ended.
+ */
 public interface TaskListener {
   Topic<TaskListener> SONARLINT_TASK_TOPIC = Topic.create("SonarLint task start and finish", TaskListener.class);
 
   void started(SonarLintJob job);
 
   void ended(SonarLintJob job);
+
+  abstract class Adapter implements TaskListener {
+    @Override
+    public void started(SonarLintJob job) {
+      // can be optionally implemented
+    }
+
+    @Override
+    public void ended(SonarLintJob job) {
+      // can be optionally implemented
+    }
+  }
 }

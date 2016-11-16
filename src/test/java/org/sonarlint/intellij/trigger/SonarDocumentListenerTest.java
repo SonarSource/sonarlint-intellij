@@ -48,7 +48,7 @@ public class SonarDocumentListenerTest {
   @Mock
   private Project project;
   @Mock
-  private SonarLintJobManager jobManager;
+  private SonarLintSubmitter submitter;
   @Mock
   private EditorFactory editorFactory;
   @Mock
@@ -67,7 +67,7 @@ public class SonarDocumentListenerTest {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    listener = new SonarDocumentListener(project, globalSettings, jobManager, editorFactory, utils, docManager, 500);
+    listener = new SonarDocumentListener(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
     listener.initComponent();
   }
 
@@ -87,7 +87,7 @@ public class SonarDocumentListenerTest {
 
     listener.documentChanged(event);
     assertThat(listener.getEvents()).hasSize(1);
-    verify(jobManager, timeout(1000)).submitAsync(m1, Collections.singleton(file), TriggerType.EDITOR_CHANGE);
+    verify(submitter, timeout(1000)).submitFiles(new VirtualFile[] {file}, TriggerType.EDITOR_CHANGE, true, true);
   }
 
   @Test
@@ -106,7 +106,7 @@ public class SonarDocumentListenerTest {
     when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
 
     listener.documentChanged(event);
-    verifyZeroInteractions(jobManager);
+    verifyZeroInteractions(submitter);
   }
 
   @Test
@@ -124,7 +124,7 @@ public class SonarDocumentListenerTest {
     when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(false);
 
     listener.documentChanged(event);
-    verifyZeroInteractions(jobManager);
+    verifyZeroInteractions(submitter);
   }
 
   @Test

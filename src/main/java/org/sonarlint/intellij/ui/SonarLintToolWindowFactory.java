@@ -26,6 +26,10 @@ import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
 
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
+  public static final String TAB_LOGS = "Log";
+  public static final String TAB_CURRENT_FILE = "Current file";
+  public static final String TAB_CHANGED_FILES = "Changed files";
+
   @Override
   public void createToolWindowContent(Project project, ToolWindow toolWindow) {
     addIssuesTab(project, toolWindow);
@@ -39,7 +43,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     Content logContent = toolWindow.getContentManager().getFactory()
       .createContent(
         issuesPanel,
-        "Current file",
+        TAB_CURRENT_FILE,
         false);
     toolWindow.getContentManager().addDataProvider(issuesPanel::getData);
     toolWindow.getContentManager().addContent(logContent);
@@ -50,7 +54,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     Content logContent = toolWindow.getContentManager().getFactory()
       .createContent(
         changedPanel,
-        "Changed files",
+        TAB_CHANGED_FILES,
         false);
     toolWindow.getContentManager().addContent(logContent);
   }
@@ -58,7 +62,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   private static void addLogTab(Project project, ToolWindow toolWindow) {
     Content toolContent = toolWindow.getContentManager().getFactory().createContent(
       new SonarLintLogPanel(toolWindow, project),
-      "Log",
+      TAB_LOGS,
       false);
     toolWindow.getContentManager().addContent(toolContent);
   }

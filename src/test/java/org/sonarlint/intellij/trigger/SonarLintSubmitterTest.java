@@ -39,7 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class OpenFilesSubmitterTest {
+public class SonarLintSubmitterTest {
   @Mock
   private SonarLintConsole console;
   @Mock
@@ -64,15 +64,15 @@ public class OpenFilesSubmitterTest {
   }
 
   @Test
-  public void should_submit() {
+  public void should_submit_open_files() {
     VirtualFile f1 = mock(VirtualFile.class);
     Module m1 = mock(Module.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(m1);
     when(utils.shouldAnalyzeAutomatically(f1, m1)).thenReturn(true);
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
-    submitter.submit(TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitAsync(eq(m1), eq(Collections.singleton(f1)), eq(TriggerType.BINDING_CHANGE));
+    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
+    verify(sonarLintJobManager).submitBackground(eq(m1), eq(Collections.singleton(f1)), eq(TriggerType.BINDING_CHANGE));
   }
 
   @Test
@@ -83,14 +83,14 @@ public class OpenFilesSubmitterTest {
     when(utils.shouldAnalyzeAutomatically(f1, m1)).thenReturn(false);
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
-    submitter.submit(TriggerType.BINDING_CHANGE);
+    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     verifyZeroInteractions(sonarLintJobManager);
   }
 
   @Test
   public void should_not_submit_if_auto_disable() {
     globalSettings.setAutoTrigger(false);
-    submitter.submitIfAutoEnabled(TriggerType.BINDING_CHANGE);
+    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     verifyZeroInteractions(sonarLintJobManager);
   }
 
@@ -100,7 +100,7 @@ public class OpenFilesSubmitterTest {
     when(utils.findModuleForFile(f1, project)).thenReturn(null);
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
-    submitter.submit(TriggerType.BINDING_CHANGE);
+    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     verifyZeroInteractions(sonarLintJobManager);
   }
 }

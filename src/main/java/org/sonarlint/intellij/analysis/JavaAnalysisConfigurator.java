@@ -202,7 +202,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
       return false;
     }
 
-    file.refresh(false, false);
+   // file.refresh(false, false);
     return file.exists();
   }
 

@@ -40,9 +40,14 @@ public class SonarLintStatus extends AbstractProjectComponent {
     return p.getComponent(SonarLintStatus.class);
   }
 
+  /**
+   * Whether a manually-initiated task is running.
+   * Used, for example, to enable/disable task-related actions (run, stop).
+   */
   public synchronized boolean isRunning() {
     return status == Status.RUNNING || status == Status.CANCELLING;
   }
+
 
   public synchronized boolean isCanceled() {
     return status == Status.CANCELLING;
@@ -63,6 +68,9 @@ public class SonarLintStatus extends AbstractProjectComponent {
     }
   }
 
+  /**
+   * Cancel the task currently running
+   */
   public void cancel() {
     Status callback = null;
     synchronized (this) {

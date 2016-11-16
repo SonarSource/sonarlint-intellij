@@ -38,24 +38,7 @@ public class SonarLintJobTest {
 
     assertThat(job.files()).containsOnly(f);
     assertThat(job.module()).isEqualTo(m);
-    assertThat(job.triggers()).containsOnly(TriggerType.COMPILATION);
-    assertThat(job.creationTime()).isBetween(System.currentTimeMillis()-5000, System.currentTimeMillis());
-  }
-
-  @Test
-  public void testCombineJobs() {
-    Module m = mock(Module.class);
-    VirtualFile f1 = mock(VirtualFile.class);
-    VirtualFile f2 = mock(VirtualFile.class);
-
-    SonarLintJob job1 = new SonarLintJob(m, Collections.singleton(f1), TriggerType.COMPILATION);
-    SonarLintJob job2 = new SonarLintJob(m, Collections.singleton(f2), TriggerType.EDITOR_CHANGE);
-    SonarLintJob job = new SonarLintJob(job1, job2);
-
-
-    assertThat(job.files()).containsOnly(f1, f2);
-    assertThat(job.module()).isEqualTo(m);
-    assertThat(job.triggers()).containsOnly(TriggerType.COMPILATION, TriggerType.EDITOR_CHANGE);
+    assertThat(job.trigger()).isEqualTo(TriggerType.COMPILATION);
     assertThat(job.creationTime()).isBetween(System.currentTimeMillis()-5000, System.currentTimeMillis());
   }
 

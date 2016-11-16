@@ -68,7 +68,7 @@ public class SonarLintTaskTest extends SonarTest {
     when(progress.isCanceled()).thenReturn(false);
     processor = mock(IssueProcessor.class);
     SonarLintConsole console = mock(SonarLintConsole.class);
-    task = SonarLintTask.createBackground(processor, job);
+    task = new SonarLintTask(processor, job, true);
     configurator = mock(SonarLintAnalyzer.class);
     when(configurator.analyzeModule(any(Module.class), anyListOf(VirtualFile.class), any(IssueListener.class))).thenReturn(analysisResults);
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
@@ -90,12 +90,10 @@ public class SonarLintTaskTest extends SonarTest {
     task.run(progress);
 
     verify(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
-    verify(processor).process(job, new ArrayList<>(), new ArrayList<>(), job.triggers());
-    verify(listener).ended(job);
+    verify(processor).process(job, new ArrayList<>(), new ArrayList<>(), job.trigger());
 
     verifyNoMoreInteractions(configurator);
     verifyNoMoreInteractions(processor);
-    verifyNoMoreInteractions(listener);
   }
 
   @Test

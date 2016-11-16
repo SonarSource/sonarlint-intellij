@@ -26,8 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.concurrent.CompletableFuture;
 import javax.annotation.concurrent.Immutable;
 import org.sonarlint.intellij.trigger.TriggerType;
 
@@ -35,37 +34,26 @@ import org.sonarlint.intellij.trigger.TriggerType;
 public class SonarLintJob {
   private final Module m;
   private final Set<VirtualFile> files;
-  private final Set<TriggerType> triggers;
+  private final TriggerType trigger;
   private final long creationTime;
+  private final CompletableFuture<AnalysisResult> future;
 
-  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger) {
-    this(m, files, Collections.singleton(trigger));
-  }
-
-  SonarLintJob(Module m, Collection<VirtualFile> files, Set<TriggerType> triggers) {
+  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger, CompletableFuture<AnalysisResult> future) {
+    this.future = future;
     Preconditions.checkNotNull(m);
-    Preconditions.checkNotNull(triggers);
+    Preconditions.checkNotNull(trigger);
     Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
 
     this.m = m;
     Set<VirtualFile> fileSet = new HashSet<>();
     fileSet.addAll(files);
     this.files = Collections.unmodifiableSet(fileSet);
-    this.triggers = Collections.unmodifiableSet(triggers);
+    this.trigger = trigger;
     this.creationTime = System.currentTimeMillis();
   }
 
-  SonarLintJob(SonarLintJob job1, SonarLintJob job2) {
-    Preconditions.checkArgument(job1.module().equals(job2.module()), "Jobs must belong to the same module");
-
-    this.m = job1.module();
-    SonarLintJob oldest = job1.creationTime() < job2.creationTime() ? job1 : job2;
-    Set<VirtualFile> fileSet = new HashSet<>();
-    fileSet.addAll(job1.files());
-    fileSet.addAll(job2.files());
-    this.files = Collections.unmodifiableSet(fileSet);
-    this.creationTime = oldest.creationTime();
-    this.triggers = Stream.concat(job1.triggers().stream(), job2.triggers().stream()).collect(Collectors.toSet());
+  public CompletableFuture<AnalysisResult> future() {
+    return future;
   }
 
   public long creationTime() {
@@ -80,8 +68,8 @@ public class SonarLintJob {
     return files;
   }
 
-  public Set<TriggerType> triggers() {
-    return triggers;
+  public TriggerType trigger() {
+    return trigger;
   }
 
 }
