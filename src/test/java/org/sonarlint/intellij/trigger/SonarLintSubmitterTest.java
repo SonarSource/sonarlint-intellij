@@ -53,14 +53,14 @@ public class OpenFilesSubmitterTest {
 
   private SonarLintGlobalSettings globalSettings;
 
-  private OpenFilesSubmitter submitter;
+  private SonarLintSubmitter submitter;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    submitter = new OpenFilesSubmitter(project, console, fileEditorManager, sonarLintJobManager, globalSettings, utils);
+    submitter = new SonarLintSubmitter(project, console, fileEditorManager, sonarLintJobManager, globalSettings, utils);
   }
 
   @Test

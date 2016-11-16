@@ -31,14 +31,14 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
-public class OpenFilesSubmitter extends AbstractProjectComponent {
+public class SonarLintSubmitter extends AbstractProjectComponent {
   private final SonarLintConsole console;
   private final FileEditorManager editorManager;
   private final SonarLintJobManager sonarLintJobManager;
   private final SonarLintGlobalSettings globalSettings;
   private final SonarLintAppUtils utils;
 
-  public OpenFilesSubmitter(Project project, SonarLintConsole console, FileEditorManager editorManager,
+  public SonarLintSubmitter(Project project, SonarLintConsole console, FileEditorManager editorManager,
     SonarLintJobManager sonarLintJobManager, SonarLintGlobalSettings globalSettings, SonarLintAppUtils utils) {
     super(project);
     this.console = console;

@@ -29,6 +29,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   @Override
   public void createToolWindowContent(Project project, ToolWindow toolWindow) {
     addIssuesTab(project, toolWindow);
+    addChangedFilesTab(project, toolWindow);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
   }
@@ -38,9 +39,19 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     Content logContent = toolWindow.getContentManager().getFactory()
       .createContent(
         issuesPanel,
-        "Issues",
+        "Current file",
         false);
     toolWindow.getContentManager().addDataProvider(issuesPanel::getData);
+    toolWindow.getContentManager().addContent(logContent);
+  }
+
+  private static void addChangedFilesTab(Project project, ToolWindow toolWindow) {
+    SonarLintChangedPanel changedPanel = new SonarLintChangedPanel(project);
+    Content logContent = toolWindow.getContentManager().getFactory()
+      .createContent(
+        changedPanel,
+        "Changed files",
+        false);
     toolWindow.getContentManager().addContent(logContent);
   }
 
