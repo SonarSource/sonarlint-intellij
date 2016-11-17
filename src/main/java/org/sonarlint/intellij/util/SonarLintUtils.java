@@ -37,6 +37,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.net.HttpConfigurable;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -60,6 +61,7 @@ public class SonarLintUtils {
 
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
   public static final int CONNECTION_TIMEOUT_MS = 30_000;
+  public static final String PATH_SEPARATOR_PATTERN = Pattern.quote(File.separator);
 
   private SonarLintUtils() {
     // Utility class
@@ -324,6 +326,19 @@ public class SonarLintUtils {
       throw new IllegalStateException("no base path in default project");
     }
     return Paths.get(project.getBasePath()).relativize(Paths.get(virtualFile.getPath())).toString();
+  }
+
+  /**
+   * Convert relative path to SonarQube file key
+   *
+   * @param relativePath relative path string in the local OS
+   * @return SonarQube file key
+   */
+  public static String toFileKey(String relativePath) {
+    if (File.separatorChar != '/') {
+      return relativePath.replaceAll(PATH_SEPARATOR_PATTERN, "/");
+    }
+    return relativePath;
   }
 
 }
