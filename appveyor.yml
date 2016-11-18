@@ -1,4 +1,3 @@
 build_script:
-  - mvn clean verify
-
+  - gradlew.bat buildPlugin check
 
