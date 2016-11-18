@@ -256,7 +256,7 @@ public class SonarLintUtils {
       .connectTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
       .readTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
       .url(server.getHostUrl());
-    if (server.getToken() != null) {
+    if (StringUtil.isNotEmpty(server.getToken())) {
       serverConfigBuilder.token(server.getToken());
     } else {
       serverConfigBuilder.credentials(server.getLogin(), server.getPassword());

@@ -170,12 +170,20 @@ public class SonarQubeServer {
     }
 
     public Builder setToken(@Nullable String token) {
-      this.token = PasswordUtil.encodePassword(token);
+      if (token == null) {
+        this.token = null;
+      } else {
+        this.token = PasswordUtil.encodePassword(token);
+      }
       return this;
     }
 
     public Builder setPassword(@Nullable String password) {
-      this.password = PasswordUtil.encodePassword(password);
+      if (password == null) {
+        this.password = null;
+      } else {
+        this.password = PasswordUtil.encodePassword(password);
+      }
       return this;
     }
 
