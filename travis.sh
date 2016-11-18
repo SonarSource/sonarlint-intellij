@@ -47,6 +47,12 @@ CI)
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.projectVersion=$CURRENT_VERSION \
         -Dsonar.login=$SONAR_TOKEN
+  
+  elif [[ "${TRAVIS_BRANCH}" == "branch-"* ]] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
+    strongEcho 'Build and publish in artifactory'
+    prepareBuildVersion
+    ./gradlew buildPlugin check artifactory \
+        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace --info
 
   elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN-}" ]; then
     strongEcho 'Build and analyze pull request'                                                                                                                              
