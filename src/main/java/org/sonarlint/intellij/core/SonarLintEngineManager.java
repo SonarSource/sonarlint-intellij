@@ -32,7 +32,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ModuleUpdateStatus;
+import org.sonarsource.sonarlint.core.client.api.connected.ModuleStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 @ThreadSafe
@@ -46,6 +46,40 @@ public class SonarLintEngineManager implements ApplicationComponent {
   public SonarLintEngineManager(SonarLintGlobalSettings settings, SonarLintEngineFactory engineFactory) {
     this.settings = settings;
     this.engineFactory = engineFactory;
+  }
+
+  private static void stopInThread(final ConnectedSonarLintEngine engine) {
+    new Thread("stop-sonarlint-engine") {
+      @Override
+      public void run() {
+        engine.stop(false);
+      }
+    }.start();
+  }
+
+  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey) {
+    // Check if engine's global storage is OK
+    ConnectedSonarLintEngine.State state = engine.getState();
+    if (state != ConnectedSonarLintEngine.State.UPDATED) {
+      if (state != ConnectedSonarLintEngine.State.NEED_UPDATE) {
+        notifications.notifyServerNotUpdated();
+      } else if (state != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
+        notifications.notifyServerStorageNeedsUpdate(serverId);
+      }
+      throw new IllegalStateException("Server is not updated: " + serverId);
+    }
+
+    // Check if module's storage is OK. Global storage was updated and all project's binding that were open too,
+    // but we might have now opened a new project with a different binding.
+    ModuleStorageStatus moduleStorageStatus = engine.getModuleStorageStatus(projectKey);
+
+    if (moduleStorageStatus == null) {
+      notifications.notifyModuleInvalid();
+      throw new IllegalStateException("Project is bound to a module that doesn't exist: " + projectKey);
+    } else if (moduleStorageStatus.isStale()) {
+      notifications.notifyModuleStale();
+      throw new IllegalStateException("Stale module's storage: " + projectKey);
+    }
   }
 
   @Override
@@ -100,40 +134,6 @@ public class SonarLintEngineManager implements ApplicationComponent {
     ConnectedSonarLintEngine engine = getConnectedEngine(serverId);
     checkConnectedEngineStatus(engine, notifications, serverId, projectKey);
     return engine;
-  }
-
-  private static void stopInThread(final ConnectedSonarLintEngine engine) {
-    new Thread("stop-sonarlint-engine") {
-      @Override
-      public void run() {
-        engine.stop(false);
-      }
-    }.start();
-  }
-
-  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey) {
-    // Check if engine's global storage is OK
-    ConnectedSonarLintEngine.State state = engine.getState();
-    if (state != ConnectedSonarLintEngine.State.UPDATED) {
-      if (state != ConnectedSonarLintEngine.State.NEED_UPDATE) {
-        notifications.notifyServerNotUpdated();
-      } else if (state != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
-        notifications.notifyServerNeedsUpdate(serverId);
-      }
-      throw new IllegalStateException("Server is not updated: " + serverId);
-    }
-
-    // Check if module's storage is OK. Global storage was updated and all project's binding that were open too,
-    // but we might have now opened a new project with a different binding.
-    ModuleUpdateStatus moduleUpdateStatus = engine.getModuleUpdateStatus(projectKey);
-
-    if (moduleUpdateStatus == null) {
-      notifications.notifyModuleInvalid();
-      throw new IllegalStateException("Project is bound to a module that doesn't exist: " + projectKey);
-    } else if (moduleUpdateStatus.isStale()) {
-      notifications.notifyModuleStale();
-      throw new IllegalStateException("Stale module's storage: " + projectKey);
-    }
   }
 
   private void reloadServerNames() {
