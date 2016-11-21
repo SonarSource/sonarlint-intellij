@@ -46,7 +46,7 @@ public class OpenedFilesScopeTest extends SonarTest {
   @Test
   public void testAll() {
     VirtualFile file = mock(VirtualFile.class);
-    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] { file });
+    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] {file});
     assertThat(scope.getAll()).containsOnly(file);
     assertThat(scope.getDisplayName()).isEqualTo("Opened files");
   }
@@ -55,7 +55,7 @@ public class OpenedFilesScopeTest extends SonarTest {
   public void testCondition() {
     AbstractScope.ScopeListener listener = mock(AbstractScope.ScopeListener.class);
     VirtualFile file = mock(VirtualFile.class);
-    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] { file });
+    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] {file});
     scope.addListener(listener);
     project.getMessageBus().syncPublisher(FileEditorManagerListener.FILE_EDITOR_MANAGER).fileOpened(editorManager, file);
     verify(listener).conditionChanged();

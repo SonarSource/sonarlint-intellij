@@ -24,6 +24,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
@@ -90,7 +91,7 @@ public class SonarLintTaskTest extends SonarTest {
     task.run(progress);
 
     verify(configurator).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
-    verify(processor).process(job, new ArrayList<>(), new ArrayList<>(), job.trigger());
+    verify(processor).process(job, new ArrayList<>(), new ArrayList<>());
 
     verifyNoMoreInteractions(configurator);
     verifyNoMoreInteractions(processor);
@@ -113,6 +114,6 @@ public class SonarLintTaskTest extends SonarTest {
   }
 
   private SonarLintJob createJob() {
-    return new SonarLintJob(module, files, TriggerType.ACTION);
+    return new SonarLintJob(module, files, TriggerType.ACTION, new CompletableFuture<>());
   }
 }

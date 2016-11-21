@@ -24,7 +24,13 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
+import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
+/**
+ * Factory of SonarLint tool window.
+ * Nothing can be injected as it runs in the root pico container.
+ */
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TAB_LOGS = "Log";
   public static final String TAB_CURRENT_FILE = "Current file";
@@ -50,7 +56,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addChangedFilesTab(Project project, ToolWindow toolWindow) {
-    SonarLintChangedPanel changedPanel = new SonarLintChangedPanel(project);
+    ChangedFilesIssues changedFileIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
+    SonarLintChangedPanel changedPanel = new SonarLintChangedPanel(project, changedFileIssues);
     Content logContent = toolWindow.getContentManager().getFactory()
       .createContent(
         changedPanel,

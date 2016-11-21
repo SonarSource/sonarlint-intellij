@@ -41,7 +41,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarAnalyzeScopeActionTest extends SonarTest{
+public class SonarAnalyzeScopeActionTest extends SonarTest {
   @Mock
   private SonarLintAppUtils utils;
   @Mock

@@ -6,17 +6,27 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ContainerAdapter;
+import java.awt.event.ContainerEvent;
+import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.Date;
+import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.*;
@@ -25,6 +35,10 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
+import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.scope.AbstractScope;
@@ -39,19 +53,20 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
   private static final String INITIAL_LABEL = "Trigger the analysis to find issues on the files in the change set";
 
   private final Project project;
+  private final ChangedFilesIssues changedFileIssues;
   private Tree tree;
   private ActionToolbar mainToolbar;
   private TreeModelBuilder treeBuilder;
   private SonarLintRulePanel rulePanel;
   private JLabel lastAnalysisLabel;
-  private Date lastAnalysisTime = null;
+  private Timer lastAnalysisTimeUpdater;
 
-  public SonarLintChangedPanel(Project project) {
+  public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues) {
     super(false, true);
     this.project = project;
+    this.changedFileIssues = changedFileIssues;
 
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
-
     addToolbar();
 
     JPanel issuesPanel = new JPanel(new BorderLayout());
@@ -68,11 +83,43 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
     super.setContent(createSplitter(issuesPanel, scrollableRulePanel));
+    this.treeBuilder.updateModel(changedFileIssues.issues(), x -> true);
+    setLastAnalysisTime();
+
+    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    busConnection.subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, issues -> {
+      ApplicationManager.getApplication().invokeLater(() -> {
+        treeBuilder.updateModel(issues, x -> true);
+        setLastAnalysisTime();
+        expandTree();
+      });
+    });
+
+    // try to destroy timer when this panel is destroyed. Supposedly it should get garbage collected anyway after an unspecified interval.
+    lastAnalysisTimeUpdater = new Timer(5000, e -> setLastAnalysisTime());
+    this.addContainerListener(new ContainerAdapter() {
+      @Override public void componentRemoved(ContainerEvent e) {
+        if(lastAnalysisTimeUpdater != null) {
+          lastAnalysisTimeUpdater.stop();
+          lastAnalysisTimeUpdater = null;
+        }
+      }
+    });
+  }
+
+  private void setLastAnalysisTime() {
+    LocalDateTime lastAnalysis = changedFileIssues.getLastAnalysisDate();
+
+    if (lastAnalysis == null) {
+      lastAnalysisLabel.setText(INITIAL_LABEL);
+    } else {
+      lastAnalysisLabel.setText("Last analysis done: " + SonarLintUtils.age(System.currentTimeMillis()));
+    }
   }
 
   private Component createLastAnalysisPanel() {
     JPanel panel = new JPanel(new GridBagLayout());
-    lastAnalysisLabel = new JLabel(INITIAL_LABEL);
+    lastAnalysisLabel = new JLabel("");
     final GridBagConstraints gc =
       new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
         new Insets(2, 2, 2, 2), 0, 0);

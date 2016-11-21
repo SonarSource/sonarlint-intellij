@@ -22,6 +22,7 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import org.junit.Test;
 import org.sonarlint.intellij.trigger.TriggerType;
 
@@ -33,13 +34,15 @@ public class SonarLintJobTest {
   public void testRoundTrip() {
     Module m = mock(Module.class);
     VirtualFile f = mock(VirtualFile.class);
+    CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
 
-    SonarLintJob job = new SonarLintJob(m, Collections.singleton(f), TriggerType.COMPILATION);
+    SonarLintJob job = new SonarLintJob(m, Collections.singleton(f), TriggerType.COMPILATION, future);
 
     assertThat(job.files()).containsOnly(f);
     assertThat(job.module()).isEqualTo(m);
     assertThat(job.trigger()).isEqualTo(TriggerType.COMPILATION);
-    assertThat(job.creationTime()).isBetween(System.currentTimeMillis()-5000, System.currentTimeMillis());
+    assertThat(job.creationTime()).isBetween(System.currentTimeMillis() - 5000, System.currentTimeMillis());
+    assertThat(job.future()).isEqualTo(future);
   }
 
 }

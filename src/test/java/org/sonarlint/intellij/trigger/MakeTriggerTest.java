@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 
 public class MakeTriggerTest extends SonarTest {
   @Mock
-  SonarLintSubmitter submitter;
+  private SonarLintSubmitter submitter;
   @Mock
   private Project project;
   @Mock
@@ -51,7 +51,6 @@ public class MakeTriggerTest extends SonarTest {
   private CompilerManager compilerManager;
 
   private MakeTrigger trigger;
-
 
   @Before
   public void setUp() {

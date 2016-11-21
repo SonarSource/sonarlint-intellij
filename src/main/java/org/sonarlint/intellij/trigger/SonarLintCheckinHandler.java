@@ -1,6 +1,8 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -24,18 +26,22 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
+  private static final Logger LOGGER = Logger.getInstance(SonarLintCheckinHandler.class);
   private static final String ACTIVATED_OPTION_NAME = "SONARLINT_PRECOMMIT_ANALYSIS";
   private static final String SONARLINT_TOOL_WINDOW_ID = "SonarLint";
+
   private final ToolWindowManager toolWindowManager;
   private final SonarLintGlobalSettings globalSettings;
   private final Collection<VirtualFile> affectedFiles;
   private final Project project;
 
-  public SonarLintCheckinHandler(ToolWindowManager toolWindowManager, SonarLintGlobalSettings globalSettings, Collection<VirtualFile> affectedFiles, Project project) {
+  public SonarLintCheckinHandler(ToolWindowManager toolWindowManager, SonarLintGlobalSettings globalSettings, Collection<VirtualFile> affectedFiles,
+    Project project) {
     this.toolWindowManager = toolWindowManager;
     this.globalSettings = globalSettings;
     this.affectedFiles = affectedFiles;
@@ -59,12 +65,21 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   private ReturnResult processResult(Future<AnalysisResult> futureResult) {
     try {
       AnalysisResult result = futureResult.get();
-      if (result.issues() == 0) {
+
+      ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
+      changedFilesIssues.set(result.issues());
+
+      if (result.numberIssues() == 0) {
         return ReturnResult.COMMIT;
       }
 
+      if(ApplicationManager.getApplication().isHeadlessEnvironment()) {
+        LOGGER.info( String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues()));
+        return ReturnResult.CANCEL;
+      }
+
       final int answer = Messages.showYesNoCancelDialog(project,
-        String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.issues()),
+        String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues()),
         "SonarLint Analysis Results",
         "Review Issues",
         "Commit Anyway",
@@ -72,10 +87,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         UIUtil.getWarningIcon());
 
       if (answer == Messages.YES) {
-        ToolWindow toolWindow = toolWindowManager.getToolWindow(SONARLINT_TOOL_WINDOW_ID);
-        if(toolWindow != null) {
-          toolWindow.show(new SelectChangedFilesTab(toolWindow));
-        }
+        showChangedFilesTab();
         return ReturnResult.CLOSE_WINDOW;
       } else if (answer == Messages.CANCEL) {
         return ReturnResult.CANCEL;
@@ -83,23 +95,27 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return ReturnResult.COMMIT;
       }
     } catch (Exception e) {
-      String msg = "Error analysing " + affectedFiles.size() + " changed files.";
+      String msg = "SonarLint - Error analysing " + affectedFiles.size() + " changed files.";
       if (e.getMessage() != null) {
         msg = msg + ": " + e.getMessage();
       }
+      LOGGER.error("msg", e);
       Messages.showErrorDialog(project, msg, "Error Analysing Files");
       return ReturnResult.CANCEL;
     }
   }
 
   private void showChangedFilesTab() {
-
+    ToolWindow toolWindow = toolWindowManager.getToolWindow(SONARLINT_TOOL_WINDOW_ID);
+    if(toolWindow != null) {
+      toolWindow.show(new ChangedFilesTabOpener(toolWindow));
+    }
   }
 
-  private static class SelectChangedFilesTab implements Runnable {
+  private static class ChangedFilesTabOpener implements Runnable {
     private final ToolWindow toolWindow;
 
-    private SelectChangedFilesTab(ToolWindow toolWindow) {
+    private ChangedFilesTabOpener(ToolWindow toolWindow) {
       this.toolWindow = toolWindow;
     }
 
@@ -125,7 +141,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       panel.add(checkBox);
       boolean dumb = DumbService.isDumb(project);
       checkBox.setEnabled(!dumb);
-      checkBox.setToolTipText(dumb ? "Code analysis is impossible until indices are up-to-date" : "");
+      checkBox.setToolTipText(dumb ? "SonarLint analysis is impossible until indices are up-to-date" : "");
       return panel;
     }
 

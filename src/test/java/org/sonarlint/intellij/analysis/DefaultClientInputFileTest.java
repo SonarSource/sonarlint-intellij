@@ -55,7 +55,7 @@ public class DefaultClientInputFileTest {
     assertThat(inputFile.getPath()).isEqualTo("file");
     assertThat(inputFile.getClientObject()).isEqualTo(vFile);
     assertThat(inputFile.contents()).isEqualTo("test string");
-    try(BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
       assertThat(reader.lines().collect(Collectors.joining())).isEqualTo("test string");
     }
   }
@@ -69,7 +69,7 @@ public class DefaultClientInputFileTest {
     inputFile = new DefaultClientInputFile(vFile, true, StandardCharsets.UTF_8, doc);
 
     assertThat(inputFile.contents()).isEqualTo("test string");
-    try(BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
       assertThat(reader.lines().collect(Collectors.joining())).isEqualTo("test string");
     }
   }

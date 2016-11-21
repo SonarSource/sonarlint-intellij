@@ -52,6 +52,7 @@ public abstract class SonarTest {
     module = createModule();
     app = mock(Application.class);
     ApplicationManager.setApplication(app, mock(Disposable.class));
+    when(app.isHeadlessEnvironment()).thenReturn(true);
     createModuleRoot();
   }
 

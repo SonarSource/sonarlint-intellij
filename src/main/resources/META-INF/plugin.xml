@@ -89,6 +89,9 @@
             <implementation-class>org.sonarlint.intellij.trigger.SonarLintSubmitter</implementation-class>
         </component>
         <component>
+            <implementation-class>org.sonarlint.intellij.issue.ChangedFilesIssues</implementation-class>
+        </component>
+        <component>
             <implementation-class>org.sonarlint.intellij.editor.CodeAnalyzerRestarter</implementation-class>
         </component>
         <component>

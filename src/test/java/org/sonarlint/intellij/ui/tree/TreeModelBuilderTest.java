@@ -102,7 +102,7 @@ public class TreeModelBuilderTest {
     Collections.sort(sorted, new TreeModelBuilder.IssueComparator());
 
     // criteria: creation date (most recent, nulls last), getSeverity (highest first), rule alphabetically
-    assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3) );
+    assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));
   }
 
   private void assertNode(IssueNode node, String file, int number) {

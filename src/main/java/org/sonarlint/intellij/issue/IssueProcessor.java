@@ -84,7 +84,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     console.info("Found " + issues.size() + end);
-    job.future().complete(new AnalysisResult(job.files().size(), issues.size()));
+    job.future().complete(new AnalysisResult(job.files().size(), map));
   }
 
   private static boolean shouldUpdateServerIssues(TriggerType trigger) {

@@ -60,7 +60,7 @@ public class SonarLintEngineManagerTest {
     when(engineFactory.createEngine(anyString())).thenReturn(connectedEngine);
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
-    manager = new SonarLintEngineManager(globalSettings,  engineFactory);
+    manager = new SonarLintEngineManager(globalSettings, engineFactory);
   }
 
   @Test
@@ -89,7 +89,7 @@ public class SonarLintEngineManagerTest {
   @Test
   public void should_fail_not_updated() {
     globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
-    manager = new SonarLintEngineManager(globalSettings,  engineFactory);
+    manager = new SonarLintEngineManager(globalSettings, engineFactory);
 
     manager.initComponent();
 
@@ -104,7 +104,7 @@ public class SonarLintEngineManagerTest {
     when(connectedEngine.getModuleUpdateStatus("project1")).thenReturn(moduleOk);
 
     globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
-    manager = new SonarLintEngineManager(globalSettings,  engineFactory);
+    manager = new SonarLintEngineManager(globalSettings, engineFactory);
 
     manager.initComponent();
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);

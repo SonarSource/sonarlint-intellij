@@ -26,6 +26,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -75,7 +76,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     }
 
     CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
-    future.complete(new AnalysisResult(0,0));
+    future.complete(new AnalysisResult(0, Collections.emptyMap()));
     return future;
   }
 

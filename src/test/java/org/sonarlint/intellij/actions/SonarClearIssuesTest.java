@@ -72,7 +72,7 @@ public class SonarClearIssuesTest extends SonarTest {
     VirtualFile openFile = mock(VirtualFile.class);
     PsiFile psiFile = mock(PsiFile.class);
 
-    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] { openFile });
+    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] {openFile});
     when(openFile.isValid()).thenReturn(true);
     when(psiManager.findFile(openFile)).thenReturn(psiFile);
 

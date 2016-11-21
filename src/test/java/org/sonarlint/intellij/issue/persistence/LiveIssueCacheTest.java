@@ -99,7 +99,7 @@ public class LiveIssueCacheTest {
     VirtualFile file0 = createTestFile("file0");
     cache.save(file0, Collections.singleton(issue1));
 
-    for(int i = 1; i< LiveIssueCache.MAX_ENTRIES; i++) {
+    for (int i = 1; i < LiveIssueCache.MAX_ENTRIES; i++) {
       VirtualFile file = createTestFile("file" + i);
       cache.save(file, Collections.singleton(issue1));
     }
@@ -158,7 +158,7 @@ public class LiveIssueCacheTest {
     doThrow(new IOException()).when(store).save(anyString(), anyCollectionOf(Trackable.class));
 
     LiveIssue issue1 = createTestIssue("r1");
-    for(int i = 0; i< LiveIssueCache.MAX_ENTRIES; i++) {
+    for (int i = 0; i < LiveIssueCache.MAX_ENTRIES; i++) {
       VirtualFile file = createTestFile("file" + i);
       cache.save(file, Collections.singleton(issue1));
     }
@@ -181,7 +181,6 @@ public class LiveIssueCacheTest {
     verify(store).save(eq("file1"), anyCollectionOf(Trackable.class));
     verifyNoMoreInteractions(store);
   }
-
 
   private LiveIssue createTestIssue(String ruleKey) {
     LiveIssue issue = mock(LiveIssue.class);
