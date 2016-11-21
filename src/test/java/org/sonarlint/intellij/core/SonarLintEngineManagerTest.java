@@ -29,7 +29,7 @@ import org.mockito.Mockito;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ModuleUpdateStatus;
+import org.sonarsource.sonarlint.core.client.api.connected.ModuleStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -101,7 +101,7 @@ public class SonarLintEngineManagerTest {
   @Test
   public void should_pass_checks() {
     when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
-    when(connectedEngine.getModuleUpdateStatus("project1")).thenReturn(moduleOk);
+    when(connectedEngine.getModuleStorageStatus("project1")).thenReturn(moduleOk);
 
     globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager(globalSettings, engineFactory);
@@ -117,7 +117,7 @@ public class SonarLintEngineManagerTest {
     return SonarQubeServer.newBuilder().setName(name).build();
   }
 
-  private static ModuleUpdateStatus moduleOk = new ModuleUpdateStatus() {
+  private static ModuleStorageStatus moduleOk = new ModuleStorageStatus() {
     @Override public Date getLastUpdateDate() {
       return new Date(System.currentTimeMillis());
     }

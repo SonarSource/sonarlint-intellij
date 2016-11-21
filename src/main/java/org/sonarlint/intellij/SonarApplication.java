@@ -54,7 +54,8 @@ public class SonarApplication implements ApplicationComponent {
   }
 
   public void registerNotifications() {
-    NotificationGroup.balloonGroup(SonarLintProjectNotifications.BINDING_PROBLEM);
+    NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_BINDING_PROBLEM);
+    NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_UPDATE_NOTIFICATION);
   }
 
   @Override

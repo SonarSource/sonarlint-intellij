@@ -43,7 +43,6 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
-
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -70,7 +69,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.event.HyperlinkEvent;
-
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
@@ -78,7 +76,7 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.GlobalUpdateStatus;
+import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 
 public class SonarQubeServerMgmtPanel implements Disposable {
@@ -302,9 +300,9 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         builder.append("never updated");
         break;
       case UPDATED:
-        GlobalUpdateStatus updateStatus = engine.getUpdateStatus();
-        if (updateStatus != null) {
-          builder.append(SonarLintUtils.age(updateStatus.getLastUpdateDate().getTime()));
+        GlobalStorageStatus storageStatus = engine.getGlobalStorageStatus();
+        if (storageStatus != null) {
+          builder.append(SonarLintUtils.age(storageStatus.getLastUpdateDate().getTime()));
         } else {
           builder.append("up to date");
         }
@@ -330,6 +328,10 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       return;
     }
 
+    updateServerBinding(server, engine, background, false);
+  }
+
+  public static void updateServerBinding(SonarQubeServer server, ConnectedSonarLintEngine engine, boolean background, boolean onlyProjects) {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
     Set<String> projectKeys = new HashSet<>();
 
@@ -341,7 +343,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       }
     }
 
-    ServerUpdateTask task = new ServerUpdateTask(engine, server, projectKeys, false);
+    ServerUpdateTask task = new ServerUpdateTask(engine, server, projectKeys, onlyProjects);
     if (background) {
       ProgressManager.getInstance().run(task.asBackground());
     } else {
