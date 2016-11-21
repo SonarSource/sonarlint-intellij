@@ -48,7 +48,6 @@ public class SonarLintStatus extends AbstractProjectComponent {
     return status == Status.RUNNING || status == Status.CANCELLING;
   }
 
-
   public synchronized boolean isCanceled() {
     return status == Status.CANCELLING;
   }

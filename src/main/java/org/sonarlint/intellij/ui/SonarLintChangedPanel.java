@@ -10,23 +10,16 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ContainerAdapter;
 import java.awt.event.ContainerEvent;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.*;
@@ -36,12 +29,9 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
-import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
-import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarlint.intellij.ui.scope.AbstractScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -99,7 +89,7 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
     lastAnalysisTimeUpdater = new Timer(5000, e -> setLastAnalysisTime());
     this.addContainerListener(new ContainerAdapter() {
       @Override public void componentRemoved(ContainerEvent e) {
-        if(lastAnalysisTimeUpdater != null) {
+        if (lastAnalysisTimeUpdater != null) {
           lastAnalysisTimeUpdater.stop();
           lastAnalysisTimeUpdater = null;
         }
@@ -108,7 +98,7 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
   }
 
   private void setLastAnalysisTime() {
-    LocalDateTime lastAnalysis = changedFileIssues.getLastAnalysisDate();
+    LocalDateTime lastAnalysis = changedFileIssues.lastAnalysisDate();
 
     if (lastAnalysis == null) {
       lastAnalysisLabel.setText(INITIAL_LABEL);

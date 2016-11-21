@@ -29,7 +29,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -39,17 +38,12 @@ import com.intellij.util.containers.HashMap;
 import com.intellij.util.messages.MessageBusConnection;
 
 import java.awt.BorderLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.util.Collection;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
@@ -67,9 +61,8 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 import org.sonarlint.intellij.ui.scope.AbstractScope;
-import org.sonarlint.intellij.ui.scope.OpenedFilesScope;
+import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -77,7 +70,6 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator, DataProvider {
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.issuestoolwindow";
-  private static final String SELECTED_SCOPE_KEY = "SONARLINT_ISSUES_VIEW_SCOPE";
   private static final String SPLIT_PROPORTION = "SONARLINT_ISSUES_SPLIT_PROPORTION";
 
   private final Project project;
@@ -92,6 +84,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     super(false, true);
     this.project = project;
     this.issueManager = project.getComponent(IssueManager.class);
+    this.scope = new CurrentFileScope(project);
 
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
 
@@ -99,7 +92,6 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
 
     JPanel issuesPanel = new JPanel(new BorderLayout());
     createTree();
-    issuesPanel.add(createScopePanel(), BorderLayout.NORTH);
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
 
     rulePanel = new SonarLintRulePanel(project, projectBindingManager);
@@ -145,56 +137,6 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     return splitter;
   }
 
-  private void switchScope(AbstractScope newScope) {
-    if (scope != null) {
-      scope.removeListeners();
-    }
-
-    scope = newScope;
-    scope.addListener(this::updateTree);
-  }
-
-  private JComponent createScopePanel() {
-    DefaultComboBoxModel comboModel = new DefaultComboBoxModel();
-    comboModel.addElement(new CurrentFileScope(project));
-    comboModel.addElement(new OpenedFilesScope(project));
-
-    // set selected element that was last saved, if any
-    String savedSelectedScope = PropertiesComponent.getInstance(project).getValue(SELECTED_SCOPE_KEY);
-    if (savedSelectedScope != null) {
-      for (int i = 0; i < comboModel.getSize(); i++) {
-        Object el = comboModel.getElementAt(i);
-        if (el.toString().equals(savedSelectedScope)) {
-          comboModel.setSelectedItem(el);
-          break;
-        }
-      }
-    }
-
-    final ComboBox scopeComboBox = new ComboBox(comboModel);
-    scopeComboBox.addActionListener(evt -> {
-      switchScope((AbstractScope) scopeComboBox.getSelectedItem());
-      updateTree();
-      PropertiesComponent.getInstance(project).setValue(SELECTED_SCOPE_KEY, scopeComboBox.getSelectedItem().toString());
-    });
-    switchScope((AbstractScope) scopeComboBox.getSelectedItem());
-    JPanel scopePanel = new JPanel(new GridBagLayout());
-    final JLabel scopesLabel = new JLabel("Scope:");
-    scopesLabel.setDisplayedMnemonic('S');
-    scopesLabel.setLabelFor(scopeComboBox);
-    final GridBagConstraints gc =
-      new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-        new Insets(2, 2, 2, 2), 0, 0);
-    scopePanel.add(scopesLabel, gc);
-    scopePanel.add(scopeComboBox, gc);
-
-    gc.fill = GridBagConstraints.HORIZONTAL;
-    gc.weightx = 1;
-    scopePanel.add(Box.createHorizontalBox(), gc);
-
-    return scopePanel;
-  }
-
   private void addToolbar() {
     ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
     mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
@@ -218,14 +160,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   }
 
   private void expandTree() {
-    if (tree.getRowCount() < 30) {
-      TreeUtil.expandAll(tree);
-    } else {
-      tree.expandRow(0);
-      if (tree.getRowCount() > 1) {
-        tree.expandRow(1);
-      }
-    }
+    TreeUtil.expandAll(tree);
   }
 
   private void issueTreeSelectionChanged() {

@@ -25,7 +25,10 @@ import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,18 +39,25 @@ import static org.mockito.Mockito.when;
 public class SonarLintCheckinHandlerFactoryTest {
   private SonarLintCheckinHandlerFactory sonarLintCheckinHandlerFactory;
 
-  @Test
-  public void testFactory() {
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    CheckinProjectPanel panel = mock(CheckinProjectPanel.class);
-    VirtualFile file = mock(VirtualFile.class);
-    Project project = mock(Project.class);
+  @Mock
+  private CheckinProjectPanel panel;
+  @Mock
+  private VirtualFile file;
+  @Mock
+  private Project project;
 
+  @Before
+  public void setUp() {
+    MockitoAnnotations.initMocks(this);
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     when(panel.getVirtualFiles()).thenReturn(Collections.singletonList(file));
     when(panel.getProject()).thenReturn(project);
 
     sonarLintCheckinHandlerFactory = new SonarLintCheckinHandlerFactory(settings);
+  }
 
+  @Test
+  public void testFactory() {
     CheckinHandler handler = sonarLintCheckinHandlerFactory.createHandler(panel, mock(CommitContext.class));
     assertThat(handler).isInstanceOf(SonarLintCheckinHandler.class);
 

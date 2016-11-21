@@ -48,13 +48,13 @@ public class ChangedFilesIssuesTest extends SonarTest {
   }
 
   @Test
-  public void test() {
+  public void testSet() {
     Map<VirtualFile, Collection<LiveIssue>> issues = new HashMap<>();
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
     changedFilesIssues.set(issues);
-    assertThat(changedFilesIssues.getLastAnalysisDate())
+    assertThat(changedFilesIssues.lastAnalysisDate())
       .isLessThanOrEqualTo(LocalDateTime.now())
       .isGreaterThan(LocalDateTime.now().minus(Duration.ofSeconds(3)));
     assertThat(changedFilesIssues.issues()).isEqualTo(issues);
@@ -63,11 +63,25 @@ public class ChangedFilesIssuesTest extends SonarTest {
 
     // everything should be done even if it's an empty map
     changedFilesIssues.set(Collections.emptyMap());
-    assertThat(changedFilesIssues.getLastAnalysisDate())
+    assertThat(changedFilesIssues.lastAnalysisDate())
       .isLessThanOrEqualTo(LocalDateTime.now())
       .isGreaterThan(LocalDateTime.now().minus(Duration.ofSeconds(3)));
     assertThat(changedFilesIssues.issues()).isEmpty();
 
     verify(listener).update(Collections.emptyMap());
+  }
+
+  @Test
+  public void testClear() {
+    Map<VirtualFile, Collection<LiveIssue>> issues = new HashMap<>();
+    issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
+    issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
+
+    changedFilesIssues.set(issues);
+    changedFilesIssues.clear();
+
+    verify(listener).update(Collections.emptyMap());
+    assertThat(changedFilesIssues.lastAnalysisDate()).isNull();
+    assertThat(changedFilesIssues.issues()).isEmpty();
   }
 }

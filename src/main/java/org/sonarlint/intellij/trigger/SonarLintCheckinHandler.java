@@ -73,8 +73,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return ReturnResult.COMMIT;
       }
 
-      if(ApplicationManager.getApplication().isHeadlessEnvironment()) {
-        LOGGER.info( String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues()));
+      if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
+        LOGGER.info(String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues()));
         return ReturnResult.CANCEL;
       }
 
@@ -107,7 +107,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
   private void showChangedFilesTab() {
     ToolWindow toolWindow = toolWindowManager.getToolWindow(SONARLINT_TOOL_WINDOW_ID);
-    if(toolWindow != null) {
+    if (toolWindow != null) {
       toolWindow.show(new ChangedFilesTabOpener(toolWindow));
     }
   }
@@ -122,7 +122,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     @Override public void run() {
       ContentManager contentManager = toolWindow.getContentManager();
       Content content = contentManager.findContent(SonarLintToolWindowFactory.TAB_CHANGED_FILES);
-      if(content != null) {
+      if (content != null) {
         contentManager.setSelectedContent(content);
       }
     }

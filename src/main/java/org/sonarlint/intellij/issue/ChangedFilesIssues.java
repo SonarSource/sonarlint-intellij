@@ -30,8 +30,14 @@ public class ChangedFilesIssues extends AbstractProjectComponent {
     this.messageBus.syncPublisher(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC).update(issues);
   }
 
+  public void clear() {
+    this.issues = Collections.emptyMap();
+    this.lastAnalysis = null;
+    this.messageBus.syncPublisher(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC).update(issues);
+  }
+
   @CheckForNull
-  public LocalDateTime getLastAnalysisDate() {
+  public LocalDateTime lastAnalysisDate() {
     return lastAnalysis;
   }
 

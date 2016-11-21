@@ -27,10 +27,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.concurrent.Immutable;
 import org.sonarlint.intellij.trigger.TriggerType;
 
-@Immutable
 public class SonarLintJob {
   private final Module m;
   private final Set<VirtualFile> files;

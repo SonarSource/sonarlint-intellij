@@ -84,7 +84,6 @@ public class SonarLintProjectBindPanel implements Disposable {
   private JButton configureServerButton;
   private ConnectedSonarLintEngine engine;
 
-
   // binding mgmt
   private JPanel bindPanel;
   private JComboBox<RemoteModule> projectComboBox;

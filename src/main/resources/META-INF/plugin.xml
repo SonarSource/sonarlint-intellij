@@ -166,16 +166,16 @@
                 icon="/images/onde-sonar-16-execute.png">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
 
 
-        <action id="SonarLint.SonarAnalyzeScopeAction"
-                class="org.sonarlint.intellij.actions.SonarAnalyzeScopeAction"
-                text="Analyze files in the selected scope"
-                description="Run SonarLint analysis on the files in the selected scope"
+        <action id="SonarLint.SonarAnalyzeChangedFilesAction"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
+                text="Analyze VCS changed files"
+                description="Run SonarLint analysis on the files that have been changed"
                 icon="/images/onde-sonar-16-execute.png">
-            <add-to-group group-id="SonarLint.issuestoolwindow"/>
-            <add-to-group group-id="SonarLint.logtoolwindow"/>
+            <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.Cancel"
@@ -185,6 +185,7 @@
                 icon="/images/suspend.png">
             <add-to-group group-id="SonarLint.logtoolwindow"/>
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
+            <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
 
@@ -195,6 +196,7 @@
                 icon="/images/externalToolsSmall.png">
             <add-to-group group-id="SonarLint.logtoolwindow"/>
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
+            <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.CleanConsole"
@@ -211,6 +213,14 @@
                 description="Clear SonarLint issues"
                 icon="/images/clean.png">
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
+        </action>
+
+        <action id="SonarLint.toolwindow.ClearChangedFilesIssues"
+                class="org.sonarlint.intellij.actions.SonarClearChangedFilesIssues"
+                text="Clear list of issues"
+                description="Clear list of issues on changed files"
+                icon="/images/clean.png">
+            <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
     </actions>
 
