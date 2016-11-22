@@ -13,7 +13,7 @@ set -euo pipefail
 
 function installTravisTools {
   mkdir ~/.local
-  curl -sSL https://github.com/SonarSource/travis-utils/tarball/v28 | tar zx --strip-components 1 -C ~/.local
+  curl -sSL https://github.com/SonarSource/travis-utils/tarball/v33 | tar zx --strip-components 1 -C ~/.local
   source ~/.local/bin/install
 }
 
@@ -25,8 +25,20 @@ function strongEcho {
 function prepareBuildVersion {
     # Analyze with SNAPSHOT version as long as SQ does not correctly handle purge of release data
     CURRENT_VERSION=`cat gradle.properties | grep version | awk -F= '{print $2}'`
+    RELEASE_VERSION=`echo $CURRENT_VERSION | sed "s/-.*//g"`
+    # In case of 2 digits, we need to add the 3rd digit (0 obviously)
+    # Mandatory in order to compare versions (patch VS non patch)
+    IFS=$'.'
+    DIGIT_COUNT=`echo $RELEASE_VERSION | wc -w`
+    unset IFS
+    if [ $DIGIT_COUNT -lt 3 ]; then
+        RELEASE_VERSION="$RELEASE_VERSION.0"
+    fi
+    NEW_VERSION="$RELEASE_VERSION.$TRAVIS_BUILD_NUMBER"
+    export PROJECT_VERSION=$NEW_VERSION
+
     # Deply the release version related to this build instead of snapshot
-    sed -i.bak "s/-SNAPSHOT/-build$TRAVIS_BUILD_NUMBER/g" gradle.properties
+    sed -i.bak "s/$CURRENT_VERSION/$NEW_VERSION/g" gradle.properties
     # set the build name with travis build number
     echo buildInfo.build.name=sonarlint-intellij >> gradle.properties 
     echo buildInfo.build.number=$TRAVIS_BUILD_NUMBER >> gradle.properties
