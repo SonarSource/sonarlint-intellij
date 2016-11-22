@@ -34,7 +34,7 @@ function prepareBuildVersion {
     if [ $DIGIT_COUNT -lt 3 ]; then
         RELEASE_VERSION="$RELEASE_VERSION.0"
     fi
-    NEW_VERSION="$RELEASE_VERSION.$BUILD_ID"
+    NEW_VERSION="$RELEASE_VERSION.$TRAVIS_BUILD_NUMBER"
     export PROJECT_VERSION=$NEW_VERSION
 
     # Deply the release version related to this build instead of snapshot
