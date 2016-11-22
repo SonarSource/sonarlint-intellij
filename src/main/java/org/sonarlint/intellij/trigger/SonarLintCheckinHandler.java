@@ -178,18 +178,13 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     @Override
     public void saveState() {
-      PropertiesComponent.getInstance(project).setValue(ACTIVATED_OPTION_NAME, checkBox.isSelected());
+      PropertiesComponent.getInstance(project).setValue(ACTIVATED_OPTION_NAME, Boolean.toString(checkBox.isSelected()));
     }
 
     @Override
     public void restoreState() {
       PropertiesComponent props = PropertiesComponent.getInstance(project);
-
-      if (!props.isValueSet(ACTIVATED_OPTION_NAME)) {
-        checkBox.setSelected(globalSettings.isAutoTrigger());
-      } else {
-        checkBox.setSelected(props.getBoolean(ACTIVATED_OPTION_NAME));
-      }
+      checkBox.setSelected(props.getBoolean(ACTIVATED_OPTION_NAME, globalSettings.isAutoTrigger()));
     }
   }
 }
