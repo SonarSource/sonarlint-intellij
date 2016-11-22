@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.issue.persistence;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Scanner;
@@ -108,9 +109,12 @@ public class IndexedObjectStoreTest {
   public void testErrorCleanInvalid() throws IOException {
     store.write("mykey", "myvalue");
 
-    // Setting folder readonly will not prevent to write in it on Windows
-    Assume.assumeFalse(SystemUtils.IS_OS_WINDOWS);
-    getPath("mykey").getParent().toFile().setReadOnly();
+    // Try to make file readonly on supported platform to prevent deletion
+    if (!getPath("mykey").getParent().toFile().setReadOnly()) {
+      // Fallback: replace file by a non empty directory to prevent deletion
+      Files.delete(getPath("mykey"));
+      Files.createDirectories(getPath("mykey").resolve("foo"));
+    }
 
     when(index.keys()).thenReturn(Arrays.asList("mykey"));
     when(validator.apply(anyString())).thenReturn(Boolean.FALSE);
