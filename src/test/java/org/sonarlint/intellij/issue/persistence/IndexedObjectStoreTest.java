@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Scanner;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -106,7 +108,10 @@ public class IndexedObjectStoreTest {
   public void testErrorCleanInvalid() throws IOException {
     store.write("mykey", "myvalue");
 
+    // Setting folder readonly will not prevent to write in it on Windows
+    Assume.assumeFalse(SystemUtils.IS_OS_WINDOWS);
     getPath("mykey").getParent().toFile().setReadOnly();
+
     when(index.keys()).thenReturn(Arrays.asList("mykey"));
     when(validator.apply(anyString())).thenReturn(Boolean.FALSE);
 

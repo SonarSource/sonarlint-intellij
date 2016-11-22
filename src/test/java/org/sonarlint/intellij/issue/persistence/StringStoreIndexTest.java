@@ -21,6 +21,9 @@ package org.sonarlint.intellij.issue.persistence;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,6 +70,9 @@ public class StringStoreIndexTest {
 
   @Test
   public void testErrorSave() throws IOException {
+    // Setting folder readonly will not prevent to write in it on Windows
+    Assume.assumeFalse(SystemUtils.IS_OS_WINDOWS);
+
     baseDir.toFile().setReadOnly();
 
     Path test1 = baseDir.resolve("p1").resolve("file1");
