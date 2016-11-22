@@ -32,6 +32,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.impl.MessageBusImpl;
+import java.io.IOException;
 import java.lang.reflect.Modifier;
 import org.junit.After;
 import org.junit.Before;
@@ -47,7 +48,7 @@ public abstract class SonarTest {
   protected Application app;
 
   @Before
-  public void setUp() {
+  public final void setUp() {
     project = createProject();
     module = createModule();
     app = mock(Application.class);
@@ -57,7 +58,7 @@ public abstract class SonarTest {
   }
 
   @After
-  public void tearDown() {
+  public final void tearDown() {
     project = null;
     module = null;
   }

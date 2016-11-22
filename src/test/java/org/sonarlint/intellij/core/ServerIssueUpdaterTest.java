@@ -20,12 +20,15 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collections;
-import org.hamcrest.CustomMatcher;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarApplication;
@@ -33,7 +36,6 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -51,8 +53,12 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class ServerIssueUpdaterTest extends SonarTest {
+  public static final String PROJECT_KEY = "foo";
   private ServerIssueUpdater updater;
   private SonarLintProjectSettings settings;
+
+  @Rule
+  public TemporaryFolder temp = new TemporaryFolder();
 
   @Mock
   private Project project;
@@ -63,13 +69,18 @@ public class ServerIssueUpdaterTest extends SonarTest {
   @Mock
   private SonarLintConsole console;
 
+  private Path projectBaseDir;
+
   @Before
-  public void setUp() {
+  public void prepare() throws IOException {
     MockitoAnnotations.initMocks(this);
-    super.setUp();
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
-    when(project.getBasePath()).thenReturn("");
+
+    projectBaseDir = temp.newFolder().toPath();
+
+    when(project.getBasePath()).thenReturn( FileUtil.toSystemIndependentName(projectBaseDir.toString()));
     settings = new SonarLintProjectSettings();
+    settings.setProjectKey(PROJECT_KEY);
     updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console);
   }
 
@@ -87,7 +98,8 @@ public class ServerIssueUpdaterTest extends SonarTest {
   public void testServerIssueTracking() {
     VirtualFile file = mock(VirtualFile.class);
     ServerIssue serverIssue = mock(ServerIssue.class);
-    when(file.getPath()).thenReturn("");
+    String filename = "MyFile.txt";
+    when(file.getPath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.resolve(filename).toString()));
 
     // mock creation of engine / server
     ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
@@ -97,7 +109,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     when(bindingManager.getSonarQubeServer()).thenReturn(server);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(ServerConfiguration.class), anyString(), anyString()))
+    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY), eq(filename)))
       .thenReturn(Collections.singleton(serverIssue).iterator());
 
     // run
@@ -106,12 +118,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     updater.initComponent();
     updater.fetchAndMatchServerIssues(Collections.singletonList(file));
 
-    verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(new CustomMatcher<Collection<Trackable>>("one trackable") {
-      @Override public boolean matches(Object o) {
-        Collection<Trackable> issues = (Collection<Trackable>) o;
-        return issues.size() == 1;
-      }
-    }));
+    verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
     verify(bindingManager).getConnectedEngine();
     verify(console, never()).error(anyString());

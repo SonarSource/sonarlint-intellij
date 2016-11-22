@@ -50,9 +50,8 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
   private AnActionEvent event;
 
   @Before
-  public void setUp() {
+  public void prepare() {
     MockitoAnnotations.initMocks(this);
-    super.setUp();
     super.register(app, SonarLintAppUtils.class, utils);
     super.register(project, SonarLintConsole.class, console);
     super.register(project, SonarLintSubmitter.class, submitter);

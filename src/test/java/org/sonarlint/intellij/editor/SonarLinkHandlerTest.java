@@ -38,8 +38,7 @@ public class SonarLinkHandlerTest extends SonarTest {
   private SonarLintFacade sonarlint;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
     sonarlint = mock(SonarLintFacade.class);
     editor = mock(Editor.class);

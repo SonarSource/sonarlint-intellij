@@ -30,10 +30,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarCleanConsoleTest extends SonarTest {
-  @Before
-  public void setUp() {
-    super.setUp();
-  }
 
   @Test
   public void testAction() {

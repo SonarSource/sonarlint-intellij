@@ -55,9 +55,8 @@ public class CodeAnalyzerRestarterTest extends SonarTest {
   private CodeAnalyzerRestarter analyzerRestarter;
 
   @Before
-  public void setUp() {
+  public void prepare() {
     MockitoAnnotations.initMocks(this);
-    super.setUp();
     MessageBusConnection connection = mock(MessageBusConnection.class);
     when(bus.connect(project)).thenReturn(connection);
     analyzerRestarter = new CodeAnalyzerRestarter(project, fileEditorManager, codeAnalyzer, psiManager, bus);

@@ -29,8 +29,7 @@ public class SonarLintStatusTest extends SonarTest {
   private SonarLintStatus status;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     status = new SonarLintStatus(getProject());
   }
 
