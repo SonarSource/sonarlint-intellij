@@ -46,7 +46,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
    * So on startup, opened files will be submitted one by one.
    */
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    submitter.submitFiles(new VirtualFile[] {file}, TriggerType.EDITOR_OPEN, true, true);
+    submitter.submitFiles(new VirtualFile[] {file}, TriggerType.EDITOR_OPEN, true, false);
   }
 
   @Override

@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
@@ -52,10 +53,10 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     ChangeListManager changeListManager = ChangeListManager.getInstance(project);
 
     List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
-    Future<AnalysisResult> future = submitter.submitFiles(affectedFiles.toArray(new VirtualFile[affectedFiles.size()]), TriggerType.ACTION, false, false);
+    CompletableFuture<AnalysisResult> future = submitter.submitFiles(affectedFiles.toArray(new VirtualFile[affectedFiles.size()]), TriggerType.ACTION, false, true);
+
     try {
-      AnalysisResult result = future.get();
-      changedFilesIssues.set(result.issues());
+      future.thenAccept(result -> changedFilesIssues.set(result.issues()));
     } catch (Exception ex) {
       LOGGER.error("Failed to analyse changed files", ex);
     }

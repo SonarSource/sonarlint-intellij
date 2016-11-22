@@ -21,11 +21,32 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.util.messages.Topic;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
-@FunctionalInterface
 public interface GlobalConfigurationListener {
-  Topic<GlobalConfigurationListener> SONARLINT_GLOBAL_CONFIG_TOPIC = Topic.create("Global configuration changed", GlobalConfigurationListener.class);
+  Topic<GlobalConfigurationListener> TOPIC = Topic.create("Global configuration events", GlobalConfigurationListener.class);
 
+  /**
+   * Called immediately when list of servers is changed (servers added or removed), even before saving
+   */
   void changed(List<SonarQubeServer> serverList);
+
+  /**
+   * Called when settings are saved (clicking "Apply" or "Ok")
+   */
+  void applied(List<SonarQubeServer> serverList, boolean autoTrigger);
+
+  abstract class Adapter implements GlobalConfigurationListener {
+    @Override
+    public void changed(List<SonarQubeServer> serverList) {
+      // nothing done by default
+    }
+
+    @Override
+    public void applied(List<SonarQubeServer> serverList, boolean autoTrigger) {
+      // nothing done by default
+    }
+  }
 }

@@ -19,6 +19,7 @@ import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -51,19 +52,20 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   @Override
   @Nullable
   public RefreshableOnComponent getBeforeCheckinConfigurationPanel() {
-    final JCheckBox checkBox = new NonFocusableCheckBox("Run SonarLint");
+    final JCheckBox checkBox = new NonFocusableCheckBox("Perform SonarLint Analysis");
     return new MyRefreshableOnComponent(checkBox);
   }
 
   @Override
   public ReturnResult beforeCheckin(@Nullable CommitExecutor executor, PairConsumer<Object, Object> additionalDataConsumer) {
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    Future<AnalysisResult> result = submitter.submitFiles(affectedFiles.toArray(new VirtualFile[affectedFiles.size()]), TriggerType.CHECK_IN, false, true);
+    CompletableFuture<AnalysisResult> result = submitter.submitFiles(affectedFiles.toArray(new VirtualFile[affectedFiles.size()]), TriggerType.CHECK_IN, false, true);
     return processResult(result);
   }
 
   private ReturnResult processResult(Future<AnalysisResult> futureResult) {
     try {
+      // this will block EDT! The analysis task can't use EDT or it will dead lock
       AnalysisResult result = futureResult.get();
 
       ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
@@ -73,27 +75,13 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return ReturnResult.COMMIT;
       }
 
+      String resultStr = String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues());
       if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
-        LOGGER.info(String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues()));
+        LOGGER.info(resultStr);
         return ReturnResult.CANCEL;
       }
 
-      final int answer = Messages.showYesNoCancelDialog(project,
-        String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues()),
-        "SonarLint Analysis Results",
-        "Review Issues",
-        "Commit Anyway",
-        "Close",
-        UIUtil.getWarningIcon());
-
-      if (answer == Messages.YES) {
-        showChangedFilesTab();
-        return ReturnResult.CLOSE_WINDOW;
-      } else if (answer == Messages.CANCEL) {
-        return ReturnResult.CANCEL;
-      } else {
-        return ReturnResult.COMMIT;
-      }
+      return showYesNoCancel(resultStr);
     } catch (Exception e) {
       String msg = "SonarLint - Error analysing " + affectedFiles.size() + " changed files.";
       if (e.getMessage() != null) {
@@ -102,6 +90,25 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       LOGGER.error("msg", e);
       Messages.showErrorDialog(project, msg, "Error Analysing Files");
       return ReturnResult.CANCEL;
+    }
+  }
+
+  private ReturnResult showYesNoCancel(String resultStr) {
+    final int answer = Messages.showYesNoCancelDialog(project,
+      resultStr,
+      "SonarLint Analysis Results",
+      "Review Issues",
+      "Commit Anyway",
+      "Close",
+      UIUtil.getWarningIcon());
+
+    if (answer == Messages.YES) {
+      showChangedFilesTab();
+      return ReturnResult.CLOSE_WINDOW;
+    } else if (answer == Messages.CANCEL) {
+      return ReturnResult.CANCEL;
+    } else {
+      return ReturnResult.COMMIT;
     }
   }
 

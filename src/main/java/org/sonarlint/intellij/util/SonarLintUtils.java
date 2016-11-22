@@ -49,6 +49,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
@@ -110,7 +111,7 @@ public class SonarLintUtils {
    * on which one of the split editors is selected.
    * This seems to work well with split editors.
    */
-  @Nullable
+  @CheckForNull
   public static VirtualFile getSelectedFile(Project project) {
     FileEditorManager editorManager = FileEditorManager.getInstance(project);
 

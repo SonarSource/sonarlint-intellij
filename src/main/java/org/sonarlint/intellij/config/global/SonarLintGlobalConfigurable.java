@@ -33,17 +33,18 @@ import javax.swing.JPanel;
 
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
+import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private final SonarLintEngineManager serverManager;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
   private SonarLintGlobalSettingsPanel globalPanel;
-
+  private Application app;
   private SonarLintGlobalSettings globalSettings;
 
   public SonarLintGlobalConfigurable() {
-    Application app = ApplicationManager.getApplication();
+    this.app = ApplicationManager.getApplication();
     this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
     this.serverManager = ApplicationManager.getApplication().getComponent(SonarLintEngineManager.class);
   }
@@ -68,6 +69,8 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
 
+    GlobalConfigurationListener globalConfigurationListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
+    globalConfigurationListener.applied(globalSettings.getSonarQubeServers(), globalSettings.isAutoTrigger());
     serverManager.reloadServers();
   }
 

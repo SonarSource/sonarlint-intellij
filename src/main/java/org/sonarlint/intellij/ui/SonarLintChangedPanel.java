@@ -16,13 +16,14 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
-import java.awt.*;
-import java.awt.event.ContainerAdapter;
-import java.awt.event.ContainerEvent;
-import java.time.LocalDateTime;
+import java.awt.BorderLayout;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import javax.swing.*;
+import javax.swing.Box;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
@@ -30,6 +31,7 @@ import javax.swing.tree.TreePath;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
+import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.tree.IssueTree;
@@ -40,29 +42,26 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.changedtoolwindow";
   private static final String SPLIT_PROPORTION = "SONARLINT_CHANGED_ISSUES_SPLIT_PROPORTION";
-  private static final String INITIAL_LABEL = "Trigger the analysis to find issues on the files in the change set";
 
   private final Project project;
-  private final ChangedFilesIssues changedFileIssues;
+  private final SonarLintRulePanel rulePanel;
+  private final LastAnalysisPanel lastAnalysisPanel;
   private Tree tree;
   private ActionToolbar mainToolbar;
   private TreeModelBuilder treeBuilder;
-  private SonarLintRulePanel rulePanel;
-  private JLabel lastAnalysisLabel;
-  private Timer lastAnalysisTimeUpdater;
 
   public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues) {
     super(false, true);
     this.project = project;
-    this.changedFileIssues = changedFileIssues;
+    this.lastAnalysisPanel = new LastAnalysisPanel(changedFileIssues, project);
 
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
     addToolbar();
 
     JPanel issuesPanel = new JPanel(new BorderLayout());
     createTree();
-    issuesPanel.add(createLastAnalysisPanel(), BorderLayout.NORTH);
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
+    issuesPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
 
     rulePanel = new SonarLintRulePanel(project, projectBindingManager);
 
@@ -74,52 +73,20 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
 
     super.setContent(createSplitter(issuesPanel, scrollableRulePanel));
     this.treeBuilder.updateModel(changedFileIssues.issues(), x -> true);
-    setLastAnalysisTime();
+    subscribeToEvents();
+  }
 
+  private void subscribeToEvents() {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, issues -> {
       ApplicationManager.getApplication().invokeLater(() -> {
         treeBuilder.updateModel(issues, x -> true);
-        setLastAnalysisTime();
+        lastAnalysisPanel.update();
         expandTree();
       });
     });
-
-    // try to destroy timer when this panel is destroyed. Supposedly it should get garbage collected anyway after an unspecified interval.
-    lastAnalysisTimeUpdater = new Timer(5000, e -> setLastAnalysisTime());
-    this.addContainerListener(new ContainerAdapter() {
-      @Override public void componentRemoved(ContainerEvent e) {
-        if (lastAnalysisTimeUpdater != null) {
-          lastAnalysisTimeUpdater.stop();
-          lastAnalysisTimeUpdater = null;
-        }
-      }
-    });
-  }
-
-  private void setLastAnalysisTime() {
-    LocalDateTime lastAnalysis = changedFileIssues.lastAnalysisDate();
-
-    if (lastAnalysis == null) {
-      lastAnalysisLabel.setText(INITIAL_LABEL);
-    } else {
-      lastAnalysisLabel.setText("Last analysis done: " + SonarLintUtils.age(System.currentTimeMillis()));
-    }
-  }
-
-  private Component createLastAnalysisPanel() {
-    JPanel panel = new JPanel(new GridBagLayout());
-    lastAnalysisLabel = new JLabel("");
-    final GridBagConstraints gc =
-      new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-        new Insets(2, 2, 2, 2), 0, 0);
-    panel.add(lastAnalysisLabel, gc);
-
-    gc.fill = GridBagConstraints.HORIZONTAL;
-    gc.weightx = 1;
-    panel.add(Box.createHorizontalBox(), gc);
-
-    return panel;
+    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
+      ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
   }
 
   private JComponent createSplitter(JComponent c1, JComponent c2) {
@@ -170,7 +137,7 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
   private void createTree() {
     treeBuilder = new TreeModelBuilder();
     DefaultTreeModel model = treeBuilder.createModel();
-    tree = new IssueTree(project, model);
+    tree = new IssueTree(project, model, true);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
   }
 

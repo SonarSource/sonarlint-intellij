@@ -110,7 +110,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   public void create() {
     Application app = ApplicationManager.getApplication();
     serverManager = app.getComponent(SonarLintEngineManager.class);
-    serverChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.SONARLINT_GLOBAL_CONFIG_TOPIC);
+    serverChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     serverList = new JBList();
     serverList.getEmptyText().setText(LABEL_NO_SERVERS);
     serverList.addMouseListener(new MouseAdapter() {

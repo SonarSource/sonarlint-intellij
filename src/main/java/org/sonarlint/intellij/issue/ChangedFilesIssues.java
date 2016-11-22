@@ -31,7 +31,7 @@ public class ChangedFilesIssues extends AbstractProjectComponent {
   }
 
   public void clear() {
-    this.issues = Collections.emptyMap();
+    this.issues = Collections.unmodifiableMap(Collections.emptyMap());
     this.lastAnalysis = null;
     this.messageBus.syncPublisher(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC).update(issues);
   }

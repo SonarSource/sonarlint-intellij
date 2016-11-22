@@ -56,7 +56,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    submitter.submitFiles(new VirtualFile[] {selectedFile}, TriggerType.ACTION, false, executeBackground(e));
+    submitter.submitFiles(new VirtualFile[] {selectedFile}, TriggerType.ACTION, false, !executeBackground(e));
   }
 
   /**

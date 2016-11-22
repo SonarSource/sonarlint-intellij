@@ -93,6 +93,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     JPanel issuesPanel = new JPanel(new BorderLayout());
     createTree();
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
+    issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
     rulePanel = new SonarLintRulePanel(project, projectBindingManager);
 
@@ -104,6 +105,12 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
 
     super.setContent(createSplitter(issuesPanel, scrollableRulePanel));
 
+    subscribeToEvents();
+    updateTree();
+  }
+
+  private void subscribeToEvents() {
+    scope.addListener(this::updateTree);
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
 
@@ -120,7 +127,6 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     });
 
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
-    updateTree();
   }
 
   private JComponent createSplitter(JComponent c1, JComponent c2) {
@@ -175,7 +181,7 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
   private void createTree() {
     treeBuilder = new TreeModelBuilder();
     DefaultTreeModel model = treeBuilder.createModel();
-    tree = new IssueTree(project, model);
+    tree = new IssueTree(project, model, false);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
   }
 

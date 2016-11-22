@@ -58,48 +58,49 @@ public class SonarLintJobManager extends AbstractProjectComponent {
   }
 
   /**
-   * Runs SonarLint analysis asynchronously, as a background task, in the application worker thread.
-   * It won't block the current thread (in most cases, the event dispatch thread), but the contents of file being analyzed
-   * might be changed with the editor at the same time, resulting in a bad placement of the issues in the editor.
+   * Runs SonarLint analysis asynchronously, as a background task, in the application's thread pool.
+   * It might queue the submission of the job in the thread pool.
+   * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
+   * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
+   * @see #submitManual(Module, Collection, TriggerType)
    */
-  public Future<AnalysisResult> submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+  public CompletableFuture<AnalysisResult> submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
     SonarLintJob newJob = new SonarLintJob(m, files, trigger, future);
     SonarLintTask task = new SonarLintTask(processor, newJob, true);
-    runBackground(task);
+    runInEDT(task);
     return future;
   }
 
   /**
-   * Runs SonarLint analysis synchronously, if no analysis is already on going.
-   * It might queue the submission of the job in the EDT thread.
+   * Runs SonarLint analysis synchronously, if no manual (foreground) analysis is already on going.
+   * If a foreground analysis is already on going, this method simply returns an empty AnalysisResult.
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
    * The reason why we might want to queue the analysis instead of starting immediately is that the EDT might currently hold a write access.
    * If we hold a write lock, the ApplicationManager will not work as expected, because it won't start a pooled thread if we hold
    * a write access (the pooled thread would dead lock if it needs getLive access). The listener for file editor events holds the write access, for example.
    * @see #submitBackground(Module, Collection, TriggerType)
    */
-  public Future<AnalysisResult> submit(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+  public CompletableFuture<AnalysisResult> submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
-
     synchronized (lock) {
       if (myProject.isDisposed() || !status.tryRun()) {
         future.complete(new AnalysisResult(0, Collections.emptyMap()));
         return future;
       }
     }
-    SonarLintJob job = new SonarLintJob(m, files, trigger, future);
-    SonarLintUserTask task = new SonarLintUserTask(processor, job, status);
-    runTask(task);
+    SonarLintJob newJob = new SonarLintJob(m, files, trigger, future);
+    SonarLintUserTask task = new SonarLintUserTask(processor, newJob, status);
+    runInEDT(task);
     return future;
   }
 
-  private void runBackground(SonarLintTask task) {
+  private void runInEDT(SonarLintTask task) {
     final Application app = ApplicationManager.getApplication();
     // task needs to be submitted in the EDT because progress manager will create the related UI
-    if (!app.isDispatchThread() || !app.isWriteAccessAllowed()) {
+    if (!app.isDispatchThread()) {
       app.invokeLater(() -> runTask(task));
     } else {
       runTask(task);
@@ -107,14 +108,15 @@ public class SonarLintJobManager extends AbstractProjectComponent {
   }
 
   /**
-   * Runs task through the ProgressManager.
+   * Runs task through the ProgressManager. Needs to be called from EDT.
    * Depending on the type of task (Modal or Backgroundable), it will prepare related UI and execute the task in the current thread
    * or on the Application thread pool.
    */
   private void runTask(SonarLintTask task) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     notifyStart(task.getJob());
     // Save files. Needs to be ran in EDT to have write access so we need to do it now to avoid a possible dead lock inside the task
-    ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(task.getJob().files()), ModalityState.NON_MODAL);
+    SonarLintUtils.saveFiles(task.getJob().files());
     ProgressManager.getInstance().run(task);
     notifyEnd(task.getJob());
   }

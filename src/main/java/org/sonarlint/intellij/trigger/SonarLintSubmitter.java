@@ -57,20 +57,28 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
       return;
     }
     VirtualFile[] openFiles = editorManager.getOpenFiles();
-    submitFiles(openFiles, trigger, true, true);
+    submitFiles(openFiles, trigger, true, false);
   }
 
-  public Future<AnalysisResult> submitFiles(VirtualFile[] files, TriggerType trigger, boolean autoTrigger, boolean background) {
+  /**
+   * Submit files for analysis.
+   * @param files Files to be analyzed. If empty, nothing is done and an empty AnalysisResult is returned.
+   * @param trigger What triggered the analysis
+   * @param autoTrigger Whether the analysis was triggered automatically. It affects the filter of files that should be analysed.
+   * @param manual Whether this is a user-initiated action. If it is, it will start running in foreground and will consume the single slot, updating
+   *               the status of the associated actions / icons.
+   */
+  public CompletableFuture<AnalysisResult> submitFiles(VirtualFile[] files, TriggerType trigger, boolean autoTrigger, boolean manual) {
     Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, autoTrigger);
 
     if (!filesByModule.isEmpty()) {
       console.debug("Trigger: " + trigger);
 
       for (Module m : filesByModule.keySet()) {
-        if (background) {
-          return sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger);
+        if (manual) {
+          return sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger);
         } else {
-          return sonarLintJobManager.submit(m, filesByModule.get(m), trigger);
+          return sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger);
         }
       }
     }
