@@ -40,8 +40,7 @@ public class ChangedFilesIssuesTest extends SonarTest {
   private ChangedFilesIssuesListener listener;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     listener = mock(ChangedFilesIssuesListener.class);
     project.getMessageBus().connect().subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, listener);
     changedFilesIssues = new ChangedFilesIssues(project);
@@ -55,8 +54,8 @@ public class ChangedFilesIssuesTest extends SonarTest {
 
     changedFilesIssues.set(issues);
     assertThat(changedFilesIssues.lastAnalysisDate())
-      .isLessThanOrEqualTo(LocalDateTime.now())
-      .isGreaterThan(LocalDateTime.now().minus(Duration.ofSeconds(3)));
+      .isBeforeOrEqualTo(LocalDateTime.now())
+      .isAfter(LocalDateTime.now().minus(Duration.ofSeconds(3)));
     assertThat(changedFilesIssues.issues()).isEqualTo(issues);
 
     verify(listener).update(issues);
@@ -64,8 +63,8 @@ public class ChangedFilesIssuesTest extends SonarTest {
     // everything should be done even if it's an empty map
     changedFilesIssues.set(Collections.emptyMap());
     assertThat(changedFilesIssues.lastAnalysisDate())
-      .isLessThanOrEqualTo(LocalDateTime.now())
-      .isGreaterThan(LocalDateTime.now().minus(Duration.ofSeconds(3)));
+      .isBeforeOrEqualTo(LocalDateTime.now())
+      .isAfter(LocalDateTime.now().minus(Duration.ofSeconds(3)));
     assertThat(changedFilesIssues.issues()).isEmpty();
 
     verify(listener).update(Collections.emptyMap());

@@ -66,8 +66,7 @@ public class IssueManagerTest extends SonarTest {
   private ArgumentCaptor<Collection<LiveIssue>> issueCollectionCaptor;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     MockitoAnnotations.initMocks(this);
     when(file1.isValid()).thenReturn(true);
     when(file2.isValid()).thenReturn(true);

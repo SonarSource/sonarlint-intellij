@@ -36,8 +36,7 @@ public class SonarCancelTest extends SonarTest {
   private AnActionEvent event;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     register(SonarLintStatus.class, new SonarLintStatus(project));
     sonarCancel = new SonarCancel();
     event = SonarLintTestUtils.createAnActionEvent(project);

@@ -31,8 +31,7 @@ import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -81,7 +80,7 @@ public class StandaloneSonarLintFacadeTest {
   @Test
   public void should_start_analysis() {
     AnalysisResults results = mock(AnalysisResults.class);
-    when(engine.analyze(any(ConnectedAnalysisConfiguration.class), any(IssueListener.class), any(LogOutput.class))).thenReturn(results);
+    when(engine.analyze(any(StandaloneAnalysisConfiguration.class), any(IssueListener.class), any(LogOutput.class))).thenReturn(results);
     assertThat(facade.startAnalysis(Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap())).isEqualTo(results);
   }
 }

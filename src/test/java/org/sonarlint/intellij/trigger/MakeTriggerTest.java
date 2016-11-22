@@ -53,8 +53,7 @@ public class MakeTriggerTest extends SonarTest {
   private MakeTrigger trigger;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     MockitoAnnotations.initMocks(this);
     SonarLintTestUtils.mockMessageBus(app);
     trigger = new MakeTrigger(project, submitter, console, compilerManager);

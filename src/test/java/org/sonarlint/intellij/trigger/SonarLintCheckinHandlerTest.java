@@ -52,8 +52,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
   private ChangedFilesIssues changedFilesIssues;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     MockitoAnnotations.initMocks(this);
     globalSettings = new SonarLintGlobalSettings();
     future = new CompletableFuture<>();

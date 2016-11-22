@@ -38,8 +38,7 @@ public class GlobalLogOutputTest extends SonarTest {
   private GlobalLogOutput output;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     manager = mock(ProjectManager.class);
     output = new GlobalLogOutput(manager);
     super.register(app, GlobalLogOutput.class, output);

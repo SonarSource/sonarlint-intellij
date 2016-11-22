@@ -32,8 +32,7 @@ import static org.mockito.Mockito.verify;
 
 public class ConnectionTestTaskTest extends SonarTest {
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     super.register(app, SonarApplication.class, new SonarApplication());
   }
 

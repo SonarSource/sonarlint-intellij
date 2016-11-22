@@ -44,8 +44,7 @@ public class SonarLintUtilsTest extends SonarTest {
   private FileType notBinary;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     testFile = mock(VirtualFile.class);
 
     notBinary = mock(FileType.class);

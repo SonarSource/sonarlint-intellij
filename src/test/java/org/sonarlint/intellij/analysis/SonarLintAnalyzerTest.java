@@ -66,8 +66,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
   private SonarLintAnalyzer analyzer;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     MockitoAnnotations.initMocks(this);
     analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app);
 

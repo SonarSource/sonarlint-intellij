@@ -53,8 +53,7 @@ public class SonarClearIssuesTest extends SonarTest {
   private SonarClearIssues clearIssues;
 
   @Before
-  public void setUp() {
-    super.setUp();
+  public void prepare() {
     MockitoAnnotations.initMocks(this);
     when(event.getProject()).thenReturn(project);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));

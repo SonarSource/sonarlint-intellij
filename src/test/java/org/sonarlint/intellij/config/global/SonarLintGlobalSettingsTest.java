@@ -28,10 +28,6 @@ import org.sonarlint.intellij.SonarTest;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SonarLintGlobalSettingsTest extends SonarTest {
-  @Before
-  public void setUp() {
-    super.setUp();
-  }
 
   @Test
   public void testRoundTrip() {
