@@ -51,19 +51,17 @@ import org.sonarlint.intellij.ui.nodes.IssueNode;
  */
 public class IssueTree extends Tree implements DataProvider {
   private final Project project;
-  private final boolean rootVisible;
 
   public IssueTree(Project project, TreeModel model, boolean rootVisible) {
     super(model);
     this.project = project;
-    this.rootVisible = rootVisible;
+    this.setRootVisible(rootVisible);
     init();
   }
 
   private void init() {
     UIUtil.setLineStyleAngled(this);
     this.setShowsRootHandles(true);
-    this.setRootVisible(rootVisible);
     this.setCellRenderer(new IssueTreeCellRenderer());
     this.expandRow(0);
 

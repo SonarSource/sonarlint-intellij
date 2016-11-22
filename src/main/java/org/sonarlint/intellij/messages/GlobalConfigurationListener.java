@@ -21,8 +21,6 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.util.messages.Topic;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
 public interface GlobalConfigurationListener {

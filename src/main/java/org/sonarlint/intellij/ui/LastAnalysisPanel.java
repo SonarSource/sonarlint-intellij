@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import java.awt.GridBagConstraints;
@@ -36,6 +37,7 @@ import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LastAnalysisPanel implements Disposable {
+  private static final Logger LOGGER = Logger.getInstance(LastAnalysisPanel.class);
   private static final String NO_ANALYSIS_LABEL = "Trigger the analysis to find issues on the files in the change set";
   private final ChangedFilesIssues changedFileIssues;
   private GridBagConstraints gc;
@@ -80,7 +82,7 @@ public class LastAnalysisPanel implements Disposable {
     try {
       icon = new JLabel(ResourceLoader.getIcon("info.png"));
     } catch (IOException e) {
-      // ignore
+      LOGGER.error("Failed to load icon", e);
     }
     lastAnalysisLabel = new JLabel("");
     gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0);

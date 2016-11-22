@@ -97,13 +97,11 @@ public class SonarLintChangedPanel extends SimpleToolWindowPanel implements Occu
 
   private void subscribeToEvents() {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, issues -> {
-      ApplicationManager.getApplication().invokeLater(() -> {
-        treeBuilder.updateModel(issues, x -> true);
-        lastAnalysisPanel.update();
-        expandTree();
-      });
-    });
+    busConnection.subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(() -> {
+      treeBuilder.updateModel(issues, x -> true);
+      lastAnalysisPanel.update();
+      expandTree();
+    }));
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
       ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
   }

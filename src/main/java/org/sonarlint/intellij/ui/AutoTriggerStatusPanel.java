@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -50,6 +51,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AutoTriggerStatusPanel {
+  private static final Logger LOGGER = Logger.getInstance(AutoTriggerStatusPanel.class);
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
   private static final String FILE_DISABLED = "FILE_DISABLED";
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
@@ -145,7 +147,8 @@ public class AutoTriggerStatusPanel {
       disabledCard.add(new JLabel(ResourceLoader.getIcon(WARN_ICO)), gc);
       notThisFileCard.add(link, gc);
     } catch (IOException e) {
-      // do nothing
+      // do nothing except logging
+      LOGGER.error("Failed to load icon", e);
     }
 
     JLabel enabledLabel = new JLabel("Automatic analysis is enabled");
