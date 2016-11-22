@@ -113,11 +113,6 @@ public class SonarLintJobManager extends AbstractProjectComponent {
     // Save files. Needs to be ran in EDT to have write access so we need to do it now to avoid a possible dead lock inside the task
     SonarLintUtils.saveFiles(task.getJob().files());
     ProgressManager.getInstance().run(task);
-    notifyEnd(task.getJob());
-  }
-
-  private void notifyEnd(SonarLintJob job) {
-    messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
   }
 
   private void notifyStart(SonarLintJob job) {

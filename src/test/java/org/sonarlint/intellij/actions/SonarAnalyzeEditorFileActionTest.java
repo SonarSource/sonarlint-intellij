@@ -68,7 +68,7 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
     when(utils.getSelectedFile(project)).thenReturn(f1);
 
     editorFileAction.actionPerformed(event);
-    verify(submitter).submitFiles(new VirtualFile[] {f1}, TriggerType.ACTION, false, false);
+    verify(submitter).submitFiles(new VirtualFile[] {f1}, TriggerType.ACTION, false, true);
   }
 
   @Test

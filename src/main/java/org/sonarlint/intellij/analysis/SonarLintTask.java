@@ -27,6 +27,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
+import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -92,6 +93,8 @@ public class SonarLintTask extends Task.Backgroundable {
         console.error(msg, e);
         LOGGER.warn(msg, e);
       }
+    } finally {
+      myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
     }
   }
 
