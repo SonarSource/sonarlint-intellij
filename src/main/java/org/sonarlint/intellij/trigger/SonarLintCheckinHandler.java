@@ -94,15 +94,15 @@ public class SonarLintCheckinHandler extends CheckinHandler {
         return ReturnResult.COMMIT;
       }
 
-      String resultStr = String.format("SonarLint analysis on %d files found %d issues", result.filesAnalysed(), result.numberIssues());
+      String msg = createMessage(result);
       if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
-        LOGGER.info(resultStr);
+        LOGGER.info(msg);
         return ReturnResult.CANCEL;
       }
 
-      return showYesNoCancel(resultStr);
+      return showYesNoCancel(msg);
     } catch (Exception e) {
-      String msg = "SonarLint - Error analysing " + affectedFiles.size() + " changed files.";
+      String msg = "SonarLint - Error analysing " + affectedFiles.size() + " changed file(s).";
       if (e.getMessage() != null) {
         msg = msg + ": " + e.getMessage();
       }
@@ -110,6 +110,16 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       Messages.showErrorDialog(project, msg, "Error Analysing Files");
       return ReturnResult.CANCEL;
     }
+  }
+
+  private static String createMessage(AnalysisResult result) {
+    long filesAnalysed = result.filesAnalysed();
+    long numIssues = result.numberIssues();
+
+    String files = filesAnalysed == 1 ? "file" : "files";
+    String issues = numIssues == 1 ? "issue" : "issues";
+
+    return String.format("SonarLint analysis on %d %s found %d %s", filesAnalysed, files, numIssues, issues);
   }
 
   private ReturnResult showYesNoCancel(String resultStr) {

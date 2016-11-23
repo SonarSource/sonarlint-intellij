@@ -30,7 +30,6 @@ import com.intellij.util.messages.MessageBus;
 
 import java.util.Collection;
 
-import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -82,7 +81,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
     CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
     synchronized (lock) {
       if (myProject.isDisposed() || !status.tryRun()) {
-        future.complete(new AnalysisResult(0, Collections.emptyMap()));
+        future.complete(AnalysisResult.empty());
         return future;
       }
     }

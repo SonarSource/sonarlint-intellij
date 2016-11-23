@@ -74,17 +74,19 @@ public class IssueProcessor extends AbstractProjectComponent {
       token.finish();
     }
 
-    console.debug("Processed issues in " + (System.currentTimeMillis() - start) + " ms");
+    String issueStr = issues.size() == 1 ? "issue" : "issues";
+    console.debug(String.format("Processed %d %s in %d ms", issues.size(), issueStr, System.currentTimeMillis() - start));
 
-    String end;
-    if (issues.size() == 1) {
-      end = " issue";
-    } else {
-      end = " issues";
-    }
+    long issuesToShow = map.entrySet().stream()
+      .flatMap(e -> e.getValue().stream())
+      .filter(x -> !x.isResolved())
+      .count();
 
-    console.info("Found " + issues.size() + end);
-    job.future().complete(new AnalysisResult(job.files().size(), map));
+    long filesAnalyzed = map.keySet().size();
+
+    String end = issuesToShow == 1 ? " unresolved issue" : " unresolved issues";
+    console.info("Found " + issuesToShow + end);
+    job.future().complete(new AnalysisResult(filesAnalyzed, map, issuesToShow));
   }
 
   private static boolean shouldUpdateServerIssues(TriggerType trigger) {
