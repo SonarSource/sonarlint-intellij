@@ -20,9 +20,12 @@
 package org.sonarlint.intellij.issue.persistence;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Scanner;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -106,7 +109,13 @@ public class IndexedObjectStoreTest {
   public void testErrorCleanInvalid() throws IOException {
     store.write("mykey", "myvalue");
 
-    getPath("mykey").getParent().toFile().setReadOnly();
+    // Try to make file readonly on supported platform to prevent deletion
+    if (!getPath("mykey").getParent().toFile().setReadOnly()) {
+      // Fallback: replace file by a non empty directory to prevent deletion
+      Files.delete(getPath("mykey"));
+      Files.createDirectories(getPath("mykey").resolve("foo"));
+    }
+
     when(index.keys()).thenReturn(Arrays.asList("mykey"));
     when(validator.apply(anyString())).thenReturn(Boolean.FALSE);
 

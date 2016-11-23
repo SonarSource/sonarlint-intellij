@@ -20,7 +20,11 @@
 package org.sonarlint.intellij.issue.persistence;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.commons.lang.SystemUtils;
+import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,9 +71,13 @@ public class StringStoreIndexTest {
 
   @Test
   public void testErrorSave() throws IOException {
-    baseDir.toFile().setReadOnly();
-
+    // Try to make file readonly on supported platform to prevent file creation
     Path test1 = baseDir.resolve("p1").resolve("file1");
+    if (!baseDir.toFile().setReadOnly()) {
+      // Fallback: create a directory at the target location to prevent file creation
+      Files.createDirectory(temp.getRoot().toPath().resolve(StringStoreIndex.INDEX_FILENAME));
+    }
+
     exception.expect(IllegalStateException.class);
     index.save("key1", test1);
   }
