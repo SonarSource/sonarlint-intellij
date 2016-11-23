@@ -61,7 +61,7 @@ public class UpdateChecker extends AbstractProjectComponent {
     scheduledTask.cancel(true);
   }
 
-  private void checkForUpdate() {
+  void checkForUpdate() {
     ConnectedSonarLintEngine engine;
     try {
       engine = projectBindingManager.getConnectedEngine();

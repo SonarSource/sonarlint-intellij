@@ -46,7 +46,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   public SonarLintGlobalConfigurable() {
     this.app = ApplicationManager.getApplication();
     this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
-    this.serverManager = ApplicationManager.getApplication().getComponent(SonarLintEngineManager.class);
+    this.serverManager = app.getComponent(SonarLintEngineManager.class);
   }
 
   @Nls @Override public String getDisplayName() {

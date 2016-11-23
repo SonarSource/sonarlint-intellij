@@ -76,6 +76,17 @@ public class SonarLintSubmitterTest {
   }
 
   @Test
+  public void should_submit_manual() {
+    VirtualFile f1 = mock(VirtualFile.class);
+    Module m1 = mock(Module.class);
+    when(utils.findModuleForFile(f1, project)).thenReturn(m1);
+    when(utils.shouldAnalyze(f1, m1)).thenReturn(true);
+
+    submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false, true);
+    verify(sonarLintJobManager).submitManual(eq(m1), eq(Collections.singleton(f1)), eq(TriggerType.BINDING_CHANGE));
+  }
+
+  @Test
   public void should_not_submit_if_fail_checks() {
     VirtualFile f1 = mock(VirtualFile.class);
     Module m1 = mock(Module.class);
@@ -91,6 +102,17 @@ public class SonarLintSubmitterTest {
   public void should_not_submit_if_auto_disable() {
     globalSettings.setAutoTrigger(false);
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
+    verifyZeroInteractions(sonarLintJobManager);
+  }
+
+  @Test
+  public void should_not_submit_if_not_analyzable() {
+    VirtualFile f1 = mock(VirtualFile.class);
+    Module m1 = mock(Module.class);
+    when(utils.findModuleForFile(f1, project)).thenReturn(m1);
+    when(utils.shouldAnalyze(f1, m1)).thenReturn(false);
+    submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false, false);
+
     verifyZeroInteractions(sonarLintJobManager);
   }
 
