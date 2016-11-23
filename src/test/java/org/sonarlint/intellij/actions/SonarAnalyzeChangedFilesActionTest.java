@@ -74,6 +74,11 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
     assertThat(action.isEnabled(project, status)).isFalse();
 
     when(status.isRunning()).thenReturn(false);
+    when(changeListManager.getAffectedFiles()).thenReturn(Collections.emptyList());
+    assertThat(action.isEnabled(project, status)).isFalse();
+
+    when(status.isRunning()).thenReturn(false);
+    when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(mock(VirtualFile.class)));
     assertThat(action.isEnabled(project, status)).isTrue();
   }
 
