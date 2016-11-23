@@ -52,7 +52,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     ChangeListManager changeListManager = ChangeListManager.getInstance(project);
 
     List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
-    CompletableFuture<AnalysisResult> future = submitter.submitFiles(affectedFiles.toArray(new VirtualFile[affectedFiles.size()]), TriggerType.ACTION, false, true);
+    CompletableFuture<AnalysisResult> future = submitter.submitFiles(affectedFiles, TriggerType.ACTION, false, true);
 
     try {
       future.thenAccept(result -> changedFilesIssues.set(result.issues()));

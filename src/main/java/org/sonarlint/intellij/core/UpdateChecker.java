@@ -53,7 +53,7 @@ public class UpdateChecker extends AbstractProjectComponent {
 
   @Override
   public void initComponent() {
-    scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::checkForUpdate, 10, 24 * 60 * 60, TimeUnit.SECONDS);
+    scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::checkForUpdate, 10, 24L * 60L * 60L, TimeUnit.SECONDS);
   }
 
   @Override

@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
@@ -87,7 +86,7 @@ public class SonarDocumentListenerTest {
 
     listener.documentChanged(event);
     assertThat(listener.getEvents()).hasSize(1);
-    verify(submitter, timeout(1000)).submitFiles(new VirtualFile[] {file}, TriggerType.EDITOR_CHANGE, true, false);
+    verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true, false);
   }
 
   @Test

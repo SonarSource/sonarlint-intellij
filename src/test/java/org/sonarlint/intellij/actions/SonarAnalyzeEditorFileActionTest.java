@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -67,7 +68,7 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
     when(utils.getSelectedFile(project)).thenReturn(f1);
 
     editorFileAction.actionPerformed(event);
-    verify(submitter).submitFiles(new VirtualFile[] {f1}, TriggerType.ACTION, false, true);
+    verify(submitter).submitFiles(Collections.singleton(f1), TriggerType.ACTION, false, true);
   }
 
   @Test

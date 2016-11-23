@@ -26,31 +26,23 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.containers.HashMap;
 import com.intellij.util.messages.MessageBusConnection;
 
 import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.Map;
-import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreePath;
 
 import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NonNls;
@@ -59,7 +51,6 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
-import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.scope.AbstractScope;
 import org.sonarlint.intellij.ui.scope.CurrentFileScope;
@@ -67,21 +58,18 @@ import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator, DataProvider {
+public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataProvider {
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.issuestoolwindow";
   private static final String SPLIT_PROPORTION = "SONARLINT_ISSUES_SPLIT_PROPORTION";
 
-  private final Project project;
   private final IssueManager issueManager;
-  private Tree tree;
+
   private ActionToolbar mainToolbar;
   private AbstractScope scope;
-  private TreeModelBuilder treeBuilder;
   private SonarLintRulePanel rulePanel;
 
   public SonarLintIssuesPanel(Project project) {
-    super(false, true);
     this.project = project;
     this.issueManager = project.getComponent(IssueManager.class);
     this.scope = new CurrentFileScope(project);
@@ -195,77 +183,5 @@ public class SonarLintIssuesPanel extends SimpleToolWindowPanel implements Occur
     return null;
   }
 
-  @CheckForNull
-  private OccurenceInfo occurrence(@Nullable IssueNode node) {
-    if (node == null) {
-      return null;
-    }
 
-    TreePath path = new TreePath(node.getPath());
-    tree.getSelectionModel().setSelectionPath(path);
-    tree.scrollPathToVisible(path);
-
-    RangeMarker range = node.issue().getRange();
-    int startOffset = (range != null) ? range.getStartOffset() : 0;
-    return new OccurenceInfo(
-      new OpenFileDescriptor(project, node.issue().psiFile().getVirtualFile(), startOffset),
-      -1,
-      -1);
-  }
-
-  @Override public boolean hasNextOccurence() {
-    // relies on the assumption that a TreeNodes will always be the last row in the table view of the tree
-    TreePath path = tree.getSelectionPath();
-    if (path == null) {
-      return false;
-    }
-    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-    if (node instanceof IssueNode) {
-      return tree.getRowCount() != tree.getRowForPath(path) + 1;
-    } else {
-      return node.getChildCount() > 0;
-    }
-  }
-
-  @Override public boolean hasPreviousOccurence() {
-    TreePath path = tree.getSelectionPath();
-    if (path == null) {
-      return false;
-    }
-    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
-    return (node instanceof IssueNode) && !isFirst(node);
-  }
-
-  private static boolean isFirst(final TreeNode node) {
-    final TreeNode parent = node.getParent();
-    return parent == null || (parent.getIndex(node) == 0 && isFirst(parent));
-  }
-
-  @CheckForNull
-  @Override
-  public OccurenceInfo goNextOccurence() {
-    TreePath path = tree.getSelectionPath();
-    if (path == null) {
-      return null;
-    }
-    return occurrence(treeBuilder.getNextIssue((AbstractNode<?>) path.getLastPathComponent()));
-  }
-
-  @CheckForNull
-  @Override
-  public OccurenceInfo goPreviousOccurence() {
-    TreePath path = tree.getSelectionPath();
-    if (path == null) {
-      return null;
-    }
-    return occurrence(treeBuilder.getPreviousIssue((AbstractNode<?>) path.getLastPathComponent()));
-  }
-
-  @Override public String getNextOccurenceActionName() {
-    return "Next Issue";
-  }
-
-  @Override public String getPreviousOccurenceActionName() {
-    return "Previous Issue";
-  }
 }

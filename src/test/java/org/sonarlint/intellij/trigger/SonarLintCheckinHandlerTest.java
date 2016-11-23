@@ -56,7 +56,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
     MockitoAnnotations.initMocks(this);
     globalSettings = new SonarLintGlobalSettings();
     future = new CompletableFuture<>();
-    when(submitter.submitFiles(new VirtualFile[] {file}, TriggerType.CHECK_IN, false, true)).thenReturn(future);
+    when(submitter.submitFiles(Collections.singleton(file), TriggerType.CHECK_IN, false, true)).thenReturn(future);
 
     super.register(project, SonarLintSubmitter.class, submitter);
     super.register(project, ChangedFilesIssues.class, changedFilesIssues);
@@ -71,7 +71,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
     verify(changedFilesIssues).set(Collections.emptyMap());
-    verify(submitter).submitFiles(new VirtualFile[] {file}, TriggerType.CHECK_IN, false, true);
+    verify(submitter).submitFiles(Collections.singleton(file), TriggerType.CHECK_IN, false, true);
   }
 
   @Test
@@ -83,6 +83,6 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
     verify(changedFilesIssues).set(anyMap());
-    verify(submitter).submitFiles(new VirtualFile[] {file}, TriggerType.CHECK_IN, false, true);
+    verify(submitter).submitFiles(Collections.singleton(file), TriggerType.CHECK_IN, false, true);
   }
 }

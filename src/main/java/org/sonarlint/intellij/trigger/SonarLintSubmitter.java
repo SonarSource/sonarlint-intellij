@@ -26,6 +26,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -56,7 +58,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
       return;
     }
     VirtualFile[] openFiles = editorManager.getOpenFiles();
-    submitFiles(openFiles, trigger, true, false);
+    submitFiles(Arrays.asList(openFiles), trigger, true, false);
   }
 
   /**
@@ -67,7 +69,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
    * @param manual Whether this is a user-initiated action. If it is, it will start running in foreground and will consume the single slot, updating
    *               the status of the associated actions / icons.
    */
-  public CompletableFuture<AnalysisResult> submitFiles(VirtualFile[] files, TriggerType trigger, boolean autoTrigger, boolean manual) {
+  public CompletableFuture<AnalysisResult> submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean autoTrigger, boolean manual) {
     Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, autoTrigger);
 
     if (!filesByModule.isEmpty()) {
@@ -87,7 +89,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     return future;
   }
 
-  private Multimap<Module, VirtualFile> filterAndgetByModule(VirtualFile[] files, boolean autoTrigger) {
+  private Multimap<Module, VirtualFile> filterAndgetByModule(Collection<VirtualFile> files, boolean autoTrigger) {
     Multimap<Module, VirtualFile> filesByModule = HashMultimap.create();
 
     for (VirtualFile file : files) {

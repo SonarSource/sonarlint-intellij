@@ -78,7 +78,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   @Override
   public ReturnResult beforeCheckin(@Nullable CommitExecutor executor, PairConsumer<Object, Object> additionalDataConsumer) {
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    CompletableFuture<AnalysisResult> result = submitter.submitFiles(affectedFiles.toArray(new VirtualFile[affectedFiles.size()]), TriggerType.CHECK_IN, false, true);
+    CompletableFuture<AnalysisResult> result = submitter.submitFiles(affectedFiles, TriggerType.CHECK_IN, false, true);
     return processResult(result);
   }
 

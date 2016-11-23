@@ -26,6 +26,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
+import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
@@ -46,7 +47,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
    * So on startup, opened files will be submitted one by one.
    */
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    submitter.submitFiles(new VirtualFile[] {file}, TriggerType.EDITOR_OPEN, true, false);
+    submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_OPEN, true, false);
   }
 
   @Override

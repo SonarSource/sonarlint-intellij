@@ -23,6 +23,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -51,7 +52,7 @@ public class FileEditorTriggerTest {
   public void should_trigger() {
     VirtualFile f1 = mock(VirtualFile.class);
     editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
-    verify(submitter).submitFiles(new VirtualFile[] {f1}, TriggerType.EDITOR_OPEN, true, false);
+    verify(submitter).submitFiles(Collections.singleton(f1), TriggerType.EDITOR_OPEN, true, false);
   }
 
   @Test

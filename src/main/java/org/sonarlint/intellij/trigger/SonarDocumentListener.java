@@ -142,7 +142,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
 
     private void triggerFile(VirtualFile file) {
-      submitter.submitFiles(new VirtualFile[] {file}, TriggerType.EDITOR_CHANGE, true, false);
+      submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true, false);
     }
 
     private void checkTimers() {

@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collections;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -56,7 +57,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    submitter.submitFiles(new VirtualFile[] {selectedFile}, TriggerType.ACTION, false, !executeBackground(e));
+    submitter.submitFiles(Collections.singleton(selectedFile), TriggerType.ACTION, false, !executeBackground(e));
   }
 
   /**
