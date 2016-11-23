@@ -83,9 +83,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
       }
     }
 
-    CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
-    future.complete(AnalysisResult.empty());
-    return future;
+    return CompletableFuture.completedFuture(AnalysisResult.empty());
   }
 
   private Multimap<Module, VirtualFile> filterAndgetByModule(Collection<VirtualFile> files, boolean autoTrigger) {

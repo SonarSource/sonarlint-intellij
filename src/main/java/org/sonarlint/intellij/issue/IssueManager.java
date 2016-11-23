@@ -99,47 +99,54 @@ public class IssueManager extends AbstractProjectComponent {
     return store.contains(storeKey);
   }
 
-  public void store(Map<VirtualFile, Collection<LiveIssue>> map) {
-    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
-      store(e.getKey(), e.getValue());
-    }
-    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
+  public Map<VirtualFile, Collection<LiveIssue>> store(Map<VirtualFile, Collection<LiveIssue>> map) {
+    Map<VirtualFile, Collection<LiveIssue>> tracked = map.entrySet().stream()
+      .collect(Collectors.toMap(Map.Entry::getKey, e -> store(e.getKey(), e.getValue())));
+
+    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(tracked);
+    return tracked;
   }
 
-  void store(VirtualFile file, final Collection<LiveIssue> rawIssues) {
+  Collection<LiveIssue> store(VirtualFile file, final Collection<LiveIssue> rawIssues) {
     boolean firstAnalysis = !wasAnalyzed(file);
 
     // this will also delete all existing issues in the file
     if (firstAnalysis) {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
       cache.save(file, rawIssues);
+      return rawIssues;
     } else {
-      matchWithPreviousIssues(file, rawIssues);
+      return matchWithPreviousIssues(file, rawIssues);
     }
   }
 
-  private void matchWithPreviousIssues(VirtualFile file, Collection<LiveIssue> rawIssues) {
+  private Collection<LiveIssue> matchWithPreviousIssues(VirtualFile file, Collection<LiveIssue> rawIssues) {
     matchingInProgress.lock();
-    Input<Trackable> baseInput = () -> getPreviousIssues(file);
-    Input<LiveIssue> rawInput = () -> rawIssues;
-    updateTrackedIssues(file, baseInput, rawInput);
-    matchingInProgress.unlock();
+    try {
+      Input<Trackable> baseInput = () -> getPreviousIssues(file);
+      Input<LiveIssue> rawInput = () -> rawIssues;
+      return updateTrackedIssues(file, baseInput, rawInput);
+    } finally {
+      matchingInProgress.unlock();
+    }
   }
 
-  public void matchWithServerIssues(VirtualFile file, final Collection<Trackable> serverIssues) {
+  public Collection<LiveIssue> matchWithServerIssues(VirtualFile file, final Collection<Trackable> serverIssues) {
     matchingInProgress.lock();
-    Collection<LiveIssue> previousIssues = getForFile(file);
-    Input<Trackable> baseInput = () -> serverIssues;
-    Input<LiveIssue> rawInput = () -> previousIssues;
+    try {
+      Collection<LiveIssue> previousIssues = getForFile(file);
+      Input<Trackable> baseInput = () -> serverIssues;
+      Input<LiveIssue> rawInput = () -> previousIssues;
 
-    updateTrackedIssues(file, baseInput, rawInput);
-    matchingInProgress.unlock();
-
-    Map<VirtualFile, Collection<LiveIssue>> map = Collections.singletonMap(file, cache.getLive(file));
-    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
+      Collection<LiveIssue> trackedIssues = updateTrackedIssues(file, baseInput, rawInput);
+      messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(Collections.singletonMap(file, trackedIssues));
+      return trackedIssues;
+    } finally {
+      matchingInProgress.unlock();
+    }
   }
 
-  private <T extends Trackable> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LiveIssue> rawInput) {
+  private <T extends Trackable> Collection<LiveIssue> updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LiveIssue> rawInput) {
     Collection<LiveIssue> trackedIssues = new ArrayList<>();
     Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(rawInput, baseInput);
     for (Map.Entry<LiveIssue, ? extends Trackable> entry : tracking.getMatchedRaws().entrySet()) {
@@ -156,6 +163,7 @@ public class IssueManager extends AbstractProjectComponent {
       trackedIssues.add(newIssue);
     }
     cache.save(file, trackedIssues);
+    return trackedIssues;
   }
 
   private static void copyFromPrevious(LiveIssue rawMatched, Trackable previousMatched) {

@@ -81,8 +81,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
     CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
     synchronized (lock) {
       if (myProject.isDisposed() || !status.tryRun()) {
-        future.complete(AnalysisResult.empty());
-        return future;
+        return CompletableFuture.completedFuture(AnalysisResult.empty());
       }
     }
     SonarLintJob newJob = new SonarLintJob(m, files, trigger, future);

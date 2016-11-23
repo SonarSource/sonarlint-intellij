@@ -55,28 +55,33 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.serverIssueUpdater = serverIssueUpdater;
   }
 
-  public void process(final SonarLintJob job, final Collection<Issue> issues, Collection<ClientInputFile> failedAnalysisFiles) {
+  public void process(final SonarLintJob job, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
-      map = transformIssues(issues, job.files(), failedAnalysisFiles);
+      map = transformIssues(rawIssues, job.files(), failedAnalysisFiles);
 
-      manager.store(map);
+      // this might be updated later after tracking with server issues
+      map = manager.store(map);
+
+      String issueStr = rawIssues.size() == 1 ? "issue" : "issues";
+      console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
 
       if (shouldUpdateServerIssues(job.trigger())) {
         console.debug("Fetching server issues");
         serverIssueUpdater.fetchAndMatchServerIssues(job.files());
+      } else {
+        logAndCompleteFuture(map, job);
       }
 
     } finally {
       // closeable only introduced in 2016.2
       token.finish();
     }
+  }
 
-    String issueStr = issues.size() == 1 ? "issue" : "issues";
-    console.debug(String.format("Processed %d %s in %d ms", issues.size(), issueStr, System.currentTimeMillis() - start));
-
+  private void logAndCompleteFuture(Map<VirtualFile, Collection<LiveIssue>> map, SonarLintJob job) {
     long issuesToShow = map.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
       .filter(x -> !x.isResolved())
@@ -86,6 +91,7 @@ public class IssueProcessor extends AbstractProjectComponent {
 
     String end = issuesToShow == 1 ? " unresolved issue" : " unresolved issues";
     console.info("Found " + issuesToShow + end);
+
     job.future().complete(new AnalysisResult(filesAnalyzed, map, issuesToShow));
   }
 

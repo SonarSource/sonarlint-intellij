@@ -23,12 +23,21 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileUrlChangeAdapter;
+import com.sun.xml.internal.ws.util.CompletedFuture;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -38,6 +47,7 @@ import java.util.stream.StreamSupport;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.ServerIssueTrackable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -79,19 +89,36 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     SonarQubeServer server = projectBindingManager.getSonarQubeServer();
     ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
     String moduleKey = projectSettings.getProjectKey();
+    Map<VirtualFile, Future<Collection<LiveIssue>>> futures = new HashMap<>();
 
     for (VirtualFile virtualFile : virtualFiles) {
       String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
-      fetchAndMatchServerIssues(virtualFile, server, engine, moduleKey, relativePath);
+      futures.put(virtualFile, fetchAndMatchServerIssues(virtualFile, server, engine, moduleKey, relativePath));
     }
+
+    new Thread() {
+      @Override
+      public void run() {
+        Map<VirtualFile, Collection<LiveIssue>> issues = new HashMap<>();
+        for(Map.Entry<VirtualFile, Future<Collection<LiveIssue>>> e : futures.entrySet()) {
+          try {
+            e.getValue().get();
+          } catch (Exception ex) {
+            ex.printStackTrace();
+          }
+        }
+      }
+    }.start();
   }
 
-  private void fetchAndMatchServerIssues(VirtualFile virtualFile, SonarQubeServer server, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
-    Runnable task = new IssueUpdateRunnable(server, virtualFile, engine, moduleKey, relativePath);
+  private Future<Collection<LiveIssue>> fetchAndMatchServerIssues(VirtualFile virtualFile, SonarQubeServer server, ConnectedSonarLintEngine engine,
+    String moduleKey, String relativePath) {
+    Callable<Collection<LiveIssue>> task = new IssueUpdateRunnable(server, virtualFile, engine, moduleKey, relativePath);
     try {
-      this.executorService.submit(task);
+      return this.executorService.submit(task);
     } catch (RejectedExecutionException e) {
       LOGGER.debug("fetch and match server issues rejected for moduleKey=" + moduleKey + ", filepath=" + relativePath, e);
+      return CompletableFuture.completedFuture(issueManager.getForFile(virtualFile));
     }
   }
 
@@ -113,7 +140,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     }
   }
 
-  private class IssueUpdateRunnable implements Runnable {
+  private class IssueUpdateRunnable implements Callable<Collection<LiveIssue>> {
     private final SonarQubeServer server;
     private final VirtualFile virtualFile;
     private final ConnectedSonarLintEngine engine;
@@ -128,18 +155,19 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       this.relativePath = relativePath;
     }
 
-    @Override public void run() {
+    @Override public Collection<LiveIssue> call() {
       try {
         Iterator<ServerIssue> serverIssues = fetchServerIssues(server, engine, moduleKey, relativePath);
         Collection<Trackable> serverIssuesTrackable = toStream(serverIssues).map(ServerIssueTrackable::new).collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
-          issueManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);
+          return issueManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);
         }
       } catch (Throwable t) {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible
         console.error("error while fetching and matching server issues", t);
       }
+      return issueManager.getForFile(virtualFile);
     }
 
     private <T> Stream<T> toStream(Iterator<T> iterator) {
