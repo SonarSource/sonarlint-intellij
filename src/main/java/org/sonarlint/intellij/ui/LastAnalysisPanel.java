@@ -23,6 +23,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -38,8 +39,10 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LastAnalysisPanel implements Disposable {
   private static final Logger LOGGER = Logger.getInstance(LastAnalysisPanel.class);
-  private static final String NO_ANALYSIS_LABEL = "Trigger the analysis to find issues on the files in the change set";
+  private static final String NO_ANALYSIS_LABEL = "Trigger the analysis to find issues on the files in the VCS change set";
+  private static final String NO_CHANGED_FILES_LABEL = "VCS contains no changed files";
   private final ChangedFilesIssues changedFileIssues;
+  private final Project project;
   private GridBagConstraints gc;
   private Timer lastAnalysisTimeUpdater;
   private JLabel lastAnalysisLabel;
@@ -48,8 +51,9 @@ public class LastAnalysisPanel implements Disposable {
 
   public LastAnalysisPanel(ChangedFilesIssues changedFileIssues, Project project) {
     this.changedFileIssues = changedFileIssues;
+    this.project = project;
     createComponents();
-    setLastAnalysisTime();
+    setLabel();
     setTimer();
     Disposer.register(project, this);
   }
@@ -59,14 +63,21 @@ public class LastAnalysisPanel implements Disposable {
   }
 
   public void update() {
-    setLastAnalysisTime();
+    setLabel();
   }
 
-  private void setLastAnalysisTime() {
+  private void setLabel() {
     LocalDateTime lastAnalysis = changedFileIssues.lastAnalysisDate();
     panel.removeAll();
     if (lastAnalysis == null) {
-      lastAnalysisLabel.setText(NO_ANALYSIS_LABEL);
+      ChangeListManager changeListManager = ChangeListManager.getInstance(project);
+      boolean noChangedFiles = changeListManager.getAffectedFiles().isEmpty();
+
+      if (noChangedFiles) {
+        lastAnalysisLabel.setText(NO_CHANGED_FILES_LABEL);
+      } else {
+        lastAnalysisLabel.setText(NO_ANALYSIS_LABEL);
+      }
       panel.add(icon);
       panel.add(lastAnalysisLabel, gc);
     } else {
@@ -100,6 +111,6 @@ public class LastAnalysisPanel implements Disposable {
   }
 
   private void setTimer() {
-    lastAnalysisTimeUpdater = new Timer(5000, e -> setLastAnalysisTime());
+    lastAnalysisTimeUpdater = new Timer(5000, e -> setLabel());
   }
 }
