@@ -37,7 +37,11 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
   private static final Logger LOGGER = Logger.getInstance(SonarAnalyzeChangedFilesAction.class);
 
   @Override protected boolean isEnabled(Project project, SonarLintStatus status) {
-    return !status.isRunning();
+    if (status.isRunning()) {
+      return false;
+    }
+    ChangeListManager changeListManager = ChangeListManager.getInstance(project);
+    return !changeListManager.getAffectedFiles().isEmpty();
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
