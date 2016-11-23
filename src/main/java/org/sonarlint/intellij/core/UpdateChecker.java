@@ -62,23 +62,23 @@ public class UpdateChecker extends AbstractProjectComponent {
   }
 
   private void checkForUpdate() {
+    ConnectedSonarLintEngine engine;
     try {
-      if (projectSettings.isBindingEnabled()) {
-        LOG.debug("Checking for updates...");
-        ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
-        GlobalStorageStatus globalStorageStatus = engine.getGlobalStorageStatus();
-        ModuleStorageStatus moduleStorageStatus = engine.getModuleStorageStatus(projectSettings.getProjectKey());
-        if (globalStorageStatus == null || globalStorageStatus.isStale() || moduleStorageStatus == null || moduleStorageStatus.isStale()) {
-          LOG.debug("Storage is stale. Skip updates checking.");
-          return;
-        }
-        List<String> changelog = new ArrayList<>();
-        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(projectBindingManager.getSonarQubeServer());
-        boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration);
-        checkForProjectUpdates(changelog, engine, serverConfiguration);
-        if (!changelog.isEmpty()) {
-          notifications.notifyServerHasUpdates(projectSettings.getServerId(), changelog, engine, projectBindingManager.getSonarQubeServer(), !hasGlobalUpdates);
-        }
+      engine = projectBindingManager.getConnectedEngine();
+    } catch (Exception e) {
+      // happens if project is not bound, binding is invalid, storages are not updated, ...
+      LOG.debug("Couldn't get a connected engine to check for update: " + e.getMessage());
+      return;
+    }
+
+    try {
+      LOG.debug("Checking for updates...");
+      List<String> changelog = new ArrayList<>();
+      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(projectBindingManager.getSonarQubeServer());
+      boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration);
+      checkForProjectUpdates(changelog, engine, serverConfiguration);
+      if (!changelog.isEmpty()) {
+        notifications.notifyServerHasUpdates(projectSettings.getServerId(), changelog, engine, projectBindingManager.getSonarQubeServer(), !hasGlobalUpdates);
       }
     } catch (Exception e) {
       LOG.warn("There was an error while checking for updates", e);
