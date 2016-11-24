@@ -29,9 +29,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,7 +42,7 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintCheckinHandlerTest extends SonarTest {
   private SonarLintCheckinHandler handler;
-  private CompletableFuture<AnalysisResult> future;
+  private CompletableFuture<Void> future;
   private SonarLintGlobalSettings globalSettings;
   @Mock
   private VirtualFile file;
@@ -50,39 +50,48 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
   private SonarLintSubmitter submitter;
   @Mock
   private ChangedFilesIssues changedFilesIssues;
+  @Mock
+  private IssueManager issueManager;
 
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
     globalSettings = new SonarLintGlobalSettings();
     future = new CompletableFuture<>();
-    when(submitter.submitFiles(Collections.singleton(file), TriggerType.CHECK_IN, false, true)).thenReturn(future);
 
     super.register(project, SonarLintSubmitter.class, submitter);
     super.register(project, ChangedFilesIssues.class, changedFilesIssues);
+    super.register(project, IssueManager.class, issueManager);
   }
 
   @Test
-  public void testNoIssues() {
-    future.complete(new AnalysisResult(0, Collections.emptyMap()));
+  public void testNoUnresolvedIssues() {
+    future.complete(null);
+    LiveIssue issue = mock(LiveIssue.class);
+    when(issue.isResolved()).thenReturn(true);
+
+    when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
     handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, Collections.singleton(file), project);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(changedFilesIssues).set(Collections.emptyMap());
-    verify(submitter).submitFiles(Collections.singleton(file), TriggerType.CHECK_IN, false, true);
+    verify(changedFilesIssues).set(Collections.singletonMap(file, Collections.singleton(issue)));
+    verify(submitter).submitFilesModal(Collections.singleton(file), TriggerType.CHECK_IN);
   }
 
   @Test
   public void testIssues() {
-    future.complete(new AnalysisResult(2, Collections.singletonMap(file, Collections.singletonList(mock(LiveIssue.class)))));
+    future.complete(null);
+    LiveIssue issue = mock(LiveIssue.class);
+
+    when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
     handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, Collections.singleton(file), project);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
     verify(changedFilesIssues).set(anyMap());
-    verify(submitter).submitFiles(Collections.singleton(file), TriggerType.CHECK_IN, false, true);
+    verify(submitter).submitFilesModal(Collections.singleton(file), TriggerType.CHECK_IN);
   }
 }

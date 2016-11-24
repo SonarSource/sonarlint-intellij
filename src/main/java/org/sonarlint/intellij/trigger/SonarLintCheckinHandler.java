@@ -38,15 +38,17 @@ import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.util.Collection;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -78,29 +80,10 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   @Override
   public ReturnResult beforeCheckin(@Nullable CommitExecutor executor, PairConsumer<Object, Object> additionalDataConsumer) {
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    CompletableFuture<AnalysisResult> result = submitter.submitFiles(affectedFiles, TriggerType.CHECK_IN, false, true);
-    return processResult(result);
-  }
-
-  private ReturnResult processResult(Future<AnalysisResult> futureResult) {
+    // this will block EDT (modal)
     try {
-      // this will block EDT! The analysis task can't use EDT or it will dead lock
-      AnalysisResult result = futureResult.get();
-
-      ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
-      changedFilesIssues.set(result.issues());
-
-      if (result.numberIssues() == 0) {
-        return ReturnResult.COMMIT;
-      }
-
-      String msg = createMessage(result);
-      if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
-        LOGGER.info(msg);
-        return ReturnResult.CANCEL;
-      }
-
-      return showYesNoCancel(msg);
+      submitter.submitFilesModal(affectedFiles, TriggerType.CHECK_IN);
+      return processResult();
     } catch (Exception e) {
       String msg = "SonarLint - Error analysing " + affectedFiles.size() + " changed file(s).";
       if (e.getMessage() != null) {
@@ -112,10 +95,35 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
   }
 
-  private static String createMessage(AnalysisResult result) {
-    long filesAnalysed = result.filesAnalysed();
-    long numIssues = result.numberIssues();
+  private ReturnResult processResult() {
+    ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
+    IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
 
+    Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
+      .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
+
+    long numIssues = map.entrySet().stream()
+      .flatMap(e -> e.getValue().stream())
+      .filter(i -> !i.isResolved())
+      .count();
+    changedFilesIssues.set(map);
+
+    if (numIssues == 0) {
+      return ReturnResult.COMMIT;
+    }
+
+    long numFiles = map.keySet().size();
+
+    String msg = createMessage(numFiles, numIssues);
+    if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
+      LOGGER.info(msg);
+      return ReturnResult.CANCEL;
+    }
+
+    return showYesNoCancel(msg);
+  }
+
+  private static String createMessage(long filesAnalysed, long numIssues) {
     String files = filesAnalysed == 1 ? "file" : "files";
     String issues = numIssues == 1 ? "issue" : "issues";
 

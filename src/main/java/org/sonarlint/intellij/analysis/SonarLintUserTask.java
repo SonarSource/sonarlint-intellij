@@ -23,11 +23,14 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.IssueProcessor;
 
+/**
+ * A modal task (blocking) initiated explicitly by the user.
+ */
 class SonarLintUserTask extends SonarLintTask {
   private final SonarLintStatus status;
 
-  SonarLintUserTask(IssueProcessor processor, SonarLintJob job, SonarLintStatus status) {
-    super(processor, job, false);
+  SonarLintUserTask(IssueProcessor processor, SonarLintJob job, SonarLintStatus status, boolean modal) {
+    super(processor, job, modal, false);
     this.status = status;
   }
 
@@ -35,11 +38,8 @@ class SonarLintUserTask extends SonarLintTask {
     try {
       super.run(indicator);
     } finally {
-      stopRun();
+      status.stopRun();
     }
-  }
 
-  private void stopRun() {
-    status.stopRun();
   }
 }

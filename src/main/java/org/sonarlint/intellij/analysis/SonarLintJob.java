@@ -34,10 +34,8 @@ public class SonarLintJob {
   private final Set<VirtualFile> files;
   private final TriggerType trigger;
   private final long creationTime;
-  private final CompletableFuture<AnalysisResult> future;
 
-  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger, CompletableFuture<AnalysisResult> future) {
-    this.future = future;
+  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger) {
     Preconditions.checkNotNull(m);
     Preconditions.checkNotNull(trigger);
     Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
@@ -48,10 +46,6 @@ public class SonarLintJob {
     this.files = Collections.unmodifiableSet(fileSet);
     this.trigger = trigger;
     this.creationTime = System.currentTimeMillis();
-  }
-
-  public CompletableFuture<AnalysisResult> future() {
-    return future;
   }
 
   public long creationTime() {

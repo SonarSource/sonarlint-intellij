@@ -52,7 +52,7 @@ public class FileEditorTriggerTest {
   public void should_trigger() {
     VirtualFile f1 = mock(VirtualFile.class);
     editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
-    verify(submitter).submitFiles(Collections.singleton(f1), TriggerType.EDITOR_OPEN, true, false);
+    verify(submitter).submitFiles(Collections.singleton(f1), TriggerType.EDITOR_OPEN, true);
   }
 
   @Test

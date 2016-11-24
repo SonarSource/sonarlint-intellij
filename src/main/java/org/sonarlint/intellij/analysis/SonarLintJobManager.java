@@ -30,7 +30,6 @@ import com.intellij.util.messages.MessageBus;
 
 import java.util.Collection;
 
-import java.util.concurrent.CompletableFuture;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -40,8 +39,6 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class SonarLintJobManager extends AbstractProjectComponent {
   private final IssueProcessor processor;
   private final MessageBus messageBus;
-  // used to synchronize the handling of queue and running status together
-  private final Object lock;
   private final SonarLintStatus status;
   private final SonarLintConsole console;
 
@@ -49,7 +46,6 @@ public class SonarLintJobManager extends AbstractProjectComponent {
     super(project);
     this.processor = processor;
     this.messageBus = project.getMessageBus();
-    this.lock = new Object();
     this.status = SonarLintStatus.get(this.myProject);
     this.console = SonarLintConsole.get(myProject);
   }
@@ -59,15 +55,13 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * It might queue the submission of the job in the thread pool.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
-   * @see #submitManual(Module, Collection, TriggerType)
+   * @see #submitManual(Module, Collection, TriggerType, boolean)
    */
-  public CompletableFuture<AnalysisResult> submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+  public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
-    CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
-    SonarLintJob newJob = new SonarLintJob(m, files, trigger, future);
+    SonarLintJob newJob = new SonarLintJob(m, files, trigger);
     SonarLintTask task = new SonarLintTask(processor, newJob, true);
     runInEDT(task);
-    return future;
   }
 
   /**
@@ -76,18 +70,14 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
    * @see #submitBackground(Module, Collection, TriggerType)
    */
-  public CompletableFuture<AnalysisResult> submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+  public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
-    CompletableFuture<AnalysisResult> future = new CompletableFuture<>();
-    synchronized (lock) {
-      if (myProject.isDisposed() || !status.tryRun()) {
-        return CompletableFuture.completedFuture(AnalysisResult.empty());
-      }
+    if (myProject.isDisposed() || !status.tryRun()) {
+      return;
     }
-    SonarLintJob newJob = new SonarLintJob(m, files, trigger, future);
-    SonarLintUserTask task = new SonarLintUserTask(processor, newJob, status);
+    SonarLintJob newJob = new SonarLintJob(m, files, trigger);
+    SonarLintUserTask task = new SonarLintUserTask(processor, newJob, status, modal);
     runInEDT(task);
-    return future;
   }
 
   private void runInEDT(SonarLintTask task) {
@@ -103,7 +93,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
   /**
    * Runs task through the ProgressManager. Needs to be called from EDT.
    * Depending on the type of task (Modal or Backgroundable), it will prepare related UI and execute the task in the current thread
-   * or on the Application thread pool.
+   * or in the Application thread pool.
    */
   private void runTask(SonarLintTask task) {
     ApplicationManager.getApplication().assertIsDispatchThread();

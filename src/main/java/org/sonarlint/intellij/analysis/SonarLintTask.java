@@ -23,6 +23,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.List;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
@@ -36,19 +37,34 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTask.class);
   private final IssueProcessor processor;
-  private final SonarLintJob job;
+  protected final SonarLintJob job;
+  protected final boolean modal;
   private final boolean startInBackground;
 
   public SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background) {
+    this(processor, job, false, background);
+  }
+    /**
+     * An IntelliJ task, that will run with its Progress Manager.
+     * @param modal If true and background is false, it will be a blocking task, without the possibility to send it to background.
+     * @param background Whether it should start in the foreground or background.
+     */
+  protected SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean modal, boolean background) {
     super(job.module().getProject(), "SonarLint Analysis", true);
     this.processor = processor;
     this.job = job;
+    this.modal = modal;
     this.startInBackground = background;
   }
 
   @Override
   public boolean shouldStartInBackground() {
     return startInBackground;
+  }
+
+  @Override
+  public boolean isConditionalModal() {
+    return modal;
   }
 
   private static String getFileName(VirtualFile file) {
@@ -61,7 +77,6 @@ public class SonarLintTask extends Task.Backgroundable {
 
   @Override
   public void run(ProgressIndicator indicator) {
-    SonarLintConsole console = SonarLintConsole.get(myProject);
     AccumulatorIssueListener listener = new AccumulatorIssueListener();
 
     try {
@@ -84,17 +99,26 @@ public class SonarLintTask extends Task.Backgroundable {
       List<Issue> issues = listener.getIssues();
       indicator.setText("Creating SonarLint issues: " + issues.size());
 
-      processor.process(job, issues, results.failedAnalysisFiles());
+      processor.process(job, indicator, issues, results.failedAnalysisFiles());
     } catch (RuntimeException e) {
-      job.future().completeExceptionally(e);
-      // if cancelled, ignore any errors since they were most likely caused by the interrupt
-      if (!indicator.isCanceled()) {
-        String msg = "Error running SonarLint analysis";
-        console.error(msg, e);
-        LOGGER.warn(msg, e);
-      }
+      handleError(e, indicator);
     } finally {
       myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
+    }
+  }
+
+  private void handleError(RuntimeException e, ProgressIndicator indicator) {
+    // if cancelled, ignore any errors since they were most likely caused by the interrupt
+    if (!indicator.isCanceled()) {
+      SonarLintConsole console = SonarLintConsole.get(myProject);
+      String msg = "Error running SonarLint analysis";
+      console.error(msg, e);
+      LOGGER.warn(msg, e);
+
+      if (indicator.isShowing()) {
+        msg = "SonarLint analysis failed: " + e.getMessage();
+        Messages.showErrorDialog(msg, "Error Running SonarLint Analysis");
+      }
     }
   }
 

@@ -82,8 +82,8 @@ public class SonarLintSubmitterTest {
     when(utils.findModuleForFile(f1, project)).thenReturn(m1);
     when(utils.shouldAnalyze(f1, m1)).thenReturn(true);
 
-    submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false, true);
-    verify(sonarLintJobManager).submitManual(eq(m1), eq(Collections.singleton(f1)), eq(TriggerType.BINDING_CHANGE));
+    submitter.submitFilesModal(Collections.singleton(f1), TriggerType.BINDING_CHANGE);
+    verify(sonarLintJobManager).submitManual(eq(m1), eq(Collections.singleton(f1)), eq(TriggerType.BINDING_CHANGE), eq(true));
   }
 
   @Test
@@ -111,7 +111,7 @@ public class SonarLintSubmitterTest {
     Module m1 = mock(Module.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(m1);
     when(utils.shouldAnalyze(f1, m1)).thenReturn(false);
-    submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false, false);
+    submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false);
 
     verifyZeroInteractions(sonarLintJobManager);
   }

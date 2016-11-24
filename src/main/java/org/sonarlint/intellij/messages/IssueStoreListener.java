@@ -26,7 +26,7 @@ import java.util.Map;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 /**
- * Called when issue store is updated.
+ * Called when issue store is updated. Should be used by UI that displays issues.
  */
 public interface IssueStoreListener {
   Topic<IssueStoreListener> SONARLINT_ISSUE_STORE_TOPIC = Topic.create("Issue store changed", IssueStoreListener.class);

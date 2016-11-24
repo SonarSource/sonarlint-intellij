@@ -86,7 +86,7 @@ public class SonarDocumentListenerTest {
 
     listener.documentChanged(event);
     assertThat(listener.getEvents()).hasSize(1);
-    verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true, false);
+    verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
   }
 
   @Test

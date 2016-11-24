@@ -89,7 +89,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     settings.setBindingEnabled(false);
 
-    updater.fetchAndMatchServerIssues(Collections.singletonList(file));
+    updater.fetchAndMatchServerIssues(Collections.singletonList(file), false);
     verifyZeroInteractions(bindingManager);
     verifyZeroInteractions(issueManager);
   }
@@ -116,7 +116,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     settings.setBindingEnabled(true);
 
     updater.initComponent();
-    updater.fetchAndMatchServerIssues(Collections.singletonList(file));
+    updater.fetchAndMatchServerIssues(Collections.singletonList(file), false);
 
     verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 

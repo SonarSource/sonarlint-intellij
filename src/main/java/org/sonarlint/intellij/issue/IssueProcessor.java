@@ -23,10 +23,10 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -55,48 +55,41 @@ public class IssueProcessor extends AbstractProjectComponent {
     this.serverIssueUpdater = serverIssueUpdater;
   }
 
-  public void process(final SonarLintJob job, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<LiveIssue>> map;
+  public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
+    Map<VirtualFile, Collection<LiveIssue>> transformedIssues;
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
-      map = transformIssues(rawIssues, job.files(), failedAnalysisFiles);
+      transformedIssues = transformIssues(rawIssues, job.files(), failedAnalysisFiles);
 
       // this might be updated later after tracking with server issues
-      map = manager.store(map);
-
-      String issueStr = rawIssues.size() == 1 ? "issue" : "issues";
-      console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
-
-      if (shouldUpdateServerIssues(job.trigger())) {
-        console.debug("Fetching server issues");
-        serverIssueUpdater.fetchAndMatchServerIssues(job.files());
-      } else {
-        logAndCompleteFuture(map, job);
-      }
+      manager.store(transformedIssues);
 
     } finally {
       // closeable only introduced in 2016.2
       token.finish();
     }
-  }
 
-  private void logAndCompleteFuture(Map<VirtualFile, Collection<LiveIssue>> map, SonarLintJob job) {
-    long issuesToShow = map.entrySet().stream()
+    String issueStr = rawIssues.size() == 1 ? "issue" : "issues";
+    console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
+
+    long issuesToShow = transformedIssues.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
-      .filter(x -> !x.isResolved())
       .count();
 
-    long filesAnalyzed = map.keySet().size();
-
-    String end = issuesToShow == 1 ? " unresolved issue" : " unresolved issues";
+    String end = issuesToShow == 1 ? " issue" : " issues";
     console.info("Found " + issuesToShow + end);
 
-    job.future().complete(new AnalysisResult(filesAnalyzed, map, issuesToShow));
+    if (shouldUpdateServerIssues(job.trigger())) {
+      String msg = "Fetching server issues";
+      console.debug(msg);
+      indicator.setText(msg);
+      serverIssueUpdater.fetchAndMatchServerIssues(job.files(), indicator.isModal());
+    }
   }
 
   private static boolean shouldUpdateServerIssues(TriggerType trigger) {
-    return trigger == TriggerType.EDITOR_OPEN || trigger == TriggerType.ACTION || trigger == TriggerType.BINDING_CHANGE;
+    return trigger == TriggerType.EDITOR_OPEN || trigger == TriggerType.ACTION || trigger == TriggerType.BINDING_CHANGE || trigger == TriggerType.CHECK_IN;
   }
 
   private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {

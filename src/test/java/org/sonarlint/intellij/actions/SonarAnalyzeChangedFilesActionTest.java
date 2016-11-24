@@ -24,21 +24,18 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -51,6 +48,8 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
   private SonarLintStatus status;
   @Mock
   private ChangedFilesIssues issues;
+  @Mock
+  private IssueManager issueManager;
 
   @Mock
   private PeriodicalTasksCloser tasksCloser;
@@ -66,6 +65,7 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
     super.register(app, PeriodicalTasksCloser.class, tasksCloser);
     super.register(SonarLintSubmitter.class, submitter);
     super.register(ChangedFilesIssues.class, issues);
+    super.register(IssueManager.class, issueManager);
   }
 
   @Test
@@ -87,15 +87,12 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
     AnActionEvent event = mock(AnActionEvent.class);
 
     VirtualFile file = mock(VirtualFile.class);
-    CompletableFuture<AnalysisResult> result = mock(CompletableFuture.class);
 
     when(event.getProject()).thenReturn(project);
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(file));
-    when(submitter.submitFiles(Collections.singletonList(file), TriggerType.ACTION, false, true)).thenReturn(result);
 
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(Collections.singletonList(file), TriggerType.ACTION, false, true);
-    verify(result).thenAccept(any(Consumer.class));
+    verify(submitter).submitFiles(Collections.singletonList(file), TriggerType.ACTION, false);
   }
 }

@@ -23,7 +23,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
@@ -66,7 +65,7 @@ public class SonarLintTaskTest extends SonarTest {
     when(progress.isCanceled()).thenReturn(false);
     processor = mock(IssueProcessor.class);
     SonarLintConsole console = mock(SonarLintConsole.class);
-    task = new SonarLintTask(processor, job, true);
+    task = new SonarLintTask(processor, job, false, true);
     sonarLintAnalyzer = mock(SonarLintAnalyzer.class);
     when(sonarLintAnalyzer.analyzeModule(eq(module), eq(job.files()), any(IssueListener.class))).thenReturn(analysisResults);
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
@@ -88,7 +87,7 @@ public class SonarLintTaskTest extends SonarTest {
     task.run(progress);
 
     verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
-    verify(processor).process(job, new ArrayList<>(), new ArrayList<>());
+    verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
     verifyNoMoreInteractions(sonarLintAnalyzer);
@@ -112,6 +111,6 @@ public class SonarLintTaskTest extends SonarTest {
   }
 
   private SonarLintJob createJob() {
-    return new SonarLintJob(module, files, TriggerType.ACTION, new CompletableFuture<>());
+    return new SonarLintJob(module, files, TriggerType.ACTION);
   }
 }

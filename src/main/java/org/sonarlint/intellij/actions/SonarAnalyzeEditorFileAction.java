@@ -57,11 +57,11 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    submitter.submitFiles(Collections.singleton(selectedFile), TriggerType.ACTION, false, !executeBackground(e));
+    submitter.submitFiles(Collections.singleton(selectedFile), TriggerType.ACTION, executeBackground(e));
   }
 
   /**
-   * Whether the analysis should be lauched in the background.
+   * Whether the analysis should be launched in the background.
    * Analysis should be run in background in the following cases:
    *  - Keybinding used (place = MainMenu)
    *  - Macro used (place = unknown)
