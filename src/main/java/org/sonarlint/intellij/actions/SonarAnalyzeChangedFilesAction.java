@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -34,8 +33,6 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
-  private static final Logger LOGGER = Logger.getInstance(SonarAnalyzeChangedFilesAction.class);
-
   @Override protected boolean isEnabled(Project project, SonarLintStatus status) {
     if (status.isRunning()) {
       return false;
@@ -57,11 +54,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
 
     List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
     CompletableFuture<AnalysisResult> future = submitter.submitFiles(affectedFiles, TriggerType.ACTION, false, true);
-
-    try {
-      future.thenAccept(result -> changedFilesIssues.set(result.issues()));
-    } catch (Exception ex) {
-      LOGGER.error("Failed to analyse changed files", ex);
-    }
+    // TODO: do something in case of error?
+    future.thenAccept(result -> changedFilesIssues.set(result.issues()));
   }
 }
