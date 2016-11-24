@@ -53,12 +53,9 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   private static final String GROUP_ID = "SonarLint.changedtoolwindow";
   private static final String SPLIT_PROPORTION = "SONARLINT_CHANGED_ISSUES_SPLIT_PROPORTION";
 
-  private final Project project;
   private final SonarLintRulePanel rulePanel;
   private final LastAnalysisPanel lastAnalysisPanel;
-  private Tree tree;
   private ActionToolbar mainToolbar;
-  private TreeModelBuilder treeBuilder;
 
   public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues) {
     this.project = project;

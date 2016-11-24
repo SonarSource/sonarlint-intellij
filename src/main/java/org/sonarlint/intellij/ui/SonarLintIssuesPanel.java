@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.ide.OccurenceNavigator;
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
