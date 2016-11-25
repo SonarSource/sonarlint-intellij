@@ -21,32 +21,33 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.components.AbstractProjectComponent;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
 public class UpdateChecker extends AbstractProjectComponent {
 
-  private static final Logger LOG = Logger.getInstance(UpdateChecker.class);
-
   private final ProjectBindingManager projectBindingManager;
   private final SonarLintProjectSettings projectSettings;
   private final SonarLintProjectNotifications notifications;
   private ScheduledFuture<?> scheduledTask;
+  private final GlobalLogOutput log;
 
   public UpdateChecker(Project project, ProjectBindingManager projectBindingManager, SonarLintProjectSettings projectSettings, SonarLintProjectNotifications notifications) {
     super(project);
     this.projectBindingManager = projectBindingManager;
     this.projectSettings = projectSettings;
     this.notifications = notifications;
+    this.log = GlobalLogOutput.get();
   }
 
   @Override
@@ -65,21 +66,24 @@ public class UpdateChecker extends AbstractProjectComponent {
       engine = projectBindingManager.getConnectedEngine();
     } catch (Exception e) {
       // happens if project is not bound, binding is invalid, storages are not updated, ...
-      LOG.debug("Couldn't get a connected engine to check for update: " + e.getMessage());
+      log.log("Couldn't get a connected engine to check for update: " + e.getMessage(), LogOutput.Level.DEBUG);
       return;
     }
 
     try {
-      LOG.debug("Checking for updates...");
       List<String> changelog = new ArrayList<>();
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(projectBindingManager.getSonarQubeServer());
+      log.log("Check for updates from server '" + projectBindingManager.getSonarQubeServer().getName() + "'...", LogOutput.Level.INFO);
       boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration);
+      log.log("Check for updates from server '" + projectBindingManager.getSonarQubeServer().getName() +
+        "' for project '" + projectSettings.getProjectKey() + "'...", LogOutput.Level.INFO);
       checkForProjectUpdates(changelog, engine, serverConfiguration);
       if (!changelog.isEmpty()) {
-        notifications.notifyServerHasUpdates(projectSettings.getServerId(), changelog, engine, projectBindingManager.getSonarQubeServer(), !hasGlobalUpdates);
+        changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
+        notifications.notifyServerHasUpdates(projectSettings.getServerId(), engine, projectBindingManager.getSonarQubeServer(), !hasGlobalUpdates);
       }
     } catch (Exception e) {
-      LOG.warn("There was an error while checking for updates", e);
+      log.log("There was an error while checking for updates: " + e.getMessage(), LogOutput.Level.WARN);
     }
   }
 

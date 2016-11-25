@@ -20,19 +20,17 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.project.Project;
-import java.util.Arrays;
+import com.intellij.openapi.project.ProjectManager;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonar.api.platform.Server;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
@@ -68,6 +66,7 @@ public class UpdateCheckerTest extends SonarTest {
     settings.setServerId("serverId");
     server = createServer();
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
+    super.register(app, GlobalLogOutput.class, new GlobalLogOutput(mock(ProjectManager.class)));
     when(bindingManager.getSonarQubeServer()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 
@@ -112,7 +111,7 @@ public class UpdateCheckerTest extends SonarTest {
 
     verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull());
     verify(engine).checkIfModuleStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull());
-    verify(notifications).notifyServerHasUpdates("serverId", Arrays.asList("change1", "change1"), engine, server, false);
+    verify(notifications).notifyServerHasUpdates("serverId", engine, server, false);
 
     verifyNoMoreInteractions(engine);
     verifyZeroInteractions(notifications);

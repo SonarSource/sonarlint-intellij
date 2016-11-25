@@ -25,8 +25,6 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.text.StringUtil;
-import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +59,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
       "<b>SonarLint - Project bound to invalid SonarQube server</b>",
-        UPDATE_BINDING_MSG,
+      UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -74,7 +72,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
       "<b>SonarLint - Project bound to an invalid remote module</b>",
-        UPDATE_BINDING_MSG,
+      UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -87,7 +85,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
       "<b>SonarLint - Project's binding data is invalid</b>",
-        UPDATE_BINDING_MSG,
+      UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -100,7 +98,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
       "<b>SonarLint - No data for SonarQube server</b>",
-        UPDATE_SERVER_MSG,
+      UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -113,34 +111,24 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
       "<b>SonarLint - Binding for server '" + serverId + "' outdated</b>",
-        UPDATE_SERVER_MSG,
+      UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
     shown = true;
   }
 
-  public void notifyServerHasUpdates(String serverId, List<String> changelog, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
+  public void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
     Notification notification = new Notification(GROUP_UPDATE_NOTIFICATION,
-      "<b>SonarLint - Configuration updates available.</b> <a href=\"#ignore\">Ignore...</a>",
-      "\n<br>Some configuration updates are available from the SonarQube server '" + serverId + "': <ul><li>" + StringUtil.join(changelog, "<li>")
-        + "</ul>If you want to apply them, <a href=\"#update\">click here to update binding</a>",
+      "SonarLint Updates",
+      "Configuration changed on SonarQube server '" + serverId + "'. <a href=\"#update\">Update now</a>",
       NotificationType.INFORMATION, new NotificationListener.Adapter() {
         @Override
         public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-          switch (event.getDescription()) {
-            case "#ignore":
-              notification.hideBalloon();
-              break;
-            case "#update":
-              SonarQubeServerMgmtPanel.updateServerBinding(server, engine, true, onlyProjects);
-              break;
-            default:
-              throw new IllegalArgumentException("Unknow event: " + event.getDescription());
-          }
+          notification.hideBalloon();
+          SonarQubeServerMgmtPanel.updateServerBinding(server, engine, true, onlyProjects);
         }
       });
-    notification.setImportant(false);
     notification.notify(myProject);
   }
 
