@@ -73,7 +73,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   @Override
   @Nullable
   public RefreshableOnComponent getBeforeCheckinConfigurationPanel() {
-    final JCheckBox checkBox = new NonFocusableCheckBox("Perform SonarLint Analysis");
+    final JCheckBox checkBox = new NonFocusableCheckBox("Perform SonarLint analysis");
     return new MyRefreshableOnComponent(checkBox);
   }
 

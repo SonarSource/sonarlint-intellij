@@ -183,7 +183,6 @@
                 text="Cancel SonarLint analysis"
                 description="Cancel the SonarLint analysis running"
                 icon="/images/suspend.png">
-            <add-to-group group-id="SonarLint.logtoolwindow"/>
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>

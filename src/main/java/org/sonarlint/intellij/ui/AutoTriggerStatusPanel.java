@@ -61,7 +61,7 @@ public class AutoTriggerStatusPanel {
   private static final String OK_ICO = "ok.png";
 
   private static final String TOOLTIP = "Some files are not automatically analysed. For example, "
-    + "files that are excluded or Java files that don't belong to a non-generated source root.";
+    + "files that are excluded or Java files that don't belong the project's source root.";
 
   private final Project project;
   private final SonarLintAppUtils utils;
