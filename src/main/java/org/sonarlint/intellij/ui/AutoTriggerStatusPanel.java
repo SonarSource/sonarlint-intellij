@@ -58,7 +58,6 @@ public class AutoTriggerStatusPanel {
 
   private static final String WARN_ICO = "warning.png";
   private static final String INFO_ICO = "info.png";
-  private static final String OK_ICO = "ok.png";
 
   private static final String TOOLTIP = "Some files are not automatically analysed. For example, "
     + "files that are excluded or Java files that don't belong the project's source root.";
@@ -143,7 +142,6 @@ public class AutoTriggerStatusPanel {
         }
       });
 
-      enabledCard.add(new JLabel(ResourceLoader.getIcon(OK_ICO)), gc);
       disabledCard.add(new JLabel(ResourceLoader.getIcon(WARN_ICO)), gc);
       notThisFileCard.add(link, gc);
     } catch (IOException e) {
@@ -152,7 +150,7 @@ public class AutoTriggerStatusPanel {
     }
 
     JLabel enabledLabel = new JLabel("Automatic analysis is enabled");
-    JLabel disabledLabel = new JLabel("On-the-fly analysis is disabled - the list won't be updated automatically");
+    JLabel disabledLabel = new JLabel("On-the-fly analysis is disabled - issues are not automatically displayed");
     JLabel notThisFileLabel = new JLabel("This file is not automatically analysed");
     notThisFileLabel.setToolTipText(TOOLTIP);
 
