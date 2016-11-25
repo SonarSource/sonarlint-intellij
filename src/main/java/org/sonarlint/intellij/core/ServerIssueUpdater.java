@@ -36,6 +36,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -96,12 +97,14 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     }
   }
 
-  private void waitForTasks(List<Future<Void>> updateTasks) {
+  private static void waitForTasks(List<Future<Void>> updateTasks) {
     for(Future<Void> f : updateTasks) {
       try {
         f.get(5, TimeUnit.SECONDS);
-      } catch (Exception ex) {
+      } catch (TimeoutException ex) {
         LOGGER.warn("ServerIssueUpdater task expired", ex);
+      } catch (Exception ex) {
+        LOGGER.warn("ServerIssueUpdater task failed", ex);
       }
     }
   }

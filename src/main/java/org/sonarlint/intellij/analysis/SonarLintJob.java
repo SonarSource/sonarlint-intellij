@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 public class SonarLintJob {
