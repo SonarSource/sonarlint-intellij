@@ -26,17 +26,17 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 intellij {
-
-  if (project.hasProperty("ijVersion")){
+  if (project.hasProperty("ijVersion")) {
     version ijVersion
   } else {
-    version '2016.2.5'
+    version '2016.3'
   }
   pluginName 'SonarLint'
   updateSinceUntilBuild false
   publish {
     pluginId '7973'
   }
+  type 'IC'
 }
 
 protobuf {
