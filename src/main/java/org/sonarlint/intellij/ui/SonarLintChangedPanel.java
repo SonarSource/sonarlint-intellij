@@ -26,7 +26,6 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.ScrollPaneFactory;
@@ -90,7 +89,7 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
       expandTree();
     }));
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
-      ApplicationManager.getApplication().invokeAndWait(mainToolbar::updateActionsImmediately, ModalityState.current()));
+      ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
   }
 
   private JComponent createSplitter(JComponent c1, JComponent c2) {
