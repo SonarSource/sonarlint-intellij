@@ -33,6 +33,8 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.5 - Analysis of VCS changed files and notifications about binding update</li>
+        <li>2.4.3 - Bug fix for multi-module projects on Windows</li>
         <li>2.4.2 - Fix resolved issues on windows and authentication</li>
         <li>2.4.1 - Bug fix of Javascript in standalone mode.</li>
         <li>2.4 - Hide issues that are resolved in SonarQube. Numerous bug fixes.</li>
