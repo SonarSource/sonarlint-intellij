@@ -131,11 +131,12 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
     if (modified) {
       SonarLintConsole console = SonarLintConsole.get(project);
-      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
-      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-
       console.info("Clearing all issues because binding changed");
+
+      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
       store.clear();
+
+      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     }
   }
