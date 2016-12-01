@@ -25,6 +25,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
@@ -59,31 +60,37 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
   private final ToolWindowManager toolWindowManager;
   private final SonarLintGlobalSettings globalSettings;
-  private final Collection<VirtualFile> affectedFiles;
   private final Project project;
+  private final CheckinProjectPanel checkinPanel;
+  private JCheckBox checkBox;
 
-  public SonarLintCheckinHandler(ToolWindowManager toolWindowManager, SonarLintGlobalSettings globalSettings, Collection<VirtualFile> affectedFiles,
-    Project project) {
+  public SonarLintCheckinHandler(ToolWindowManager toolWindowManager, SonarLintGlobalSettings globalSettings,
+    Project project, CheckinProjectPanel checkinPanel) {
     this.toolWindowManager = toolWindowManager;
     this.globalSettings = globalSettings;
-    this.affectedFiles = affectedFiles;
     this.project = project;
+    this.checkinPanel = checkinPanel;
   }
 
   @Override
   @Nullable
   public RefreshableOnComponent getBeforeCheckinConfigurationPanel() {
-    final JCheckBox checkBox = new NonFocusableCheckBox("Perform SonarLint analysis");
+    this.checkBox = new NonFocusableCheckBox("Perform SonarLint analysis");
     return new MyRefreshableOnComponent(checkBox);
   }
 
   @Override
   public ReturnResult beforeCheckin(@Nullable CommitExecutor executor, PairConsumer<Object, Object> additionalDataConsumer) {
+    if (checkBox != null && !checkBox.isSelected()) {
+      return ReturnResult.COMMIT;
+    }
+
+    Collection<VirtualFile> affectedFiles = checkinPanel.getVirtualFiles();
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
     // this will block EDT (modal)
     try {
       submitter.submitFilesModal(affectedFiles, TriggerType.CHECK_IN);
-      return processResult();
+      return processResult(affectedFiles);
     } catch (Exception e) {
       String msg = "SonarLint - Error analysing " + affectedFiles.size() + " changed file(s).";
       if (e.getMessage() != null) {
@@ -95,7 +102,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
   }
 
-  private ReturnResult processResult() {
+  private ReturnResult processResult(Collection<VirtualFile> affectedFiles) {
     ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
     IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
 
