@@ -62,7 +62,6 @@ public class SonarLintCheckinHandlerFactoryTest {
     assertThat(handler).isInstanceOf(SonarLintCheckinHandler.class);
 
     verify(panel).getProject();
-    verify(panel).getVirtualFiles();
   }
 
 }

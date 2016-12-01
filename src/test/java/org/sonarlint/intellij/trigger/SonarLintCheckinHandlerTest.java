@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindowManager;
@@ -52,6 +53,8 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
   private ChangedFilesIssues changedFilesIssues;
   @Mock
   private IssueManager issueManager;
+  @Mock
+  private CheckinProjectPanel checkinProjectPanel;
 
   @Before
   public void prepare() {
@@ -62,6 +65,8 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
     super.register(project, SonarLintSubmitter.class, submitter);
     super.register(project, ChangedFilesIssues.class, changedFilesIssues);
     super.register(project, IssueManager.class, issueManager);
+
+    when(checkinProjectPanel.getVirtualFiles()).thenReturn(Collections.singleton(file));
   }
 
   @Test
@@ -72,7 +77,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
-    handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, Collections.singleton(file), project);
+    handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, project, checkinProjectPanel);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
@@ -87,7 +92,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
-    handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, Collections.singleton(file), project);
+    handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, project, checkinProjectPanel);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
