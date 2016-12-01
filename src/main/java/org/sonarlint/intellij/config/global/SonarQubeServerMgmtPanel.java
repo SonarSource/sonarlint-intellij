@@ -430,16 +430,15 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     }
 
     private List<String> getOpenProjectNames(Project[] openProjects, SonarQubeServer server) {
-      List<String> projectsUsingNames = new LinkedList<>();
+      List<String> openProjectNames = new LinkedList<>();
 
       for (Project p : openProjects) {
         SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
-        String serverId = projectSettings.getServerId();
-        if (projectSettings.getServerId() != null && serverId != null && serverId.equals(server.getName())) {
-          projectsUsingNames.add(p.getName());
+        if (server.getName().equals(projectSettings.getServerId())) {
+          openProjectNames.add(p.getName());
         }
       }
-      return projectsUsingNames;
+      return openProjectNames;
     }
   }
 }
