@@ -67,7 +67,7 @@ public class SonarApplication implements ApplicationComponent {
   public void initComponent() {
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     Language.getRegisteredLanguages().stream()
-      .filter(languages::contains)
+      .filter(lang -> languages.contains(lang.getID()))
       .forEach(this::registerExternalAnnotatorFor);
     registerNotifications();
   }
