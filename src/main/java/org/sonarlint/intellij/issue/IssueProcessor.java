@@ -74,8 +74,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
 
     long issuesToShow = transformedIssues.entrySet().stream()
-      .flatMap(e -> e.getValue().stream())
-      .count();
+      .mapToLong(e -> e.getValue().size())
+      .sum();
 
     String end = issuesToShow == 1 ? " issue" : " issues";
     console.info("Found " + issuesToShow + end);
