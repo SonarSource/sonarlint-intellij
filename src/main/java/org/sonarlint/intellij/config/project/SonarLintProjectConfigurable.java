@@ -97,10 +97,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   @Override
   public boolean isModified() {
-    if (panel != null) {
-      return panel.isModified(projectSettings);
-    }
-    return false;
+    return panel != null && panel.isModified(projectSettings);
   }
 
   @Override
