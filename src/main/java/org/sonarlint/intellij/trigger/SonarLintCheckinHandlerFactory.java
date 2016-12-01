@@ -37,6 +37,6 @@ public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
 
   @NotNull @Override public CheckinHandler createHandler(@NotNull CheckinProjectPanel panel, @NotNull CommitContext commitContext) {
     Project project = panel.getProject();
-    return new SonarLintCheckinHandler(ToolWindowManager.getInstance(project), globalSettings, panel.getVirtualFiles(), project);
+    return new SonarLintCheckinHandler(ToolWindowManager.getInstance(project), globalSettings, project, panel);
   }
 }
