@@ -123,9 +123,10 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
       SonarQubeServer server = bindingManager.getSonarQubeServer();
       ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
-      String projectKey = projectSettings.getProjectKey();
+      String moduleKey = projectSettings.getProjectKey();
 
-      ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singleton(projectKey), true);
+      ServerUpdateTask task = new ServerUpdateTask(engine, server,
+        Collections.singleton(moduleKey), Collections.singletonMap(moduleKey, Collections.singletonList(project)), true);
       ProgressManager.getInstance().run(task.asModal());
     }
 

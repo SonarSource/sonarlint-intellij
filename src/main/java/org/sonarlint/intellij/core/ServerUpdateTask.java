@@ -30,10 +30,16 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
@@ -46,14 +52,16 @@ public class ServerUpdateTask {
   private static final Logger LOGGER = Logger.getInstance(ServerUpdateTask.class);
   private final ConnectedSonarLintEngine engine;
   private final SonarQubeServer server;
-  private final Set<String> projectKeys;
+  private final Set<String> moduleKeys;
+  private final Map<String, List<Project>> projectsPerModule;
   private final boolean onlyModules;
   private final GlobalLogOutput log;
 
-  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Set<String> projectKeys, boolean onlyModules) {
+  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Set<String> moduleKeys, Map<String, List<Project>> projectsPerModule, boolean onlyModules) {
     this.engine = engine;
     this.server = server;
-    this.projectKeys = projectKeys;
+    this.projectsPerModule = projectsPerModule;
+    this.moduleKeys = moduleKeys;
     this.onlyModules = onlyModules;
     this.log = GlobalLogOutput.get();
   }
@@ -107,15 +115,15 @@ public class ServerUpdateTask {
     final Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
     final Set<String> invalidModules = new HashSet<>();
 
-    for (String key : projectKeys) {
-      if (existingProjectKeys.contains(key)) {
-        updateModule(serverConfiguration, key);
+    for (String moduleKey : moduleKeys) {
+      if (existingProjectKeys.contains(moduleKey)) {
+        updateModule(serverConfiguration, moduleKey, projectsPerModule.get(moduleKey));
       } else {
-        invalidModules.add(key);
+        invalidModules.add(moduleKey);
       }
     }
 
-    if (!projectKeys.isEmpty() && !invalidModules.isEmpty()) {
+    if (!moduleKeys.isEmpty() && !invalidModules.isEmpty()) {
       log.log("The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), LogOutput.Level.WARN);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
@@ -127,10 +135,11 @@ public class ServerUpdateTask {
     }
   }
 
-  private void updateModule(ServerConfiguration serverConfiguration, String key) {
+  private void updateModule(ServerConfiguration serverConfiguration, String moduleKey, List<Project> projects) {
     try {
-      engine.updateModule(serverConfiguration, key);
-      log.log("Module '" + key + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+      engine.updateModule(serverConfiguration, moduleKey);
+      log.log("Module '" + moduleKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+      projects.forEach(ServerUpdateTask::analyzeOpenFiles);
     } catch (Exception e) {
       // in case of error, show a message box and keep updating other modules
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
@@ -142,4 +151,14 @@ public class ServerUpdateTask {
     }
   }
 
+  private static void analyzeOpenFiles(Project project) {
+    SonarLintConsole console = SonarLintConsole.get(project);
+    console.info("Clearing all issues because binding was updated");
+
+    IssueManager store = SonarLintUtils.get(project, IssueManager.class);
+    store.clear();
+
+    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+    submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
+  }
 }
