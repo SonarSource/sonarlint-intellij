@@ -74,8 +74,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
 
     long issuesToShow = transformedIssues.entrySet().stream()
-      .flatMap(e -> e.getValue().stream())
-      .count();
+      .mapToLong(e -> e.getValue().size())
+      .sum();
 
     String end = issuesToShow == 1 ? " issue" : " issues";
     console.info("Found " + issuesToShow + end);
@@ -89,7 +89,16 @@ public class IssueProcessor extends AbstractProjectComponent {
   }
 
   private static boolean shouldUpdateServerIssues(TriggerType trigger) {
-    return trigger == TriggerType.EDITOR_OPEN || trigger == TriggerType.ACTION || trigger == TriggerType.BINDING_CHANGE || trigger == TriggerType.CHECK_IN;
+    switch (trigger) {
+      case ACTION:
+      case BINDING_CHANGE:
+      case BINDING_UPDATE:
+      case CHECK_IN:
+      case EDITOR_OPEN:
+        return true;
+      default:
+        return false;
+    }
   }
 
   private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {

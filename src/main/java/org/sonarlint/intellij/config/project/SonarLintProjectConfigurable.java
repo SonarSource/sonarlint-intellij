@@ -97,10 +97,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   @Override
   public boolean isModified() {
-    if (panel != null) {
-      return panel.isModified(projectSettings);
-    }
-    return false;
+    return panel != null && panel.isModified(projectSettings);
   }
 
   @Override
@@ -123,19 +120,20 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
       SonarQubeServer server = bindingManager.getSonarQubeServer();
       ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
-      String projectKey = projectSettings.getProjectKey();
+      String moduleKey = projectSettings.getProjectKey();
 
-      ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singleton(projectKey), true);
+      ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(moduleKey, Collections.singletonList(project)), true);
       ProgressManager.getInstance().run(task.asModal());
     }
 
     if (modified) {
       SonarLintConsole console = SonarLintConsole.get(project);
-      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
-      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-
       console.info("Clearing all issues because binding changed");
+
+      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
       store.clear();
+
+      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     }
   }

@@ -54,9 +54,11 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -333,17 +335,18 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
   public static void updateServerBinding(SonarQubeServer server, ConnectedSonarLintEngine engine, boolean background, boolean onlyProjects) {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-    Set<String> projectKeys = new HashSet<>();
+    Map<String, List<Project>> projectsPerModule = new HashMap<>();
 
     for (Project p : openProjects) {
       SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
-      if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId())
-        && projectSettings.getProjectKey() != null) {
-        projectKeys.add(projectSettings.getProjectKey());
+      String moduleKey = projectSettings.getProjectKey();
+      if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && moduleKey != null) {
+        List<Project> projects = projectsPerModule.computeIfAbsent(moduleKey, k -> new ArrayList<>());
+        projects.add(p);
       }
     }
 
-    ServerUpdateTask task = new ServerUpdateTask(engine, server, projectKeys, onlyProjects);
+    ServerUpdateTask task = new ServerUpdateTask(engine, server, projectsPerModule, onlyProjects);
     if (background) {
       ProgressManager.getInstance().run(task.asBackground());
     } else {
@@ -385,7 +388,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         ((CollectionListModel) serverList.getModel()).add(created);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
-        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptySet(), false);
+        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
         ProgressManager.getInstance().run(task.asBackground());
       }
     }
@@ -427,16 +430,15 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     }
 
     private List<String> getOpenProjectNames(Project[] openProjects, SonarQubeServer server) {
-      List<String> projectsUsingNames = new LinkedList<>();
+      List<String> openProjectNames = new LinkedList<>();
 
       for (Project p : openProjects) {
         SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
-        String serverId = projectSettings.getServerId();
-        if (projectSettings.getServerId() != null && serverId != null && serverId.equals(server.getName())) {
-          projectsUsingNames.add(p.getName());
+        if (server.getName().equals(projectSettings.getServerId())) {
+          openProjectNames.add(p.getName());
         }
       }
-      return projectsUsingNames;
+      return openProjectNames;
     }
   }
 }
