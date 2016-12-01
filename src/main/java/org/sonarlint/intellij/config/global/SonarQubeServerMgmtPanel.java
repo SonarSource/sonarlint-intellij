@@ -335,20 +335,18 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
   public static void updateServerBinding(SonarQubeServer server, ConnectedSonarLintEngine engine, boolean background, boolean onlyProjects) {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-    Set<String> moduleKeys = new HashSet<>(openProjects.length);
-    Map<String, List<Project>> projectPerModule = new HashMap<>(openProjects.length);
+    Map<String, List<Project>> projectsPerModule = new HashMap<>();
 
     for (Project p : openProjects) {
       SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
       String moduleKey = projectSettings.getProjectKey();
       if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && moduleKey != null) {
-        moduleKeys.add(moduleKey);
-        List<Project> projects = projectPerModule.computeIfAbsent(moduleKey, k -> new ArrayList<>());
+        List<Project> projects = projectsPerModule.computeIfAbsent(moduleKey, k -> new ArrayList<>());
         projects.add(p);
       }
     }
 
-    ServerUpdateTask task = new ServerUpdateTask(engine, server, moduleKeys, projectPerModule, onlyProjects);
+    ServerUpdateTask task = new ServerUpdateTask(engine, server, projectsPerModule, onlyProjects);
     if (background) {
       ProgressManager.getInstance().run(task.asBackground());
     } else {
@@ -390,7 +388,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         ((CollectionListModel) serverList.getModel()).add(created);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
-        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptySet(), Collections.emptyMap(), false);
+        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
         ProgressManager.getInstance().run(task.asBackground());
       }
     }

@@ -52,16 +52,14 @@ public class ServerUpdateTask {
   private static final Logger LOGGER = Logger.getInstance(ServerUpdateTask.class);
   private final ConnectedSonarLintEngine engine;
   private final SonarQubeServer server;
-  private final Set<String> moduleKeys;
   private final Map<String, List<Project>> projectsPerModule;
   private final boolean onlyModules;
   private final GlobalLogOutput log;
 
-  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Set<String> moduleKeys, Map<String, List<Project>> projectsPerModule, boolean onlyModules) {
+  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Map<String, List<Project>> projectsPerModule, boolean onlyModules) {
     this.engine = engine;
     this.server = server;
     this.projectsPerModule = projectsPerModule;
-    this.moduleKeys = moduleKeys;
     this.onlyModules = onlyModules;
     this.log = GlobalLogOutput.get();
   }
@@ -115,15 +113,16 @@ public class ServerUpdateTask {
     final Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
     final Set<String> invalidModules = new HashSet<>();
 
-    for (String moduleKey : moduleKeys) {
+    for (Map.Entry<String, List<Project>> entry : projectsPerModule.entrySet()) {
+      String moduleKey = entry.getKey();
       if (existingProjectKeys.contains(moduleKey)) {
-        updateModule(serverConfiguration, moduleKey, projectsPerModule.get(moduleKey));
+        updateModule(serverConfiguration, moduleKey, entry.getValue());
       } else {
         invalidModules.add(moduleKey);
       }
     }
 
-    if (!moduleKeys.isEmpty() && !invalidModules.isEmpty()) {
+    if (!projectsPerModule.isEmpty() && !invalidModules.isEmpty()) {
       log.log("The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), LogOutput.Level.WARN);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
