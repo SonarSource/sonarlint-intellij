@@ -24,9 +24,11 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -142,7 +144,14 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
 
     private void triggerFile(VirtualFile file) {
-      submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
+      if (isOpen(file)) {
+        submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
+      }
+    }
+
+    private boolean isOpen(VirtualFile file) {
+      VirtualFile[] selectedFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
+      return Arrays.stream(selectedFiles).anyMatch(f -> f.equals(file));
     }
 
     private void checkTimers() {
