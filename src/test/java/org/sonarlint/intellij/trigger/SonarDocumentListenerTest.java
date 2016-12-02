@@ -40,6 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
@@ -83,10 +84,12 @@ public class SonarDocumentListenerTest {
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
     when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
+    when(utils.isOpenFile(project, file)).thenReturn(true);
 
     listener.documentChanged(event);
     assertThat(listener.getEvents()).hasSize(1);
     verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
+    verifyNoMoreInteractions(submitter);
   }
 
   @Test

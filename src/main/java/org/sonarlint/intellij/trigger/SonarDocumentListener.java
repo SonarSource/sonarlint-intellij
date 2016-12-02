@@ -26,14 +26,12 @@ import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
-
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -142,7 +140,9 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
 
     private void triggerFile(VirtualFile file) {
-      submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
+      if (utils.isOpenFile(myProject, file)) {
+        submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
+      }
     }
 
     private void checkTimers() {
