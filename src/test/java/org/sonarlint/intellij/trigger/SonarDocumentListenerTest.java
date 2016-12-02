@@ -28,6 +28,10 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,11 +41,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class SonarDocumentListenerTest {
   @Mock
@@ -54,6 +54,8 @@ public class SonarDocumentListenerTest {
   private SonarLintAppUtils utils;
   @Mock
   private FileDocumentManager docManager;
+  @Mock
+  private SonarDocumentListener.OpenFileChecker openFileChecker;
 
   private SonarLintGlobalSettings globalSettings;
   private SonarDocumentListener listener;
@@ -66,7 +68,7 @@ public class SonarDocumentListenerTest {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    listener = new SonarDocumentListener(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
+    listener = new SonarDocumentListener(project, globalSettings, submitter, editorFactory, utils, docManager, 500, openFileChecker);
     listener.initComponent();
   }
 
@@ -83,10 +85,32 @@ public class SonarDocumentListenerTest {
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
     when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
+    when(openFileChecker.apply(file)).thenReturn(true);
 
     listener.documentChanged(event);
     assertThat(listener.getEvents()).hasSize(1);
     verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
+    verifyNoMoreInteractions(submitter);
+  }
+
+  @Test
+  public void dont_trigger_if_file_not_open() {
+    Module m1 = mock(Module.class);
+    VirtualFile file = mock(VirtualFile.class);
+    Document doc = mock(Document.class);
+    DocumentEvent event = mock(DocumentEvent.class);
+
+    when(file.isValid()).thenReturn(true);
+    when(event.getDocument()).thenReturn(doc);
+    when(docManager.getFile(doc)).thenReturn(file);
+    when(utils.guessProjectForFile(file)).thenReturn(project);
+    when(utils.findModuleForFile(file, project)).thenReturn(m1);
+    when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
+    when(openFileChecker.apply(file)).thenReturn(true);
+
+    listener.documentChanged(event);
+    assertThat(listener.getEvents()).hasSize(1);
+    verifyZeroInteractions(submitter);
   }
 
   @Test

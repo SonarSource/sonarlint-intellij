@@ -34,6 +34,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.sonarlint.intellij.analysis.SonarLintJob;
@@ -54,14 +55,17 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   private final Map<VirtualFile, Long> eventMap;
   private final EventWatcher watcher;
   private final int timerMs;
+  private final OpenFileChecker openFileChecker;
 
   public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager) {
-    this(project, globalSettings, submitter, editorFactory, utils, docManager, DEFAULT_TIMER_MS);
+    this(project, globalSettings, submitter, editorFactory, utils, docManager, DEFAULT_TIMER_MS,
+            new DefaultOpenFileChecker(project));
   }
 
   public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
-    EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
+    EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs,
+    OpenFileChecker openFileChecker) {
     super(project);
     this.submitter = submitter;
     this.utils = utils;
@@ -70,6 +74,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     this.globalSettings = globalSettings;
     this.watcher = new EventWatcher();
     this.timerMs = timerMs;
+    this.openFileChecker = openFileChecker;
 
     editorFactory.getEventMulticaster().addDocumentListener(this);
 
@@ -144,14 +149,9 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
 
     private void triggerFile(VirtualFile file) {
-      if (isOpen(file)) {
+      if (openFileChecker.apply(file)) {
         submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
       }
-    }
-
-    private boolean isOpen(VirtualFile file) {
-      VirtualFile[] selectedFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
-      return Arrays.stream(selectedFiles).anyMatch(f -> f.equals(file));
     }
 
     private void checkTimers() {
@@ -179,5 +179,25 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   public void disposeComponent() {
     watcher.stopWatcher();
     eventMap.clear();
+  }
+
+  /**
+   * Check if a file is currently open in the editor or not.
+   */
+  interface OpenFileChecker extends Function<VirtualFile, Boolean> {
+  }
+
+  static class DefaultOpenFileChecker implements OpenFileChecker {
+    private final Project project;
+
+    public DefaultOpenFileChecker(Project project) {
+      this.project = project;
+    }
+
+    @Override
+    public Boolean apply(VirtualFile file) {
+      VirtualFile[] openFiles = FileEditorManager.getInstance(project).getOpenFiles();
+      return Arrays.stream(openFiles).anyMatch(f -> f.equals(file));
+    }
   }
 }
