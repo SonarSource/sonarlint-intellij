@@ -125,12 +125,15 @@ public class SonarLintUtils {
     return null;
   }
 
+  /**
+   * Must be called from EDT
+   */
   private static boolean saveFile(final VirtualFile virtualFile) {
     final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
     if (fileDocumentManager.isFileModified(virtualFile)) {
       final Document document = fileDocumentManager.getDocument(virtualFile);
       if (document != null) {
-        ApplicationManager.getApplication().invokeAndWait(() -> fileDocumentManager.saveDocument(document), ModalityState.any());
+        fileDocumentManager.saveDocument(document);
         return true;
       }
     }
