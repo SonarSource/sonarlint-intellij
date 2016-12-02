@@ -20,11 +20,13 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Arrays;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
@@ -54,5 +56,10 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   @CheckForNull
   public Project guessProjectForFile(VirtualFile file) {
     return ProjectLocator.getInstance().guessProjectForFile(file);
+  }
+
+  public boolean isOpenFile(Project project, VirtualFile file) {
+    VirtualFile[] openFiles = FileEditorManager.getInstance(project).getOpenFiles();
+    return Arrays.stream(openFiles).anyMatch(f -> f.equals(file));
   }
 }

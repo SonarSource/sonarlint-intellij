@@ -55,8 +55,6 @@ public class SonarDocumentListenerTest {
   private SonarLintAppUtils utils;
   @Mock
   private FileDocumentManager docManager;
-  @Mock
-  private SonarDocumentListener.OpenFileChecker openFileChecker;
 
   private SonarLintGlobalSettings globalSettings;
   private SonarDocumentListener listener;
@@ -69,7 +67,7 @@ public class SonarDocumentListenerTest {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    listener = new SonarDocumentListener(project, globalSettings, submitter, editorFactory, utils, docManager, 500, openFileChecker);
+    listener = new SonarDocumentListener(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
     listener.initComponent();
   }
 
@@ -86,32 +84,12 @@ public class SonarDocumentListenerTest {
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
     when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
-    when(openFileChecker.apply(file)).thenReturn(true);
+    when(utils.isOpenFile(project, file)).thenReturn(true);
 
     listener.documentChanged(event);
     assertThat(listener.getEvents()).hasSize(1);
     verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
     verifyNoMoreInteractions(submitter);
-  }
-
-  @Test
-  public void dont_trigger_if_file_not_open() {
-    Module m1 = mock(Module.class);
-    VirtualFile file = mock(VirtualFile.class);
-    Document doc = mock(Document.class);
-    DocumentEvent event = mock(DocumentEvent.class);
-
-    when(file.isValid()).thenReturn(true);
-    when(event.getDocument()).thenReturn(doc);
-    when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(project);
-    when(utils.findModuleForFile(file, project)).thenReturn(m1);
-    when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
-    when(openFileChecker.apply(file)).thenReturn(true);
-
-    listener.documentChanged(event);
-    assertThat(listener.getEvents()).hasSize(1);
-    verifyZeroInteractions(submitter);
   }
 
   @Test
