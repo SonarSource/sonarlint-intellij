@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -116,8 +118,9 @@ public class SonarLintTask extends Task.Backgroundable {
       LOGGER.warn(msg, e);
 
       if (indicator.isShowing()) {
-        msg = "SonarLint analysis failed: " + e.getMessage();
-        Messages.showErrorDialog(msg, "Error Running SonarLint Analysis");
+        String dialogMsg = "SonarLint analysis failed: " + e.getMessage();
+        ApplicationManager.getApplication().invokeAndWait(
+          () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarLint Analysis"), ModalityState.defaultModalityState());
       }
     }
   }
