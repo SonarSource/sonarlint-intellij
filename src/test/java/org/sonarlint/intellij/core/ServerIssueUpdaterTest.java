@@ -110,7 +110,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
 
     // mock issues downloaded
     when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY), eq(filename)))
-      .thenReturn(Collections.singleton(serverIssue).iterator());
+      .thenReturn(Collections.singletonList(serverIssue));
 
     // run
     settings.setBindingEnabled(true);
