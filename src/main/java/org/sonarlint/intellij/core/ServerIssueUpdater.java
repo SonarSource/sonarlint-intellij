@@ -24,7 +24,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -38,8 +37,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -155,8 +152,8 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
     @Override public Void call() {
       try {
-        Iterator<ServerIssue> serverIssues = fetchServerIssues(server, engine, moduleKey, relativePath);
-        Collection<Trackable> serverIssuesTrackable = toStream(serverIssues).map(ServerIssueTrackable::new).collect(Collectors.toList());
+        List<ServerIssue> serverIssues = fetchServerIssues(server, engine, moduleKey, relativePath);
+        Collection<Trackable> serverIssuesTrackable = serverIssues.stream().map(ServerIssueTrackable::new).collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
           issueManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);
@@ -168,12 +165,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       return null;
     }
 
-    private <T> Stream<T> toStream(Iterator<T> iterator) {
-      Iterable<T> iterable = () -> iterator;
-      return StreamSupport.stream(iterable.spliterator(), false);
-    }
-
-    private Iterator<ServerIssue> fetchServerIssues(SonarQubeServer server, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
+    private List<ServerIssue> fetchServerIssues(SonarQubeServer server, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
       try {
         ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
         LOGGER.debug("fetchServerIssues moduleKey=" + moduleKey + ", filepath=" + relativePath);
