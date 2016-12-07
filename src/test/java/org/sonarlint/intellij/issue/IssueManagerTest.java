@@ -199,6 +199,7 @@ public class IssueManagerTest extends SonarTest {
     LiveIssue issuePointer = fileIssues.iterator().next();
     assertThat(issuePointer.uid()).isEqualTo(issue.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
+    assertThat(issuePointer.getCreationDate()).isNull();
   }
 
   @Test
