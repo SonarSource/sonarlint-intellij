@@ -221,6 +221,20 @@ public class IssueManagerTest extends SonarTest {
   }
 
   @Test
+  public void should_preserve_creation_date_of_leaked_issues_in_connected_mode() {
+    LiveIssue issue = createRangeStoredIssue(1, "issue 1", 10);
+    Long creationDate = 1L;
+    issue.setCreationDate(creationDate);
+    when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
+
+    manager.matchWithServerIssues(file1, Collections.emptyList());
+
+    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+    assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(creationDate);
+  }
+
+  @Test
   public void testClear() {
     manager.clear();
     verify(cache).clear();
