@@ -151,8 +151,9 @@ public class IssueManager extends AbstractProjectComponent {
     for (LiveIssue newIssue : tracking.getUnmatchedRaws()) {
       if (newIssue.getServerIssueKey() != null) {
         wipeServerIssueDetails(newIssue);
+      } else if (newIssue.getCreationDate() == null) {
+        newIssue.setCreationDate(System.currentTimeMillis());
       }
-      newIssue.setCreationDate(System.currentTimeMillis());
       trackedIssues.add(newIssue);
     }
     cache.save(file, trackedIssues);

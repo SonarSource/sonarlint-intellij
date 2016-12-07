@@ -126,7 +126,7 @@ public class IssueManagerTest extends SonarTest {
   }
 
   @Test
-  public void testTracking_should_copy_server_issue_on_match() {
+  public void should_copy_server_issue_on_match() {
     String serverIssueKey = "dummyServerIssueKey";
 
     LiveIssue localIssue = createRangeStoredIssue(1, "issue 1", 10);
@@ -145,7 +145,7 @@ public class IssueManagerTest extends SonarTest {
   }
 
   @Test
-  public void testTracking_should_preserve_server_issue_if_moved_locally() {
+  public void should_preserve_server_issue_if_moved_locally() {
     String serverIssueKey = "dummyServerIssueKey";
 
     LiveIssue localIssue = createRangeStoredIssue(1, "local issue", 10);
@@ -169,7 +169,7 @@ public class IssueManagerTest extends SonarTest {
   }
 
   @Test
-  public void testTracking_should_ignore_server_issue_if_not_matched() {
+  public void should_ignore_server_issue_if_not_matched() {
     LiveIssue localIssue = createRangeStoredIssue(1, "local issue", 10);
     when(cache.getLive(file1)).thenReturn(Collections.singletonList(localIssue));
 
@@ -186,7 +186,7 @@ public class IssueManagerTest extends SonarTest {
   }
 
   @Test
-  public void testTracking_should_drop_server_issue_reference_if_gone() {
+  public void should_drop_server_issue_reference_if_gone() {
     LiveIssue issue = createRangeStoredIssue(1, "issue 1", 10);
     issue.setServerIssueKey("dummyServerIssueKey");
     when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
@@ -199,10 +199,11 @@ public class IssueManagerTest extends SonarTest {
     LiveIssue issuePointer = fileIssues.iterator().next();
     assertThat(issuePointer.uid()).isEqualTo(issue.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
+    assertThat(issuePointer.getCreationDate()).isNull();
   }
 
   @Test
-  public void testTracking_should_update_server_issue() {
+  public void should_update_server_issue() {
     LiveIssue issue = createRangeStoredIssue(1, "issue 1", 10);
     issue.setServerIssueKey("dummyServerIssueKey");
     when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
@@ -218,6 +219,20 @@ public class IssueManagerTest extends SonarTest {
     LiveIssue issuePointer = fileIssues.iterator().next();
     assertThat(issuePointer.isResolved()).isTrue();
     assertThat(issuePointer.getAssignee()).isEqualTo(newAssignee);
+  }
+
+  @Test
+  public void should_preserve_creation_date_of_leaked_issues_in_connected_mode() {
+    LiveIssue issue = createRangeStoredIssue(1, "issue 1", 10);
+    Long creationDate = 1L;
+    issue.setCreationDate(creationDate);
+    when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
+
+    manager.matchWithServerIssues(file1, Collections.emptyList());
+
+    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    assertThat(fileIssues).hasSize(1);
+    assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(creationDate);
   }
 
   @Test
