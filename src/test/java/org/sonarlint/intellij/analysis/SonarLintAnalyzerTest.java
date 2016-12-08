@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.AccessToken;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ContentEntry;
@@ -84,7 +85,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     when(file.getPath()).thenReturn("testFile");
     IssueListener listener = mock(IssueListener.class);
-
+    when(app.getDefaultModalityState()).thenReturn(ModalityState.NON_MODAL);
     analyzer.analyzeModule(module, Collections.singleton(file), listener);
     verify(facade).startAnalysis(anyListOf(ClientInputFile.class), eq(listener), anyMapOf(String.class, String.class));
   }

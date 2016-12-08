@@ -34,7 +34,6 @@ import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintJobManager extends AbstractProjectComponent {
   private final IssueProcessor processor;
@@ -98,8 +97,6 @@ public class SonarLintJobManager extends AbstractProjectComponent {
   private void runTask(SonarLintTask task) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     notifyStart(task.getJob());
-    // Save files. Needs to be ran in EDT to have write access so we need to do it now to avoid a possible dead lock inside the task
-    SonarLintUtils.saveFiles(task.getJob().files());
     ProgressManager.getInstance().run(task);
   }
 
