@@ -73,7 +73,7 @@ public class SonarQubeServerTest {
     assertThat(server1.equals(server3)).isFalse();
     assertThat(server1.equals(null)).isFalse();
 
-    assertThat(server1.hashCode()).isEqualTo(server3.hashCode());
+    assertThat(server1.hashCode()).isEqualTo(server2.hashCode());
   }
 
   @Test
