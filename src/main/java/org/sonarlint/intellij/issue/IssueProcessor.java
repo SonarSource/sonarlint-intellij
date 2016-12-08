@@ -77,6 +77,11 @@ public class IssueProcessor extends AbstractProjectComponent {
       .mapToLong(e -> e.getValue().size())
       .sum();
 
+    Collection<VirtualFile> filesWithIssues = transformedIssues.entrySet().stream()
+      .filter(e -> !e.getValue().isEmpty())
+      .map(Map.Entry::getKey)
+      .collect(Collectors.toList());
+
     String end = issuesToShow == 1 ? " issue" : " issues";
     console.info("Found " + issuesToShow + end);
 
@@ -84,7 +89,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       String msg = "Fetching server issues";
       console.debug(msg);
       indicator.setText(msg);
-      serverIssueUpdater.fetchAndMatchServerIssues(job.files(), indicator.isModal());
+      serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssues, indicator.isModal());
     }
   }
 
