@@ -201,7 +201,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
 
     updateServerButton.setAction(new AbstractAction() {
       @Override public void actionPerformed(ActionEvent e) {
-        actionUpdateServerTask(false);
+        actionUpdateServerTask();
       }
     });
     updateServerButton.setText("Update binding");
@@ -324,16 +324,16 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     updateServerButton.setEnabled(state != ConnectedSonarLintEngine.State.UPDATING);
   }
 
-  private void actionUpdateServerTask(boolean background) {
+  private void actionUpdateServerTask() {
     SonarQubeServer server = getSelectedServer();
     if (server == null || engine == null || engine.getState() == ConnectedSonarLintEngine.State.UPDATING) {
       return;
     }
 
-    updateServerBinding(server, engine, background, false);
+    updateServerBinding(server, engine, false);
   }
 
-  public static void updateServerBinding(SonarQubeServer server, ConnectedSonarLintEngine engine, boolean background, boolean onlyProjects) {
+  public static void updateServerBinding(SonarQubeServer server, ConnectedSonarLintEngine engine, boolean onlyProjects) {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
     Map<String, List<Project>> projectsPerModule = new HashMap<>();
 
@@ -347,11 +347,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     }
 
     ServerUpdateTask task = new ServerUpdateTask(engine, server, projectsPerModule, onlyProjects);
-    if (background) {
-      ProgressManager.getInstance().run(task.asBackground());
-    } else {
-      ProgressManager.getInstance().run(task.asModal());
-    }
+    ProgressManager.getInstance().run(task.asBackground());
   }
 
   private void editServer() {
