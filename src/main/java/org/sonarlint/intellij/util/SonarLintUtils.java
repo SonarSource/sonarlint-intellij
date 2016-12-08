@@ -36,6 +36,7 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.net.HttpConfigurable;
 
+import com.intellij.util.net.ssl.CertificateManager;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -253,11 +254,14 @@ public class SonarLintUtils {
   }
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
+    CertificateManager certificateManager = get(CertificateManager.class);
     SonarApplication sonarlint = get(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
       .connectTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
       .readTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
+      .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
+      .trustManager(certificateManager.getCustomTrustManager())
       .url(server.getHostUrl());
     if (StringUtil.isNotEmpty(server.getToken())) {
       serverConfigBuilder.token(server.getToken());
