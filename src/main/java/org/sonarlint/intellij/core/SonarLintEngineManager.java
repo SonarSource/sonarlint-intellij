@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ModuleStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -64,7 +65,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
       } else if (state != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
         notifications.notifyServerStorageNeedsUpdate(serverId);
       }
-      throw new IllegalStateException("Server is not updated: " + serverId);
+      throw new InvalidBindingException("Server is not updated: " + serverId);
     }
 
     // Check if module's storage is OK. Global storage was updated and all project's binding that were open too,
@@ -73,10 +74,10 @@ public class SonarLintEngineManager implements ApplicationComponent {
 
     if (moduleStorageStatus == null) {
       notifications.notifyModuleInvalid();
-      throw new IllegalStateException("Project is bound to a module that doesn't exist: " + projectKey);
+      throw new InvalidBindingException("Project is bound to a module that doesn't exist: " + projectKey);
     } else if (moduleStorageStatus.isStale()) {
       notifications.notifyModuleStale();
-      throw new IllegalStateException("Stale module's storage: " + projectKey);
+      throw new InvalidBindingException("Stale module's storage: " + projectKey);
     }
   }
 
@@ -126,7 +127,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
 
     if (!configuredStorageIds.contains(serverId)) {
       notifications.notifyServerIdInvalid();
-      throw new IllegalStateException("Invalid server name: " + serverId);
+      throw new InvalidBindingException("Invalid server name: " + serverId);
     }
 
     ConnectedSonarLintEngine engine = getConnectedEngine(serverId);

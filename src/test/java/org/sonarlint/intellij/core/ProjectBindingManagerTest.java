@@ -28,6 +28,7 @@ import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -118,14 +119,14 @@ public class ProjectBindingManagerTest {
 
     SonarQubeServer server = SonarQubeServer.newBuilder().setName("server2").build();
     globalSettings.setSonarQubeServers(Collections.singletonList(server));
-    exception.expect(IllegalStateException.class);
+    exception.expect(InvalidBindingException.class);
     projectBindingManager.getSonarQubeServer();
   }
 
   @Test
   public void fail_invalid_server_binding() {
     settings.setBindingEnabled(true);
-    exception.expect(IllegalStateException.class);
+    exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
     assertThat(projectBindingManager.getFacadeForAnalysis()).isNotNull();
   }
@@ -136,7 +137,7 @@ public class ProjectBindingManagerTest {
     settings.setServerId("server1");
     settings.setProjectKey(null);
 
-    exception.expect(IllegalStateException.class);
+    exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
     assertThat(projectBindingManager.getFacadeForAnalysis()).isNotNull();
   }

@@ -28,6 +28,7 @@ import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ModuleStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -81,7 +82,7 @@ public class SonarLintEngineManagerTest {
   @Test
   public void should_fail_invalid_server() {
     manager.initComponent();
-    exception.expect(IllegalStateException.class);
+    exception.expect(InvalidBindingException.class);
     exception.expectMessage("Invalid server name");
     manager.getConnectedEngine(notifications, "server1", "project1");
   }
@@ -93,7 +94,7 @@ public class SonarLintEngineManagerTest {
 
     manager.initComponent();
 
-    exception.expect(IllegalStateException.class);
+    exception.expect(InvalidBindingException.class);
     exception.expectMessage("Server is not updated");
     manager.getConnectedEngine(notifications, "server1", "project1");
   }
