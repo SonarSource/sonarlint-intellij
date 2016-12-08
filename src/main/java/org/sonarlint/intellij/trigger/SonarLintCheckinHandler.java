@@ -115,13 +115,19 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       .count();
     changedFilesIssues.set(map);
 
+    long numBlockerIssues = map.entrySet().stream()
+      .flatMap(e -> e.getValue().stream())
+      .filter(i -> !i.isResolved())
+      .filter(i -> "BLOCKER".equals(i.getSeverity()))
+      .count();
+
     if (numIssues == 0) {
       return ReturnResult.COMMIT;
     }
 
     long numFiles = map.keySet().size();
 
-    String msg = createMessage(numFiles, numIssues);
+    String msg = createMessage(numFiles, numIssues, numBlockerIssues);
     if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
       LOGGER.info(msg);
       return ReturnResult.CANCEL;
@@ -130,11 +136,17 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     return showYesNoCancel(msg);
   }
 
-  private static String createMessage(long filesAnalysed, long numIssues) {
+  private static String createMessage(long filesAnalysed, long numIssues, long numBlockerIssues) {
     String files = filesAnalysed == 1 ? "file" : "files";
     String issues = numIssues == 1 ? "issue" : "issues";
 
-    return String.format("SonarLint analysis on %d %s found %d %s", filesAnalysed, files, numIssues, issues);
+    if (numBlockerIssues > 0) {
+      String blocker = numBlockerIssues == 1 ? "issue" : "issues";
+      return String.format("SonarLint analysis on %d %s found %d %s (including %d blocker %s)", filesAnalysed, files,
+        numIssues, issues, numBlockerIssues, blocker);
+    } else {
+      return String.format("SonarLint analysis on %d %s found %d %s", filesAnalysed, files, numIssues, issues);
+    }
   }
 
   private ReturnResult showYesNoCancel(String resultStr) {
