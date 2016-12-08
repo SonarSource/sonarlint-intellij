@@ -122,7 +122,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     annotation.setHighlightType(getType(issue.getSeverity()));
   }
 
-  private static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
+  static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
     if (severity == null) {
       return SonarLintTextAttributes.MAJOR;
     }
@@ -132,6 +132,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       case "BLOCKER":
         return SonarLintTextAttributes.BLOCKER;
       case "INFO":
+
         return SonarLintTextAttributes.INFO;
       case "CRITICAL":
         return SonarLintTextAttributes.CRITICAL;

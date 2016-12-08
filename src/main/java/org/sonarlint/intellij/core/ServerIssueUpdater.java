@@ -95,7 +95,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private static void waitForTasks(List<Future<Void>> updateTasks) {
-    for(Future<Void> f : updateTasks) {
+    for (Future<Void> f : updateTasks) {
       try {
         f.get(5, TimeUnit.SECONDS);
       } catch (TimeoutException ex) {

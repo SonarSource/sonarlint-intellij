@@ -123,12 +123,12 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       "SonarLint Updates",
       "Configuration changed on SonarQube server '" + serverId + "'. <a href=\"#update\">Update now</a>",
       NotificationType.INFORMATION, new NotificationListener.Adapter() {
-        @Override
-        public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-          notification.hideBalloon();
-          SonarQubeServerMgmtPanel.updateServerBinding(server, engine, onlyProjects);
-        }
-      });
+      @Override
+      public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
+        notification.hideBalloon();
+        SonarQubeServerMgmtPanel.updateServerBinding(server, engine, onlyProjects);
+      }
+    });
     notification.notify(myProject);
   }
 

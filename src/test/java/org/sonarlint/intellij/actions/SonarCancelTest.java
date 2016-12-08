@@ -28,6 +28,7 @@ import org.sonarlint.intellij.analysis.SonarLintStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarCancelTest extends SonarTest {
@@ -58,9 +59,26 @@ public class SonarCancelTest extends SonarTest {
   }
 
   @Test
+  public void testCancelWithoutProject() {
+    event = SonarLintTestUtils.createAnActionEvent(null);
+    sonarCancel.actionPerformed(event);
+
+    assertThat(SonarLintStatus.get(project).isRunning()).isFalse();
+    assertThat(SonarLintStatus.get(project).isCanceled()).isFalse();
+  }
+
+  @Test
   public void testDisableIfNotRunning() {
     SonarLintStatus status = mock(SonarLintStatus.class);
     when(status.isRunning()).thenReturn(false);
+    assertThat(sonarCancel.isEnabled(project, status)).isFalse();
+  }
+
+  @Test
+  public void testDisableIfCanceled() {
+    SonarLintStatus status = mock(SonarLintStatus.class);
+    when(status.isRunning()).thenReturn(true);
+    when(status.isCanceled()).thenReturn(true);
     assertThat(sonarCancel.isEnabled(project, status)).isFalse();
   }
 

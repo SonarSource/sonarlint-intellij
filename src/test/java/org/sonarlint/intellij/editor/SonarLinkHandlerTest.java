@@ -29,6 +29,7 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarLinkHandlerTest extends SonarTest {
@@ -59,6 +60,14 @@ public class SonarLinkHandlerTest extends SonarTest {
     assertThat(desc).contains(RULE_KEY);
     verify(sonarlint).getDescription(RULE_KEY);
     verify(sonarlint).getRuleName(RULE_KEY);
+  }
+
+  @Test
+  public void testDescriptionWithoutProject() {
+    when(editor.getProject()).thenReturn(null);
+
+    assertThat(handler.getDescription(RULE_KEY, editor)).isNull();
+    verifyZeroInteractions(sonarlint);
   }
 
   @Test

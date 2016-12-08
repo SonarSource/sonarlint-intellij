@@ -39,6 +39,55 @@ public class SonarQubeServerTest {
     assertThat(server.getLogin()).isEqualTo("login");
     assertThat(server.getPassword()).isEqualTo("pass");
     assertThat(server.getHostUrl()).isEqualTo("host");
+
+    assertThat(server.toString()).isEqualTo(server.getName());
+  }
+
+  @Test
+  public void testEqualsAndHash() {
+    SonarQubeServer server1 = SonarQubeServer.newBuilder()
+      .setHostUrl("host")
+      .setPassword("pass")
+      .setToken("token")
+      .setName("name")
+      .setLogin("login")
+      .build();
+
+    SonarQubeServer server2 = SonarQubeServer.newBuilder()
+      .setHostUrl("host")
+      .setPassword("pass")
+      .setToken("token")
+      .setName("name")
+      .setLogin("login")
+      .build();
+
+    SonarQubeServer server3 = SonarQubeServer.newBuilder()
+      .setHostUrl("host")
+      .setPassword("pass1")
+      .setToken("token")
+      .setName("name")
+      .setLogin("login")
+      .build();
+
+    assertThat(server1.equals(server2)).isTrue();
+    assertThat(server1.equals(server3)).isFalse();
+    assertThat(server1.equals(null)).isFalse();
+
+    assertThat(server1.hashCode()).isEqualTo(server3.hashCode());
+  }
+
+  @Test
+  public void testSetNullEncodedFields() {
+    SonarQubeServer server = SonarQubeServer.newBuilder()
+      .setHostUrl("host")
+      .setPassword(null)
+      .setToken(null)
+      .setName("name")
+      .setLogin("login")
+      .build();
+
+    assertThat(server.getToken()).isNull();
+    assertThat(server.getPassword()).isNull();
   }
 
   @Test

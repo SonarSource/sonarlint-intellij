@@ -43,6 +43,12 @@ public class SonarLintConsole extends AbstractProjectComponent {
     settings = myProject.getComponent(SonarLintProjectSettings.class);
   }
 
+  SonarLintConsole(Project project, ConsoleView consoleView, SonarLintProjectSettings settings) {
+    super(project);
+    this.consoleView = consoleView;
+    this.settings = settings;
+  }
+
   @Override
   public void projectClosed() {
     // if we do it when Project is disposed, it's too late
@@ -60,7 +66,7 @@ public class SonarLintConsole extends AbstractProjectComponent {
   }
 
   public boolean debugEnabled() {
-    return settings.isAnalysisLogsEnabled();
+    return settings.isVerboseEnabled();
   }
 
   public void info(String msg) {

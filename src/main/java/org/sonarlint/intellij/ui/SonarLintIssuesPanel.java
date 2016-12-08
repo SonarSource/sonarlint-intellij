@@ -183,5 +183,4 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     return null;
   }
 
-
 }

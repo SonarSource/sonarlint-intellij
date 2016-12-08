@@ -32,6 +32,7 @@ import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -71,6 +72,17 @@ public class MakeTriggerTest extends SonarTest {
     when(context.getProject()).thenReturn(mock(Project.class));
     trigger.buildFinished(project, UUID.randomUUID(), true);
     verify(submitter).submitOpenFilesAuto(TriggerType.COMPILATION);
+  }
+
+  @Test
+  public void should_do_nothing_on_generate() {
+    trigger.fileGenerated("output", "relative");
+    verifyZeroInteractions(submitter);
+  }
+
+  @Test
+  public void component_name() {
+    assertThat(trigger.getComponentName()).isEqualTo("MakeTrigger");
   }
 
   @Test

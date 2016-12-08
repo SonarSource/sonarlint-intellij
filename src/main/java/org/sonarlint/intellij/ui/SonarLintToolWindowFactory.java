@@ -82,9 +82,9 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   private static void addLogTab(Project project, ToolWindow toolWindow) {
     Content logContent = toolWindow.getContentManager().getFactory()
       .createContent(
-      new SonarLintLogPanel(toolWindow, project),
-      TAB_LOGS,
-      false);
+        new SonarLintLogPanel(toolWindow, project),
+        TAB_LOGS,
+        false);
     toolWindow.getContentManager().addContent(logContent);
   }
 
@@ -104,7 +104,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
     if (content != null && !hasVcs) {
       toolWindow.getContentManager().removeContent(content, false);
-    } else if(content == null && hasVcs) {
+    } else if (content == null && hasVcs) {
       toolWindow.getContentManager().addContent(changedFilesTab, 1);
     }
   }

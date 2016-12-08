@@ -78,7 +78,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
 
     projectBaseDir = temp.newFolder().toPath();
 
-    when(project.getBasePath()).thenReturn( FileUtil.toSystemIndependentName(projectBaseDir.toString()));
+    when(project.getBasePath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.toString()));
     settings = new SonarLintProjectSettings();
     settings.setProjectKey(PROJECT_KEY);
     updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console);

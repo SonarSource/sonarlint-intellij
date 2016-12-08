@@ -48,6 +48,8 @@ public class SonarLintProjectSettingsTest {
     settings.setBindingEnabled(true);
     assertThat(settings.isBindingEnabled()).isTrue();
 
+    assertThat(settings.getState()).isEqualTo(settings);
+
     settings.setAdditionalProperties(Collections.singletonMap("key", "value"));
     assertThat(settings.getAdditionalProperties()).containsExactly(MapEntry.entry("key", "value"));
 

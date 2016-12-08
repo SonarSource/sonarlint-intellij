@@ -82,6 +82,20 @@ public class SonarClearIssuesTest extends SonarTest {
   }
 
   @Test
+  public void testClearWithInvalidFiles() {
+    VirtualFile openFile = mock(VirtualFile.class);
+
+    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] {openFile});
+    when(openFile.isValid()).thenReturn(false);
+
+    clearIssues.actionPerformed(event);
+
+    verifyZeroInteractions(psiManager);
+    verifyZeroInteractions(codeAnalyzer);
+    verify(issueManager).clear();
+  }
+
+  @Test
   public void testDoNothingIfNoProject() {
     when(event.getProject()).thenReturn(null);
 

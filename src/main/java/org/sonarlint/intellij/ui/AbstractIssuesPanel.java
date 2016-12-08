@@ -37,7 +37,7 @@ import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   protected Project project;
   protected Tree tree;
-  protected  TreeModelBuilder treeBuilder;
+  protected TreeModelBuilder treeBuilder;
 
   AbstractIssuesPanel() {
     super(false, true);
