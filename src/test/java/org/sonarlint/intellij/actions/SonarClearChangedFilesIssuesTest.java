@@ -47,4 +47,11 @@ public class SonarClearChangedFilesIssuesTest extends SonarTest {
 
     verify(changedFilesIssues).clear();
   }
+
+  @Test
+  public void noProject() {
+    AnActionEvent event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(null);
+    action.actionPerformed(event);
+  }
 }

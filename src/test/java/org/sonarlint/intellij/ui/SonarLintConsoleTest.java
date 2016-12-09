@@ -48,6 +48,12 @@ public class SonarLintConsoleTest {
   }
 
   @Test
+  public void testClear() {
+    console.clear();
+    verify(consoleView).clear();
+  }
+
+  @Test
   public void testVerboseLogging() {
     assertThat(console.debugEnabled()).isFalse();
     console.debug("debug msg");

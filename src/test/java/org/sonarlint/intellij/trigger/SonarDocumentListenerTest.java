@@ -130,6 +130,40 @@ public class SonarDocumentListenerTest {
   }
 
   @Test
+  public void dont_trigger_if_no_project() {
+    VirtualFile file = mock(VirtualFile.class);
+    Document doc = mock(Document.class);
+    DocumentEvent event = mock(DocumentEvent.class);
+
+    when(file.isValid()).thenReturn(true);
+    when(event.getDocument()).thenReturn(doc);
+    when(docManager.getFile(doc)).thenReturn(file);
+    when(utils.guessProjectForFile(file)).thenReturn(null);
+
+    listener.documentChanged(event);
+    verifyZeroInteractions(submitter);
+  }
+
+  @Test
+  public void dont_trigger_if_no_vfile() {
+    Document doc = mock(Document.class);
+    DocumentEvent event = mock(DocumentEvent.class);
+
+    when(event.getDocument()).thenReturn(doc);
+    when(docManager.getFile(doc)).thenReturn(null);
+
+    listener.documentChanged(event);
+    verifyZeroInteractions(submitter);
+  }
+
+  @Test
+  public void nothing_to_do_before_doc_change() {
+    listener.beforeDocumentChange(null);
+    verifyZeroInteractions(submitter);
+    verifyZeroInteractions(utils);
+  }
+
+  @Test
   public void clear_and_dispose() {
     Module m1 = mock(Module.class);
     VirtualFile file = mock(VirtualFile.class);
