@@ -29,7 +29,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
@@ -53,18 +52,152 @@ public class TreeModelBuilder {
   private DefaultTreeModel model;
   private SummaryNode summary;
   private IssueTreeIndex index;
-  private Predicate<VirtualFile> filePredicate;
 
   public TreeModelBuilder() {
     this.index = new IssueTreeIndex();
   }
 
-  public void updateFiles(Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
-    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : issuesPerFile.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue(), filePredicate);
+  /**
+   * Creates the model with a basic root
+   */
+  public DefaultTreeModel createModel() {
+    summary = new SummaryNode();
+    model = new DefaultTreeModel(summary);
+    model.setRoot(summary);
+    return model;
+  }
+
+  private AbstractNode getFilesParent() {
+    return summary;
+  }
+
+  public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map, String emptyText) {
+    summary.setEmptyText(emptyText);
+
+    List<VirtualFile> toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
+
+    toRemove.forEach(this::removeFile);
+
+    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
+      setFileIssues(e.getKey(), e.getValue());
     }
 
     model.nodeChanged(summary);
+  }
+
+  @CheckForNull
+  private FileNode setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
+    if (!accept(file)) {
+      removeFile(file);
+      return null;
+    }
+
+    List<LiveIssue> filtered = filter(issues);
+    if (filtered.isEmpty()) {
+      removeFile(file);
+      return null;
+    }
+
+    boolean newFile = false;
+    FileNode fNode = index.getFileNode(file);
+    if (fNode == null) {
+      newFile = true;
+      fNode = new FileNode(file);
+      index.setFileNode(fNode);
+    }
+
+    setIssues(fNode, filtered);
+
+    if (newFile) {
+      AbstractNode parent = getFilesParent();
+      int idx = parent.getInsertIdx(fNode, new FileNodeComparator());
+      int[] newIdx = {idx};
+      model.nodesWereInserted(parent, newIdx);
+      model.nodeChanged(parent);
+    } else {
+      model.nodeStructureChanged(fNode);
+    }
+
+    return fNode;
+  }
+
+  private void removeFile(VirtualFile file) {
+    FileNode node = index.getFileNode(file);
+
+    if (node != null) {
+      index.remove(node.file());
+      model.removeNodeFromParent(node);
+    }
+  }
+
+  private static void setIssues(FileNode node, Iterable<LiveIssue> issuePointers) {
+    node.removeAllChildren();
+
+    // 15ms for 500 issues -> to improve?
+    TreeSet<LiveIssue> set = new TreeSet<>(ISSUE_COMPARATOR);
+
+    for (LiveIssue issue : issuePointers) {
+      set.add(issue);
+    }
+
+    for (LiveIssue issue : set) {
+      IssueNode iNode = new IssueNode(issue);
+      node.add(iNode);
+    }
+  }
+
+  private static List<LiveIssue> filter(Iterable<LiveIssue> issues) {
+    return StreamSupport.stream(issues.spliterator(), false)
+      .filter(TreeModelBuilder::accept)
+      .collect(Collectors.toList());
+  }
+
+  private static boolean accept(LiveIssue issue) {
+    return !issue.isResolved() && issue.isValid();
+  }
+
+  private static boolean accept(VirtualFile file) {
+    return file.isValid();
+  }
+
+  private static class FileNodeComparator implements Comparator<FileNode> {
+    @Override public int compare(FileNode o1, FileNode o2) {
+      int c = o1.file().getName().compareTo(o2.file().getName());
+      if (c != 0) {
+        return c;
+      }
+
+      return o1.file().getPath().compareTo(o2.file().getPath());
+    }
+  }
+
+  static class IssueComparator implements Comparator<LiveIssue> {
+    @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
+      Ordering<Long> creationDateOrdering = Ordering.natural().reverse().nullsLast();
+      int dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
+
+      if (dateCompare != 0) {
+        return dateCompare;
+      }
+
+      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getSeverity(), o2.getSeverity());
+
+      if (severityCompare != 0) {
+        return severityCompare;
+      }
+
+      RangeMarker r1 = o1.getRange();
+      RangeMarker r2 = o2.getRange();
+
+      int rangeStart1 = (r1 == null) ? -1 : r1.getStartOffset();
+      int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
+
+      return ComparisonChain.start()
+        .compare(rangeStart1, rangeStart2)
+        .compare(o1.getRuleName(), o2.getRuleName())
+        .compare(o1.uid(), o2.uid())
+        .result();
+    }
   }
 
   @CheckForNull
@@ -169,149 +302,5 @@ public class TreeModelBuilder {
     }
 
     return (AbstractNode) after;
-  }
-
-  /**
-   * Creates the model with a basic root
-   */
-  public DefaultTreeModel createModel() {
-    summary = new SummaryNode();
-
-    model = new DefaultTreeModel(summary);
-    model.setRoot(summary);
-    return model;
-  }
-
-  private AbstractNode getParent() {
-    return summary;
-  }
-
-  public DefaultTreeModel updateModel(Map<VirtualFile, Collection<LiveIssue>> map, Predicate<VirtualFile> filePredicate) {
-    this.filePredicate = filePredicate;
-
-    List<VirtualFile> toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
-
-    toRemove.forEach(this::removeFile);
-
-    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue(), filePredicate);
-    }
-
-    return model;
-  }
-
-  @CheckForNull
-  private FileNode setFileIssues(VirtualFile file, Iterable<LiveIssue> issues, Predicate<VirtualFile> condition) {
-    if (!accept(file, condition)) {
-      removeFile(file);
-      return null;
-    }
-
-    List<LiveIssue> filtered = filter(issues);
-    if (filtered.isEmpty()) {
-      removeFile(file);
-      return null;
-    }
-
-    boolean newFile = false;
-    FileNode fNode = index.getFileNode(file);
-    if (fNode == null) {
-      newFile = true;
-      fNode = new FileNode(file);
-      index.setFileNode(fNode);
-    }
-
-    setIssues(fNode, filtered);
-
-    if (newFile) {
-      AbstractNode parent = getParent();
-      int idx = parent.getInsertIdx(fNode, new FileNodeComparator());
-      int[] newIdx = {idx};
-      model.nodesWereInserted(parent, newIdx);
-      model.nodeChanged(parent);
-    } else {
-      model.nodeStructureChanged(fNode);
-    }
-
-    return fNode;
-  }
-
-  private void removeFile(VirtualFile file) {
-    FileNode node = index.getFileNode(file);
-
-    if (node != null) {
-      index.remove(node.file());
-      model.removeNodeFromParent(node);
-    }
-  }
-
-  private static void setIssues(FileNode node, Iterable<LiveIssue> issuePointers) {
-    node.removeAllChildren();
-
-    // 15ms for 500 issues -> to improve?
-    TreeSet<LiveIssue> set = new TreeSet<>(ISSUE_COMPARATOR);
-
-    for (LiveIssue issue : issuePointers) {
-      set.add(issue);
-    }
-
-    for (LiveIssue issue : set) {
-      IssueNode iNode = new IssueNode(issue);
-      node.add(iNode);
-    }
-  }
-
-  private static List<LiveIssue> filter(Iterable<LiveIssue> issues) {
-    return StreamSupport.stream(issues.spliterator(), false)
-      .filter(TreeModelBuilder::accept)
-      .collect(Collectors.toList());
-  }
-
-  private static boolean accept(LiveIssue issue) {
-    return !issue.isResolved() && issue.isValid();
-  }
-
-  private static boolean accept(VirtualFile file, Predicate<VirtualFile> condition) {
-    return file.isValid() && condition.test(file);
-  }
-
-  private static class FileNodeComparator implements Comparator<FileNode> {
-    @Override public int compare(FileNode o1, FileNode o2) {
-      int c = o1.file().getName().compareTo(o2.file().getName());
-      if (c != 0) {
-        return c;
-      }
-
-      return o1.file().getPath().compareTo(o2.file().getPath());
-    }
-  }
-
-  static class IssueComparator implements Comparator<LiveIssue> {
-    @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
-      Ordering<Long> creationDateOrdering = Ordering.natural().reverse().nullsLast();
-      int dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
-
-      if (dateCompare != 0) {
-        return dateCompare;
-      }
-
-      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getSeverity(), o2.getSeverity());
-
-      if (severityCompare != 0) {
-        return severityCompare;
-      }
-
-      RangeMarker r1 = o1.getRange();
-      RangeMarker r2 = o2.getRange();
-
-      int rangeStart1 = (r1 == null) ? -1 : r1.getStartOffset();
-      int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
-
-      return ComparisonChain.start()
-        .compare(rangeStart1, rangeStart2)
-        .compare(o1.getRuleName(), o2.getRuleName())
-        .compare(o1.uid(), o2.uid())
-        .result();
-    }
   }
 }

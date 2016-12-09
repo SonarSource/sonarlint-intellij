@@ -52,10 +52,9 @@ import org.sonarlint.intellij.ui.nodes.IssueNode;
 public class IssueTree extends Tree implements DataProvider {
   private final Project project;
 
-  public IssueTree(Project project, TreeModel model, boolean rootVisible) {
+  public IssueTree(Project project, TreeModel model) {
     super(model);
     this.project = project;
-    this.setRootVisible(rootVisible);
     init();
   }
 

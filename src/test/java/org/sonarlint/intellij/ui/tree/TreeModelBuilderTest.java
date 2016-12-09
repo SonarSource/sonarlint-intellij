@@ -72,7 +72,7 @@ public class TreeModelBuilderTest {
     addFile(data, "file2", 2);
     addFile(data, "file3", 2);
 
-    treeBuilder.updateModel(data, file -> true);
+    treeBuilder.updateModel(data, "empty");
     IssueNode first = treeBuilder.getNextIssue((AbstractNode<?>) model.getRoot());
     assertNode(first, "file1", 1);
 

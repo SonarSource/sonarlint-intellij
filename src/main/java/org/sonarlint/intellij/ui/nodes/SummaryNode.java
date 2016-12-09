@@ -22,8 +22,15 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.ui.ColoredTreeCellRenderer;
 
 public class SummaryNode extends AbstractNode {
+  private String emptyText;
+
   public SummaryNode() {
     super();
+    this.emptyText = "No issues to display";
+  }
+
+  public void setEmptyText(String emptyText) {
+    this.emptyText = emptyText;
   }
 
   public String getText() {
@@ -31,7 +38,7 @@ public class SummaryNode extends AbstractNode {
     int files = getChildCount();
 
     if (issues == 0) {
-      return "No issues to display";
+      return emptyText;
     }
 
     return String.format("Found %d %s in %d %s", issues, issues == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");

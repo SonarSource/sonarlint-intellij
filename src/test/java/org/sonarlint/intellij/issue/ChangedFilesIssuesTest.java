@@ -65,6 +65,7 @@ public class ChangedFilesIssuesTest extends SonarTest {
     assertThat(changedFilesIssues.lastAnalysisDate())
       .isBeforeOrEqualTo(LocalDateTime.now())
       .isAfter(LocalDateTime.now().minus(Duration.ofSeconds(3)));
+    assertThat(changedFilesIssues.wasAnalyzed()).isTrue();
     assertThat(changedFilesIssues.issues()).isEmpty();
 
     verify(listener).update(Collections.emptyMap());
@@ -82,5 +83,7 @@ public class ChangedFilesIssuesTest extends SonarTest {
     verify(listener).update(Collections.emptyMap());
     assertThat(changedFilesIssues.lastAnalysisDate()).isNull();
     assertThat(changedFilesIssues.issues()).isEmpty();
+    assertThat(changedFilesIssues.wasAnalyzed()).isFalse();
+
   }
 }

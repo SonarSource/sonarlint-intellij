@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
+import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.issue.persistence.IssuePersistence;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
@@ -68,6 +69,15 @@ public class IssueManager extends AbstractProjectComponent {
   public void clear() {
     cache.clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
+  }
+
+  /**
+   * Returns the issues in the live cache for a file.
+   * If the file was never analysed, null is returned. If the file was analysed but no issues were found, an empty Collection is returned.
+   */
+  @CheckForNull
+  public Collection<LiveIssue> getForFileOrNull(VirtualFile file) {
+    return cache.getLive(file);
   }
 
   public Collection<LiveIssue> getForFile(VirtualFile file) {

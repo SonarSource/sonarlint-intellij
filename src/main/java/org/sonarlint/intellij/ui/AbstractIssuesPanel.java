@@ -20,13 +20,16 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.treeStructure.Tree;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import javax.swing.JComponent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -41,6 +44,20 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
 
   AbstractIssuesPanel() {
     super(false, true);
+  }
+
+  protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty) {
+    float savedProportion = PropertiesComponent.getInstance(project).getFloat(proportionProperty, 0.65f);
+
+    final Splitter splitter = new Splitter(false);
+    splitter.setFirstComponent(c1);
+    splitter.setSecondComponent(c2);
+    splitter.setProportion(savedProportion);
+    splitter.setHonorComponentsMinimumSize(true);
+    splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION,
+      evt -> PropertiesComponent.getInstance(project).setValue(proportionProperty, Float.toString(splitter.getProportion())));
+
+    return splitter;
   }
 
   @CheckForNull

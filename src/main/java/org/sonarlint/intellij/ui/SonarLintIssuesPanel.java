@@ -19,14 +19,12 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Splitter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.containers.HashMap;
@@ -37,7 +35,6 @@ import java.util.Collection;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.Box;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
@@ -60,7 +57,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataProvider {
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.issuestoolwindow";
-  private static final String SPLIT_PROPORTION = "SONARLINT_ISSUES_SPLIT_PROPORTION";
+  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
 
   private final IssueManager issueManager;
 
@@ -90,7 +87,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
       ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
-    super.setContent(createSplitter(issuesPanel, scrollableRulePanel));
+    super.setContent(createSplitter(issuesPanel, scrollableRulePanel, SPLIT_PROPORTION_PROPERTY));
 
     subscribeToEvents();
     updateTree();
@@ -103,7 +100,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
 
       @Override public void filesChanged(final Map<VirtualFile, Collection<LiveIssue>> map) {
         ApplicationManager.getApplication().invokeLater(() -> {
-          treeBuilder.updateFiles(map);
+          treeBuilder.updateModel(map, "No issues found in the current opened file");
           expandTree();
         });
       }
@@ -115,20 +112,6 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
 
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
-  }
-
-  private JComponent createSplitter(JComponent c1, JComponent c2) {
-    float savedProportion = PropertiesComponent.getInstance(project).getFloat(SPLIT_PROPORTION, 0.65f);
-
-    final Splitter splitter = new Splitter(false);
-    splitter.setFirstComponent(c1);
-    splitter.setSecondComponent(c2);
-    splitter.setProportion(savedProportion);
-    splitter.setHonorComponentsMinimumSize(true);
-    splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION,
-      evt -> PropertiesComponent.getInstance(project).setValue(SPLIT_PROPORTION, Float.toString(splitter.getProportion())));
-
-    return splitter;
   }
 
   private void addToolbar() {
@@ -146,10 +129,21 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new HashMap<>();
     Collection<VirtualFile> all = scope.getAll();
     for (VirtualFile f : all) {
-      issuesPerFile.put(f, issueManager.getForFile(f));
+      Collection<LiveIssue> issues = issueManager.getForFileOrNull(f);
+      if (issues != null) {
+        issuesPerFile.put(f, issues);
+      }
+    }
+    String emptyText;
+    if (all.isEmpty()) {
+      emptyText = "No file opened in the editor";
+    } else if (issuesPerFile.isEmpty()) {
+      emptyText = "No analysis done on the current opened file";
+    } else {
+      emptyText = "No issues found in the current opened file";
     }
 
-    treeBuilder.updateModel(issuesPerFile, scope.getCondition());
+    treeBuilder.updateModel(issuesPerFile, emptyText);
     expandTree();
   }
 
@@ -169,7 +163,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
   private void createTree() {
     treeBuilder = new TreeModelBuilder();
     DefaultTreeModel model = treeBuilder.createModel();
-    tree = new IssueTree(project, model, false);
+    tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
   }
 

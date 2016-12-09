@@ -55,6 +55,10 @@ public class ChangedFilesIssues extends AbstractProjectComponent {
     this.messageBus.syncPublisher(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC).update(issues);
   }
 
+  public boolean wasAnalyzed() {
+    return lastAnalysis != null;
+  }
+
   @CheckForNull
   public LocalDateTime lastAnalysisDate() {
     return lastAnalysis;

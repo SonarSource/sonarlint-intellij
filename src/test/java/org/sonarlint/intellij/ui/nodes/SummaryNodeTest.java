@@ -55,4 +55,13 @@ public class SummaryNodeTest {
 
     verify(renderer).append("No issues to display");
   }
+
+  @Test
+  public void testEmptyText() {
+    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    node.setEmptyText("Empty");
+    node.render(renderer);
+
+    verify(renderer).append("Empty");
+  }
 }

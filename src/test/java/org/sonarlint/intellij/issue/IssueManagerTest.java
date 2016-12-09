@@ -180,6 +180,8 @@ public class IssueManagerTest extends SonarTest {
     Collection<LiveIssue> fileIssues = manager.getForFile(file1);
     assertThat(fileIssues).hasSize(1);
 
+    assertThat(manager.getForFileOrNull(file1)).containsExactly(fileIssues.iterator().next());
+
     LiveIssue issuePointer = fileIssues.iterator().next();
     assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
@@ -200,6 +202,14 @@ public class IssueManagerTest extends SonarTest {
     assertThat(issuePointer.uid()).isEqualTo(issue.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
     assertThat(issuePointer.getCreationDate()).isNull();
+  }
+
+  @Test
+  public void unknown_file() {
+    VirtualFile unknownFile = mock(VirtualFile.class);
+    when(cache.getLive(unknownFile)).thenReturn(null);
+    assertThat(manager.getForFileOrNull(unknownFile)).isNull();
+    assertThat(manager.getForFile(unknownFile)).isEmpty();
   }
 
   @Test
