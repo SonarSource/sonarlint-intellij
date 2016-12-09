@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
@@ -72,7 +73,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     this.console = console;
   }
 
-  public void fetchAndMatchServerIssues(Collection<VirtualFile> virtualFiles, boolean modal) {
+  public void fetchAndMatchServerIssues(Collection<VirtualFile> virtualFiles, ProgressIndicator indicator) {
     if (!projectSettings.isBindingEnabled()) {
       // not in connected mode
       return;
@@ -83,13 +84,17 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     String moduleKey = projectSettings.getProjectKey();
     List<Future<Void>> updateTasks = new LinkedList<>();
 
+    String msg = "Fetching server issues";
+    console.debug(msg);
+    indicator.setText(msg);
+
     // submit tasks
     for (VirtualFile virtualFile : virtualFiles) {
       String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
       updateTasks.add(fetchAndMatchServerIssues(virtualFile, server, engine, moduleKey, relativePath));
     }
 
-    if (modal) {
+    if (indicator.isModal()) {
       waitForTasks(updateTasks);
     }
   }

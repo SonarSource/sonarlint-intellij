@@ -85,11 +85,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     String end = issuesToShow == 1 ? " issue" : " issues";
     console.info("Found " + issuesToShow + end);
 
-    if (shouldUpdateServerIssues(job.trigger())) {
-      String msg = "Fetching server issues";
-      console.debug(msg);
-      indicator.setText(msg);
-      serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssues, indicator.isModal());
+    if (!filesWithIssues.isEmpty() && shouldUpdateServerIssues(job.trigger())) {
+      serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssues, indicator);
     }
   }
 

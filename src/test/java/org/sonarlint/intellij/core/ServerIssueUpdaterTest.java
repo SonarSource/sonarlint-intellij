@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -68,6 +69,8 @@ public class ServerIssueUpdaterTest extends SonarTest {
   private ProjectBindingManager bindingManager;
   @Mock
   private SonarLintConsole console;
+  @Mock
+  private ProgressIndicator indicator;
 
   private Path projectBaseDir;
 
@@ -78,6 +81,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
 
     projectBaseDir = temp.newFolder().toPath();
 
+    when(indicator.isModal()).thenReturn(false);
     when(project.getBasePath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.toString()));
     settings = new SonarLintProjectSettings();
     settings.setProjectKey(PROJECT_KEY);
@@ -89,7 +93,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     settings.setBindingEnabled(false);
 
-    updater.fetchAndMatchServerIssues(Collections.singletonList(file), false);
+    updater.fetchAndMatchServerIssues(Collections.singletonList(file), indicator);
     verifyZeroInteractions(bindingManager);
     verifyZeroInteractions(issueManager);
   }
@@ -116,7 +120,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     settings.setBindingEnabled(true);
 
     updater.initComponent();
-    updater.fetchAndMatchServerIssues(Collections.singletonList(file), false);
+    updater.fetchAndMatchServerIssues(Collections.singletonList(file), indicator);
 
     verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
