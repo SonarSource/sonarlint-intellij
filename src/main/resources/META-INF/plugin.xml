@@ -33,6 +33,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.6 - Support of SSL certificates configured in IntelliJ</li>
         <li>2.5 - Analysis of VCS changed files and notifications about binding update</li>
         <li>2.4.3 - Bug fix for multi-module projects on Windows</li>
         <li>2.4.2 - Fix resolved issues on windows and authentication</li>
