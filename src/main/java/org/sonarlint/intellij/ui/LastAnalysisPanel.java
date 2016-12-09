@@ -20,25 +20,22 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
+import icons.SonarLintIcons;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
-import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LastAnalysisPanel implements Disposable {
-  private static final Logger LOGGER = Logger.getInstance(LastAnalysisPanel.class);
   private static final String NO_ANALYSIS_LABEL = "Trigger the analysis to find issues on the files in the VCS change set";
   private static final String NO_CHANGED_FILES_LABEL = "VCS contains no changed files";
   private final ChangedFilesIssues changedFileIssues;
@@ -90,11 +87,7 @@ public class LastAnalysisPanel implements Disposable {
 
   private void createComponents() {
     panel = new JPanel(new GridBagLayout());
-    try {
-      icon = new JLabel(ResourceLoader.getIcon("info.png"));
-    } catch (IOException e) {
-      LOGGER.error("Failed to load icon", e);
-    }
+    icon = new JLabel(SonarLintIcons.INFO);
     lastAnalysisLabel = new JLabel("");
     gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0);
 

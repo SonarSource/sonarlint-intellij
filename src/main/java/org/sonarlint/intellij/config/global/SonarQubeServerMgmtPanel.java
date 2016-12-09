@@ -25,7 +25,6 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -43,6 +42,7 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
+import icons.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -51,7 +51,6 @@ import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -75,16 +74,13 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 
 public class SonarQubeServerMgmtPanel implements Disposable {
-  private static final Logger LOGGER = Logger.getInstance(SonarQubeServerMgmtPanel.class);
   private static final String LABEL_NO_SERVERS = "No servers";
-  private static final String LIST_ICON = ResourceLoader.ICON_SONARQUBE_16;
 
   // UI
   private JPanel panel;
@@ -155,12 +151,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       @Override
       protected void customizeCellRenderer(JList list, Object value, int index, boolean selected, boolean hasFocus) {
         SonarQubeServer server = (SonarQubeServer) value;
-        try {
-          setIcon(ResourceLoader.getIcon(LIST_ICON));
-        } catch (IOException e) {
-          LOGGER.error("Error loading SonarLint icon", e);
-        }
-
+        setIcon(SonarLintIcons.ICON_SONARQUBE_16);
         append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
       }
     });

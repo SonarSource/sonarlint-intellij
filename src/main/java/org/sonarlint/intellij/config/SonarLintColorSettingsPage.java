@@ -26,7 +26,7 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighter;
 import com.intellij.openapi.options.colors.AttributesDescriptor;
 import com.intellij.openapi.options.colors.ColorDescriptor;
 import com.intellij.openapi.options.colors.ColorSettingsPage;
-import java.io.IOException;
+import icons.SonarLintIcons;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
@@ -34,11 +34,8 @@ import java.util.TreeMap;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.util.ResourceLoader;
 
 public class SonarLintColorSettingsPage implements ColorSettingsPage {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintColorSettingsPage.class);
-
   private static final AttributesDescriptor[] DESCRIPTORS = new AttributesDescriptor[] {
     new AttributesDescriptor("Major issue", SonarLintTextAttributes.MAJOR),
     new AttributesDescriptor("Minor issue", SonarLintTextAttributes.MINOR),
@@ -66,12 +63,7 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
   }
 
   @Nullable @Override public Icon getIcon() {
-    try {
-      return ResourceLoader.getIcon(ResourceLoader.ICON_SONARLINT_16);
-    } catch (IOException e) {
-      LOGGER.error("Couldn't load icon", e);
-    }
-    return null;
+    return SonarLintIcons.SONARLINT;
   }
 
   @NotNull @Override public SyntaxHighlighter getHighlighter() {

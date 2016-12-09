@@ -164,22 +164,28 @@
         <group id="SonarLint.issuestoolwindow" text="SonarLint" popup="true"/>
         <group id="SonarLint.changedtoolwindow" text="SonarLint" popup="true"/>
 
+        <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
+                text="Analyze this file with SonarLint"
+                description="Run SonarLint analysis on this file"
+                icon="SonarLintIcons.SONARLINT">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+        </action>
+
         <action id="SonarLint.AnalyzeCurrentEditorFile"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
                 text="Analyze this file with SonarLint"
                 description="Run SonarLint analysis on the file selected in the editor"
-                icon="/images/onde-sonar-16-execute.png">
+                icon="SonarLintIcons.PLAY">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
-            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
-
 
         <action id="SonarLint.SonarAnalyzeChangedFilesAction"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
                 text="Analyze VCS changed files"
                 description="Run SonarLint analysis on the files that have been changed"
-                icon="/images/onde-sonar-16-execute.png">
+                icon="SonarLintIcons.PLAY">
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
@@ -187,7 +193,7 @@
                 class="org.sonarlint.intellij.actions.SonarCancel"
                 text="Cancel SonarLint analysis"
                 description="Cancel the SonarLint analysis running"
-                icon="/images/suspend.png">
+                icon="SonarLintIcons.SUSPEND">
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
@@ -197,7 +203,7 @@
                 class="org.sonarlint.intellij.actions.SonarConfigureProject"
                 text="Configure SonarLint"
                 description="Configure SonarLint"
-                icon="/images/externalToolsSmall.png">
+                icon="SonarLintIcons.TOOLS">
             <add-to-group group-id="SonarLint.logtoolwindow"/>
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
@@ -207,7 +213,7 @@
                 class="org.sonarlint.intellij.actions.SonarCleanConsole"
                 text="Clear SonarLint console"
                 description="Clear SonarLint console"
-                icon="/images/clean.png">
+                icon="SonarLintIcons.CLEAN">
             <add-to-group group-id="SonarLint.logtoolwindow"/>
         </action>
 
@@ -215,7 +221,7 @@
                 class="org.sonarlint.intellij.actions.SonarClearIssues"
                 text="Clear SonarLint issues"
                 description="Clear SonarLint issues"
-                icon="/images/clean.png">
+                icon="SonarLintIcons.CLEAN">
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
 
@@ -223,7 +229,7 @@
                 class="org.sonarlint.intellij.actions.SonarClearChangedFilesIssues"
                 text="Clear list of issues"
                 description="Clear list of issues on changed files"
-                icon="/images/clean.png">
+                icon="SonarLintIcons.CLEAN">
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
     </actions>

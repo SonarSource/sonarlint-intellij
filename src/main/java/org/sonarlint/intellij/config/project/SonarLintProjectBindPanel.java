@@ -22,7 +22,6 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.ui.ComboBox;
@@ -34,13 +33,13 @@ import com.intellij.ui.components.JBCheckBox;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 
+import icons.SonarLintIcons;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +59,6 @@ import javax.swing.border.Border;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
-import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteModule;
@@ -69,7 +67,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import static org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine.State;
 
 public class SonarLintProjectBindPanel implements Disposable {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintProjectBindPanel.class);
   private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
   private static final String PROJECT_NO_SERVER = "<No server selected>";
   private static final String PROJECT_EMPTY = "<No projects to display>";
@@ -389,11 +386,7 @@ public class SonarLintProjectBindPanel implements Disposable {
 
       append(value.getName(), attrs, true);
       setToolTipText("Connect to this SonarQube server");
-      try {
-        setIcon(ResourceLoader.getIcon(ResourceLoader.ICON_SONARQUBE_16));
-      } catch (IOException e) {
-        LOGGER.error("Failed to load SonarQube icon", e);
-      }
+      setIcon(SonarLintIcons.ICON_SONARQUBE_16);
     }
   }
 

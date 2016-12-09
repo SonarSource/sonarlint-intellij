@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -45,7 +44,6 @@ import javax.swing.SwingConstants;
 import javax.swing.text.PlainDocument;
 
 import org.sonarlint.intellij.core.ConnectionTestTask;
-import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isBlank;
@@ -212,18 +210,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     }
 
     authTypeComboBox.addItemListener(e -> switchAuth(e.getItem().equals(AUTH_TOKEN)));
-    setIcon();
-
     return rootPanel;
-  }
-
-  private void setIcon() {
-    try {
-      ImageIcon sonarQubeIcon = ResourceLoader.getIcon(ResourceLoader.ICON_SONARQUBE_32);
-      super.getPeer().getWindow().setIconImage(sonarQubeIcon.getImage());
-    } catch (Exception e) {
-      // ignore and don't set icon
-    }
   }
 
   private void switchAuth(boolean token) {

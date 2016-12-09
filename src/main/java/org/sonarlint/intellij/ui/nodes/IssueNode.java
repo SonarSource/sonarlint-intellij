@@ -19,20 +19,17 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
-import java.io.IOException;
+import icons.SonarLintIcons;
 import javax.annotation.Nonnull;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueNode extends AbstractNode {
-  private static final Logger LOGGER = Logger.getInstance(IssueNode.class);
   private final LiveIssue issue;
 
   public IssueNode(LiveIssue issue) {
@@ -43,11 +40,7 @@ public class IssueNode extends AbstractNode {
     String severity = issue.getSeverity();
 
     if (severity != null) {
-      try {
-        renderer.setIcon(ResourceLoader.getSeverityIcon(severity));
-      } catch (IOException e) {
-        LOGGER.error("Couldn't load icon for getSeverity: " + severity, e);
-      }
+      renderer.setIcon(SonarLintIcons.severity(severity));
     }
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
 

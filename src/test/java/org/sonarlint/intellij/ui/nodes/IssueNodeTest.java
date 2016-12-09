@@ -22,11 +22,11 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.psi.PsiFile;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
+import icons.SonarLintIcons;
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -61,7 +61,7 @@ public class IssueNodeTest {
 
     verify(renderer).append("1 hour ago", SimpleTextAttributes.GRAY_ATTRIBUTES);
     verify(renderer).append("rule");
-    verify(renderer).setIcon(ResourceLoader.getSeverityIcon("MAJOR"));
+    verify(renderer).setIcon(SonarLintIcons.severity("MAJOR"));
   }
 
   @Test

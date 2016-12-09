@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -32,11 +31,11 @@ import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.messages.MessageBusConnection;
+import icons.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.IOException;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -46,18 +45,13 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.util.ResourceLoader;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AutoTriggerStatusPanel {
-  private static final Logger LOGGER = Logger.getInstance(AutoTriggerStatusPanel.class);
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
   private static final String FILE_DISABLED = "FILE_DISABLED";
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
-
-  private static final String WARN_ICO = "warning.png";
-  private static final String INFO_ICO = "info.png";
 
   private static final String TOOLTIP = "Some files are not automatically analysed. For example, "
     + "files that are excluded or Java files that don't belong the project's source root.";
@@ -126,28 +120,23 @@ public class AutoTriggerStatusPanel {
     JPanel disabledCard = new JPanel(new GridBagLayout());
     JPanel notThisFileCard = new JPanel(new GridBagLayout());
 
-    try {
-      Icon infoIcon = ResourceLoader.getIcon(INFO_ICO);
-      HyperlinkLabel link = new HyperlinkLabel("");
-      link.setIcon(infoIcon);
-      link.setUseIconAsLink(true);
-      link.addHyperlinkListener(new HyperlinkAdapter() {
-        @Override
-        protected void hyperlinkActivated(HyperlinkEvent e) {
-          final JLabel label = new JLabel("<html>" + TOOLTIP + "</html>");
-          label.setBorder(HintUtil.createHintBorder());
-          label.setBackground(HintUtil.INFORMATION_COLOR);
-          label.setOpaque(true);
-          HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
-        }
-      });
+    Icon infoIcon = SonarLintIcons.INFO;
+    HyperlinkLabel link = new HyperlinkLabel("");
+    link.setIcon(infoIcon);
+    link.setUseIconAsLink(true);
+    link.addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        final JLabel label = new JLabel("<html>" + TOOLTIP + "</html>");
+        label.setBorder(HintUtil.createHintBorder());
+        label.setBackground(HintUtil.INFORMATION_COLOR);
+        label.setOpaque(true);
+        HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
+      }
+    });
 
-      disabledCard.add(new JLabel(ResourceLoader.getIcon(WARN_ICO)), gc);
-      notThisFileCard.add(link, gc);
-    } catch (IOException e) {
-      // do nothing except logging
-      LOGGER.error("Failed to load icon", e);
-    }
+    disabledCard.add(new JLabel(SonarLintIcons.WARN), gc);
+    notThisFileCard.add(link, gc);
 
     JLabel enabledLabel = new JLabel("Automatic analysis is enabled");
     JLabel disabledLabel = new JLabel("On-the-fly analysis is disabled - issues are not automatically displayed");
