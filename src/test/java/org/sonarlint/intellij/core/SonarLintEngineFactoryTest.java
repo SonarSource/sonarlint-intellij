@@ -57,6 +57,11 @@ public class SonarLintEngineFactoryTest {
   }
 
   @Test
+  public void componentName() {
+    assertThat(factory.getComponentName()).isEqualTo("SonarLintEngineFactory");
+  }
+
+  @Test
   public void connected() {
     ConnectedSonarLintEngine engine = factory.createEngine("id");
     assertThat(engine).isNotNull();

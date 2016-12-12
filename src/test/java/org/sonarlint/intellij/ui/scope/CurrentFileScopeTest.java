@@ -58,6 +58,7 @@ public class CurrentFileScopeTest extends SonarTest {
     CurrentFileScope scope = new CurrentFileScope(project);
 
     assertThat(scope.getDisplayName()).isEqualTo("Current File");
+    assertThat(scope.toString()).isEqualTo("Current File");
     Predicate<VirtualFile> condition = scope.getCondition();
     assertThat(condition.test(file)).isTrue();
     assertThat(condition.test(mock(VirtualFile.class))).isFalse();
