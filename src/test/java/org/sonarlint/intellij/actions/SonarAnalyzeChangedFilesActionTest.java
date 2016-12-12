@@ -29,6 +29,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -36,6 +37,8 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,7 +53,6 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
   private ChangedFilesIssues issues;
   @Mock
   private IssueManager issueManager;
-
   @Mock
   private PeriodicalTasksCloser tasksCloser;
   @Mock
@@ -93,6 +95,6 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
 
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(Collections.singletonList(file), TriggerType.ACTION, false);
+    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ACTION), any(AnalysisCallback.class), eq(false));
   }
 }

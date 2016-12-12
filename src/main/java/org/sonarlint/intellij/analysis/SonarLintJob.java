@@ -35,13 +35,13 @@ public class SonarLintJob {
   private final Set<VirtualFile> files;
   private final TriggerType trigger;
   private final long creationTime;
-  @Nullable private final AnalysisErrorCallback callback;
+  @Nullable private final AnalysisCallback callback;
 
   SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger) {
     this(m, files, trigger, null);
   }
 
-  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback) {
+  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
     this.callback = callback;
     Preconditions.checkNotNull(m);
     Preconditions.checkNotNull(trigger);
@@ -56,7 +56,7 @@ public class SonarLintJob {
   }
 
   @CheckForNull
-  public AnalysisErrorCallback callback() {
+  public AnalysisCallback callback() {
     return callback;
   }
 

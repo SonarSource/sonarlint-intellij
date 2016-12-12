@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.analysis.AnalysisErrorCallback;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -85,7 +85,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
     verify(changedFilesIssues).set(Collections.singletonMap(file, Collections.singleton(issue)));
-    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisErrorCallback.class));
+    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 
   @Test
@@ -100,6 +100,6 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
     verify(changedFilesIssues).set(anyMap());
-    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisErrorCallback.class));
+    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 }

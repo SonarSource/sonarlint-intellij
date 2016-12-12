@@ -35,7 +35,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
  * Nothing can be injected as it runs in the root pico container.
  */
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
-  private static final String TOOL_WINDOW_ID = "SonarLint";
+  public static final String TOOL_WINDOW_ID = "SonarLint";
   public static final String TAB_LOGS = "Log";
   public static final String TAB_CURRENT_FILE = "Current file";
   public static final String TAB_CHANGED_FILES = "Changed files";

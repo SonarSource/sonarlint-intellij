@@ -27,6 +27,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -87,6 +88,11 @@ public class IssueProcessor extends AbstractProjectComponent {
 
     if (!filesWithIssues.isEmpty() && shouldUpdateServerIssues(job.trigger())) {
       serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssues, indicator);
+    }
+
+    AnalysisCallback callback = job.callback();
+    if (callback != null) {
+      callback.onSuccess(transformedIssues);
     }
   }
 

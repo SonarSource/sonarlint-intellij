@@ -33,8 +33,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.NonFocusableCheckBox;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
@@ -47,17 +45,18 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.ui.ChangedFilesTabOpener;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
   private static final Logger LOGGER = Logger.getInstance(SonarLintCheckinHandler.class);
   private static final String ACTIVATED_OPTION_NAME = "SONARLINT_PRECOMMIT_ANALYSIS";
-  private static final String SONARLINT_TOOL_WINDOW_ID = "SonarLint";
 
   private final ToolWindowManager toolWindowManager;
   private final SonarLintGlobalSettings globalSettings;
@@ -91,7 +90,16 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     // this will block EDT (modal)
     try {
       AtomicBoolean error = new AtomicBoolean(false);
-      submitter.submitFilesModal(affectedFiles, TriggerType.CHECK_IN, ex -> error.set(true));
+      AnalysisCallback callback = new AnalysisCallback() {
+        @Override public void onSuccess(Map<VirtualFile, Collection<LiveIssue>> issues) {
+          // do nothing
+        }
+
+        @Override public void onError(Exception e) {
+          error.set(true);
+        }
+      };
+      submitter.submitFilesModal(affectedFiles, TriggerType.CHECK_IN, callback);
       if (error.get()) {
         return ReturnResult.CANCEL;
       }
@@ -178,25 +186,9 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    ToolWindow toolWindow = toolWindowManager.getToolWindow(SONARLINT_TOOL_WINDOW_ID);
+    ToolWindow toolWindow = toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
     if (toolWindow != null) {
       toolWindow.show(new ChangedFilesTabOpener(toolWindow));
-    }
-  }
-
-  private static class ChangedFilesTabOpener implements Runnable {
-    private final ToolWindow toolWindow;
-
-    private ChangedFilesTabOpener(ToolWindow toolWindow) {
-      this.toolWindow = toolWindow;
-    }
-
-    @Override public void run() {
-      ContentManager contentManager = toolWindow.getContentManager();
-      Content content = contentManager.findContent(SonarLintToolWindowFactory.TAB_CHANGED_FILES);
-      if (content != null) {
-        contentManager.setSelectedContent(content);
-      }
     }
   }
 

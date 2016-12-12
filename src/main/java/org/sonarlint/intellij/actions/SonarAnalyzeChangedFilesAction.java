@@ -23,17 +23,20 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.util.ui.UIUtil;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.ui.ChangedFilesTabOpener;
+import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
@@ -53,17 +56,38 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     }
 
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
     ChangeListManager changeListManager = ChangeListManager.getInstance(project);
 
+    AnalysisCallback callback = new ShowIssuesCallable(project);
     List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
-    submitter.submitFiles(affectedFiles, TriggerType.ACTION, false);
+    submitter.submitFiles(affectedFiles, TriggerType.ACTION, callback, false);
+  }
 
-    // TODO: do something in case of error?
-    IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
-    Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
-      .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
+  private class ShowIssuesCallable implements AnalysisCallback {
+    private final Project project;
 
-    changedFilesIssues.set(map);
+    private ShowIssuesCallable(Project project) {
+      this.project = project;
+    }
+
+    @Override public void onSuccess(Map<VirtualFile, Collection<LiveIssue>> issues) {
+      ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
+      changedFilesIssues.set(issues);
+      showChangedFilesTab(project);
+    }
+
+    @Override public void onError(Exception e) {
+      // do nothing
+    }
+
+    private void showChangedFilesTab(Project project) {
+      UIUtil.invokeLaterIfNeeded(() -> {
+        ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+        ToolWindow toolWindow = toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
+        if (toolWindow != null) {
+          toolWindow.show(new ChangedFilesTabOpener(toolWindow));
+        }
+      });
+    }
   }
 }

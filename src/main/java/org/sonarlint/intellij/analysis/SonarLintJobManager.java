@@ -54,13 +54,13 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * It might queue the submission of the job in the thread pool.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
-   * @see #submitManual(Module, Collection, TriggerType, boolean, AnalysisErrorCallback)
+   * @see #submitManual(Module, Collection, TriggerType, boolean, AnalysisCallback)
    */
   public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
     submitBackground(m, files, trigger, null);
   }
 
-  public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback) {
+  public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     SonarLintJob newJob = new SonarLintJob(m, files, trigger, callback);
     SonarLintTask task = taskFactory.createTask(newJob, true);
@@ -71,13 +71,13 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * Runs SonarLint analysis synchronously, if no manual (foreground) analysis is already on going.
    * If a foreground analysis is already on going, this method simply returns an empty AnalysisResult.
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
-   * @see #submitBackground(Module, Collection, TriggerType, AnalysisErrorCallback)
+   * @see #submitBackground(Module, Collection, TriggerType, AnalysisCallback)
    */
   public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal) {
     submitManual(m, files, trigger, modal, null);
   }
 
-  public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal, @Nullable AnalysisErrorCallback callback) {
+  public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal, @Nullable AnalysisCallback callback) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     if (myProject.isDisposed() || !status.tryRun()) {
       return;

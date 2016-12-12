@@ -29,7 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collection;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.analysis.AnalysisErrorCallback;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -71,7 +71,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     submitFilesModal(files, trigger, null);
   }
 
-  public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback) {
+  public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
     Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, false);
 
     if (!filesByModule.isEmpty()) {
@@ -94,7 +94,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     submitFiles(files, trigger, null, startInBackground);
   }
 
-  public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback, boolean startInBackground) {
+  public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
     Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, startInBackground);
 
     if (!filesByModule.isEmpty()) {
