@@ -30,20 +30,20 @@ import com.intellij.util.messages.MessageBus;
 
 import java.util.Collection;
 
-import org.sonarlint.intellij.issue.IssueProcessor;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarLintJobManager extends AbstractProjectComponent {
-  private final IssueProcessor processor;
   private final MessageBus messageBus;
   private final SonarLintStatus status;
   private final SonarLintConsole console;
+  private final SonarLintTaskFactory taskFactory;
 
-  public SonarLintJobManager(Project project, IssueProcessor processor) {
+  public SonarLintJobManager(Project project, SonarLintTaskFactory taskFactory) {
     super(project);
-    this.processor = processor;
+    this.taskFactory = taskFactory;
     this.messageBus = project.getMessageBus();
     this.status = SonarLintStatus.get(this.myProject);
     this.console = SonarLintConsole.get(myProject);
@@ -54,12 +54,16 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * It might queue the submission of the job in the thread pool.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
-   * @see #submitManual(Module, Collection, TriggerType, boolean)
+   * @see #submitManual(Module, Collection, TriggerType, boolean, AnalysisErrorCallback)
    */
   public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+    submitBackground(m, files, trigger, null);
+  }
+
+  public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
-    SonarLintJob newJob = new SonarLintJob(m, files, trigger);
-    SonarLintTask task = new SonarLintTask(processor, newJob, true);
+    SonarLintJob newJob = new SonarLintJob(m, files, trigger, callback);
+    SonarLintTask task = taskFactory.createTask(newJob, true);
     runInEDT(task);
   }
 
@@ -67,15 +71,19 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * Runs SonarLint analysis synchronously, if no manual (foreground) analysis is already on going.
    * If a foreground analysis is already on going, this method simply returns an empty AnalysisResult.
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
-   * @see #submitBackground(Module, Collection, TriggerType)
+   * @see #submitBackground(Module, Collection, TriggerType, AnalysisErrorCallback)
    */
   public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal) {
+    submitManual(m, files, trigger, modal, null);
+  }
+
+  public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal, @Nullable AnalysisErrorCallback callback) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     if (myProject.isDisposed() || !status.tryRun()) {
       return;
     }
-    SonarLintJob newJob = new SonarLintJob(m, files, trigger);
-    SonarLintUserTask task = new SonarLintUserTask(processor, newJob, status, modal);
+    SonarLintJob newJob = new SonarLintJob(m, files, trigger, callback);
+    SonarLintUserTask task = taskFactory.createUserTask(newJob, modal);
     runInEDT(task);
   }
 

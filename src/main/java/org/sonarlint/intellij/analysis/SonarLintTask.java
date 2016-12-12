@@ -123,6 +123,11 @@ public class SonarLintTask extends Task.Backgroundable {
         ApplicationManager.getApplication().invokeAndWait(
           () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarLint Analysis"), ModalityState.defaultModalityState());
       }
+
+      AnalysisErrorCallback callback = job.callback();
+      if (callback != null) {
+        callback.onError(e);
+      }
     }
   }
 

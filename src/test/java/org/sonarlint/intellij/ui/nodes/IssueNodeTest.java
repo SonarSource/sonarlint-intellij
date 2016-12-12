@@ -65,6 +65,16 @@ public class IssueNodeTest {
   }
 
   @Test
+  public void testInvalidIssue() {
+    LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
+    when(i.isValid()).thenReturn(false);
+    node = new IssueNode(i);
+    node.render(renderer);
+
+    verify(renderer).append("rule", SimpleTextAttributes.GRAY_ATTRIBUTES);
+  }
+
+  @Test
   public void testCount() {
     LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
     node = new IssueNode(i);

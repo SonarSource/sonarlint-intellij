@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 public class SonarLintJob {
@@ -33,8 +35,14 @@ public class SonarLintJob {
   private final Set<VirtualFile> files;
   private final TriggerType trigger;
   private final long creationTime;
+  @Nullable private final AnalysisErrorCallback callback;
 
   SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger) {
+    this(m, files, trigger, null);
+  }
+
+  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback) {
+    this.callback = callback;
     Preconditions.checkNotNull(m);
     Preconditions.checkNotNull(trigger);
     Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
@@ -45,6 +53,11 @@ public class SonarLintJob {
     this.files = Collections.unmodifiableSet(fileSet);
     this.trigger = trigger;
     this.creationTime = System.currentTimeMillis();
+  }
+
+  @CheckForNull
+  public AnalysisErrorCallback callback() {
+    return callback;
   }
 
   public long creationTime() {

@@ -40,6 +40,7 @@ import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
@@ -89,17 +90,25 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
     // this will block EDT (modal)
     try {
-      submitter.submitFilesModal(affectedFiles, TriggerType.CHECK_IN);
+      AtomicBoolean error = new AtomicBoolean(false);
+      submitter.submitFilesModal(affectedFiles, TriggerType.CHECK_IN, ex -> error.set(true));
+      if (error.get()) {
+        return ReturnResult.CANCEL;
+      }
       return processResult(affectedFiles);
     } catch (Exception e) {
-      String msg = "SonarLint - Error analysing " + affectedFiles.size() + " changed file(s).";
-      if (e.getMessage() != null) {
-        msg = msg + ": " + e.getMessage();
-      }
-      LOGGER.error("msg", e);
-      Messages.showErrorDialog(project, msg, "Error Analysing Files");
+      handleError(e, affectedFiles.size());
       return ReturnResult.CANCEL;
     }
+  }
+
+  private void handleError(Exception e, int numFiles) {
+    String msg = "SonarLint - Error analysing " + numFiles + " changed file(s).";
+    if (e.getMessage() != null) {
+      msg = msg + ": " + e.getMessage();
+    }
+    LOGGER.error("msg", e);
+    Messages.showErrorDialog(project, msg, "Error Analysing Files");
   }
 
   private ReturnResult processResult(Collection<VirtualFile> affectedFiles) {

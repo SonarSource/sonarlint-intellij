@@ -30,12 +30,15 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.analysis.AnalysisErrorCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -82,7 +85,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
     verify(changedFilesIssues).set(Collections.singletonMap(file, Collections.singleton(issue)));
-    verify(submitter).submitFilesModal(Collections.singleton(file), TriggerType.CHECK_IN);
+    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisErrorCallback.class));
   }
 
   @Test
@@ -97,6 +100,6 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
     verify(changedFilesIssues).set(anyMap());
-    verify(submitter).submitFilesModal(Collections.singleton(file), TriggerType.CHECK_IN);
+    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisErrorCallback.class));
   }
 }

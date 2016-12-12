@@ -28,6 +28,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collection;
+import javax.annotation.Nullable;
+import org.sonarlint.intellij.analysis.AnalysisErrorCallback;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -66,13 +68,17 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
    * @param trigger What triggered the analysis
    */
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger) {
+    submitFilesModal(files, trigger, null);
+  }
+
+  public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback) {
     Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, false);
 
     if (!filesByModule.isEmpty()) {
       console.debug("Trigger: " + trigger);
 
       for (Module m : filesByModule.keySet()) {
-        sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, true);
+        sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, true, callback);
       }
     }
   }
@@ -85,6 +91,10 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
    *                    if it starts in background or foreground.
    */
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {
+    submitFiles(files, trigger, null, startInBackground);
+  }
+
+  public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisErrorCallback callback, boolean startInBackground) {
     Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, startInBackground);
 
     if (!filesByModule.isEmpty()) {
@@ -92,9 +102,9 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
       for (Module m : filesByModule.keySet()) {
         if (startInBackground) {
-          sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger);
+          sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger, callback);
         } else {
-          sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, false);
+          sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, false, callback);
         }
       }
     }

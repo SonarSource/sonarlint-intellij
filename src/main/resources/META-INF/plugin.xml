@@ -145,6 +145,9 @@
         <component>
             <implementation-class>org.sonarlint.intellij.core.UpdateChecker</implementation-class>
         </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintTaskFactory</implementation-class>
+        </component>
     </project-components>
 
     <extensions defaultExtensionNs="com.intellij">
