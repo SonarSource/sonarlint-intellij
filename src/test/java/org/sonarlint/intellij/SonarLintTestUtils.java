@@ -26,6 +26,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import java.awt.GraphicsEnvironment;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
@@ -61,7 +62,7 @@ public class SonarLintTestUtils {
     return connection;
   }
 
-  public static AnActionEvent createAnActionEvent(Project project) {
+  public static AnActionEvent createAnActionEvent(@Nullable Project project) {
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(project);
     return event;
