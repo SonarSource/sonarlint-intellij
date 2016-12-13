@@ -76,6 +76,10 @@ public class IssueNode extends AbstractNode {
       return "(0, 0) ";
     }
 
+    if (!issue.isValid()) {
+      return "(-, -) ";
+    }
+
     Document doc = FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile());
     if (doc == null) {
       return "(?, ?)";

@@ -83,8 +83,11 @@ public class IssueTree extends Tree implements DataProvider {
         return null;
       }
       LiveIssue issue = ((IssueNode) node).issue();
-      int offset;
+      if (!issue.isValid()) {
+        return null;
+      }
 
+      int offset;
       RangeMarker range = issue.getRange();
       if (range != null) {
         offset = range.getStartOffset();
