@@ -53,6 +53,12 @@ public class SonarLintColorSettingsPageTest {
   }
 
   @Test
+  public void testAttributeDescriptors() {
+    // one per severity
+    assertThat(colorSettingsPage.getAttributeDescriptors()).hasSize(5);
+  }
+
+  @Test
   public void testIcon() {
     assertThat(colorSettingsPage.getIcon()).isNotNull();
   }

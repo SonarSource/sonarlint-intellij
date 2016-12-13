@@ -74,6 +74,17 @@ public class FileNodeTest {
     verify(renderer).setIcon(AllIcons.FileTypes.Java);
   }
 
+  @Test
+  public void testRenderMultiple() {
+    node.add(createTestIssueNode());
+    node.add(createTestIssueNode());
+    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    node.render(renderer);
+
+    verify(renderer).append("fileName");
+    verify(renderer).setIcon(AllIcons.FileTypes.Java);
+  }
+
   private static IssueNode createTestIssueNode() {
     return mock(IssueNode.class);
   }

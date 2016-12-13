@@ -84,6 +84,8 @@ public class SonarLintTaskTest extends SonarTest {
     getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
 
     assertThat(task.shouldStartInBackground()).isTrue();
+    assertThat(task.isConditionalModal()).isFalse();
+    assertThat(task.getJob()).isEqualTo(job);
     task.run(progress);
 
     verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));

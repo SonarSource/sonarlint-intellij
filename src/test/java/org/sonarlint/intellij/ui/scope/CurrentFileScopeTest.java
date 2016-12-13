@@ -24,12 +24,15 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class CurrentFileScopeTest extends SonarTest {
@@ -62,6 +65,21 @@ public class CurrentFileScopeTest extends SonarTest {
     Predicate<VirtualFile> condition = scope.getCondition();
     assertThat(condition.test(file)).isTrue();
     assertThat(condition.test(mock(VirtualFile.class))).isFalse();
+  }
+
+  @Test
+  public void testListener() {
+    VirtualFile file = mock(VirtualFile.class);
+    mockOpenFile(file);
+    CurrentFileScope scope = new CurrentFileScope(project);
+    AbstractScope.ScopeListener listener = mock(AbstractScope.ScopeListener.class);
+    scope.addListener(listener);
+    scope.updateCondition(f -> true);
+    verify(listener).conditionChanged();
+
+    scope.removeListeners();
+    scope.updateCondition(f -> true);
+    verifyNoMoreInteractions(listener);
   }
 
   private void mockNoOpenFile() {

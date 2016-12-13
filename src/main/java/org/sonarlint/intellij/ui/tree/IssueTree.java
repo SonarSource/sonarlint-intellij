@@ -78,23 +78,7 @@ public class IssueTree extends Tree implements DataProvider {
 
   @Nullable @Override public Object getData(@NonNls String dataId) {
     if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
-      DefaultMutableTreeNode node = getSelectedNode();
-      if (!(node instanceof IssueNode)) {
-        return null;
-      }
-      LiveIssue issue = ((IssueNode) node).issue();
-      if (!issue.isValid()) {
-        return null;
-      }
-
-      int offset;
-      RangeMarker range = issue.getRange();
-      if (range != null) {
-        offset = range.getStartOffset();
-      } else {
-        offset = 0;
-      }
-      return new OpenFileDescriptor(project, issue.psiFile().getVirtualFile(), offset);
+      return navigate();
     } else if (PlatformDataKeys.TREE_EXPANDER.is(dataId)) {
       return new DefaultTreeExpander(this);
     } else if (PlatformDataKeys.VIRTUAL_FILE.is(dataId)) {
@@ -111,6 +95,26 @@ public class IssueTree extends Tree implements DataProvider {
     }
 
     return null;
+  }
+
+  private Object navigate() {
+    DefaultMutableTreeNode node = getSelectedNode();
+    if (!(node instanceof IssueNode)) {
+      return null;
+    }
+    LiveIssue issue = ((IssueNode) node).issue();
+    if (!issue.isValid()) {
+      return null;
+    }
+
+    int offset;
+    RangeMarker range = issue.getRange();
+    if (range != null) {
+      offset = range.getStartOffset();
+    } else {
+      offset = 0;
+    }
+    return new OpenFileDescriptor(project, issue.psiFile().getVirtualFile(), offset);
   }
 
   private VirtualFile getSelectedFile() {

@@ -37,16 +37,22 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarLintJobManager extends AbstractProjectComponent {
   private final MessageBus messageBus;
+  private final ProgressManager progressManager;
   private final SonarLintStatus status;
   private final SonarLintConsole console;
   private final SonarLintTaskFactory taskFactory;
 
-  public SonarLintJobManager(Project project, SonarLintTaskFactory taskFactory) {
+  public SonarLintJobManager(Project project, SonarLintTaskFactory taskFactory, SonarLintStatus status, SonarLintConsole console) {
+    this(project, taskFactory, ProgressManager.getInstance(), status, console);
+  }
+
+  public SonarLintJobManager(Project project, SonarLintTaskFactory taskFactory, ProgressManager progressManager, SonarLintStatus status, SonarLintConsole console) {
     super(project);
     this.taskFactory = taskFactory;
     this.messageBus = project.getMessageBus();
-    this.status = SonarLintStatus.get(this.myProject);
-    this.console = SonarLintConsole.get(myProject);
+    this.progressManager = progressManager;
+    this.status = status;
+    this.console = console;
   }
 
   /**
@@ -105,7 +111,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
   private void runTask(SonarLintTask task) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     notifyStart(task.getJob());
-    ProgressManager.getInstance().run(task);
+    progressManager.run(task);
   }
 
   private void notifyStart(SonarLintJob job) {

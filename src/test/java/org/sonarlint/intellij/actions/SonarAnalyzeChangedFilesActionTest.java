@@ -41,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
@@ -82,6 +83,13 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
     when(status.isRunning()).thenReturn(false);
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(mock(VirtualFile.class)));
     assertThat(action.isEnabled(project, status)).isTrue();
+  }
+
+  @Test
+  public void testNoProject() {
+    AnActionEvent event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(null);
+    action.actionPerformed(event);
   }
 
   @Test
