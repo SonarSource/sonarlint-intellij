@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisCallbackAggregator;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -99,12 +100,12 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
     if (!filesByModule.isEmpty()) {
       console.debug("Trigger: " + trigger);
-
+      AnalysisCallback wrappedCallback = callback != null ? new AnalysisCallbackAggregator(callback, filesByModule.keySet().size()) : null;
       for (Module m : filesByModule.keySet()) {
         if (startInBackground) {
-          sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger, callback);
+          sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger, wrappedCallback);
         } else {
-          sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, false, callback);
+          sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, false, wrappedCallback);
         }
       }
     }
