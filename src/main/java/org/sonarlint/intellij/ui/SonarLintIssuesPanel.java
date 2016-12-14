@@ -99,10 +99,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
 
       @Override public void filesChanged(final Map<VirtualFile, Collection<LiveIssue>> map) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-          treeBuilder.updateModel(map, "No issues found in the current opened file");
-          expandTree();
-        });
+        ApplicationManager.getApplication().invokeLater(SonarLintIssuesPanel.this::updateTree);
       }
 
       @Override public void allChanged() {
