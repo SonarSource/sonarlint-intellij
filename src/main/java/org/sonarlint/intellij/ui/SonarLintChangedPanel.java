@@ -20,12 +20,17 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vcs.changes.ChangeListAdapter;
+import com.intellij.openapi.vcs.changes.ChangeListListener;
+import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -44,7 +49,7 @@ import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintChangedPanel extends AbstractIssuesPanel implements OccurenceNavigator, DataProvider {
+public class SonarLintChangedPanel extends AbstractIssuesPanel implements OccurenceNavigator, DataProvider, Disposable {
   private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.changedtoolwindow";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_CHANGED_ISSUES_SPLIT_PROPORTION";
@@ -52,13 +57,14 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   private final SonarLintRulePanel rulePanel;
   private final LastAnalysisPanel lastAnalysisPanel;
   private final ChangedFilesIssues changedFileIssues;
+  private final ChangeListManager changeListManager;
   private ActionToolbar mainToolbar;
 
   public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues) {
     this.changedFileIssues = changedFileIssues;
     this.project = project;
     this.lastAnalysisPanel = new LastAnalysisPanel(changedFileIssues, project);
-
+    this.changeListManager = ChangeListManager.getInstance(project);
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
     addToolbar();
 
@@ -78,9 +84,11 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
     super.setContent(createSplitter(issuesPanel, scrollableRulePanel, SPLIT_PROPORTION_PROPERTY));
     this.treeBuilder.updateModel(changedFileIssues.issues(), getEmptyText());
     subscribeToEvents();
+    Disposer.register(project, this);
   }
 
   private void subscribeToEvents() {
+    changeListManager.addChangeListListener(vcsChangeListener);
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(() -> {
       treeBuilder.updateModel(issues, getEmptyText());
@@ -114,7 +122,13 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   }
 
   private String getEmptyText() {
-    return changedFileIssues.wasAnalyzed() ? "No issues in changed files" : "No analysis done on changed files";
+    if (changedFileIssues.wasAnalyzed()) {
+      return "No issues in changed files";
+    } else if (changeListManager.getAffectedFiles().isEmpty()) {
+      return "No changed files in the VCS";
+    } else {
+      return "No analysis done on changed files";
+    }
   }
 
   private void issueTreeSelectionChanged() {
@@ -132,4 +146,16 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
     tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
   }
+
+  @Override
+  public void dispose() {
+    changeListManager.removeChangeListListener(vcsChangeListener);
+  }
+
+  private ChangeListListener vcsChangeListener = new ChangeListAdapter() {
+    @Override
+    public void changeListUpdateDone() {
+      ApplicationManager.getApplication().invokeLater(() -> treeBuilder.updateEmptyText(getEmptyText()));
+    }
+  };
 }

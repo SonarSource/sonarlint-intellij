@@ -85,6 +85,13 @@ public class TreeModelBuilder {
     model.nodeChanged(summary);
   }
 
+  public void updateEmptyText(String emptyText) {
+    summary.setEmptyText(emptyText);
+    if (summary.isLeaf()) {
+      model.nodeChanged(summary);
+    }
+  }
+
   @CheckForNull
   private FileNode setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
     if (!accept(file)) {
