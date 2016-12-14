@@ -23,7 +23,9 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
@@ -31,12 +33,15 @@ import com.intellij.util.messages.MessageBus;
 import java.util.Collection;
 
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarLintJobManager extends AbstractProjectComponent {
+  private final ExecutorService executor = Executors.newSingleThreadExecutor(new AnalysisThreadFactory());
   private final MessageBus messageBus;
   private final ProgressManager progressManager;
   private final SonarLintStatus status;
@@ -99,17 +104,26 @@ public class SonarLintJobManager extends AbstractProjectComponent {
   }
 
   /**
-   * Runs task through the ProgressManager. Needs to be called from EDT.
    * Depending on the type of task (Modal or Backgroundable), it will prepare related UI and execute the task in the current thread
-   * or in the Application thread pool.
+   * or in the executor.
+   * It needs to be called from EDT because of the creation of the Indicator.
    */
   private void runTask(SonarLintTask task) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
     notifyStart(task.getJob());
-    progressManager.run(task);
+    if (task.isConditionalModal() || task.isModal()) {
+      progressManager.run(task);
+    } else {
+      ProgressIndicator progressIndicator = new BackgroundableProcessIndicator(task);
+      executor.submit(() -> progressManager.runProcess(() -> task.run(progressIndicator), progressIndicator));
+    }
   }
 
   private void notifyStart(SonarLintJob job) {
     messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).started(job);
+  }
+
+  @Override
+  public void projectClosed() {
+    executor.shutdown();
   }
 }
