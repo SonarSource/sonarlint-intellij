@@ -64,8 +64,8 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * @see #submitManual(Map, TriggerType, boolean, AnalysisCallback)
    */
   public void submitBackground(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
-    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     SonarLintJob newJob = new SonarLintJob(files, trigger, callback);
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().size()));
     SonarLintTask task = taskFactory.createTask(newJob, true);
     runInEDT(task);
   }
@@ -77,12 +77,13 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * @see #submitBackground(Map, TriggerType, AnalysisCallback)
    */
   public void submitManual(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, boolean modal, @Nullable AnalysisCallback callback) {
-    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     if (myProject.isDisposed() || !status.tryRun()) {
       console.info("Canceling analysis triggered by the user because another one is already running or because the project is disposed");
       return;
     }
+
     SonarLintJob newJob = new SonarLintJob(files, trigger, callback);
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().size()));
     SonarLintUserTask task = taskFactory.createUserTask(newJob, modal);
     runInEDT(task);
   }
