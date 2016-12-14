@@ -30,6 +30,7 @@ import com.intellij.util.messages.MessageBus;
 
 import java.util.Collection;
 
+import java.util.Map;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -60,15 +61,11 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * It might queue the submission of the job in the thread pool.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
-   * @see #submitManual(Module, Collection, TriggerType, boolean, AnalysisCallback)
+   * @see #submitManual(Map, TriggerType, boolean, AnalysisCallback)
    */
-  public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger) {
-    submitBackground(m, files, trigger, null);
-  }
-
-  public void submitBackground(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
+  public void submitBackground(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
-    SonarLintJob newJob = new SonarLintJob(m, files, trigger, callback);
+    SonarLintJob newJob = new SonarLintJob(files, trigger, callback);
     SonarLintTask task = taskFactory.createTask(newJob, true);
     runInEDT(task);
   }
@@ -77,18 +74,15 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * Runs SonarLint analysis synchronously, if no manual (foreground) analysis is already on going.
    * If a foreground analysis is already on going, this method simply returns an empty AnalysisResult.
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
-   * @see #submitBackground(Module, Collection, TriggerType, AnalysisCallback)
+   * @see #submitBackground(Map, TriggerType, AnalysisCallback)
    */
-  public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal) {
-    submitManual(m, files, trigger, modal, null);
-  }
-
-  public void submitManual(Module m, Collection<VirtualFile> files, TriggerType trigger, boolean modal, @Nullable AnalysisCallback callback) {
+  public void submitManual(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, boolean modal, @Nullable AnalysisCallback callback) {
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), files.size()));
     if (myProject.isDisposed() || !status.tryRun()) {
+      console.info("Canceling analysis triggered by the user because another one is already running or because the project is disposed");
       return;
     }
-    SonarLintJob newJob = new SonarLintJob(m, files, trigger, callback);
+    SonarLintJob newJob = new SonarLintJob(files, trigger, callback);
     SonarLintUserTask task = taskFactory.createUserTask(newJob, modal);
     runInEDT(task);
   }

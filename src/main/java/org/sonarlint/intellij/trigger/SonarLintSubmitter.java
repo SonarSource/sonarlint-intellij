@@ -28,9 +28,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.AnalysisCallbackAggregator;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -73,14 +73,11 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
-    Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, false);
+    Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, false);
 
     if (!filesByModule.isEmpty()) {
       console.debug("Trigger: " + trigger);
-
-      for (Module m : filesByModule.keySet()) {
-        sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, true, callback);
-      }
+      sonarLintJobManager.submitManual(filesByModule, trigger, true, callback);
     }
   }
 
@@ -96,22 +93,19 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
-    Multimap<Module, VirtualFile> filesByModule = filterAndgetByModule(files, startInBackground);
+    Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, startInBackground);
 
     if (!filesByModule.isEmpty()) {
       console.debug("Trigger: " + trigger);
-      AnalysisCallback wrappedCallback = callback != null ? new AnalysisCallbackAggregator(callback, filesByModule.keySet().size()) : null;
-      for (Module m : filesByModule.keySet()) {
-        if (startInBackground) {
-          sonarLintJobManager.submitBackground(m, filesByModule.get(m), trigger, wrappedCallback);
-        } else {
-          sonarLintJobManager.submitManual(m, filesByModule.get(m), trigger, false, wrappedCallback);
-        }
+      if (startInBackground) {
+        sonarLintJobManager.submitBackground(filesByModule, trigger, callback);
+      } else {
+        sonarLintJobManager.submitManual(filesByModule, trigger, false, callback);
       }
     }
   }
 
-  private Multimap<Module, VirtualFile> filterAndgetByModule(Collection<VirtualFile> files, boolean autoTrigger) {
+  private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean autoTrigger) {
     Multimap<Module, VirtualFile> filesByModule = HashMultimap.create();
 
     for (VirtualFile file : files) {
@@ -130,6 +124,6 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
       filesByModule.put(m, file);
     }
 
-    return filesByModule;
+    return filesByModule.asMap();
   }
 }

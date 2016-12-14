@@ -26,5 +26,6 @@ import org.sonarlint.intellij.issue.LiveIssue;
 
 public interface AnalysisCallback {
   void onSuccess(Map<VirtualFile, Collection<LiveIssue>> issues);
+
   void onError(Exception e);
 }

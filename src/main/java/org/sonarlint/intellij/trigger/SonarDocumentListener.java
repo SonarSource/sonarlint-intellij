@@ -71,7 +71,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
 
     project.getMessageBus().connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
       @Override public void started(SonarLintJob job) {
-        removeFiles(job.files());
+        removeFiles(job.allFiles());
       }
     });
   }

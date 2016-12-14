@@ -22,19 +22,26 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTask.class);
@@ -42,6 +49,7 @@ public class SonarLintTask extends Task.Backgroundable {
   protected final SonarLintJob job;
   protected final boolean modal;
   private final boolean startInBackground;
+  private final SonarLintConsole console;
 
   public SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background) {
     this(processor, job, false, background);
@@ -53,11 +61,12 @@ public class SonarLintTask extends Task.Backgroundable {
    * @param background Whether it should start in the foreground or background.
    */
   protected SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean modal, boolean background) {
-    super(job.module().getProject(), "SonarLint Analysis", true);
+    super(job.project(), "SonarLint Analysis", true);
     this.processor = processor;
     this.job = job;
     this.modal = modal;
     this.startInBackground = background;
+    this.console = SonarLintConsole.get(job.project());
   }
 
   @Override
@@ -83,16 +92,12 @@ public class SonarLintTask extends Task.Backgroundable {
     AccumulatorIssueListener listener = new AccumulatorIssueListener();
 
     try {
-      if (isCanceled(indicator, myProject)) {
-        return;
-      }
+      checkCanceled(indicator, myProject);
 
-      AnalysisResults results = analyze(myProject, indicator, listener);
+      List<AnalysisResults> results = analyze(myProject, indicator, listener);
 
       //last chance to cancel (to avoid the possibility of having interrupt flag set)
-      if (isCanceled(indicator, myProject)) {
-        return;
-      }
+      checkCanceled(indicator, myProject);
 
       LOGGER.info("SonarLint analysis done");
 
@@ -102,7 +107,14 @@ public class SonarLintTask extends Task.Backgroundable {
       List<Issue> issues = listener.getIssues();
       indicator.setText("Creating SonarLint issues: " + issues.size());
 
-      processor.process(job, indicator, issues, results.failedAnalysisFiles());
+      List<ClientInputFile> allFailedAnalysisFiles = results.stream()
+        .flatMap(r -> r.failedAnalysisFiles().stream())
+        .collect(Collectors.toList());
+
+      processor.process(job, indicator, issues, allFailedAnalysisFiles);
+    } catch (CanceledException e1) {
+      console.info("Analysis canceled");
+      return;
     } catch (RuntimeException e) {
       handleError(e, indicator);
     } finally {
@@ -113,7 +125,6 @@ public class SonarLintTask extends Task.Backgroundable {
   private void handleError(RuntimeException e, ProgressIndicator indicator) {
     // if cancelled, ignore any errors since they were most likely caused by the interrupt
     if (!indicator.isCanceled()) {
-      SonarLintConsole console = SonarLintConsole.get(myProject);
       String msg = "Error running SonarLint analysis";
       console.error(msg, e);
       LOGGER.warn(msg, e);
@@ -131,33 +142,45 @@ public class SonarLintTask extends Task.Backgroundable {
     }
   }
 
-  private static boolean isCanceled(ProgressIndicator indicator, Project project) {
-    return indicator.isCanceled() || project.isDisposed();
+  private static void checkCanceled(ProgressIndicator indicator, Project project) {
+    if (indicator.isCanceled() || project.isDisposed()) {
+      throw new CanceledException();
+    }
   }
 
-  private AnalysisResults analyze(Project project, ProgressIndicator indicator, AccumulatorIssueListener listener) {
+  private List<AnalysisResults> analyze(Project project, ProgressIndicator indicator, AccumulatorIssueListener listener) {
     SonarLintAnalyzer analyzer = SonarLintUtils.get(project, SonarLintAnalyzer.class);
 
     indicator.setIndeterminate(true);
-    if (job.files().size() > 1) {
-      indicator.setText("Running SonarLint Analysis for " + job.files().size() + " files");
+    int numModules = job.filesPerModule().keySet().size();
+    String suffix = "";
+    if (numModules > 1) {
+      suffix = String.format(" in %d modules", numModules);
+    }
+
+    int numFiles = job.allFiles().size();
+    if (numFiles > 1) {
+      indicator.setText("Running SonarLint Analysis for " + numFiles + " files" + suffix);
     } else {
-      indicator.setText("Running SonarLint Analysis for '" + getFileName(job.files().iterator().next()) + "'");
+      indicator.setText("Running SonarLint Analysis for '" + getFileName(job.allFiles().iterator().next()) + "'");
     }
 
     LOGGER.info(indicator.getText());
 
     CancelMonitor monitor = new CancelMonitor(indicator, Thread.currentThread());
-    AnalysisResults result;
+    List<AnalysisResults> results = new LinkedList<>();
 
     try {
       monitor.start();
-      result = analyzer.analyzeModule(job.module(), job.files(), listener);
+      for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
+        results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener));
+        checkCanceled(indicator, myProject);
+      }
       indicator.startNonCancelableSection();
     } finally {
       monitor.stopMonitor();
     }
-    return result;
+    return results;
   }
 
   private class CancelMonitor extends Thread {

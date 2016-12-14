@@ -28,12 +28,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.issue.tracking.Trackable;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyCollectionOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -112,7 +111,7 @@ public class LiveIssueCacheTest {
     VirtualFile file = createTestFile("anotherfile");
     cache.save(file, Collections.singleton(issue1));
 
-    verify(store).save(eq("file1"), anyCollectionOf(Trackable.class));
+    verify(store).save(eq("file1"), anyCollection());
   }
 
   @Test
@@ -136,14 +135,14 @@ public class LiveIssueCacheTest {
 
     cache.flushAll();
 
-    verify(store).save(eq("file0"), anyCollectionOf(Trackable.class));
-    verify(store).save(eq("file1"), anyCollectionOf(Trackable.class));
+    verify(store).save(eq("file0"), anyCollection());
+    verify(store).save(eq("file1"), anyCollection());
     verifyNoMoreInteractions(store);
   }
 
   @Test
   public void error_flush() throws IOException {
-    doThrow(new IOException()).when(store).save(anyString(), anyCollectionOf(Trackable.class));
+    doThrow(new IOException()).when(store).save(anyString(), anyCollection());
 
     LiveIssue issue1 = createTestIssue("r1");
     VirtualFile file0 = createTestFile("file0");
@@ -155,7 +154,7 @@ public class LiveIssueCacheTest {
 
   @Test
   public void error_remove_eldest() throws IOException {
-    doThrow(new IOException()).when(store).save(anyString(), anyCollectionOf(Trackable.class));
+    doThrow(new IOException()).when(store).save(anyString(), anyCollection());
 
     LiveIssue issue1 = createTestIssue("r1");
     for (int i = 0; i < LiveIssueCache.MAX_ENTRIES; i++) {
@@ -177,8 +176,8 @@ public class LiveIssueCacheTest {
 
     cache.disposeComponent();
 
-    verify(store).save(eq("file0"), anyCollectionOf(Trackable.class));
-    verify(store).save(eq("file1"), anyCollectionOf(Trackable.class));
+    verify(store).save(eq("file0"), anyCollection());
+    verify(store).save(eq("file1"), anyCollection());
     verifyNoMoreInteractions(store);
   }
 

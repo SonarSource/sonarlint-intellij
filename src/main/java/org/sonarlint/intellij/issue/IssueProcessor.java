@@ -61,7 +61,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     long start = System.currentTimeMillis();
     AccessToken token = ReadAction.start();
     try {
-      transformedIssues = transformIssues(rawIssues, job.files(), failedAnalysisFiles);
+      transformedIssues = transformIssues(rawIssues, job.allFiles(), failedAnalysisFiles);
 
       // this might be updated later after tracking with server issues
       manager.store(transformedIssues);

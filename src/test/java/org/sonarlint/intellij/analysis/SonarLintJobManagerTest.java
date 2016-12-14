@@ -22,7 +22,9 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -66,7 +68,7 @@ public class SonarLintJobManagerTest extends SonarTest {
 
   @Test
   public void testUserTask() {
-    manager.submitManual(mock(Module.class), Collections.singleton(mock(VirtualFile.class)), TriggerType.ACTION, true);
+    manager.submitManual(mockFiles(), TriggerType.ACTION, true, null);
     verify(factory).createUserTask(any(SonarLintJob.class), eq(true));
     verify(app).isDispatchThread();
     verify(progressManager).run(task);
@@ -74,9 +76,13 @@ public class SonarLintJobManagerTest extends SonarTest {
 
   @Test
   public void testRunBackground() {
-    manager.submitBackground(mock(Module.class), Collections.singleton(mock(VirtualFile.class)), TriggerType.ACTION);
+    manager.submitBackground(mockFiles(), TriggerType.ACTION, null);
     verify(factory).createTask(any(SonarLintJob.class), eq(true));
     verify(app).isDispatchThread();
     verify(progressManager).run(task);
+  }
+
+  private Map<Module, Collection<VirtualFile>> mockFiles() {
+    return Collections.singletonMap(mock(Module.class), Collections.singleton(mock(VirtualFile.class)));
   }
 }

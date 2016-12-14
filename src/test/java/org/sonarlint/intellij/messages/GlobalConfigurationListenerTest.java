@@ -31,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class GlobalConfigurationListenerTest extends SonarTest {
   private List<SonarQubeServer> testList;
+
   @Before
   public void prepare() {
     testList = new LinkedList<>();

@@ -41,7 +41,7 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 

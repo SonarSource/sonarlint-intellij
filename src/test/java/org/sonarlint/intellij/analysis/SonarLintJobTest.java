@@ -35,8 +35,8 @@ public class SonarLintJobTest {
     VirtualFile f = mock(VirtualFile.class);
     SonarLintJob job = new SonarLintJob(m, Collections.singleton(f), TriggerType.COMPILATION);
 
-    assertThat(job.files()).containsOnly(f);
-    assertThat(job.module()).isEqualTo(m);
+    assertThat(job.allFiles()).containsOnly(f);
+    assertThat(job.filesPerModule().keySet()).containsOnly(m);
     assertThat(job.trigger()).isEqualTo(TriggerType.COMPILATION);
     assertThat(job.creationTime()).isBetween(System.currentTimeMillis() - 5000, System.currentTimeMillis());
   }

@@ -22,9 +22,13 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -36,8 +40,8 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -47,32 +51,35 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintTaskTest extends SonarTest {
   private SonarLintTask task;
+  @Mock
   private IssueProcessor processor;
   private HashSet<VirtualFile> files;
+  @Mock
   private ProgressIndicator progress;
   private SonarLintJob job;
+  @Mock
   private SonarLintAnalyzer sonarLintAnalyzer;
+  @Mock
   private AnalysisResults analysisResults;
 
   @Before
   public void prepare() {
+    MockitoAnnotations.initMocks(this);
     files = new HashSet<>();
     VirtualFile testFile = mock(VirtualFile.class);
     files.add(testFile);
     job = createJob();
-    progress = mock(ProgressIndicator.class);
-    analysisResults = mock(AnalysisResults.class);
     when(progress.isCanceled()).thenReturn(false);
-    processor = mock(IssueProcessor.class);
-    SonarLintConsole console = mock(SonarLintConsole.class);
-    task = new SonarLintTask(processor, job, false, true);
-    sonarLintAnalyzer = mock(SonarLintAnalyzer.class);
-    when(sonarLintAnalyzer.analyzeModule(eq(module), eq(job.files()), any(IssueListener.class))).thenReturn(analysisResults);
+    when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
+    when(sonarLintAnalyzer.analyzeModule(eq(module), eq(files), any(IssueListener.class))).thenReturn(analysisResults);
+
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
     super.register(SonarLintAnalyzer.class, sonarLintAnalyzer);
-    super.register(SonarLintConsole.class, console);
+    super.register(SonarLintConsole.class, mock(SonarLintConsole.class));
     super.register(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     super.register(IssueManager.class, mock(IssueManager.class));
+
+    task = new SonarLintTask(processor, job, false, true);
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();
@@ -88,7 +95,7 @@ public class SonarLintTaskTest extends SonarTest {
     assertThat(task.getJob()).isEqualTo(job);
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class));
     verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
@@ -101,7 +108,7 @@ public class SonarLintTaskTest extends SonarTest {
     TaskListener listener = mock(TaskListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
 
-    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(module), eq(job.files()), any(IssueListener.class));
+    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class));
     task.run(progress);
 
     // never called because of error

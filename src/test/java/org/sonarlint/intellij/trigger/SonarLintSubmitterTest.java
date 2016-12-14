@@ -33,7 +33,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -72,7 +72,7 @@ public class SonarLintSubmitterTest {
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitBackground(eq(m1), eq(Collections.singleton(f1)), eq(TriggerType.BINDING_CHANGE), eq(null));
+    verify(sonarLintJobManager).submitBackground(eq(Collections.singletonMap(m1, Collections.singleton(f1))), eq(TriggerType.BINDING_CHANGE), eq(null));
   }
 
   @Test
@@ -83,7 +83,7 @@ public class SonarLintSubmitterTest {
     when(utils.shouldAnalyze(f1, m1)).thenReturn(true);
 
     submitter.submitFilesModal(Collections.singleton(f1), TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitManual(eq(m1), eq(Collections.singleton(f1)), eq(TriggerType.BINDING_CHANGE), eq(true), eq(null));
+    verify(sonarLintJobManager).submitManual(eq(Collections.singletonMap(m1, Collections.singleton(f1))), eq(TriggerType.BINDING_CHANGE), eq(true), eq(null));
   }
 
   @Test

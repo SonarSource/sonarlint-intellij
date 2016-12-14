@@ -21,38 +21,46 @@ package org.sonarlint.intellij.analysis;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 public class SonarLintJob {
-  private final Module m;
-  private final Set<VirtualFile> files;
+  private final Map<Module, Collection<VirtualFile>> files;
   private final TriggerType trigger;
   private final long creationTime;
   @Nullable private final AnalysisCallback callback;
 
-  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger) {
-    this(m, files, trigger, null);
+  SonarLintJob(Module module, Collection<VirtualFile> files, TriggerType trigger) {
+    this(Collections.singletonMap(module, files), trigger, null);
   }
 
-  SonarLintJob(Module m, Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
+  SonarLintJob(Map<Module, Collection<VirtualFile>> files, TriggerType trigger) {
+    this(files, trigger, null);
+  }
+
+  SonarLintJob(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
     this.callback = callback;
-    Preconditions.checkNotNull(m);
+    Preconditions.checkNotNull(files);
     Preconditions.checkNotNull(trigger);
     Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
 
-    this.m = m;
-    Set<VirtualFile> fileSet = new HashSet<>();
-    fileSet.addAll(files);
-    this.files = Collections.unmodifiableSet(fileSet);
+    Map<Module, Collection<VirtualFile>> fileMap = new HashMap<>();
+    fileMap.putAll(files);
+    this.files = Collections.unmodifiableMap(fileMap);
     this.trigger = trigger;
     this.creationTime = System.currentTimeMillis();
+  }
+
+  public Project project() {
+    return files.keySet().iterator().next().getProject();
   }
 
   @CheckForNull
@@ -64,12 +72,14 @@ public class SonarLintJob {
     return creationTime;
   }
 
-  public Module module() {
-    return m;
+  public Map<Module, Collection<VirtualFile>> filesPerModule() {
+    return files;
   }
 
-  public Set<VirtualFile> files() {
-    return files;
+  public Collection<VirtualFile> allFiles() {
+    return files.entrySet().stream()
+      .flatMap(e -> e.getValue().stream())
+      .collect(Collectors.toList());
   }
 
   public TriggerType trigger() {

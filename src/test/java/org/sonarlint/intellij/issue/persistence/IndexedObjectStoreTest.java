@@ -24,26 +24,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Scanner;
-import org.apache.commons.lang.SystemUtils;
-import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class IndexedObjectStoreTest {
