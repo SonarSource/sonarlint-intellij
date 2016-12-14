@@ -60,6 +60,13 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   private final ChangeListManager changeListManager;
   private ActionToolbar mainToolbar;
 
+  private ChangeListListener vcsChangeListener = new ChangeListAdapter() {
+    @Override
+    public void changeListUpdateDone() {
+      ApplicationManager.getApplication().invokeLater(() -> treeBuilder.updateEmptyText(getEmptyText()));
+    }
+  };
+
   public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues) {
     this.changedFileIssues = changedFileIssues;
     this.project = project;
@@ -151,11 +158,4 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   public void dispose() {
     changeListManager.removeChangeListListener(vcsChangeListener);
   }
-
-  private ChangeListListener vcsChangeListener = new ChangeListAdapter() {
-    @Override
-    public void changeListUpdateDone() {
-      ApplicationManager.getApplication().invokeLater(() -> treeBuilder.updateEmptyText(getEmptyText()));
-    }
-  };
 }

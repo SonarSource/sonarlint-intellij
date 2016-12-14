@@ -46,6 +46,7 @@ public abstract class SonarLintFacade {
   }
 
   protected abstract AnalysisResults analyse(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener);
+
   protected abstract RuleDetails ruleDetails(String ruleKey);
 
   public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
@@ -59,14 +60,14 @@ public abstract class SonarLintFacade {
 
   @CheckForNull
   public String getDescription(String ruleKey) {
-      RuleDetails details = ruleDetails(ruleKey);
-      if (details == null) {
-        return null;
-      }
-      if (details.getExtendedDescription().isEmpty()) {
-        return details.getHtmlDescription();
-      }
-      return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
+    RuleDetails details = ruleDetails(ruleKey);
+    if (details == null) {
+      return null;
+    }
+    if (details.getExtendedDescription().isEmpty()) {
+      return details.getHtmlDescription();
+    }
+    return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
   }
 
   @CheckForNull
