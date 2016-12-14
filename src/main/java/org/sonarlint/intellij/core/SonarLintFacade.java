@@ -19,19 +19,62 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.project.Project;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 import javax.annotation.CheckForNull;
 
-public interface SonarLintFacade {
-  AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps);
+public abstract class SonarLintFacade {
+  protected final Project project;
+  protected final SonarLintProjectSettings projectSettings;
 
-  @CheckForNull String getDescription(String ruleKey);
+  protected SonarLintFacade(Project project, SonarLintProjectSettings projectSettings) {
+    this.project = project;
+    this.projectSettings = projectSettings;
+  }
 
-  @CheckForNull String getRuleName(String ruleKey);
+  protected abstract AnalysisResults analyse(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener);
+  protected abstract RuleDetails ruleDetails(String ruleKey);
+
+  public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
+    Path baseDir = Paths.get(project.getBasePath());
+    Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
+    Map<String, String> props = new HashMap<>();
+    props.putAll(additionalProps);
+    props.putAll(projectSettings.getAdditionalProperties());
+    return analyse(baseDir, workDir, inputFiles, props, issueListener);
+  }
+
+  @CheckForNull
+  public String getDescription(String ruleKey) {
+      RuleDetails details = ruleDetails(ruleKey);
+      if (details == null) {
+        return null;
+      }
+      if (details.getExtendedDescription().isEmpty()) {
+        return details.getHtmlDescription();
+      }
+      return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
+  }
+
+  @CheckForNull
+  public String getRuleName(String ruleKey) {
+    RuleDetails details = ruleDetails(ruleKey);
+    if (details == null) {
+      return null;
+    }
+    return details.getName();
+  }
 }
