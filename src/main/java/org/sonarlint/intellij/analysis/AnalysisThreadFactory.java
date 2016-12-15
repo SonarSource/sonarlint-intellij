@@ -27,9 +27,14 @@ public class AnalysisThreadFactory implements ThreadFactory {
 
   @Override public Thread newThread(@NotNull Runnable r) {
     Thread t = new Thread(r);
-    t.setName("SonarLintAnalysis" + counter++);
+    t.setName("SonarLintAnalysis" + id());
     t.setDaemon(true);
     t.setPriority(Thread.MIN_PRIORITY);
     return t;
+  }
+
+  private static int id() {
+    counter++;
+    return counter;
   }
 }
