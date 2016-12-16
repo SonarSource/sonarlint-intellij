@@ -19,13 +19,8 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
-import java.util.Map;
-import org.sonarlint.intellij.issue.LiveIssue;
-
 public interface AnalysisCallback {
-  void onSuccess(Map<VirtualFile, Collection<LiveIssue>> issues);
+  void onSuccess();
 
   void onError(Exception e);
 }

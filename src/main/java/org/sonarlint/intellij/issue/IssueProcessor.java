@@ -87,12 +87,12 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.info("Found " + issuesToShow + end);
 
     if (!filesWithIssues.isEmpty() && shouldUpdateServerIssues(job.trigger())) {
-      serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssues, indicator);
+      serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssues, indicator, job.waitForServerIssues());
     }
 
     AnalysisCallback callback = job.callback();
     if (callback != null) {
-      callback.onSuccess(transformedIssues);
+      callback.onSuccess();
     }
   }
 

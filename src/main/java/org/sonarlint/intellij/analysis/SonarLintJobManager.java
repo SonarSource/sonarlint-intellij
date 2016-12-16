@@ -69,7 +69,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * @see #submitManual(Map, TriggerType, boolean, AnalysisCallback)
    */
   public void submitBackground(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
-    SonarLintJob newJob = new SonarLintJob(files, trigger, callback);
+    SonarLintJob newJob = new SonarLintJob(files, trigger, false, callback);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().size()));
     SonarLintTask task = taskFactory.createTask(newJob, true);
     runInEDT(task);
@@ -87,7 +87,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
       return;
     }
 
-    SonarLintJob newJob = new SonarLintJob(files, trigger, callback);
+    SonarLintJob newJob = new SonarLintJob(files, trigger, true, callback);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().size()));
     SonarLintUserTask task = taskFactory.createUserTask(newJob, modal);
     runInEDT(task);
