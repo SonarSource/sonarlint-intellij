@@ -91,7 +91,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     try {
       AtomicBoolean error = new AtomicBoolean(false);
       AnalysisCallback callback = new AnalysisCallback() {
-        @Override public void onSuccess(Map<VirtualFile, Collection<LiveIssue>> issues) {
+        @Override public void onSuccess() {
           // do nothing
         }
 

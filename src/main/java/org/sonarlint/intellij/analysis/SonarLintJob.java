@@ -36,18 +36,16 @@ public class SonarLintJob {
   private final Map<Module, Collection<VirtualFile>> files;
   private final TriggerType trigger;
   private final long creationTime;
+  private boolean waitForServerIssues;
   @Nullable private final AnalysisCallback callback;
 
   SonarLintJob(Module module, Collection<VirtualFile> files, TriggerType trigger) {
-    this(Collections.singletonMap(module, files), trigger, null);
+    this(Collections.singletonMap(module, files), trigger, false ,null);
   }
 
-  SonarLintJob(Map<Module, Collection<VirtualFile>> files, TriggerType trigger) {
-    this(files, trigger, null);
-  }
-
-  SonarLintJob(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
+  SonarLintJob(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, boolean waitForServerIssues, @Nullable AnalysisCallback callback) {
     this.callback = callback;
+    this.waitForServerIssues = waitForServerIssues;
     Preconditions.checkNotNull(files);
     Preconditions.checkNotNull(trigger);
     Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
@@ -80,6 +78,10 @@ public class SonarLintJob {
     return files.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
       .collect(Collectors.toList());
+  }
+
+  public boolean waitForServerIssues() {
+    return waitForServerIssues;
   }
 
   public TriggerType trigger() {

@@ -38,6 +38,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -73,7 +75,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     this.console = console;
   }
 
-  public void fetchAndMatchServerIssues(Collection<VirtualFile> virtualFiles, ProgressIndicator indicator) {
+  public void fetchAndMatchServerIssues(Collection<VirtualFile> virtualFiles, ProgressIndicator indicator, boolean waitForCompletion) {
     if (!projectSettings.isBindingEnabled()) {
       // not in connected mode
       return;
@@ -85,6 +87,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     List<Future<Void>> updateTasks = new LinkedList<>();
 
     String msg = "Fetching server issues";
+    if (waitForCompletion) {
+      msg += " (waiting for results)";
+    }
     console.debug(msg);
     indicator.setText(msg);
 
@@ -94,7 +99,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       updateTasks.add(fetchAndMatchServerIssues(virtualFile, server, engine, moduleKey, relativePath));
     }
 
-    if (indicator.isModal()) {
+    if (waitForCompletion) {
       waitForTasks(updateTasks);
     }
   }
