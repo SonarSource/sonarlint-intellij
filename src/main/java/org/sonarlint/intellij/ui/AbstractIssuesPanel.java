@@ -33,17 +33,23 @@ import javax.swing.JComponent;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import org.sonarlint.intellij.editor.SonarLintHighlighting;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 
 abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   protected Project project;
+  protected SonarLintHighlighting highlighting;
+  protected SonarLintRulePanel rulePanel;
   protected Tree tree;
   protected TreeModelBuilder treeBuilder;
 
-  AbstractIssuesPanel() {
+  AbstractIssuesPanel(Project project) {
     super(false, true);
+    this.project = project;
+    this.highlighting = new SonarLintHighlighting(project);
   }
 
   protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty) {
@@ -58,6 +64,20 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       evt -> PropertiesComponent.getInstance(project).setValue(proportionProperty, Float.toString(splitter.getProportion())));
 
     return splitter;
+  }
+
+  protected void issueTreeSelectionChanged() {
+    IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
+    if (selectedNodes.length > 0) {
+      LiveIssue issue = selectedNodes[0].issue();
+      rulePanel.setRuleKey(issue);
+      if (issue.getRange() != null) {
+        highlighting.highlightFlowsWithHighlightersUtil(issue.getRange(), issue.getMessage(), issue.flows());
+      }
+    } else {
+      rulePanel.setRuleKey(null);
+      highlighting.removeHighlightingFlows();
+    }
   }
 
   @CheckForNull

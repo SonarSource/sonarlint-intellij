@@ -24,6 +24,9 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import java.security.MessageDigest;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -47,6 +50,7 @@ public class LiveIssue implements Trackable {
   private final String ruleName;
   private final String message;
   private final String ruleKey;
+  private final List<Flow> flows;
 
   // tracked fields (mutable)
   private Long creationDate;
@@ -55,10 +59,10 @@ public class LiveIssue implements Trackable {
   private String assignee;
 
   public LiveIssue(Issue issue, PsiFile psiFile) {
-    this(issue, psiFile, null);
+    this(issue, psiFile, null, Collections.emptyList());
   }
 
-  public LiveIssue(Issue issue, PsiFile psiFile, @Nullable RangeMarker range) {
+  public LiveIssue(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, List<Flow> flows) {
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
@@ -67,6 +71,7 @@ public class LiveIssue implements Trackable {
     this.psiFile = psiFile;
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
+    this.flows = flows;
 
     if (range != null) {
       Document document = range.getDocument();
@@ -179,5 +184,39 @@ public class LiveIssue implements Trackable {
 
   public void setAssignee(String assignee) {
     this.assignee = assignee;
+  }
+
+  public List<Flow> flows() {
+    return flows;
+  }
+
+  public static class Flow {
+    private List<IssueLocation> locations;
+
+    public Flow(List<IssueLocation> locations) {
+      this.locations = locations;
+    }
+
+    public List<IssueLocation> locations() {
+      return locations;
+    }
+  }
+
+  public static class IssueLocation {
+    private RangeMarker location;
+    private String message;
+
+    public IssueLocation(RangeMarker location, String message) {
+      this.location = location;
+      this.message = message;
+    }
+
+    public String message() {
+      return message;
+    }
+
+    public RangeMarker location() {
+      return location;
+    }
   }
 }

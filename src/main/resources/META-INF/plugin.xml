@@ -157,6 +157,8 @@
         <applicationConfigurable id="SonarLintApp" displayName="SonarLint General Settings" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
         <colorSettingsPage implementation="org.sonarlint.intellij.config.SonarLintColorSettingsPage"/>
         <checkinHandlerFactory implementation="org.sonarlint.intellij.trigger.SonarLintCheckinHandlerFactory"/>
+        <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
+        <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
     </extensions>
 
     <extensionPoints>

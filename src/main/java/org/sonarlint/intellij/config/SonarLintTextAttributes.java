@@ -30,6 +30,7 @@ public class SonarLintTextAttributes {
   public static final TextAttributesKey MINOR;
   public static final TextAttributesKey BLOCKER;
   public static final TextAttributesKey INFO;
+  public static final TextAttributesKey SELECTED;
 
   static {
     /**
@@ -40,6 +41,7 @@ public class SonarLintTextAttributes {
     MINOR = createTextAttributesKey("SONARLINT_MINOR", SonarLintSeverity.MINOR.defaultTextAttributes());
     INFO = createTextAttributesKey("SONARLINT_INFO", SonarLintSeverity.INFO.defaultTextAttributes());
     BLOCKER = createTextAttributesKey("SONARLINT_BLOCKER", SonarLintSeverity.BLOCKER.defaultTextAttributes());
+    SELECTED = createTextAttributesKey("SONARLINT_SELECTED");
   }
 
   private SonarLintTextAttributes() {

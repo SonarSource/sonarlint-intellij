@@ -35,11 +35,11 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
     super();
   }
 
-  public boolean shouldAnalyzeAutomatically(@Nullable VirtualFile file, @Nullable Module module) {
+  public boolean shouldAnalyzeAutomatically(VirtualFile file, @Nullable Module module) {
     return SonarLintUtils.shouldAnalyzeAutomatically(file, module);
   }
 
-  public boolean shouldAnalyze(@Nullable VirtualFile file, @Nullable Module module) {
+  public boolean shouldAnalyze(VirtualFile file, @Nullable Module module) {
     return SonarLintUtils.shouldAnalyze(file, module);
   }
 

@@ -66,7 +66,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     submitter.submitFiles(affectedFiles, TriggerType.ACTION, callback, false);
   }
 
-  private class ShowIssuesCallable implements AnalysisCallback {
+  private static class ShowIssuesCallable implements AnalysisCallback {
     private final Project project;
     private final ChangedFilesIssues changedFilesIssues;
     private final Collection<VirtualFile> affectedFiles;

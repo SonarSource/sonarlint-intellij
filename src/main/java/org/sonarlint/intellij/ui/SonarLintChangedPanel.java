@@ -44,7 +44,6 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
 import org.sonarlint.intellij.messages.StatusListener;
-import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -54,7 +53,6 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   private static final String GROUP_ID = "SonarLint.changedtoolwindow";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_CHANGED_ISSUES_SPLIT_PROPORTION";
 
-  private final SonarLintRulePanel rulePanel;
   private final LastAnalysisPanel lastAnalysisPanel;
   private final ChangedFilesIssues changedFileIssues;
   private final ChangeListManager changeListManager;
@@ -68,8 +66,8 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   };
 
   public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues) {
+    super(project);
     this.changedFileIssues = changedFileIssues;
-    this.project = project;
     this.lastAnalysisPanel = new LastAnalysisPanel(changedFileIssues, project);
     this.changeListManager = ChangeListManager.getInstance(project);
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
@@ -135,15 +133,6 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
       return "No changed files in the VCS";
     } else {
       return "No analysis done on changed files";
-    }
-  }
-
-  private void issueTreeSelectionChanged() {
-    IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
-    if (selectedNodes.length > 0) {
-      rulePanel.setRuleKey(selectedNodes[0].issue());
-    } else {
-      rulePanel.setRuleKey(null);
     }
   }
 

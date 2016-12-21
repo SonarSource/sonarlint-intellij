@@ -40,7 +40,8 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
     new AttributesDescriptor("Minor issue", SonarLintTextAttributes.MINOR),
     new AttributesDescriptor("Critical issue", SonarLintTextAttributes.CRITICAL),
     new AttributesDescriptor("Blocker issue", SonarLintTextAttributes.BLOCKER),
-    new AttributesDescriptor("Info issue", SonarLintTextAttributes.INFO)
+    new AttributesDescriptor("Info issue", SonarLintTextAttributes.INFO),
+    new AttributesDescriptor("Selected issue", SonarLintTextAttributes.SELECTED)
   };
 
   private static class DescriptorComparator implements Comparator<AttributesDescriptor> {

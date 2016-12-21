@@ -33,6 +33,7 @@ import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -139,7 +140,6 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     }
   }
 
-  @NotNull
   private static VirtualFile[] getProjectClasspath(@Nullable final Module module) {
     if (module == null) {
       return new VirtualFile[0];
@@ -167,7 +167,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     return found.toArray(new VirtualFile[found.size()]);
   }
 
-  @Nullable
+  @CheckForNull
   private static VirtualFile getCompilerOutputPath(final Module module) {
     final CompilerModuleExtension compilerModuleExtension = CompilerModuleExtension.getInstance(module);
     if (compilerModuleExtension != null) {
@@ -180,7 +180,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     return null;
   }
 
-  @Nullable
+  @CheckForNull
   private static VirtualFile getCompilerTestOutputPath(final Module module) {
     final CompilerModuleExtension compilerModuleExtension = CompilerModuleExtension.getInstance(module);
     if (compilerModuleExtension != null) {

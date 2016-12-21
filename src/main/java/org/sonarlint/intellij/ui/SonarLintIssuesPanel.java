@@ -31,6 +31,8 @@ import com.intellij.util.containers.HashMap;
 import com.intellij.util.messages.MessageBusConnection;
 
 import java.awt.BorderLayout;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.Collection;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -47,7 +49,6 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
-import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.scope.AbstractScope;
 import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 import org.sonarlint.intellij.ui.tree.IssueTree;
@@ -63,10 +64,9 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
 
   private ActionToolbar mainToolbar;
   private AbstractScope scope;
-  private SonarLintRulePanel rulePanel;
 
   public SonarLintIssuesPanel(Project project) {
-    this.project = project;
+    super(project);
     this.issueManager = project.getComponent(IssueManager.class);
     this.scope = new CurrentFileScope(project);
 
@@ -148,20 +148,20 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     TreeUtil.expandAll(tree);
   }
 
-  private void issueTreeSelectionChanged() {
-    IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
-    if (selectedNodes.length > 0) {
-      rulePanel.setRuleKey(selectedNodes[0].issue());
-    } else {
-      rulePanel.setRuleKey(null);
-    }
-  }
-
   private void createTree() {
     treeBuilder = new TreeModelBuilder();
     DefaultTreeModel model = treeBuilder.createModel();
     tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
+    tree.addFocusListener(new FocusListener() {
+      @Override public void focusGained(FocusEvent e) {
+        issueTreeSelectionChanged();
+      }
+
+      @Override public void focusLost(FocusEvent e) {
+        highlighting.removeHighlightingFlows();
+      }
+    });
   }
 
   @Nullable

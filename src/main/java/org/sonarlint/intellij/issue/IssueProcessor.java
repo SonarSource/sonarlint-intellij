@@ -22,11 +22,14 @@ package org.sonarlint.intellij.issue;
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import java.util.LinkedList;
+import java.util.List;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
@@ -41,8 +44,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 public class IssueProcessor extends AbstractProjectComponent {
+  private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
   private final IssueManager manager;
   private final SonarLintConsole console;
@@ -149,6 +154,8 @@ public class IssueProcessor extends AbstractProjectComponent {
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
         map.remove(vFile);
+      } catch (Exception e) {
+        LOGGER.error("Error finding location for issue", e);
       }
     }
 
@@ -159,9 +166,30 @@ public class IssueProcessor extends AbstractProjectComponent {
     PsiFile psiFile = matcher.findFile(vFile);
     if (issue.getStartLine() != null) {
       RangeMarker rangeMarker = matcher.match(psiFile, issue);
-      return new LiveIssue(issue, psiFile, rangeMarker);
+      List<LiveIssue.Flow> flows = transformFlows(psiFile, issue.flows());
+      return new LiveIssue(issue, psiFile, rangeMarker, flows);
     } else {
       return new LiveIssue(issue, psiFile);
     }
+  }
+
+  private List<LiveIssue.Flow> transformFlows(PsiFile psiFile, List<Issue.Flow> flows) {
+    List<LiveIssue.Flow> transformedFlows = new LinkedList<>();
+
+    for (Issue.Flow f : flows) {
+      try {
+        List<LiveIssue.IssueLocation> newLocations = new LinkedList<>();
+        for (IssueLocation location : f.locations()) {
+          RangeMarker range = matcher.match(psiFile, location);
+          newLocations.add(new LiveIssue.IssueLocation(range, location.getMessage()));
+        }
+        LiveIssue.Flow newFlow = new LiveIssue.Flow(newLocations);
+        transformedFlows.add(newFlow);
+      } catch (Exception e) {
+        LOGGER.error("Error finding secondary location for issue", e);
+      }
+    }
+
+    return transformedFlows;
   }
 }

@@ -260,6 +260,6 @@ public class IssueManagerTest extends SonarTest {
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
     PsiFile psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
-    return new LiveIssue(issue, psiFile, range);
+    return new LiveIssue(issue, psiFile, range, Collections.emptyList());
   }
 }
