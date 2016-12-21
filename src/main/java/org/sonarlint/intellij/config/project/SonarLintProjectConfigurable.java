@@ -125,27 +125,29 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   @Override
   public void reset() {
-    if (panel != null) {
-      List<SonarQubeServer> currentServers = null;
+    if (panel == null) {
+      return;
+    }
 
-      // try get the global settings that are currently being configured in the configurable, if it is open
-      DataContext ctx = DataManager.getInstance().getDataContextFromFocus().getResult();
-      if (ctx != null) {
-        Settings allSettings = Settings.KEY.getData(ctx);
-        if (allSettings != null) {
-          final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
-          if (globalConfigurable != null) {
-            currentServers = globalConfigurable.getCurrentSettings();
-          }
+    List<SonarQubeServer> currentServers = null;
+
+    // try get the global settings that are currently being configured in the configurable, if it is open
+    DataContext ctx = DataManager.getInstance().getDataContextFromFocus().getResult();
+    if (ctx != null) {
+      Settings allSettings = Settings.KEY.getData(ctx);
+      if (allSettings != null) {
+        final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+        if (globalConfigurable != null) {
+          currentServers = globalConfigurable.getCurrentSettings();
         }
       }
-
-      // get saved settings if needed
-      if (currentServers == null) {
-        currentServers = SonarLintUtils.get(SonarLintGlobalSettings.class).getSonarQubeServers();
-      }
-      panel.load(currentServers, projectSettings);
     }
+
+    // get saved settings if needed
+    if (currentServers == null) {
+      currentServers = SonarLintUtils.get(SonarLintGlobalSettings.class).getSonarQubeServers();
+    }
+    panel.load(currentServers, projectSettings);
   }
 
   @Override
