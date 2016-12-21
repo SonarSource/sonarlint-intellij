@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
+import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
@@ -128,11 +129,14 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       List<SonarQubeServer> currentServers = null;
 
       // try get the global settings that are currently being configured in the configurable, if it is open
-      Settings allSettings = Settings.KEY.getData(DataManager.getInstance().getDataContextFromFocus().getResult());
-      if (allSettings != null) {
-        final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
-        if (globalConfigurable != null) {
-          currentServers = globalConfigurable.getCurrentSettings();
+      DataContext ctx = DataManager.getInstance().getDataContextFromFocus().getResult();
+      if (ctx != null) {
+        Settings allSettings = Settings.KEY.getData(ctx);
+        if (allSettings != null) {
+          final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+          if (globalConfigurable != null) {
+            currentServers = globalConfigurable.getCurrentSettings();
+          }
         }
       }
 
