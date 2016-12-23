@@ -33,7 +33,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import java.nio.charset.Charset;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,13 +45,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TreeModelBuilderTest {
-  private TreeModelBuilder treeBuilder;
+public class IssueTreeModelBuilderTest {
+  private IssueTreeModelBuilder treeBuilder;
   private DefaultTreeModel model;
 
   @Before
   public void setUp() {
-    treeBuilder = new TreeModelBuilder();
+    treeBuilder = new IssueTreeModelBuilder();
     model = treeBuilder.createModel();
   }
 
@@ -99,7 +98,7 @@ public class TreeModelBuilderTest {
 
     List<LiveIssue> sorted = new ArrayList<>();
     sorted.addAll(list);
-    Collections.sort(sorted, new TreeModelBuilder.IssueComparator());
+    Collections.sort(sorted, new IssueTreeModelBuilder.IssueComparator());
 
     // criteria: creation date (most recent, nulls last), getSeverity (highest first), rule alphabetically
     assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));

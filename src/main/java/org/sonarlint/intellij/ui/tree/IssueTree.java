@@ -37,6 +37,7 @@ import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
 import com.intellij.util.ui.UIUtil;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
@@ -60,7 +61,7 @@ public class IssueTree extends Tree implements DataProvider {
 
   private void init() {
     UIUtil.setLineStyleAngled(this);
-    this.setShowsRootHandles(true);
+    this.setShowsRootHandles(false);
     this.setCellRenderer(new IssueTreeCellRenderer());
     this.expandRow(0);
 
@@ -97,7 +98,8 @@ public class IssueTree extends Tree implements DataProvider {
     return null;
   }
 
-  private Object navigate() {
+  @CheckForNull
+  private OpenFileDescriptor navigate() {
     DefaultMutableTreeNode node = getSelectedNode();
     if (!(node instanceof IssueNode)) {
       return null;
@@ -117,6 +119,7 @@ public class IssueTree extends Tree implements DataProvider {
     return new OpenFileDescriptor(project, issue.psiFile().getVirtualFile(), offset);
   }
 
+  @CheckForNull
   private VirtualFile getSelectedFile() {
     DefaultMutableTreeNode node = getSelectedNode();
     if (!(node instanceof FileNode)) {
@@ -126,6 +129,7 @@ public class IssueTree extends Tree implements DataProvider {
     return fileNode.file();
   }
 
+  @CheckForNull
   private DefaultMutableTreeNode getSelectedNode() {
     TreePath path = getSelectionPath();
     if (path == null) {

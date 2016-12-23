@@ -21,41 +21,64 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.treeStructure.Tree;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.Collections;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
+import org.sonarlint.intellij.ui.nodes.LocationNode;
+import org.sonarlint.intellij.ui.tree.FlowsTree;
+import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
+import org.sonarlint.intellij.ui.tree.IssueTree;
+import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 
 abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
+  private static final String ID = "SonarLint";
   protected Project project;
   protected SonarLintHighlighting highlighting;
   protected SonarLintRulePanel rulePanel;
   protected Tree tree;
-  protected TreeModelBuilder treeBuilder;
+  protected IssueTreeModelBuilder treeBuilder;
+  protected FlowsTree flowsTree;
+  protected FlowsTreeModelBuilder flowsTreeBuilder;
+  protected ActionToolbar mainToolbar;
 
   AbstractIssuesPanel(Project project) {
     super(false, true);
     this.project = project;
-    this.highlighting = new SonarLintHighlighting(project);
+    this.highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
+
+    addToolbar();
+    createFlowsTree();
+    createIssuesTree();
   }
 
-  protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty) {
-    float savedProportion = PropertiesComponent.getInstance(project).getFloat(proportionProperty, 0.65f);
+  abstract protected String getToolbarGroupId();
 
-    final Splitter splitter = new Splitter(false);
+  protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, boolean vertical, float defaultSplit) {
+    float savedProportion = PropertiesComponent.getInstance(project).getFloat(proportionProperty, defaultSplit);
+
+    final Splitter splitter = new Splitter(vertical);
     splitter.setFirstComponent(c1);
     splitter.setSecondComponent(c2);
     splitter.setProportion(savedProportion);
@@ -66,6 +89,14 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     return splitter;
   }
 
+  protected void flowsTreeSelectionChanged() {
+    LocationNode[] selectedNodes = flowsTree.getSelectedNodes(LocationNode.class, null);
+    if (selectedNodes.length > 0) {
+      LocationNode node = selectedNodes[0];
+      highlighting.highlightFlowsWithHighlightersUtil(node.rangeMarker(), node.message(), Collections.emptyList());
+    }
+  }
+
   protected void issueTreeSelectionChanged() {
     IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
@@ -74,10 +105,49 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       if (issue.getRange() != null) {
         highlighting.highlightFlowsWithHighlightersUtil(issue.getRange(), issue.getMessage(), issue.flows());
       }
+      flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
+      flowsTreeBuilder.setFlows(issue.flows(), issue.getRange(), issue.getMessage());
+      flowsTree.expandAll();
     } else {
+      flowsTreeBuilder.clearFlows();
+      flowsTree.getEmptyText().setText("No issue selected");
       rulePanel.setRuleKey(null);
       highlighting.removeHighlightingFlows();
     }
+  }
+
+  protected void addToolbar() {
+    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(getToolbarGroupId());
+    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
+    mainToolbar.setTargetComponent(this);
+    Box toolBarBox = Box.createHorizontalBox();
+    toolBarBox.add(mainToolbar.getComponent());
+
+    super.setToolbar(toolBarBox);
+    mainToolbar.getComponent().setVisible(true);
+  }
+
+  private void createFlowsTree() {
+    flowsTreeBuilder = new FlowsTreeModelBuilder();
+    DefaultTreeModel model = flowsTreeBuilder.createModel();
+    flowsTree = new FlowsTree(project, model);
+    flowsTreeBuilder.clearFlows();
+    flowsTree.getEmptyText().setText("No issue selected");
+    flowsTree.addTreeSelectionListener(e -> flowsTreeSelectionChanged());
+  }
+
+  private void createIssuesTree() {
+    treeBuilder = new IssueTreeModelBuilder();
+    DefaultTreeModel model = treeBuilder.createModel();
+    tree = new IssueTree(project, model);
+    tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
+    tree.addKeyListener(new KeyAdapter() {
+      public void keyPressed(KeyEvent e) {
+        if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
+          highlighting.removeHighlightingFlows();
+        }
+      }
+    });
   }
 
   @CheckForNull

@@ -21,7 +21,6 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import icons.SonarLintIcons;
@@ -80,10 +79,7 @@ public class IssueNode extends AbstractNode {
       return "(-, -) ";
     }
 
-    Document doc = FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile());
-    if (doc == null) {
-      return "(?, ?)";
-    }
+    Document doc = range.getDocument();
     int line = doc.getLineNumber(range.getStartOffset());
     int offset = range.getStartOffset() - doc.getLineStartOffset(line);
     return String.format("(%d, %d) ", line + 1, offset);

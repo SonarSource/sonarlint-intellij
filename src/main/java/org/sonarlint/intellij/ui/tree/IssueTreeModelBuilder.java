@@ -45,7 +45,7 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
  * Responsible for maintaining the tree model and send change events when needed.
  * Should be optimize to minimize the recreation of portions of the tree.
  */
-public class TreeModelBuilder {
+public class IssueTreeModelBuilder {
   private static final List<String> SEVERITY_ORDER = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
@@ -53,7 +53,7 @@ public class TreeModelBuilder {
   private SummaryNode summary;
   private IssueTreeIndex index;
 
-  public TreeModelBuilder() {
+  public IssueTreeModelBuilder() {
     this.index = new IssueTreeIndex();
   }
 
@@ -155,7 +155,7 @@ public class TreeModelBuilder {
 
   private static List<LiveIssue> filter(Iterable<LiveIssue> issues) {
     return StreamSupport.stream(issues.spliterator(), false)
-      .filter(TreeModelBuilder::accept)
+      .filter(IssueTreeModelBuilder::accept)
       .collect(Collectors.toList());
   }
 

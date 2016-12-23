@@ -19,9 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -29,20 +26,15 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.containers.HashMap;
 import com.intellij.util.messages.MessageBusConnection;
-
+import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.util.Collection;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.swing.Box;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.tree.DefaultTreeModel;
-
-import com.intellij.util.ui.tree.TreeUtil;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -51,43 +43,41 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.scope.AbstractScope;
 import org.sonarlint.intellij.ui.scope.CurrentFileScope;
-import org.sonarlint.intellij.ui.tree.IssueTree;
-import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataProvider {
-  private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.issuestoolwindow";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
+  private static final String FLOWS_SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_FLOWS_SPLIT_PROPORTION";
 
   private final IssueManager issueManager;
 
-  private ActionToolbar mainToolbar;
   private AbstractScope scope;
 
-  public SonarLintIssuesPanel(Project project) {
+  public SonarLintIssuesPanel(Project project, IssueManager issueManager, ProjectBindingManager projectBindingManager) {
     super(project);
-    this.issueManager = project.getComponent(IssueManager.class);
+    this.issueManager = issueManager;
     this.scope = new CurrentFileScope(project);
 
-    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
-
-    addToolbar();
-
+    // Issues panel
     JPanel issuesPanel = new JPanel(new BorderLayout());
-    createTree();
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
-    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
+    // Flows panel with tree
+    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree);
+    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
 
+    // Rule panel
+    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
     JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
       rulePanel.getPanel(),
       ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
       ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
-    super.setContent(createSplitter(issuesPanel, scrollableRulePanel, SPLIT_PROPORTION_PROPERTY));
+    // Put everything together
+    JComponent rightComponent = createSplitter(scrollableRulePanel, flowsPanel, FLOWS_SPLIT_PROPORTION_PROPERTY, true, 0.5f);
+    super.setContent(createSplitter(issuesPanel, rightComponent, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 
     subscribeToEvents();
     updateTree();
@@ -109,17 +99,6 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
 
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
-  }
-
-  private void addToolbar() {
-    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
-    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
-    mainToolbar.setTargetComponent(this);
-    Box toolBarBox = Box.createHorizontalBox();
-    toolBarBox.add(mainToolbar.getComponent());
-
-    super.setToolbar(toolBarBox);
-    mainToolbar.getComponent().setVisible(true);
   }
 
   public void updateTree() {
@@ -148,22 +127,6 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     TreeUtil.expandAll(tree);
   }
 
-  private void createTree() {
-    treeBuilder = new TreeModelBuilder();
-    DefaultTreeModel model = treeBuilder.createModel();
-    tree = new IssueTree(project, model);
-    tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
-    tree.addFocusListener(new FocusListener() {
-      @Override public void focusGained(FocusEvent e) {
-        issueTreeSelectionChanged();
-      }
-
-      @Override public void focusLost(FocusEvent e) {
-        highlighting.removeHighlightingFlows();
-      }
-    });
-  }
-
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
@@ -174,4 +137,8 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     return null;
   }
 
+  @Override
+  protected String getToolbarGroupId() {
+    return GROUP_ID;
+  }
 }

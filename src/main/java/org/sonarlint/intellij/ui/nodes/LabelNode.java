@@ -17,17 +17,23 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.tree;
+package org.sonarlint.intellij.ui.nodes;
 
+import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder;
 import com.intellij.ui.ColoredTreeCellRenderer;
-import javax.swing.JTree;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import com.intellij.ui.SimpleTextAttributes;
+import java.awt.Insets;
 
-public class IssueTreeCellRenderer extends ColoredTreeCellRenderer {
-  @Override public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-    AbstractNode node = (AbstractNode) value;
-    node.render(this);
+public class LabelNode extends AbstractNode {
+  private final String label;
+
+  public LabelNode(String label) {
+    this.label = label;
   }
 
+  @Override public void render(ColoredTreeCellRenderer renderer) {
+    renderer.setIpad(new Insets(3, 3, 3, 3));
+    renderer.setBorder(new BottomLineBorder());
+    renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
+  }
 }

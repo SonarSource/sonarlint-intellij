@@ -27,7 +27,9 @@ import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 /**
@@ -55,7 +57,9 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addIssuesTab(Project project, ToolWindow toolWindow) {
-    SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
+    SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project, issueManager, projectBindingManager);
     Content issuesContent = toolWindow.getContentManager().getFactory()
       .createContent(
         issuesPanel,
@@ -67,7 +71,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
   private void addChangedFilesTab(Project project, ToolWindow toolWindow) {
     ChangedFilesIssues changedFileIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
-    SonarLintChangedPanel changedPanel = new SonarLintChangedPanel(project, changedFileIssues);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    SonarLintChangedPanel changedPanel = new SonarLintChangedPanel(project, changedFileIssues, projectBindingManager);
     Content changedContent = toolWindow.getContentManager().getFactory()
       .createContent(
         changedPanel,

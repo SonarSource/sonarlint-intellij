@@ -159,11 +159,14 @@
         <checkinHandlerFactory implementation="org.sonarlint.intellij.trigger.SonarLintCheckinHandlerFactory"/>
         <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
+        <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.ui.EscapeHandler"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
     </extensions>
 
     <extensionPoints>
         <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator" />
     </extensionPoints>
+
 
     <actions>
         <group id="SonarLint.logtoolwindow" text="SonarLint" popup="true"/>

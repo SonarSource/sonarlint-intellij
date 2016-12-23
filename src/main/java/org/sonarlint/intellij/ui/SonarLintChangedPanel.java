@@ -21,9 +21,6 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.actionSystem.ActionGroup;
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -35,28 +32,23 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
-import javax.swing.Box;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
 import org.sonarlint.intellij.messages.StatusListener;
-import org.sonarlint.intellij.ui.tree.IssueTree;
-import org.sonarlint.intellij.ui.tree.TreeModelBuilder;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintChangedPanel extends AbstractIssuesPanel implements OccurenceNavigator, DataProvider, Disposable {
-  private static final String ID = "SonarLint";
   private static final String GROUP_ID = "SonarLint.changedtoolwindow";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_CHANGED_ISSUES_SPLIT_PROPORTION";
+  private static final String FLOWS_SPLIT_PROPORTION_PROPERTY = "SONARLINT_CHANGED_ISSUES_FLOWS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
   private final ChangedFilesIssues changedFileIssues;
   private final ChangeListManager changeListManager;
-  private ActionToolbar mainToolbar;
 
   private ChangeListListener vcsChangeListener = new ChangeListAdapter() {
     @Override
@@ -65,28 +57,34 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
     }
   };
 
-  public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues) {
+  public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues, ProjectBindingManager projectBindingManager) {
     super(project);
     this.changedFileIssues = changedFileIssues;
     this.lastAnalysisPanel = new LastAnalysisPanel(changedFileIssues, project);
     this.changeListManager = ChangeListManager.getInstance(project);
-    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
-    addToolbar();
 
+    // Issues panel with tree
     JPanel issuesPanel = new JPanel(new BorderLayout());
-    createTree();
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
 
-    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
+    // Flows panel with tree
+    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree);
+    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
 
+    // Rule panel
+    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
     JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
       rulePanel.getPanel(),
       ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
       ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
-    super.setContent(createSplitter(issuesPanel, scrollableRulePanel, SPLIT_PROPORTION_PROPERTY));
+    // Put everything together
+    JComponent rightComponent = createSplitter(scrollableRulePanel, flowsPanel, FLOWS_SPLIT_PROPORTION_PROPERTY, true, 0.5f);
+    super.setContent(createSplitter(issuesPanel, rightComponent, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
+
+    // Events
     this.treeBuilder.updateModel(changedFileIssues.issues(), getEmptyText());
     subscribeToEvents();
     Disposer.register(project, this);
@@ -102,17 +100,6 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
     }));
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
       ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
-  }
-
-  private void addToolbar() {
-    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
-    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
-    mainToolbar.setTargetComponent(this);
-    Box toolBarBox = Box.createHorizontalBox();
-    toolBarBox.add(mainToolbar.getComponent());
-
-    super.setToolbar(toolBarBox);
-    mainToolbar.getComponent().setVisible(true);
   }
 
   private void expandTree() {
@@ -136,11 +123,9 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
     }
   }
 
-  private void createTree() {
-    treeBuilder = new TreeModelBuilder();
-    DefaultTreeModel model = treeBuilder.createModel();
-    tree = new IssueTree(project, model);
-    tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
+  @Override
+  protected String getToolbarGroupId() {
+    return GROUP_ID;
   }
 
   @Override

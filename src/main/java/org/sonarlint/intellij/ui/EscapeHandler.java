@@ -17,17 +17,24 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.tree;
+package org.sonarlint.intellij.ui;
 
-import com.intellij.ui.ColoredTreeCellRenderer;
-import javax.swing.JTree;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import com.intellij.openapi.actionSystem.DataContext;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.editor.Caret;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
+import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.editor.SonarLintHighlighting;
 
-public class IssueTreeCellRenderer extends ColoredTreeCellRenderer {
-  @Override public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-    AbstractNode node = (AbstractNode) value;
-    node.render(this);
+public class EscapeHandler extends EditorActionHandler {
+  @Override
+  protected void doExecute(Editor editor, @Nullable Caret caret, DataContext dataContext) {
+    Project project = editor.getProject();
+    if (project != null) {
+      SonarLintHighlighting highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
+      highlighting.removeHighlightingFlows();
+    }
   }
-
 }
