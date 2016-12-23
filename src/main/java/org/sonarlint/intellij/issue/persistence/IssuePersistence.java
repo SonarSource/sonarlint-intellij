@@ -45,7 +45,7 @@ public class IssuePersistence extends AbstractProjectComponent {
   protected IssuePersistence(Project project) {
     super(project);
     storeBasePath = getBasePath();
-    FileUtils.forceMkDirs(storeBasePath);
+    FileUtils.mkdirs(storeBasePath);
     StoreIndex<String> index = new StringStoreIndex(storeBasePath);
     PathMapper<String> mapper = new HashingPathMapper(storeBasePath, 2);
     StoreKeyValidator<String> validator = new PathStoreKeyValidator(project.getBaseDir());
@@ -94,8 +94,8 @@ public class IssuePersistence extends AbstractProjectComponent {
   }
 
   public synchronized void clear() {
-    FileUtils.deleteDirectory(storeBasePath);
-    FileUtils.forceMkDirs(storeBasePath);
+    FileUtils.deleteRecursively(storeBasePath);
+    FileUtils.mkdirs(storeBasePath);
   }
 
   private static Collection<LocalIssueTrackable> transform(Sonarlint.Issues protoIssues) {
