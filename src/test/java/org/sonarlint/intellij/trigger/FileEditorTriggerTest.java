@@ -63,7 +63,7 @@ public class FileEditorTriggerTest {
 
   @Test
   public void should_not_trigger_if_auto_disabled() {
-    globalSettings.setAutoTrigger(true);
+    globalSettings.setAutoTrigger(false);
     VirtualFile f1 = mock(VirtualFile.class);
     editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
     verifyZeroInteractions(submitter);
