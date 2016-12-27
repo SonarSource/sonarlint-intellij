@@ -94,6 +94,7 @@ public class SonarLintUtils {
    * Must be called from EDT
    */
   public static boolean saveFiles(final Collection<VirtualFile> virtualFiles) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     boolean[] success = new boolean[] {true};
 
     ApplicationManager.getApplication().runWriteAction(() -> {
@@ -129,6 +130,8 @@ public class SonarLintUtils {
    * Must be called from EDT
    */
   private static boolean saveFile(final VirtualFile virtualFile) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+
     final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
     if (fileDocumentManager.isFileModified(virtualFile)) {
       final Document document = fileDocumentManager.getDocument(virtualFile);
