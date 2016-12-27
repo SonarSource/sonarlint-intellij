@@ -28,25 +28,31 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final SonarLintSubmitter submitter;
   private final MessageBusConnection busConnection;
+  private final SonarLintGlobalSettings globalSettings;
 
-  public FileEditorTrigger(Project project, SonarLintSubmitter submitter) {
+  public FileEditorTrigger(Project project, SonarLintSubmitter submitter, SonarLintGlobalSettings globalSettings) {
     super(project);
     this.submitter = submitter;
     this.busConnection = project.getMessageBus().connect(project);
+    this.globalSettings = globalSettings;
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
   }
 
-  @Override
   /**
    * I've tried hard to group opening events on startup without success.
    * Tried: Project.isInitialized, Project.isOpen, schedule to EDT thread and to WriteAction.
    * So on startup, opened files will be submitted one by one.
    */
+  @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
+    if (!globalSettings.isAutoTrigger()) {
+      return;
+    }
     submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_OPEN, true);
   }
 

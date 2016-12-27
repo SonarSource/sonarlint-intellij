@@ -29,9 +29,11 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class FileEditorTriggerTest {
   @Mock
@@ -39,13 +41,17 @@ public class FileEditorTriggerTest {
   @Mock
   private SonarLintSubmitter submitter;
 
+  private SonarLintGlobalSettings globalSettings;
+
   private FileEditorTrigger editorTrigger;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     SonarLintTestUtils.mockMessageBus(project);
-    editorTrigger = new FileEditorTrigger(project, submitter);
+    globalSettings = new SonarLintGlobalSettings();
+    globalSettings.setAutoTrigger(true);
+    editorTrigger = new FileEditorTrigger(project, submitter, globalSettings);
   }
 
   @Test
@@ -53,6 +59,14 @@ public class FileEditorTriggerTest {
     VirtualFile f1 = mock(VirtualFile.class);
     editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
     verify(submitter).submitFiles(Collections.singleton(f1), TriggerType.EDITOR_OPEN, true);
+  }
+
+  @Test
+  public void should_not_trigger_if_auto_disabled() {
+    globalSettings.setAutoTrigger(true);
+    VirtualFile f1 = mock(VirtualFile.class);
+    editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
+    verifyZeroInteractions(submitter);
   }
 
   @Test
