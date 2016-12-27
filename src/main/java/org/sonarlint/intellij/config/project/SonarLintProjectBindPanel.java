@@ -25,15 +25,19 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.ui.ComboBoxWithWidePopup;
+import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.ListSpeedSearch;
+import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBCheckBox;
+import com.intellij.ui.components.JBList;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-
+import com.intellij.util.containers.Convertor;
 import icons.SonarLintIcons;
+import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -41,21 +45,24 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.AbstractAction;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.ListSelectionModel;
 import javax.swing.border.Border;
-
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
@@ -83,18 +90,17 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   // binding mgmt
   private JPanel bindPanel;
-  private JComboBox<RemoteModule> projectComboBox;
+  private JBList<RemoteModule> projectList;
   private String lastSelectedProjectKey;
 
   public JPanel create() {
-    rootPanel = new JPanel(new GridBagLayout());
+    rootPanel = new JPanel(new BorderLayout());
     bindEnable = new JBCheckBox("Enable binding to remote SonarQube server", true);
     bindEnable.addItemListener(new BindItemListener());
     createBindPanel();
 
-    rootPanel.add(bindEnable, new GridBagConstraints(0, 0, 1, 1, 1, 0, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, new Insets(0, 0, 0, 0), 0, 0));
-    rootPanel.add(bindPanel, new GridBagConstraints(0, 1, 1, 1, 1, 1, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, new Insets(4, 4, 4, 0), 0, 0));
-
+    rootPanel.add(bindEnable, BorderLayout.NORTH);
+    rootPanel.add(bindPanel, BorderLayout.CENTER);
     return rootPanel;
   }
 
@@ -121,13 +127,8 @@ public class SonarLintProjectBindPanel implements Disposable {
   @CheckForNull
   public String getSelectedProjectKey() {
     // do things in a type safe way
-    int idx = projectComboBox.getSelectedIndex();
-    if (idx < 0) {
-      return null;
-    } else {
-      RemoteModule module = projectComboBox.getModel().getElementAt(idx);
-      return module.getKey();
-    }
+    RemoteModule module = projectList.getSelectedValue();
+    return module == null ? null : module.getKey();
   }
 
   /**
@@ -156,78 +157,60 @@ public class SonarLintProjectBindPanel implements Disposable {
     setProjects();
   }
 
-  private void setProjectsInComboBox(Map<String, RemoteModule> moduleMap) {
-    Set<RemoteModule> orderedSet = new TreeSet<>((o1, o2) -> {
-      int c1 = o1.getName().compareTo(o2.getName());
+  private void setProjectsInList(Collection<RemoteModule> modules) {
+    Comparator<RemoteModule> moduleComparator = (o1, o2) -> {
+      int c1 = o1.getName().compareToIgnoreCase(o2.getName());
       if (c1 != 0) {
         return c1;
       }
+      return o1.getKey().compareToIgnoreCase(o2.getKey());
+    };
 
-      return o1.getKey().compareTo(o2.getKey());
-    });
-    orderedSet.addAll(moduleMap.values());
+    List<RemoteModule> sortedModules = modules.stream()
+      .filter(RemoteModule::isRoot)
+      .sorted(moduleComparator)
+      .collect(Collectors.toList());
 
     RemoteModule selected = null;
-    int i = 0;
-    for (RemoteModule mod : orderedSet) {
-      if (!mod.isRoot()) {
-        continue;
-      }
-      // this won't call the change listener
-      DefaultComboBoxModel<RemoteModule> model = (DefaultComboBoxModel) projectComboBox.getModel();
-      model.insertElementAt(mod, i);
-      i++;
-      if (lastSelectedProjectKey != null && lastSelectedProjectKey.equals(mod.getKey())) {
-        selected = mod;
-      }
+    if (lastSelectedProjectKey != null) {
+      selected = sortedModules.stream()
+        .filter(module -> lastSelectedProjectKey.equals(module.getKey()))
+        .findAny().orElse(null);
     }
+    CollectionListModel<RemoteModule> projectListModel = new CollectionListModel<>(sortedModules);
 
+    projectList.setModel(projectListModel);
+    projectList.setCellRenderer(new ProjectListRenderer());
     setSelectedProject(selected);
-    projectComboBox.setPrototypeDisplayValue(null);
-    projectComboBox.setEnabled(bindEnable.isSelected());
+    projectList.setEnabled(bindEnable.isSelected());
   }
 
   private void setSelectedProject(@Nullable RemoteModule selected) {
     if (selected != null) {
-      projectComboBox.setSelectedItem(selected);
-    } else if (projectComboBox.getItemCount() > 0 && lastSelectedProjectKey == null) {
-      projectComboBox.setSelectedIndex(0);
+      projectList.setSelectedValue(selected, true);
+    } else if (!projectList.isEmpty() && lastSelectedProjectKey == null) {
+      projectList.setSelectedIndex(0);
     } else {
-      projectComboBox.setSelectedItem(null);
+      projectList.setSelectedValue(null, true);
     }
   }
 
   private void setProjects() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    projectComboBox.removeAllItems();
-
     if (engine != null && engine.getState() == State.UPDATED) {
       Map<String, RemoteModule> moduleMap = engine.allModulesByKey();
       if (!moduleMap.isEmpty()) {
-        setProjectsInComboBox(moduleMap);
+        setProjectsInList(moduleMap.values());
       }
+    } else {
+      projectList.setModel(new DefaultListModel<>());
     }
 
     // it can be happen because server has no projects, no server selected, or server not updated
-    if (projectComboBox.getItemCount() == 0) {
-      final String fMsg = getProjectEmptyText();
-      RemoteModule empty = new RemoteModule() {
-        @Override public String getKey() {
-          return "";
-        }
-
-        @Override public String getName() {
-          return fMsg;
-        }
-
-        @Override public boolean isRoot() {
-          return true;
-        }
-      };
-
-      projectComboBox.setPrototypeDisplayValue(empty);
-      projectComboBox.setEnabled(false);
+    if (projectList.isEmpty()) {
+      projectList.setEmptyText(getProjectEmptyText());
+      projectList.setEnabled(false);
     }
   }
 
@@ -299,14 +282,20 @@ public class SonarLintProjectBindPanel implements Disposable {
     bindPanel.setBorder(b);
 
     JLabel projectListLabel = new JLabel("SonarQube project:");
-    projectComboBox = new ComboBoxWithWidePopup(new DefaultComboBoxModel<RemoteModule>());
-    projectComboBox.setRenderer(new ProjectComboBoxRenderer());
-    projectComboBox.setEditable(false);
-    projectComboBox.addItemListener(new ProjectItemListener());
+    projectList = new JBList<>();
+    projectList.setCellRenderer(new ProjectListRenderer());
+    projectList.addListSelectionListener(new ProjectItemListener());
+    projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    new ListSpeedSearch(projectList, new Convertor<Object, String>() {
+      @Override public String convert(Object o) {
+        RemoteModule module = (RemoteModule) o;
+        return module.getName() + " " + module.getKey();
+      }
+    });
 
     JPanel serverPanel = new JPanel(new GridLayoutManager(1, 3));
     configureServerButton = new JButton();
-    serverComboBox = new ComboBox();
+    serverComboBox = new ComboBox<>();
     JLabel serverListLabel = new JLabel("Bind to server:");
 
     serverComboBox.setRenderer(new ServerComboBoxRenderer());
@@ -314,7 +303,7 @@ public class SonarLintProjectBindPanel implements Disposable {
 
     serverListLabel.setLabelFor(serverComboBox);
 
-    serverPanel.add(serverComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+    serverPanel.add(ScrollPaneFactory.createScrollPane(serverComboBox), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
       GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     serverPanel.add(configureServerButton, new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
       GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -328,8 +317,9 @@ public class SonarLintProjectBindPanel implements Disposable {
 
     bindPanel.add(serverListLabel, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 0, 0), 0, 0));
     bindPanel.add(serverPanel, new GridBagConstraints(1, 0, 1, 1, 1, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(2, 3, 0, 0), 0, 0));
-    bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0, 1, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(2, 0, 0, 0), 0, 0));
-    bindPanel.add(projectComboBox, new GridBagConstraints(1, 1, 1, 1, 1, 1, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, new Insets(2, 3, 0, 0), 0, 0));
+    bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE, new Insets(2, 0, 0, 0), 0, 0));
+    bindPanel.add(ScrollPaneFactory.createScrollPane(projectList),
+      new GridBagConstraints(1, 1, 1, 1, 1, 1, GridBagConstraints.LINE_START, GridBagConstraints.BOTH, new Insets(2, 3, 0, 0), 0, 0));
 
   }
 
@@ -393,7 +383,7 @@ public class SonarLintProjectBindPanel implements Disposable {
   /**
    * Render modules in combo box
    */
-  private class ProjectComboBoxRenderer extends ColoredListCellRenderer<RemoteModule> {
+  private class ProjectListRenderer extends ColoredListCellRenderer<RemoteModule> {
     @Override protected void customizeCellRenderer(JList list, @Nullable RemoteModule value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
         if (bindEnable.isSelected()) {
@@ -409,7 +399,7 @@ public class SonarLintProjectBindPanel implements Disposable {
       }
 
       SimpleTextAttributes attrs;
-      if (projectComboBox.isEnabled()) {
+      if (projectList.isEnabled()) {
         attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
       } else {
         attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
@@ -442,18 +432,14 @@ public class SonarLintProjectBindPanel implements Disposable {
       serverComboBox.setEnabled(bound);
       configureServerButton.setEnabled(bound);
 
-      projectComboBox.setEnabled(bound && updated);
-
+      projectList.setEnabled(bound && updated);
       setProjects();
     }
   }
 
-  private class ProjectItemListener implements ItemListener {
-    @Override
-    public void itemStateChanged(ItemEvent event) {
-      if (event.getStateChange() == ItemEvent.SELECTED) {
-        lastSelectedProjectKey = getSelectedProjectKey();
-      }
+  private class ProjectItemListener implements ListSelectionListener {
+    @Override public void valueChanged(ListSelectionEvent event) {
+      lastSelectedProjectKey = getSelectedProjectKey();
     }
   }
 
