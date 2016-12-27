@@ -33,11 +33,6 @@ import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
-import org.apache.commons.lang.StringUtils;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,6 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 

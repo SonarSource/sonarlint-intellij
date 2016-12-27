@@ -28,10 +28,9 @@ import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
-
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 @State(
   name = "SonarLintProjectSettings",

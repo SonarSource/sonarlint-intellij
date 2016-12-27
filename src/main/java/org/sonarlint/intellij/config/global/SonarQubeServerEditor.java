@@ -42,7 +42,6 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.text.PlainDocument;
-
 import org.sonarlint.intellij.core.ConnectionTestTask;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 

@@ -28,8 +28,14 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
@@ -37,13 +43,6 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 public class IssueProcessor extends AbstractProjectComponent {

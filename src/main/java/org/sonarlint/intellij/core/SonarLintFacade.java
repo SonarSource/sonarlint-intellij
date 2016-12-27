@@ -26,15 +26,12 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-
-import javax.annotation.CheckForNull;
 
 public abstract class SonarLintFacade {
   protected final Project project;

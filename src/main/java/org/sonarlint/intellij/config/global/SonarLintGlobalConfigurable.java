@@ -23,14 +23,12 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
-
 import java.awt.BorderLayout;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;

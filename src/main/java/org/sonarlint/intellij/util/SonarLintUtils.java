@@ -35,7 +35,6 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.net.HttpConfigurable;
-
 import com.intellij.util.net.ssl.CertificateManager;
 import java.io.File;
 import java.lang.reflect.Field;

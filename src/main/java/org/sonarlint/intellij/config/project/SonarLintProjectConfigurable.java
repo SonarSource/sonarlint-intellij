@@ -28,11 +28,10 @@ import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
-
 import java.util.Collections;
+import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
-
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -42,8 +41,6 @@ import org.sonarlint.intellij.core.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
-
-import java.util.List;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 /**

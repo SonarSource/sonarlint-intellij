@@ -40,7 +40,7 @@ public class SonarLintJob {
   @Nullable private final AnalysisCallback callback;
 
   SonarLintJob(Module module, Collection<VirtualFile> files, TriggerType trigger) {
-    this(Collections.singletonMap(module, files), trigger, false ,null);
+    this(Collections.singletonMap(module, files), trigger, false, null);
   }
 
   SonarLintJob(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, boolean waitForServerIssues, @Nullable AnalysisCallback callback) {

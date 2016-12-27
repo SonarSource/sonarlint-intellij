@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.ui.VerticalFlowLayout;
-
 import java.awt.BorderLayout;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;

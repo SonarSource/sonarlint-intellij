@@ -21,11 +21,9 @@ package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.project.Project;
-
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Map;
-
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
@@ -33,8 +31,8 @@ import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;

@@ -25,7 +25,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import java.security.MessageDigest;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;

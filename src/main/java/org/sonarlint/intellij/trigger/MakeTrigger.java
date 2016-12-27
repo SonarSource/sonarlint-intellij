@@ -26,9 +26,7 @@ import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-
 import java.util.UUID;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 

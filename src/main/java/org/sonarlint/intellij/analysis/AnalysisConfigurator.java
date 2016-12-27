@@ -21,7 +21,6 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
-
 import java.util.Map;
 
 public interface AnalysisConfigurator {
