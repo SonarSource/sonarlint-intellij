@@ -81,6 +81,15 @@ public class MakeTriggerTest extends SonarTest {
   }
 
   @Test
+  public void handle_null_project() {
+    // this doesn't comply with the interface but it's null in DummyCompileContext
+    when(context.getProject()).thenReturn(null);
+    trigger.compilationFinished(false, 0, 0, context);
+    trigger.buildFinished(null, UUID.randomUUID(), true);
+    verifyZeroInteractions(submitter);
+  }
+
+  @Test
   public void component_name() {
     assertThat(trigger.getComponentName()).isEqualTo("MakeTrigger");
   }

@@ -55,7 +55,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
   }
 
   @Override public void buildFinished(Project project, UUID sessionId, boolean isAutomake) {
-    if (!project.equals(myProject) || !isAutomake) {
+    if (project == null || !project.equals(myProject) || !isAutomake) {
       // covered by compilationFinished
       return;
     }
@@ -65,10 +65,12 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
   }
 
   /**
-   * Does not get called for Automake
+   * Does not get called for Automake.
+   * {@link CompileContext} can have a null Project. See {@link com.intellij.openapi.compiler.DummyCompileContext}.
    */
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
-    if (compileContext.getProject().equals(myProject)) {
+    Project project = compileContext.getProject();
+    if (project != null && project.equals(myProject)) {
       console.debug("compilation finished");
       submitter.submitOpenFilesAuto(TriggerType.COMPILATION);
     }
