@@ -56,6 +56,9 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     this(project, globalSettings, submitter, editorFactory, utils, docManager, DEFAULT_TIMER_MS);
   }
 
+  /**
+   * For unit testing (pico container won't be able to inject timerMs)
+   */
   public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
     super(project);
@@ -140,7 +143,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     }
 
     private void triggerFile(VirtualFile file) {
-      if (utils.isOpenFile(myProject, file)) {
+      if (utils.isOpenFile(myProject, file) && globalSettings.isAutoTrigger()) {
         submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
       }
     }
