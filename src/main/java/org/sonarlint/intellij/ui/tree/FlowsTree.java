@@ -46,7 +46,7 @@ public class FlowsTree extends Tree {
   private void init() {
     setRootVisible(false);
     setShowsRootHandles(false);
-    setCellRenderer(new IssueTreeCellRenderer());
+    setCellRenderer(new TreeCellRenderer());
     this.selectionModel.addTreeSelectionListener(e -> {
       if (e.getSource() != null) {
         TreePath newPath = e.getNewLeadSelectionPath();

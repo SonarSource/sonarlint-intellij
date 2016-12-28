@@ -62,7 +62,7 @@ public class IssueTree extends Tree implements DataProvider {
   private void init() {
     UIUtil.setLineStyleAngled(this);
     this.setShowsRootHandles(false);
-    this.setCellRenderer(new IssueTreeCellRenderer());
+    this.setCellRenderer(new TreeCellRenderer());
     this.expandRow(0);
 
     DefaultActionGroup group = new DefaultActionGroup();
