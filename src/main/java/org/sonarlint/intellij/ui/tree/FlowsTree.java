@@ -60,6 +60,7 @@ public class FlowsTree extends Tree {
     TreeWillExpandListener l = new TreeWillExpandListener() {
       @Override
       public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+        // nothing to do
       }
 
       @Override

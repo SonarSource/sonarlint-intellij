@@ -17,21 +17,29 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.tree;
+package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.ui.ColoredTreeCellRenderer;
-import javax.swing.JTree;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.ui.nodes.AbstractNode;
+import com.intellij.ui.SimpleTextAttributes;
+import org.junit.Before;
+import org.junit.Test;
 
-/**
- * Can't unit test this because the parent uses a service, depending on a pico container with a method
- * that doesn't exist in the pico container used by SonarLint (different versions), causing NoSuchMethodError.
- */
-public class IssueTreeCellRenderer extends ColoredTreeCellRenderer {
-  @Override public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-    AbstractNode node = (AbstractNode) value;
-    node.render(this);
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
+public class LabelNodeTest {
+  private LabelNode node;
+
+  @Before
+  public void setUp() {
+    node = new LabelNode("msg");
   }
 
+  @Test
+  public void testRenderer() {
+    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    node.render(renderer);
+
+    verify(renderer).append("msg", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
+  }
 }

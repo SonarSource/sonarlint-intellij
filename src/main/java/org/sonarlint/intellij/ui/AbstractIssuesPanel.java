@@ -73,7 +73,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     createIssuesTree();
   }
 
-  abstract protected String getToolbarGroupId();
+  protected abstract String getToolbarGroupId();
 
   protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, boolean vertical, float defaultSplit) {
     float savedProportion = PropertiesComponent.getInstance(project).getFloat(proportionProperty, defaultSplit);
@@ -142,6 +142,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
     tree.addKeyListener(new KeyAdapter() {
+      @Override
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
           highlighting.removeHighlightingFlows();

@@ -34,7 +34,8 @@ public class AnalysisThreadFactoryTest {
 
   @Test
   public void check_props() {
-    Thread thread = factory.newThread(() -> {});
+    Thread thread = factory.newThread(() -> {
+    });
 
     assertThat(thread.isDaemon()).isTrue();
     assertThat(thread.getName()).startsWith("SonarLintAnalysis");

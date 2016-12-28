@@ -32,9 +32,6 @@ public class FlowsTreeModelBuilder {
   private SummaryNode summary;
   private DefaultTreeModel model;
 
-  public FlowsTreeModelBuilder() {
-  }
-
   public DefaultTreeModel createModel() {
     summary = new SummaryNode();
     model = new DefaultTreeModel(summary);
@@ -47,7 +44,7 @@ public class FlowsTreeModelBuilder {
     model.setRoot(null);
   }
 
-  private boolean containsLocations(List<LiveIssue.Flow> flows) {
+  private static boolean containsLocations(List<LiveIssue.Flow> flows) {
     return flows.stream().flatMap(f -> f.locations().stream()).findAny().isPresent();
   }
 

@@ -33,9 +33,7 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.impl.MessageBusImpl;
 import com.intellij.util.net.ssl.CertificateManager;
-import java.io.IOException;
 import java.lang.reflect.Modifier;
-import javax.net.ssl.SSLContext;
 import org.junit.After;
 import org.junit.Before;
 

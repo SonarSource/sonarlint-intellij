@@ -286,12 +286,11 @@ public class SonarLintProjectBindPanel implements Disposable {
     projectList.setCellRenderer(new ProjectListRenderer());
     projectList.addListSelectionListener(new ProjectItemListener());
     projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    new ListSpeedSearch(projectList, new Convertor<Object, String>() {
-      @Override public String convert(Object o) {
-        RemoteModule module = (RemoteModule) o;
-        return module.getName() + " " + module.getKey();
-      }
-    });
+    Convertor<Object, String> convertor = o -> {
+      RemoteModule module = (RemoteModule) o;
+      return module.getName() + " " + module.getKey();
+    };
+    new ListSpeedSearch(projectList, convertor);
 
     JPanel serverPanel = new JPanel(new GridLayoutManager(1, 3));
     configureServerButton = new JButton();

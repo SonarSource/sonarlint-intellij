@@ -71,15 +71,16 @@ public class RangeBlinker {
 
   public void startBlinking() {
     Project project = myEditor.getProject();
-    if (ApplicationManager.getApplication().isDisposed() || myEditor.isDisposed() || project != null && project.isDisposed()) {
+    if (ApplicationManager.getApplication().isDisposed() || myEditor.isDisposed() || (project != null && project.isDisposed())) {
       return;
     }
 
     MarkupModel markupModel = myEditor.getMarkupModel();
     if (show) {
       for (Segment segment : myMarkers) {
-        if (segment.getEndOffset() > myEditor.getDocument().getTextLength())
+        if (segment.getEndOffset() > myEditor.getDocument().getTextLength()) {
           continue;
+        }
         RangeHighlighter highlighter = markupModel.addRangeHighlighter(segment.getStartOffset(), segment.getEndOffset(),
           HighlighterLayer.ADDITIONAL_SYNTAX, myAttributes,
           HighlighterTargetArea.EXACT_RANGE);

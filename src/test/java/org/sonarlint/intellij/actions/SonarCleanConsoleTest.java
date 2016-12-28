@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.ui.SonarLintConsole;

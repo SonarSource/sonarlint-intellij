@@ -24,7 +24,6 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
