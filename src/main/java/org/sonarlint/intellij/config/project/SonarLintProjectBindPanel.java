@@ -105,6 +105,7 @@ public class SonarLintProjectBindPanel implements Disposable {
   }
 
   public void load(Collection<SonarQubeServer> servers, boolean enabled, @Nullable String selectedServerId, @Nullable String selectedProjectKey) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     this.bindEnable.setSelected(enabled);
     this.lastSelectedProjectKey = selectedProjectKey;
 
@@ -126,7 +127,6 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   @CheckForNull
   public String getSelectedProjectKey() {
-    // do things in a type safe way
     RemoteModule module = projectList.getSelectedValue();
     return module == null ? null : module.getKey();
   }

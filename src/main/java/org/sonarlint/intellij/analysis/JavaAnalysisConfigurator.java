@@ -34,6 +34,8 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -150,20 +152,31 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
       if (entry instanceof ModuleOrderEntry) {
         // Add dependent module output dir as library
         Module dependentModule = ((ModuleOrderEntry) entry).getModule();
-        if (dependentModule != null) {
-          VirtualFile output = getCompilerOutputPath(dependentModule);
-          if (output != null) {
-            found.add(output);
-          }
-        }
+        found.addAll(getModuleEntries(dependentModule));
       } else if (entry instanceof LibraryOrderEntry) {
         Library lib = ((LibraryOrderEntry) entry).getLibrary();
-        if (lib != null) {
-          Collections.addAll(found, lib.getFiles(OrderRootType.CLASSES));
-        }
+        found.addAll(getLibraryEntries(lib));
       }
     }
     return found.toArray(new VirtualFile[found.size()]);
+  }
+
+  private static Collection<VirtualFile> getLibraryEntries(@Nullable Library lib) {
+    if (lib == null) {
+      return Collections.emptyList();
+    }
+    return Arrays.asList(lib.getFiles(OrderRootType.CLASSES));
+  }
+
+  private static Collection<VirtualFile> getModuleEntries(@Nullable Module dependentModule) {
+    if (dependentModule == null) {
+      return Collections.emptyList();
+    }
+    VirtualFile output = getCompilerOutputPath(dependentModule);
+    if (output == null) {
+      return Collections.emptyList();
+    }
+    return Collections.singleton(output);
   }
 
   @CheckForNull

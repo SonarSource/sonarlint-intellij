@@ -149,11 +149,12 @@ public class SonarLintUtils {
 
     // file and module not null here
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+    SonarLintConsole console = SonarLintConsole.get(module.getProject());
     ContentEntry[] entries = moduleRootManager.getContentEntries();
 
     for (ContentEntry e : entries) {
       if (isExcludedOrUnderExcludedDirectory(file, e)) {
-        SonarLintConsole.get(module.getProject()).debug("Not automatically analysing excluded file: " + file.getName());
+        console.debug("Not automatically analysing excluded file: " + file.getName());
         return false;
       }
 
@@ -164,21 +165,25 @@ public class SonarLintUtils {
         }
 
         if (VfsUtil.isAncestor(sourceFolder.getFile(), file, false)) {
-          if (isJavaResource(sourceFolder)) {
-            SonarLintConsole.get(module.getProject()).debug("Not automatically analysing file under resources: " + file.getName());
-            return false;
-          } else if (isJavaGeneratedSource(sourceFolder)) {
-            SonarLintConsole.get(module.getProject()).debug("Not automatically analysing file belonging to generated source folder: " + file.getName());
-            return false;
-          }
-
-          return true;
+          return isValidSourceFolder(console, file, sourceFolder);
         }
       }
     }
 
     // java must be in a source root. For other files, we always analyse them.
     return !"java".equalsIgnoreCase(file.getFileType().getDefaultExtension());
+  }
+
+  private static boolean isValidSourceFolder(SonarLintConsole console, VirtualFile file, SourceFolder sourceFolder) {
+    if (isJavaResource(sourceFolder)) {
+      console.debug("Not automatically analysing file under resources: " + file.getName());
+      return false;
+    } else if (isJavaGeneratedSource(sourceFolder)) {
+      console.debug("Not automatically analysing file belonging to generated source folder: " + file.getName());
+      return false;
+    }
+
+    return true;
   }
 
   public static boolean isExcludedOrUnderExcludedDirectory(final VirtualFile file, ContentEntry contentEntry) {
@@ -214,22 +219,23 @@ public class SonarLintUtils {
 
   public static void configureProxy(String host, ServerConfiguration.Builder builder) {
     HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
-    if (isHttpProxyEnabledForUrl(httpConfigurable, host)) {
-      Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
+    if (!isHttpProxyEnabledForUrl(httpConfigurable, host)) {
+      return;
+    }
+    Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
 
-      Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
-      builder.proxy(proxy);
+    Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
+    builder.proxy(proxy);
 
-      if (httpConfigurable.PROXY_AUTHENTICATION) {
-        // Different ways to fetch login based on runtime version (SLI-95)
-        try {
-          Object proxyLogin = tryGetProxyLogin(httpConfigurable);
-          if (proxyLogin != null) {
-            builder.proxyCredentials(proxyLogin.toString(), httpConfigurable.getPlainProxyPassword());
-          }
-        } catch (Exception ex) {
-          LOG.warn("Could not fetch value for proxy login", ex);
+    if (httpConfigurable.PROXY_AUTHENTICATION) {
+      // Different ways to fetch login based on runtime version (SLI-95)
+      try {
+        Object proxyLogin = tryGetProxyLogin(httpConfigurable);
+        if (proxyLogin != null) {
+          builder.proxyCredentials(proxyLogin.toString(), httpConfigurable.getPlainProxyPassword());
         }
+      } catch (Exception ex) {
+        LOG.warn("Could not fetch value for proxy login", ex);
       }
     }
   }
