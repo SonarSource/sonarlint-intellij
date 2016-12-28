@@ -43,6 +43,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
 
   private final SonarLintGlobalSettings globalSettings;
   private final SonarLintSubmitter submitter;
+  private final EditorFactory editorFactory;
   private final SonarLintAppUtils utils;
   private final FileDocumentManager docManager;
 
@@ -63,25 +64,26 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
     super(project);
     this.submitter = submitter;
+    this.editorFactory = editorFactory;
     this.utils = utils;
     this.docManager = docManager;
     this.eventMap = new ConcurrentHashMap<>();
     this.globalSettings = globalSettings;
     this.watcher = new EventWatcher();
     this.timerMs = timerMs;
-
-    editorFactory.getEventMulticaster().addDocumentListener(this);
-
-    project.getMessageBus().connect(project).subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
-      @Override public void started(SonarLintJob job) {
-        removeFiles(job.allFiles());
-      }
-    });
   }
 
   @Override
   public void initComponent() {
+    myProject.getMessageBus()
+      .connect(myProject)
+      .subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
+        @Override public void started(SonarLintJob job) {
+          removeFiles(job.allFiles());
+        }
+      });
     watcher.start();
+    editorFactory.getEventMulticaster().addDocumentListener(this);
   }
 
   @Override public void beforeDocumentChange(DocumentEvent event) {
@@ -171,6 +173,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
 
   @Override
   public void disposeComponent() {
+    editorFactory.getEventMulticaster().removeDocumentListener(this);
     watcher.stopWatcher();
     eventMap.clear();
   }

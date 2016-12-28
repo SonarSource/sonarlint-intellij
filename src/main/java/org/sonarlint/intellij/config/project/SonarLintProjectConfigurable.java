@@ -58,7 +58,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   public SonarLintProjectConfigurable(Project project) {
     this.project = project;
     this.projectSettings = project.getComponent(SonarLintProjectSettings.class);
-    this.bus = ApplicationManager.getApplication().getMessageBus().connect();
+    this.bus = ApplicationManager.getApplication().getMessageBus().connect(project);
     this.bus.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override public void changed(List<SonarQubeServer> newServerList) {
         if (panel != null) {

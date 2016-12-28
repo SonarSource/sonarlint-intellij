@@ -40,7 +40,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
     this.submitter = submitter;
     this.console = console;
     this.compilerManager = compilerManager;
-    ApplicationManager.getApplication().getMessageBus().connect().subscribe(BuildManagerListener.TOPIC, this);
+    ApplicationManager.getApplication().getMessageBus().connect(project).subscribe(BuildManagerListener.TOPIC, this);
   }
 
   // introduced with IDEA 15

@@ -25,22 +25,19 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final SonarLintSubmitter submitter;
-  private final MessageBusConnection busConnection;
   private final SonarLintGlobalSettings globalSettings;
 
   public FileEditorTrigger(Project project, SonarLintSubmitter submitter, SonarLintGlobalSettings globalSettings) {
     super(project);
     this.submitter = submitter;
-    this.busConnection = project.getMessageBus().connect(project);
     this.globalSettings = globalSettings;
-    busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+    project.getMessageBus().connect(project).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
   }
 
   /**
@@ -64,10 +61,5 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
   @Override
   public void selectionChanged(@NotNull FileEditorManagerEvent event) {
     // nothing to do
-  }
-
-  @Override
-  public void disposeComponent() {
-    busConnection.disconnect();
   }
 }
