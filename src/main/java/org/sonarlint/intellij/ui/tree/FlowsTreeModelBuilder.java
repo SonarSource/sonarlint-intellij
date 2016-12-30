@@ -32,9 +32,6 @@ public class FlowsTreeModelBuilder {
   private SummaryNode summary;
   private DefaultTreeModel model;
 
-  public FlowsTreeModelBuilder() {
-  }
-
   public DefaultTreeModel createModel() {
     summary = new SummaryNode();
     model = new DefaultTreeModel(summary);

@@ -90,7 +90,7 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   // binding mgmt
   private JPanel bindPanel;
-  private JBList<RemoteModule> projectList;
+  private JBList projectList;
   private String lastSelectedProjectKey;
 
   public JPanel create() {
@@ -127,7 +127,7 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   @CheckForNull
   public String getSelectedProjectKey() {
-    RemoteModule module = projectList.getSelectedValue();
+    RemoteModule module = (RemoteModule) projectList.getSelectedValue();
     return module == null ? null : module.getKey();
   }
 
@@ -282,7 +282,7 @@ public class SonarLintProjectBindPanel implements Disposable {
     bindPanel.setBorder(b);
 
     JLabel projectListLabel = new JLabel("SonarQube project:");
-    projectList = new JBList<>();
+    projectList = new JBList();
     projectList.setCellRenderer(new ProjectListRenderer());
     projectList.addListSelectionListener(new ProjectItemListener());
     projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
