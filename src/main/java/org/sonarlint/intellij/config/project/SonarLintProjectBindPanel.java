@@ -90,6 +90,7 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   // binding mgmt
   private JPanel bindPanel;
+  // generic list only introduced in 2016.3
   private JBList projectList;
   private String lastSelectedProjectKey;
 
@@ -294,7 +295,8 @@ public class SonarLintProjectBindPanel implements Disposable {
 
     JPanel serverPanel = new JPanel(new GridLayoutManager(1, 3));
     configureServerButton = new JButton();
-    serverComboBox = new ComboBox<>();
+    // generic ComboBox only introduced in 2016.2.5
+    serverComboBox = new ComboBox();
     JLabel serverListLabel = new JLabel("Bind to server:");
 
     serverComboBox.setRenderer(new ServerComboBoxRenderer());
