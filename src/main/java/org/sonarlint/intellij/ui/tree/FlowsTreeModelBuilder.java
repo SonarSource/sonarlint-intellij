@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
@@ -60,7 +62,9 @@ public class FlowsTreeModelBuilder {
       LabelNode label = new LabelNode("Flow " + i);
       summary.add(label);
       int j = 1;
-      for (LiveIssue.IssueLocation location : f.locations()) {
+      List<LiveIssue.IssueLocation> reverseOrderedLocations = new ArrayList<>(f.locations());
+      Collections.reverse(reverseOrderedLocations);
+      for (LiveIssue.IssueLocation location : reverseOrderedLocations) {
         LocationNode locationNode = new LocationNode(j, location.location(), location.message());
         label.add(locationNode);
         j++;
