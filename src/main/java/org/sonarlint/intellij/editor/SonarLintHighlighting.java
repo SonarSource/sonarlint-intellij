@@ -46,6 +46,8 @@ import java.util.stream.Stream;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.LiveIssue;
 
+import static javafx.scene.control.TableColumnBuilder.create;
+
 public class SonarLintHighlighting {
   private static final int HIGHLIGHT_GROUP_ID = 1001;
   private final Project project;
@@ -117,11 +119,14 @@ public class SonarLintHighlighting {
   }
 
   private static HighlightInfo createHighlight(RangeMarker location, String message) {
-    return HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
+    HighlightInfo.Builder builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
       .range(location.getStartOffset(), location.getEndOffset())
-      .descriptionAndTooltip(message)
       .severity(HighlightSeverity.ERROR)
-      .textAttributes(SonarLintTextAttributes.SELECTED)
-      .create();
+      .textAttributes(SonarLintTextAttributes.SELECTED);
+
+    if (!message.isEmpty() && !"...".equals(message)) {
+      builder.descriptionAndTooltip(message);
+    }
+    return builder.create();
   }
 }

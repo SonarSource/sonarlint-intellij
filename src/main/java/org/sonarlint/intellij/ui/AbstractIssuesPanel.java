@@ -31,6 +31,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.treeStructure.Tree;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collections;
@@ -146,6 +148,13 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
           highlighting.removeHighlightingFlows();
+        }
+      }
+    });
+    tree.addFocusListener(new FocusAdapter() {
+      @Override public void focusGained(FocusEvent e) {
+        if (!e.isTemporary()) {
+          issueTreeSelectionChanged();
         }
       }
     });
