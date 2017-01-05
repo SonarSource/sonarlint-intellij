@@ -50,8 +50,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
   private static final String FLOWS_SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_FLOWS_SPLIT_PROPORTION";
 
   private final IssueManager issueManager;
-
-  private AbstractScope scope;
+  private final AbstractScope scope;
 
   public SonarLintIssuesPanel(Project project, IssueManager issueManager, ProjectBindingManager projectBindingManager) {
     super(project);

@@ -43,9 +43,9 @@ import org.sonarlint.intellij.issue.LiveIssue;
 public class SonarLintRulePanel {
   private final Project project;
   private final ProjectBindingManager projectBindingManager;
-  private JPanel panel;
+  private final JPanel panel;
+  private final HTMLEditorKit kit;
   private JEditorPane editor;
-  private HTMLEditorKit kit;
 
   public SonarLintRulePanel(Project project, ProjectBindingManager projectBindingManager) {
     this.project = project;

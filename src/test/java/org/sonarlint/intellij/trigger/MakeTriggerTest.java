@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 

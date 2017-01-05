@@ -54,8 +54,8 @@ import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 
 abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   private static final String ID = "SonarLint";
-  protected Project project;
-  protected SonarLintHighlighting highlighting;
+  protected final Project project;
+  protected final SonarLintHighlighting highlighting;
   protected SonarLintRulePanel rulePanel;
   protected Tree tree;
   protected IssueTreeModelBuilder treeBuilder;

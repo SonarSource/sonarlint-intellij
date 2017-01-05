@@ -36,7 +36,7 @@ public class SonarLintJob {
   private final Map<Module, Collection<VirtualFile>> files;
   private final TriggerType trigger;
   private final long creationTime;
-  private boolean waitForServerIssues;
+  private final boolean waitForServerIssues;
   @Nullable private final AnalysisCallback callback;
 
   SonarLintJob(Module module, Collection<VirtualFile> files, TriggerType trigger) {

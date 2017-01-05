@@ -27,9 +27,9 @@ import java.awt.Insets;
 import javax.annotation.Nullable;
 
 public class LocationNode extends AbstractNode {
-  private String message;
+  private final String message;
   private final int number;
-  private RangeMarker rangeMarker;
+  private final RangeMarker rangeMarker;
 
   public LocationNode(int number, RangeMarker rangeMarker, @Nullable String message) {
     this.number = number;

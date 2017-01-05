@@ -190,7 +190,7 @@ public class LiveIssue implements Trackable {
   }
 
   public static class Flow {
-    private List<IssueLocation> locations;
+    private final List<IssueLocation> locations;
 
     public Flow(List<IssueLocation> locations) {
       this.locations = locations;
@@ -202,8 +202,8 @@ public class LiveIssue implements Trackable {
   }
 
   public static class IssueLocation {
-    private RangeMarker location;
-    private String message;
+    private final RangeMarker location;
+    private final String message;
 
     public IssueLocation(RangeMarker location, String message) {
       this.location = location;

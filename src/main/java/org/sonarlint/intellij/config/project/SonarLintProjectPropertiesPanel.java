@@ -174,7 +174,7 @@ public class SonarLintProjectPropertiesPanel {
         for (Map.Entry<String, String> entry : options.entrySet()) {
           myRows.add(new KeyValuePair(entry.getKey(), entry.getValue()));
         }
-        Collections.sort(myRows, new KeyValueComparator());
+        myRows.sort(new KeyValueComparator());
         fireTableRowsInserted(0, options.size() - 1);
       }
     }

@@ -50,7 +50,7 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   private final ChangedFilesIssues changedFileIssues;
   private final ChangeListManager changeListManager;
 
-  private ChangeListListener vcsChangeListener = new ChangeListAdapter() {
+  private final ChangeListListener vcsChangeListener = new ChangeListAdapter() {
     @Override
     public void changeListUpdateDone() {
       ApplicationManager.getApplication().invokeLater(() -> treeBuilder.updateEmptyText(getEmptyText()));

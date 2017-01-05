@@ -49,9 +49,9 @@ public class IssueTreeModelBuilder {
   private static final List<String> SEVERITY_ORDER = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
+  private final IssueTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
-  private IssueTreeIndex index;
 
   public IssueTreeModelBuilder() {
     this.index = new IssueTreeIndex();
@@ -92,17 +92,16 @@ public class IssueTreeModelBuilder {
     }
   }
 
-  @CheckForNull
-  private FileNode setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
+  private void setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
     if (!accept(file)) {
       removeFile(file);
-      return null;
+      return;
     }
 
     List<LiveIssue> filtered = filter(issues);
     if (filtered.isEmpty()) {
       removeFile(file);
-      return null;
+      return;
     }
 
     boolean newFile = false;
@@ -124,8 +123,6 @@ public class IssueTreeModelBuilder {
     } else {
       model.nodeStructureChanged(fNode);
     }
-
-    return fNode;
   }
 
   private void removeFile(VirtualFile file) {
@@ -210,7 +207,7 @@ public class IssueTreeModelBuilder {
   @CheckForNull
   public IssueNode getNextIssue(AbstractNode<?> startNode) {
     if (!(startNode instanceof IssueNode)) {
-      return firstIssueDown((AbstractNode) startNode);
+      return firstIssueDown(startNode);
     }
 
     Object next = getNextNode(startNode);

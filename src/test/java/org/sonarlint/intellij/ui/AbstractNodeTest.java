@@ -88,7 +88,7 @@ public class AbstractNodeTest {
     verify(child1, times(1)).getIssueCount();
   }
 
-  private Comparator<FileNode> nameComparator = (f1, f2) -> f1.file().getName().compareTo(f2.file().getName());
+  private final Comparator<FileNode> nameComparator = Comparator.comparing(f -> f.file().getName());
 
   private VirtualFile mockFile(String name) {
     VirtualFile file = mock(VirtualFile.class);

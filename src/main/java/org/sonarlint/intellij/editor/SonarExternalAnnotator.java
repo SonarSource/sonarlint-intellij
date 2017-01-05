@@ -111,13 +111,13 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       annotation.setTextAttributes(getTextAttrsKey(issue.getSeverity()));
     }
 
-    /**
+    /*
      * 3 possible ways to set text attributes and error stripe color:
-     * - enforce text attributes ({@link Annotation#setEnforcedTextAttributes}) and we need to set everything manually
-     * (including error stripe color). This won't be configurable in a standard way and won't change based on used color scheme;
+     * - enforce text attributes ({@link Annotation#setEnforcedTextAttributes}) and we need to set everything
+     * manually (including error stripe color). This won't be configurable in a standard way and won't change based on used color scheme
      * - rely on one of the default attributes by giving a key {@link com.intellij.openapi.editor.colors.CodeInsightColors} or your own
-     * key ({@link SonarLintTextAttributes} to {@link Annotation#setTextAttributes}
-     * - let {@link Annotation#getTextAttributes} decide it based on highlight type and severity.
+     * key (SonarLintTextAttributes) to Annotation#setTextAttributes
+     * - let Annotation#getTextAttributes decide it based on highlight type and severity.
      */
     annotation.setHighlightType(getType(issue.getSeverity()));
   }

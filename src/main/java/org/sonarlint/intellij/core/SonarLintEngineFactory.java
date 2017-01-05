@@ -41,7 +41,7 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConf
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
-  private GlobalLogOutput globalLogOutput;
+  private final GlobalLogOutput globalLogOutput;
 
   public SonarLintEngineFactory(GlobalLogOutput globalLogOutput) {
     this.globalLogOutput = globalLogOutput;

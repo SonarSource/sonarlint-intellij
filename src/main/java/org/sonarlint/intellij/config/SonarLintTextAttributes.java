@@ -33,7 +33,7 @@ public class SonarLintTextAttributes {
   public static final TextAttributesKey SELECTED;
 
   static {
-    /**
+    /*
      * Defaults should be consistent with SonarLintSeverity
      */
     CRITICAL = createTextAttributesKey("SONARLINT_CRITICAL", SonarLintSeverity.CRITICAL.defaultTextAttributes());

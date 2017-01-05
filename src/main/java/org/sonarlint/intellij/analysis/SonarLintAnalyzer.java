@@ -23,6 +23,7 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ContentEntry;
@@ -47,6 +48,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 public class SonarLintAnalyzer {
+  private static final Logger LOG = Logger.getInstance(SonarLintAnalyzer.class);
   private final ProjectBindingManager projectBindingManager;
   private final EncodingProjectManager encodingProjectManager;
   private final SonarLintConsole console;
@@ -92,6 +94,7 @@ public class SonarLintAnalyzer {
     }
 
     console.info("Analysing " + what + "...");
+    LOG.assertTrue(!ApplicationManager.getApplication().isReadAccessAllowed(), "Should not be in a read action (risk of dead lock)");
     ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(filesToAnalyze), ModalityState.defaultModalityState());
     AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps);
     console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");

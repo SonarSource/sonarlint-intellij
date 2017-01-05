@@ -39,8 +39,8 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
 public class IssuePersistence extends AbstractProjectComponent {
-  private Path storeBasePath;
-  private IndexedObjectStore<String, Sonarlint.Issues> store;
+  private final Path storeBasePath;
+  private final IndexedObjectStore<String, Sonarlint.Issues> store;
 
   protected IssuePersistence(Project project) {
     super(project);
@@ -78,10 +78,7 @@ public class IssuePersistence extends AbstractProjectComponent {
   @CheckForNull
   public synchronized Collection<LocalIssueTrackable> read(String key) throws IOException {
     Optional<Sonarlint.Issues> issues = store.read(key);
-    if (issues.isPresent()) {
-      return transform(issues.get());
-    }
-    return null;
+    return issues.map(IssuePersistence::transform).orElse(null);
   }
 
   private Path getBasePath() {

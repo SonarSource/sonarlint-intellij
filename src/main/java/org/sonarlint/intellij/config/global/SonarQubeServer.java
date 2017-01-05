@@ -28,7 +28,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 
-@Immutable
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
  * By default, it will serialize data when there are public setters and getters for a field or when the field is public.
@@ -40,6 +39,7 @@ import javax.annotation.concurrent.Immutable;
  * @see com.intellij.util.xmlb.annotations.Tag
  * @see com.intellij.util.xmlb.annotations.OptionTag
  */
+@Immutable
 public class SonarQubeServer {
   @OptionTag
   private String hostUrl;

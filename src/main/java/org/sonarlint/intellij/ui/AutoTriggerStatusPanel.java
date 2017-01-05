@@ -58,14 +58,14 @@ public class AutoTriggerStatusPanel {
 
   private final Project project;
   private final SonarLintAppUtils utils;
+  private final SonarLintGlobalSettings globalSettings;
   private JPanel panel;
   private CardLayout layout;
-  private SonarLintGlobalSettings globalSettings;
 
   public AutoTriggerStatusPanel(Project project) {
     this.project = project;
     this.utils = SonarLintUtils.get(SonarLintAppUtils.class);
-    globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
+    this.globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
     createPanel();
     switchCards();
     subscribeToEvents();

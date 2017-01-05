@@ -38,7 +38,7 @@ import static java.awt.GridBagConstraints.WEST;
  * Inspired by {@link FormBuilder}
  */
 public class ServerFormBuilder {
-  private JPanel panel;
+  private final JPanel panel;
   private int rowGap;
   private int lineCount;
   private int columnGap;

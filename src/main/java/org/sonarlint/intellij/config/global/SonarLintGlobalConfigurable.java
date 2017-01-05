@@ -35,11 +35,11 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private final SonarLintEngineManager serverManager;
+  private final Application app;
+  private final SonarLintGlobalSettings globalSettings;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
   private SonarLintGlobalSettingsPanel globalPanel;
-  private Application app;
-  private SonarLintGlobalSettings globalSettings;
 
   public SonarLintGlobalConfigurable() {
     this.app = ApplicationManager.getApplication();

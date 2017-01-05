@@ -32,9 +32,9 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
 
 public class ChangedFilesIssues extends AbstractProjectComponent {
+  private final MessageBus messageBus;
   private Map<VirtualFile, Collection<LiveIssue>> issues;
   private LocalDateTime lastAnalysis;
-  private MessageBus messageBus;
 
   public ChangedFilesIssues(Project project) {
     super(project);

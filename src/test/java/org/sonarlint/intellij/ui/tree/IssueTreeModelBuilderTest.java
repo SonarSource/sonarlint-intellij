@@ -97,7 +97,7 @@ public class IssueTreeModelBuilderTest {
 
     List<LiveIssue> sorted = new ArrayList<>();
     sorted.addAll(list);
-    Collections.sort(sorted, new IssueTreeModelBuilder.IssueComparator());
+    sorted.sort(new IssueTreeModelBuilder.IssueComparator());
 
     // criteria: creation date (most recent, nulls last), getSeverity (highest first), rule alphabetically
     assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));
