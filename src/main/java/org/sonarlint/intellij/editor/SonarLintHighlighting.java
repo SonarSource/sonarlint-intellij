@@ -46,8 +46,6 @@ import java.util.stream.Stream;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.LiveIssue;
 
-import static javafx.scene.control.TableColumnBuilder.create;
-
 public class SonarLintHighlighting {
   private static final int HIGHLIGHT_GROUP_ID = 1001;
   private final Project project;
