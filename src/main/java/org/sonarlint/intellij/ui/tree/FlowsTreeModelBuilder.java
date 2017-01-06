@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.tree;
 import com.intellij.openapi.editor.RangeMarker;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
@@ -56,22 +57,65 @@ public class FlowsTreeModelBuilder {
       return;
     }
 
+    if (flows.size() == 1) {
+      setSingleFlow(flows.iterator().next(), rangeMarker, message);
+    } else if (flows.stream().noneMatch(flow -> flow.locations().size() != 1)) {
+      setFlatList(flows, rangeMarker, message);
+    } else {
+      setMultipleFlows(flows, rangeMarker, message);
+    }
+  }
+
+  private void setMultipleFlows(List<LiveIssue.Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
+    LocationNode primaryLocation = new LocationNode(rangeMarker, message);
+    summary.add(primaryLocation);
+
     int i = 1;
     for (LiveIssue.Flow f : flows) {
       LabelNode label = new LabelNode("Flow " + i);
-      summary.add(label);
-      int j = 1;
-      List<LiveIssue.IssueLocation> reverseOrderedLocations = new ArrayList<>(f.locations());
-      Collections.reverse(reverseOrderedLocations);
-      for (LiveIssue.IssueLocation location : reverseOrderedLocations) {
+      primaryLocation.add(label);
+      int j = f.locations().size();
+      for (LiveIssue.IssueLocation location : f.locations()) {
         LocationNode locationNode = new LocationNode(j, location.location(), location.message());
         label.add(locationNode);
-        j++;
+        j--;
       }
       label.add(new LocationNode(j, rangeMarker, message));
       i++;
     }
+    model.setRoot(summary);
+  }
+
+  private void setFlatList(List<LiveIssue.Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
+    summary = new SummaryNode();
+    LocationNode primaryLocation = new LocationNode(rangeMarker, message);
+    primaryLocation.setBold(true);
+    summary.add(primaryLocation);
+
+    flows.stream()
+      .flatMap(flow -> flow.locations().stream())
+      .sorted(Comparator.comparing(i -> i.location().getStartOffset()))
+      .forEachOrdered(location -> {
+        LocationNode locationNode = new LocationNode(location.location(), location.message());
+        primaryLocation.add(locationNode);
+      });
+
+    model.setRoot(summary);
+  }
+
+  private void setSingleFlow(LiveIssue.Flow flow, RangeMarker rangeMarker, @Nullable String message) {
+    summary = new SummaryNode();
+    LocationNode primaryLocation = new LocationNode(rangeMarker, message);
+    primaryLocation.setBold(true);
+    summary.add(primaryLocation);
+
+    int i = flow.locations().size();
+    for (LiveIssue.IssueLocation location : flow.locations()) {
+      LocationNode locationNode = new LocationNode(i--, location.location(), location.message());
+      primaryLocation.add(locationNode);
+    }
+
     model.setRoot(summary);
   }
 }

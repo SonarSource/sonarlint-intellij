@@ -50,10 +50,13 @@ public class FlowsTree extends Tree {
     this.selectionModel.addTreeSelectionListener(e -> {
       if (e.getSource() != null) {
         TreePath newPath = e.getNewLeadSelectionPath();
-        if (newPath != null && newPath.getPathCount() <= 2) {
-          FlowsTree.this.setSelectionPath(e.getOldLeadSelectionPath());
-        } else {
-          navigateToSelected();
+        if (newPath != null) {
+          Object o = newPath.getLastPathComponent();
+          if (!(o instanceof LocationNode)) {
+            FlowsTree.this.setSelectionPath(e.getOldLeadSelectionPath());
+          } else {
+            navigateToSelected();
+          }
         }
       }
     });

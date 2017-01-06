@@ -32,10 +32,7 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
@@ -44,7 +41,6 @@ import org.sonarlint.intellij.messages.StatusListener;
 public class SonarLintChangedPanel extends AbstractIssuesPanel implements OccurenceNavigator, DataProvider, Disposable {
   private static final String GROUP_ID = "SonarLint.changedtoolwindow";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_CHANGED_ISSUES_SPLIT_PROPORTION";
-  private static final String FLOWS_SPLIT_PROPORTION_PROPERTY = "SONARLINT_CHANGED_ISSUES_FLOWS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
   private final ChangedFilesIssues changedFileIssues;
@@ -58,7 +54,7 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   };
 
   public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues, ProjectBindingManager projectBindingManager) {
-    super(project);
+    super(project, projectBindingManager);
     this.changedFileIssues = changedFileIssues;
     this.lastAnalysisPanel = new LastAnalysisPanel(changedFileIssues, project);
     this.changeListManager = ChangeListManager.getInstance(project);
@@ -68,21 +64,8 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
 
-    // Flows panel with tree
-    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree);
-    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
-
-    // Rule panel
-    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
-    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
-      rulePanel.getPanel(),
-      ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-    scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
-
     // Put everything together
-    JComponent rightComponent = createSplitter(scrollableRulePanel, flowsPanel, FLOWS_SPLIT_PROPORTION_PROPERTY, true, 0.5f);
-    super.setContent(createSplitter(issuesPanel, rightComponent, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
+    super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 
     // Events
     this.treeBuilder.updateModel(changedFileIssues.issues(), getEmptyText());

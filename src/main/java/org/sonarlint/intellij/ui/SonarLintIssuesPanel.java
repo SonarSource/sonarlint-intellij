@@ -31,10 +31,7 @@ import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.Map;
 import javax.annotation.Nullable;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -47,13 +44,12 @@ import org.sonarlint.intellij.ui.scope.CurrentFileScope;
 public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataProvider {
   private static final String GROUP_ID = "SonarLint.issuestoolwindow";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
-  private static final String FLOWS_SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_FLOWS_SPLIT_PROPORTION";
 
   private final IssueManager issueManager;
   private final AbstractScope scope;
 
   public SonarLintIssuesPanel(Project project, IssueManager issueManager, ProjectBindingManager projectBindingManager) {
-    super(project);
+    super(project, projectBindingManager);
     this.issueManager = issueManager;
     this.scope = new CurrentFileScope(project);
 
@@ -62,21 +58,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
-    // Flows panel with tree
-    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree);
-    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
-
-    // Rule panel
-    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
-    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
-      rulePanel.getPanel(),
-      ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-    scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
-
-    // Put everything together
-    JComponent rightComponent = createSplitter(scrollableRulePanel, flowsPanel, FLOWS_SPLIT_PROPORTION_PROPERTY, true, 0.5f);
-    super.setContent(createSplitter(issuesPanel, rightComponent, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
+    super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 
     subscribeToEvents();
     updateTree();

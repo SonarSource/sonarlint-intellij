@@ -28,13 +28,22 @@ import javax.annotation.Nullable;
 
 public class LocationNode extends AbstractNode {
   private final String message;
-  private final int number;
+  private final Integer number;
   private final RangeMarker rangeMarker;
+  private boolean bold = false;
 
-  public LocationNode(int number, RangeMarker rangeMarker, @Nullable String message) {
+  public LocationNode(RangeMarker rangeMarker, @Nullable String message) {
+    this(null, rangeMarker, message);
+  }
+
+  public LocationNode(@Nullable Integer number, RangeMarker rangeMarker, @Nullable String message) {
     this.number = number;
     this.rangeMarker = rangeMarker;
     this.message = message;
+  }
+
+  public void setBold(boolean bold) {
+    this.bold = bold;
   }
 
   public RangeMarker rangeMarker() {
@@ -48,11 +57,13 @@ public class LocationNode extends AbstractNode {
   @Override public void render(ColoredTreeCellRenderer renderer) {
     renderer.setIpad(new Insets(3, 3, 3, 3));
     renderer.setBorder(null);
-    renderer.append(issueCoordinates(), SimpleTextAttributes.GRAY_ATTRIBUTES);
-    renderer.append(String.valueOf(number) + ":", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+    renderer.append(issueCoordinates(), bold ? SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES : SimpleTextAttributes.GRAY_ATTRIBUTES);
+    if (number != null) {
+      renderer.append(String.valueOf(number) + ":", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
+    }
     renderer.append("  ");
     if (message != null && !message.isEmpty() && !"...".equals(message)) {
-      renderer.append(message);
+      renderer.append(message, bold ? SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES : SimpleTextAttributes.REGULAR_ATTRIBUTES);
     } else {
       renderer.append("[ no message ]");
     }

@@ -30,6 +30,8 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
+import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
@@ -40,10 +42,13 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JComponent;
+import javax.swing.JScrollPane;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
@@ -59,13 +64,14 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   protected final Project project;
   protected final SonarLintHighlighting highlighting;
   protected SonarLintRulePanel rulePanel;
+  protected JBTabbedPane detailsTab;
   protected Tree tree;
   protected IssueTreeModelBuilder treeBuilder;
   protected FlowsTree flowsTree;
   protected FlowsTreeModelBuilder flowsTreeBuilder;
   protected ActionToolbar mainToolbar;
 
-  AbstractIssuesPanel(Project project) {
+  AbstractIssuesPanel(Project project, ProjectBindingManager projectBindingManager) {
     super(false, true);
     this.project = project;
     this.highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
@@ -73,6 +79,25 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     addToolbar();
     createFlowsTree();
     createIssuesTree();
+    createTabs(projectBindingManager);
+  }
+
+  private void createTabs(ProjectBindingManager projectBindingManager) {
+    // Flows panel with tree
+    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree);
+    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
+
+    // Rule panel
+    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
+    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
+      rulePanel.getPanel(),
+      ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
+
+    detailsTab = new JBTabbedPane();
+    detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", 0);
+    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", 1);
   }
 
   protected abstract String getToolbarGroupId();
