@@ -25,10 +25,14 @@ import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
+import com.intellij.openapi.keymap.Keymap;
+import com.intellij.openapi.keymap.KeymapManager;
+import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
@@ -145,14 +149,22 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   /**
    * Check in IntelliJ {@link com.intellij.codeInsight.daemon.impl.LocalInspectionsPass#createHighlightInfo} and
    * {@link InspectionDescriptionLinkHandler}
+   * {@link com.intellij.codeInsight.daemon.impl.LocalInspectionsPass}
    * {@link com.intellij.openapi.editor.colors.CodeInsightColors}
    */
   private String getHtmlMessage(LiveIssue issue) {
+    String shortcut = "";
+    final KeymapManager keymapManager = KeymapManager.getInstance();
+    if (keymapManager != null && keymapManager.getActiveKeymap() != null) {
+      final Keymap keymap = keymapManager.getActiveKeymap();
+      shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
+    }
+
     @NonNls
     final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
       + (isDark() ? " color=\"7AB4C9\" " : "")
-      + ">more...</a> ";
+      + ">more...</a> " + shortcut;
     return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString(issue.getMessage()) + link);
   }
 

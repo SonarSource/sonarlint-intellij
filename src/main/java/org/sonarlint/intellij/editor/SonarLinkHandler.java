@@ -33,7 +33,7 @@ public class SonarLinkHandler extends TooltipLinkHandler {
   @Override
   public String getDescription(@NotNull String refSuffix, @NotNull Editor editor) {
     Project project = editor.getProject();
-    if (project == null) {
+    if (project == null || project.isDisposed()) {
       return null;
     }
 
