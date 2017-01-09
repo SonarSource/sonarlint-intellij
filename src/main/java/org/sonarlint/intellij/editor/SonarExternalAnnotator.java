@@ -109,6 +109,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.getSeverity()), textRange, issue.getMessage(), htmlMsg);
 
+    if (!issue.flows().isEmpty()) {
+      annotation.registerFix(new ShowLocationsIntention(issue.getRange(), issue.getMessage(), issue.flows()));
+    }
+
     if (issue.getRange() == null) {
       annotation.setFileLevelAnnotation(true);
     } else {
