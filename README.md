@@ -45,6 +45,6 @@ Deploy on Jetbrains plugin repository (todo try to use publish task).
 
 ### License
 
-Copyright 2008-2016 SonarSource.
+Copyright 2013-2017 SonarSource.
 
 Licensed under the [GNU Lesser General Public License, Version 3.0](http://www.gnu.org/licenses/lgpl.txt)
