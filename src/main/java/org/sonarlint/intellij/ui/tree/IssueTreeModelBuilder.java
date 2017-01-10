@@ -67,6 +67,10 @@ public class IssueTreeModelBuilder {
     return model;
   }
 
+  public int numberIssues() {
+    return summary.getIssueCount();
+  }
+
   private AbstractNode getFilesParent() {
     return summary;
   }

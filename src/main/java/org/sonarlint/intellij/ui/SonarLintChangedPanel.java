@@ -86,13 +86,10 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   }
 
   private void expandTree() {
-    if (tree.getRowCount() < 30) {
+    if (treeBuilder.numberIssues() < 30) {
       TreeUtil.expandAll(tree);
     } else {
       tree.expandRow(0);
-      if (tree.getRowCount() > 1) {
-        tree.expandRow(1);
-      }
     }
   }
 
