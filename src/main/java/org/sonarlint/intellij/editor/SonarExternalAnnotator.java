@@ -164,12 +164,17 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
     }
 
+    String flows = "";
+    if (!issue.flows().isEmpty()) {
+      flows = " [with flows] ";
+    }
+
     @NonNls
     final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
       + (isDark() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;
-    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString(issue.getMessage()) + link);
+    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString(issue.getMessage()) + flows + link);
   }
 
   private boolean isDark() {
