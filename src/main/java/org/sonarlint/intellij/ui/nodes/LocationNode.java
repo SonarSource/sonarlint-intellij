@@ -24,6 +24,7 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import java.awt.Insets;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
 public class LocationNode extends AbstractNode {
@@ -50,6 +51,7 @@ public class LocationNode extends AbstractNode {
     return rangeMarker;
   }
 
+  @CheckForNull
   public String message() {
     return message;
   }

@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.LiveIssue;
 
@@ -87,7 +88,7 @@ public class SonarLintHighlighting {
    * @see com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
    * @see com.intellij.codeInsight.highlighting.BraceHighlightingHandler
    */
-  public void highlightFlowsWithHighlightersUtil(RangeMarker rangeMarker, String message, List<LiveIssue.Flow> flows) {
+  public void highlightFlowsWithHighlightersUtil(RangeMarker rangeMarker, @Nullable String message, List<LiveIssue.Flow> flows) {
     stopBlinking();
     HighlightInfo primaryInfo = createHighlight(rangeMarker, message);
 
@@ -116,13 +117,13 @@ public class SonarLintHighlighting {
     });
   }
 
-  private static HighlightInfo createHighlight(RangeMarker location, String message) {
+  private static HighlightInfo createHighlight(RangeMarker location, @Nullable String message) {
     HighlightInfo.Builder builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
       .range(location.getStartOffset(), location.getEndOffset())
       .severity(HighlightSeverity.ERROR)
       .textAttributes(SonarLintTextAttributes.SELECTED);
 
-    if (!message.isEmpty() && !"...".equals(message)) {
+    if (message != null && !message.isEmpty() && !"...".equals(message)) {
       builder.descriptionAndTooltip(message);
     }
     return builder.create();

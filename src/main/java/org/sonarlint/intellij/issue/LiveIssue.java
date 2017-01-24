@@ -210,6 +210,7 @@ public class LiveIssue implements Trackable {
       this.message = message;
     }
 
+    @CheckForNull
     public String message() {
       return message;
     }
