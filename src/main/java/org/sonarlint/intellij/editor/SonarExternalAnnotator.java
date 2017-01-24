@@ -166,7 +166,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     String flows = "";
     if (!issue.flows().isEmpty()) {
-      flows = " [with flows] ";
+      flows = " [context] ";
     }
 
     @NonNls
