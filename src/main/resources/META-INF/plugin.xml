@@ -33,6 +33,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.7.1 - Bug fix for handling secondary locations without message</li>
         <li>2.7 - Display of secondary locations of issues</li>
         <li>2.6 - Support of SSL certificates configured in IntelliJ</li>
         <li>2.5 - Analysis of VCS changed files and notifications about binding update</li>
