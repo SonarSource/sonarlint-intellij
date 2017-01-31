@@ -27,17 +27,48 @@ import com.intellij.notification.NotificationGroup;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
+import java.util.HashSet;
+import java.util.Set;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
 
 public class SonarApplication implements ApplicationComponent {
+  private static final Set<String> languages = new HashSet<>();
+
+  static {
+    languages.add("Groovy");
+    languages.add("XML");
+    languages.add("XHTML");
+    languages.add("JAVA");
+    languages.add("JavaScript");
+    languages.add("TEXT");
+
+    languages.add("PostgresPLSQL");
+    languages.add("SQL");
+    languages.add("SQLite");
+    languages.add("Sybase");
+    languages.add("H2");
+    languages.add("SQL92");
+    languages.add("Oracle");
+    languages.add("OracleSqlPlus");
+
+    languages.add("Python");
+    languages.add("Cobol");
+    languages.add("COBOL");
+    languages.add("Swift");
+    languages.add("SWIFT");
+    languages.add("PHP");
+  }
+
   private IdeaPluginDescriptor plugin;
 
   @Override
   public void initComponent() {
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
-    Language.getRegisteredLanguages().forEach(this::registerExternalAnnotatorFor);
+    Language.getRegisteredLanguages().stream()
+      .filter(languages::contains)
+      .forEach(this::registerExternalAnnotatorFor);
     registerNotifications();
   }
 
