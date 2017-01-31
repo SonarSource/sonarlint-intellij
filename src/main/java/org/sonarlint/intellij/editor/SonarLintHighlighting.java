@@ -117,6 +117,10 @@ public class SonarLintHighlighting {
     });
   }
 
+  public boolean isActiveInEditor(Editor editor) {
+    return currentHighlightedDoc != null && currentHighlightedDoc.equals(editor.getDocument());
+  }
+
   private static HighlightInfo createHighlight(RangeMarker location, @Nullable String message) {
     HighlightInfo.Builder builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
       .range(location.getStartOffset(), location.getEndOffset())

@@ -29,12 +29,41 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 
 public class EscapeHandler extends EditorActionHandler {
+
+  private final EditorActionHandler originalHandler;
+
+  public EscapeHandler(EditorActionHandler originalHandler) {
+    super(false);
+    this.originalHandler = originalHandler;
+  }
+
   @Override
   protected void doExecute(Editor editor, @Nullable Caret caret, DataContext dataContext) {
     Project project = editor.getProject();
     if (project != null) {
       SonarLintHighlighting highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
-      highlighting.removeHighlightingFlows();
+      if (highlighting.isActiveInEditor(editor)) {
+        highlighting.removeHighlightingFlows();
+        return;
+      }
     }
+    originalHandler.execute(editor, caret, dataContext);
   }
+
+  @Override
+  public boolean isEnabledForCaret(Editor editor, Caret caret, DataContext ctx) {
+    return isActive(editor) || originalHandler.isEnabled(editor, caret, ctx);
+  }
+
+  private static boolean isActive(Editor editor) {
+    Project project = editor.getProject();
+    if (project != null) {
+      SonarLintHighlighting highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
+      if (highlighting.isActiveInEditor(editor)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 }
