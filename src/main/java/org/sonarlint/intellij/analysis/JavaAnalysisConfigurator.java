@@ -112,19 +112,23 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static void configureBinaries(Module ijModule, Map<String, String> properties) {
+    String testPath = null;
+    VirtualFile testCompilerOutput = getCompilerTestOutputPath(ijModule);
+    if (testCompilerOutput != null) {
+      testPath = testCompilerOutput.getCanonicalPath();
+    }
+
     VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
     if (compilerOutput != null) {
       String path = compilerOutput.getCanonicalPath();
       if (path != null) {
         properties.put(JAVA_BINARIES_PROPERTY, path);
+        testPath = (testPath != null) ? (testPath + SEPARATOR + path) : path;
       }
     }
-    VirtualFile testCompilerOutput = getCompilerTestOutputPath(ijModule);
-    if (testCompilerOutput != null) {
-      String path = testCompilerOutput.getCanonicalPath();
-      if (path != null) {
-        properties.put(JAVA_TEST_BINARIES_PROPERTY, path);
-      }
+
+    if (testPath != null) {
+      properties.put(JAVA_TEST_BINARIES_PROPERTY, testPath);
     }
   }
 
