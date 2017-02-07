@@ -22,7 +22,6 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindowManager;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
@@ -80,7 +79,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
-    handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, project, checkinProjectPanel);
+    handler = new SonarLintCheckinHandler(globalSettings, project, checkinProjectPanel);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
@@ -95,7 +94,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
-    handler = new SonarLintCheckinHandler(mock(ToolWindowManager.class), globalSettings, project, checkinProjectPanel);
+    handler = new SonarLintCheckinHandler(globalSettings, project, checkinProjectPanel);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);

@@ -87,7 +87,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     }
   }
 
-  private void addAllFilesTab(Project project, ToolWindow toolWindow) {
+  private static void addAllFilesTab(Project project, ToolWindow toolWindow) {
     AllFilesIssues allFileIssues = SonarLintUtils.get(project, AllFilesIssues.class);
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
     SonarLintAllFilesPanel resultsPanel = new SonarLintAllFilesPanel(project, allFileIssues, projectBindingManager);

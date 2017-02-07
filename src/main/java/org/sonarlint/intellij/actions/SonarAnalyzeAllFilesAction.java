@@ -61,7 +61,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     submitter.submitFiles(allFiles, TriggerType.ACTION, callback, false);
   }
 
-  private Collection<VirtualFile> getAllFiles(Project project) {
+  private static Collection<VirtualFile> getAllFiles(Project project) {
     List<VirtualFile> fileList = new ArrayList<>();
     ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
     fileIndex.iterateContent(vFile -> {

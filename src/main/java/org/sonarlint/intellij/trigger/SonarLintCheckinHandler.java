@@ -31,7 +31,6 @@ import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.NonFocusableCheckBox;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
@@ -58,15 +57,12 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   private static final Logger LOGGER = Logger.getInstance(SonarLintCheckinHandler.class);
   private static final String ACTIVATED_OPTION_NAME = "SONARLINT_PRECOMMIT_ANALYSIS";
 
-  private final ToolWindowManager toolWindowManager;
   private final SonarLintGlobalSettings globalSettings;
   private final Project project;
   private final CheckinProjectPanel checkinPanel;
   private JCheckBox checkBox;
 
-  public SonarLintCheckinHandler(ToolWindowManager toolWindowManager, SonarLintGlobalSettings globalSettings,
-    Project project, CheckinProjectPanel checkinPanel) {
-    this.toolWindowManager = toolWindowManager;
+  public SonarLintCheckinHandler(SonarLintGlobalSettings globalSettings, Project project, CheckinProjectPanel checkinPanel) {
     this.globalSettings = globalSettings;
     this.project = project;
     this.checkinPanel = checkinPanel;

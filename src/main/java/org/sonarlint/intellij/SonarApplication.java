@@ -24,12 +24,18 @@ import com.intellij.ide.plugins.PluginManager;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageExtensionPoint;
 import com.intellij.notification.NotificationGroup;
+import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
+import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
 public class SonarApplication implements ApplicationComponent {
   private IdeaPluginDescriptor plugin;
@@ -39,6 +45,7 @@ public class SonarApplication implements ApplicationComponent {
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     Language.getRegisteredLanguages().forEach(this::registerExternalAnnotatorFor);
     registerNotifications();
+    cleanOldWorkDir();
   }
 
   public String getVersion() {
@@ -67,5 +74,20 @@ public class SonarApplication implements ApplicationComponent {
   @Override
   public String getComponentName() {
     return getClass().getSimpleName();
+  }
+
+  private static void cleanOldWorkDir() {
+    Path oldWorkDir = Paths.get(PathManager.getConfigPath()).resolve("sonarlint").resolve("work");
+    if (!Files.isDirectory(oldWorkDir)) {
+      return;
+    }
+
+    try {
+      Files.list(oldWorkDir)
+        .filter(f -> f.getFileName().toString().startsWith(".sonartmp_"))
+        .forEach(FileUtils::deleteRecursively);
+    } catch (IOException e) {
+      // ignore
+    }
   }
 }
