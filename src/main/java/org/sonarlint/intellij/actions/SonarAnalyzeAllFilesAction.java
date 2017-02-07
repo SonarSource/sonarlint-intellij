@@ -22,9 +22,11 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +34,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.AllFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -41,13 +43,9 @@ import org.sonarlint.intellij.ui.IssuesViewTabOpener;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
+public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   @Override protected boolean isEnabled(Project project, SonarLintStatus status) {
-    if (status.isRunning()) {
-      return false;
-    }
-    ChangeListManager changeListManager = ChangeListManager.getInstance(project);
-    return !changeListManager.getAffectedFiles().isEmpty();
+    return !status.isRunning();
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
@@ -58,22 +56,32 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     }
 
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    ChangeListManager changeListManager = ChangeListManager.getInstance(project);
+    Collection<VirtualFile> allFiles = getAllFiles(project);
+    AnalysisCallback callback = new ShowIssuesCallable(project, allFiles);
+    submitter.submitFiles(allFiles, TriggerType.ACTION, callback, false);
+  }
 
-    List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
-    AnalysisCallback callback = new ShowIssuesCallable(project, affectedFiles);
-    submitter.submitFiles(affectedFiles, TriggerType.ACTION, callback, false);
+  private Collection<VirtualFile> getAllFiles(Project project) {
+    List<VirtualFile> fileList = new ArrayList<>();
+    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+    fileIndex.iterateContent(vFile -> {
+      if (!vFile.isDirectory() && fileIndex.isInSourceContent(vFile)) {
+        fileList.add(vFile);
+      }
+      return true;
+    });
+    return fileList;
   }
 
   private static class ShowIssuesCallable implements AnalysisCallback {
     private final Project project;
-    private final ChangedFilesIssues changedFilesIssues;
+    private final AllFilesIssues allFilesIssues;
     private final Collection<VirtualFile> affectedFiles;
     private final IssueManager issueManager;
 
     private ShowIssuesCallable(Project project, Collection<VirtualFile> affectedFiles) {
       this.project = project;
-      this.changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
+      this.allFilesIssues = SonarLintUtils.get(project, AllFilesIssues.class);
       this.issueManager = SonarLintUtils.get(project, IssueManager.class);
       this.affectedFiles = affectedFiles;
     }
@@ -86,12 +94,12 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     public void onSuccess() {
       Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
         .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
-      changedFilesIssues.set(map);
-      showChangedFilesTab();
+      allFilesIssues.set(map);
+      showAllFilesTab();
     }
 
-    private void showChangedFilesTab() {
-      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_CHANGED_FILES));
+    private void showAllFilesTab() {
+      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_ALL_FILES));
     }
   }
 }

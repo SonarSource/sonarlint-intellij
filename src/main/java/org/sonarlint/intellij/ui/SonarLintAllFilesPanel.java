@@ -20,52 +20,31 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.vcs.changes.ChangeListAdapter;
-import com.intellij.openapi.vcs.changes.ChangeListListener;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.issue.ChangedFilesIssues;
-import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
+import org.sonarlint.intellij.issue.AllFilesIssues;
+import org.sonarlint.intellij.messages.AllFilesIssuesListener;
 import org.sonarlint.intellij.messages.StatusListener;
 
-public class SonarLintChangedPanel extends AbstractIssuesPanel implements OccurenceNavigator, DataProvider, Disposable {
-  private static final String NO_ANALYSIS_LABEL = "Trigger the analysis to find issues on the files in the VCS change set";
-  private static final String NO_CHANGED_FILES_LABEL = "VCS contains no changed files";
-  private static final String GROUP_ID = "SonarLint.changedtoolwindow";
-  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_CHANGED_ISSUES_SPLIT_PROPORTION";
+public class SonarLintAllFilesPanel extends AbstractIssuesPanel implements OccurenceNavigator, DataProvider {
+  private static final String GROUP_ID = "SonarLint.alltoolwindow";
+  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_RESULTS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
-  private final ChangedFilesIssues changedFileIssues;
-  private final ChangeListManager changeListManager;
+  private final AllFilesIssues allFilesIssues;
 
-  private final ChangeListListener vcsChangeListener = new ChangeListAdapter() {
-    @Override
-    public void changeListUpdateDone() {
-      ApplicationManager.getApplication().invokeLater(() -> treeBuilder.updateEmptyText(getEmptyText()));
-    }
-  };
-
-  public SonarLintChangedPanel(Project project, ChangedFilesIssues changedFileIssues, ProjectBindingManager projectBindingManager) {
+  public SonarLintAllFilesPanel(Project project, AllFilesIssues allFilesIssues, ProjectBindingManager projectBindingManager) {
     super(project, projectBindingManager);
-    this.changeListManager = ChangeListManager.getInstance(project);
-    this.changedFileIssues = changedFileIssues;
-    this.lastAnalysisPanel = new LastAnalysisPanel(changedFileIssues.lastAnalysisDate(), project, () -> {
-      if (changeListManager.getAffectedFiles().isEmpty()) {
-        return NO_CHANGED_FILES_LABEL;
-      } else {
-        return NO_ANALYSIS_LABEL;
-      }
-    });
+    this.allFilesIssues = allFilesIssues;
+    this.lastAnalysisPanel = new LastAnalysisPanel(allFilesIssues.lastAnalysisDate(), project,
+      () -> "Trigger the analysis to find issues on all source files");
 
     // Issues panel with tree
     JPanel issuesPanel = new JPanel(new BorderLayout());
@@ -76,17 +55,15 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
     super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 
     // Events
-    this.treeBuilder.updateModel(changedFileIssues.issues(), getEmptyText());
+    this.treeBuilder.updateModel(allFilesIssues.issues(), getEmptyText());
     subscribeToEvents();
-    Disposer.register(project, this);
   }
 
   private void subscribeToEvents() {
-    changeListManager.addChangeListListener(vcsChangeListener);
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(() -> {
+    busConnection.subscribe(AllFilesIssuesListener.ALL_FILES_ISSUES_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(() -> {
       treeBuilder.updateModel(issues, getEmptyText());
-      lastAnalysisPanel.update(changedFileIssues.lastAnalysisDate());
+      lastAnalysisPanel.update(allFilesIssues.lastAnalysisDate());
       expandTree();
     }));
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
@@ -102,22 +79,15 @@ public class SonarLintChangedPanel extends AbstractIssuesPanel implements Occure
   }
 
   private String getEmptyText() {
-    if (changedFileIssues.wasAnalyzed()) {
-      return "No issues in changed files";
-    } else if (changeListManager.getAffectedFiles().isEmpty()) {
-      return "No changed files in the VCS";
+    if (allFilesIssues.wasAnalyzed()) {
+      return "No issues found";
     } else {
-      return "No analysis done on changed files";
+      return "No analysis done";
     }
   }
 
   @Override
   protected String getToolbarGroupId() {
     return GROUP_ID;
-  }
-
-  @Override
-  public void dispose() {
-    changeListManager.removeChangeListListener(vcsChangeListener);
   }
 }

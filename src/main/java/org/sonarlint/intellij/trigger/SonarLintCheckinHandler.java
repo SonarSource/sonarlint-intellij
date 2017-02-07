@@ -21,6 +21,7 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -30,7 +31,6 @@ import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.NonFocusableCheckBox;
 import com.intellij.util.PairConsumer;
@@ -50,7 +50,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.ui.ChangedFilesTabOpener;
+import org.sonarlint.intellij.ui.IssuesViewTabOpener;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -186,10 +186,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    ToolWindow toolWindow = toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
-    if (toolWindow != null) {
-      toolWindow.show(new ChangedFilesTabOpener(toolWindow));
-    }
+    ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_CHANGED_FILES);
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent {
