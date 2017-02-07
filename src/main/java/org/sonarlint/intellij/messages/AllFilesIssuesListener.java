@@ -17,24 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui;
+package org.sonarlint.intellij.messages;
 
-import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.messages.Topic;
+import java.util.Collection;
+import java.util.Map;
+import org.sonarlint.intellij.issue.LiveIssue;
 
-public class ChangedFilesTabOpener implements Runnable {
-  private final ToolWindow toolWindow;
+public interface AllFilesIssuesListener {
+  Topic<AllFilesIssuesListener> ALL_FILES_ISSUES_TOPIC = Topic.create("Files issues changed", AllFilesIssuesListener.class);
 
-  public ChangedFilesTabOpener(ToolWindow toolWindow) {
-    this.toolWindow = toolWindow;
-  }
-
-  @Override public void run() {
-    ContentManager contentManager = toolWindow.getContentManager();
-    Content content = contentManager.findContent(SonarLintToolWindowFactory.TAB_CHANGED_FILES);
-    if (content != null) {
-      contentManager.setSelectedContent(content);
-    }
-  }
+  /**
+   * Called when the store of issues is modified. It is modified only as a result of a user action to analyse all files.
+   */
+  void update(Map<VirtualFile, Collection<LiveIssue>> issues);
 }

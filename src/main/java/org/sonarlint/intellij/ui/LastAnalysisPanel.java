@@ -22,33 +22,30 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
-import com.intellij.openapi.vcs.changes.ChangeListManager;
 import icons.SonarLintIcons;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.LocalDateTime;
+import java.util.function.Supplier;
 import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
-import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LastAnalysisPanel implements Disposable {
-  private static final String NO_ANALYSIS_LABEL = "Trigger the analysis to find issues on the files in the VCS change set";
-  private static final String NO_CHANGED_FILES_LABEL = "VCS contains no changed files";
-  private final ChangedFilesIssues changedFileIssues;
-  private final Project project;
+  private LocalDateTime lastAnalysis;
+  private final Supplier<String> emptyTestSupplier;
   private GridBagConstraints gc;
   private Timer lastAnalysisTimeUpdater;
   private JLabel lastAnalysisLabel;
   private JLabel icon;
   private JPanel panel;
 
-  public LastAnalysisPanel(ChangedFilesIssues changedFileIssues, Project project) {
-    this.changedFileIssues = changedFileIssues;
-    this.project = project;
+  public LastAnalysisPanel(LocalDateTime lastAnalysis, Project project, Supplier<String> emptyTestSupplier) {
+    this.lastAnalysis = lastAnalysis;
+    this.emptyTestSupplier = emptyTestSupplier;
     createComponents();
     setLabel();
     setTimer();
@@ -59,22 +56,15 @@ public class LastAnalysisPanel implements Disposable {
     return panel;
   }
 
-  public void update() {
+  public void update(LocalDateTime lastAnalysis) {
+    this.lastAnalysis = lastAnalysis;
     setLabel();
   }
 
   private void setLabel() {
-    LocalDateTime lastAnalysis = changedFileIssues.lastAnalysisDate();
     panel.removeAll();
     if (lastAnalysis == null) {
-      ChangeListManager changeListManager = ChangeListManager.getInstance(project);
-      boolean noChangedFiles = changeListManager.getAffectedFiles().isEmpty();
-
-      if (noChangedFiles) {
-        lastAnalysisLabel.setText(NO_CHANGED_FILES_LABEL);
-      } else {
-        lastAnalysisLabel.setText(NO_ANALYSIS_LABEL);
-      }
+      lastAnalysisLabel.setText(emptyTestSupplier.get());
       panel.add(icon);
       panel.add(lastAnalysisLabel, gc);
     } else {

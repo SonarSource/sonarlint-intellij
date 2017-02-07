@@ -97,6 +97,9 @@
             <implementation-class>org.sonarlint.intellij.issue.ChangedFilesIssues</implementation-class>
         </component>
         <component>
+            <implementation-class>org.sonarlint.intellij.issue.AllFilesIssues</implementation-class>
+        </component>
+        <component>
             <implementation-class>org.sonarlint.intellij.editor.CodeAnalyzerRestarter</implementation-class>
         </component>
         <component>
@@ -161,8 +164,9 @@
         <checkinHandlerFactory implementation="org.sonarlint.intellij.trigger.SonarLintCheckinHandlerFactory"/>
         <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
-        <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.ui.EscapeHandler"/>
+        <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.ui.IssuesViewTabOpener"/>
     </extensions>
 
     <extensionPoints>
@@ -174,6 +178,8 @@
         <group id="SonarLint.logtoolwindow" text="SonarLint" popup="true"/>
         <group id="SonarLint.issuestoolwindow" text="SonarLint" popup="true"/>
         <group id="SonarLint.changedtoolwindow" text="SonarLint" popup="true"/>
+        <group id="SonarLint.alltoolwindow" text="SonarLint" popup="true"/>
+
 
         <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
@@ -200,6 +206,22 @@
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
+        <action id="SonarLint.SonarAnalyzeAllFilesAction"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
+                text="Analyze all files"
+                description="Run SonarLint analysis on all files in the project"
+                icon="SonarLintIcons.PLAY">
+            <add-to-group group-id="SonarLint.alltoolwindow"/>
+        </action>
+
+        <action id="SonarLint.SonarAnalyzeAllFilesActionPopup"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
+                text="SonarLint: analyze all files in the Project"
+                description="Run SonarLint analysis on all files in the project"
+                icon="SonarLintIcons.SONARLINT">
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        </action>
+
         <action id="SonarLint.toolwindow.Cancel"
                 class="org.sonarlint.intellij.actions.SonarCancel"
                 text="Cancel SonarLint analysis"
@@ -218,6 +240,7 @@
             <add-to-group group-id="SonarLint.logtoolwindow"/>
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
+            <add-to-group group-id="SonarLint.alltoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.CleanConsole"

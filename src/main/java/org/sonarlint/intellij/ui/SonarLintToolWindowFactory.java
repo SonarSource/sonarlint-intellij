@@ -28,6 +28,7 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.issue.AllFilesIssues;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -41,6 +42,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TAB_LOGS = "Log";
   public static final String TAB_CURRENT_FILE = "Current file";
   public static final String TAB_CHANGED_FILES = "Changed files";
+  public static final String TAB_ALL_FILES = "All files";
 
   private Content changedFilesTab;
 
@@ -48,6 +50,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
     addIssuesTab(project, toolWindow);
     addChangedFilesTab(project, toolWindow);
+    addAllFilesTab(project, toolWindow);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
 
@@ -82,6 +85,18 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     if (hasVcs(project)) {
       toolWindow.getContentManager().addContent(changedContent);
     }
+  }
+
+  private void addAllFilesTab(Project project, ToolWindow toolWindow) {
+    AllFilesIssues allFileIssues = SonarLintUtils.get(project, AllFilesIssues.class);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    SonarLintAllFilesPanel resultsPanel = new SonarLintAllFilesPanel(project, allFileIssues, projectBindingManager);
+    Content allFilesContent = toolWindow.getContentManager().getFactory()
+      .createContent(
+        resultsPanel,
+        TAB_ALL_FILES,
+        false);
+    toolWindow.getContentManager().addContent(allFilesContent);
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
