@@ -42,7 +42,7 @@ public abstract class SonarLintFacade {
     this.projectSettings = projectSettings;
   }
 
-  protected abstract AnalysisResults analyse(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener);
+  protected abstract AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener);
 
   protected abstract RuleDetails ruleDetails(String ruleKey);
 
@@ -52,7 +52,7 @@ public abstract class SonarLintFacade {
     Map<String, String> props = new HashMap<>();
     props.putAll(additionalProps);
     props.putAll(projectSettings.getAdditionalProperties());
-    return analyse(baseDir, workDir, inputFiles, props, issueListener);
+    return analyze(baseDir, workDir, inputFiles, props, issueListener);
   }
 
   @CheckForNull

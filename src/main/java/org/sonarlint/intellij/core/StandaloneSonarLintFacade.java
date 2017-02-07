@@ -47,7 +47,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     this.sonarlint = engine;
   }
 
-  @Override protected AnalysisResults analyse(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener) {
+  @Override protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener) {
     StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props);
     console.debug("Starting analysis with configuration:\n" + config.toString());
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings));

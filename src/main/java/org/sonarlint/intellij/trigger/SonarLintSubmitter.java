@@ -85,7 +85,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
    * Submit files for analysis.
    * @param files Files to be analyzed.
    * @param trigger What triggered the analysis
-   * @param startInBackground Whether the analysis was triggered automatically. It affects the filter of files that should be analysed and also
+   * @param startInBackground Whether the analysis was triggered automatically. It affects the filter of files that should be analyzed and also
    *                    if it starts in background or foreground.
    */
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {

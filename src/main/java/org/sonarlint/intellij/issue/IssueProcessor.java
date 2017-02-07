@@ -113,11 +113,11 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
   }
 
-  private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
+  private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
     Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
 
-    for (VirtualFile f : analysed) {
+    for (VirtualFile f : analyzed) {
       if (failedVirtualFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
@@ -132,9 +132,9 @@ public class IssueProcessor extends AbstractProjectComponent {
    * Transforms issues and organizes them per file
    */
   private Map<VirtualFile, Collection<LiveIssue>> transformIssues(
-    Collection<Issue> issues, Collection<VirtualFile> analysed, Collection<ClientInputFile> failedAnalysisFiles) {
+    Collection<Issue> issues, Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
 
-    Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analysed, failedAnalysisFiles);
+    Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
 
     for (Issue issue : issues) {
       ClientInputFile inputFile = issue.getInputFile();

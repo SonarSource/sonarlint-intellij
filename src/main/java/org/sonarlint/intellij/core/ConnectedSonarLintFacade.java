@@ -50,7 +50,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  protected AnalysisResults analyse(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener) {
+  protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener) {
     ConnectedAnalysisConfiguration config = new ConnectedAnalysisConfiguration(moduleKey, baseDir, workDir, inputFiles, props);
     console.debug("Starting analysis with configuration:\n" + config.toString());
 

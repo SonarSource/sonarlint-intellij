@@ -30,7 +30,7 @@ public interface ChangedFilesIssuesListener {
   Topic<ChangedFilesIssuesListener> CHANGED_FILES_ISSUES_TOPIC = Topic.create("Changed files issues changed", ChangedFilesIssuesListener.class);
 
   /**
-   * Called when the store of issues in changed files is modified. It is modified only as a result of a user action to analyse all changed files.
+   * Called when the store of issues in changed files is modified. It is modified only as a result of a user action to analyze all changed files.
    */
   void update(Map<VirtualFile, Collection<LiveIssue>> issues);
 }

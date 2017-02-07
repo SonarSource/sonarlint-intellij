@@ -153,16 +153,16 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     return showYesNoCancel(msg);
   }
 
-  private static String createMessage(long filesAnalysed, long numIssues, long numBlockerIssues) {
-    String files = filesAnalysed == 1 ? "file" : "files";
+  private static String createMessage(long filesAnalyzed, long numIssues, long numBlockerIssues) {
+    String files = filesAnalyzed == 1 ? "file" : "files";
     String issues = numIssues == 1 ? "issue" : "issues";
 
     if (numBlockerIssues > 0) {
       String blocker = numBlockerIssues == 1 ? "issue" : "issues";
-      return String.format("SonarLint analysis on %d %s found %d %s (including %d blocker %s)", filesAnalysed, files,
+      return String.format("SonarLint analysis on %d %s found %d %s (including %d blocker %s)", filesAnalyzed, files,
         numIssues, issues, numBlockerIssues, blocker);
     } else {
-      return String.format("SonarLint analysis on %d %s found %d %s", filesAnalysed, files, numIssues, issues);
+      return String.format("SonarLint analysis on %d %s found %d %s", filesAnalyzed, files, numIssues, issues);
     }
   }
 

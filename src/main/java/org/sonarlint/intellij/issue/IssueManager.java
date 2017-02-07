@@ -73,7 +73,7 @@ public class IssueManager extends AbstractProjectComponent {
 
   /**
    * Returns the issues in the live cache for a file.
-   * If the file was never analysed, null is returned. If the file was analysed but no issues were found, an empty Collection is returned.
+   * If the file was never analyzed, null is returned. If the file was analyzed but no issues were found, an empty Collection is returned.
    */
   @CheckForNull
   public Collection<LiveIssue> getForFileOrNull(VirtualFile file) {

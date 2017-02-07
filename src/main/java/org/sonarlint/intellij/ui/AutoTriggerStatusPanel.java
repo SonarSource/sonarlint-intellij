@@ -53,7 +53,7 @@ public class AutoTriggerStatusPanel {
   private static final String FILE_DISABLED = "FILE_DISABLED";
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
 
-  private static final String TOOLTIP = "Some files are not automatically analysed. For example, "
+  private static final String TOOLTIP = "Some files are not automatically analyzed. For example, "
     + "files that are excluded or Java files that don't belong the project's source root.";
 
   private final Project project;
@@ -140,7 +140,7 @@ public class AutoTriggerStatusPanel {
 
     JLabel enabledLabel = new JLabel("Automatic analysis is enabled");
     JLabel disabledLabel = new JLabel("On-the-fly analysis is disabled - issues are not automatically displayed");
-    JLabel notThisFileLabel = new JLabel("This file is not automatically analysed");
+    JLabel notThisFileLabel = new JLabel("This file is not automatically analyzed");
     notThisFileLabel.setToolTipText(TOOLTIP);
 
     enabledCard.add(enabledLabel, gc);

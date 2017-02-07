@@ -29,7 +29,7 @@ public interface AllFilesIssuesListener {
   Topic<AllFilesIssuesListener> ALL_FILES_ISSUES_TOPIC = Topic.create("Files issues changed", AllFilesIssuesListener.class);
 
   /**
-   * Called when the store of issues is modified. It is modified only as a result of a user action to analyse all files.
+   * Called when the store of issues is modified. It is modified only as a result of a user action to analyze all files.
    */
   void update(Map<VirtualFile, Collection<LiveIssue>> issues);
 }

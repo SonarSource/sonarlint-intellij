@@ -170,7 +170,7 @@ public class SonarLintUtils {
       }
     }
 
-    // java must be in a source root. For other files, we always analyse them.
+    // java must be in a source root. For other files, we always analyze them.
     return !"java".equalsIgnoreCase(file.getFileType().getDefaultExtension());
   }
 
