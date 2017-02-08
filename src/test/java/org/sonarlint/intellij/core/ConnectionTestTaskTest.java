@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.tasks.ConnectionTestTask;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

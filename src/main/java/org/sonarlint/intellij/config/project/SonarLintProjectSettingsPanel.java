@@ -26,6 +26,8 @@ import java.util.List;
 import javax.swing.JPanel;
 import org.apache.commons.codec.binary.StringUtils;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import com.intellij.openapi.project.Project;
+
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
@@ -34,14 +36,14 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   private final JPanel rootPropertiesPane;
   private SonarLintProjectBindPanel bindPanel;
 
-  public SonarLintProjectSettingsPanel() {
+  public SonarLintProjectSettingsPanel(Project project) {
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
     root = new JPanel(new BorderLayout());
     JBTabbedPane tabs = new JBTabbedPane();
 
     rootBindPane = new JPanel(new BorderLayout());
-    rootBindPane.add(bindPanel.create());
+    rootBindPane.add(bindPanel.create(project));
 
     rootPropertiesPane = new JPanel(new BorderLayout());
     rootPropertiesPane.add(propsPanel.create(), BorderLayout.CENTER);

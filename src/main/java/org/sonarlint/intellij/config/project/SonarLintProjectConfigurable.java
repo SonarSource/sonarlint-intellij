@@ -37,7 +37,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.core.ServerUpdateTask;
+import org.sonarlint.intellij.tasks.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -84,7 +84,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public JComponent createComponent() {
     if (panel == null) {
-      panel = new SonarLintProjectSettingsPanel();
+      panel = new SonarLintProjectSettingsPanel(project);
     }
     return panel.getRootPane();
   }
