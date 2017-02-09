@@ -183,7 +183,7 @@ public class IssueProcessor extends AbstractProjectComponent {
         try {
           range = matcher.match(psiFile, loc);
         } catch (Exception e) {
-          LOGGER.error("Error finding secondary location for issue. Rule={}, Start={} End={}", e, rule,
+          LOGGER.error("Error finding secondary location for issue. Rule={}, StartLine={} StartLineOffset={} EndLine={} EndLineOffset={}", e, rule,
             String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));
           return Collections.emptyList();
         }
