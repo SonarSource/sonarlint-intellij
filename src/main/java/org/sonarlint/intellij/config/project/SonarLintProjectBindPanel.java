@@ -24,6 +24,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.CollectionListModel;
@@ -242,7 +243,7 @@ public class SonarLintProjectBindPanel implements Disposable {
     ServerDownloadProjectTask downloadTask = new ServerDownloadProjectTask(project, engine, selectedServer);
 
     try {
-      downloadTask.queue();
+      ProgressManager.getInstance().run(downloadTask);
       Map<String, RemoteModule> map = downloadTask.getResult();
       setProjectsInList(map.values());
     } catch (Exception e) {
