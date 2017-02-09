@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Map;
 import org.sonarlint.intellij.issue.LiveIssue;
 
+@FunctionalInterface
 public interface AllFilesIssuesListener {
   Topic<AllFilesIssuesListener> ALL_FILES_ISSUES_TOPIC = Topic.create("Files issues changed", AllFilesIssuesListener.class);
 

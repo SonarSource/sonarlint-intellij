@@ -46,7 +46,7 @@ public class IssuesViewTabOpener {
     }
   }
 
-  private class ContentSelector implements Runnable {
+  private static class ContentSelector implements Runnable {
     private final ToolWindow toolWindow;
     private final String tab;
 
