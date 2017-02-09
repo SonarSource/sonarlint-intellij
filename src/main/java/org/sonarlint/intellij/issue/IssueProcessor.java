@@ -30,6 +30,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -165,28 +166,32 @@ public class IssueProcessor extends AbstractProjectComponent {
     PsiFile psiFile = matcher.findFile(vFile);
     if (issue.getStartLine() != null) {
       RangeMarker rangeMarker = matcher.match(psiFile, issue);
-      List<LiveIssue.Flow> flows = transformFlows(psiFile, issue.flows());
+      List<LiveIssue.Flow> flows = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
       return new LiveIssue(issue, psiFile, rangeMarker, flows);
     } else {
       return new LiveIssue(issue, psiFile);
     }
   }
 
-  private List<LiveIssue.Flow> transformFlows(PsiFile psiFile, List<Issue.Flow> flows) {
+  private List<LiveIssue.Flow> transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
     List<LiveIssue.Flow> transformedFlows = new LinkedList<>();
 
     for (Issue.Flow f : flows) {
-      try {
-        List<LiveIssue.IssueLocation> newLocations = new LinkedList<>();
-        for (IssueLocation location : f.locations()) {
-          RangeMarker range = matcher.match(psiFile, location);
-          newLocations.add(new LiveIssue.IssueLocation(range, location.getMessage()));
+      List<LiveIssue.IssueLocation> newLocations = new LinkedList<>();
+      for (IssueLocation loc : f.locations()) {
+        RangeMarker range;
+        try {
+          range = matcher.match(psiFile, loc);
+        } catch (Exception e) {
+          LOGGER.error("Error finding secondary location for issue. Rule={}, Start={} End={}", e, rule,
+            String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));
+          return Collections.emptyList();
         }
-        LiveIssue.Flow newFlow = new LiveIssue.Flow(newLocations);
-        transformedFlows.add(newFlow);
-      } catch (Exception e) {
-        LOGGER.error("Error finding secondary location for issue", e);
+        newLocations.add(new LiveIssue.IssueLocation(range, loc.getMessage()));
       }
+      LiveIssue.Flow newFlow = new LiveIssue.Flow(newLocations);
+      transformedFlows.add(newFlow);
+
     }
 
     return transformedFlows;
