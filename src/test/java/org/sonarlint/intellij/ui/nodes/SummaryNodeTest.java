@@ -19,9 +19,9 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.ui.ColoredTreeCellRenderer;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -42,7 +42,7 @@ public class SummaryNodeTest {
 
     node.add(child1);
 
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("Found 3 issues in 1 file");
@@ -50,7 +50,7 @@ public class SummaryNodeTest {
 
   @Test
   public void testNoIssues() {
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("No issues to display");
@@ -58,7 +58,7 @@ public class SummaryNodeTest {
 
   @Test
   public void testEmptyText() {
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.setEmptyText("Empty");
     node.render(renderer);
 

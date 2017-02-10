@@ -20,12 +20,12 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.ColoredTreeCellRenderer;
 import java.util.Comparator;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -39,7 +39,7 @@ public class AbstractNodeTest {
   @Before
   public void setUp() {
     testNode = new AbstractNode() {
-      @Override public void render(ColoredTreeCellRenderer renderer) {
+      @Override public void render(TreeCellRenderer renderer) {
         // do nothing
       }
     };

@@ -22,10 +22,10 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.mock.MockDocument;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -48,7 +48,7 @@ public class LocationNodeTest {
   @Test
   public void testRenderer() {
     node = new LocationNode(3, range, "msg");
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);
@@ -60,7 +60,7 @@ public class LocationNodeTest {
   @Test
   public void testNoMessage() {
     node = new LocationNode(3, range, "...");
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);

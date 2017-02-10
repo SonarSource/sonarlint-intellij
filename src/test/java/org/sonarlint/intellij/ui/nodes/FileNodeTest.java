@@ -22,9 +22,9 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.ColoredTreeCellRenderer;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -67,7 +67,7 @@ public class FileNodeTest {
   @Test
   public void testRender() {
     node.add(createTestIssueNode());
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("fileName");
@@ -78,7 +78,7 @@ public class FileNodeTest {
   public void testRenderMultiple() {
     node.add(createTestIssueNode());
     node.add(createTestIssueNode());
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("fileName");

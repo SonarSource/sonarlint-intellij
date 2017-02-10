@@ -49,7 +49,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.ui.IssuesViewTabOpener;
+import org.sonarlint.intellij.actions.IssuesViewTabOpener;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -91,7 +91,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
           // do nothing
         }
 
-        @Override public void onError(Exception e) {
+        @Override public void onError(Throwable e) {
           error.set(true);
         }
       };

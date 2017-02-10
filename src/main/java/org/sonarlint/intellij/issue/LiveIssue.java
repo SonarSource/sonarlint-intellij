@@ -46,6 +46,7 @@ public class LiveIssue implements Trackable {
   private final Integer textRangeHash;
   private final Integer lineHash;
   private final String severity;
+  private final String type;
   private final String ruleName;
   private final String message;
   private final String ruleKey;
@@ -67,6 +68,7 @@ public class LiveIssue implements Trackable {
     this.ruleKey = issue.getRuleKey();
     this.ruleName = issue.getRuleName();
     this.severity = issue.getSeverity();
+    this.type = issue.getType();
     this.psiFile = psiFile;
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
@@ -147,6 +149,10 @@ public class LiveIssue implements Trackable {
 
   public String getSeverity() {
     return severity;
+  }
+
+  public String getType() {
+    return type;
   }
 
   public String getRuleName() {

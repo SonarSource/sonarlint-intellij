@@ -166,7 +166,7 @@
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
         <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.ui.IssuesViewTabOpener"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.actions.IssuesViewTabOpener"/>
     </extensions>
 
     <extensionPoints>

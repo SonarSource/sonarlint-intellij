@@ -21,11 +21,13 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.ui.ColoredTreeCellRenderer;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.SimpleTextAttributes;
 import icons.SonarLintIcons;
 import javax.annotation.Nonnull;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueNode extends AbstractNode {
@@ -35,17 +37,26 @@ public class IssueNode extends AbstractNode {
     this.issue = issue;
   }
 
-  @Override public void render(ColoredTreeCellRenderer renderer) {
-    String severity = issue.getSeverity();
+  @Override public void render(TreeCellRenderer renderer) {
+    String severity = StringUtil.capitalize(StringUtil.toLowerCase(issue.getSeverity()));
+    String type = issue.getType();
 
-    if (severity != null) {
+    if (type != null) {
+      String typeStr = StringUtil.toLowerCase(type.replace('_', ' '));
+      renderer.setIconToolTip(severity + " " + typeStr);
+      renderer.setIcon(new CompoundIcon(CompoundIcon.Axis.X_AXIS, 6, SonarLintIcons.type(type), SonarLintIcons.severity(severity)));
+    } else {
+      renderer.setIconToolTip(severity);
       renderer.setIcon(SonarLintIcons.severity(severity));
     }
+
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
 
     if (issue.isValid()) {
+      renderer.setToolTipText("Double click to open location");
       renderer.append(issue.getMessage());
     } else {
+      renderer.setToolTipText("Issue is no longer valid");
       renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
 
