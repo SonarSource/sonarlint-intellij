@@ -21,9 +21,9 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import javax.swing.Icon;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class FileNode extends AbstractNode {
   private static final Logger LOGGER = Logger.getInstance(FileNode.class);
@@ -51,7 +51,7 @@ public class FileNode extends AbstractNode {
     return file.getFileType().getIcon();
   }
 
-  @Override public void render(ColoredTreeCellRenderer renderer) {
+  @Override public void render(TreeCellRenderer renderer) {
     renderer.setIcon(getIcon());
     renderer.append(file.getName());
 

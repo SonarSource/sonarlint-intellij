@@ -115,14 +115,14 @@ public class SonarLintTask extends Task.Backgroundable {
     } catch (CanceledException e1) {
       console.info("Analysis canceled");
       return;
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
       handleError(e, indicator);
     } finally {
       myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
     }
   }
 
-  private void handleError(RuntimeException e, ProgressIndicator indicator) {
+  private void handleError(Throwable e, ProgressIndicator indicator) {
     // if cancelled, ignore any errors since they were most likely caused by the interrupt
     if (!indicator.isCanceled()) {
       String msg = "Error running SonarLint analysis";

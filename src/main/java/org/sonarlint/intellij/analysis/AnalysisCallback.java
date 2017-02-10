@@ -22,5 +22,5 @@ package org.sonarlint.intellij.analysis;
 public interface AnalysisCallback {
   void onSuccess();
 
-  void onError(Exception e);
+  void onError(Throwable e);
 }

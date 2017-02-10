@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.ui.ColoredTreeCellRenderer;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class SummaryNode extends AbstractNode {
   private String emptyText;
@@ -44,7 +44,7 @@ public class SummaryNode extends AbstractNode {
     return String.format("Found %d %s in %d %s", issues, issues == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
   }
 
-  @Override public void render(ColoredTreeCellRenderer renderer) {
+  @Override public void render(TreeCellRenderer renderer) {
     renderer.append(getText());
   }
 }

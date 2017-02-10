@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.util.ui.UIUtil;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,12 +26,13 @@ import java.util.Enumeration;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutableTreeNode {
   protected int issueCount;
   protected int fileCount;
 
-  public abstract void render(ColoredTreeCellRenderer renderer);
+  public abstract void render(TreeCellRenderer renderer);
 
   public int getIssueCount() {
     if (issueCount < 0) {

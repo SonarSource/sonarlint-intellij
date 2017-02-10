@@ -19,10 +19,10 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -37,7 +37,7 @@ public class LabelNodeTest {
 
   @Test
   public void testRenderer() {
-    ColoredTreeCellRenderer renderer = mock(ColoredTreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("msg", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);

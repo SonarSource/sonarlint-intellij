@@ -42,4 +42,8 @@ public class SonarLintIcons {
   public static Icon severity(String severity) {
     return IconLoader.getIcon("/images/severity/" + severity.toLowerCase() + ".png");
   }
+
+  public static Icon type(String type) {
+    return IconLoader.getIcon("/images/type/" + type.toLowerCase() + ".png");
+  }
 }

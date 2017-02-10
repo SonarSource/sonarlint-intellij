@@ -37,7 +37,6 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.ui.IssuesViewTabOpener;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -78,7 +77,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
       this.affectedFiles = affectedFiles;
     }
 
-    @Override public void onError(Exception e) {
+    @Override public void onError(Throwable e) {
       // do nothing
     }
 

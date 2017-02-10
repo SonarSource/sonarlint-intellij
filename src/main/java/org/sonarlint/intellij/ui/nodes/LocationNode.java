@@ -21,11 +21,11 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import java.awt.Insets;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class LocationNode extends AbstractNode {
   private final String message;
@@ -56,7 +56,7 @@ public class LocationNode extends AbstractNode {
     return message;
   }
 
-  @Override public void render(ColoredTreeCellRenderer renderer) {
+  @Override public void render(TreeCellRenderer renderer) {
     renderer.setIpad(new Insets(3, 3, 3, 3));
     renderer.setBorder(null);
     renderer.append(issueCoordinates(), bold ? SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES : SimpleTextAttributes.GRAY_ATTRIBUTES);

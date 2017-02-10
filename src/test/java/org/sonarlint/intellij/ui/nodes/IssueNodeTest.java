@@ -20,13 +20,13 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.psi.PsiFile;
-import com.intellij.ui.ColoredTreeCellRenderer;
 import com.intellij.ui.SimpleTextAttributes;
 import icons.SonarLintIcons;
 import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,11 +36,11 @@ import static org.mockito.Mockito.when;
 
 public class IssueNodeTest {
   private IssueNode node;
-  private ColoredTreeCellRenderer renderer;
+  private TreeCellRenderer renderer;
 
   @Before
   public void setUp() {
-    renderer = mock(ColoredTreeCellRenderer.class);
+    renderer = mock(TreeCellRenderer.class);
   }
 
   @Test
