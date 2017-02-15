@@ -29,7 +29,7 @@ import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
+import org.sonarlint.intellij.messages.AnalysisResultsListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -37,12 +37,12 @@ import static org.mockito.Mockito.verify;
 
 public class ChangedFilesIssuesTest extends SonarTest {
   private ChangedFilesIssues changedFilesIssues;
-  private ChangedFilesIssuesListener listener;
+  private AnalysisResultsListener listener;
 
   @Before
   public void prepare() {
-    listener = mock(ChangedFilesIssuesListener.class);
-    project.getMessageBus().connect().subscribe(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC, listener);
+    listener = mock(AnalysisResultsListener.class);
+    project.getMessageBus().connect().subscribe(AnalysisResultsListener.CHANGED_FILES_TOPIC, listener);
     changedFilesIssues = new ChangedFilesIssues(project);
   }
 

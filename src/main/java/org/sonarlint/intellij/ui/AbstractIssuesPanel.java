@@ -69,17 +69,20 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   protected IssueTreeModelBuilder treeBuilder;
   protected FlowsTree flowsTree;
   protected FlowsTreeModelBuilder flowsTreeBuilder;
-  protected ActionToolbar mainToolbar;
+  private ActionToolbar mainToolbar;
 
   AbstractIssuesPanel(Project project, ProjectBindingManager projectBindingManager) {
     super(false, true);
     this.project = project;
     this.highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
 
-    addToolbar();
     createFlowsTree();
     createIssuesTree();
     createTabs(projectBindingManager);
+  }
+
+  public void refreshToolbar() {
+    mainToolbar.updateActionsImmediately();
   }
 
   private void createTabs(ProjectBindingManager projectBindingManager) {
@@ -99,8 +102,6 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", 0);
     detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", 1);
   }
-
-  protected abstract String getToolbarGroupId();
 
   protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, boolean vertical, float defaultSplit) {
     float savedProportion = PropertiesComponent.getInstance(project).getFloat(proportionProperty, defaultSplit);
@@ -143,13 +144,17 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     }
   }
 
-  protected void addToolbar() {
-    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(getToolbarGroupId());
+  protected void setToolbar(String id) {
+    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(id);
+    if (mainToolbar != null) {
+      mainToolbar.setTargetComponent(null);
+      super.setToolbar(null);
+      mainToolbar = null;
+    }
     mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
     mainToolbar.setTargetComponent(this);
     Box toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
-
     super.setToolbar(toolBarBox);
     mainToolbar.getComponent().setVisible(true);
   }

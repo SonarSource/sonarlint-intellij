@@ -178,8 +178,7 @@
         <group id="SonarLint.logtoolwindow" text="SonarLint" popup="true"/>
         <group id="SonarLint.issuestoolwindow" text="SonarLint" popup="true"/>
         <group id="SonarLint.changedtoolwindow" text="SonarLint" popup="true"/>
-        <group id="SonarLint.alltoolwindow" text="SonarLint" popup="true"/>
-
+        <group id="SonarLint.resultstoolwindow" text="SonarLint" popup="true"/>
 
         <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
@@ -198,28 +197,20 @@
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
 
-        <action id="SonarLint.SonarAnalyzeChangedFilesAction"
-                class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
-                text="Analyze VCS changed files"
-                description="Run SonarLint analysis on the files that have been changed"
-                icon="SonarLintIcons.PLAY">
-            <add-to-group group-id="SonarLint.changedtoolwindow"/>
-        </action>
-
         <action id="SonarLint.SonarAnalyzeAllFilesAction"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
                 text="Analyze all files"
                 description="Run SonarLint analysis on all files in the project"
                 icon="SonarLintIcons.PLAY">
-            <add-to-group group-id="SonarLint.alltoolwindow"/>
+            <add-to-group group-id="SonarLint.resultstoolwindow"/>
         </action>
 
-        <action id="SonarLint.SonarAnalyzeAllFilesActionPopup"
-                class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
-                text="SonarLint: analyze all files in the Project"
-                description="Run SonarLint analysis on all files in the project"
-                icon="SonarLintIcons.SONARLINT">
-            <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+        <action id="SonarLint.SonarAnalyzeChangedFilesAction"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
+                text="Analyze changed files"
+                description="Run SonarLint analysis on CVS changed files"
+                icon="SonarLintIcons.PLAY">
+            <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.Cancel"
@@ -228,6 +219,7 @@
                 description="Cancel the SonarLint analysis running"
                 icon="SonarLintIcons.SUSPEND">
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
+            <add-to-group group-id="SonarLint.resultstoolwindow"/>
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
@@ -239,8 +231,8 @@
                 icon="SonarLintIcons.TOOLS">
             <add-to-group group-id="SonarLint.logtoolwindow"/>
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
+            <add-to-group group-id="SonarLint.resultstoolwindow"/>
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
-            <add-to-group group-id="SonarLint.alltoolwindow"/>
         </action>
 
         <action id="SonarLint.toolwindow.CleanConsole"
@@ -259,11 +251,12 @@
             <add-to-group group-id="SonarLint.issuestoolwindow"/>
         </action>
 
-        <action id="SonarLint.toolwindow.ClearChangedFilesIssues"
-                class="org.sonarlint.intellij.actions.SonarClearChangedFilesIssues"
-                text="Clear list of issues"
-                description="Clear list of issues on changed files"
+        <action id="SonarLint.toolwindow.SonarClearAnalysisResults"
+                class="org.sonarlint.intellij.actions.SonarClearAnalysisResults"
+                text="Clear issues"
+                description="Clear analysis results"
                 icon="SonarLintIcons.CLEAN">
+            <add-to-group group-id="SonarLint.resultstoolwindow"/>
             <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
     </actions>

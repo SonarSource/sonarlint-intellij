@@ -182,7 +182,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_CHANGED_FILES);
+    ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS, true);
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent {

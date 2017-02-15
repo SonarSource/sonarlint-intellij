@@ -98,7 +98,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     }
 
     private void showAllFilesTab() {
-      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_ALL_FILES));
+      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS, false));
     }
   }
 }

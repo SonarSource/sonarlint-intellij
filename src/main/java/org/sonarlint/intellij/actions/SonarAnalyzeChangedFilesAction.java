@@ -90,7 +90,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     }
 
     private void showChangedFilesTab() {
-      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_CHANGED_FILES));
+      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS, true));
     }
   }
 }

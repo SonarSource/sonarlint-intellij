@@ -20,40 +20,33 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.actionSystem.DataProvider;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.util.containers.HashMap;
-import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.util.Collection;
-import java.util.Map;
+import java.util.Collections;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.messages.IssueStoreListener;
-import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.ui.scope.AbstractScope;
-import org.sonarlint.intellij.ui.scope.CurrentFileScope;
+import org.sonarlint.intellij.ui.scope.CurrentFileController;
 
 public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataProvider {
   private static final String GROUP_ID = "SonarLint.issuestoolwindow";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
 
-  private final IssueManager issueManager;
-  private final AbstractScope scope;
+  private final CurrentFileController scope;
 
-  public SonarLintIssuesPanel(Project project, IssueManager issueManager, ProjectBindingManager projectBindingManager) {
+  public SonarLintIssuesPanel(Project project, ProjectBindingManager projectBindingManager, CurrentFileController scope) {
     super(project, projectBindingManager);
-    this.issueManager = issueManager;
-    this.scope = new CurrentFileScope(project);
+    this.scope = scope;
 
     // Issues panel
+    setToolbar(GROUP_ID);
     JPanel issuesPanel = new JPanel(new BorderLayout());
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
@@ -61,46 +54,18 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 
     subscribeToEvents();
-    updateTree();
   }
 
   private void subscribeToEvents() {
-    scope.addListener(this::updateTree);
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
-
-      @Override public void filesChanged(final Map<VirtualFile, Collection<LiveIssue>> map) {
-        ApplicationManager.getApplication().invokeLater(SonarLintIssuesPanel.this::updateTree);
-      }
-
-      @Override public void allChanged() {
-        ApplicationManager.getApplication().invokeLater(SonarLintIssuesPanel.this::updateTree);
-      }
-    });
-
-    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
-      newStatus -> ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
+    scope.setPanel(this);
   }
 
-  public void updateTree() {
-    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new HashMap<>();
-    Collection<VirtualFile> all = scope.getAll();
-    for (VirtualFile f : all) {
-      Collection<LiveIssue> issues = issueManager.getForFileOrNull(f);
-      if (issues != null) {
-        issuesPerFile.put(f, issues);
-      }
-    }
-    String emptyText;
-    if (all.isEmpty()) {
-      emptyText = "No file opened in the editor";
-    } else if (issuesPerFile.isEmpty()) {
-      emptyText = "No analysis done on the current opened file";
+  public void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {
+    if (file == null) {
+      treeBuilder.updateModel(Collections.emptyMap(), emptyText);
     } else {
-      emptyText = "No issues found in the current opened file";
+      treeBuilder.updateModel(Collections.singletonMap(file, issues), emptyText);
     }
-
-    treeBuilder.updateModel(issuesPerFile, emptyText);
     expandTree();
   }
 
@@ -116,10 +81,5 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     }
 
     return null;
-  }
-
-  @Override
-  protected String getToolbarGroupId() {
-    return GROUP_ID;
   }
 }

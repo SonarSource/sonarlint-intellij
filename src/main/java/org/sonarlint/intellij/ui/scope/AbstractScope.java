@@ -21,15 +21,18 @@ package org.sonarlint.intellij.ui.scope;
 
 import com.intellij.openapi.actionSystem.DataKey;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
+import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.issue.LiveIssue;
 
 public abstract class AbstractScope {
   public static final DataKey<AbstractScope> SCOPE_DATA_KEY = DataKey.create("SonarLintScope");
   private final List<ScopeListener> listeners = new ArrayList<>();
-  private Predicate<VirtualFile> filePredicate = f -> true;
 
   public abstract String getDisplayName();
 
@@ -41,25 +44,33 @@ public abstract class AbstractScope {
     listeners.clear();
   }
 
-  public Predicate<VirtualFile> getCondition() {
-    return filePredicate;
+  public abstract String getEmptyText();
+
+  public abstract String getLabelText();
+
+  public abstract String toolbarId();
+
+  @CheckForNull
+  public abstract LocalDateTime getLastAnalysisDate();
+
+  public abstract Map<VirtualFile, Collection<LiveIssue>> issues();
+
+  protected void updateIssues() {
+    listeners.forEach(ScopeListener::updateIssues);
   }
 
-  public abstract Collection<VirtualFile> getAll();
-
-  protected void updateCondition(Predicate<VirtualFile> filePredicate) {
-    this.filePredicate = filePredicate;
-    listeners.forEach(ScopeListener::conditionChanged);
+  protected void updateTexts() {
+    listeners.forEach(ScopeListener::updateTexts);
   }
 
-  @FunctionalInterface
   public interface ScopeListener {
-    void conditionChanged();
+    void updateIssues();
+
+    void updateTexts();
   }
 
   @Override
   public String toString() {
     return getDisplayName();
-
   }
 }

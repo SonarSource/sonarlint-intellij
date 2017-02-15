@@ -27,7 +27,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.time.LocalDateTime;
-import java.util.function.Supplier;
+import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -36,18 +36,14 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LastAnalysisPanel implements Disposable {
   private LocalDateTime lastAnalysis;
-  private final Supplier<String> emptyTestSupplier;
   private GridBagConstraints gc;
   private Timer lastAnalysisTimeUpdater;
   private JLabel lastAnalysisLabel;
   private JLabel icon;
   private JPanel panel;
 
-  public LastAnalysisPanel(LocalDateTime lastAnalysis, Project project, Supplier<String> emptyTestSupplier) {
-    this.lastAnalysis = lastAnalysis;
-    this.emptyTestSupplier = emptyTestSupplier;
+  public LastAnalysisPanel(Project project) {
     createComponents();
-    setLabel();
     setTimer();
     Disposer.register(project, this);
   }
@@ -56,15 +52,15 @@ public class LastAnalysisPanel implements Disposable {
     return panel;
   }
 
-  public void update(LocalDateTime lastAnalysis) {
+  public void update(@Nullable LocalDateTime lastAnalysis, String emptyText) {
     this.lastAnalysis = lastAnalysis;
-    setLabel();
+    setLabel(emptyText);
   }
 
-  private void setLabel() {
+  private void setLabel(String emptyText) {
     panel.removeAll();
     if (lastAnalysis == null) {
-      lastAnalysisLabel.setText(emptyTestSupplier.get());
+      lastAnalysisLabel.setText(emptyText);
       panel.add(icon);
       panel.add(lastAnalysisLabel, gc);
     } else {
@@ -94,6 +90,11 @@ public class LastAnalysisPanel implements Disposable {
   }
 
   private void setTimer() {
-    lastAnalysisTimeUpdater = new Timer(5000, e -> setLabel());
+    lastAnalysisTimeUpdater = new Timer(5000, e -> {
+      LocalDateTime last = lastAnalysis;
+      if (last != null) {
+        lastAnalysisLabel.setText("Analysis done " + SonarLintUtils.age(System.currentTimeMillis()));
+      }
+    });
   }
 }

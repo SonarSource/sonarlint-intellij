@@ -17,20 +17,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages;
+package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.Topic;
-import java.util.Collection;
-import java.util.Map;
-import org.sonarlint.intellij.issue.LiveIssue;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
+import org.sonarlint.intellij.issue.AllFilesIssues;
+import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
-@FunctionalInterface
-public interface AllFilesIssuesListener {
-  Topic<AllFilesIssuesListener> ALL_FILES_ISSUES_TOPIC = Topic.create("Files issues changed", AllFilesIssuesListener.class);
+public class SonarClearAnalysisResults extends AnAction {
+  @Override public void actionPerformed(AnActionEvent e) {
+    Project project = e.getProject();
+    if (project == null) {
+      return;
+    }
 
-  /**
-   * Called when the store of issues is modified. It is modified only as a result of a user action to analyze all files.
-   */
-  void update(Map<VirtualFile, Collection<LiveIssue>> issues);
+    AllFilesIssues store = SonarLintUtils.get(project, AllFilesIssues.class);
+    store.clear();
+
+    ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
+    changedFilesIssues.clear();
+  }
 }

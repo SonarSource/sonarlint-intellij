@@ -26,11 +26,12 @@ import java.util.Map;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 @FunctionalInterface
-public interface ChangedFilesIssuesListener {
-  Topic<ChangedFilesIssuesListener> CHANGED_FILES_ISSUES_TOPIC = Topic.create("Changed files issues changed", ChangedFilesIssuesListener.class);
+public interface AnalysisResultsListener {
+  Topic<AnalysisResultsListener> ALL_FILES_TOPIC = Topic.create("All files results", AnalysisResultsListener.class);
+  Topic<AnalysisResultsListener> CHANGED_FILES_TOPIC = Topic.create("Changed files results", AnalysisResultsListener.class);
 
   /**
-   * Called when the store of issues in changed files is modified. It is modified only as a result of a user action to analyze all changed files.
+   * Called when the store of issues is modified. It is modified only as a result of a user action to analyze files.
    */
   void update(Map<VirtualFile, Collection<LiveIssue>> issues);
 }

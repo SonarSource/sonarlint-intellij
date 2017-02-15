@@ -25,6 +25,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
+import org.sonarlint.intellij.ui.SonarLintAnalysisResultsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 public class IssuesViewTabOpener {
@@ -37,23 +38,25 @@ public class IssuesViewTabOpener {
   /**
    * Must run in EDT
    */
-  public void open(String tab) {
+  public void open(String tab, boolean switchToChangedFiles) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
     ToolWindow toolWindow = toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
     if (toolWindow != null) {
-      toolWindow.show(new ContentSelector(toolWindow, tab));
+      toolWindow.show(new ContentSelector(toolWindow, tab, switchToChangedFiles));
     }
   }
 
   private static class ContentSelector implements Runnable {
     private final ToolWindow toolWindow;
     private final String tab;
+    private final boolean switchToChangedFiles;
 
-    private ContentSelector(ToolWindow toolWindow, String tab) {
+    private ContentSelector(ToolWindow toolWindow, String tab, boolean switchToChangedFiles) {
       this.toolWindow = toolWindow;
       this.tab = tab;
+      this.switchToChangedFiles = switchToChangedFiles;
     }
 
     @Override public void run() {
@@ -61,6 +64,10 @@ public class IssuesViewTabOpener {
       Content content = contentManager.findContent(tab);
       if (content != null) {
         contentManager.setSelectedContent(content);
+        if (switchToChangedFiles) {
+          SonarLintAnalysisResultsPanel component = (SonarLintAnalysisResultsPanel) content.getComponent();
+          component.selectChangedFilesScope();
+        }
       }
     }
   }

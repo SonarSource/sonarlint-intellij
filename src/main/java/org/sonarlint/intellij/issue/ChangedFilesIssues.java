@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.messages.ChangedFilesIssuesListener;
+import org.sonarlint.intellij.messages.AnalysisResultsListener;
 
 public class ChangedFilesIssues extends AbstractProjectComponent {
   private final MessageBus messageBus;
@@ -46,13 +46,13 @@ public class ChangedFilesIssues extends AbstractProjectComponent {
   public void set(Map<VirtualFile, Collection<LiveIssue>> issues) {
     this.issues = Collections.unmodifiableMap(issues);
     this.lastAnalysis = LocalDateTime.now();
-    this.messageBus.syncPublisher(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC).update(issues);
+    this.messageBus.syncPublisher(AnalysisResultsListener.CHANGED_FILES_TOPIC).update(issues);
   }
 
   public void clear() {
     this.issues = Collections.unmodifiableMap(Collections.emptyMap());
     this.lastAnalysis = null;
-    this.messageBus.syncPublisher(ChangedFilesIssuesListener.CHANGED_FILES_ISSUES_TOPIC).update(issues);
+    this.messageBus.syncPublisher(AnalysisResultsListener.CHANGED_FILES_TOPIC).update(issues);
   }
 
   public boolean wasAnalyzed() {

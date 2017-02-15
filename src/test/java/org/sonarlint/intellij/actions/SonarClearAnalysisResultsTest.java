@@ -23,29 +23,34 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.issue.AllFilesIssues;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarClearChangedFilesIssuesTest extends SonarTest {
-  private SonarClearChangedFilesIssues action;
+public class SonarClearAnalysisResultsTest extends SonarTest {
+  private SonarClearAnalysisResults action;
 
   @Before
   public void prepare() {
-    action = new SonarClearChangedFilesIssues();
+    action = new SonarClearAnalysisResults();
   }
 
   @Test
   public void clear() {
     ChangedFilesIssues changedFilesIssues = mock(ChangedFilesIssues.class);
     super.register(ChangedFilesIssues.class, changedFilesIssues);
+    AllFilesIssues allFilesIssues = mock(AllFilesIssues.class);
+    super.register(AllFilesIssues.class, allFilesIssues);
+
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(project);
     action.actionPerformed(event);
 
     verify(changedFilesIssues).clear();
+    verify(allFilesIssues).clear();
   }
 
   @Test

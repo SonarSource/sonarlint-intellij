@@ -28,7 +28,6 @@ import org.apache.commons.codec.binary.StringUtils;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import com.intellij.openapi.project.Project;
 
-
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
   private final JPanel root;
