@@ -135,7 +135,9 @@ public class CompoundIcon implements Icon {
   }
 
   @Override
-  public void paintIcon(Component c, Graphics g, int x, int y) {
+  public void paintIcon(Component c, Graphics g, int paramX, int paramY) {
+    int x = paramX;
+    int y = paramY;
     if (axis == Axis.X_AXIS) {
       int height = getIconHeight();
 

@@ -35,6 +35,7 @@ import java.awt.Image;
 import java.net.URL;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.Locale;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -121,7 +122,7 @@ public class SonarLintRulePanel {
   }
 
   private static String clean(String txt) {
-    return StringUtil.capitalize(txt.toLowerCase().replace("_", " "));
+    return StringUtil.capitalize(txt.toLowerCase(Locale.ENGLISH).replace("_", " "));
   }
 
   private void nothingToDisplay(boolean error) {
@@ -184,25 +185,26 @@ public class SonarLintRulePanel {
   public static class CustomHTMLEditorKit extends HTMLEditorKit {
     private static HTMLFactory factory = null;
 
+    static {
+      factory = new HTMLFactory() {
+        @Override
+        public View create(Element elem) {
+          AttributeSet attrs = elem.getAttributes();
+          Object elementName = attrs.getAttribute(AbstractDocument.ElementNameAttribute);
+          Object o = (elementName != null) ? null : attrs.getAttribute(StyleConstants.NameAttribute);
+          if (o instanceof HTML.Tag) {
+            HTML.Tag kind = (HTML.Tag) o;
+            if (HTML.Tag.IMG.equals(kind)) {
+              return new CustomImageView(elem);
+            }
+          }
+          return super.create(elem);
+        }
+      };
+    }
+
     @Override
     public ViewFactory getViewFactory() {
-      if (factory == null) {
-        factory = new HTMLFactory() {
-          @Override
-          public View create(Element elem) {
-            AttributeSet attrs = elem.getAttributes();
-            Object elementName = attrs.getAttribute(AbstractDocument.ElementNameAttribute);
-            Object o = (elementName != null) ? null : attrs.getAttribute(StyleConstants.NameAttribute);
-            if (o instanceof HTML.Tag) {
-              HTML.Tag kind = (HTML.Tag) o;
-              if (HTML.Tag.IMG.equals(kind)) {
-                return new CustomImageView(elem);
-              }
-            }
-            return super.create(elem);
-          }
-        };
-      }
       return factory;
     }
   }

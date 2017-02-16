@@ -20,6 +20,7 @@
 package icons;
 
 import com.intellij.openapi.util.IconLoader;
+import java.util.Locale;
 import javax.swing.Icon;
 
 public class SonarLintIcons {
@@ -48,7 +49,7 @@ public class SonarLintIcons {
   }
 
   public static Icon severity(String severity) {
-    String name = severity.toLowerCase() + ".png";
+    String name = severity.toLowerCase(Locale.ENGLISH) + ".png";
     return IconLoader.getIcon("/images/severity/" + name);
   }
 
@@ -57,7 +58,7 @@ public class SonarLintIcons {
   }
 
   public static Icon type(String type) {
-    String name = type.toLowerCase() + ".png";
+    String name = type.toLowerCase(Locale.ENGLISH) + ".png";
     return IconLoader.getIcon("/images/type/" + name);
   }
 }
