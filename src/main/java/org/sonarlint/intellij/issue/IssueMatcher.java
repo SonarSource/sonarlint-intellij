@@ -83,8 +83,8 @@ public class IssueMatcher extends AbstractProjectComponent {
       throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
     }
 
-    int rangeStart = findStartLineOffset(file, doc, ijStartLine, issueLocation.getStartLineOffset());
     int rangeEnd = findEndLineOffset(doc, ijEndLine, issueLocation.getEndLineOffset());
+    int rangeStart = findStartLineOffset(file, doc, ijStartLine, issueLocation.getStartLineOffset(), rangeEnd);
 
     if (rangeEnd < rangeStart) {
       throw new NoMatchException("Invalid text range  (start: " + rangeStart + ", end: " + rangeEnd);
@@ -104,7 +104,7 @@ public class IssueMatcher extends AbstractProjectComponent {
     return lineStart + endOffset;
   }
 
-  private static int findStartLineOffset(PsiFile file, Document doc, int ijLine, @Nullable Integer startOffset) {
+  private static int findStartLineOffset(PsiFile file, Document doc, int ijLine, @Nullable Integer startOffset, int rangeEnd) {
     int ijStartOffset = (startOffset == null) ? 0 : startOffset;
     int lineStartOffset = doc.getLineStartOffset(ijLine);
     int rangeStart = lineStartOffset + ijStartOffset;
@@ -128,8 +128,13 @@ public class IssueMatcher extends AbstractProjectComponent {
 
     int nextRangeStart = next.getTextRange().getStartOffset();
 
-    // we got to another line, don't use it
+    if (nextRangeStart >= rangeEnd) {
+      // we passed the end, don't use it
+      return rangeStart;
+    }
+
     if (doc.getLineNumber(nextRangeStart) != ijLine) {
+      // we got to another line, don't use it
       return rangeStart;
     }
 
