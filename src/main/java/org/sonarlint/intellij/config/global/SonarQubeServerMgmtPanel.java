@@ -94,8 +94,8 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   // Model
   private GlobalConfigurationListener serverChangeListener;
   private SonarLintEngineManager serverManager;
-  private List<SonarQubeServer> servers = new ArrayList<>();
-  private Set<String> deletedServerIds = new HashSet<>();
+  private final List<SonarQubeServer> servers = new ArrayList<>();
+  private final Set<String> deletedServerIds = new HashSet<>();
   private ConnectedSonarLintEngine engine = null;
   private StateListener engineListener;
 

@@ -39,11 +39,25 @@ public class SonarLintIcons {
     // only static
   }
 
+  public static Icon severity12(String severity) {
+    return severity(severity + "12");
+  }
+
+  public static Icon type12(String type) {
+    return type(type + "12");
+  }
+
   public static Icon severity(String severity) {
-    return IconLoader.getIcon("/images/severity/" + severity.toLowerCase() + ".png");
+    String name = severity.toLowerCase() + ".png";
+    return IconLoader.getIcon("/images/severity/" + name);
+  }
+
+  public static Icon toDisabled(Icon icon) {
+    return IconLoader.getDisabledIcon(icon);
   }
 
   public static Icon type(String type) {
-    return IconLoader.getIcon("/images/type/" + type.toLowerCase() + ".png");
+    String name = type.toLowerCase() + ".png";
+    return IconLoader.getIcon("/images/type/" + name);
   }
 }

@@ -46,10 +46,10 @@ public class SonarLinkHandler extends TooltipLinkHandler {
 
   private static String transform(String ruleKey, @Nullable String ruleName, @Nullable String description) {
     if (description == null || ruleName == null) {
-      StringBuilder sb = new StringBuilder(128);
-      sb.append("<html><body>");
-      sb.append("<code>").append(ruleKey).append("</code></br>");
-      sb.append("</body></html>");
+      StringBuilder sb = new StringBuilder(128)
+        .append("<html><body>")
+        .append("<code>").append(ruleKey).append("</code></br>")
+        .append("</body></html>");
       return sb.toString();
     }
 

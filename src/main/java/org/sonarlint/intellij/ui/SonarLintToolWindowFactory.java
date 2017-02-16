@@ -57,11 +57,11 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         issuesPanel,
         TAB_CURRENT_FILE,
         false);
-    toolWindow.getContentManager().addDataProvider(issuesPanel::getData);
+    toolWindow.getContentManager().addDataProvider(issuesPanel);
     toolWindow.getContentManager().addContent(issuesContent);
   }
 
-  private void addAnalysisResultsTab(Project project, ToolWindow toolWindow) {
+  private static void addAnalysisResultsTab(Project project, ToolWindow toolWindow) {
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
     SonarLintAnalysisResultsPanel resultsPanel = new SonarLintAnalysisResultsPanel(project, projectBindingManager);
     Content analysisResultsContent = toolWindow.getContentManager().getFactory()
@@ -69,7 +69,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         resultsPanel,
         TAB_ANALYSIS_RESULTS,
         false);
-    toolWindow.getContentManager().addDataProvider(resultsPanel::getData);
+    toolWindow.getContentManager().addDataProvider(resultsPanel);
     toolWindow.getContentManager().addContent(analysisResultsContent);
   }
 

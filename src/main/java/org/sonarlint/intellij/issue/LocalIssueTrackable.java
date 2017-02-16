@@ -24,7 +24,7 @@ import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.proto.Sonarlint;
 
 public class LocalIssueTrackable implements Trackable {
-  private Sonarlint.Issues.Issue issue;
+  private final Sonarlint.Issues.Issue issue;
 
   public LocalIssueTrackable(Sonarlint.Issues.Issue issue) {
     this.issue = issue;

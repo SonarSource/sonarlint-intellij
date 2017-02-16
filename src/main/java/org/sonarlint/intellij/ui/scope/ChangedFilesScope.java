@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.scope;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.ChangeListAdapter;
 import com.intellij.openapi.vcs.changes.ChangeListListener;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -58,6 +59,8 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
   private void subscribeToEvents() {
     changeListManager.addChangeListListener(vcsChangeListener);
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    busConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED,
+      () -> ApplicationManager.getApplication().invokeLater(this::updateTexts));
     busConnection.subscribe(AnalysisResultsListener.CHANGED_FILES_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(this::updateIssues));
   }
 
@@ -76,12 +79,20 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
   public String getLabelText() {
     String noAnalysisLabel = "Trigger the analysis to find issues on the files in the VCS change set";
     String noChangedFilesLabel = "VCS contains no changed files";
+    String noVcs = "Project has no active VCS";
 
-    if (changeListManager.getAffectedFiles().isEmpty()) {
+    if (!hasVcs()) {
+      return noVcs;
+    } else if (changeListManager.getAffectedFiles().isEmpty()) {
       return noAnalysisLabel;
     } else {
       return noChangedFilesLabel;
     }
+  }
+
+  private boolean hasVcs() {
+    ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
+    return vcsManager.hasActiveVcss();
   }
 
   @Override public String toolbarId() {

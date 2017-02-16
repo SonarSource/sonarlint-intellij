@@ -27,7 +27,7 @@ public class CompoundIcon implements Icon {
   public enum Axis {
     X_AXIS,
     Y_AXIS,
-    Z_AXIS;
+    Z_AXIS
   }
 
   public static final float TOP = 0.0f;
@@ -38,9 +38,8 @@ public class CompoundIcon implements Icon {
 
   private Icon[] icons;
 
-  private Axis axis;
-
-  private int gap;
+  private final Axis axis;
+  private final int gap;
 
   private float alignmentX = CENTER;
   private float alignmentY = CENTER;

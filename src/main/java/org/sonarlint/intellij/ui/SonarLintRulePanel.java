@@ -26,6 +26,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
+import com.intellij.util.IconUtil;
+import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
@@ -103,16 +105,16 @@ public class SonarLintRulePanel {
     }
   }
 
-  private void createTable(LiveIssue issue, StringBuilder builder) {
+  private static void createTable(LiveIssue issue, StringBuilder builder) {
     // apparently some css properties are not supported
     String imgAttributes = "valign=\"top\" hspace=\"3\"";
 
     builder.append("<table><tr>");
     if (issue.getType() != null) {
-      builder.append("<td>").append("<img " + imgAttributes + " src=\"file:///type/").append(issue.getType()).append("\"/></td>")
+      builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///type/").append(issue.getType()).append("\"/></td>")
         .append("<td class=\"pad\"><b>").append(clean(issue.getType())).append("</b></td>");
     }
-    builder.append("<td>").append("<img " + imgAttributes + " src=\"file:///severity/").append(issue.getSeverity()).append("\"/></td>")
+    builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///severity/").append(issue.getSeverity()).append("\"/></td>")
       .append("<td class=\"pad\"><b>").append(clean(issue.getSeverity())).append("</b></td>")
       .append("<td><b>").append(issue.getRuleKey()).append("</b></td>")
       .append("</tr></table>");
@@ -231,6 +233,10 @@ public class SonarLintRulePanel {
         return;
       }
 
+      // in presentation mode we don't want huge icons
+      if (JBUI.isHiDPI()) {
+        icon = IconUtil.scale(icon, 0.5);
+      }
       Dictionary<URL, Image> cache = (Dictionary<URL, Image>) getDocument().getProperty("imageCache");
       if (cache == null) {
         cache = new Hashtable<>();

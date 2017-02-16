@@ -23,8 +23,10 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import javax.annotation.Nonnull;
+import javax.swing.Icon;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
@@ -44,10 +46,11 @@ public class IssueNode extends AbstractNode {
     if (type != null) {
       String typeStr = StringUtil.toLowerCase(type.replace('_', ' '));
       renderer.setIconToolTip(severity + " " + typeStr);
-      renderer.setIcon(new CompoundIcon(CompoundIcon.Axis.X_AXIS, 6, SonarLintIcons.type(type), SonarLintIcons.severity(severity)));
+      int gap = JBUI.isHiDPI() ? 8 : 4;
+      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
     } else {
       renderer.setIconToolTip(severity);
-      renderer.setIcon(SonarLintIcons.severity(severity));
+      setIcon(renderer, SonarLintIcons.severity12(severity));
     }
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);
@@ -65,6 +68,14 @@ public class IssueNode extends AbstractNode {
     if (issue.getCreationDate() != null) {
       String creationDate = SonarLintUtils.age(issue.getCreationDate());
       renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
+    }
+  }
+
+  private void setIcon(TreeCellRenderer renderer, Icon icon) {
+    if (issue.isValid()) {
+      renderer.setIcon(icon);
+    } else {
+      renderer.setIcon(SonarLintIcons.toDisabled(icon));
     }
   }
 

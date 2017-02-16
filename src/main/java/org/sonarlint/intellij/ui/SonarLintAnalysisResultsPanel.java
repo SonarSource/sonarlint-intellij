@@ -25,7 +25,6 @@ import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
-import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -74,19 +73,11 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
 
   private void subscribeToEvents() {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
-
-    //  busConnection.subscribe(ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED,
-    //       () -> ApplicationManager.getApplication().invokeLater(this::vcsChange));
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
   }
 
   public void selectChangedFilesScope() {
     scopeComboBox.setSelectedItem(changedFilesScope);
-  }
-
-  private static boolean hasVcs(Project project) {
-    ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
-    return vcsManager.hasActiveVcss();
   }
 
   @Override

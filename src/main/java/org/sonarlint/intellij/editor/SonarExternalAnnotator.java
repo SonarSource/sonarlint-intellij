@@ -140,7 +140,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       case "BLOCKER":
         return SonarLintTextAttributes.BLOCKER;
       case "INFO":
-
         return SonarLintTextAttributes.INFO;
       case "CRITICAL":
         return SonarLintTextAttributes.CRITICAL;
