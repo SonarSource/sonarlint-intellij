@@ -19,52 +19,16 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.MessageBus;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import javax.annotation.CheckForNull;
+import com.intellij.util.messages.Topic;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 
-public class ChangedFilesIssues extends AbstractProjectComponent {
-  private final MessageBus messageBus;
-  private Map<VirtualFile, Collection<LiveIssue>> issues;
-  private LocalDateTime lastAnalysis;
-
+public class ChangedFilesIssues extends IssueStore {
   public ChangedFilesIssues(Project project) {
     super(project);
-    issues = new HashMap<>();
-    messageBus = project.getMessageBus();
-    lastAnalysis = null;
   }
 
-  public void set(Map<VirtualFile, Collection<LiveIssue>> issues) {
-    this.issues = Collections.unmodifiableMap(issues);
-    this.lastAnalysis = LocalDateTime.now();
-    this.messageBus.syncPublisher(AnalysisResultsListener.CHANGED_FILES_TOPIC).update(issues);
-  }
-
-  public void clear() {
-    this.issues = Collections.unmodifiableMap(Collections.emptyMap());
-    this.lastAnalysis = null;
-    this.messageBus.syncPublisher(AnalysisResultsListener.CHANGED_FILES_TOPIC).update(issues);
-  }
-
-  public boolean wasAnalyzed() {
-    return lastAnalysis != null;
-  }
-
-  @CheckForNull
-  public LocalDateTime lastAnalysisDate() {
-    return lastAnalysis;
-  }
-
-  public Map<VirtualFile, Collection<LiveIssue>> issues() {
-    return issues;
+  @Override protected Topic<AnalysisResultsListener> getTopic() {
+    return AnalysisResultsListener.CHANGED_FILES_TOPIC;
   }
 }

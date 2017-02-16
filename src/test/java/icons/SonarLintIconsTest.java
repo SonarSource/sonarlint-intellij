@@ -31,6 +31,23 @@ public class SonarLintIconsTest {
     assertThat(SonarLintIcons.severity("BLOCKER")).isNotNull();
     assertThat(SonarLintIcons.severity("INFO")).isNotNull();
     assertThat(SonarLintIcons.severity("CRITICAL")).isNotNull();
+
+    assertThat(SonarLintIcons.severity12("MAJOR")).isNotNull();
+    assertThat(SonarLintIcons.severity12("MINOR")).isNotNull();
+    assertThat(SonarLintIcons.severity12("BLOCKER")).isNotNull();
+    assertThat(SonarLintIcons.severity12("INFO")).isNotNull();
+    assertThat(SonarLintIcons.severity12("CRITICAL")).isNotNull();
+  }
+
+  @Test
+  public void testTypes() {
+    assertThat(SonarLintIcons.type("BUG")).isNotNull();
+    assertThat(SonarLintIcons.type("VULNERABILITY")).isNotNull();
+    assertThat(SonarLintIcons.type("CODE_SMELL")).isNotNull();
+
+    assertThat(SonarLintIcons.type12("BUG")).isNotNull();
+    assertThat(SonarLintIcons.type12("VULNERABILITY")).isNotNull();
+    assertThat(SonarLintIcons.type12("CODE_SMELL")).isNotNull();
   }
 
   @Test
@@ -44,5 +61,10 @@ public class SonarLintIconsTest {
     assertThat(SonarLintIcons.SUSPEND).isNotNull();
     assertThat(SonarLintIcons.TOOLS).isNotNull();
     assertThat(SonarLintIcons.WARN).isNotNull();
+  }
+
+  @Test
+  public void testDisabled() {
+    assertThat(SonarLintIcons.toDisabled(SonarLintIcons.WARN)).isNotNull();
   }
 }

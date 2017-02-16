@@ -67,6 +67,7 @@ public class ChangedFilesIssuesTest extends SonarTest {
       .isAfter(LocalDateTime.now().minus(Duration.ofSeconds(3)));
     assertThat(changedFilesIssues.wasAnalyzed()).isTrue();
     assertThat(changedFilesIssues.issues()).isEmpty();
+    assertThat(changedFilesIssues.getTopic()).isEqualTo(AnalysisResultsListener.CHANGED_FILES_TOPIC);
 
     verify(listener).update(Collections.emptyMap());
   }

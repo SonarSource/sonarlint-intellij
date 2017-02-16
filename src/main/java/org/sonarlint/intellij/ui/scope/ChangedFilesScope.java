@@ -51,7 +51,7 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
   public ChangedFilesScope(Project project) {
     this.project = project;
     this.analysisResultsStore = SonarLintUtils.get(project, ChangedFilesIssues.class);
-    this.changeListManager = ChangeListManager.getInstance(project);
+    this.changeListManager = SonarLintUtils.get(project, ChangeListManager.class);
     subscribeToEvents();
     Disposer.register(project, this);
   }
@@ -84,14 +84,14 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
     if (!hasVcs()) {
       return noVcs;
     } else if (changeListManager.getAffectedFiles().isEmpty()) {
-      return noAnalysisLabel;
-    } else {
       return noChangedFilesLabel;
+    } else {
+      return noAnalysisLabel;
     }
   }
 
   private boolean hasVcs() {
-    ProjectLevelVcsManager vcsManager = ProjectLevelVcsManager.getInstance(project);
+    ProjectLevelVcsManager vcsManager = SonarLintUtils.get(project, ProjectLevelVcsManager.class);
     return vcsManager.hasActiveVcss();
   }
 

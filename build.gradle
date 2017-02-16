@@ -75,8 +75,8 @@ dependencies {
   // provided by the core:
   //compile 'com.google.protobuf:protobuf-java:3.1.0'
   testCompile 'junit:junit:4.12'
-  testCompile 'org.assertj:assertj-core:3.6.0'
-  testCompile 'org.mockito:mockito-core:2.2.22'
+  testCompile 'org.assertj:assertj-core:3.6.2'
+  testCompile 'org.mockito:mockito-core:2.7.6'
   sqplugins (
     'org.sonarsource.java:sonar-java-plugin:4.4.0.8066',
     'org.sonarsource.javascript:sonar-javascript-plugin:2.19.0.3866',

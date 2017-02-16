@@ -47,10 +47,10 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
   private static final String SELECTED_SCOPE_KEY = "SONARLINT_ANALYSIS_RESULTS_SCOPE";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
-  private final LastAnalysisPanel lastAnalysisPanel;
-  private AbstractScope scope;
+  private final transient LastAnalysisPanel lastAnalysisPanel;
+  private transient AbstractScope scope;
 
-  private ChangedFilesScope changedFilesScope;
+  private transient ChangedFilesScope changedFilesScope;
   private ComboBox scopeComboBox;
 
   public SonarLintAnalysisResultsPanel(Project project, ProjectBindingManager projectBindingManager) {

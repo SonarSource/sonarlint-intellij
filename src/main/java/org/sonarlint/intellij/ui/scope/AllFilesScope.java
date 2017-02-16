@@ -60,7 +60,7 @@ public class AllFilesScope extends AbstractScope {
 
   @Override
   public String getLabelText() {
-    return "Trigger the analysis to find issues on all project sources";
+    return "Trigger the analysis to find issues in all project sources";
   }
 
   @Override public String toolbarId() {
