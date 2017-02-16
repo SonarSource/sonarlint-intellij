@@ -62,7 +62,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
   private static Collection<VirtualFile> getAllFiles(Project project) {
     List<VirtualFile> fileList = new ArrayList<>();
-    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+    ProjectFileIndex fileIndex = SonarLintUtils.get(project, ProjectRootManager.class).getFileIndex();
     fileIndex.iterateContent(vFile -> {
       if (!vFile.isDirectory() && fileIndex.isInSourceContent(vFile)) {
         fileList.add(vFile);
