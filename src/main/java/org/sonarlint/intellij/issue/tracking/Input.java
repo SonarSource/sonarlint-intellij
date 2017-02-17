@@ -21,6 +21,7 @@ package org.sonarlint.intellij.issue.tracking;
 
 import java.util.Collection;
 
+@FunctionalInterface
 public interface Input<ISSUE extends Trackable> {
 
   Collection<ISSUE> getIssues();

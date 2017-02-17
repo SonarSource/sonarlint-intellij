@@ -41,7 +41,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
@@ -171,7 +170,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     mainToolbar.getComponent().setVisible(true);
   }
 
-  private ActionGroup createActionGroup(Collection<AnAction> actions) {
+  private static ActionGroup createActionGroup(Collection<AnAction> actions) {
     SimpleActionGroup actionGroup = new SimpleActionGroup();
     actions.forEach(actionGroup::add);
     return actionGroup;

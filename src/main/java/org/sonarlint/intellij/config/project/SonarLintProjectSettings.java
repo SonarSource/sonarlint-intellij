@@ -35,8 +35,8 @@ import org.jetbrains.annotations.NotNull;
 @State(
   name = "SonarLintProjectSettings",
   storages = {
-    @Storage(id = "default", file = StoragePathMacros.PROJECT_FILE),
-    @Storage(id = "dir", file = StoragePathMacros.PROJECT_CONFIG_DIR + "/sonarlint.xml", scheme = StorageScheme.DIRECTORY_BASED)
+    @Storage(file = StoragePathMacros.PROJECT_FILE, id = "default"),
+    @Storage(file = StoragePathMacros.PROJECT_CONFIG_DIR + "/sonarlint.xml", scheme = StorageScheme.DIRECTORY_BASED, id = "dir")
   })
 public final class SonarLintProjectSettings extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectSettings> {
 

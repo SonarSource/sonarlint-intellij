@@ -40,11 +40,11 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarClearIssues extends AnAction {
+  private static final Logger LOGGER = Logger.getInstance(SonarClearIssues.class);
+
   public SonarClearIssues(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);
   }
-
-  private static final Logger LOGGER = Logger.getInstance(SonarClearIssues.class);
 
   @Override
   public void actionPerformed(AnActionEvent e) {

@@ -71,7 +71,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     mainToolbar.getComponent().setVisible(true);
   }
 
-  private ActionGroup createActionGroup() {
+  private static ActionGroup createActionGroup() {
     SonarLintActions sonarLintActions = SonarLintActions.getInstance();
     SimpleActionGroup actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.configure());
