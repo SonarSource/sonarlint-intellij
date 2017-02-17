@@ -21,7 +21,7 @@ package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,8 +54,8 @@ public class ChangedFilesIssuesTest extends SonarTest {
 
     changedFilesIssues.set(issues);
     assertThat(changedFilesIssues.lastAnalysisDate())
-      .isBeforeOrEqualTo(LocalDateTime.now())
-      .isAfter(LocalDateTime.now().minus(Duration.ofSeconds(3)));
+      .isLessThanOrEqualTo(Instant.now())
+      .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
     assertThat(changedFilesIssues.issues()).isEqualTo(issues);
 
     verify(listener).update(issues);
@@ -63,8 +63,8 @@ public class ChangedFilesIssuesTest extends SonarTest {
     // everything should be done even if it's an empty map
     changedFilesIssues.set(Collections.emptyMap());
     assertThat(changedFilesIssues.lastAnalysisDate())
-      .isBeforeOrEqualTo(LocalDateTime.now())
-      .isAfter(LocalDateTime.now().minus(Duration.ofSeconds(3)));
+      .isLessThanOrEqualTo(Instant.now())
+      .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
     assertThat(changedFilesIssues.wasAnalyzed()).isTrue();
     assertThat(changedFilesIssues.issues()).isEmpty();
     assertThat(changedFilesIssues.getTopic()).isEqualTo(AnalysisResultsListener.CHANGED_FILES_TOPIC);

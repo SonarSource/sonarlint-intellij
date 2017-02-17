@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ui.scope;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +60,7 @@ public class AllFilesScopeTest extends SonarTest {
   public void testContainsIssues() {
     VirtualFile file = mock(VirtualFile.class);
     LiveIssue issue = mock(LiveIssue.class);
-    when(issues.lastAnalysisDate()).thenReturn(LocalDateTime.now());
+    when(issues.lastAnalysisDate()).thenReturn(Instant.now());
     when(issues.wasAnalyzed()).thenReturn(true);
     when(issues.issues()).thenReturn(Collections.singletonMap(file, Collections.singleton(issue)));
 

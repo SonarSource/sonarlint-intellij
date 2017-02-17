@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui.scope;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -86,7 +86,7 @@ public class ChangedFilesScopeTest extends SonarTest {
     LiveIssue issue = mock(LiveIssue.class);
     when(vcsManager.hasActiveVcss()).thenReturn(true);
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(file));
-    when(issues.lastAnalysisDate()).thenReturn(LocalDateTime.now());
+    when(issues.lastAnalysisDate()).thenReturn(Instant.now());
     when(issues.wasAnalyzed()).thenReturn(true);
     when(issues.issues()).thenReturn(Collections.singletonMap(file, Collections.singleton(issue)));
 
