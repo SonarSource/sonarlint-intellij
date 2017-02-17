@@ -21,9 +21,15 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import javax.swing.Icon;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class SonarCleanConsole extends AnAction {
+  public SonarCleanConsole(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+    super(text, description, icon);
+  }
+
   @Override
   public void actionPerformed(AnActionEvent e) {
     if (e.getProject() != null) {

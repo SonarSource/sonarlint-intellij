@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.scope;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
@@ -28,6 +29,7 @@ import com.intellij.openapi.vcs.changes.ChangeListListener;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -35,6 +37,7 @@ import java.util.Map;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
+import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ChangedFilesScope extends AbstractScope implements Disposable {
@@ -47,13 +50,24 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
       ApplicationManager.getApplication().invokeLater(ChangedFilesScope.this::updateTexts);
     }
   };
+  private SimpleActionGroup actionGroup;
 
   public ChangedFilesScope(Project project) {
     this.project = project;
     this.analysisResultsStore = SonarLintUtils.get(project, ChangedFilesIssues.class);
     this.changeListManager = SonarLintUtils.get(project, ChangeListManager.class);
+    createActionGroup();
     subscribeToEvents();
     Disposer.register(project, this);
+  }
+
+  private void createActionGroup() {
+    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
+    actionGroup = new SimpleActionGroup();
+    actionGroup.add(sonarLintActions.analyzeAllFiles());
+    actionGroup.add(sonarLintActions.cancelAnalysis());
+    actionGroup.add(sonarLintActions.configure());
+    actionGroup.add(sonarLintActions.clearResults());
   }
 
   private void subscribeToEvents() {
@@ -95,8 +109,8 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
     return vcsManager.hasActiveVcss();
   }
 
-  @Override public String toolbarId() {
-    return "SonarLint.changedtoolwindow";
+  @Override public ActionGroup toolbarActionGroup() {
+    return actionGroup;
   }
 
   @Override public LocalDateTime getLastAnalysisDate() {

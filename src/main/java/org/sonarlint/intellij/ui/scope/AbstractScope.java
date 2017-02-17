@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.scope;
 
+import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.DataKey;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.time.LocalDateTime;
@@ -47,7 +48,7 @@ public abstract class AbstractScope {
 
   public abstract String getLabelText();
 
-  public abstract String toolbarId();
+  public abstract ActionGroup toolbarActionGroup();
 
   @CheckForNull
   public abstract LocalDateTime getLastAnalysisDate();

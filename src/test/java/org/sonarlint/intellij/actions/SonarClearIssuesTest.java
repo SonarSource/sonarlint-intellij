@@ -63,7 +63,7 @@ public class SonarClearIssuesTest extends SonarTest {
     super.register(FileEditorManager.class, editorManager);
     super.register(PsiManager.class, psiManager);
 
-    clearIssues = new SonarClearIssues();
+    clearIssues = new SonarClearIssues(null, null, null);
   }
 
   @Test

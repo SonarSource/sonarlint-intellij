@@ -24,6 +24,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
+import javax.swing.Icon;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -32,6 +34,14 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
+  public SonarAnalyzeEditorFileAction() {
+    super();
+  }
+
+  public SonarAnalyzeEditorFileAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+    super(text, description, icon);
+  }
+
   @Override
   protected boolean isEnabled(Project project, SonarLintStatus status) {
     if (status.isRunning()) {

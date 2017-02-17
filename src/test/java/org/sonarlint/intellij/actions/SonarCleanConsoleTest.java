@@ -38,7 +38,7 @@ public class SonarCleanConsoleTest extends SonarTest {
     when(event.getProject()).thenReturn(project);
     super.register(project, SonarLintConsole.class, console);
 
-    SonarCleanConsole clean = new SonarCleanConsole();
+    SonarCleanConsole clean = new SonarCleanConsole(null, null, null);
 
     clean.actionPerformed(event);
     verify(console).clear();
@@ -47,7 +47,7 @@ public class SonarCleanConsoleTest extends SonarTest {
   @Test
   public void testNoOpIfNoProject() {
     AnActionEvent event = mock(AnActionEvent.class);
-    SonarCleanConsole clean = new SonarCleanConsole();
+    SonarCleanConsole clean = new SonarCleanConsole(null, null, null);
     clean.actionPerformed(event);
   }
 }

@@ -29,16 +29,17 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
+import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
 import javax.swing.Box;
 import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarLint";
-  private static final String GROUP_ID = "SonarLint.logtoolwindow";
 
   private final ToolWindow toolWindow;
   private final Project project;
@@ -60,14 +61,22 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   }
 
   private void addToolbar() {
-    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(GROUP_ID);
-    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
+    ActionGroup actionGroup = createActionGroup();
+    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, actionGroup, false);
     mainToolbar.setTargetComponent(this);
     Box toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
 
     super.setToolbar(toolBarBox);
     mainToolbar.getComponent().setVisible(true);
+  }
+
+  private ActionGroup createActionGroup() {
+    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
+    SimpleActionGroup actionGroup = new SimpleActionGroup();
+    actionGroup.add(sonarLintActions.configure());
+    actionGroup.add(sonarLintActions.cleanConsole());
+    return actionGroup;
   }
 
   private void addLogActions() {

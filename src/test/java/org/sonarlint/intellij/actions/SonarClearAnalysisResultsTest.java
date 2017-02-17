@@ -35,7 +35,7 @@ public class SonarClearAnalysisResultsTest extends SonarTest {
 
   @Before
   public void prepare() {
-    action = new SonarClearAnalysisResults();
+    action = new SonarClearAnalysisResults(null, null, null);
   }
 
   @Test

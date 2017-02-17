@@ -34,10 +34,16 @@ import com.intellij.psi.PsiManager;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import javax.swing.Icon;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarClearIssues extends AnAction {
+  public SonarClearIssues(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+    super(text, description, icon);
+  }
+
   private static final Logger LOGGER = Logger.getInstance(SonarClearIssues.class);
 
   @Override

@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.swing.Icon;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.issue.AllFilesIssues;
@@ -43,6 +45,14 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
+  public SonarAnalyzeAllFilesAction() {
+    super();
+  }
+
+  public SonarAnalyzeAllFilesAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+    super(text, description, icon);
+  }
+
   @Override protected boolean isEnabled(Project project, SonarLintStatus status) {
     return !status.isRunning();
   }

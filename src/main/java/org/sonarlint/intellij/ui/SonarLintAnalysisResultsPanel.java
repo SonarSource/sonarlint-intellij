@@ -62,7 +62,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     issuesPanel.add(createScopePanel(), BorderLayout.NORTH);
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
-    setToolbar(scope.toolbarId());
+    setToolbar(scope.toolbarActionGroup());
 
     // Put everything together
     super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
@@ -147,7 +147,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     scope.addListener(this);
     updateIssues();
     updateTexts();
-    setToolbar(scope.toolbarId());
+    setToolbar(scope.toolbarActionGroup());
     PropertiesComponent.getInstance(project).setValue(SELECTED_SCOPE_KEY, newScope.toString());
     this.refreshToolbar();
   }

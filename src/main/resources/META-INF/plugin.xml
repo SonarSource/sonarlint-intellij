@@ -33,7 +33,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>2.7.1 - Bug fix for handling secondary locations without message</li>
+        <li>2.8 - Analyze all files in project. New icons for issue types</li>
         <li>2.7 - Display of secondary locations of issues</li>
         <li>2.6 - Support of SSL certificates configured in IntelliJ</li>
         <li>2.5 - Analysis of VCS changed files and notifications about binding update</li>
@@ -86,6 +86,9 @@
         </component>
         <component>
             <implementation-class>org.sonarlint.intellij.core.SonarLintEngineFactory</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.util.SonarLintActions</implementation-class>
         </component>
     </application-components>
 
@@ -173,54 +176,29 @@
         <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator" />
     </extensionPoints>
 
-
     <actions>
-        <group id="SonarLint.logtoolwindow" text="SonarLint" popup="true"/>
-        <group id="SonarLint.issuestoolwindow" text="SonarLint" popup="true"/>
-        <group id="SonarLint.changedtoolwindow" text="SonarLint" popup="true"/>
-        <group id="SonarLint.resultstoolwindow" text="SonarLint" popup="true"/>
-
+        <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
         <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
-                text="Analyze this file with SonarLint"
-                description="Run SonarLint analysis on this file"
+                text="Analyze File with SonarLint"
+                description="Run SonarLint analysis on the file currently selected in the editor"
                 icon="SonarLintIcons.SONARLINT">
+            <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
         </action>
 
-        <action id="SonarLint.AnalyzeCurrentEditorFile"
-                class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
-                text="Analyze this file with SonarLint"
-                description="Run SonarLint analysis on the file selected in the editor"
-                icon="SonarLintIcons.PLAY">
-            <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
-            <add-to-group group-id="SonarLint.issuestoolwindow"/>
-        </action>
-
-        <action id="SonarLint.SonarAnalyzeAllFilesAction"
-                class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
-                text="Analyze all files"
-                description="Run SonarLint analysis on all files in the project"
-                icon="SonarLintIcons.PLAY">
-            <add-to-group group-id="SonarLint.resultstoolwindow"/>
-        </action>
-
-        <action id="SonarLint.SonarAnalyzeChangedFilesAction"
+        <action id="SonarLint.AnalyzeChangedFiles"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
-                text="Analyze changed files"
-                description="Run SonarLint analysis on CVS changed files"
-                icon="SonarLintIcons.PLAY">
-            <add-to-group group-id="SonarLint.changedtoolwindow"/>
+                text="Analyze VCS Changed Files with SonarLint"
+                description="Run a SonarLint analysis on VCS changed files"
+                icon="SonarLintIcons.SONARLINT">
         </action>
 
         <action id="SonarLint.toolwindow.Cancel"
                 class="org.sonarlint.intellij.actions.SonarCancel"
-                text="Cancel SonarLint analysis"
+                text="Cancel SonarLint Analysis"
                 description="Cancel the SonarLint analysis running"
                 icon="SonarLintIcons.SUSPEND">
-            <add-to-group group-id="SonarLint.issuestoolwindow"/>
-            <add-to-group group-id="SonarLint.resultstoolwindow"/>
-            <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
 
 
@@ -229,35 +207,6 @@
                 text="Configure SonarLint"
                 description="Configure SonarLint"
                 icon="SonarLintIcons.TOOLS">
-            <add-to-group group-id="SonarLint.logtoolwindow"/>
-            <add-to-group group-id="SonarLint.issuestoolwindow"/>
-            <add-to-group group-id="SonarLint.resultstoolwindow"/>
-            <add-to-group group-id="SonarLint.changedtoolwindow"/>
-        </action>
-
-        <action id="SonarLint.toolwindow.CleanConsole"
-                class="org.sonarlint.intellij.actions.SonarCleanConsole"
-                text="Clear SonarLint console"
-                description="Clear SonarLint console"
-                icon="SonarLintIcons.CLEAN">
-            <add-to-group group-id="SonarLint.logtoolwindow"/>
-        </action>
-
-        <action id="SonarLint.toolwindow.ClearIssues"
-                class="org.sonarlint.intellij.actions.SonarClearIssues"
-                text="Clear SonarLint issues"
-                description="Clear SonarLint issues"
-                icon="SonarLintIcons.CLEAN">
-            <add-to-group group-id="SonarLint.issuestoolwindow"/>
-        </action>
-
-        <action id="SonarLint.toolwindow.SonarClearAnalysisResults"
-                class="org.sonarlint.intellij.actions.SonarClearAnalysisResults"
-                text="Clear issues"
-                description="Clear analysis results"
-                icon="SonarLintIcons.CLEAN">
-            <add-to-group group-id="SonarLint.resultstoolwindow"/>
-            <add-to-group group-id="SonarLint.changedtoolwindow"/>
         </action>
     </actions>
 

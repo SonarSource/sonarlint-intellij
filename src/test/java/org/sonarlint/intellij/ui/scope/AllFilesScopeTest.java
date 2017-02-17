@@ -27,8 +27,10 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.AllFilesIssues;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -38,6 +40,7 @@ public class AllFilesScopeTest extends SonarTest {
 
   @Before
   public void prepare() {
+    super.register(app, SonarLintActions.class, mock(SonarLintActions.class, RETURNS_DEEP_STUBS));
     issues = mock(AllFilesIssues.class);
     super.register(AllFilesIssues.class, issues);
     scope = new AllFilesScope(project);
@@ -49,7 +52,7 @@ public class AllFilesScopeTest extends SonarTest {
     assertThat(scope.getLastAnalysisDate()).isNull();
     assertThat(scope.getLabelText()).isEqualTo("Trigger the analysis to find issues in all project sources");
     assertThat(scope.getEmptyText()).isEqualTo("No analysis done");
-    assertThat(scope.toolbarId()).isEqualTo("SonarLint.resultstoolwindow");
+    assertThat(scope.toolbarActionGroup()).isNotNull();
     assertThat(scope.issues()).isEmpty();
   }
 

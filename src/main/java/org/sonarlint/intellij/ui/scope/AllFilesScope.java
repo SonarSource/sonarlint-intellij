@@ -19,9 +19,11 @@
  */
 package org.sonarlint.intellij.ui.scope;
 
+import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -29,16 +31,28 @@ import java.util.Map;
 import org.sonarlint.intellij.issue.AllFilesIssues;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
+import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AllFilesScope extends AbstractScope {
   private final Project project;
   private final AllFilesIssues allFilesIssues;
+  private SimpleActionGroup actionGroup;
 
   public AllFilesScope(Project project) {
     this.project = project;
     this.allFilesIssues = SonarLintUtils.get(project, AllFilesIssues.class);
+    createActionGroup();
     subscribeToEvents();
+  }
+
+  private void createActionGroup() {
+    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
+    actionGroup = new SimpleActionGroup();
+    actionGroup.add(sonarLintActions.analyzeAllFiles());
+    actionGroup.add(sonarLintActions.cancelAnalysis());
+    actionGroup.add(sonarLintActions.configure());
+    actionGroup.add(sonarLintActions.clearResults());
   }
 
   private void subscribeToEvents() {
@@ -63,8 +77,8 @@ public class AllFilesScope extends AbstractScope {
     return "Trigger the analysis to find issues in all project sources";
   }
 
-  @Override public String toolbarId() {
-    return "SonarLint.resultstoolwindow";
+  @Override public ActionGroup toolbarActionGroup() {
+    return actionGroup;
   }
 
   @Override public LocalDateTime getLastAnalysisDate() {

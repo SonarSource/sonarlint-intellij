@@ -29,8 +29,10 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +44,7 @@ public class ChangedFilesScopeTest extends SonarTest {
 
   @Before
   public void prepare() {
+    super.register(app, SonarLintActions.class, mock(SonarLintActions.class, RETURNS_DEEP_STUBS));
     vcsManager = mock(ProjectLevelVcsManager.class);
     changeListManager = mock(ChangeListManager.class);
     issues = mock(ChangedFilesIssues.class);
@@ -57,7 +60,7 @@ public class ChangedFilesScopeTest extends SonarTest {
     assertThat(scope.getLastAnalysisDate()).isNull();
     assertThat(scope.getLabelText()).isEqualTo("Project has no active VCS");
     assertThat(scope.getEmptyText()).isEqualTo("No changed files in the VCS");
-    assertThat(scope.toolbarId()).isEqualTo("SonarLint.changedtoolwindow");
+    assertThat(scope.toolbarActionGroup()).isNotNull();
     assertThat(scope.issues()).isEmpty();
   }
 

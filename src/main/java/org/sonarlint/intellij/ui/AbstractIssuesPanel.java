@@ -24,12 +24,14 @@ import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
+import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
@@ -37,7 +39,9 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
@@ -145,18 +149,32 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   }
 
   protected void setToolbar(String id) {
-    ActionGroup mainActionGroup = (ActionGroup) ActionManager.getInstance().getAction(id);
+    ActionGroup group = (ActionGroup) ActionManager.getInstance().getAction(id);
+    setToolbar(group);
+  }
+
+  protected void setToolbar(Collection<AnAction> actions) {
+    setToolbar(createActionGroup(actions));
+  }
+
+  protected void setToolbar(ActionGroup group) {
     if (mainToolbar != null) {
       mainToolbar.setTargetComponent(null);
       super.setToolbar(null);
       mainToolbar = null;
     }
-    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, mainActionGroup, false);
+    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, group, false);
     mainToolbar.setTargetComponent(this);
     Box toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
     super.setToolbar(toolBarBox);
     mainToolbar.getComponent().setVisible(true);
+  }
+
+  private ActionGroup createActionGroup(Collection<AnAction> actions) {
+    SimpleActionGroup actionGroup = new SimpleActionGroup();
+    actions.forEach(actionGroup::add);
+    return actionGroup;
   }
 
   private void createFlowsTree() {
