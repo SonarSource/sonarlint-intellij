@@ -66,7 +66,7 @@ public class SonarLintActions implements ApplicationComponent {
     analyzeCurrentFileAction = new SonarAnalyzeEditorFileAction("Analyze Currently Selected File",
       "Run a SonarLint analysis on the file that is currently selected in the editor",
       SonarLintIcons.PLAY);
-    analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("AAnalyze VCS Changed Files",
+    analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
       "Run a SonarLint analysis on VCS changed files",
       SonarLintIcons.PLAY);
   }
