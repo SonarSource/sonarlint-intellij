@@ -25,7 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import org.sonarlint.intellij.issue.AllFilesIssues;
@@ -81,7 +81,7 @@ public class AllFilesScope extends AbstractScope {
     return actionGroup;
   }
 
-  @Override public LocalDateTime getLastAnalysisDate() {
+  @Override public Instant getLastAnalysisDate() {
     return allFilesIssues.lastAnalysisDate();
   }
 

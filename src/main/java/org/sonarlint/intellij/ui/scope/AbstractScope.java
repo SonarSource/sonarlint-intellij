@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui.scope;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.DataKey;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -51,7 +51,7 @@ public abstract class AbstractScope {
   public abstract ActionGroup toolbarActionGroup();
 
   @CheckForNull
-  public abstract LocalDateTime getLastAnalysisDate();
+  public abstract Instant getLastAnalysisDate();
 
   public abstract Map<VirtualFile, Collection<LiveIssue>> issues();
 

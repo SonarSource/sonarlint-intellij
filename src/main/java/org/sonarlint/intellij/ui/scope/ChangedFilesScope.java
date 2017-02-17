@@ -31,7 +31,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
@@ -64,7 +64,7 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
   private void createActionGroup() {
     SonarLintActions sonarLintActions = SonarLintActions.getInstance();
     actionGroup = new SimpleActionGroup();
-    actionGroup.add(sonarLintActions.analyzeAllFiles());
+    actionGroup.add(sonarLintActions.analyzeChangedFiles());
     actionGroup.add(sonarLintActions.cancelAnalysis());
     actionGroup.add(sonarLintActions.configure());
     actionGroup.add(sonarLintActions.clearResults());
@@ -113,7 +113,7 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
     return actionGroup;
   }
 
-  @Override public LocalDateTime getLastAnalysisDate() {
+  @Override public Instant getLastAnalysisDate() {
     return analysisResultsStore.lastAnalysisDate();
   }
 

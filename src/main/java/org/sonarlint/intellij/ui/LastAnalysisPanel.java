@@ -23,10 +23,11 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import icons.SonarLintIcons;
+import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JLabel;
@@ -35,12 +36,15 @@ import javax.swing.Timer;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LastAnalysisPanel implements Disposable {
-  private LocalDateTime lastAnalysis;
-  private GridBagConstraints gc;
+  private static final String NO_ANALYSIS = "NO_ANALYSIS";
+  private static final String WITH_ANALYSIS = "WITH_ANALYSIS";
+
+  private Instant lastAnalysis;
   private Timer lastAnalysisTimeUpdater;
   private JLabel lastAnalysisLabel;
-  private JLabel icon;
+  private JLabel noAnalysisLabel;
   private JPanel panel;
+  private CardLayout layout;
 
   public LastAnalysisPanel(Project project) {
     createComponents();
@@ -52,33 +56,43 @@ public class LastAnalysisPanel implements Disposable {
     return panel;
   }
 
-  public void update(@Nullable LocalDateTime lastAnalysis, String emptyText) {
+  public void update(@Nullable Instant lastAnalysis, String emptyText) {
     this.lastAnalysis = lastAnalysis;
     setLabel(emptyText);
   }
 
   private void setLabel(String emptyText) {
-    panel.removeAll();
     if (lastAnalysis == null) {
-      lastAnalysisLabel.setText(emptyText);
-      panel.add(icon);
-      panel.add(lastAnalysisLabel, gc);
+      layout.show(panel, NO_ANALYSIS);
+      noAnalysisLabel.setText(emptyText);
     } else {
-      lastAnalysisLabel.setText("Analysis done " + SonarLintUtils.age(System.currentTimeMillis()));
-      panel.add(lastAnalysisLabel, gc);
+      layout.show(panel, WITH_ANALYSIS);
+      lastAnalysisLabel.setText("Analysis done " + SonarLintUtils.age(lastAnalysis.toEpochMilli()));
     }
 
-    panel.add(Box.createHorizontalBox(), gc);
+    panel.repaint();
   }
 
   private void createComponents() {
-    panel = new JPanel(new GridBagLayout());
-    icon = new JLabel(SonarLintIcons.INFO);
+    layout = new CardLayout();
+    panel = new JPanel(layout);
     lastAnalysisLabel = new JLabel("");
-    gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0);
+    noAnalysisLabel = new JLabel("");
 
+    GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0);
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.weightx = 1;
+
+    JPanel noAnalysisCard = new JPanel(new GridBagLayout());
+    noAnalysisCard.add(new JLabel(SonarLintIcons.INFO));
+    noAnalysisCard.add(noAnalysisLabel, gc);
+    noAnalysisCard.add(Box.createHorizontalBox(), gc);
+    panel.add(noAnalysisCard, NO_ANALYSIS);
+
+    JPanel withAnalysisCard = new JPanel(new GridBagLayout());
+    withAnalysisCard.add(lastAnalysisLabel, gc);
+    withAnalysisCard.add(Box.createHorizontalBox(), gc);
+    panel.add(withAnalysisCard, WITH_ANALYSIS);
   }
 
   @Override
@@ -91,10 +105,11 @@ public class LastAnalysisPanel implements Disposable {
 
   private void setTimer() {
     lastAnalysisTimeUpdater = new Timer(5000, e -> {
-      LocalDateTime last = lastAnalysis;
-      if (last != null) {
-        lastAnalysisLabel.setText("Analysis done " + SonarLintUtils.age(System.currentTimeMillis()));
+      if (lastAnalysis != null) {
+        lastAnalysisLabel.setText("Analysis done " + SonarLintUtils.age(lastAnalysis.toEpochMilli()));
+        panel.repaint();
       }
     });
+    lastAnalysisTimeUpdater.start();
   }
 }

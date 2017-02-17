@@ -24,7 +24,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.Topic;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import org.sonarlint.intellij.messages.AnalysisResultsListener;
 public abstract class IssueStore extends AbstractProjectComponent {
   private final MessageBus messageBus;
   private Map<VirtualFile, Collection<LiveIssue>> issues;
-  private LocalDateTime lastAnalysis;
+  private Instant lastAnalysis;
 
   protected IssueStore(Project project) {
     super(project);
@@ -46,7 +46,7 @@ public abstract class IssueStore extends AbstractProjectComponent {
 
   public void set(Map<VirtualFile, Collection<LiveIssue>> issues) {
     this.issues = Collections.unmodifiableMap(issues);
-    this.lastAnalysis = LocalDateTime.now();
+    this.lastAnalysis = Instant.now();
     this.messageBus.syncPublisher(getTopic()).update(issues);
   }
 
@@ -61,7 +61,7 @@ public abstract class IssueStore extends AbstractProjectComponent {
   }
 
   @CheckForNull
-  public LocalDateTime lastAnalysisDate() {
+  public Instant lastAnalysisDate() {
     return lastAnalysis;
   }
 
