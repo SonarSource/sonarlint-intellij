@@ -22,6 +22,7 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -74,7 +75,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     List<VirtualFile> fileList = new ArrayList<>();
     ProjectFileIndex fileIndex = SonarLintUtils.get(project, ProjectRootManager.class).getFileIndex();
     fileIndex.iterateContent(vFile -> {
-      if (!vFile.isDirectory() && fileIndex.isInSourceContent(vFile)) {
+      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile, vFile.getFileType())) {
         fileList.add(vFile);
       }
       return true;
