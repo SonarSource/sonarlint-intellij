@@ -226,7 +226,7 @@ public class SonarLintRulePanel {
 
       Icon icon;
       if (path.startsWith("/severity/")) {
-        String severity = url.getPath().substring(9);
+        String severity = url.getPath().substring(10);
         icon = SonarLintIcons.severity(severity);
       } else if (path.startsWith("/type/")) {
         String type = url.getPath().substring(6);
