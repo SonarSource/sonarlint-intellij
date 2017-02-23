@@ -106,8 +106,13 @@ public class IssueMatcher extends AbstractProjectComponent {
 
   private static int findStartLineOffset(PsiFile file, Document doc, int ijLine, @Nullable Integer startOffset, int rangeEnd) {
     int ijStartOffset = (startOffset == null) ? 0 : startOffset;
-    int lineStartOffset = doc.getLineStartOffset(ijLine);
-    int rangeStart = lineStartOffset + ijStartOffset;
+    int lineStart = doc.getLineStartOffset(ijLine);
+    int rangeStart = lineStart + ijStartOffset;
+
+    if (rangeStart >= rangeEnd) {
+      // we passed end
+      return rangeEnd;
+    }
 
     if (ijStartOffset != 0) {
       // this is a precise issue location, accept it as it is
