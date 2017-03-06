@@ -30,6 +30,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
@@ -50,6 +51,8 @@ public class SonarLintSubmitterTest {
   private SonarLintAppUtils utils;
   @Mock
   private Project project;
+  @Mock
+  private SonarLintTelemetry telemetry;
 
   private SonarLintGlobalSettings globalSettings;
 
@@ -60,7 +63,7 @@ public class SonarLintSubmitterTest {
     MockitoAnnotations.initMocks(this);
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    submitter = new SonarLintSubmitter(project, console, fileEditorManager, sonarLintJobManager, globalSettings, utils);
+    submitter = new SonarLintSubmitter(project, console, fileEditorManager, telemetry, sonarLintJobManager, globalSettings, utils);
   }
 
   @Test

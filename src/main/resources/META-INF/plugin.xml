@@ -90,6 +90,9 @@
         <component>
             <implementation-class>org.sonarlint.intellij.util.SonarLintActions</implementation-class>
         </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.telemetry.SonarLintTelemetry</implementation-class>
+        </component>
     </application-components>
 
     <project-components>

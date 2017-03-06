@@ -64,6 +64,7 @@ import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 public class SonarLintUtils {
@@ -304,9 +305,20 @@ public class SonarLintUtils {
     }
 
     if (server.enableProxy()) {
-      SonarLintUtils.configureProxy(server.getHostUrl(), serverConfigBuilder);
+      configureProxy(server.getHostUrl(), serverConfigBuilder);
     }
     return serverConfigBuilder.build();
+  }
+
+  public static TelemetryClientConfig getTelemetryClientConfig() {
+    CertificateManager certificateManager = get(CertificateManager.class);
+    SonarApplication sonarlint = get(SonarApplication.class);
+    TelemetryClientConfig.Builder clientConfigBuilder = new TelemetryClientConfig.Builder()
+      .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
+      .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
+      .sslTrustManager(certificateManager.getCustomTrustManager());
+
+    return clientConfigBuilder.build();
   }
 
   /**
