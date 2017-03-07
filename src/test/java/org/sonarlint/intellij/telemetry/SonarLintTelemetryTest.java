@@ -26,7 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
+import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarApplication;
@@ -41,7 +41,7 @@ public class SonarLintTelemetryTest {
   @Before
   public void setUp() throws IOException {
     telemetry = createTelemetry();
-    filePath = Paths.get(PathManager.getSystemPath(), "sonarlint_usage.json");
+    filePath = Paths.get(PathManager.getSystemPath(), "sonarlint_usage");
     Files.deleteIfExists(filePath);
   }
 
@@ -65,39 +65,27 @@ public class SonarLintTelemetryTest {
   }
 
   @Test
-  public void testOnlyCountOncePerDay() throws IOException {
-    LocalDate today = LocalDate.now();
+  public void testScheduler() throws IOException {
     telemetry.initComponent();
-    telemetry.markUsage();
-    telemetry.markUsage();
-    telemetry.markUsage();
+    assertThat(telemetry.scheduledFuture).isNotNull();
+    assertThat(telemetry.scheduledFuture.getDelay(TimeUnit.MINUTES)).isBetween(0L, 1L);
     telemetry.disposeComponent();
+    assertThat(telemetry.scheduledFuture).isNull();
 
-    telemetry = createTelemetry();
-    telemetry.initComponent();
-    telemetry.markUsage();
-    telemetry.markUsage();
-    telemetry.markUsage();
-    telemetry.disposeComponent();
-
-    assertThat(filePath).exists();
-    TelemetryStorage storage = TelemetryStorage.load(filePath);
-    assertThat(storage.lastUseDate()).isEqualTo(today);
-    assertThat(storage.installDate()).isEqualTo(today);
-    assertThat(storage.numUseDays()).isEqualTo(1L);
+    assertThat(telemetry.getComponentName()).isEqualTo("SonarLintTelemetry");
   }
 
   @Test
   public void testDisable() {
     telemetry.initComponent();
-    assertThat(telemetry.enabled()).isTrue();
+    assertThat(telemetry.telemetry.enabled()).isTrue();
     telemetry.setEnabled(false);
-    assertThat(telemetry.enabled()).isFalse();
+    assertThat(telemetry.telemetry.enabled()).isFalse();
     telemetry.disposeComponent();
 
     telemetry = createTelemetry();
     telemetry.initComponent();
-    assertThat(telemetry.enabled()).isFalse();
+    assertThat(telemetry.telemetry.enabled()).isFalse();
     telemetry.disposeComponent();
   }
 }

@@ -19,103 +19,69 @@
  */
 package org.sonarlint.intellij.telemetry;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarsource.sonarlint.core.WsHelperImpl;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
+import org.sonarsource.sonarlint.core.telemetry.Telemetry;
 
 public class SonarLintTelemetry implements ApplicationComponent {
-  private static final String STORAGE_FILENAME = "sonarlint_usage.json";
-  private final TelemetryClient worker;
-  private TelemetryStorage storage;
-  private ScheduledFuture<?> scheduledFuture;
+  private static final String PRODUCT = "SonarLint IntelliJ";
+  private static final String STORAGE_FILENAME = "sonarlint_usage";
+
+  private final SonarApplication application;
+  private final ProjectManager projectManager;
+
+  @VisibleForTesting
+  Telemetry telemetry;
+  @VisibleForTesting
+  ScheduledFuture<?> scheduledFuture;
 
   public SonarLintTelemetry(SonarApplication application, ProjectManager projectManager) {
-    this.worker = new TelemetryClient(new WsHelperImpl(), application, projectManager);
-  }
-
-  private boolean loadStorage() {
-    Path filePath = getStorageFilePath();
-    storage = null;
-
-    if (Files.exists(filePath)) {
-      try {
-        storage = TelemetryStorage.load(filePath);
-      } catch (Exception e) {
-        // ignore, we will recreate
-      }
-    }
-
-    if (storage == null) {
-      storage = new TelemetryStorage();
-      try {
-        storage.save(filePath);
-      } catch (IOException e) {
-        // no data should be sent
-        return false;
-      }
-    }
-    return true;
-  }
-
-  public boolean enabled() {
-    return storage.enabled();
+    this.application = application;
+    this.projectManager = projectManager;
+    this.telemetry = null;
   }
 
   public void setEnabled(boolean enabled) {
-    storage.setEnabled(enabled);
-    saveData();
+    if (telemetry != null) {
+      telemetry.enable(enabled);
+    }
   }
 
   @Override public void initComponent() {
     try {
-      if (loadStorage()) {
-        scheduleUpload();
-      }
+      this.telemetry = new Telemetry(getStorageFilePath());
+      this.scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(this::upload,
+        1, TimeUnit.HOURS.toMinutes(6), TimeUnit.MINUTES);
     } catch (Exception e) {
       // fail silently
     }
   }
 
-  private void scheduleUpload() {
-    scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(this::upload,
-      1, TimeUnit.DAYS.toMinutes(1), TimeUnit.MINUTES);
-  }
-
   private void upload() {
-    if (!storage.enabled()) {
-      return;
-    }
-
-    LocalDateTime now = LocalDateTime.now();
-    LocalDateTime lastUpload = storage.lastUploadDateTime();
-    if (lastUpload == null || lastUpload.until(now, ChronoUnit.HOURS) >= 23) {
-      scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(() -> worker.run(storage),
-        1, TimeUnit.DAYS.toMinutes(1), TimeUnit.MINUTES);
-      storage.setLastUploadTime(now);
-      saveData();
+    if (telemetry != null) {
+      TelemetryClientConfig clientConfig = SonarLintUtils.getTelemetryClientConfig();
+      telemetry.getClient(PRODUCT, application.getVersion()).tryUpload(clientConfig, isAnyProjectConnected());
     }
   }
 
-  public void markUsage() {
-    LocalDate today = LocalDate.now();
-    LocalDate lastUsed = storage.lastUseDate();
-    if (lastUsed == null || !lastUsed.equals(today)) {
-      storage.setLastUseDate(today);
-      storage.setNumUseDays(storage.numUseDays() + 1);
-      saveData();
+  public void analysisSubmitted() {
+    if (telemetry != null) {
+      telemetry.getDataCollection().analysisDone();
     }
   }
 
@@ -124,14 +90,12 @@ public class SonarLintTelemetry implements ApplicationComponent {
       scheduledFuture.cancel(false);
       scheduledFuture = null;
     }
-    saveData();
-  }
-
-  private void saveData() {
     try {
-      storage.save(getStorageFilePath());
+      if (telemetry != null) {
+        telemetry.save();
+      }
     } catch (IOException e) {
-      // fail silently
+      // ignore
     }
   }
 
@@ -143,4 +107,8 @@ public class SonarLintTelemetry implements ApplicationComponent {
     return Paths.get(PathManager.getSystemPath()).resolve(STORAGE_FILENAME);
   }
 
+  private boolean isAnyProjectConnected() {
+    Project[] openProjects = projectManager.getOpenProjects();
+    return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.get(p, SonarLintProjectSettings.class).isBindingEnabled());
+  }
 }
