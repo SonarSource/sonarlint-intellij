@@ -314,7 +314,7 @@ public class SonarLintUtils {
     CertificateManager certificateManager = get(CertificateManager.class);
     SonarApplication sonarlint = get(SonarApplication.class);
     TelemetryClientConfig.Builder clientConfigBuilder = new TelemetryClientConfig.Builder()
-      .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
+      .userAgent("SonarLint")
       .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
       .sslTrustManager(certificateManager.getCustomTrustManager());
 
