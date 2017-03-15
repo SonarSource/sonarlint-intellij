@@ -71,7 +71,7 @@ public class StringStoreIndexTest {
     // Try to make file readonly on supported platform to prevent file creation
     Path test1 = baseDir.resolve("p1").resolve("file1");
     if (!baseDir.toFile().setReadOnly()) {
-      // Fallback: create a directory at the target location to prevent file creation
+      // Fallback: get a directory at the target location to prevent file creation
       Files.createDirectory(temp.getRoot().toPath().resolve(StringStoreIndex.INDEX_FILENAME));
     }
 

@@ -93,7 +93,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
 
   private void runInEDT(SonarLintTask task) {
     final Application app = ApplicationManager.getApplication();
-    // task needs to be submitted in the EDT because progress manager will create the related UI
+    // task needs to be submitted in the EDT because progress manager will get the related UI
     if (!app.isDispatchThread()) {
       app.invokeLater(() -> runTask(task));
     } else {
