@@ -45,16 +45,17 @@ import javax.swing.JPanel;
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-public class SonarLintGlobalSettingsPanel {
+public class SonarLintGlobalOptionsPanel {
   private JPanel rootPane;
   private JCheckBox autoTrigger;
 
-  public SonarLintGlobalSettingsPanel(SonarLintGlobalSettings model) {
+  public SonarLintGlobalOptionsPanel(SonarLintGlobalSettings model) {
     load(model);
   }
 
   public JComponent getComponent() {
     if (rootPane == null) {
+
       rootPane = new JPanel(new BorderLayout());
       rootPane.add(createTopPanel(), BorderLayout.NORTH);
     }

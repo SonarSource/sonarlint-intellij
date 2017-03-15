@@ -23,6 +23,7 @@ import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
+import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
 import javax.annotation.CheckForNull;
@@ -30,21 +31,28 @@ import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private final SonarLintEngineManager serverManager;
   private final Application app;
   private final SonarLintGlobalSettings globalSettings;
+  private final SonarLintTelemetry telemetry;
+  private final SonarApplication sonarApplication;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
-  private SonarLintGlobalSettingsPanel globalPanel;
+  private SonarLintGlobalOptionsPanel globalPanel;
+  private SonarLintAboutPanel about;
 
   public SonarLintGlobalConfigurable() {
     this.app = ApplicationManager.getApplication();
     this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
     this.serverManager = app.getComponent(SonarLintEngineManager.class);
+    this.telemetry = app.getComponent(SonarLintTelemetry.class);
+    this.sonarApplication = app.getComponent(SonarApplication.class);
   }
 
   @Nls @Override public String getDisplayName() {
@@ -60,12 +68,13 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @Override public boolean isModified() {
-    return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings);
+    return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings) || about.isModified(telemetry);
   }
 
   @Override public void apply() throws ConfigurationException {
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
+    about.save(telemetry);
 
     GlobalConfigurationListener globalConfigurationListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings.getSonarQubeServers(), globalSettings.isAutoTrigger());
@@ -90,6 +99,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     if (globalPanel != null) {
       globalPanel.load(globalSettings);
     }
+    if (about != null) {
+      about.load(telemetry.enabled(), telemetry.optedOut());
+    }
   }
 
   @Override public void disposeUIResources() {
@@ -107,11 +119,20 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   private JPanel getPanel() {
     if (rootPanel == null) {
-      rootPanel = new JPanel(new BorderLayout());
-      globalPanel = new SonarLintGlobalSettingsPanel(globalSettings);
+      about = new SonarLintAboutPanel(sonarApplication);
+
+      globalPanel = new SonarLintGlobalOptionsPanel(globalSettings);
       serversPanel = new SonarQubeServerMgmtPanel();
-      rootPanel.add(globalPanel.getComponent(), BorderLayout.NORTH);
-      rootPanel.add(serversPanel.getComponent(), BorderLayout.CENTER);
+
+      JPanel settingsPanel = new JPanel(new BorderLayout());
+      settingsPanel.add(globalPanel.getComponent(), BorderLayout.NORTH);
+      settingsPanel.add(serversPanel.getComponent(), BorderLayout.CENTER);
+
+      rootPanel = new JPanel(new BorderLayout());
+      JBTabbedPane tabs = new JBTabbedPane();
+      tabs.insertTab("Settings", null, settingsPanel, "Configure SonarLint for all projects", 0);
+      tabs.insertTab("About", null, about.getComponent(), "About SonarLint", 1);
+      rootPanel.add(tabs, BorderLayout.CENTER);
     }
 
     return rootPanel;

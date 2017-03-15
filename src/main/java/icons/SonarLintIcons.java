@@ -28,7 +28,7 @@ public class SonarLintIcons {
   public static final Icon ICON_SONARLINT_13 = IconLoader.getIcon("/images/ico-sonarlint-13.png");
 
   public static final Icon SONARLINT = IconLoader.getIcon("/images/sonarlint.png");
-
+  public static final Icon SONARLINT_32 = IconLoader.getIcon("/images/sonarlint@2x.png");
   public static final Icon PLAY = IconLoader.getIcon("/images/execute.png");
   public static final Icon CLEAN = IconLoader.getIcon("/images/clean.png");
   public static final Icon TOOLS = IconLoader.getIcon("/images/externalToolsSmall.png");

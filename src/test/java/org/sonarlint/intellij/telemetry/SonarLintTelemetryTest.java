@@ -19,49 +19,75 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.util.net.ssl.CertificateManager;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.SonarTest;
+import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
+import org.sonarsource.sonarlint.core.telemetry.Telemetry;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
-public class SonarLintTelemetryTest {
+public class SonarLintTelemetryTest extends SonarTest {
   private SonarLintTelemetry telemetry;
-  private Path filePath;
+  private Telemetry engine;
+  private TelemetryEngineProvider engineProvider;
+  private TelemetryClient client;
 
   @Before
-  public void setUp() throws IOException {
-    telemetry = createTelemetry();
-    filePath = Paths.get(PathManager.getSystemPath(), "sonarlint_usage");
-    Files.deleteIfExists(filePath);
+  public void start() throws Exception {
+    super.register(CertificateManager.class, mock(CertificateManager.class));
+    this.telemetry = createTelemetry();
   }
 
-  private SonarLintTelemetry createTelemetry() {
-    SonarApplication app = mock(SonarApplication.class);
+  @After
+  public void after() {
+    System.clearProperty(SonarLintTelemetry.DISABLE_PROPERTY_KEY);
+  }
+
+  private SonarLintTelemetry createTelemetry() throws Exception {
+    engine = mock(Telemetry.class);
+    client = mock(TelemetryClient.class);
+    when(engine.getClient()).thenReturn(client);
+    engineProvider = mock(TelemetryEngineProvider.class);
+    when(engineProvider.get()).thenReturn(engine);
     ProjectManager projectManager = mock(ProjectManager.class);
-    return new SonarLintTelemetry(app, projectManager);
+    when(projectManager.getOpenProjects()).thenReturn(new Project[0]);
+    return new SonarLintTelemetry(engineProvider, projectManager);
+  }
+
+  @Test
+  public void disable() throws Exception {
+    System.setProperty(SonarLintTelemetry.DISABLE_PROPERTY_KEY, "true");
+    telemetry = createTelemetry();
+    telemetry.initComponent();
+    assertThat(telemetry.enabled()).isFalse();
   }
 
   @Test
   public void testSaveData() {
     telemetry.initComponent();
     telemetry.disposeComponent();
-    assertThat(filePath).exists();
   }
 
   @Test
-  public void testInvalidFile() throws IOException {
-    Files.write(filePath, "trash".getBytes(StandardCharsets.UTF_8));
+  public void testExceptionCreation() throws Exception {
+    when(engineProvider.get()).thenThrow(new IOException());
     telemetry.initComponent();
+    assertThat(telemetry.enabled()).isFalse();
   }
 
   @Test
@@ -76,16 +102,22 @@ public class SonarLintTelemetryTest {
   }
 
   @Test
-  public void testDisable() {
+  public void testOptOut() throws Exception {
+    when(engine.enabled()).thenReturn(true);
     telemetry.initComponent();
-    assertThat(telemetry.telemetry.enabled()).isTrue();
-    telemetry.setEnabled(false);
-    assertThat(telemetry.telemetry.enabled()).isFalse();
+    telemetry.optOut(true);
+    verify(engine).enable(false);
+    verify(client).optOut(any(TelemetryClientConfig.class), anyBoolean());
     telemetry.disposeComponent();
+  }
 
-    telemetry = createTelemetry();
+  @Test
+  public void testDontOptOutAgain() {
+    when(engine.enabled()).thenReturn(false);
     telemetry.initComponent();
-    assertThat(telemetry.telemetry.enabled()).isFalse();
-    telemetry.disposeComponent();
+    telemetry.optOut(true);
+    verify(engine).enabled();
+    verifyNoMoreInteractions(engine);
+    verifyZeroInteractions(client);
   }
 }

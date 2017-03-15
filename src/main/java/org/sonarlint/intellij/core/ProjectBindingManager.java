@@ -49,7 +49,7 @@ public class ProjectBindingManager extends AbstractProjectComponent {
   }
 
   /**
-   * Will create a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
+   * Will get a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
    * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an IllegalStateException.
    */
   public synchronized SonarLintFacade getFacadeForAnalysis() {
