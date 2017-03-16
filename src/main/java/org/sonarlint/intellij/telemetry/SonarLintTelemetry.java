@@ -70,7 +70,7 @@ public class SonarLintTelemetry implements ApplicationComponent {
   }
 
   public boolean optedOut() {
-    return enabled && this.telemetryEngine.enabled();
+    return !enabled || !this.telemetryEngine.enabled();
   }
 
   @Override public void initComponent() {

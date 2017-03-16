@@ -113,7 +113,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       serversPanel.dispose();
       serversPanel = null;
     }
-
+    about = null;
     serverManager.reloadServers();
   }
 

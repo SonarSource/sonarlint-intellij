@@ -159,7 +159,7 @@ public class SonarLintAboutPanel {
 
   public void load(boolean telemetryEnabled, boolean telemetryOptedOut) {
     optOutCheckBox.setEnabled(telemetryEnabled);
-    optOutCheckBox.setSelected(telemetryEnabled && !telemetryOptedOut);
+    optOutCheckBox.setSelected(!telemetryEnabled || telemetryOptedOut);
   }
 
   public void save(SonarLintTelemetry telemetry) {
