@@ -96,15 +96,28 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
       throw new IllegalStateException("Couldn't find plugins");
     }
 
-    List<URL> pluginsUrls = new ArrayList<>();
+    if ("file".equalsIgnoreCase(pluginsDir.toURI().getScheme())) {
+      return getPluginsUrls(pluginsDir);
+    } else {
+      return getPluginsUrlsWithFs(pluginsDir);
+    }
+  }
+
+  private URL[] getPluginsUrlsWithFs(URL pluginsDir) throws IOException, URISyntaxException {
     Map<String, String> env = new HashMap<>();
     env.put("create", "true");
-    try (FileSystem zipfs = FileSystems.newFileSystem(pluginsDir.toURI(), env)) {
-      try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()), "*.jar")) {
-        for (Path path : directoryStream) {
-          globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
-          pluginsUrls.add(path.toUri().toURL());
-        }
+    try (FileSystem fs = FileSystems.newFileSystem(pluginsDir.toURI(), env)) {
+      return getPluginsUrls(pluginsDir);
+    }
+  }
+
+  private URL[] getPluginsUrls(URL pluginsDir) throws IOException, URISyntaxException {
+    List<URL> pluginsUrls = new ArrayList<>();
+
+    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()), "*.jar")) {
+      for (Path path : directoryStream) {
+        globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
+        pluginsUrls.add(path.toUri().toURL());
       }
     }
     return pluginsUrls.toArray(new URL[pluginsUrls.size()]);
