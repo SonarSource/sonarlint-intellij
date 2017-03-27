@@ -159,6 +159,6 @@ public class SonarLintAboutPanel {
   }
 
   public boolean isModified(SonarLintTelemetry telemetry) {
-    return telemetry.enabled() && telemetry.optedOut() == enableCheckBox.isSelected();
+    return telemetry.enabled() && telemetry.optedIn() != enableCheckBox.isSelected();
   }
 }

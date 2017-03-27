@@ -91,12 +91,12 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
 
   private URL[] loadPlugins() throws IOException, URISyntaxException {
     URL pluginsDir = this.getClass().getClassLoader().getResource("plugins");
-
     if (pluginsDir == null) {
       throw new IllegalStateException("Couldn't find plugins");
     }
 
     if ("file".equalsIgnoreCase(pluginsDir.toURI().getScheme())) {
+
       return getPluginsUrls(pluginsDir);
     } else {
       return getPluginsUrlsWithFs(pluginsDir);
