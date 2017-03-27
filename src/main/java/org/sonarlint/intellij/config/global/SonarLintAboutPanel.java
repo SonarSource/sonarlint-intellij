@@ -45,7 +45,7 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 public class SonarLintAboutPanel {
   private final SonarApplication application;
   private JPanel panel;
-  private JCheckBox optOutCheckBox;
+  private JCheckBox enableCheckBox;
 
   public SonarLintAboutPanel(SonarApplication application) {
     this.application = application;
@@ -90,7 +90,7 @@ public class SonarLintAboutPanel {
   private JComponent createTelemetryPanel() {
     // tooltip
     final HyperlinkLabel link = new HyperlinkLabel("");
-    link.setHyperlinkText("See an ", "example", " of the data collected");
+    link.setHyperlinkText("See a ", "sample of the data", "");
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
@@ -109,64 +109,56 @@ public class SonarLintAboutPanel {
     });
 
     // info
-    JBLabel infoIcon = new JBLabel(SonarLintIcons.INFO);
-    JBLabel info = new JBLabel("<html>SonarLint collects anonymous usage statistics to help "
-      + "us understand how SonarLint is used so that we can continue to improve the product. "
-      + "No identifier, source code or IP address is collected.</html>");
-
-    // put everything together
-    JPanel infoPanel = new JPanel(new GridBagLayout());
-    GridBagConstraints c = new GridBagConstraints();
-    c.gridx = 0;
-    c.gridy = 0;
-    c.ipadx = 5;
-    c.gridheight = 2;
-    c.anchor = GridBagConstraints.NORTH;
-    c.fill = GridBagConstraints.NONE;
-    infoPanel.add(infoIcon, c);
-
-    c.gridheight = 1;
-    c.gridx = 1;
-    c.fill = GridBagConstraints.HORIZONTAL;
-    c.weightx = 1.0f;
-    infoPanel.add(info, c);
-
-    c.gridx = 1;
-    c.gridy = 1;
-    c.anchor = GridBagConstraints.WEST;
-    c.fill = GridBagConstraints.NONE;
-    infoPanel.add(link, c);
+    JBLabel info = new JBLabel("<html>By sharing anonymous SonarLint usage statistics, you help us understand how SonarLint is used so "
+      + "we can improve the plugin to work even better for you. We don't collect source code, IP addresses, or any personally identifying "
+      + "information. And we don't share the data with anyone else.</html>");
 
     // checkbox
-    optOutCheckBox = new JCheckBox("Opt out of SonarLint telemetry");
-    optOutCheckBox.setFocusable(false);
+    enableCheckBox = new JCheckBox("Share anonymous SonarLint statistics");
+    enableCheckBox.setFocusable(false);
     JPanel tickOptions = new JPanel(new VerticalFlowLayout());
     tickOptions.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
-    tickOptions.add(optOutCheckBox);
+    tickOptions.add(enableCheckBox);
 
     // all telemetry together
-    JPanel telemetryPanel = new JPanel(new BorderLayout());
-    telemetryPanel.setBorder(IdeBorderFactory.createTitledBorder("Telemetry"));
-    telemetryPanel.add(infoPanel, BorderLayout.NORTH);
-    telemetryPanel.add(tickOptions, BorderLayout.CENTER);
+    JPanel infoPanel = new JPanel(new GridBagLayout());
+    infoPanel.setBorder(IdeBorderFactory.createTitledBorder("Statistics"));
+    GridBagConstraints c = new GridBagConstraints();
+    c.gridheight = 1;
+    c.gridx = 0;
+    c.gridy = 0;
+    c.anchor = GridBagConstraints.NORTH;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    c.weightx = 1.0f;
 
-    return telemetryPanel;
+    infoPanel.add(info, c);
+    c.gridy = 1;
+    c.anchor = GridBagConstraints.WEST;
+    c.fill = GridBagConstraints.HORIZONTAL;
+    infoPanel.add(link, c);
+    c.gridy = 2;
+    c.weighty = 1.0f;
+    c.anchor = GridBagConstraints.WEST;
+    c.fill = GridBagConstraints.BOTH;
+    infoPanel.add(tickOptions, c);
+
+    return infoPanel;
   }
 
   public JComponent getComponent() {
     return panel;
   }
 
-  public void load(boolean telemetryEnabled, boolean telemetryOptedOut) {
-    optOutCheckBox.setEnabled(telemetryEnabled);
-    optOutCheckBox.setSelected(!telemetryEnabled || telemetryOptedOut);
+  public void load(boolean telemetryEnabled, boolean telemetryOptedIn) {
+    enableCheckBox.setEnabled(telemetryEnabled);
+    enableCheckBox.setSelected(telemetryEnabled && telemetryOptedIn);
   }
 
   public void save(SonarLintTelemetry telemetry) {
-    telemetry.optOut(optOutCheckBox.isSelected());
+    telemetry.optOut(!enableCheckBox.isSelected());
   }
 
   public boolean isModified(SonarLintTelemetry telemetry) {
-    return telemetry.enabled() && telemetry.optedOut() != optOutCheckBox.isSelected();
+    return telemetry.enabled() && telemetry.optedOut() == enableCheckBox.isSelected();
   }
 }

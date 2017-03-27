@@ -59,8 +59,12 @@ public class SonarLintTelemetry implements ApplicationComponent {
       }
       telemetryEngine.enable(!optOut);
       if (optOut) {
-        TelemetryClientConfig clientConfig = SonarLintUtils.getTelemetryClientConfig();
-        telemetryEngine.getClient().optOut(clientConfig, isAnyProjectConnected());
+        try {
+          TelemetryClientConfig clientConfig = SonarLintUtils.getTelemetryClientConfig();
+          telemetryEngine.getClient().optOut(clientConfig, isAnyProjectConnected());
+        } catch (Exception e) {
+          // fail silently
+        }
       }
     }
   }
