@@ -140,6 +140,9 @@ public class SonarLintUtils {
    */
   @CheckForNull
   public static VirtualFile getSelectedFile(Project project) {
+    if (project.isDisposed()) {
+      return null;
+    }
     FileEditorManager editorManager = FileEditorManager.getInstance(project);
 
     Editor editor = editorManager.getSelectedTextEditor();
