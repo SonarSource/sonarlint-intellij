@@ -107,6 +107,9 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * It needs to be called from EDT because of the creation of the Indicator.
    */
   private void runTask(SonarLintTask task) {
+    if (myProject.isDisposed()) {
+      return;
+    }
     notifyStart(task.getJob());
     if (task.isConditionalModal() || task.isModal()) {
       progressManager.run(task);
