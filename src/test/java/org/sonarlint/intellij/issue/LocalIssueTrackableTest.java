@@ -60,4 +60,22 @@ public class LocalIssueTrackableTest {
     assertThat(trackable.getLine()).isNull();
     assertThat(trackable.getCreationDate()).isNull();
   }
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void severityNotStored() {
+    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
+      .build();
+
+    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
+    trackable.getSeverity();
+  }
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void typeNotStored() {
+    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
+      .build();
+
+    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
+    trackable.getType();
+  }
 }

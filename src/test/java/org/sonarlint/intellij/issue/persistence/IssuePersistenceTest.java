@@ -24,6 +24,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
+import javax.annotation.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -125,6 +126,14 @@ public class IssuePersistenceTest {
 
     @Override public String getAssignee() {
       return "assignee";
+    }
+
+    @Override public String getSeverity() {
+      return "severity";
+    }
+
+    @Nullable @Override public String getType() {
+      return "type";
     }
   };
 }

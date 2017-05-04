@@ -46,6 +46,8 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getCreationDate()).isEqualTo(1_000_000);
     assertThat(trackable.getServerIssueKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(100);
+    assertThat(trackable.getSeverity()).isEqualTo("severity");
+    assertThat(trackable.getType()).isEqualTo("type");
   }
 
   private class NullTestIssue extends TestIssue {

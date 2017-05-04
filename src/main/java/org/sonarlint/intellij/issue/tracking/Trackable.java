@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.issue.tracking;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 
 public interface Trackable {
 
@@ -49,4 +50,9 @@ public interface Trackable {
   boolean isResolved();
 
   String getAssignee();
+
+  String getSeverity();
+
+  @Nullable
+  String getType();
 }

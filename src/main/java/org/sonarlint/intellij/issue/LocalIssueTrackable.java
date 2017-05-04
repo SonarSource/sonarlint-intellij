@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.issue;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.proto.Sonarlint;
 
@@ -69,5 +70,13 @@ public class LocalIssueTrackable implements Trackable {
 
   @Override public String getAssignee() {
     return issue.getAssignee();
+  }
+
+  @Override public String getSeverity() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Nullable @Override public String getType() {
+    throw new UnsupportedOperationException();
   }
 }
