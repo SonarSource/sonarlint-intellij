@@ -24,6 +24,9 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarApplication;
@@ -151,5 +154,10 @@ public class SonarLintUtilsTest extends SonarTest {
     assertThat(SonarLintUtils.age(System.currentTimeMillis() - 3_600_000 - 100_000)).isEqualTo("1 hour ago");
     assertThat(SonarLintUtils.age(System.currentTimeMillis() - 2 * 3_600_000 - 100_000)).isEqualTo("2 hours ago");
     assertThat(SonarLintUtils.age(System.currentTimeMillis() - 24 * 3_600_000 - 100_000)).isEqualTo("1 day ago");
+    assertThat(SonarLintUtils.age(LocalDateTime.now()
+      .minus(15, ChronoUnit.MONTHS)
+      .atZone(ZoneId.systemDefault())
+      .toInstant()
+      .toEpochMilli())).isEqualTo("1 year ago");
   }
 }
