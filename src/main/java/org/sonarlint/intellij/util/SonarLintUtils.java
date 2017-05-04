@@ -101,7 +101,7 @@ public class SonarLintUtils {
 
   public static Image iconToImage(Icon icon) {
     if (icon instanceof ImageIcon) {
-      return ((ImageIcon)icon).getImage();
+      return ((ImageIcon) icon).getImage();
     } else {
       int w = icon.getIconWidth();
       int h = icon.getIconHeight();
@@ -301,7 +301,10 @@ public class SonarLintUtils {
       .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
       .trustManager(certificateManager.getCustomTrustManager())
       .url(server.getHostUrl());
-    if (StringUtil.isNotEmpty(server.getToken())) {
+    if (!isBlank(server.getOrganizationKey())) {
+      serverConfigBuilder.organizationKey(server.getOrganizationKey());
+    }
+    if (!isBlank(server.getToken())) {
       serverConfigBuilder.token(server.getToken());
     } else {
       serverConfigBuilder.credentials(server.getLogin(), server.getPassword());

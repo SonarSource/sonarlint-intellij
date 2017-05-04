@@ -24,7 +24,7 @@ import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
 import javax.swing.JPanel;
-import org.apache.commons.codec.binary.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import com.intellij.openapi.project.Project;
 
