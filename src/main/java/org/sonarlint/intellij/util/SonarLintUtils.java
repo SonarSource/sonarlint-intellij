@@ -50,10 +50,12 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -354,22 +356,35 @@ public class SonarLintUtils {
   }
 
   public static String age(long creationDate) {
-    Date date = new Date(creationDate);
-    Date now = new Date();
-    long days = TimeUnit.MILLISECONDS.toDays(now.getTime() - date.getTime());
+    LocalDateTime creation = LocalDateTime.ofInstant(Instant.ofEpochMilli(creationDate), ZoneId.systemDefault());
+    LocalDateTime now = LocalDateTime.now();
+
+    long years = ChronoUnit.YEARS.between(creation, now);
+    if (years > 0) {
+      return pluralize(years, "year");
+    }
+    long months = ChronoUnit.MONTHS.between(creation, now);
+    if (months > 0) {
+      return pluralize(months, "month");
+    }
+    long days = ChronoUnit.DAYS.between(creation, now);
     if (days > 0) {
-      return pluralize(days, "day", "days");
+      return pluralize(days, "day");
     }
-    long hours = TimeUnit.MILLISECONDS.toHours(now.getTime() - date.getTime());
+    long hours = ChronoUnit.HOURS.between(creation, now);
     if (hours > 0) {
-      return pluralize(hours, "hour", "hours");
+      return pluralize(hours, "hour");
     }
-    long minutes = TimeUnit.MILLISECONDS.toMinutes(now.getTime() - date.getTime());
+    long minutes = ChronoUnit.MINUTES.between(creation, now);
     if (minutes > 0) {
-      return pluralize(minutes, "minute", "minutes");
+      return pluralize(minutes, "minute");
     }
 
     return "few seconds ago";
+  }
+
+  private static String pluralize(long strictlyPositiveCount, String singular) {
+    return pluralize(strictlyPositiveCount, singular, singular + "s");
   }
 
   private static String pluralize(long strictlyPositiveCount, String singular, String plural) {
