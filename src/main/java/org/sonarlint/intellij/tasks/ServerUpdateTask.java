@@ -90,7 +90,7 @@ public class ServerUpdateTask {
         log.log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       }
 
-      updateModules(serverConfiguration);
+      updateModules(serverConfiguration, monitor);
 
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + server.getName() + "' was cancelled");
@@ -106,7 +106,7 @@ public class ServerUpdateTask {
     }
   }
 
-  private void updateModules(ServerConfiguration serverConfiguration) {
+  private void updateModules(ServerConfiguration serverConfiguration, TaskProgressMonitor monitor) {
     //here we assume that server is updated, or this won't work
     final Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
     final Set<String> invalidModules = new HashSet<>();
@@ -114,7 +114,7 @@ public class ServerUpdateTask {
     for (Map.Entry<String, List<Project>> entry : projectsPerModule.entrySet()) {
       String moduleKey = entry.getKey();
       if (existingProjectKeys.contains(moduleKey)) {
-        updateModule(serverConfiguration, moduleKey, entry.getValue());
+        updateModule(serverConfiguration, moduleKey, entry.getValue(), monitor);
       } else {
         invalidModules.add(moduleKey);
       }
@@ -132,9 +132,9 @@ public class ServerUpdateTask {
     }
   }
 
-  private void updateModule(ServerConfiguration serverConfiguration, String moduleKey, List<Project> projects) {
+  private void updateModule(ServerConfiguration serverConfiguration, String moduleKey, List<Project> projects, TaskProgressMonitor monitor) {
     try {
-      engine.updateModule(serverConfiguration, moduleKey);
+      engine.updateModule(serverConfiguration, moduleKey, monitor);
       log.log("Module '" + moduleKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       projects.forEach(ServerUpdateTask::analyzeOpenFiles);
     } catch (Exception e) {

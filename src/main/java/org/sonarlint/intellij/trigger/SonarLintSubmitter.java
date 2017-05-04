@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.trigger;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
@@ -111,7 +110,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean autoTrigger) {
-    Multimap<Module, VirtualFile> filesByModule = HashMultimap.create();
+    HashMultimap<Module, VirtualFile> filesByModule = HashMultimap.create();
 
     for (VirtualFile file : files) {
       Module m = utils.findModuleForFile(file, myProject);

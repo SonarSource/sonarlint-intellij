@@ -27,6 +27,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteModule;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -48,8 +49,9 @@ public class ServerDownloadProjectTask extends Task.Modal {
 
   @Override public void run(@NotNull ProgressIndicator indicator) {
     try {
+      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator);
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      this.result = engine.downloadAllModules(serverConfiguration);
+      this.result = engine.downloadAllModules(serverConfiguration, monitor);
     } catch (Exception e) {
       LOGGER.info("Failed to download list of projects", e);
       this.exception = e;

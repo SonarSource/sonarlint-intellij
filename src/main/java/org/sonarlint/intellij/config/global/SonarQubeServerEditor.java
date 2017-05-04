@@ -71,6 +71,9 @@ public class SonarQubeServerEditor extends DialogWrapper {
   private JBTextField loginText;
   private JBLabel loginLabel;
 
+  private JBTextField organizationKeyText;
+  private JBLabel organizationLabel;
+
   private JBPasswordField passwordText;
   private JBLabel passwordLabel;
 
@@ -149,6 +152,14 @@ public class SonarQubeServerEditor extends DialogWrapper {
     urlText.setText(server.getHostUrl());
     urlText.getEmptyText().setText("Example: http://localhost:9000");
     urlLabel.setLabelFor(urlText);
+
+    organizationLabel = new JBLabel("Organization:", SwingConstants.RIGHT);
+    organizationLabel.setDisplayedMnemonic('O');
+    organizationKeyText = new JBTextField();
+    organizationKeyText.setDocument(new PlainDocument());
+    organizationKeyText.setText(server.getOrganizationKey());
+    organizationKeyText.getEmptyText().setText("Leave empty to use the Default Organization.");
+    organizationLabel.setLabelFor(urlText);
 
     authTypeLabel = new JBLabel("Authentication type:", SwingConstants.RIGHT);
 
@@ -245,6 +256,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     ServerFormBuilder builder = new ServerFormBuilder()
       .addLabeledComponent(nameLabel, nameText, true)
       .addLabeledComponent(urlLabel, urlText, true)
+      .addLabeledComponent(organizationLabel, organizationKeyText, true)
       .addLabeledComponent(authTypeLabel, authTypeComboBox, false)
       .addLabeledComponentWithButton(tokenLabel, tokenText, tokenButton)
       .addLabeledComponent(loginLabel, loginText, true)
@@ -287,7 +299,8 @@ public class SonarQubeServerEditor extends DialogWrapper {
   private SonarQubeServer createServer() {
     SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
       .setName(nameText.getText().trim())
-      .setHostUrl(urlText.getText().trim());
+      .setHostUrl(urlText.getText().trim())
+      .setOrganizationKey(organizationKeyText.getText().trim());
 
     if (AUTH_TOKEN.equals(authTypeComboBox.getSelectedItem())) {
       builder.setToken(new String(tokenText.getPassword()))
