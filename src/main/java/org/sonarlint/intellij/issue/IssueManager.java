@@ -132,7 +132,7 @@ public class IssueManager extends AbstractProjectComponent {
     matchingInProgress.lock();
     Input<Trackable> baseInput = () -> getPreviousIssues(file);
     Input<LiveIssue> rawInput = () -> rawIssues;
-    updateTrackedIssues(file, baseInput, rawInput);
+    updateTrackedIssues(file, baseInput, rawInput, false);
     matchingInProgress.unlock();
   }
 
@@ -142,26 +142,28 @@ public class IssueManager extends AbstractProjectComponent {
     Input<Trackable> baseInput = () -> serverIssues;
     Input<LiveIssue> rawInput = () -> previousIssues;
 
-    updateTrackedIssues(file, baseInput, rawInput);
+    updateTrackedIssues(file, baseInput, rawInput, true);
     matchingInProgress.unlock();
 
     Map<VirtualFile, Collection<LiveIssue>> map = Collections.singletonMap(file, cache.getLive(file));
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
   }
 
-  private <T extends Trackable> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LiveIssue> rawInput) {
+  private <T extends Trackable> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LiveIssue> rawInput, boolean isServerIssueMatching) {
     Collection<LiveIssue> trackedIssues = new ArrayList<>();
     Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(rawInput, baseInput);
     for (Map.Entry<LiveIssue, ? extends Trackable> entry : tracking.getMatchedRaws().entrySet()) {
       LiveIssue rawMatched = entry.getKey();
       Trackable previousMatched = entry.getValue();
-      copyFromPrevious(rawMatched, previousMatched);
+      copyFromPrevious(rawMatched, previousMatched, isServerIssueMatching);
       trackedIssues.add(rawMatched);
     }
     for (LiveIssue newIssue : tracking.getUnmatchedRaws()) {
       if (newIssue.getServerIssueKey() != null) {
+        // were matched before with server issues, now not anymore
         wipeServerIssueDetails(newIssue);
       } else if (newIssue.getCreationDate() == null) {
+        // first time seen, even locally
         newIssue.setCreationDate(System.currentTimeMillis());
       }
       trackedIssues.add(newIssue);
@@ -169,15 +171,26 @@ public class IssueManager extends AbstractProjectComponent {
     cache.save(file, trackedIssues);
   }
 
-  private static void copyFromPrevious(LiveIssue rawMatched, Trackable previousMatched) {
+  /**
+   * Previous matched will be either server issue or preexisting local issue.
+   */
+  private static void copyFromPrevious(LiveIssue rawMatched, Trackable previousMatched, boolean isServerIssueMatching) {
     rawMatched.setCreationDate(previousMatched.getCreationDate());
     rawMatched.setServerIssueKey(previousMatched.getServerIssueKey());
     rawMatched.setResolved(previousMatched.isResolved());
     rawMatched.setAssignee(previousMatched.getAssignee());
+
+    if (isServerIssueMatching) {
+      rawMatched.setSeverity(previousMatched.getSeverity());
+      if (previousMatched.getType() != null) {
+        // old SQ servers won't return this field
+        rawMatched.setType(previousMatched.getType());
+      }
+    }
   }
 
   private static void wipeServerIssueDetails(LiveIssue issue) {
-    issue.setCreationDate(null);
+    // we keep creation date from the old server issue
     issue.setServerIssueKey(null);
     issue.setResolved(false);
     issue.setAssignee("");

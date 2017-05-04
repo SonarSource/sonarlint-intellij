@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.issue;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 
@@ -78,5 +79,13 @@ public class ServerIssueTrackable implements Trackable {
 
   @Override public String getAssignee() {
     return serverIssue.assigneeLogin();
+  }
+
+  @Override public String getSeverity() {
+    return serverIssue.severity();
+  }
+
+  @Nullable @Override public String getType() {
+    return serverIssue.type();
   }
 }

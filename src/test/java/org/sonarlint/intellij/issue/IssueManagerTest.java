@@ -47,20 +47,16 @@ import static org.mockito.Mockito.when;
 
 public class IssueManagerTest extends SonarTest {
   private IssueManager manager;
-
   @Mock
   private LiveIssueCache cache;
   @Mock
   private VirtualFile file1;
-  @Mock
-  private VirtualFile file2;
   @Mock
   private Document document;
   @Mock
   private IssuePersistence store;
 
   private LiveIssue issue1;
-  private LiveIssue issue2;
 
   @Captor
   private ArgumentCaptor<Collection<LiveIssue>> issueCollectionCaptor;
@@ -69,58 +65,60 @@ public class IssueManagerTest extends SonarTest {
   public void prepare() {
     MockitoAnnotations.initMocks(this);
     when(file1.isValid()).thenReturn(true);
-    when(file2.isValid()).thenReturn(true);
     when(file1.getPath()).thenReturn("file1");
-    when(file2.getPath()).thenReturn("file2");
 
     when(project.getBasePath()).thenReturn("");
     manager = new IssueManager(project, cache, store);
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
-    issue2 = createRangeStoredIssue(2, "issue 2", 10);
 
+    when(cache.contains(file1)).thenReturn(true);
     when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue1));
-    when(cache.getLive(file2)).thenReturn(Collections.singletonList(issue2));
   }
 
   @Test
   public void should_return_file_issues() {
     assertThat(manager.getForFile(file1)).containsExactly(issue1);
-    assertThat(manager.getForFile(file2)).containsExactly(issue2);
   }
 
   @Test
   public void testTracking() {
     // tracking based on setRuleKey / line number
-    manager.clear();
     LiveIssue i1 = createRangeStoredIssue(1, "issue 1", 10);
     i1.setCreationDate(1000L);
+    i1.setSeverity("old");
+    i1.setType("old");
+    when(cache.contains(file1)).thenReturn(true);
     when(cache.getLive(file1)).thenReturn(Collections.singletonList(i1));
 
     LiveIssue i2 = createRangeStoredIssue(1, "issue 1", 10);
     i2.setCreationDate(2000L);
+    i2.setSeverity("severity");
+    i2.setType("type");
+
     manager.store(file1, Collections.singletonList(i2));
 
-    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
+
     assertThat(fileIssues).hasSize(1);
     assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(1000);
+    assertThat(fileIssues.iterator().next().getSeverity()).isEqualTo("severity");
+    assertThat(fileIssues.iterator().next().getType()).isEqualTo("type");
   }
 
   @Test
   public void testTracking_checksum() {
     // tracking based on checksum
-    LiveIssue i1 = createRangeStoredIssue(1, "issue 1", 10);
-    i1.setCreationDate(1000L);
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(i1));
-    when(cache.contains(file1)).thenReturn(true);
+    issue1.setCreationDate(1000L);
 
     LiveIssue i2 = createRangeStoredIssue(1, "issue 1", 11);
     i2.setCreationDate(2000L);
     manager.store(file1, Collections.singletonList(i2));
 
     verify(cache).save(eq(file1), issueCollectionCaptor.capture());
-
     Collection<LiveIssue> issues = issueCollectionCaptor.getValue();
+
     assertThat(issues).hasSize(1);
     assertThat(issues.iterator().next().getCreationDate()).isEqualTo(1000);
   }
@@ -129,79 +127,90 @@ public class IssueManagerTest extends SonarTest {
   public void should_copy_server_issue_on_match() {
     String serverIssueKey = "dummyServerIssueKey";
 
-    LiveIssue localIssue = createRangeStoredIssue(1, "issue 1", 10);
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(localIssue));
+    issue1.setSeverity("localSeverity");
+    issue1.setType("localType");
 
     LiveIssue serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setServerIssueKey(serverIssueKey);
+    serverIssue.setSeverity("serverSeverity");
+    // old SQ servers don't give type
+    serverIssue.setType(null);
     manager.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
     assertThat(fileIssues).hasSize(1);
 
     LiveIssue issuePointer = fileIssues.iterator().next();
-    assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
+    assertThat(issuePointer.uid()).isEqualTo(issue1.uid());
     assertThat(issuePointer.getServerIssueKey()).isEqualTo(serverIssueKey);
+    assertThat(issuePointer.getSeverity()).isEqualTo("serverSeverity");
+    assertThat(issuePointer.getType()).isEqualTo("localType");
   }
 
   @Test
   public void should_preserve_server_issue_if_moved_locally() {
     String serverIssueKey = "dummyServerIssueKey";
+    issue1.setServerIssueKey(serverIssueKey);
 
-    LiveIssue localIssue = createRangeStoredIssue(1, "local issue", 10);
-    localIssue.setServerIssueKey(serverIssueKey);
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(localIssue));
-
-    LiveIssue serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
+    LiveIssue serverIssue = createRangeStoredIssue(2, "server issue", issue1.getLine() + 100);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setResolved(true);
+    serverIssue.setSeverity("sev");
+    serverIssue.setType("type");
     manager.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
+
     assertThat(fileIssues).hasSize(1);
 
     LiveIssue issuePointer = fileIssues.iterator().next();
     // the local issue is preserved ...
-    assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
-    assertThat(issuePointer.getLine()).isEqualTo(localIssue.getLine());
+    assertThat(issuePointer.uid()).isEqualTo(issue1.uid());
+    assertThat(issuePointer.getLine()).isEqualTo(issue1.getLine());
     // ... + the change from the server is copied
     assertThat(issuePointer.isResolved()).isTrue();
+    assertThat(issuePointer.getSeverity()).isEqualTo("sev");
+    assertThat(issuePointer.getType()).isEqualTo("type");
   }
 
   @Test
   public void should_ignore_server_issue_if_not_matched() {
-    LiveIssue localIssue = createRangeStoredIssue(1, "local issue", 10);
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(localIssue));
-
-    LiveIssue serverIssue = createRangeStoredIssue(2, "server issue", localIssue.getLine() + 100);
+    LiveIssue serverIssue = createRangeStoredIssue(2, "server issue", issue1.getLine() + 100);
     serverIssue.setServerIssueKey("dummyServerIssueKey");
     manager.matchWithServerIssues(file1, Collections.singletonList(serverIssue));
 
-    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
-    assertThat(fileIssues).hasSize(1);
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
 
+    assertThat(fileIssues).hasSize(1);
     assertThat(manager.getForFileOrNull(file1)).containsExactly(fileIssues.iterator().next());
 
     LiveIssue issuePointer = fileIssues.iterator().next();
-    assertThat(issuePointer.uid()).isEqualTo(localIssue.uid());
+    assertThat(issuePointer.uid()).isEqualTo(issue1.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
   }
 
   @Test
   public void should_drop_server_issue_reference_if_gone() {
-    LiveIssue issue = createRangeStoredIssue(1, "issue 1", 10);
-    issue.setServerIssueKey("dummyServerIssueKey");
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
+    issue1.setCreationDate(1000L);
+    issue1.setServerIssueKey("dummyServerIssueKey");
+    issue1.setSeverity("sev");
 
     manager.matchWithServerIssues(file1, Collections.emptyList());
 
-    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
     assertThat(fileIssues).hasSize(1);
 
     LiveIssue issuePointer = fileIssues.iterator().next();
-    assertThat(issuePointer.uid()).isEqualTo(issue.uid());
+    assertThat(issuePointer.uid()).isEqualTo(issue1.uid());
     assertThat(issuePointer.getServerIssueKey()).isNull();
-    assertThat(issuePointer.getCreationDate()).isNull();
+
+    // keep old creation date and severity
+    assertThat(issuePointer.getCreationDate()).isEqualTo(1000L);
+    assertThat(issuePointer.getSeverity()).isEqualTo("sev");
   }
 
   @Test
@@ -214,16 +223,17 @@ public class IssueManagerTest extends SonarTest {
 
   @Test
   public void should_update_server_issue() {
-    LiveIssue issue = createRangeStoredIssue(1, "issue 1", 10);
-    issue.setServerIssueKey("dummyServerIssueKey");
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
+    issue1.setServerIssueKey("dummyServerIssueKey");
 
-    issue.setResolved(true);
+    LiveIssue serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     String newAssignee = "newAssignee";
-    issue.setAssignee(newAssignee);
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
+    serverIssue.setAssignee(newAssignee);
+    serverIssue.setResolved(true);
 
-    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    manager.matchWithServerIssues(file1, Collections.singleton(serverIssue));
+
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
     assertThat(fileIssues).hasSize(1);
 
     LiveIssue issuePointer = fileIssues.iterator().next();
@@ -233,14 +243,13 @@ public class IssueManagerTest extends SonarTest {
 
   @Test
   public void should_preserve_creation_date_of_leaked_issues_in_connected_mode() {
-    LiveIssue issue = createRangeStoredIssue(1, "issue 1", 10);
     Long creationDate = 1L;
-    issue.setCreationDate(creationDate);
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(issue));
+    issue1.setCreationDate(creationDate);
 
     manager.matchWithServerIssues(file1, Collections.emptyList());
 
-    Collection<LiveIssue> fileIssues = manager.getForFile(file1);
+    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
     assertThat(fileIssues).hasSize(1);
     assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(creationDate);
   }

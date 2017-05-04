@@ -45,14 +45,14 @@ public class LiveIssue implements Trackable {
   private final PsiFile psiFile;
   private final Integer textRangeHash;
   private final Integer lineHash;
-  private final String severity;
-  private final String type;
   private final String ruleName;
   private final String message;
   private final String ruleKey;
   private final List<Flow> flows;
 
   // tracked fields (mutable)
+  private String severity;
+  private String type;
   private Long creationDate;
   private String serverIssueKey;
   private boolean resolved;
@@ -147,10 +147,12 @@ public class LiveIssue implements Trackable {
     return psiFile;
   }
 
+  @Override
   public String getSeverity() {
     return severity;
   }
 
+  @Override
   public String getType() {
     return type;
   }
@@ -189,6 +191,14 @@ public class LiveIssue implements Trackable {
 
   public void setAssignee(String assignee) {
     this.assignee = assignee;
+  }
+
+  public void setSeverity(String severity) {
+    this.severity = severity;
+  }
+
+  public void setType(@Nullable String type) {
+    this.type = type;
   }
 
   public List<Flow> flows() {
