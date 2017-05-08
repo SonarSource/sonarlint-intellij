@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.editor.colors.EditorColorsScheme;
+import com.intellij.openapi.options.FontSize;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.IdeBorderFactory;
@@ -74,7 +75,7 @@ public class SonarLintRulePanel {
     StyleSheet styleSheet = kit.getStyleSheet();
     EditorColorsScheme scheme = EditorColorsManager.getInstance().getGlobalScheme();
     String fontName = scheme.getFontPreferences().getFontFamily();
-    styleSheet.addRule("body {font-family:" + fontName + ";}");
+    styleSheet.addRule("body {font-family:" + fontName + "; font-size: " + FontSize.SMALL.getSize() + ";}");
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
 
