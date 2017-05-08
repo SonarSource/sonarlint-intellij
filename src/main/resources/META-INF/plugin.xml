@@ -184,6 +184,10 @@
     </extensionPoints>
 
     <actions>
+        <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="true" icon="/images/ico-sonarlint-13.png">
+            <add-to-group anchor="last" group-id="AnalyzeMenu"/>
+        </group>
+
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
         <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
@@ -192,6 +196,7 @@
                 icon="SonarLintIcons.SONARLINT">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
         <action id="SonarLint.AnalyzeChangedFiles"
@@ -199,6 +204,15 @@
                 text="Analyze VCS Changed Files with SonarLint"
                 description="Run a SonarLint analysis on VCS changed files"
                 icon="SonarLintIcons.SONARLINT">
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
+        </action>
+
+        <action id="SonarLint.AnalyzeAllFiles"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
+                text="Analyze All Files with SonarLint"
+                description="Run a SonarLint analysis on all files in the project"
+                icon="SonarLintIcons.SONARLINT">
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
         <action id="SonarLint.toolwindow.Cancel"
@@ -215,6 +229,7 @@
                 description="Configure SonarLint"
                 icon="SonarLintIcons.TOOLS">
         </action>
+
     </actions>
 
 </idea-plugin>
