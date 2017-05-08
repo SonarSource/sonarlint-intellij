@@ -28,10 +28,12 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -44,7 +46,10 @@ import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
+import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
+import org.sonarsource.sonarlint.core.client.api.connected.UpdateResult;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
+import org.sonarsource.sonarlint.core.plugin.Version;
 
 public class ServerUpdateTask {
   private static final Logger LOGGER = Logger.getInstance(ServerUpdateTask.class);
@@ -86,7 +91,15 @@ public class ServerUpdateTask {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
 
       if (!onlyModules) {
-        engine.update(serverConfiguration, monitor);
+        UpdateResult updateResult = engine.update(serverConfiguration, monitor);
+        Collection<SonarAnalyzer> tooOld = updateResult.analyzers().stream()
+          .filter(SonarAnalyzer::sonarlintCompatible)
+          .filter(ServerUpdateTask::tooOld)
+          .collect(Collectors.toList());
+        if (!tooOld.isEmpty()) {
+          ApplicationManager.getApplication().invokeAndWait(() -> Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld),
+            "Analyzers Not Loaded"));
+        }
         log.log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       }
 
@@ -104,6 +117,37 @@ public class ServerUpdateTask {
         }
       }, ModalityState.any());
     }
+  }
+
+  private static String buildMinimumVersionFailMessage(Collection<SonarAnalyzer> failingAnalyzers) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("The following plugins do not meet the required minimum versions, please upgrade them: ");
+
+    boolean first = true;
+    for (SonarAnalyzer p : failingAnalyzers) {
+      if (!first) {
+        builder.append(",");
+      } else {
+        first = false;
+      }
+      builder.append(p.key())
+        .append(" (installed: ")
+        .append(p.version())
+        .append(", minimum: ")
+        .append(p.minimumVersion())
+        .append(")");
+    }
+
+    return builder.toString();
+  }
+
+  private static boolean tooOld(SonarAnalyzer analyzer) {
+    if (analyzer.minimumVersion() != null && analyzer.version() != null) {
+      Version minimum = Version.create(analyzer.minimumVersion());
+      Version version = Version.create(analyzer.version());
+      return version.compareTo(minimum) < 0;
+    }
+    return false;
   }
 
   private void updateModules(ServerConfiguration serverConfiguration, TaskProgressMonitor monitor) {
