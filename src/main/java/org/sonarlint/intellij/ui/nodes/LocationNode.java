@@ -66,8 +66,6 @@ public class LocationNode extends AbstractNode {
     renderer.append("  ");
     if (message != null && !message.isEmpty() && !"...".equals(message)) {
       renderer.append(message, bold ? SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES : SimpleTextAttributes.REGULAR_ATTRIBUTES);
-    } else {
-      renderer.append("[ no message ]");
     }
   }
 

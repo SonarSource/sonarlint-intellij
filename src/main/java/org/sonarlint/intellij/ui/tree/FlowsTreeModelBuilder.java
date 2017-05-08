@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -73,13 +75,15 @@ public class FlowsTreeModelBuilder {
     for (LiveIssue.Flow f : flows) {
       LabelNode label = new LabelNode("Flow " + i);
       primaryLocation.add(label);
-      int j = f.locations().size();
-      for (LiveIssue.IssueLocation location : f.locations()) {
+
+      List<LiveIssue.IssueLocation> reversedLocations = new ArrayList<>(f.locations());
+      Collections.reverse(reversedLocations);
+      int j = 1;
+      for (LiveIssue.IssueLocation location : reversedLocations) {
         LocationNode locationNode = new LocationNode(j, location.location(), location.message());
         label.add(locationNode);
-        j--;
+        j++;
       }
-      label.add(new LocationNode(j, rangeMarker, message));
       i++;
     }
     model.setRoot(summary);
@@ -108,9 +112,12 @@ public class FlowsTreeModelBuilder {
     primaryLocation.setBold(true);
     summary.add(primaryLocation);
 
-    int i = flow.locations().size();
-    for (LiveIssue.IssueLocation location : flow.locations()) {
-      LocationNode locationNode = new LocationNode(i--, location.location(), location.message());
+    List<LiveIssue.IssueLocation> reversedLocations = new ArrayList<>(flow.locations());
+    Collections.reverse(reversedLocations);
+
+    int i = 1;
+    for (LiveIssue.IssueLocation location : reversedLocations) {
+      LocationNode locationNode = new LocationNode(i++, location.location(), location.message());
       primaryLocation.add(locationNode);
     }
 
