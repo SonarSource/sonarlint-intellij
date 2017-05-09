@@ -99,6 +99,10 @@ public class ServerIssueTrackableTest {
       return "severity";
     }
 
+    @Override public String type() {
+      return "type";
+    }
+
     @Override public boolean manualSeverity() {
       return false;
     }

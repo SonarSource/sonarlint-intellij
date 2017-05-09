@@ -29,6 +29,7 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class LocationNodeTest {
@@ -65,6 +66,5 @@ public class LocationNodeTest {
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);
     verify(renderer).append("3:", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
-    verify(renderer).append("[ no message ]");
   }
 }
