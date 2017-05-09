@@ -101,15 +101,14 @@ public class StandaloneTest {
   @Test
   public void simpleJavascript() throws Exception {
     ClientInputFile inputFile = prepareInputFile("Foo.js",
-      "var Person = function(first, last, middle) {\n"
-        + "    this.middle = middle; this.last = last;\n"
-        + "};");
+      "for (;;) {}");
     List<Issue> issues = analyze(inputFile);
 
     assertThat(issues)
       .extracting("ruleKey", "startLine", "inputFile.path", "severity")
       .containsOnly(
-        tuple("javascript:OneStatementPerLine", 2, inputFile.getPath(), "MAJOR"));
+        tuple("javascript:S2189", 1, inputFile.getPath(), "BLOCKER"),
+        tuple("javascript:EmptyBlock", 1, inputFile.getPath(), "MAJOR"));
   }
 
   @Test
