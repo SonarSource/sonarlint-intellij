@@ -97,8 +97,8 @@ public class ServerUpdateTask {
           .filter(ServerUpdateTask::tooOld)
           .collect(Collectors.toList());
         if (!tooOld.isEmpty()) {
-          ApplicationManager.getApplication().invokeAndWait(() -> Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld),
-            "Analyzers Not Loaded"));
+          ApplicationManager.getApplication().invokeAndWait(() ->
+            Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
         }
         log.log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       }
