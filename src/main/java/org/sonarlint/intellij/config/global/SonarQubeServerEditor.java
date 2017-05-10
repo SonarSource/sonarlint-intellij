@@ -33,6 +33,7 @@ import com.intellij.util.net.HttpConfigurable;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -73,6 +74,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
 
   private JBTextField organizationKeyText;
   private JBLabel organizationLabel;
+  private JButton organizationSelect;
 
   private JBPasswordField passwordText;
   private JBLabel passwordLabel;
@@ -160,6 +162,8 @@ public class SonarQubeServerEditor extends DialogWrapper {
     organizationKeyText.setText(server.getOrganizationKey());
     organizationKeyText.getEmptyText().setText("Leave empty to use the Default Organization.");
     organizationLabel.setLabelFor(urlText);
+    organizationSelect = new JButton("Select From List");
+    organizationSelect.addActionListener(this::openOrganizationList);
 
     authTypeLabel = new JBLabel("Authentication type:", SwingConstants.RIGHT);
 
@@ -223,6 +227,14 @@ public class SonarQubeServerEditor extends DialogWrapper {
     return rootPanel;
   }
 
+  private void openOrganizationList(ActionEvent e) {
+    SonarQubeServer tmpServer = createServer();
+    OrganizationSelector selector = new OrganizationSelector(rootPanel, tmpServer);
+    if (selector.showAndGet()) {
+      organizationKeyText.setText(selector.getSelectedOrganizationKey());
+    }
+  }
+
   private void switchAuth(boolean token) {
     passwordText.setVisible(!token);
     passwordLabel.setVisible(!token);
@@ -256,7 +268,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     ServerFormBuilder builder = new ServerFormBuilder()
       .addLabeledComponent(nameLabel, nameText, true)
       .addLabeledComponent(urlLabel, urlText, true)
-      .addLabeledComponent(organizationLabel, organizationKeyText, true)
+      .addLabeledComponentWithButton(organizationLabel, organizationKeyText, organizationSelect)
       .addLabeledComponent(authTypeLabel, authTypeComboBox, false)
       .addLabeledComponentWithButton(tokenLabel, tokenText, tokenButton)
       .addLabeledComponent(loginLabel, loginText, true)
