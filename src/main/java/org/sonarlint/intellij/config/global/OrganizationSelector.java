@@ -52,8 +52,7 @@ import static javax.swing.JList.VERTICAL;
 
 public class OrganizationSelector extends DialogWrapper {
   private final SonarQubeServer server;
-  private JBList orgList;
-  private JBLabel text;
+  private JBList<RemoteOrganization> orgList;
   private String selectedOrganizationKey;
   private JPanel panel;
 
@@ -69,8 +68,8 @@ public class OrganizationSelector extends DialogWrapper {
 
   @Nullable @Override protected JComponent createCenterPanel() {
     panel = new JPanel(new BorderLayout(10, 10));
-    text = new JBLabel("Choose a organization from the list. Type to search.");
-    orgList = new JBList();
+    JBLabel text = new JBLabel("Choose a organization from the list. Type to search.");
+    orgList = new JBList<>();
     orgList.setLayoutOrientation(VERTICAL);
     orgList.setVisibleRowCount(8);
     orgList.setEnabled(false);
@@ -97,17 +96,14 @@ public class OrganizationSelector extends DialogWrapper {
     @Override
     public void mouseClicked(MouseEvent e) {
       if (e.getClickCount() == 2 && orgList.getSelectedValue() != null) {
-        RemoteOrganization org = (RemoteOrganization) orgList.getSelectedValue();
-        selectedOrganizationKey = org.getKey();
-        setOKActionEnabled(true);
+        organizationSelected();
         OrganizationSelector.this.close(0, true);
       }
     }
   }
 
   private void organizationSelected() {
-    RemoteOrganization org = (RemoteOrganization) orgList.getSelectedValue();
-    this.selectedOrganizationKey = org.getKey();
+    this.selectedOrganizationKey = orgList.getSelectedValue().getKey();
     this.setOKActionEnabled(true);
   }
 
@@ -116,6 +112,7 @@ public class OrganizationSelector extends DialogWrapper {
       super(null, "Updating List of Organizations", true);
     }
 
+    @Override
     public void run(ProgressIndicator progress) {
       try {
         ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
@@ -132,7 +129,7 @@ public class OrganizationSelector extends DialogWrapper {
     }
 
     public void setResults(List<RemoteOrganization> orgs) {
-      orgList.setListData(orgs.toArray());
+      orgList.setListData(orgs.toArray(new RemoteOrganization[orgs.size()]));
       orgList.setEnabled(true);
       orgList.requestFocusInWindow();
     }
@@ -143,7 +140,7 @@ public class OrganizationSelector extends DialogWrapper {
   }
 
   private class ListRenderer extends ColoredListCellRenderer<RemoteOrganization> {
-    @Override protected void customizeCellRenderer(JList<? extends RemoteOrganization> list, @Nullable RemoteOrganization value, int index, boolean selected, boolean hasFocus) {
+    @Override protected void customizeCellRenderer(JList list, @Nullable RemoteOrganization value, int index, boolean selected, boolean hasFocus) {
       if (value == null) {
         return;
       }

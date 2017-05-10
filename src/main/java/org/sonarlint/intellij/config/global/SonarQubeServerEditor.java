@@ -33,7 +33,6 @@ import com.intellij.util.net.HttpConfigurable;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -97,9 +96,9 @@ public class SonarQubeServerEditor extends DialogWrapper {
       .collect(Collectors.toSet());
 
     if (isCreating) {
-      super.setTitle("Create SonarQube server configuration");
+      super.setTitle("Create SonarQube Server Configuration");
     } else {
-      super.setTitle("Edit SonarQube server configuration");
+      super.setTitle("Edit SonarQube Server Configuration");
     }
     super.setModal(true);
     super.setResizable(true);
@@ -163,7 +162,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     organizationKeyText.getEmptyText().setText("Leave empty to use the Default Organization.");
     organizationLabel.setLabelFor(urlText);
     organizationSelect = new JButton("Select From List");
-    organizationSelect.addActionListener(this::openOrganizationList);
+    organizationSelect.addActionListener(e -> openOrganizationList());
 
     authTypeLabel = new JBLabel("Authentication type:", SwingConstants.RIGHT);
 
@@ -227,7 +226,7 @@ public class SonarQubeServerEditor extends DialogWrapper {
     return rootPanel;
   }
 
-  private void openOrganizationList(ActionEvent e) {
+  private void openOrganizationList() {
     SonarQubeServer tmpServer = createServer();
     OrganizationSelector selector = new OrganizationSelector(rootPanel, tmpServer);
     if (selector.showAndGet()) {
