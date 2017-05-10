@@ -52,7 +52,7 @@ import static javax.swing.JList.VERTICAL;
 
 public class OrganizationSelector extends DialogWrapper {
   private final SonarQubeServer server;
-  private JBList<RemoteOrganization> orgList;
+  private JBList orgList;
   private String selectedOrganizationKey;
   private JPanel panel;
 
@@ -69,7 +69,7 @@ public class OrganizationSelector extends DialogWrapper {
   @Nullable @Override protected JComponent createCenterPanel() {
     panel = new JPanel(new BorderLayout(10, 10));
     JBLabel text = new JBLabel("Choose a organization from the list. Type to search.");
-    orgList = new JBList<>();
+    orgList = new JBList();
     orgList.setLayoutOrientation(VERTICAL);
     orgList.setVisibleRowCount(8);
     orgList.setEnabled(false);
@@ -103,7 +103,8 @@ public class OrganizationSelector extends DialogWrapper {
   }
 
   private void organizationSelected() {
-    this.selectedOrganizationKey = orgList.getSelectedValue().getKey();
+    RemoteOrganization org = (RemoteOrganization) orgList.getSelectedValue();
+    this.selectedOrganizationKey = org.getKey();
     this.setOKActionEnabled(true);
   }
 
