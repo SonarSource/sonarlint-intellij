@@ -72,7 +72,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   protected IssueTreeModelBuilder treeBuilder;
   protected FlowsTree flowsTree;
   protected FlowsTreeModelBuilder flowsTreeBuilder;
-  private ActionToolbar mainToolbar;
+  protected ActionToolbar mainToolbar;
 
   AbstractIssuesPanel(Project project, ProjectBindingManager projectBindingManager) {
     super(false, true);

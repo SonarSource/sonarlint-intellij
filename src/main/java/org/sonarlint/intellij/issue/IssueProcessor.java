@@ -37,11 +37,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.sonar.scanner.protocol.input.ScannerInput;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
@@ -195,5 +198,30 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     return transformedFlows;
+  }
+
+  public Map<VirtualFile, Collection<LiveIssue>> transformServerIssues(Project project, List<ScannerInput.ServerIssue> localServerIssues) {
+    Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
+    for (ScannerInput.ServerIssue localIssue : localServerIssues) {
+      VirtualFile file = SonarLintUtils.getVirtualFile(project, localIssue.getPath());
+      if (file == null)  {
+        LOGGER.warn("Couldn't find vFile: " + localIssue.getPath());
+        continue;
+      }
+
+      Collection<LiveIssue> previousIssues = map.get(file);
+      List<LiveIssue> previousList = new ArrayList<>();
+      if (previousIssues != null) {
+        previousList.addAll(previousIssues);
+      }
+      try {
+        LiveIssue liveIssue = transformIssue(new LocalServerIssue(localIssue, file), file);
+        previousList.add(liveIssue);
+      } catch (IssueMatcher.NoMatchException e) {
+        LOGGER.warn(e);
+      }
+      map.put(file, previousList);
+    }
+    return map;
   }
 }

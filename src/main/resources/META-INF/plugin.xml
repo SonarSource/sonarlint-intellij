@@ -110,6 +110,9 @@
             <implementation-class>org.sonarlint.intellij.issue.AllFilesIssues</implementation-class>
         </component>
         <component>
+            <implementation-class>org.sonarlint.intellij.issue.ServerIssues</implementation-class>
+        </component>
+        <component>
             <implementation-class>org.sonarlint.intellij.editor.CodeAnalyzerRestarter</implementation-class>
         </component>
         <component>
@@ -215,6 +218,14 @@
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
+        <action id="SonarLint.SonarAnalyzeServerIssuesAction"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeServerIssuesAction"
+                text="Analyze SonarLint server issues"
+                description="Run SonarLint analysis on the server issues"
+                icon="SonarLintIcons.PLAY">
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
+        </action>
+
         <action id="SonarLint.toolwindow.Cancel"
                 class="org.sonarlint.intellij.actions.SonarCancel"
                 text="Cancel SonarLint Analysis"
@@ -230,6 +241,12 @@
                 icon="SonarLintIcons.TOOLS">
         </action>
 
+        <action id="SonarLint.toolwindow.ClearServerIssues"
+                class="org.sonarlint.intellij.actions.SonarClearServerIssues"
+                text="Clear list of server issues"
+                description="Clear list of server issues"
+                icon="SonarLintIcons.CLEAN">
+        </action>
     </actions>
 
 </idea-plugin>

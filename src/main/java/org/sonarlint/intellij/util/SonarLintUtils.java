@@ -30,6 +30,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -53,8 +54,13 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
@@ -401,6 +407,31 @@ public class SonarLintUtils {
     return Paths.get(project.getBasePath()).relativize(Paths.get(virtualFile.getPath())).toString();
   }
 
+  public static VirtualFile getVirtualFile(Project project, String relativePath) {
+    if (project.getBasePath() == null) {
+      throw new IllegalStateException("no base path in default project");
+    }
+    VirtualFile[] vFiles = SonarLintUtils.get(project, ProjectRootManager.class).getContentRoots();
+    List<VirtualFile> files = new ArrayList<>();
+    Arrays.stream(vFiles).forEach(vFile -> {
+      VirtualFile source = vFile.findFileByRelativePath(relativePath);
+      if (source != null && source.isValid()) {
+        files.add(source);
+      }
+    });
+    return !files.isEmpty() ? files.get(0) : null;
+  }
+
+  public static LocalDateTime getLocalDateTime(@Nullable Date dateTime) {
+    if (dateTime == null) {
+      return null;
+    }
+    Calendar cal = Calendar.getInstance();
+    cal.setTime(dateTime);
+    return LocalDateTime.of(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH),
+            cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE), cal.get(Calendar.SECOND));
+  }
+
   /**
    * Convert relative path to SonarQube file key
    *
@@ -412,6 +443,10 @@ public class SonarLintUtils {
       return relativePath.replaceAll(PATH_SEPARATOR_PATTERN, "/");
     }
     return relativePath;
+  }
+
+  public static String printDateTime(LocalDateTime dateTime) {
+    return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
   }
 
 }

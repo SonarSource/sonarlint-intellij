@@ -26,6 +26,7 @@ import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.ServerIssues;
 import org.sonarlint.intellij.ui.scope.CurrentFileController;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -38,11 +39,13 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TAB_LOGS = "Log";
   public static final String TAB_CURRENT_FILE = "Current file";
   public static final String TAB_ANALYSIS_RESULTS = "Project files";
+  public static final String TAB_SERVER_FILES = "Server issues";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
     addIssuesTab(project, toolWindow);
     addAnalysisResultsTab(project, toolWindow);
+    addServerFilesTab(project, toolWindow);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
   }
@@ -71,6 +74,19 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         false);
     toolWindow.getContentManager().addDataProvider(resultsPanel);
     toolWindow.getContentManager().addContent(analysisResultsContent);
+  }
+
+  private static void addServerFilesTab(Project project, ToolWindow toolWindow) {
+    ServerIssues serverIssues = SonarLintUtils.get(project, ServerIssues.class);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    SonarLintServerPanel serverPanel = new SonarLintServerPanel(project, serverIssues, projectBindingManager);
+    Content serverContent = toolWindow.getContentManager().getFactory()
+            .createContent(
+                    serverPanel,
+                    TAB_SERVER_FILES,
+                    false);
+    toolWindow.getContentManager().addDataProvider(serverPanel);
+    toolWindow.getContentManager().addContent(serverContent);
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
