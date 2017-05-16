@@ -351,6 +351,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         SonarQubeServer newServer = serverEditor.getServer();
         ((CollectionListModel) serverList.getModel()).setElementAt(newServer, selectedIndex);
         servers.set(servers.indexOf(selectedServer), newServer);
+        serverChangeListener.changed(servers);
       }
     }
   }
