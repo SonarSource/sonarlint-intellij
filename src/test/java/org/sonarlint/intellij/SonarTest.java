@@ -53,6 +53,7 @@ public abstract class SonarTest {
     module = createModule();
     app = mock(Application.class);
     ApplicationManager.setApplication(app, mock(Disposable.class));
+    when(app.isUnitTestMode()).thenReturn(true);
     when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
     when(app.isHeadlessEnvironment()).thenReturn(true);
     register(app, CertificateManager.class, new CertificateManager());

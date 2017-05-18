@@ -29,13 +29,14 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-public class FileEditorTriggerTest {
+public class FileEditorTriggerTest extends SonarTest {
   @Mock
   private Project project;
   @Mock
@@ -46,7 +47,7 @@ public class FileEditorTriggerTest {
   private FileEditorTrigger editorTrigger;
 
   @Before
-  public void setUp() {
+  public void start() {
     MockitoAnnotations.initMocks(this);
     SonarLintTestUtils.mockMessageBus(project);
     globalSettings = new SonarLintGlobalSettings();

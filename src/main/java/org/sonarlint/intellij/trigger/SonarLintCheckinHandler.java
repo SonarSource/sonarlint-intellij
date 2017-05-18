@@ -50,7 +50,7 @@ import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.actions.IssuesViewTabOpener;
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.ui.scope.ChangedFilesScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
@@ -182,7 +182,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS, true);
+    ServiceManager.getService(project, IssuesViewTabOpener.class).openProjectFiles(ChangedFilesScope.NAME);
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent {

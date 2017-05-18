@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -34,6 +35,8 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -68,7 +71,7 @@ public class SonarAnalyzeEditorFileActionTest extends SonarTest {
     when(utils.getSelectedFile(project)).thenReturn(f1);
 
     editorFileAction.actionPerformed(event);
-    verify(submitter).submitFiles(Collections.singleton(f1), TriggerType.ACTION, false);
+    verify(submitter).submitFiles(eq(Collections.singleton(f1)), eq(TriggerType.ACTION), any(AnalysisCallback.class), eq(false));
   }
 
   @Test

@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
-import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -31,7 +31,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final SonarLintSubmitter submitter;
@@ -41,7 +40,9 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
     super(project);
     this.submitter = submitter;
     this.globalSettings = globalSettings;
-    StartupManager.getInstance(myProject).registerPostStartupActivity(() -> afterStartup());
+    if (!ApplicationManager.getApplication().isUnitTestMode()) {
+      StartupManager.getInstance(myProject).registerPostStartupActivity(this::afterStartup);
+    }
   }
 
   /**

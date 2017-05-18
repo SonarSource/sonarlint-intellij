@@ -41,6 +41,7 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ChangedFilesScope extends AbstractScope implements Disposable {
+  public static final String NAME = "VCS changed files";
   private final Project project;
   private final ChangeListManager changeListManager;
   private final ChangedFilesIssues analysisResultsStore;
@@ -122,7 +123,7 @@ public class ChangedFilesScope extends AbstractScope implements Disposable {
   }
 
   @Override public String getDisplayName() {
-    return "VCS changed files";
+    return NAME;
   }
 
   @Override

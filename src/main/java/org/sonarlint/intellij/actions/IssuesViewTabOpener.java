@@ -25,6 +25,8 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
+import javax.annotation.CheckForNull;
+import javax.swing.JComponent;
 import org.sonarlint.intellij.ui.SonarLintAnalysisResultsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
@@ -38,37 +40,44 @@ public class IssuesViewTabOpener {
   /**
    * Must run in EDT
    */
-  public void open(String tab, boolean switchToChangedFiles) {
+  public void openProjectFiles(String scopeName) {
     ApplicationManager.getApplication().assertIsDispatchThread();
-
-    ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-    ToolWindow toolWindow = toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
+    ToolWindow toolWindow = getToolWindow();
     if (toolWindow != null) {
-      toolWindow.show(new ContentSelector(toolWindow, tab, switchToChangedFiles));
+      toolWindow.show(() -> {
+        JComponent component = selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS);
+        if (component != null) {
+          SonarLintAnalysisResultsPanel panel = (SonarLintAnalysisResultsPanel) component;
+          panel.switchScope(scopeName);
+        }
+      });
     }
   }
 
-  private static class ContentSelector implements Runnable {
-    private final ToolWindow toolWindow;
-    private final String tab;
-    private final boolean switchToChangedFiles;
-
-    private ContentSelector(ToolWindow toolWindow, String tab, boolean switchToChangedFiles) {
-      this.toolWindow = toolWindow;
-      this.tab = tab;
-      this.switchToChangedFiles = switchToChangedFiles;
+  /**
+   * Must run in EDT
+   */
+  public void openCurrentFile() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+    ToolWindow toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      toolWindow.show(() ->selectTab(toolWindow, SonarLintToolWindowFactory.TAB_CURRENT_FILE));
     }
+  }
 
-    @Override public void run() {
-      ContentManager contentManager = toolWindow.getContentManager();
-      Content content = contentManager.findContent(tab);
-      if (content != null) {
-        contentManager.setSelectedContent(content);
-        if (switchToChangedFiles) {
-          SonarLintAnalysisResultsPanel component = (SonarLintAnalysisResultsPanel) content.getComponent();
-          component.selectChangedFilesScope();
-        }
-      }
+  private ToolWindow getToolWindow() {
+    ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+    return toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
+  }
+
+  @CheckForNull
+  private static JComponent selectTab(ToolWindow toolWindow, String tabId) {
+    ContentManager contentManager = toolWindow.getContentManager();
+    Content content = contentManager.findContent(tabId);
+    if (content != null) {
+      contentManager.setSelectedContent(content);
+      return content.getComponent();
     }
+    return null;
   }
 }
