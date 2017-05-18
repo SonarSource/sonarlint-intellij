@@ -20,14 +20,18 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Arrays;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final SonarLintSubmitter submitter;
@@ -37,7 +41,7 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
     super(project);
     this.submitter = submitter;
     this.globalSettings = globalSettings;
-    project.getMessageBus().connect(project).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+    StartupManager.getInstance(myProject).registerPostStartupActivity(() -> afterStartup());
   }
 
   /**
@@ -45,6 +49,13 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
    * Tried: Project.isInitialized, Project.isOpen, schedule to EDT thread and to WriteAction.
    * So on startup, opened files will be submitted one by one.
    */
+
+  private void afterStartup() {
+    myProject.getMessageBus().connect(myProject).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+    VirtualFile[] openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
+    submitter.submitFiles(Arrays.asList(openFiles), TriggerType.EDITOR_OPEN, true);
+  }
+
   @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
     if (!globalSettings.isAutoTrigger()) {
