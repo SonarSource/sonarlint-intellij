@@ -20,9 +20,11 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.ui.UIUtil;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +39,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.ui.scope.ChangedFilesScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
@@ -73,12 +76,14 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
 
   private static class ShowIssuesCallable implements AnalysisCallback {
     private final ChangedFilesIssues changedFilesIssues;
+    private final Project project;
     private final Collection<VirtualFile> affectedFiles;
     private final IssueManager issueManager;
 
     private ShowIssuesCallable(Project project, Collection<VirtualFile> affectedFiles) {
       this.changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
       this.issueManager = SonarLintUtils.get(project, IssueManager.class);
+      this.project = project;
       this.affectedFiles = affectedFiles;
     }
 
@@ -91,6 +96,12 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
       Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
         .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
       changedFilesIssues.set(map);
+      showChangedFilesTab();
+    }
+
+    private void showChangedFilesTab() {
+      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class)
+        .openProjectFiles(ChangedFilesScope.NAME));
     }
   }
 }

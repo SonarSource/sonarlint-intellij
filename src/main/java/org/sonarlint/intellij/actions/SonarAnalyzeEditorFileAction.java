@@ -21,11 +21,14 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.ui.UIUtil;
 import java.util.Collections;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -67,7 +70,28 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    submitter.submitFiles(Collections.singleton(selectedFile), TriggerType.ACTION, executeBackground(e));
+    submitter.submitFiles(Collections.singleton(selectedFile), TriggerType.ACTION,new ShowIssuesCallable(project), executeBackground(e));
+  }
+
+  private class ShowIssuesCallable implements AnalysisCallback {
+    private final Project project;
+
+    private ShowIssuesCallable(Project project) {
+      this.project = project;
+    }
+
+    @Override public void onError(Throwable e) {
+      // do nothing
+    }
+
+    @Override
+    public void onSuccess() {
+      showCurrentFileTab();
+    }
+
+    private void showCurrentFileTab() {
+      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).openCurrentFile());
+    }
   }
 
   /**

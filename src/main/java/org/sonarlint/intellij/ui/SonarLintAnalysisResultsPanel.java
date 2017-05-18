@@ -33,6 +33,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import javax.swing.Box;
+import javax.swing.ComboBoxModel;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -49,8 +50,6 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
 
   private final transient LastAnalysisPanel lastAnalysisPanel;
   private transient AbstractScope scope;
-
-  private transient ChangedFilesScope changedFilesScope;
   private ComboBox scopeComboBox;
 
   public SonarLintAnalysisResultsPanel(Project project, ProjectBindingManager projectBindingManager) {
@@ -76,10 +75,6 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
   }
 
-  public void selectChangedFilesScope() {
-    scopeComboBox.setSelectedItem(changedFilesScope);
-  }
-
   @Override
   public void updateTexts() {
     lastAnalysisPanel.update(scope.getLastAnalysisDate(), scope.getLabelText());
@@ -103,23 +98,17 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
 
   private JComponent createScopePanel() {
     DefaultComboBoxModel comboModel = new DefaultComboBoxModel();
-    changedFilesScope = new ChangedFilesScope(project);
-    comboModel.addElement(changedFilesScope);
+    comboModel.addElement(new ChangedFilesScope(project));
     comboModel.addElement(new AllFilesScope(project));
+
+    scopeComboBox = new ComboBox(comboModel);
 
     // set selected element that was last saved, if any
     String savedSelectedScope = PropertiesComponent.getInstance(project).getValue(SELECTED_SCOPE_KEY);
     if (savedSelectedScope != null) {
-      for (int i = 0; i < comboModel.getSize(); i++) {
-        Object el = comboModel.getElementAt(i);
-        if (el.toString().equals(savedSelectedScope)) {
-          comboModel.setSelectedItem(el);
-          break;
-        }
-      }
+      switchScope(savedSelectedScope);
     }
 
-    scopeComboBox = new ComboBox(comboModel);
     scopeComboBox.addActionListener(evt -> switchScope((AbstractScope) scopeComboBox.getSelectedItem()));
     switchScope((AbstractScope) scopeComboBox.getSelectedItem());
     JPanel scopePanel = new JPanel(new GridBagLayout());
@@ -137,6 +126,17 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     scopePanel.add(Box.createHorizontalBox(), gc);
 
     return scopePanel;
+  }
+
+  public void switchScope(String scopeName) {
+    ComboBoxModel comboModel = scopeComboBox.getModel();
+    for (int i = 0; i < comboModel.getSize(); i++) {
+      Object el = comboModel.getElementAt(i);
+      if (el.toString().equals(scopeName)) {
+        comboModel.setSelectedItem(el);
+        break;
+      }
+    }
   }
 
   private void switchScope(AbstractScope newScope) {

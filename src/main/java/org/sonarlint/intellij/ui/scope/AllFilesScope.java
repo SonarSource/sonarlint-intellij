@@ -35,6 +35,7 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AllFilesScope extends AbstractScope {
+  public static final String NAME = "All project files";
   private final Project project;
   private final AllFilesIssues allFilesIssues;
   private SimpleActionGroup actionGroup;
@@ -61,7 +62,7 @@ public class AllFilesScope extends AbstractScope {
   }
 
   @Override public String getDisplayName() {
-    return "All project files";
+    return NAME;
   }
 
   @Override public String getEmptyText() {

@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
@@ -42,7 +44,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.ui.scope.AllFilesScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
@@ -67,7 +69,8 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
     Collection<VirtualFile> allFiles = getAllFiles(project);
-    AnalysisCallback callback = new ShowIssuesCallable(project, allFiles);
+    Notification notification = showNotification(project);
+    AnalysisCallback callback = new ShowIssuesCallable(project, allFiles, notification);
     submitter.submitFiles(allFiles, TriggerType.ACTION, callback, false);
   }
 
@@ -83,25 +86,39 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     return fileList;
   }
 
+  private static Notification showNotification(Project project) {
+    Notification notification = new Notification("SonarLint - Analyzing All Files",
+      "<b>SonarLint - Analyze All Files</b>",
+      "All files analysis may take a considerable amount of time to complete. "
+        + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
+      NotificationType.WARNING);
+    notification.setImportant(false);
+    notification.notify(project);
+    return notification;
+  }
+
   private static class ShowIssuesCallable implements AnalysisCallback {
     private final Project project;
     private final AllFilesIssues allFilesIssues;
     private final Collection<VirtualFile> affectedFiles;
+    private final Notification notification;
     private final IssueManager issueManager;
 
-    private ShowIssuesCallable(Project project, Collection<VirtualFile> affectedFiles) {
+    private ShowIssuesCallable(Project project, Collection<VirtualFile> affectedFiles, Notification notification) {
       this.project = project;
       this.allFilesIssues = SonarLintUtils.get(project, AllFilesIssues.class);
       this.issueManager = SonarLintUtils.get(project, IssueManager.class);
       this.affectedFiles = affectedFiles;
+      this.notification = notification;
     }
 
     @Override public void onError(Throwable e) {
-      // do nothing
+      notification.expire();
     }
 
     @Override
     public void onSuccess() {
+      notification.expire();
       Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
         .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
       allFilesIssues.set(map);
@@ -109,7 +126,8 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     }
 
     private void showAllFilesTab() {
-      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).open(SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS, false));
+      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class)
+        .openProjectFiles(AllFilesScope.NAME));
     }
   }
 }

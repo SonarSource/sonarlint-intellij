@@ -34,7 +34,7 @@ import org.sonarlint.intellij.actions.SonarClearIssues;
 
 /**
  * Creates and keeps a single instance of actions used by SonarLint.
- * Some actions are created programmatically instead of being declared in plugin.xml so that they reregistered in ActionManager,
+ * Some actions are created programmatically instead of being declared in plugin.xml so that they registered in ActionManager,
  * becoming accessible from the action search.
  */
 public class SonarLintActions implements ApplicationComponent {
