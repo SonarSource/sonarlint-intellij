@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.roots.ContentIterator;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
@@ -102,6 +103,7 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
       return true;
     });
 
+    Messages.setTestDialog(x -> Messages.OK);
     action.actionPerformed(event);
 
     verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ACTION), any(AnalysisCallback.class), eq(false));
