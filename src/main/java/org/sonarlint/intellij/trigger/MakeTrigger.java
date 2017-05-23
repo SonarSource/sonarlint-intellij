@@ -53,7 +53,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
   }
 
   @Override public void buildFinished(Project project, UUID sessionId, boolean isAutomake) {
-    if (project == null || !project.equals(myProject) || !isAutomake) {
+    if (!project.equals(myProject) || !isAutomake) {
       // covered by compilationFinished
       return;
     }

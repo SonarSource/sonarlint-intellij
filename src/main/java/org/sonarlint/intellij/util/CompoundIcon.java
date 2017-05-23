@@ -59,9 +59,17 @@ public class CompoundIcon implements Icon {
   public CompoundIcon(Axis axis, int gap, float alignmentX, float alignmentY, Icon... icons) {
     this.axis = axis;
     this.gap = gap;
-    this.alignmentX = alignmentX > 1.0f ? 1.0f : (alignmentX < 0.0f ? 0.0f : alignmentX);
-    this.alignmentY = alignmentY > 1.0f ? 1.0f : (alignmentY < 0.0f ? 0.0f : alignmentY);
 
+    if (alignmentX > 1.0f) {
+      this.alignmentX = 1.0f;
+    } else {
+      this.alignmentX = alignmentX < 0.0f ? 0.0f : alignmentX;
+    }
+    if (alignmentY > 1.0f) {
+      this.alignmentY = 1.0f;
+    } else {
+      this.alignmentY = alignmentY < 0.0f ? 0.0f : alignmentY;
+    }
     for (int i = 0; i < icons.length; i++) {
       if (icons[i] == null) {
         String message = "Icon (" + i + ") cannot be null";
