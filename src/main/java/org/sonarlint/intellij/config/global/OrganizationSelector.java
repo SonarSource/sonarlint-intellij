@@ -140,7 +140,7 @@ public class OrganizationSelector extends DialogWrapper {
     return selectedOrganizationKey;
   }
 
-  private class ListRenderer extends ColoredListCellRenderer<RemoteOrganization> {
+  private static class ListRenderer extends ColoredListCellRenderer<RemoteOrganization> {
     @Override protected void customizeCellRenderer(JList list, @Nullable RemoteOrganization value, int index, boolean selected, boolean hasFocus) {
       if (value == null) {
         return;
