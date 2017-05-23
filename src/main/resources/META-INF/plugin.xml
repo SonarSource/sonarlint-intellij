@@ -33,6 +33,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>2.10 - Support of SonarQube organizations</li>
         <li>2.9 - New code analyzers included in standalone mode. Collection of usage statistics</li>
         <li>2.8 - Analyze all files in project. New icons for issue types</li>
         <li>2.7 - Display of secondary locations of issues</li>
