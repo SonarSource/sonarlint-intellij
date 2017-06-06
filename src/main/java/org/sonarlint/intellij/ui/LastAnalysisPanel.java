@@ -34,6 +34,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class LastAnalysisPanel implements Disposable {
   private static final String NO_ANALYSIS = "NO_ANALYSIS";
@@ -67,7 +68,7 @@ public class LastAnalysisPanel implements Disposable {
       noAnalysisLabel.setText(emptyText);
     } else {
       layout.show(panel, WITH_ANALYSIS);
-      lastAnalysisLabel.setText("Analysis done " + SonarLintUtils.age(lastAnalysis.toEpochMilli()));
+      lastAnalysisLabel.setText("Analysis done " + DateUtils.toAge(lastAnalysis.toEpochMilli()));
     }
 
     panel.repaint();
@@ -106,7 +107,7 @@ public class LastAnalysisPanel implements Disposable {
   private void setTimer() {
     lastAnalysisTimeUpdater = new Timer(5000, e -> {
       if (lastAnalysis != null) {
-        lastAnalysisLabel.setText("Analysis done " + SonarLintUtils.age(lastAnalysis.toEpochMilli()));
+        lastAnalysisLabel.setText("Analysis done " + DateUtils.toAge(lastAnalysis.toEpochMilli()));
         panel.repaint();
       }
     });

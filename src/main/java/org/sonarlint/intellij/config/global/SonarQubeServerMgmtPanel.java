@@ -78,6 +78,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
+import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class SonarQubeServerMgmtPanel implements Disposable {
   private static final String LABEL_NO_SERVERS = "No servers";
@@ -295,7 +296,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       case UPDATED:
         GlobalStorageStatus storageStatus = engine.getGlobalStorageStatus();
         if (storageStatus != null) {
-          builder.append(SonarLintUtils.age(storageStatus.getLastUpdateDate().getTime()));
+          builder.append(DateUtils.toAge(storageStatus.getLastUpdateDate().getTime()));
         } else {
           builder.append("up to date");
         }

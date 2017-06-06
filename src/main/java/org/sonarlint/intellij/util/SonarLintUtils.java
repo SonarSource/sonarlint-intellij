@@ -355,45 +355,6 @@ public class SonarLintUtils {
     return false;
   }
 
-  public static String age(long creationDate) {
-    LocalDateTime creation = LocalDateTime.ofInstant(Instant.ofEpochMilli(creationDate), ZoneId.systemDefault());
-    LocalDateTime now = LocalDateTime.now();
-
-    long years = ChronoUnit.YEARS.between(creation, now);
-    if (years > 0) {
-      return pluralize(years, "year");
-    }
-    long months = ChronoUnit.MONTHS.between(creation, now);
-    if (months > 0) {
-      return pluralize(months, "month");
-    }
-    long days = ChronoUnit.DAYS.between(creation, now);
-    if (days > 0) {
-      return pluralize(days, "day");
-    }
-    long hours = ChronoUnit.HOURS.between(creation, now);
-    if (hours > 0) {
-      return pluralize(hours, "hour");
-    }
-    long minutes = ChronoUnit.MINUTES.between(creation, now);
-    if (minutes > 0) {
-      return pluralize(minutes, "minute");
-    }
-
-    return "few seconds ago";
-  }
-
-  private static String pluralize(long strictlyPositiveCount, String singular) {
-    return pluralize(strictlyPositiveCount, singular, singular + "s");
-  }
-
-  private static String pluralize(long strictlyPositiveCount, String singular, String plural) {
-    if (strictlyPositiveCount == 1) {
-      return "1 " + singular + " ago";
-    }
-    return strictlyPositiveCount + " " + plural + " ago";
-  }
-
   public static String getRelativePath(Project project, VirtualFile virtualFile) {
     if (project.getBasePath() == null) {
       throw new IllegalStateException("no base path in default project");

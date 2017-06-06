@@ -146,18 +146,5 @@ public class SonarLintUtilsTest extends SonarTest {
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());
   }
-
-  @Test
-  public void testAge() {
-    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 100)).isEqualTo("few seconds ago");
-    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 65_000)).isEqualTo("1 minute ago");
-    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 3_600_000 - 100_000)).isEqualTo("1 hour ago");
-    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 2 * 3_600_000 - 100_000)).isEqualTo("2 hours ago");
-    assertThat(SonarLintUtils.age(System.currentTimeMillis() - 24 * 3_600_000 - 100_000)).isEqualTo("1 day ago");
-    assertThat(SonarLintUtils.age(LocalDateTime.now()
-      .minus(15, ChronoUnit.MONTHS)
-      .atZone(ZoneId.systemDefault())
-      .toInstant()
-      .toEpochMilli())).isEqualTo("1 year ago");
-  }
+  
 }
