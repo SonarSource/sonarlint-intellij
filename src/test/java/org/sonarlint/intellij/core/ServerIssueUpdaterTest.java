@@ -26,6 +26,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -124,6 +126,40 @@ public class ServerIssueUpdaterTest extends SonarTest {
 
     verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
+    verify(bindingManager).getConnectedEngine();
+    verify(console, never()).error(anyString());
+    verify(console, never()).error(anyString(), any(Throwable.class));
+  }
+
+  @Test
+  public void testDownloadAllServerIssues() {
+    List<VirtualFile> files = new LinkedList<>();
+    for (int i = 0; i < 10; i++) {
+      VirtualFile file = mock(VirtualFile.class);
+      String filename = "MyFile" + i + ".txt";
+      when(file.getPath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.resolve(filename).toString()));
+      files.add(file);
+    }
+    ServerIssue serverIssue = mock(ServerIssue.class);
+
+    // mock creation of engine / server
+    ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
+    when(bindingManager.getConnectedEngine()).thenReturn(engine);
+    SonarQubeServer server = mock(SonarQubeServer.class);
+    when(server.getHostUrl()).thenReturn("http://dummyserver:9000");
+    when(bindingManager.getSonarQubeServer()).thenReturn(server);
+
+    // mock issues fetched
+    when(engine.getServerIssues(eq(PROJECT_KEY), anyString())).thenReturn(Collections.singletonList(serverIssue));
+
+    // run
+    settings.setBindingEnabled(true);
+
+    updater.initComponent();
+    updater.fetchAndMatchServerIssues(files, indicator, false);
+
+    verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
+    verify(engine).downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY));
     verify(bindingManager).getConnectedEngine();
     verify(console, never()).error(anyString());
     verify(console, never()).error(anyString(), any(Throwable.class));

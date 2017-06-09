@@ -29,7 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -38,6 +37,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -56,6 +56,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   private static final int THREADS_NUM = 5;
   private static final int QUEUE_LIMIT = 100;
+  private static final int FETCH_ALL_ISSUES_THRESHOLD = 10;
 
   private ExecutorService executorService;
 
@@ -82,9 +83,14 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     SonarQubeServer server = projectBindingManager.getSonarQubeServer();
     ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
     String moduleKey = projectSettings.getProjectKey();
-    List<Future<Void>> updateTasks = new LinkedList<>();
+    boolean downloadAll = virtualFiles.size() >= FETCH_ALL_ISSUES_THRESHOLD;
+    String msg;
 
-    String msg = "Fetching server issues";
+    if (downloadAll) {
+      msg = "Fetching all server issues";
+    } else {
+      msg = "Fetching server issues";
+    }
     if (waitForCompletion) {
       msg += " (waiting for results)";
     }
@@ -92,10 +98,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     indicator.setText(msg);
 
     // submit tasks
-    for (VirtualFile virtualFile : virtualFiles) {
-      String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
-      updateTasks.add(fetchAndMatchServerIssues(virtualFile, server, engine, moduleKey, relativePath));
-    }
+    List<Future<Void>> updateTasks = fetchAndMatchServerIssues(virtualFiles, server, engine, moduleKey, downloadAll);
 
     if (waitForCompletion) {
       waitForTasks(updateTasks);
@@ -105,8 +108,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private static void waitForTasks(List<Future<Void>> updateTasks) {
     for (Future<Void> f : updateTasks) {
       try {
-        f.get(5, TimeUnit.SECONDS);
+        f.get(20, TimeUnit.SECONDS);
       } catch (TimeoutException ex) {
+        f.cancel(true);
         LOGGER.warn("ServerIssueUpdater task expired", ex);
       } catch (Exception ex) {
         LOGGER.warn("ServerIssueUpdater task failed", ex);
@@ -114,11 +118,33 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     }
   }
 
-  private Future<Void> fetchAndMatchServerIssues(VirtualFile virtualFile, SonarQubeServer server, ConnectedSonarLintEngine engine,
-    String moduleKey, String relativePath) {
-    Callable<Void> task = new IssueUpdateRunnable(server, virtualFile, engine, moduleKey, relativePath);
+  private List<Future<Void>> fetchAndMatchServerIssues(Collection<VirtualFile> files, SonarQubeServer server, ConnectedSonarLintEngine engine,
+    String moduleKey, boolean downloadAll) {
+    List<Future<Void>> futureList = new LinkedList<>();
+    IssueUpdater issueUpdater = new IssueUpdater(server, engine, moduleKey);
+
+    if (!downloadAll) {
+      for (VirtualFile virtualFile : files) {
+        String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
+        Runnable task = () -> issueUpdater.downloadAndMatchFile(virtualFile, relativePath);
+        futureList.add(submit(task, moduleKey, relativePath));
+      }
+    } else {
+      Runnable task = () -> {
+        issueUpdater.downloadAllServerIssues();
+        for (VirtualFile virtualFile : files) {
+          String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
+          issueUpdater.fetchAndMatchFile(virtualFile, relativePath);
+        }
+      };
+      futureList.add(submit(task, moduleKey, null));
+    }
+    return futureList;
+  }
+
+  private Future<Void> submit(Runnable task, String moduleKey, @Nullable String relativePath) {
     try {
-      return this.executorService.submit(task);
+      return this.executorService.submit(task, null);
     } catch (RejectedExecutionException e) {
       LOGGER.debug("fetch and match server issues rejected for moduleKey=" + moduleKey + ", filepath=" + relativePath, e);
       return CompletableFuture.completedFuture(null);
@@ -143,24 +169,40 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     }
   }
 
-  private class IssueUpdateRunnable implements Callable<Void> {
+  private class IssueUpdater {
     private final SonarQubeServer server;
-    private final VirtualFile virtualFile;
     private final ConnectedSonarLintEngine engine;
     private final String moduleKey;
-    private final String relativePath;
 
-    private IssueUpdateRunnable(SonarQubeServer server, VirtualFile virtualFile, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
+    private IssueUpdater(SonarQubeServer server, ConnectedSonarLintEngine engine, String moduleKey) {
       this.server = server;
-      this.virtualFile = virtualFile;
       this.engine = engine;
       this.moduleKey = moduleKey;
-      this.relativePath = relativePath;
     }
 
-    @Override public Void call() {
+    public void fetchAndMatchFile(VirtualFile virtualFile, String relativePath) {
+      List<ServerIssue> serverIssues = engine.getServerIssues(moduleKey, relativePath);
+      matchFile(virtualFile, serverIssues);
+    }
+
+    public void downloadAndMatchFile(VirtualFile virtualFile, String relativePath) {
+      List<ServerIssue> serverIssues = fetchServerIssuesForFile(relativePath);
+      matchFile(virtualFile, serverIssues);
+    }
+
+    public void downloadAllServerIssues() {
       try {
-        List<ServerIssue> serverIssues = fetchServerIssues(server, engine, moduleKey, relativePath);
+        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
+        LOGGER.debug("fetchServerIssues moduleKey=" + moduleKey);
+        engine.downloadServerIssues(serverConfiguration, moduleKey);
+      } catch (DownloadException e) {
+        console.info(e.getMessage());
+      }
+    }
+
+
+    private void matchFile(VirtualFile virtualFile, List<ServerIssue> serverIssues) {
+      try {
         Collection<Trackable> serverIssuesTrackable = serverIssues.stream().map(ServerIssueTrackable::new).collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
@@ -170,10 +212,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible
         console.error("error while fetching and matching server issues", t);
       }
-      return null;
     }
 
-    private List<ServerIssue> fetchServerIssues(SonarQubeServer server, ConnectedSonarLintEngine engine, String moduleKey, String relativePath) {
+    private List<ServerIssue> fetchServerIssuesForFile(String relativePath) {
       try {
         ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
         LOGGER.debug("fetchServerIssues moduleKey=" + moduleKey + ", filepath=" + relativePath);
