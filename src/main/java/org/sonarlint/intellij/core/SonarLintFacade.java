@@ -46,6 +46,8 @@ public abstract class SonarLintFacade {
 
   protected abstract RuleDetails ruleDetails(String ruleKey);
 
+  public abstract boolean requiresSavingFiles();
+
   public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
     Path baseDir = Paths.get(project.getBasePath());
     Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();

@@ -56,4 +56,9 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   @Override protected RuleDetails ruleDetails(String ruleKey) {
     return sonarlint.getRuleDetails(ruleKey);
   }
+
+  @Override
+  public boolean requiresSavingFiles() {
+    return false;
+  }
 }
