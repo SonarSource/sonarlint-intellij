@@ -60,4 +60,9 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   @Override protected RuleDetails ruleDetails(String ruleKey) {
     return sonarlint.getRuleDetails(ruleKey);
   }
+
+  @Override
+  public boolean requiresSavingFiles() {
+    return true;
+  }
 }

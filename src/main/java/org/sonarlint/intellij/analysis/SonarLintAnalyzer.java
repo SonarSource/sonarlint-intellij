@@ -94,8 +94,10 @@ public class SonarLintAnalyzer {
     }
 
     console.info("Analysing " + what + "...");
-    LOG.assertTrue(!ApplicationManager.getApplication().isReadAccessAllowed(), "Should not be in a read action (risk of dead lock)");
-    ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(filesToAnalyze), ModalityState.defaultModalityState());
+    if (facade.requiresSavingFiles()) {
+      LOG.assertTrue(!ApplicationManager.getApplication().isReadAccessAllowed(), "Should not be in a read action (risk of dead lock)");
+      ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(filesToAnalyze), ModalityState.defaultModalityState());
+    }
     AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps);
     console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
     return result;
