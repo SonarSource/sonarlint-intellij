@@ -224,9 +224,9 @@ public class SonarLintProjectBindPanel implements Disposable {
     if (engine != null && engine.getState() == State.UPDATED) {
       setProjectsInList(engine.allModulesByKey().values());
     } else {
+      projectList.setEnabled(false);
       projectList.setModel(new DefaultListModel<>());
       projectList.setEmptyText(getProjectEmptyText());
-      projectList.setEnabled(false);
     }
   }
 
@@ -488,7 +488,9 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   private class ProjectItemListener implements ListSelectionListener {
     @Override public void valueChanged(ListSelectionEvent event) {
-      lastSelectedProjectKey = getSelectedProjectKey();
+      if (projectList.isEnabled()) {
+        lastSelectedProjectKey = getSelectedProjectKey();
+      }
     }
   }
 
