@@ -294,12 +294,16 @@ public class SonarLintUtils {
   }
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
+    return getServerConfiguration(server, CONNECTION_TIMEOUT_MS);
+  }
+
+  public static ServerConfiguration getServerConfiguration(SonarQubeServer server, int timeout) {
     CertificateManager certificateManager = get(CertificateManager.class);
     SonarApplication sonarlint = get(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
-      .connectTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
-      .readTimeoutMilliseconds(CONNECTION_TIMEOUT_MS)
+      .connectTimeoutMilliseconds(timeout)
+      .readTimeoutMilliseconds(timeout)
       .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
       .trustManager(certificateManager.getCustomTrustManager())
       .url(server.getHostUrl());
