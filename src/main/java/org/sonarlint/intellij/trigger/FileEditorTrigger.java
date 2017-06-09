@@ -45,16 +45,14 @@ public class FileEditorTrigger extends AbstractProjectComponent implements FileE
     }
   }
 
-  /**
-   * I've tried hard to group opening events on startup without success.
-   * Tried: Project.isInitialized, Project.isOpen, schedule to EDT thread and to WriteAction.
-   * So on startup, opened files will be submitted one by one.
-   */
-
   private void afterStartup() {
     myProject.getMessageBus().connect(myProject).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
-    VirtualFile[] openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
-    submitter.submitFiles(Arrays.asList(openFiles), TriggerType.EDITOR_OPEN, true);
+    if (globalSettings.isAutoTrigger()) {
+      VirtualFile[] openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
+      if (openFiles.length > 0) {
+        submitter.submitFiles(Arrays.asList(openFiles), TriggerType.EDITOR_OPEN, true);
+      }
+    }
   }
 
   @Override
