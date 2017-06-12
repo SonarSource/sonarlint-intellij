@@ -54,7 +54,7 @@ public class AutoTriggerStatusPanel {
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
 
   private static final String TOOLTIP = "Some files are not automatically analyzed. For example, "
-    + "files that are excluded or Java files that don't belong the project's source root.";
+    + "files that are excluded or Java files that don't belong the project's source root. Power saving mode disables all automatic analysis";
 
   private final Project project;
   private final SonarLintAppUtils utils;
