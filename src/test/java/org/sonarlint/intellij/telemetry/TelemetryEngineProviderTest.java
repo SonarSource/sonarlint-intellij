@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarsource.sonarlint.core.telemetry.Telemetry;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -36,7 +37,7 @@ public class TelemetryEngineProviderTest {
 
   @Before
   public void before() {
-    filePath = Paths.get(PathManager.getSystemPath(), "sonarlint_usage");
+    filePath = TelemetryEngineProvider.getStorageFilePath();
     engineProvider = new TelemetryEngineProvider(mock(SonarApplication.class));
   }
 
