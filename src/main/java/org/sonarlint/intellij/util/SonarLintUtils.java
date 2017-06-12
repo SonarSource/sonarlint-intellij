@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -176,6 +177,10 @@ public class SonarLintUtils {
 
   public static boolean shouldAnalyzeAutomatically(VirtualFile file, @Nullable Module module) {
     if (!shouldAnalyze(file, module) || module == null) {
+      return false;
+    }
+
+    if (PowerSaveMode.isEnabled()) {
       return false;
     }
 
