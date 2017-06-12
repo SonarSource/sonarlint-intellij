@@ -24,10 +24,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarsource.sonarlint.core.telemetry.Telemetry;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
 
 public class TelemetryEngineProvider {
+  private static final String TELEMETRY_PRODUCT_KEY = "idea";
   private static final String PRODUCT = "SonarLint IntelliJ";
-  private static final String STORAGE_FILENAME = "sonarlint_usage";
+
+  private static final String OLD_STORAGE_FILENAME = "sonarlint_usage";
 
   private final SonarApplication application;
 
@@ -39,7 +42,12 @@ public class TelemetryEngineProvider {
     return new Telemetry(getStorageFilePath(), PRODUCT, application.getVersion());
   }
 
-  private static Path getStorageFilePath() {
-    return Paths.get(PathManager.getSystemPath()).resolve(STORAGE_FILENAME);
+  static Path getStorageFilePath() {
+    TelemetryPathManager.migrate(TELEMETRY_PRODUCT_KEY, getOldStorageFilePath());
+    return TelemetryPathManager.getPath(TELEMETRY_PRODUCT_KEY);
+  }
+
+  private static Path getOldStorageFilePath() {
+    return Paths.get(PathManager.getSystemPath()).resolve(OLD_STORAGE_FILENAME);
   }
 }
