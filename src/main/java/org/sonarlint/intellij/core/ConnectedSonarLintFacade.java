@@ -33,6 +33,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
@@ -63,6 +64,6 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public boolean requiresSavingFiles() {
-    return true;
+    return !sonarlint.getLoadedAnalyzers().stream().allMatch(LoadedAnalyzer::supportsContentStream);
   }
 }

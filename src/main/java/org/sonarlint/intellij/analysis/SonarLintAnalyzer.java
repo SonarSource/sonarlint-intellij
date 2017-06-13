@@ -95,6 +95,7 @@ public class SonarLintAnalyzer {
 
     console.info("Analysing " + what + "...");
     if (facade.requiresSavingFiles()) {
+      console.debug("Saving files");
       LOG.assertTrue(!ApplicationManager.getApplication().isReadAccessAllowed(), "Should not be in a read action (risk of dead lock)");
       ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(filesToAnalyze), ModalityState.defaultModalityState());
     }
