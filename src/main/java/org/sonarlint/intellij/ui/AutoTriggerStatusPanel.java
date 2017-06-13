@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
+import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -36,6 +37,7 @@ import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.List;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -78,11 +80,11 @@ public class AutoTriggerStatusPanel {
   private void subscribeToEvents() {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void applied(java.util.List<SonarQubeServer> serverList, boolean autoTrigger) {
+      @Override public void applied(List<SonarQubeServer> serverList, boolean autoTrigger) {
         switchCards();
       }
     });
-
+    busConnection.subscribe(PowerSaveMode.TOPIC, this::switchCards);
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerAdapter() {
       @Override
       public void selectionChanged(@NotNull FileEditorManagerEvent event) {
