@@ -19,14 +19,11 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import com.intellij.openapi.application.PathManager;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarsource.sonarlint.core.telemetry.Telemetry;
-import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
