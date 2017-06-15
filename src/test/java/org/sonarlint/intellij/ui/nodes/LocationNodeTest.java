@@ -29,7 +29,6 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class LocationNodeTest {
