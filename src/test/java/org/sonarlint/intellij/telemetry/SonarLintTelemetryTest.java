@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.telemetry;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.net.ssl.CertificateManager;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +30,7 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -51,9 +53,14 @@ public class SonarLintTelemetryTest extends SonarTest {
 
   private SonarLintTelemetry createTelemetry() {
     when(engine.isEnabled()).thenReturn(true);
+
     TelemetryEngineProvider engineProvider = mock(TelemetryEngineProvider.class);
     when(engineProvider.get()).thenReturn(engine);
-    SonarLintTelemetry telemetry = new SonarLintTelemetry(engineProvider, mock(ProjectManager.class));
+
+    ProjectManager projectManager = mock(ProjectManager.class);
+    when(projectManager.getOpenProjects()).thenReturn(new Project[0]);
+
+    SonarLintTelemetry telemetry = new SonarLintTelemetry(engineProvider, projectManager);
     telemetry.initComponent();
     return telemetry;
   }
@@ -110,6 +117,7 @@ public class SonarLintTelemetryTest extends SonarTest {
     when(engine.isEnabled()).thenReturn(true);
     telemetry.upload();
     verify(engine).isEnabled();
+    verify(engine).usedConnectedMode(anyBoolean());
     verify(engine).uploadLazily();
   }
 

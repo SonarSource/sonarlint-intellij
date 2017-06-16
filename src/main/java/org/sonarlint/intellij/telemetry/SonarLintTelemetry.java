@@ -86,6 +86,7 @@ public class SonarLintTelemetry implements ApplicationComponent {
   @VisibleForTesting
   void upload() {
     if (enabled()) {
+      telemetry.usedConnectedMode(isAnyProjectConnected());
       telemetry.uploadLazily();
     }
   }
@@ -93,12 +94,6 @@ public class SonarLintTelemetry implements ApplicationComponent {
   public void usedAnalysis() {
     if (enabled()) {
       telemetry.usedAnalysis();
-    }
-  }
-
-  public void changedBinding() {
-    if (enabled()) {
-      telemetry.usedConnectedMode(isAnyProjectConnected());
     }
   }
 
