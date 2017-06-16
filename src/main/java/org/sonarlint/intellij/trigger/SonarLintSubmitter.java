@@ -75,7 +75,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
-    telemetry.analysisSubmitted();
+    telemetry.usedAnalysis();
     Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, false);
 
     if (!filesByModule.isEmpty()) {
@@ -96,7 +96,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
-    telemetry.analysisSubmitted();
+    telemetry.usedAnalysis();
     Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, startInBackground);
 
     if (!filesByModule.isEmpty()) {

@@ -100,7 +100,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       globalPanel.load(globalSettings);
     }
     if (about != null) {
-      about.load(telemetry.enabled(), telemetry.optedIn());
+      about.load(telemetry.enabled());
     }
   }
 

@@ -51,10 +51,6 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -67,7 +63,6 @@ import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 public class SonarLintUtils {
@@ -325,16 +320,6 @@ public class SonarLintUtils {
       configureProxy(server.getHostUrl(), serverConfigBuilder);
     }
     return serverConfigBuilder.build();
-  }
-
-  public static TelemetryClientConfig getTelemetryClientConfig() {
-    CertificateManager certificateManager = get(CertificateManager.class);
-    TelemetryClientConfig.Builder clientConfigBuilder = new TelemetryClientConfig.Builder()
-      .userAgent("SonarLint")
-      .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
-      .sslTrustManager(certificateManager.getCustomTrustManager());
-
-    return clientConfigBuilder.build();
   }
 
   /**
