@@ -19,34 +19,34 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import java.io.IOException;
+import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
+import org.sonarlint.intellij.SonarTest;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class TelemetryEngineProviderTest {
+public class TelemetryEngineProviderTest extends SonarTest {
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+  @Before
+  public void start() throws Exception {
+    super.register(CertificateManager.class, mock(CertificateManager.class));
+  }
 
   @Test
   public void testCreation() throws Exception {
     Path path = temporaryFolder.newFolder().toPath().resolve("usage");
 
     TelemetryEngineProvider engineProvider = new TelemetryEngineProvider(mock(SonarApplication.class)) {
-      @Override
-      TelemetryClientConfig getTelemetryClientConfig() {
-        return new TelemetryClientConfig.Builder().build();
-      }
-
       @Override
       Path getStorageFilePath() {
         return path;
