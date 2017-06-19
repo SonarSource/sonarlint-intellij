@@ -21,10 +21,12 @@ package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
+import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
 public class ConfirmStep extends AbstractWizardStepEx {
   private final WizardModel model;
@@ -49,7 +51,8 @@ public class ConfirmStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public Object getPreviousStepId() {
-    if (model.getOrganizationList().size() > 1) {
+    List<RemoteOrganization> orgList = model.getOrganizationList();
+    if (orgList != null && orgList.size() > 1) {
       return OrganizationStep.class;
     } else {
       return AuthStep.class;
@@ -61,6 +64,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
   }
 
   @Override public void commit(CommitType commitType) throws CommitStepException {
+    // nothing to do
   }
 
   @Nullable @Override public JComponent getPreferredFocusedComponent() {

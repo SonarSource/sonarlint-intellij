@@ -70,6 +70,7 @@ public class SQServerWizard {
       this.setVerticalStretch(1.25f);
     }
 
+    @Override
     protected String getDimensionServiceKey() {
       return this.getClass().getName();
     }

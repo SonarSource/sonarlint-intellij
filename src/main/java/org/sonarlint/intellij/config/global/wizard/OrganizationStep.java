@@ -56,6 +56,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
     }
   }
 
+  @Override
   public void _init() {
     List<RemoteOrganization> list = model.getOrganizationList();
     int size = list.size();

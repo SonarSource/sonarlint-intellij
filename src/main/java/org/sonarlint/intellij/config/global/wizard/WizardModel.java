@@ -27,8 +27,8 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
 public class WizardModel {
-  private final static String SONARCLOUD_URL = "https://sonarcloud.io";
-  public final static String[] SONARCLOUD_ALIAS = {"https://sonarqube.com", "https://www.sonarqube.com",
+  private static final String SONARCLOUD_URL = "https://sonarcloud.io";
+  public static final String[] SONARCLOUD_ALIAS = {"https://sonarqube.com", "https://www.sonarqube.com",
     "https://www.sonarcloud.io", "https://sonarcloud.io"};
   private ServerType serverType;
   private String serverUrl;
@@ -60,8 +60,9 @@ public class WizardModel {
     this.proxyEnabled = serverToEdit.enableProxy();
     this.token = serverToEdit.getToken();
     this.login = serverToEdit.getLogin();
-    if (serverToEdit.getPassword() != null) {
-      this.password = serverToEdit.getPassword().toCharArray();
+    String pass = serverToEdit.getPassword();
+    if (pass != null) {
+      this.password = pass.toCharArray();
     }
     this.organization = serverToEdit.getOrganizationKey();
     this.name = serverToEdit.getName();
@@ -178,7 +179,6 @@ public class WizardModel {
         .setLogin(login)
         .setPassword(new String(password));
     }
-    //builder.setEnableProxy(enableProxy.isSelected());
     return builder.build();
   }
 }

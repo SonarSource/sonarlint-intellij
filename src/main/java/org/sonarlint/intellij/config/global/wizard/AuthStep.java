@@ -25,8 +25,8 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.ui.DocumentAdapter;
 import java.awt.CardLayout;
 import java.awt.event.ItemEvent;
+import java.util.List;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -39,11 +39,12 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.tasks.OrganizationsFetchTask;
+import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class AuthStep extends AbstractWizardStepEx {
-  private final static String LOGIN_ITEM = "Login / Password";
-  private final static String TOKEN_ITEM = "Token";
+  private static final String LOGIN_ITEM = "Login / Password";
+  private static final String TOKEN_ITEM = "Token";
   private final WizardModel model;
 
   private JPanel panel;
@@ -51,11 +52,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private JTextField tokenField;
   private JTextField loginField;
   private JPasswordField passwordField;
-  private JButton createTokenButton;
   private JPanel cardPanel;
-  private JPanel tokenPanel;
-  private JPanel loginPanel;
-  private CardLayout cardLayout;
 
   public AuthStep(WizardModel model) {
     super("Authentication");
@@ -88,6 +85,7 @@ public class AuthStep extends AbstractWizardStepEx {
     passwordField.getDocument().addDocumentListener(listener);
   }
 
+  @Override
   public void _init() {
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
       authComboBox.setSelectedItem(TOKEN_ITEM);
@@ -130,7 +128,8 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public Object getNextStepId() {
-    if (model.getOrganizationList() != null && model.getOrganizationList().size() > 1) {
+    List<RemoteOrganization> orgList = model.getOrganizationList();
+    if (orgList != null && orgList.size() > 1) {
       return OrganizationStep.class;
     }
     return ConfirmStep.class;
