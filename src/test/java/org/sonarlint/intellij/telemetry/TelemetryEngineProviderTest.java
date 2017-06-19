@@ -19,29 +19,43 @@
  */
 package org.sonarlint.intellij.telemetry;
 
+import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarsource.sonarlint.core.telemetry.Telemetry;
+import org.sonarlint.intellij.SonarTest;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class TelemetryEngineProviderTest {
-  private TelemetryEngineProvider engineProvider;
-  private Path filePath;
+public class TelemetryEngineProviderTest extends SonarTest {
+
+  @Rule
+  public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Before
-  public void before() {
-    filePath = TelemetryEngineProvider.getStorageFilePath();
-    engineProvider = new TelemetryEngineProvider(mock(SonarApplication.class));
+  public void start() throws Exception {
+    super.register(CertificateManager.class, mock(CertificateManager.class));
   }
 
   @Test
   public void testCreation() throws Exception {
-    Telemetry telemetry = engineProvider.get();
-    telemetry.save();
-    assertThat(filePath).exists();
+    Path path = temporaryFolder.newFolder().toPath().resolve("usage");
+
+    TelemetryEngineProvider engineProvider = new TelemetryEngineProvider(mock(SonarApplication.class)) {
+      @Override
+      Path getStorageFilePath() {
+        return path;
+      }
+    };
+
+    TelemetryManager telemetry = engineProvider.get();
+    assertThat(path).doesNotExist();
+    telemetry.usedAnalysis();
+    assertThat(path).exists();
   }
 }

@@ -19,11 +19,16 @@
  */
 package org.sonarlint.intellij.telemetry;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarsource.sonarlint.core.telemetry.Telemetry;
+import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryClient;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
 
 public class TelemetryEngineProvider {
@@ -38,11 +43,24 @@ public class TelemetryEngineProvider {
     this.application = application;
   }
 
-  public Telemetry get() throws Exception {
-    return new Telemetry(getStorageFilePath(), PRODUCT, application.getVersion());
+  public TelemetryManager get() {
+    TelemetryClientConfig clientConfig = getTelemetryClientConfig();
+    TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, application.getVersion());
+    return new TelemetryManager(getStorageFilePath(), client);
   }
 
-  static Path getStorageFilePath() {
+  private static TelemetryClientConfig getTelemetryClientConfig() {
+    CertificateManager certificateManager = SonarLintUtils.get(CertificateManager.class);
+    TelemetryClientConfig.Builder clientConfigBuilder = new TelemetryClientConfig.Builder()
+      .userAgent("SonarLint")
+      .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
+      .sslTrustManager(certificateManager.getCustomTrustManager());
+
+    return clientConfigBuilder.build();
+  }
+
+  @VisibleForTesting
+  Path getStorageFilePath() {
     TelemetryPathManager.migrate(TELEMETRY_PRODUCT_KEY, getOldStorageFilePath());
     return TelemetryPathManager.getPath(TELEMETRY_PRODUCT_KEY);
   }
