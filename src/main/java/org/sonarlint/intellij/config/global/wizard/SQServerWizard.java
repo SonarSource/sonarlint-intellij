@@ -43,7 +43,9 @@ public class SQServerWizard {
 
   private void init(WizardModel model, boolean editing, Set<String> existingNames) {
     List<AbstractWizardStepEx> steps = createSteps(model, editing, existingNames);
-    wizard = new SonarQubeWizard(steps);
+    String title = editing ? "Edit " : "New ";
+    title = title + "SonarQube Server Configuration";
+    wizard = new SonarQubeWizard(steps, title);
   }
 
   private List<AbstractWizardStepEx> createSteps(WizardModel model, boolean editing, Set<String> existingNames) {
@@ -64,8 +66,8 @@ public class SQServerWizard {
   }
 
   private static class SonarQubeWizard extends AbstractWizardEx {
-    public SonarQubeWizard(List<AbstractWizardStepEx> steps) {
-      super("New SonarQube Server Configuration", null, steps);
+    public SonarQubeWizard(List<AbstractWizardStepEx> steps, String title) {
+      super(title, null, steps);
       this.setHorizontalStretch(1.25f);
       this.setVerticalStretch(1.25f);
     }

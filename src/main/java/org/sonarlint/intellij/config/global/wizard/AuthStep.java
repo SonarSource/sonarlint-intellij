@@ -57,6 +57,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private JPasswordField passwordField;
   private JPanel cardPanel;
   private JButton tokenButton;
+  private ErrorPainter errorPainter;
 
   public AuthStep(WizardModel model) {
     super("Authentication");
@@ -89,6 +90,9 @@ public class AuthStep extends AbstractWizardStepEx {
     loginField.getDocument().addDocumentListener(listener);
     tokenField.getDocument().addDocumentListener(listener);
     passwordField.getDocument().addDocumentListener(listener);
+
+    errorPainter = new ErrorPainter();
+    errorPainter.installOn(panel, this);
   }
 
   @Override
@@ -147,9 +151,18 @@ public class AuthStep extends AbstractWizardStepEx {
 
   @Override public boolean isComplete() {
     if (authComboBox.getSelectedItem().equals(LOGIN_ITEM)) {
-      return passwordField.getPassword().length > 0 && !loginField.getText().isEmpty();
+      boolean passValid = passwordField.getPassword().length > 0;
+      boolean loginValid = !loginField.getText().isEmpty();
+      errorPainter.setValid(passwordField, passValid);
+      errorPainter.setValid(loginField, loginValid);
+      errorPainter.setValid(tokenField, true);
+      return passValid && loginValid;
     } else {
-      return !tokenField.getText().isEmpty();
+      boolean tokenValid = !tokenField.getText().isEmpty();
+      errorPainter.setValid(tokenField, tokenValid);
+      errorPainter.setValid(loginField, true);
+      errorPainter.setValid(passwordField, true);
+      return tokenValid;
     }
   }
 

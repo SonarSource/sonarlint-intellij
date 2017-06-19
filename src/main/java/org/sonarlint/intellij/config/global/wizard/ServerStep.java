@@ -40,8 +40,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.event.MouseInputAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,9 +61,10 @@ public class ServerStep extends AbstractWizardStepEx {
   private JEditorPane sonarqubeText;
   private JCheckBox proxyCheck;
   private JButton proxyButton;
+  private ErrorPainter errorPainter;
 
   public ServerStep(WizardModel model, boolean editing, Collection<String> existingNames) {
-    super("Server");
+    super("Server Details");
     this.model = model;
     this.existingNames = existingNames;
     radioSonarCloud.addChangeListener(e -> selectionChanged());
@@ -111,6 +110,12 @@ public class ServerStep extends AbstractWizardStepEx {
     });
 
     load(editing);
+    paintErrors();
+  }
+
+  private void paintErrors() {
+    errorPainter = new ErrorPainter();
+    errorPainter.installOn(panel, this);
   }
 
   private void load(boolean editing) {
@@ -170,10 +175,12 @@ public class ServerStep extends AbstractWizardStepEx {
   }
 
   @Override public boolean isComplete() {
-    if (nameField.getText().trim().isEmpty()) {
-      return false;
-    }
-    return radioSonarCloud.isSelected() || !urlText.getText().trim().isEmpty();
+    boolean nameValid = !nameField.getText().trim().isEmpty();
+    errorPainter.setValid(nameField, nameValid);
+    boolean urlValid = radioSonarCloud.isSelected() || !urlText.getText().trim().isEmpty();
+    errorPainter.setValid(urlText, urlValid);
+
+    return nameValid && urlValid;
   }
 
   @Override public void commit(CommitType commitType) throws CommitStepException {
