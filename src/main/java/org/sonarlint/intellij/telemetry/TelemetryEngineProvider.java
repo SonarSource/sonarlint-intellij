@@ -49,7 +49,7 @@ public class TelemetryEngineProvider {
     return new TelemetryManager(getStorageFilePath(), client);
   }
 
-  private TelemetryClientConfig getTelemetryClientConfig() {
+  private static TelemetryClientConfig getTelemetryClientConfig() {
     CertificateManager certificateManager = SonarLintUtils.get(CertificateManager.class);
     TelemetryClientConfig.Builder clientConfigBuilder = new TelemetryClientConfig.Builder()
       .userAgent("SonarLint")
