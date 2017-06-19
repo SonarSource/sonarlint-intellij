@@ -17,12 +17,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.global;
+package org.sonarlint.intellij.config.global.wizard;
 
 import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.config.global.wizard.LengthRestrictedDocument;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

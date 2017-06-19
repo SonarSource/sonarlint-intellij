@@ -25,6 +25,7 @@ import javax.swing.Icon;
 
 public class SonarLintIcons {
   public static final Icon ICON_SONARQUBE_16 = IconLoader.getIcon("/images/onde-sonar-16.png");
+  public static final Icon ICON_SONARCLOUD_16 = IconLoader.getIcon("/images/sonarcloud-16.png");
   public static final Icon ICON_SONARLINT_13 = IconLoader.getIcon("/images/ico-sonarlint-13.png");
 
   public static final Icon SONARLINT = IconLoader.getIcon("/images/sonarlint.png");
@@ -51,6 +52,11 @@ public class SonarLintIcons {
   public static Icon severity(String severity) {
     String name = severity.toLowerCase(Locale.ENGLISH) + ".png";
     return IconLoader.getIcon("/images/severity/" + name);
+  }
+
+  public static Icon icon(String name) {
+    String nameWithExtension = name + ".png";
+    return IconLoader.getIcon("/images/" + nameWithExtension);
   }
 
   public static Icon toDisabled(Icon icon) {
