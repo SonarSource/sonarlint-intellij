@@ -70,6 +70,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.event.HyperlinkEvent;
+import org.sonarlint.intellij.config.global.wizard.SQServerWizard;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.tasks.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
@@ -152,8 +153,15 @@ public class SonarQubeServerMgmtPanel implements Disposable {
       @Override
       protected void customizeCellRenderer(JList list, Object value, int index, boolean selected, boolean hasFocus) {
         SonarQubeServer server = (SonarQubeServer) value;
-        setIcon(SonarLintIcons.ICON_SONARQUBE_16);
+        if (server.isSonarCloud()) {
+          setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
+        } else {
+          setIcon(SonarLintIcons.ICON_SONARQUBE_16);
+        }
         append(server.getName(), SimpleTextAttributes.REGULAR_ATTRIBUTES);
+        if (!server.isSonarCloud()) {
+          append("    (" + server.getHostUrl() + ")", SimpleTextAttributes.GRAYED_ATTRIBUTES, false);
+        }
       }
     });
   }
@@ -347,7 +355,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     int selectedIndex = serverList.getSelectedIndex();
 
     if (selectedServer != null) {
-      SonarQubeServerEditor serverEditor = new SonarQubeServerEditor(panel, servers, selectedServer, false);
+      SQServerWizard serverEditor = new SQServerWizard(selectedServer);
       if (serverEditor.showAndGet()) {
         SonarQubeServer newServer = serverEditor.getServer();
         ((CollectionListModel) serverList.getModel()).setElementAt(newServer, selectedIndex);
@@ -368,11 +376,10 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   private class AddServerAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      SonarQubeServer newServer = SonarQubeServer.newBuilder().build();
-      SonarQubeServerEditor serverEditor = new SonarQubeServerEditor(panel, servers, newServer, true);
-
-      if (serverEditor.showAndGet()) {
-        SonarQubeServer created = serverEditor.getServer();
+      Set<String> existingNames = servers.stream().map(SonarQubeServer::getName).collect(Collectors.toSet());
+      SQServerWizard wizard = new SQServerWizard(existingNames);
+      if (wizard.showAndGet()) {
+        SonarQubeServer created = wizard.getServer();
         servers.add(created);
         ((CollectionListModel) serverList.getModel()).add(created);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
@@ -400,7 +407,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
         String projects = projectsUsingNames.stream().collect(Collectors.joining("<br>"));
         int response = Messages.showYesNoDialog(serversPanel,
           "<html>The following opened projects are bound to this server configuration:<br><b>" +
-            projects + "</b><br>Delete the server?</html>", "Server configuration in use", Messages.getWarningIcon());
+            projects + "</b><br>Delete the server?</html>", "Server Configuration In Use", Messages.getWarningIcon());
         if (response == Messages.NO) {
           return;
         }

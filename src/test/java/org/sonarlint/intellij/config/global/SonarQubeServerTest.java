@@ -41,6 +41,19 @@ public class SonarQubeServerTest {
     assertThat(server.getHostUrl()).isEqualTo("host");
 
     assertThat(server.toString()).isEqualTo(server.getName());
+    assertThat(server.isSonarCloud()).isFalse();
+  }
+
+  @Test
+  public void testSonarCloud() {
+    SonarQubeServer server1 = SonarQubeServer.newBuilder()
+      .setHostUrl("https://sonarqube.com")
+      .setPassword("pass")
+      .setToken("token")
+      .setName("name")
+      .setLogin("login")
+      .build();
+    assertThat(server1.isSonarCloud()).isTrue();
   }
 
   @Test

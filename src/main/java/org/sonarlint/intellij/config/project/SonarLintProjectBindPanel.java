@@ -425,7 +425,11 @@ public class SonarLintProjectBindPanel implements Disposable {
 
       append(value.getName(), attrs, true);
       setToolTipText("Connect to this SonarQube server");
-      setIcon(SonarLintIcons.ICON_SONARQUBE_16);
+      if (value.isSonarCloud()) {
+        setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
+      } else {
+        setIcon(SonarLintIcons.ICON_SONARQUBE_16);
+      }
     }
   }
 
