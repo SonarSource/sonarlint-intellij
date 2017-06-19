@@ -19,14 +19,17 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.DocumentAdapter;
 import java.awt.CardLayout;
 import java.awt.event.ItemEvent;
 import java.util.List;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -53,6 +56,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private JTextField loginField;
   private JPasswordField passwordField;
   private JPanel cardPanel;
+  private JButton tokenButton;
 
   public AuthStep(WizardModel model) {
     super("Authentication");
@@ -73,6 +77,8 @@ public class AuthStep extends AbstractWizardStepEx {
         fireStateChanged();
       }
     });
+
+    tokenButton.addActionListener(evt -> generateToken());
 
     DocumentListener listener = new DocumentAdapter() {
       @Override protected void textChanged(DocumentEvent e) {
@@ -202,5 +208,22 @@ public class AuthStep extends AbstractWizardStepEx {
 
   private void createUIComponents() {
     authComboBox = new JComboBox();
+  }
+
+  private void generateToken() {
+    if (!BrowserUtil.isAbsoluteURL(model.getServerUrl())) {
+      Messages.showErrorDialog(panel, "Can't launch browser for URL: " + model.getServerUrl(), "Invalid Server URL");
+      return;
+    }
+
+    StringBuilder url = new StringBuilder(256);
+    url.append(model.getServerUrl());
+
+    if (!model.getServerUrl().endsWith("/")) {
+      url.append("/");
+    }
+
+    url.append("account/security");
+    BrowserUtil.browse(url.toString());
   }
 }

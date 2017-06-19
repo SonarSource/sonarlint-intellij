@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.net.HttpConfigurable;
@@ -39,6 +40,8 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.event.MouseInputAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -80,6 +83,7 @@ public class ServerStep extends AbstractWizardStepEx {
 
     String cloudText = "Continous Code Quality as a Service. Connect to SonarCloud (<a href=\"https://sonarcloud.io\">https://sonarcloud.io</a>),      the service operated by SonarSource.";
     sonarcloudText.setText(cloudText);
+    sonarcloudText.addHyperlinkListener(new BrowserHyperlinkListener());
 
     String sqText = "Connect to your SonarQube server";
     sonarqubeText.setText(sqText);

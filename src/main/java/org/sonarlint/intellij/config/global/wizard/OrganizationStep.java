@@ -101,7 +101,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public JComponent getPreferredFocusedComponent() {
-    return null;
+    return orgList;
   }
 
   private void createUIComponents() {
