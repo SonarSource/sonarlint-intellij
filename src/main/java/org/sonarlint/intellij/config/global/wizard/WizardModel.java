@@ -19,17 +19,15 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
-import java.util.Arrays;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
 public class WizardModel {
   private static final String SONARCLOUD_URL = "https://sonarcloud.io";
-  public static final String[] SONARCLOUD_ALIAS = {"https://sonarqube.com", "https://www.sonarqube.com",
-    "https://www.sonarcloud.io", "https://sonarcloud.io"};
   private ServerType serverType;
   private String serverUrl;
   private String token;
@@ -51,7 +49,7 @@ public class WizardModel {
   }
 
   public WizardModel(SonarQubeServer serverToEdit) {
-    if (Arrays.asList(SONARCLOUD_ALIAS).contains(serverToEdit.getHostUrl())) {
+    if (SonarLintUtils.isSonarCloudAlias(serverToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
     } else {
       serverType = ServerType.SONARQUBE;

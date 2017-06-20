@@ -51,6 +51,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -70,6 +71,8 @@ public class SonarLintUtils {
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
   public static final int CONNECTION_TIMEOUT_MS = 30_000;
   public static final String PATH_SEPARATOR_PATTERN = Pattern.quote(File.separator);
+  private static final String[] SONARCLOUD_ALIAS = {"https://sonarqube.com", "https://www.sonarqube.com",
+    "https://www.sonarcloud.io", "https://sonarcloud.io"};
 
   private SonarLintUtils() {
     // Utility class
@@ -83,6 +86,10 @@ public class SonarLintUtils {
     }
 
     return t;
+  }
+
+  public static boolean isSonarCloudAlias(@Nullable String url) {
+    return Arrays.asList(SONARCLOUD_ALIAS).contains(url);
   }
 
   public static boolean isEmpty(@Nullable String str) {

@@ -24,11 +24,10 @@ import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
-import java.util.Arrays;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import org.sonarlint.intellij.config.global.wizard.WizardModel;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -120,7 +119,7 @@ public class SonarQubeServer {
   }
 
   public boolean isSonarCloud() {
-    return Arrays.asList(WizardModel.SONARCLOUD_ALIAS).contains(hostUrl);
+    return SonarLintUtils.isSonarCloudAlias(hostUrl);
   }
 
   public boolean enableProxy() {
