@@ -113,6 +113,8 @@ public class AuthStep extends AbstractWizardStepEx {
     loginField.setText(model.getLogin());
     if (model.getPassword() != null) {
       passwordField.setText(new String(model.getPassword()));
+    } else {
+      passwordField.setText(null);
     }
   }
 
