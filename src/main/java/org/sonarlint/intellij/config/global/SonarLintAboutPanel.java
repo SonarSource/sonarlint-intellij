@@ -150,7 +150,7 @@ public class SonarLintAboutPanel {
   }
 
   public void load(boolean telemetryEnabled) {
-    enableCheckBox.setEnabled(telemetryEnabled);
+    enableCheckBox.setSelected(telemetryEnabled);
   }
 
   public void save(SonarLintTelemetry telemetry) {
