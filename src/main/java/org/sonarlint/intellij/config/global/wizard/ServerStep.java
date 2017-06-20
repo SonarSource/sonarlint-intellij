@@ -80,7 +80,8 @@ public class ServerStep extends AbstractWizardStepEx {
 
     nameField.setToolTipText("Name of this configuration");
 
-    String cloudText = "Continous Code Quality as a Service. Connect to SonarCloud (<a href=\"https://sonarcloud.io\">https://sonarcloud.io</a>),      the service operated by SonarSource.";
+    String cloudText = "Continous Code Quality as a Service. Connect to SonarCloud "
+      + "(<a href=\"https://sonarcloud.io\">https://sonarcloud.io</a>),      the service operated by SonarSource.";
     sonarcloudText.setText(cloudText);
     sonarcloudText.addHyperlinkListener(new BrowserHyperlinkListener());
 

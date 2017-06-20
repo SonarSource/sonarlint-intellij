@@ -48,7 +48,7 @@ public class SQServerWizard {
     wizard = new SonarQubeWizard(steps, title);
   }
 
-  private List<AbstractWizardStepEx> createSteps(WizardModel model, boolean editing, Set<String> existingNames) {
+  private static List<AbstractWizardStepEx> createSteps(WizardModel model, boolean editing, Set<String> existingNames) {
     List<AbstractWizardStepEx> steps = new LinkedList<>();
     steps.add(new ServerStep(model, editing, existingNames));
     steps.add(new AuthStep(model));

@@ -105,19 +105,19 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    JBList orgList = new JBList();
-    orgList.setLayoutOrientation(VERTICAL);
-    orgList.setVisibleRowCount(8);
-    orgList.setEnabled(true);
-    orgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    orgList.setCellRenderer(new ListRenderer());
+    JBList list = new JBList();
+    list.setLayoutOrientation(VERTICAL);
+    list.setVisibleRowCount(8);
+    list.setEnabled(true);
+    list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    list.setCellRenderer(new ListRenderer());
 
     Convertor<Object, String> convertor = o -> {
       RemoteOrganization org = (RemoteOrganization) o;
       return org.getName() + " " + org.getKey();
     };
-    new ListSpeedSearch(orgList, convertor);
-    this.orgList = orgList;
+    new ListSpeedSearch(list, convertor);
+    this.orgList = list;
   }
 
   private static class ListRenderer extends ColoredListCellRenderer<RemoteOrganization> {

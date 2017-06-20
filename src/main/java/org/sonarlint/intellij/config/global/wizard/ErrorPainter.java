@@ -22,7 +22,6 @@ package org.sonarlint.intellij.config.global.wizard;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.ui.AbstractPainter;
-import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.openapi.wm.IdeGlassPaneUtil;
 import com.intellij.util.ui.UIUtil;
 import java.awt.Component;
