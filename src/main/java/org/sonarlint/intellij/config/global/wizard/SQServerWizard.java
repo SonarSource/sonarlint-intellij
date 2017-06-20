@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardEx;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import java.util.Collections;
@@ -70,6 +71,11 @@ public class SQServerWizard {
       super(title, null, steps);
       this.setHorizontalStretch(1.25f);
       this.setVerticalStretch(1.25f);
+    }
+
+    @Override
+    protected void helpAction() {
+      BrowserUtil.browse("http://www.sonarlint.org/intellij/index.html#Connected");
     }
 
     @Override

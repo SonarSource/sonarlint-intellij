@@ -28,6 +28,8 @@ import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.ui.SwingHelper;
 import icons.SonarLintIcons;
 import java.awt.event.MouseEvent;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collection;
 import javax.swing.Icon;
 import javax.swing.JButton;
@@ -43,6 +45,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MouseInputAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;
@@ -186,12 +189,26 @@ public class ServerStep extends AbstractWizardStepEx {
 
   @Override public void commit(CommitType commitType) throws CommitStepException {
     validateName();
+    validateUrl();
     save();
   }
 
   private void validateName() throws CommitStepException {
     if (existingNames.contains(nameField.getText().trim())) {
       throw new CommitStepException("There is already a configuration with that name. Please choose another name");
+    }
+  }
+
+  private void validateUrl() throws CommitStepException {
+    if (radioSonarQube.isSelected()) {
+      try {
+        URL url = new URL(urlText.getText());
+        if (SonarLintUtils.isBlank(url.getHost())) {
+          throw new CommitStepException("Please provide a valid URL");
+        }
+      } catch (MalformedURLException e) {
+        throw new CommitStepException("Please provide a valid URL");
+      }
     }
   }
 
