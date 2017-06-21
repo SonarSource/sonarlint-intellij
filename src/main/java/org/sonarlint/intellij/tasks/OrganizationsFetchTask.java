@@ -48,7 +48,7 @@ public class OrganizationsFetchTask  extends Task.Modal {
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
     indicator.setText("Connecting to " + server.getHostUrl() + "...");
-    indicator.setIndeterminate(true);
+    indicator.setIndeterminate(false);
 
     try {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
