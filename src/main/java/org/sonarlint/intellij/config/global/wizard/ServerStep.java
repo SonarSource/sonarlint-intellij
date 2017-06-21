@@ -81,14 +81,13 @@ public class ServerStep extends AbstractWizardStepEx {
     urlText.getDocument().addDocumentListener(listener);
     nameField.getDocument().addDocumentListener(listener);
 
-    nameField.setToolTipText("Name of this configuration");
+    nameField.setToolTipText("Name of this configuration (mandatory field)");
 
-    String cloudText = "Continous Code Quality as a Service. Connect to SonarCloud "
-      + "(<a href=\"https://sonarcloud.io\">https://sonarcloud.io</a>),      the service operated by SonarSource.";
+    String cloudText = "Connect to online <a href=\"https://sonarcloud.io\">SonarCloud</a>";
     sonarcloudText.setText(cloudText);
     sonarcloudText.addHyperlinkListener(new BrowserHyperlinkListener());
 
-    String sqText = "Connect to your SonarQube server";
+    String sqText = "Connect to SonarQube";
     sonarqubeText.setText(sqText);
 
     if (!editing) {
@@ -123,11 +122,20 @@ public class ServerStep extends AbstractWizardStepEx {
   }
 
   private void load(boolean editing) {
+    Icon sqIcon = SonarLintIcons.icon("SonarQube");
+    Icon clIcon = SonarLintIcons.icon("SonarCloud");
+
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
       radioSonarCloud.setSelected(true);
+      if (editing) {
+        sqIcon = SonarLintIcons.toDisabled(sqIcon);
+      }
     } else {
       radioSonarQube.setSelected(true);
       urlText.setText(model.getServerUrl());
+      if (editing) {
+        clIcon = SonarLintIcons.toDisabled(clIcon);
+      }
     }
 
     nameField.setText(model.getName());
@@ -137,22 +145,13 @@ public class ServerStep extends AbstractWizardStepEx {
       radioSonarQube.setEnabled(false);
       radioSonarCloud.setEnabled(false);
     }
+
+    sonarqubeIcon.setIcon(sqIcon);
+    sonarcloudIcon.setIcon(clIcon);
   }
 
   private void selectionChanged() {
     boolean sq = radioSonarQube.isSelected();
-
-    Icon sqIcon = SonarLintIcons.icon("SonarQube");
-    Icon clIcon = SonarLintIcons.icon("SonarCloud");
-
-    if (sq) {
-      clIcon = SonarLintIcons.toDisabled(clIcon);
-    } else {
-      sqIcon = SonarLintIcons.toDisabled(sqIcon);
-    }
-
-    sonarqubeIcon.setIcon(sqIcon);
-    sonarcloudIcon.setIcon(clIcon);
 
     urlText.setEnabled(sq);
     urlLabel.setEnabled(sq);

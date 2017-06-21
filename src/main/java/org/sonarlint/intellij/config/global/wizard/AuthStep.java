@@ -177,7 +177,7 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void fetchOrganizations() throws CommitStepException {
-    SonarQubeServer tmpServer = model.createServer();
+    SonarQubeServer tmpServer = model.createServerWithoutOrganization();
     OrganizationsFetchTask task = new OrganizationsFetchTask(tmpServer);
     ProgressManager.getInstance().run(task);
     if (task.getException() == null) {
@@ -199,7 +199,7 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void checkConnection() throws CommitStepException {
-    SonarQubeServer tmpServer = model.createServer();
+    SonarQubeServer tmpServer = model.createServerWithoutOrganization();
     ConnectionTestTask test = new ConnectionTestTask(tmpServer);
     ProgressManager.getInstance().run(test);
     ValidationResult r = test.result();

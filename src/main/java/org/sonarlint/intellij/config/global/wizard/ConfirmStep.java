@@ -23,23 +23,41 @@ import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
 import java.util.List;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
 public class ConfirmStep extends AbstractWizardStepEx {
+  private static final String TEXT1 = "SonarQube Server connection successfully created.";
+  private static final String TEXT2 = "Click finish to save your changes and schedule an update of all project bindings.";
   private final WizardModel model;
+  private final boolean editing;
   private JPanel panel;
+  private JLabel textArea;
+  private JLabel textArea2;
 
-  public ConfirmStep(WizardModel model) {
-    super("Done");
+  public ConfirmStep(WizardModel model, boolean editing) {
+    super("Configuration completed");
     this.model = model;
+    this.editing = editing;
   }
 
   @Override
   public JComponent getComponent() {
     return panel;
+  }
+
+  @Override
+  public void _init() {
+    if (editing) {
+      String txt = TEXT1.replace("created", "edited");
+      textArea.setText(txt);
+    } else {
+      textArea.setText(TEXT1);
+    }
+    textArea2.setText(TEXT2);
   }
 
   @NotNull @Override public Object getStepId() {

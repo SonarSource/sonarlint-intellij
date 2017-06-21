@@ -155,9 +155,17 @@ public class WizardModel {
     return this;
   }
 
+  public SonarQubeServer createServerWithoutOrganization() {
+    return createServer(null);
+  }
+
   public SonarQubeServer createServer() {
+    return createServer(organization);
+  }
+
+  private SonarQubeServer createServer(@Nullable String organizationKey) {
     SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
-      .setOrganizationKey(organization)
+      .setOrganizationKey(organizationKey)
       .setEnableProxy(proxyEnabled)
       .setName(name);
 

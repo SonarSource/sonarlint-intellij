@@ -54,7 +54,7 @@ public class SQServerWizard {
     steps.add(new ServerStep(model, editing, existingNames));
     steps.add(new AuthStep(model));
     steps.add(new OrganizationStep(model));
-    steps.add(new ConfirmStep(model));
+    steps.add(new ConfirmStep(model, editing));
     return steps;
   }
 

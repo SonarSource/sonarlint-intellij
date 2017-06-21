@@ -62,12 +62,12 @@ public class OrganizationStep extends AbstractWizardStepEx {
     int size = list.size();
     orgList.setListData(list.toArray(new RemoteOrganization[size]));
     orgList.addListSelectionListener(e -> fireStateChanged());
-
     if (model.getOrganization() != null) {
       for (int i = 0; i < orgList.getModel().getSize(); i++) {
         RemoteOrganization org = (RemoteOrganization) orgList.getModel().getElementAt(i);
         if (model.getOrganization().equals(org.getKey())) {
           orgList.setSelectedIndex(i);
+          orgList.ensureIndexIsVisible(i);
           break;
         }
       }
@@ -79,7 +79,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public Object getNextStepId() {
-    return null;
+    return ConfirmStep.class;
   }
 
   @Nullable @Override public Object getPreviousStepId() {
