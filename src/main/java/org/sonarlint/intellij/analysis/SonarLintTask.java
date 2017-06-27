@@ -172,11 +172,11 @@ public class SonarLintTask extends Task.Backgroundable {
     ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator);
     List<AnalysisResults> results = new LinkedList<>();
 
-      for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
-        results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener, progressMonitor));
-        checkCanceled(indicator, myProject);
-      }
-      indicator.startNonCancelableSection();
+    for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
+      results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener, progressMonitor));
+      checkCanceled(indicator, myProject);
+    }
+    indicator.startNonCancelableSection();
     return results;
   }
 }

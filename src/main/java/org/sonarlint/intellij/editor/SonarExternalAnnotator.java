@@ -168,8 +168,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       flows = " [context] ";
     }
 
-    @NonNls
-    final String link = " <a "
+    @NonNls final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
       + (isDark() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;

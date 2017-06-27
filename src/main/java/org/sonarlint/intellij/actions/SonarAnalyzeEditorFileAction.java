@@ -70,7 +70,7 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    submitter.submitFiles(Collections.singleton(selectedFile), TriggerType.ACTION,new ShowIssuesCallable(project), executeBackground(e));
+    submitter.submitFiles(Collections.singleton(selectedFile), TriggerType.ACTION, new ShowIssuesCallable(project), executeBackground(e));
   }
 
   private class ShowIssuesCallable implements AnalysisCallback {

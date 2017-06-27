@@ -61,7 +61,7 @@ public class IssuesViewTabOpener {
     ApplicationManager.getApplication().assertIsDispatchThread();
     ToolWindow toolWindow = getToolWindow();
     if (toolWindow != null) {
-      toolWindow.show(() ->selectTab(toolWindow, SonarLintToolWindowFactory.TAB_CURRENT_FILE));
+      toolWindow.show(() -> selectTab(toolWindow, SonarLintToolWindowFactory.TAB_CURRENT_FILE));
     }
   }
 

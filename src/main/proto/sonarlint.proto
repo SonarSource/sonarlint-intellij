@@ -26,5 +26,5 @@ message Issues {
 }
 
 message StorageIndex {
-    map<string,string> mapped_path_by_key = 1;
+    map<string, string> mapped_path_by_key = 1;
 }

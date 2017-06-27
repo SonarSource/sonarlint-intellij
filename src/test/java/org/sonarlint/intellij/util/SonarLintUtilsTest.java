@@ -143,5 +143,5 @@ public class SonarLintUtilsTest extends SonarTest {
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());
   }
-  
+
 }

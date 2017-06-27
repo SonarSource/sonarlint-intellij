@@ -34,7 +34,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 import org.sonarsource.sonarlint.core.client.api.exceptions.UnsupportedServerException;
 
-public class OrganizationsFetchTask  extends Task.Modal {
+public class OrganizationsFetchTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final SonarQubeServer server;
   private Exception exception;
@@ -54,7 +54,7 @@ public class OrganizationsFetchTask  extends Task.Modal {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       WsHelper wsHelper = new WsHelperImpl();
       result = wsHelper.listOrganizations(serverConfiguration, new TaskProgressMonitor(indicator));
-    } catch(UnsupportedServerException e) {
+    } catch (UnsupportedServerException e) {
       result = Collections.emptyList();
     } catch (Exception e) {
       LOGGER.info("Failed to fetch organizations", e);

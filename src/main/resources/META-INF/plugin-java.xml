@@ -20,14 +20,14 @@
 
 -->
 <idea-plugin version="2">
-  <project-components>
-    <component>
-        <implementation-class>org.sonarlint.intellij.trigger.MakeTrigger</implementation-class>
-    </component>
-  </project-components>
+    <project-components>
+        <component>
+            <implementation-class>org.sonarlint.intellij.trigger.MakeTrigger</implementation-class>
+        </component>
+    </project-components>
 
-  <extensions defaultExtensionNs="org.sonarlint.idea">
-    <AnalysisConfiguration implementation="org.sonarlint.intellij.analysis.JavaAnalysisConfigurator" />
-  </extensions>
+    <extensions defaultExtensionNs="org.sonarlint.idea">
+        <AnalysisConfiguration implementation="org.sonarlint.intellij.analysis.JavaAnalysisConfigurator"/>
+    </extensions>
 
 </idea-plugin>

@@ -53,7 +53,7 @@ public class WizardModelTest {
     model.setServerUrl("url");
     model.setLogin("login");
     model.setProxyEnabled(true);
-    model.setPassword(new char[] { 'p', 'a', 's', 's'});
+    model.setPassword(new char[] {'p', 'a', 's', 's'});
 
     model.setServerType(WizardModel.ServerType.SONARQUBE);
 
@@ -72,7 +72,7 @@ public class WizardModelTest {
     model.setName("name");
     model.setOrganization("org");
     model.setToken("token");
-    model.setPassword(new char[] { 'p', 'a', 's', 's'});
+    model.setPassword(new char[] {'p', 'a', 's', 's'});
 
     model.setServerType(WizardModel.ServerType.SONARCLOUD);
 
