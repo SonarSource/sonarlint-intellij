@@ -38,6 +38,8 @@ import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.util.TaskProgressMonitor;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -167,64 +169,14 @@ public class SonarLintTask extends Task.Backgroundable {
 
     LOGGER.info(indicator.getText());
 
-    CancelMonitor monitor = new CancelMonitor(indicator, Thread.currentThread());
+    ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator);
     List<AnalysisResults> results = new LinkedList<>();
 
-    try {
-      monitor.start();
       for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
-        results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener));
+        results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener, progressMonitor));
         checkCanceled(indicator, myProject);
       }
       indicator.startNonCancelableSection();
-    } finally {
-      monitor.stopMonitor();
-    }
     return results;
-  }
-
-  private class CancelMonitor extends Thread {
-    private final ProgressIndicator indicator;
-    private final Thread t;
-    private boolean stop = false;
-
-    private CancelMonitor(ProgressIndicator indicator, Thread t) {
-      this.indicator = indicator;
-      this.t = t;
-      this.setName("sonarlint-cancel-monitor");
-      this.setDaemon(true);
-    }
-
-    private synchronized void stopMonitor() {
-      stop = true;
-    }
-
-    @Override
-    public void run() {
-      while (true) {
-        synchronized (this) {
-          // don't trust too much in isAlive: thread is probably pooled in a executor
-          if (stop || !t.isAlive()) {
-            return;
-          }
-        }
-        if (indicator.isCanceled()) {
-          // ensure that UI is canceled
-          if (!indicator.isCanceled()) {
-            indicator.cancel();
-          }
-
-          SonarLintConsole.get(myProject).info("Canceling...");
-          t.interrupt();
-          return;
-        }
-
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException e) {
-          return;
-        }
-      }
-    }
   }
 }

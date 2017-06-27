@@ -35,6 +35,7 @@ import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
@@ -70,7 +71,7 @@ public class SonarLintTaskTest extends SonarTest {
     job = createJob();
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
-    when(sonarLintAnalyzer.analyzeModule(eq(module), eq(files), any(IssueListener.class))).thenReturn(analysisResults);
+    when(sonarLintAnalyzer.analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class))).thenReturn(analysisResults);
 
     super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
     super.register(SonarLintAnalyzer.class, sonarLintAnalyzer);
@@ -94,7 +95,7 @@ public class SonarLintTaskTest extends SonarTest {
     assertThat(task.getJob()).isEqualTo(job);
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
     verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
@@ -107,7 +108,7 @@ public class SonarLintTaskTest extends SonarTest {
     TaskListener listener = mock(TaskListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
 
-    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class));
+    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
     task.run(progress);
 
     // never called because of error

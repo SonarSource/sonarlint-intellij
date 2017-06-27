@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -42,19 +43,21 @@ public abstract class SonarLintFacade {
     this.projectSettings = projectSettings;
   }
 
-  protected abstract AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener);
+  protected abstract AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
+    IssueListener issueListener, ProgressMonitor progressMonitor);
 
   protected abstract RuleDetails ruleDetails(String ruleKey);
 
   public abstract boolean requiresSavingFiles();
 
-  public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener, Map<String, String> additionalProps) {
+  public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener,
+    Map<String, String> additionalProps, ProgressMonitor progressMonitor) {
     Path baseDir = Paths.get(project.getBasePath());
     Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
     Map<String, String> props = new HashMap<>();
     props.putAll(additionalProps);
     props.putAll(projectSettings.getAdditionalProperties());
-    return analyze(baseDir, workDir, inputFiles, props, issueListener);
+    return analyze(baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
   }
 
   @CheckForNull

@@ -36,8 +36,10 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
@@ -85,7 +87,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
     when(file.getPath()).thenReturn("testFile");
     IssueListener listener = mock(IssueListener.class);
     when(app.getDefaultModalityState()).thenReturn(ModalityState.NON_MODAL);
-    analyzer.analyzeModule(module, Collections.singleton(file), listener);
-    verify(facade).startAnalysis(anyList(), eq(listener), anyMap());
+    analyzer.analyzeModule(module, Collections.singleton(file), listener, mock(ProgressMonitor.class));
+    verify(facade).startAnalysis(anyList(), eq(listener), anyMap(), any(ProgressMonitor.class));
   }
 }

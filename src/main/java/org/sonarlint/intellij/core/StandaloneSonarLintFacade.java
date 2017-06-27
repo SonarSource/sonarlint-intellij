@@ -27,6 +27,7 @@ import java.util.Map;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -47,10 +48,11 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     this.sonarlint = engine;
   }
 
-  @Override protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props, IssueListener issueListener) {
+  @Override protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
+    IssueListener issueListener, ProgressMonitor progressMonitor) {
     StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props);
     console.debug("Starting analysis with configuration:\n" + config.toString());
-    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings));
+    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
   }
 
   @Override protected RuleDetails ruleDetails(String ruleKey) {
