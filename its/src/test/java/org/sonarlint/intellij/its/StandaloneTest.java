@@ -138,7 +138,7 @@ public class StandaloneTest {
   private static List<Issue> analyze(ClientInputFile inputFile) throws IOException  {
     List<Issue> issues = new ArrayList<>();
     sonarlintEngine.analyze(new StandaloneAnalysisConfiguration(baseDir.toPath(),
-      temp.newFolder().toPath(), Collections.singletonList(inputFile), Collections.emptyMap()), issues::add);
+      temp.newFolder().toPath(), Collections.singletonList(inputFile), Collections.emptyMap()), issues::add, null, null);
     return issues;
   }
 
