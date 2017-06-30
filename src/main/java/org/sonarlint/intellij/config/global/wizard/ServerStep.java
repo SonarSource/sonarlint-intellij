@@ -83,11 +83,11 @@ public class ServerStep extends AbstractWizardStepEx {
 
     nameField.setToolTipText("Name of this configuration (mandatory field)");
 
-    String cloudText = "Connect to online <a href=\"https://sonarcloud.io\">SonarCloud</a>";
+    String cloudText = "Connect to <a href=\"https://sonarcloud.io\">the online service</a>";
     sonarcloudText.setText(cloudText);
     sonarcloudText.addHyperlinkListener(new BrowserHyperlinkListener());
 
-    String sqText = "Connect to SonarQube";
+    String sqText = "Connect to a server";
     sonarqubeText.setText(sqText);
 
     if (!editing) {
