@@ -56,6 +56,8 @@ public class SonarQubeServer {
   private boolean enableProxy;
   @Tag
   private String organizationKey;
+  @Tag
+  private boolean enableNotifications;
 
   private SonarQubeServer() {
     // necessary for XML deserialization
@@ -69,6 +71,7 @@ public class SonarQubeServer {
     this.password = builder.password;
     this.enableProxy = builder.enableProxy;
     this.organizationKey = builder.organizationKey;
+    this.enableNotifications = builder.enableNotifications;
   }
 
   @Override
@@ -84,12 +87,17 @@ public class SonarQubeServer {
       Comparing.equal(getLogin(), other.getLogin()) &&
       Comparing.equal(getName(), other.getName()) &&
       Comparing.equal(getOrganizationKey(), other.getOrganizationKey()) &&
-      Comparing.equal(enableProxy(), other.enableProxy());
+      Comparing.equal(enableProxy(), other.enableProxy()) &&
+      Comparing.equal(enableNotifications(), other.enableNotifications());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy);
+    return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, enableNotifications);
+  }
+
+  public boolean enableNotifications() {
+    return enableNotifications;
   }
 
   @CheckForNull
@@ -159,6 +167,7 @@ public class SonarQubeServer {
     private String login;
     private String password;
     private boolean enableProxy;
+    private boolean enableNotifications;
 
     private Builder() {
       // no args
@@ -170,6 +179,11 @@ public class SonarQubeServer {
 
     public Builder setLogin(@Nullable String login) {
       this.login = login;
+      return this;
+    }
+
+    public Builder setEnableNotifications(boolean enableNotifications) {
+      this.enableNotifications = enableNotifications;
       return this;
     }
 

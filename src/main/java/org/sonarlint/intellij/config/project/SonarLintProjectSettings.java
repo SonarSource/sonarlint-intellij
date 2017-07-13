@@ -41,29 +41,32 @@ import org.jetbrains.annotations.NotNull;
 public final class SonarLintProjectSettings extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectSettings> {
 
   private boolean verboseEnabled = false;
-
   private boolean analysisLogsEnabled = false;
   private final Map<String, String> additionalProperties = new LinkedHashMap<>();
-
   private boolean bindingEnabled = false;
   private String serverId = null;
   private String projectKey = null;
 
   /**
-   * Constructor called by the XML deserialization (no args).
+   * Constructor called by the XML serialization and deserialization (no args).
    * Even though this class has the scope of a project, we can't have it injected here.
    */
   public SonarLintProjectSettings() {
     super(null);
   }
 
+  public SonarLintProjectSettings(SonarLintProjectSettings toCopy) {
+    super(null);
+    XmlSerializerUtil.copyBean(toCopy, this);
+  }
+
   @Override
-  public SonarLintProjectSettings getState() {
+  public synchronized SonarLintProjectSettings getState() {
     return this;
   }
 
   @Override
-  public void loadState(SonarLintProjectSettings state) {
+  public synchronized void loadState(SonarLintProjectSettings state) {
     XmlSerializerUtil.copyBean(state, this);
   }
 

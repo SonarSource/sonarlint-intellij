@@ -33,15 +33,17 @@ import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 import org.sonarsource.sonarlint.core.client.api.exceptions.UnsupportedServerException;
+import org.sonarsource.sonarlint.core.notifications.SonarQubeNotifications;
 
-public class OrganizationsFetchTask extends Task.Modal {
+public class InformationFetchTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final SonarQubeServer server;
   private Exception exception;
-  private List<RemoteOrganization> result;
+  private List<RemoteOrganization> organizations;
+  private boolean notificationsSupported = false;
 
-  public OrganizationsFetchTask(SonarQubeServer server) {
-    super(null, "Fetch Organizations From SonarQube Server", true);
+  public InformationFetchTask(SonarQubeServer server) {
+    super(null, "Fetch Information From SonarQube Server", true);
     this.server = server;
   }
 
@@ -52,12 +54,14 @@ public class OrganizationsFetchTask extends Task.Modal {
 
     try {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
+      indicator.setText("Checking support of notifications");
+      notificationsSupported = SonarQubeNotifications.get().isSupported(serverConfiguration);
       WsHelper wsHelper = new WsHelperImpl();
-      result = wsHelper.listOrganizations(serverConfiguration, new TaskProgressMonitor(indicator));
+      organizations = wsHelper.listOrganizations(serverConfiguration, new TaskProgressMonitor(indicator));
     } catch (UnsupportedServerException e) {
-      result = Collections.emptyList();
+      organizations = Collections.emptyList();
     } catch (Exception e) {
-      LOGGER.info("Failed to fetch organizations", e);
+      LOGGER.info("Failed to fetch information", e);
       exception = e;
     }
   }
@@ -66,8 +70,12 @@ public class OrganizationsFetchTask extends Task.Modal {
     return exception;
   }
 
-  public List<RemoteOrganization> result() {
-    return result;
+  public List<RemoteOrganization> organizations() {
+    return organizations;
+  }
+
+  public boolean notificationsSupported() {
+    return notificationsSupported;
   }
 
 }

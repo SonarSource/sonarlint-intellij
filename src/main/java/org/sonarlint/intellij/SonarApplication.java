@@ -32,8 +32,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
+import org.sonarlint.intellij.core.SonarQubeEventNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
@@ -63,6 +65,7 @@ public class SonarApplication implements ApplicationComponent {
   public void registerNotifications() {
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_BINDING_PROBLEM);
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_UPDATE_NOTIFICATION);
+    NotificationGroup.balloonGroup(SonarQubeEventNotifications.GROUP_SONARQUBE_EVENT);
   }
 
   @Override
@@ -82,9 +85,8 @@ public class SonarApplication implements ApplicationComponent {
       return;
     }
 
-    try {
-      Files.list(oldWorkDir)
-        .filter(f -> f.getFileName().toString().startsWith(".sonartmp_"))
+    try (Stream<Path> stream = Files.list(oldWorkDir)) {
+      stream.filter(f -> f.getFileName().toString().startsWith(".sonartmp_"))
         .forEach(FileUtils::deleteRecursively);
     } catch (IOException e) {
       // ignore
