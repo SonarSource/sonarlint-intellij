@@ -41,7 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
-import org.sonarlint.intellij.tasks.OrganizationsFetchTask;
+import org.sonarlint.intellij.tasks.InformationFetchTask;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
@@ -172,26 +172,26 @@ public class AuthStep extends AbstractWizardStepEx {
     if (commitType == CommitType.Finish || commitType == CommitType.Next) {
       save();
       checkConnection();
-      fetchOrganizations();
+      fetchInformation();
     }
   }
 
-  private void fetchOrganizations() throws CommitStepException {
+  private void fetchInformation() throws CommitStepException {
     SonarQubeServer tmpServer = model.createServerWithoutOrganization();
-    OrganizationsFetchTask task = new OrganizationsFetchTask(tmpServer);
+    InformationFetchTask task = new InformationFetchTask(tmpServer);
     ProgressManager.getInstance().run(task);
     if (task.getException() == null) {
-      model.setOrganizationList(task.result());
-      if (task.result().size() == 1) {
-        model.setOrganization(task.result().iterator().next().getKey());
-      }
-      if (task.result().isEmpty()) {
+      model.setOrganizationList(task.organizations());
+      if (task.organizations().size() == 1) {
+        model.setOrganization(task.organizations().iterator().next().getKey());
+      } else if (task.organizations().isEmpty()) {
         model.setOrganization(null);
       }
+      model.setNotificationsSupported(task.notificationsSupported());
       return;
     }
 
-    String msg = "Failed to fetch list of organizations from the server. Please check the configuration and try again.";
+    String msg = "Failed to fetch information from the server. Please check the configuration and try again.";
     if (task.getException().getMessage() != null) {
       msg = msg + " Error: " + task.getException().getMessage();
     }

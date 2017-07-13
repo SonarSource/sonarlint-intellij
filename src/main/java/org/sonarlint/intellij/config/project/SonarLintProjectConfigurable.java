@@ -37,6 +37,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.tasks.ServerUpdateTask;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -51,15 +52,15 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   private final Project project;
   private final SonarLintProjectSettings projectSettings;
-  private final MessageBusConnection bus;
+  private final MessageBusConnection busConnection;
 
   private SonarLintProjectSettingsPanel panel;
 
   public SonarLintProjectConfigurable(Project project) {
     this.project = project;
     this.projectSettings = project.getComponent(SonarLintProjectSettings.class);
-    this.bus = ApplicationManager.getApplication().getMessageBus().connect(project);
-    this.bus.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
+    this.busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
+    this.busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override public void changed(List<SonarQubeServer> newServerList) {
         if (panel != null) {
           panel.serversChanged(newServerList);
@@ -104,10 +105,13 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   /**
    * When we save the binding, we need to:
+   * - Send a message for listeners interested in it
    * - If we are bound to a module, update it (even if we detected no changes)
    * - Clear all issues and submit an analysis on all open files
    */
   private void onSave() {
+    ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
+
     if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getServerId() != null) {
       ProjectBindingManager bindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
 
@@ -118,6 +122,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(moduleKey, Collections.singletonList(project)), true);
       ProgressManager.getInstance().run(task.asModal());
     }
+    projectListener.changed(projectSettings);
   }
 
   @Override
@@ -150,7 +155,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public void disposeUIResources() {
     SonarLintProjectNotifications.get(project).reset();
-    bus.disconnect();
+    busConnection.disconnect();
     if (panel != null) {
       panel.dispose();
       panel = null;

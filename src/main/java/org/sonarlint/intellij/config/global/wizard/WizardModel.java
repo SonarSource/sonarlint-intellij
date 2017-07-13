@@ -36,6 +36,8 @@ public class WizardModel {
   private String name;
   private String organization;
   private boolean proxyEnabled;
+  private boolean notificationsEnabled = true;
+  private boolean notificationsSupported = false;
 
   private List<RemoteOrganization> organizationList;
 
@@ -63,6 +65,7 @@ public class WizardModel {
       this.password = pass.toCharArray();
     }
     this.organization = serverToEdit.getOrganizationKey();
+    this.notificationsEnabled = serverToEdit.enableNotifications();
     this.name = serverToEdit.getName();
   }
 
@@ -73,6 +76,24 @@ public class WizardModel {
 
   public WizardModel setServerType(ServerType serverType) {
     this.serverType = serverType;
+    return this;
+  }
+
+  public boolean isNotificationsSupported() {
+    return notificationsSupported;
+  }
+
+  public WizardModel setNotificationsSupported(boolean notificationsSupported) {
+    this.notificationsSupported = notificationsSupported;
+    return this;
+  }
+
+  public boolean isNotificationsEnabled() {
+    return notificationsEnabled;
+  }
+
+  public WizardModel setNotificationsEnabled(boolean notificationsEnabled) {
+    this.notificationsEnabled = notificationsEnabled;
     return this;
   }
 
@@ -185,6 +206,7 @@ public class WizardModel {
         .setLogin(login)
         .setPassword(new String(password));
     }
+    builder.setEnableNotifications(notificationsEnabled && notificationsSupported);
     return builder.build();
   }
 }

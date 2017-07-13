@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.global.wizard;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
 import java.util.List;
+import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -37,6 +38,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
   private JPanel panel;
   private JLabel textArea;
   private JLabel textArea2;
+  private JCheckBox notificationsCheckBox;
 
   public ConfirmStep(WizardModel model, boolean editing) {
     super("Configuration completed");
@@ -58,6 +60,9 @@ public class ConfirmStep extends AbstractWizardStepEx {
       textArea.setText(TEXT1);
     }
     textArea2.setText(TEXT2);
+    notificationsCheckBox.setVisible(model.isNotificationsSupported());
+    notificationsCheckBox.setEnabled(model.isNotificationsSupported());
+    notificationsCheckBox.setSelected(model.isNotificationsSupported() && model.isNotificationsEnabled());
   }
 
   @NotNull @Override public Object getStepId() {
@@ -82,7 +87,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
   }
 
   @Override public void commit(CommitType commitType) throws CommitStepException {
-    // nothing to do
+    model.setNotificationsEnabled(notificationsCheckBox.isSelected());
   }
 
   @Nullable @Override public JComponent getPreferredFocusedComponent() {
