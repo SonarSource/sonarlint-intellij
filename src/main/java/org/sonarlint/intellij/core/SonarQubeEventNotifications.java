@@ -25,13 +25,13 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.util.List;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectState;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
@@ -70,6 +70,11 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
       projectState.setLastEventPolling(ZonedDateTime.now());
       register(settings);
     });
+    busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
+      @Override public void applied(List<SonarQubeServer> serverList, boolean autoTrigger) {
+        register(projectSettings);
+      }
+    });
   }
 
   @Override
@@ -79,16 +84,18 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
 
   private void register(SonarLintProjectSettings settings) {
     unregister();
-    SonarQubeServer server;
-    try {
-      server = bindingManager.getSonarQubeServer();
-    } catch (InvalidBindingException e) {
-      // do nothing
-      return;
-    }
-    if (settings.isBindingEnabled() && server.enableNotifications()) {
-      NotificationConfiguration config = createConfiguration(settings, server);
-      SonarQubeNotifications.get().register(config);
+    if (settings.isBindingEnabled()) {
+      SonarQubeServer server;
+      try {
+        server = bindingManager.getSonarQubeServer();
+      } catch (InvalidBindingException e) {
+        // do nothing
+        return;
+      }
+      if (server.enableNotifications()) {
+        NotificationConfiguration config = createConfiguration(settings, server);
+        SonarQubeNotifications.get().register(config);
+      }
     }
   }
 
