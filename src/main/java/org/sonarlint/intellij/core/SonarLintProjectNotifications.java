@@ -35,7 +35,7 @@ import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 public class SonarLintProjectNotifications extends AbstractProjectComponent {
-  public static final String GROUP_UPDATE_NOTIFICATION = "SonarLint: Updates Notifications";
+  public static final String GROUP_UPDATE_NOTIFICATION = "SonarLint: Configuration update";
   public static final String GROUP_BINDING_PROBLEM = "SonarLint: Server Binding Errors";
   private static final String UPDATE_SERVER_MSG = "\n<br>Please update the SonarQube server in the <a href='#'>SonarLint General Settings</a>";
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the <a href='#'>SonarLint project configuration</a>";
@@ -120,7 +120,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
 
   public void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
     Notification notification = new Notification(GROUP_UPDATE_NOTIFICATION,
-      "SonarLint Updates",
+      "Configuration update",
       "Configuration changed on SonarQube server '" + serverId + "'. <a href=\"#update\">Update now</a>",
       NotificationType.INFORMATION, new NotificationListener.Adapter() {
       @Override

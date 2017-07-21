@@ -26,6 +26,9 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import com.intellij.util.xmlb.annotations.Tag;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,7 +40,9 @@ import org.jetbrains.annotations.Nullable;
     @Storage(file = StoragePathMacros.PROJECT_CONFIG_DIR + "/sonarlint-state.xml", scheme = StorageScheme.DIRECTORY_BASED, id = "dir")
   })
 public class SonarLintProjectState extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectState> {
-  private ZonedDateTime lastEventPolling = null;
+  // Xml serializer doesn't handle ZonedDateTime, so we keep milliseconds since epoch
+  @Tag
+  private Long lastEventPolling = null;
 
   /**
    * Constructor called by the XML serialization and deserialization (no args).
@@ -49,11 +54,14 @@ public class SonarLintProjectState extends AbstractProjectComponent implements P
 
   @CheckForNull
   public ZonedDateTime getLastEventPolling() {
-    return lastEventPolling;
+    if (lastEventPolling != null) {
+      return ZonedDateTime.ofInstant(Instant.ofEpochMilli(lastEventPolling), ZoneOffset.systemDefault());
+    }
+    return null;
   }
 
   public void setLastEventPolling(ZonedDateTime dateTime) {
-    this.lastEventPolling = dateTime;
+    this.lastEventPolling = dateTime.toInstant().toEpochMilli();
   }
 
   @Nullable @Override public SonarLintProjectState getState() {

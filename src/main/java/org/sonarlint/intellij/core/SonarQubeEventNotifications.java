@@ -25,6 +25,8 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -116,10 +118,12 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
     }
 
     @Override public void set(ZonedDateTime dateTime) {
-      // this could be false if the settings changed between the read and write
-      if (dateTime.isAfter(projectState.getLastEventPolling())) {
-        projectState.setLastEventPolling(dateTime);
+      ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
+      if (lastEventPolling != null && dateTime.isBefore(lastEventPolling)) {
+        // this can happen if the settings changed between the read and write
+        return;
       }
+      projectState.setLastEventPolling(dateTime);
     }
   }
 
@@ -129,7 +133,7 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
   private class EventListener implements SonarQubeNotificationListener {
     @Override public void handle(SonarQubeNotification notification) {
       Notification notif = new Notification(GROUP_SONARQUBE_EVENT,
-        "<b>SonarLint - SonarQube event</b>",
+        "<b>SonarQube event</b>",
         createMessage(notification),
         NotificationType.INFORMATION,
         new NotificationListener.UrlOpeningListener(true));
@@ -138,7 +142,7 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
     }
 
     private String createMessage(SonarQubeNotification notification) {
-      return notification.message() + ". Click <a href=\"" + notification.link() + "\">here</a> to open in browser.";
+      return notification.message() + ". <a href=\"" + notification.link() + "\">Check it here</a>.";
     }
   }
 }
