@@ -166,8 +166,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     final int answer = Messages.showYesNoCancelDialog(project,
       resultStr,
       "SonarLint Analysis Results",
-      "Review Issues",
-      "Commit Anyway",
+      "&Review Issues",
+      "Comm&it Anyway",
       "Close",
       UIUtil.getWarningIcon());
 
