@@ -149,7 +149,7 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
     }
 
     private String createMessage(SonarQubeNotification notification) {
-      return notification.message() + ". <a href=\"" + notification.link() + "\">Check it here</a>.";
+      return notification.message() + "<br/>. <a href=\"" + notification.link() + "\">Check it here</a>.";
     }
   }
 }
