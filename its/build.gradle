@@ -36,7 +36,7 @@ props.each { prop ->
 dependencies {
   testCompile "org.sonarsource.sonarlint.core:sonarlint-client-api:$sonarlintCoreVersion"
   testCompile "org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion"
-  testCompile 'org.sonarsource.orchestrator:sonar-orchestrator:3.12'
+  testCompile 'org.sonarsource.orchestrator:sonar-orchestrator:3.14.0.887'
   testCompile 'org.assertj:assertj-core:2.3.0'
   testCompile 'junit:junit:4.11'
   testCompile 'org.mockito:mockito-core:1.10.19'
