@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
 
 -->
-<idea-plugin version="2">
+<idea-plugin>
     <project-components>
         <component>
             <implementation-class>org.sonarlint.intellij.trigger.MakeTrigger</implementation-class>

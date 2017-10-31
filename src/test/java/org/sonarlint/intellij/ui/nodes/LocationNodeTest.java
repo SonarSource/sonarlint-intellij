@@ -38,7 +38,8 @@ public class LocationNodeTest {
   @Before
   public void setUp() {
     range = mock(RangeMarker.class);
-    Document doc = new MockDocument("my document test");
+    MockDocument doc = new MockDocument();
+    doc.replaceText("my document test", System.currentTimeMillis());
     when(range.getDocument()).thenReturn(doc);
     when(range.isValid()).thenReturn(true);
     when(range.getStartOffset()).thenReturn(3);
