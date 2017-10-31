@@ -1,0 +1,244 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<idea-plugin url="http://intellij.sonarlint.org/">
+    <id>org.sonarlint.idea</id>
+    <name>SonarLint</name>
+    <version>${project.version}</version>
+    <vendor email="sonarlint@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
+
+    <description><![CDATA[
+        SonarLint is an IntelliJ IDEA plugin that provides on-the-fly feedback to developers on new bugs and quality issues injected into Java, JavaScript, PHP and Python code.
+        If your project is analyzed on SonarQube (formerly known as "Sonar"), SonarLint can connect to the server to retrieve the appropriate quality profiles and settings for that project.
+        Java 8 is required to run SonarLint.
+      ]]></description>
+
+    <change-notes><![CDATA[
+      <ul>
+        <li>3.0 - Avoid saving files when possible. Improve support of cancellation</li>
+        <li>2.10 - Support of SonarQube organizations</li>
+        <li>2.9 - New code analyzers included in standalone mode. Collection of usage statistics</li>
+        <li>2.8 - Analyze all files in project. New icons for issue types</li>
+        <li>2.7 - Display of secondary locations of issues</li>
+        <li>2.6 - Support of SSL certificates configured in IntelliJ</li>
+        <li>2.5 - Analysis of VCS changed files and notifications about binding update</li>
+        <li>2.4.3 - Bug fix for multi-module projects on Windows</li>
+        <li>2.4.2 - Fix resolved issues on windows and authentication</li>
+        <li>2.4.1 - Bug fix of Javascript in standalone mode.</li>
+        <li>2.4 - Hide issues that are resolved in SonarQube. Numerous bug fixes.</li>
+        <li>2.3.2 - Fix configuration of automatic trigger of analysis</li>
+        <li>2.3.1 - Bug fix for analysis configuration and performance improvements</li>
+        <li>2.3 - Support of exclusions in connected mode; Numerous bug fixes. Java 8 is now required to run SonarLint.</li>
+        <li>2.2 - Support of SonarQube LTS (4.5) and commercial plugins</li>
+        <li>2.1.1 - Bug fix for PHPStorm</li>
+        <li>2.1 - Various improvements and bug fixes</li>
+        <li>2.0.2 - Bug fix SLI-73</li>
+        <li>2.0.1 - Bug fixes</li>
+        <li>2.0 - Connect to a SonarQube server;</li>
+        <li>1.5 - Display SonarLint markers age;</li>
+        <li>1.4 - No internet required; Several bug fixes;</li>
+        <li>1.3 - Issues views; UI improvements;</li>
+        <li>1.2 - Automatic trigger of analysis; "NO SONAR" quick fix; configurable highlighting of issues;</li>
+        <li>1.1 - More precise issue location; trigger of analysis changed to on demand only; improved SonarLint console;</li>
+        <li>1.0 - On the fly SonarLint inspection</li>
+      </ul>
+      ]]>
+    </change-notes>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+    <idea-version since-build="141.177"/>
+
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.lang</depends>
+    <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
+
+    <application-components>
+        <component>
+            <implementation-class>org.sonarlint.intellij.config.global.SonarLintGlobalSettings</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.SonarApplication</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.util.SonarLintAppUtils</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.SonarLintEngineManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.util.GlobalLogOutput</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.SonarLintEngineFactory</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.util.SonarLintActions</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.telemetry.SonarLintTelemetry</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.telemetry.TelemetryEngineProvider</implementation-class>
+        </component>
+    </application-components>
+
+    <project-components>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.SonarQubeEventNotifications</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.trigger.SonarLintSubmitter</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.ChangedFilesIssues</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.AllFilesIssues</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.editor.CodeAnalyzerRestarter</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.ProjectBindingManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.persistence.LiveIssueCache</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.persistence.IssuePersistence</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.ui.SonarLintConsole</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.config.project.SonarLintProjectSettings</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.config.project.SonarLintProjectState</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintJobManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.IssueMatcher</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.IssueManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.issue.IssueProcessor</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintStatus</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.trigger.FileEditorTrigger</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.trigger.SonarDocumentListener</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintAnalyzer</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.SonarLintProjectNotifications</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.ServerIssueUpdater</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.UpdateChecker</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.analysis.SonarLintTaskFactory</implementation-class>
+        </component>
+    </project-components>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
+        <toolWindow id="SonarLint" anchor="bottom" icon="/images/ico-sonarlint-13.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory"/>
+        <projectConfigurable order="AFTER SonarLintApp" displayName="SonarLint Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable"
+                             nonDefaultProject="true"/>
+        <applicationConfigurable id="SonarLintApp" displayName="SonarLint General Settings" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
+        <colorSettingsPage implementation="org.sonarlint.intellij.config.SonarLintColorSettingsPage"/>
+        <checkinHandlerFactory implementation="org.sonarlint.intellij.trigger.SonarLintCheckinHandlerFactory"/>
+        <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
+        <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
+        <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.actions.IssuesViewTabOpener"/>
+    </extensions>
+
+    <extensionPoints>
+        <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator"/>
+    </extensionPoints>
+
+    <actions>
+        <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="true" icon="/images/ico-sonarlint-13.png">
+            <add-to-group anchor="last" group-id="AnalyzeMenu"/>
+        </group>
+
+        <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
+        <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
+                text="Analyze File with SonarLint"
+                description="Run SonarLint analysis on the file currently selected in the editor"
+                icon="SonarLintIcons.SONARLINT">
+            <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
+        </action>
+
+        <action id="SonarLint.AnalyzeChangedFiles"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
+                text="Analyze VCS Changed Files with SonarLint"
+                description="Run a SonarLint analysis on VCS changed files"
+                icon="SonarLintIcons.SONARLINT">
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
+        </action>
+
+        <action id="SonarLint.AnalyzeAllFiles"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
+                text="Analyze All Files with SonarLint"
+                description="Run a SonarLint analysis on all files in the project"
+                icon="SonarLintIcons.SONARLINT">
+            <add-to-group group-id="SonarLint.AnalyzeMenu"/>
+        </action>
+
+        <action id="SonarLint.toolwindow.Cancel"
+                class="org.sonarlint.intellij.actions.SonarCancel"
+                text="Cancel SonarLint Analysis"
+                description="Cancel the SonarLint analysis running"
+                icon="SonarLintIcons.SUSPEND">
+        </action>
+
+
+        <action id="SonarLint.toolwindow.Configure"
+                class="org.sonarlint.intellij.actions.SonarConfigureProject"
+                text="Configure SonarLint"
+                description="Configure SonarLint"
+                icon="SonarLintIcons.TOOLS">
+        </action>
+
+    </actions>
+
+</idea-plugin>
