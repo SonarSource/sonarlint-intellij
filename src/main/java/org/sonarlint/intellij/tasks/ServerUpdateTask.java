@@ -194,13 +194,15 @@ public class ServerUpdateTask {
   }
 
   private static void analyzeOpenFiles(Project project) {
-    SonarLintConsole console = SonarLintConsole.get(project);
-    console.info("Clearing all issues because binding was updated");
+    if (!project.isDisposed()) {
+      SonarLintConsole console = SonarLintConsole.get(project);
+      console.info("Clearing all issues because binding was updated");
 
-    IssueManager store = SonarLintUtils.get(project, IssueManager.class);
-    store.clear();
+      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
+      store.clear();
 
-    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
+      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+      submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
+    }
   }
 }
