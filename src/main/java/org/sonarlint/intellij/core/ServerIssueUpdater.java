@@ -57,7 +57,8 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private static final int THREADS_NUM = 5;
   private static final int QUEUE_LIMIT = 100;
   private static final int FETCH_ALL_ISSUES_THRESHOLD = 10;
-  private static final int TIMEOUT = 5_000;
+  private static final int CONNECTION_TIMEOUT = 5_000;
+  private static final int READ_TIMEOUT = 2 * 60_000;
 
   private ExecutorService executorService;
 
@@ -193,7 +194,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
     public void downloadAllServerIssues() {
       try {
-        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, TIMEOUT);
+        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
         LOGGER.debug("fetchServerIssues moduleKey=" + moduleKey);
         engine.downloadServerIssues(serverConfiguration, moduleKey);
       } catch (DownloadException e) {
@@ -216,7 +217,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
     private List<ServerIssue> fetchServerIssuesForFile(String relativePath) {
       try {
-        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, TIMEOUT);
+        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
         LOGGER.debug("fetchServerIssues moduleKey=" + moduleKey + ", filepath=" + relativePath);
         String fileKey = SonarLintUtils.toFileKey(relativePath);
         return engine.downloadServerIssues(serverConfiguration, moduleKey, fileKey);

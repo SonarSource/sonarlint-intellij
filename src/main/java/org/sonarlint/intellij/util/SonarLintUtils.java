@@ -69,8 +69,9 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 public class SonarLintUtils {
 
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
-  public static final int CONNECTION_TIMEOUT_MS = 30_000;
-  public static final String PATH_SEPARATOR_PATTERN = Pattern.quote(File.separator);
+  static final int CONNECTION_TIMEOUT_MS = 30_000;
+  static final int READ_TIMEOUT_MS = 2 * 60_000;
+  static final String PATH_SEPARATOR_PATTERN = Pattern.quote(File.separator);
   private static final String[] SONARCLOUD_ALIAS = {"https://sonarqube.com", "https://www.sonarqube.com",
     "https://www.sonarcloud.io", "https://sonarcloud.io"};
 
@@ -301,16 +302,16 @@ public class SonarLintUtils {
   }
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
-    return getServerConfiguration(server, CONNECTION_TIMEOUT_MS);
+    return getServerConfiguration(server, CONNECTION_TIMEOUT_MS, READ_TIMEOUT_MS);
   }
 
-  public static ServerConfiguration getServerConfiguration(SonarQubeServer server, int timeout) {
+  public static ServerConfiguration getServerConfiguration(SonarQubeServer server, int connectTimeout, int readTimeout) {
     CertificateManager certificateManager = get(CertificateManager.class);
     SonarApplication sonarlint = get(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
-      .connectTimeoutMilliseconds(timeout)
-      .readTimeoutMilliseconds(timeout)
+      .connectTimeoutMilliseconds(connectTimeout)
+      .readTimeoutMilliseconds(readTimeout)
       .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
       .trustManager(certificateManager.getCustomTrustManager())
       .url(server.getHostUrl());
