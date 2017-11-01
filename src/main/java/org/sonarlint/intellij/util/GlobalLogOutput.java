@@ -72,6 +72,12 @@ public class GlobalLogOutput extends ApplicationComponent.Adapter implements Log
     }
   }
 
+  public void logError(String msg, Throwable t) {
+    for (SonarLintConsole c : consoles) {
+      c.error(msg, t);
+    }
+  }
+
   void addConsole(SonarLintConsole console) {
     this.consoles.add(console);
   }

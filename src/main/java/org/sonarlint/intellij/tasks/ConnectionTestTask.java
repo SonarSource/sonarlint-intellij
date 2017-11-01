@@ -24,6 +24,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.WsHelperImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -51,7 +52,9 @@ public class ConnectionTestTask extends Task.Modal {
       WsHelper wsHelper = new WsHelperImpl();
       result = wsHelper.validateConnection(serverConfiguration);
     } catch (Exception e) {
-      LOGGER.info("Connection test failed", e);
+      String msg = "Connection test failed";
+      LOGGER.info(msg, e);
+      GlobalLogOutput.get().logError(msg, e);
       exception = e;
     }
   }
