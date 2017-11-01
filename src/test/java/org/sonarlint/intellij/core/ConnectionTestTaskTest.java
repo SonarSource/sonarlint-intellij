@@ -26,15 +26,21 @@ import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class ConnectionTestTaskTest extends SonarTest {
+  private GlobalLogOutput globalLogOutput = mock(GlobalLogOutput.class);
+
   @Before
   public void prepare() {
     super.register(app, SonarApplication.class, new SonarApplication());
+    super.register(app, GlobalLogOutput.class, globalLogOutput);
   }
 
   @Test
@@ -47,5 +53,6 @@ public class ConnectionTestTaskTest extends SonarTest {
 
     assertThat(task.getException()).isNotNull();
     assertThat(task.result()).isNull();
+    verify(globalLogOutput).logError(eq("Connection test failed"), any(Throwable.class));
   }
 }
