@@ -42,6 +42,7 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
+import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -196,8 +197,8 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     flow2.add(updateServerButton);
     flow2.add(link);
 
-    serverStatusPanel.add(flow1, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0, 0, 0, 0), 0, 0));
-    serverStatusPanel.add(flow2, new GridBagConstraints(1, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, new Insets(0, 0, 0, 0), 0, 0));
+    serverStatusPanel.add(flow1, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, JBUI.insets(0, 0, 0, 0), 0, 0));
+    serverStatusPanel.add(flow2, new GridBagConstraints(1, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, JBUI.insets(0, 0, 0, 0), 0, 0));
 
     updateServerButton.setAction(new AbstractAction() {
       @Override public void actionPerformed(ActionEvent e) {

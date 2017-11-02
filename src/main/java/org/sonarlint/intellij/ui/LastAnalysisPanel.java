@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
@@ -33,7 +34,6 @@ import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.Timer;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class LastAnalysisPanel implements Disposable {
@@ -80,7 +80,7 @@ public class LastAnalysisPanel implements Disposable {
     lastAnalysisLabel = new JLabel("");
     noAnalysisLabel = new JLabel("");
 
-    GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, new Insets(2, 2, 2, 2), 0, 0);
+    GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(2, 2, 2, 2), 0, 0);
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.weightx = 1;
 

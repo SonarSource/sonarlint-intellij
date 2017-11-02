@@ -27,6 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.messages.MessageBusConnection;
+import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -117,7 +118,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     scopesLabel.setLabelFor(scopeComboBox);
     final GridBagConstraints gc =
       new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-        new Insets(2, 2, 2, 2), 0, 0);
+        JBUI.insets(2, 2, 2, 2), 0, 0);
     scopePanel.add(scopesLabel, gc);
     scopePanel.add(scopeComboBox, gc);
 

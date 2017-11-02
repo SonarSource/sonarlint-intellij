@@ -30,7 +30,6 @@ import javax.swing.Icon;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class IssueNode extends AbstractNode {

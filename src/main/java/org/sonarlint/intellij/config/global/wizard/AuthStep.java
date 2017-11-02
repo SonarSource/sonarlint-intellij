@@ -23,6 +23,7 @@ import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.DocumentAdapter;
 import java.awt.CardLayout;
@@ -222,7 +223,7 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    authComboBox = new JComboBox();
+    authComboBox = new ComboBox();
   }
 
   private void generateToken() {
