@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.mock.MockDocument;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.SimpleTextAttributes;
 import org.junit.Before;

@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.util.ui.JBUI;
 import java.awt.Insets;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
@@ -32,7 +33,7 @@ public class LabelNode extends AbstractNode {
   }
 
   @Override public void render(TreeCellRenderer renderer) {
-    renderer.setIpad(new Insets(3, 3, 3, 3));
+    renderer.setIpad(JBUI.insets(3, 3, 3, 3));
     renderer.setBorder(new BottomLineBorder());
     renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
   }

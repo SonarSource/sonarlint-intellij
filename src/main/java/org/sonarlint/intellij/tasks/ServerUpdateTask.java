@@ -120,25 +120,17 @@ public class ServerUpdateTask {
   }
 
   private static String buildMinimumVersionFailMessage(Collection<SonarAnalyzer> failingAnalyzers) {
-    StringBuilder builder = new StringBuilder();
-    builder.append("The following plugins do not meet the required minimum versions, please upgrade them: ");
+    String msg = "The following plugins do not meet the required minimum versions, please upgrade them: ";
 
-    boolean first = true;
-    for (SonarAnalyzer p : failingAnalyzers) {
-      if (!first) {
-        builder.append(",");
-      } else {
-        first = false;
-      }
-      builder.append(p.key())
-        .append(" (installed: ")
-        .append(p.version())
-        .append(", minimum: ")
-        .append(p.minimumVersion())
-        .append(")");
-    }
+    return msg + failingAnalyzers.stream()
+      .map(ServerUpdateTask::analyzerToString)
+      .collect(Collectors.joining(","));
+  }
 
-    return builder.toString();
+  private static String analyzerToString(SonarAnalyzer analyzer) {
+    return analyzer.key()
+      + " (installed: " + analyzer.version()
+      + ", minimum: " + analyzer.minimumVersion() + ")";
   }
 
   private static boolean tooOld(SonarAnalyzer analyzer) {

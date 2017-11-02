@@ -46,21 +46,17 @@ public class SonarLinkHandler extends TooltipLinkHandler {
 
   private static String transform(String ruleKey, @Nullable String ruleName, @Nullable String description) {
     if (description == null || ruleName == null) {
-      StringBuilder sb = new StringBuilder(128)
-        .append("<html><body>")
-        .append("<code>").append(ruleKey).append("</code></br>")
-        .append("</body></html>");
-      return sb.toString();
+      return "<html><body><code>" + ruleKey + "</code></br></body></html>";
     }
 
-    StringBuilder sb = new StringBuilder(description.length() + 256);
+    return "<html><body>"
+      + "<h2>" + ruleName + "</h2>"
+      + "<code>" + ruleKey + "</code></br>"
+      + removeEmptyLines(description)
+      + "</body></html>";
+  }
 
-    sb.append("<html><body>");
-    sb.append("<h2>").append(ruleName).append("</h2>");
-    sb.append("<code>").append(ruleKey).append("</code></br>");
-    sb.append(description.replaceAll("\n(\\s*\n)+", "\n"));
-    sb.append("</body></html>");
-
-    return sb.toString();
+  private static String removeEmptyLines(String description) {
+    return description.replaceAll("\n(\\s*\n)+", "\n");
   }
 }

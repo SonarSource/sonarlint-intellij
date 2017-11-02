@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Scanner;
 import org.junit.Before;
 import org.junit.Rule;
@@ -109,7 +110,7 @@ public class IndexedObjectStoreTest {
       Files.createDirectories(getPath("mykey").resolve("foo"));
     }
 
-    when(index.keys()).thenReturn(Arrays.asList("mykey"));
+    when(index.keys()).thenReturn(Collections.singletonList("mykey"));
     when(validator.apply(anyString())).thenReturn(Boolean.FALSE);
 
     store.deleteInvalid();

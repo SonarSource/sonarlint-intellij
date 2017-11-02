@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.util.ui.JBUI;
 import java.awt.Insets;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -57,7 +58,7 @@ public class LocationNode extends AbstractNode {
   }
 
   @Override public void render(TreeCellRenderer renderer) {
-    renderer.setIpad(new Insets(3, 3, 3, 3));
+    renderer.setIpad(JBUI.insets(3, 3, 3, 3));
     renderer.setBorder(null);
     renderer.append(issueCoordinates(), bold ? SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES : SimpleTextAttributes.GRAY_ATTRIBUTES);
     if (number != null) {

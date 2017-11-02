@@ -32,6 +32,7 @@ import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.util.messages.MessageBusConnection;
+import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
@@ -116,7 +117,7 @@ public class AutoTriggerStatusPanel {
     panel = new JPanel(layout);
 
     GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
-      new Insets(2, 2, 2, 2), 0, 0);
+      JBUI.insets(2, 2, 2, 2), 0, 0);
 
     JPanel enabledCard = new JPanel(new GridBagLayout());
     JPanel disabledCard = new JPanel(new GridBagLayout());
