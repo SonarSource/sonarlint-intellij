@@ -44,12 +44,12 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.actions.IssuesViewTabOpener;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.ChangedFilesIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.actions.IssuesViewTabOpener;
 import org.sonarlint.intellij.ui.scope.ChangedFilesScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 

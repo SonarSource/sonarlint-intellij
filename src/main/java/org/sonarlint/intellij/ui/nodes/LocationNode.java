@@ -23,7 +23,6 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
-import java.awt.Insets;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;

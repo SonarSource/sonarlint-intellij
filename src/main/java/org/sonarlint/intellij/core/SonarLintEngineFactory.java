@@ -21,7 +21,6 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;

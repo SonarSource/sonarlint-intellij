@@ -37,7 +37,6 @@ import icons.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.util.List;
 import javax.swing.Box;
 import javax.swing.Icon;

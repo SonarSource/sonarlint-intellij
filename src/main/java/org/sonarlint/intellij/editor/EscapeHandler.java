@@ -26,7 +26,6 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.editor.SonarLintHighlighting;
 
 public class EscapeHandler extends EditorActionHandler {
 
