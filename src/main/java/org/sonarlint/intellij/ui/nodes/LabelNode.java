@@ -22,7 +22,6 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
-import java.awt.Insets;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class LabelNode extends AbstractNode {

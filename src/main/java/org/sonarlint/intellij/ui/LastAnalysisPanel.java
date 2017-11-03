@@ -27,7 +27,6 @@ import icons.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.time.Instant;
 import javax.annotation.Nullable;
 import javax.swing.Box;
