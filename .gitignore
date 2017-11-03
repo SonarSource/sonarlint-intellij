@@ -1,4 +1,5 @@
 src/main/resources/plugins/*.jar
+out
 
 # ---- Sonar
 .sonar
