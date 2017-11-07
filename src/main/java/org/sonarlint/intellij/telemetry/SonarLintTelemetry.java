@@ -30,6 +30,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
@@ -79,7 +80,11 @@ public class SonarLintTelemetry implements ApplicationComponent {
       this.scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(this::upload,
         1, TimeUnit.HOURS.toMinutes(6), TimeUnit.MINUTES);
     } catch (Exception e) {
-      // fail silently
+      if(org.sonarsource.sonarlint.core.client.api.util.SonarLintUtils.isInternalDebugEnabled()) {
+        String msg = "Failed to schedule telemetry job";
+        LOGGER.error(msg, e);
+        GlobalLogOutput.get().logError(msg, e);
+      }
     }
   }
 
