@@ -33,6 +33,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>3.1 - Various minor improvements and bug fixes. Updated code analyzers.</li>
         <li>3.0 - Avoid saving files when possible. Improve support of cancellation</li>
         <li>2.10 - Support of SonarQube organizations</li>
         <li>2.9 - New code analyzers included in standalone mode. Collection of usage statistics</li>
