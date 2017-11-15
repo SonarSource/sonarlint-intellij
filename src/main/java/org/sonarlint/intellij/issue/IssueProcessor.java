@@ -39,9 +39,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJob;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
@@ -52,13 +54,16 @@ public class IssueProcessor extends AbstractProjectComponent {
   private final IssueManager manager;
   private final SonarLintConsole console;
   private final ServerIssueUpdater serverIssueUpdater;
+  private final SonarLintGlobalSettings globalSettings;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, IssueManager manager, ServerIssueUpdater serverIssueUpdater) {
+  public IssueProcessor(Project project, IssueMatcher matcher, IssueManager manager, ServerIssueUpdater serverIssueUpdater,
+      SonarLintGlobalSettings globalSettings) {
     super(project);
     this.matcher = matcher;
     this.manager = manager;
     this.console = SonarLintConsole.get(project);
     this.serverIssueUpdater = serverIssueUpdater;
+    this.globalSettings = globalSettings;
   }
 
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
@@ -148,6 +153,9 @@ public class IssueProcessor extends AbstractProjectComponent {
         // file is no longer valid (might have been deleted meanwhile) or there has been an error matching an issue in it
         continue;
       }
+      if (ignoreIssueBasedOnSettings(issue)) {
+        continue;
+      }
       try {
         LiveIssue toStore = transformIssue(issue, vFile);
         map.get(vFile).add(toStore);
@@ -160,6 +168,24 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     return map;
+  }
+
+  private boolean ignoreIssueBasedOnSettings(Issue issue) {
+    SonarLintSeverity issueSeverity = globalSettings.getIssueSeverity();
+    if (issueSeverity.compareTo(SonarLintSeverity.byName(issue.getSeverity())) < 0) {
+      // ignore issues with severity lower than configured
+      return true;
+    }
+
+    String issueType = issue.getType();
+    if (("BUG".equals(issueType) && !globalSettings.isIssueTypeBug())
+        || ("CODE_SMELL".equals(issueType) && !globalSettings.isIssueTypeCodeSmell())
+        || ("VULNERABILITY".equals(issueType) && !globalSettings.isIssueTypeVulnerability())) {
+      // ignore issues with disabled type
+      return true;
+    }
+
+    return false;
   }
 
   private LiveIssue transformIssue(Issue issue, VirtualFile vFile) throws IssueMatcher.NoMatchException {
