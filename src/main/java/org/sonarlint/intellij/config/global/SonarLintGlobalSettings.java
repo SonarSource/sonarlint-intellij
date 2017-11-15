@@ -37,12 +37,20 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintBundle;
+import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 @State(name = "SonarLintGlobalSettings", storages = {@Storage(id = "sonarlint", file = StoragePathMacros.APP_CONFIG + "/sonarlint.xml")})
 public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private boolean autoTrigger = true;
+
+  private SonarLintSeverity issueSeverity = SonarLintSeverity.INFO;
+
+  private boolean issueTypeBug = true;
+  private boolean issueTypeCodeSmell = true;
+  private boolean issueTypeVulnerability = true;
+
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
 
@@ -85,6 +93,38 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   public void setAutoTrigger(boolean autoTrigger) {
     this.autoTrigger = autoTrigger;
+  }
+
+  public SonarLintSeverity getIssueSeverity() {
+    return issueSeverity;
+  }
+
+  public void setIssueSeverity(SonarLintSeverity issueSeverity) {
+    this.issueSeverity = issueSeverity;
+  }
+
+  public boolean isIssueTypeBug() {
+    return issueTypeBug;
+  }
+
+  public void setIssueTypeBug(boolean issueTypeBug) {
+    this.issueTypeBug = issueTypeBug;
+  }
+
+  public boolean isIssueTypeCodeSmell() {
+    return issueTypeCodeSmell;
+  }
+
+  public void setIssueTypeCodeSmell(boolean issueTypeCodeSmell) {
+    this.issueTypeCodeSmell = issueTypeCodeSmell;
+  }
+
+  public boolean isIssueTypeVulnerability() {
+    return issueTypeVulnerability;
+  }
+
+  public void setIssueTypeVulnerability(boolean issueTypeVulnerability) {
+    this.issueTypeVulnerability = issueTypeVulnerability;
   }
 
   public void setSonarQubeServers(List<SonarQubeServer> servers) {
