@@ -58,7 +58,7 @@ CI)
         -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace --info \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.projectVersion=$CURRENT_VERSION \
-        -Dsonar.login=$SONAR_TOKEN
+        -Dsonar.login=$SONAR_TOKEN \
         -Dsonar.analysis.buildNumber=$TRAVIS_BUILD_NUMBER \
         -Dsonar.analysis.pipeline=$TRAVIS_BUILD_NUMBER \
         -Dsonar.analysis.sha1=$TRAVIS_COMMIT  \
