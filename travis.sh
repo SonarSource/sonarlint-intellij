@@ -59,6 +59,10 @@ CI)
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.projectVersion=$CURRENT_VERSION \
         -Dsonar.login=$SONAR_TOKEN
+        -Dsonar.analysis.buildNumber=$TRAVIS_BUILD_NUMBER \
+        -Dsonar.analysis.pipeline=$TRAVIS_BUILD_NUMBER \
+        -Dsonar.analysis.sha1=$TRAVIS_COMMIT  \
+        -Dsonar.analysis.repository=$TRAVIS_REPO_SLUG
   
   elif [[ "${TRAVIS_BRANCH}" == "branch-"* ]] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     strongEcho 'Build and publish in artifactory'
