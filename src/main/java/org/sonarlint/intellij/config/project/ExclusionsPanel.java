@@ -1,6 +1,6 @@
-package org.sonarlint.intellij.config.global;
+package org.sonarlint.intellij.config.project;
 
-import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.IdeBorderFactory;
 import java.awt.BorderLayout;
 import java.util.Objects;
@@ -9,38 +9,39 @@ import java.util.function.Supplier;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
-import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.component.EditableList;
 
-public class ExclusionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
+public class ExclusionsPanel  implements ConfigurationPanel<SonarLintProjectSettings> {
   private static final String EMPTY_LABEL = "No exclusions configured";
   private static final String BORDER_TITLE = "Exclusions";
+  private final Project project;
 
   private JComponent panel;
   private EditableList<String> list;
+
+  public ExclusionsPanel(Project project) {
+    this.project = project;
+    create();
+  }
 
   @Override
   public JComponent getComponent() {
     return panel;
   }
 
-  @Override public boolean isModified(SonarLintGlobalSettings settings) {
+  @Override public boolean isModified(SonarLintProjectSettings settings) {
     return !Objects.equals(settings.getFileExclusions(), list.get());
   }
 
   @Override
-  public void load(SonarLintGlobalSettings settings) {
+  public void load(SonarLintProjectSettings settings) {
     list.set(settings.getFileExclusions());
   }
 
   @Override
-  public void save(SonarLintGlobalSettings settings) {
+  public void save(SonarLintProjectSettings settings) {
     settings.setFileExclusions(list.get());
-  }
-
-  public ExclusionsPanel() {
-    create();
   }
 
   public void create() {
@@ -48,13 +49,20 @@ public class ExclusionsPanel implements ConfigurationPanel<SonarLintGlobalSettin
     panel = new JPanel(new BorderLayout());
     panel.setBorder(b);
     Supplier<String> onAdd = () -> {
-      String s = Messages.showInputDialog(panel, "Enter new exclusion pattern", "Add File Exclusion", null, null, null);
-      return StringUtils.stripToNull(s);
+      AddEditExclusionDialog dialog = new AddEditExclusionDialog(project);
+      if (dialog.showAndGet() && dialog.getExclusion() != null) {
+        return dialog.getExclusion().toStringWithType();
+      }
+      return null;
     };
 
-    Function<String, String> onEdit = (value) -> {
-      String s = Messages.showInputDialog(panel, "Modify exclusion pattern", "Edit File Exclusion", null, value, null);
-      return StringUtils.stripToNull(s);
+    Function<String, String> onEdit = value -> {
+      AddEditExclusionDialog dialog = new AddEditExclusionDialog(project);
+      dialog.setExclusion(ExclusionItem.parse(value));
+      if (dialog.showAndGet() && dialog.getExclusion() != null) {
+        return dialog.getExclusion().toStringWithType();
+      }
+      return null;
     };
 
     list = new EditableList<>(EMPTY_LABEL, onAdd, onEdit);

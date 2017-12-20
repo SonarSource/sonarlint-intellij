@@ -5,6 +5,7 @@ import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBList;
+import com.intellij.ui.table.JBTable;
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -46,10 +47,10 @@ public class EditableList<T> {
 
     ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(list)
       .setEditActionName("Edit")
-      .setEditAction(e -> editEntry());
-
-    toolbarDecorator.setAddAction(new AddEntryAction());
-    toolbarDecorator.setRemoveAction(new RemoveEntryAction());
+      .setEditAction(e -> editEntry())
+      .setAddAction(new AddEntryAction())
+      .setRemoveAction(new RemoveEntryAction())
+      .disableUpDownActions();
 
     listPanel = new JPanel(new BorderLayout());
     listPanel.add(toolbarDecorator.createPanel(), BorderLayout.CENTER);

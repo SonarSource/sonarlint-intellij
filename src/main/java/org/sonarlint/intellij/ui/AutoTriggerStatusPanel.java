@@ -44,6 +44,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.analysis.Exclusions;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -61,6 +62,7 @@ public class AutoTriggerStatusPanel {
   private final Project project;
   private final SonarLintAppUtils utils;
   private final SonarLintGlobalSettings globalSettings;
+  private final Exclusions exclusions;
   private JPanel panel;
   private CardLayout layout;
 
@@ -68,6 +70,7 @@ public class AutoTriggerStatusPanel {
     this.project = project;
     this.utils = SonarLintUtils.get(SonarLintAppUtils.class);
     this.globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
+    this.exclusions = SonarLintUtils.get(project, Exclusions.class);
     createPanel();
     switchCards();
     subscribeToEvents();
@@ -80,7 +83,7 @@ public class AutoTriggerStatusPanel {
   private void subscribeToEvents() {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void applied(List<SonarQubeServer> serverList, boolean autoTrigger) {
+      @Override public void applied(SonarLintGlobalSettings settings) {
         switchCards();
       }
     });
@@ -100,7 +103,8 @@ public class AutoTriggerStatusPanel {
       VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
       if (selectedFile != null) {
         Module m = utils.findModuleForFile(selectedFile, project);
-        card = SonarLintUtils.shouldAnalyzeAutomatically(selectedFile, m) ? AUTO_TRIGGER_ENABLED : FILE_DISABLED;
+        Exclusions.Result result = exclusions.checkExclusionAutomaticAnalysis(selectedFile, m);
+        card = result.isExcluded() ? FILE_DISABLED : AUTO_TRIGGER_ENABLED;
       } else {
         card = AUTO_TRIGGER_ENABLED;
       }

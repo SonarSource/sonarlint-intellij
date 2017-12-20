@@ -178,54 +178,6 @@ public class SonarLintUtils {
     return false;
   }
 
-  public static boolean shouldAnalyzeAutomatically(VirtualFile file, @Nullable Module module) {
-    if (!shouldAnalyze(file, module) || module == null) {
-      return false;
-    }
-
-    if (PowerSaveMode.isEnabled()) {
-      return false;
-    }
-
-    // file and module not null here
-    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-    SonarLintConsole console = SonarLintConsole.get(module.getProject());
-    ContentEntry[] entries = moduleRootManager.getContentEntries();
-
-    for (ContentEntry e : entries) {
-      if (isExcludedOrUnderExcludedDirectory(file, e)) {
-        console.debug("Not automatically analysing excluded file: " + file.getName());
-        return false;
-      }
-
-      SourceFolder[] sourceFolders = e.getSourceFolders();
-      for (SourceFolder sourceFolder : sourceFolders) {
-        if (sourceFolder.getFile() == null || sourceFolder.isSynthetic()) {
-          continue;
-        }
-
-        if (VfsUtil.isAncestor(sourceFolder.getFile(), file, false)) {
-          return isValidSourceFolder(console, file, sourceFolder);
-        }
-      }
-    }
-
-    // java must be in a source root. For other files, we always analyze them.
-    return !"java".equalsIgnoreCase(file.getFileType().getDefaultExtension());
-  }
-
-  private static boolean isValidSourceFolder(SonarLintConsole console, VirtualFile file, SourceFolder sourceFolder) {
-    if (isJavaResource(sourceFolder)) {
-      console.debug("Not automatically analysing file under resources: " + file.getName());
-      return false;
-    } else if (isJavaGeneratedSource(sourceFolder)) {
-      console.debug("Not automatically analysing file belonging to generated source folder: " + file.getName());
-      return false;
-    }
-
-    return true;
-  }
-
   public static boolean isExcludedOrUnderExcludedDirectory(final VirtualFile file, ContentEntry contentEntry) {
     for (VirtualFile excludedDir : contentEntry.getExcludeFolderFiles()) {
       if (VfsUtil.isAncestor(excludedDir, file, false)) {
@@ -233,28 +185,6 @@ public class SonarLintUtils {
       }
     }
     return false;
-  }
-
-  public static boolean shouldAnalyze(VirtualFile file, @Nullable Module module) {
-    if (module == null) {
-      return false;
-    }
-
-    if (module.isDisposed() || module.getProject().isDisposed()) {
-      return false;
-    }
-
-    if (!file.isInLocalFileSystem() || file.getFileType().isBinary() || !file.isValid()
-      || ".idea".equals(file.getParent().getName())) {
-      return false;
-    }
-
-    // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-    if ("html".equalsIgnoreCase(file.getFileType().getName())) {
-      return false;
-    }
-
-    return true;
   }
 
   public static void configureProxy(String host, ServerConfiguration.Builder builder) {

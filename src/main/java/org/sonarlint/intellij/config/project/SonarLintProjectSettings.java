@@ -28,8 +28,10 @@ import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -131,10 +133,10 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   }
 
   public List<String> getFileExclusions() {
-    return fileExclusions;
+    return new ArrayList<>(fileExclusions);
   }
 
   public void setFileExclusions(List<String> fileExclusions) {
-    this.fileExclusions = fileExclusions;
+    this.fileExclusions = new ArrayList<>(fileExclusions);
   }
 }

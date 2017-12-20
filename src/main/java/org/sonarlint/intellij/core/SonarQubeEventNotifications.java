@@ -27,6 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import java.time.ZonedDateTime;
 import java.util.List;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectState;
@@ -71,7 +72,7 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
       register(settings);
     });
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void applied(List<SonarQubeServer> serverList, boolean autoTrigger) {
+      @Override public void applied(SonarLintGlobalSettings settings) {
         register(projectSettings);
       }
     });
