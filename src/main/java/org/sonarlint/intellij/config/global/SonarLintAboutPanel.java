@@ -42,7 +42,7 @@ import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
-public class SonarLintAboutPanel {
+public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
   private final SonarApplication application;
   private JPanel panel;
   private JCheckBox enableCheckBox;
@@ -149,14 +149,17 @@ public class SonarLintAboutPanel {
     return panel;
   }
 
-  public void load(boolean telemetryEnabled) {
-    enableCheckBox.setSelected(telemetryEnabled);
+  @Override
+  public void load(SonarLintTelemetry telemetry) {
+    enableCheckBox.setSelected(telemetry.enabled());
   }
 
+  @Override
   public void save(SonarLintTelemetry telemetry) {
     telemetry.optOut(!enableCheckBox.isSelected());
   }
 
+  @Override
   public boolean isModified(SonarLintTelemetry telemetry) {
     return telemetry.enabled() != enableCheckBox.isSelected();
   }

@@ -81,7 +81,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
-public class SonarQubeServerMgmtPanel implements Disposable {
+public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String LABEL_NO_SERVERS = "No servers";
 
   // UI
@@ -101,11 +101,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
   private ConnectedSonarLintEngine engine = null;
   private StateListener engineListener;
 
-  public SonarQubeServerMgmtPanel() {
-    create();
-  }
-
-  public void create() {
+  private void create() {
     Application app = ApplicationManager.getApplication();
     serverManager = app.getComponent(SonarLintEngineManager.class);
     serverChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
@@ -229,14 +225,20 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     }
   }
 
+  @Override
   public JComponent getComponent() {
+    if (panel == null) {
+      create();
+    }
     return panel;
   }
 
+  @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
     return !servers.equals(settings.getSonarQubeServers());
   }
 
+  @Override
   public void save(SonarLintGlobalSettings settings) {
     List<SonarQubeServer> copyList = new ArrayList<>(servers);
     settings.setSonarQubeServers(copyList);
@@ -245,6 +247,7 @@ public class SonarQubeServerMgmtPanel implements Disposable {
     unbindRemovedServers();
   }
 
+  @Override
   public void load(SonarLintGlobalSettings settings) {
     servers.clear();
     deletedServerIds.clear();

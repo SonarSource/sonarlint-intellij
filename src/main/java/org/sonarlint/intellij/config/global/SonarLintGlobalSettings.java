@@ -29,6 +29,7 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -43,6 +44,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   private boolean autoTrigger = true;
   private List<SonarQubeServer> servers = new LinkedList<>();
+  private List<String> fileExclusions = new ArrayList<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
@@ -92,5 +94,13 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   public List<SonarQubeServer> getSonarQubeServers() {
     return this.servers;
+  }
+
+  public List<String> getFileExclusions() {
+    return fileExclusions;
+  }
+
+  public void setFileExclusions(List<String> fileExclusions) {
+    this.fileExclusions = fileExclusions;
   }
 }
