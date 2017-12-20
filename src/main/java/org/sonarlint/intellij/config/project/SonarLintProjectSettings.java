@@ -26,7 +26,9 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -46,6 +48,7 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   private boolean bindingEnabled = false;
   private String serverId = null;
   private String projectKey = null;
+  private List<String> fileExclusions = new ArrayList<>();
 
   /**
    * Constructor called by the XML serialization and deserialization (no args).
@@ -127,4 +130,11 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
     this.analysisLogsEnabled = analysisLogsEnabled;
   }
 
+  public List<String> getFileExclusions() {
+    return fileExclusions;
+  }
+
+  public void setFileExclusions(List<String> fileExclusions) {
+    this.fileExclusions = fileExclusions;
+  }
 }

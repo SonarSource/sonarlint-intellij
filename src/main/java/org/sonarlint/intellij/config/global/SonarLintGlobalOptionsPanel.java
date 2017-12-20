@@ -26,14 +26,11 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 
-public class SonarLintGlobalOptionsPanel {
+public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private JPanel rootPane;
   private JCheckBox autoTrigger;
 
-  public SonarLintGlobalOptionsPanel(SonarLintGlobalSettings model) {
-    load(model);
-  }
-
+  @Override
   public JComponent getComponent() {
     if (rootPane == null) {
 
@@ -54,16 +51,19 @@ public class SonarLintGlobalOptionsPanel {
     return tickOptions;
   }
 
+  @Override
   public boolean isModified(SonarLintGlobalSettings model) {
     getComponent();
     return model.isAutoTrigger() != autoTrigger.isSelected();
   }
 
+  @Override
   public void load(SonarLintGlobalSettings model) {
     getComponent();
     autoTrigger.setSelected(model.isAutoTrigger());
   }
 
+  @Override
   public void save(SonarLintGlobalSettings model) {
     getComponent();
     model.setAutoTrigger(autoTrigger.isSelected());
