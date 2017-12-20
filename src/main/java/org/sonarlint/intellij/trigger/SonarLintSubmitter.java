@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.Exclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
@@ -43,9 +44,10 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   private final SonarLintJobManager sonarLintJobManager;
   private final SonarLintGlobalSettings globalSettings;
   private final SonarLintAppUtils utils;
+  private final Exclusions exclusions;
 
   public SonarLintSubmitter(Project project, SonarLintConsole console, FileEditorManager editorManager, SonarLintTelemetry telemetry,
-    SonarLintJobManager sonarLintJobManager, SonarLintGlobalSettings globalSettings, SonarLintAppUtils utils) {
+    SonarLintJobManager sonarLintJobManager, SonarLintGlobalSettings globalSettings, SonarLintAppUtils utils, Exclusions exclusions) {
     super(project);
     this.console = console;
     this.editorManager = editorManager;
@@ -53,6 +55,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     this.sonarLintJobManager = sonarLintJobManager;
     this.globalSettings = globalSettings;
     this.utils = utils;
+    this.exclusions = exclusions;
   }
 
   public void submitOpenFilesAuto(TriggerType trigger) {
@@ -67,7 +70,8 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
    * Submit files for analysis.
    * This is a user-initiated action. It will start running in foreground, modal (blocking) and will consume the single slot, updating
    * the status of the associated actions / icons.
-   * @param files Files to be analyzed
+   *
+   * @param files   Files to be analyzed
    * @param trigger What triggered the analysis
    */
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger) {
@@ -86,10 +90,11 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
   /**
    * Submit files for analysis.
-   * @param files Files to be analyzed.
-   * @param trigger What triggered the analysis
+   *
+   * @param files             Files to be analyzed.
+   * @param trigger           What triggered the analysis
    * @param startInBackground Whether the analysis was triggered automatically. It affects the filter of files that should be analyzed and also
-   *                    if it starts in background or foreground.
+   *                          if it starts in background or foreground.
    */
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {
     submitFiles(files, trigger, null, startInBackground);
@@ -115,12 +120,16 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     for (VirtualFile file : files) {
       Module m = utils.findModuleForFile(file, myProject);
       if (autoTrigger) {
-        if (!utils.shouldAnalyzeAutomatically(file, m)) {
+        Exclusions.Result result = exclusions.checkExclusionAutomaticAnalysis(file, m);
+        if (result.isExcluded()) {
+          if (result.excludeReason() != null) {
+            console.info("File '" + file.getName() + "' excluded: " + result.excludeReason());
+          }
           continue;
         }
       } else {
-        if (!utils.shouldAnalyze(file, m)) {
-          console.info("File can't be analyzed. Skipping: " + file.getPath());
+        if (!exclusions.shouldAnalyze(file, m)) {
+          console.info("File '" + file.getName() + "' can't be analyzed. Skipping: " + file.getPath());
           continue;
         }
       }

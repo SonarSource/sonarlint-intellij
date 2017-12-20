@@ -25,6 +25,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import org.sonarlint.intellij.config.ConfigurationPanel;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private JPanel rootPane;

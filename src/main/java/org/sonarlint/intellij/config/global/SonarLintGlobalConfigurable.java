@@ -80,7 +80,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     exclusions.save(globalSettings);
 
     GlobalConfigurationListener globalConfigurationListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
-    globalConfigurationListener.applied(globalSettings.getSonarQubeServers(), globalSettings.isAutoTrigger());
+    globalConfigurationListener.applied(globalSettings);
     serverManager.reloadServers();
   }
 

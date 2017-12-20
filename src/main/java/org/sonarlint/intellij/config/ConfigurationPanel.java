@@ -1,4 +1,4 @@
-package org.sonarlint.intellij.config.global;
+package org.sonarlint.intellij.config;
 
 import javax.swing.JComponent;
 

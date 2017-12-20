@@ -70,6 +70,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.event.HyperlinkEvent;
+import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.SQServerWizard;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;

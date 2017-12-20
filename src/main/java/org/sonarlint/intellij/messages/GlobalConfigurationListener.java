@@ -21,6 +21,7 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.util.messages.Topic;
 import java.util.List;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
 public interface GlobalConfigurationListener {
@@ -34,7 +35,7 @@ public interface GlobalConfigurationListener {
   /**
    * Called when settings are saved (clicking "Apply" or "Ok")
    */
-  void applied(List<SonarQubeServer> serverList, boolean autoTrigger);
+  void applied(SonarLintGlobalSettings settings);
 
   abstract class Adapter implements GlobalConfigurationListener {
     @Override
@@ -43,7 +44,7 @@ public interface GlobalConfigurationListener {
     }
 
     @Override
-    public void applied(List<SonarQubeServer> serverList, boolean autoTrigger) {
+    public void applied(SonarLintGlobalSettings settigns) {
       // nothing done by default
     }
   }

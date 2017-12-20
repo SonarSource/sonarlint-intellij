@@ -33,11 +33,13 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   private final JPanel root;
   private final JPanel rootBindPane;
   private final JPanel rootPropertiesPane;
+  private final ExclusionsPanel exclusionsPanel;
   private SonarLintProjectBindPanel bindPanel;
 
   public SonarLintProjectSettingsPanel(Project project) {
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
+    exclusionsPanel = new ExclusionsPanel(project);
     root = new JPanel(new BorderLayout());
     JBTabbedPane tabs = new JBTabbedPane();
 
@@ -48,7 +50,8 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     rootPropertiesPane.add(propsPanel.create(), BorderLayout.CENTER);
 
     tabs.insertTab("Bind to SonarQube project", null, rootBindPane, "Configure the binding of modules to a SonarQube server", 0);
-    tabs.insertTab("Analysis properties", null, rootPropertiesPane, "Configure analysis properties", 1);
+    tabs.insertTab("File Exclusions", null, exclusionsPanel.getComponent(), "Configure which files to exclude from analysis", 1);
+    tabs.insertTab("Analysis properties", null, rootPropertiesPane, "Configure analysis properties", 2);
 
     root.add(tabs, BorderLayout.CENTER);
   }
@@ -60,11 +63,13 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   public void load(List<SonarQubeServer> servers, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
     bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getServerId(), projectSettings.getProjectKey());
+    exclusionsPanel.load(projectSettings);
   }
 
   public void save(SonarLintProjectSettings projectSettings) {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
+    exclusionsPanel.save(projectSettings);
 
     if (bindPanel.isBindingEnabled()) {
       projectSettings.setServerId(bindPanel.getSelectedStorageId());
@@ -98,6 +103,9 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       return true;
     }
 
+    if (exclusionsPanel.isModified(projectSettings)) {
+      return true;
+    }
     return bindingChanged(projectSettings);
   }
 
