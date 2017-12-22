@@ -1,3 +1,22 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
@@ -22,17 +41,18 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isExcludedOrUnderExcludedDirectory;
 import static org.sonarlint.intellij.util.SonarLintUtils.isJavaGeneratedSource;
 import static org.sonarlint.intellij.util.SonarLintUtils.isJavaResource;
 
-public class Exclusions {
+public class LocalFileExclusions {
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
 
-  public Exclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings) {
+  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings) {
     loadGlobalExclusions(settings);
     loadProjectExclusions(projectSettings);
     subscribeToSettingsChanges(project);
@@ -86,10 +106,11 @@ public class Exclusions {
       return r;
     }
 
-    if (globalExclusions.test(file.getPath())) {
+    String relativePath = SonarLintUtils.getRelativePath(module.getProject(), file);
+    if (globalExclusions.test(relativePath)) {
       return Result.excluded("file matches exclusions defined in the SonarLint Global Settings");
     }
-    if (projectExclusions.test(file.getPath())) {
+    if (projectExclusions.test(relativePath)) {
       return Result.excluded("file matches exclusions defined in the SonarLint Project Settings");
     }
 

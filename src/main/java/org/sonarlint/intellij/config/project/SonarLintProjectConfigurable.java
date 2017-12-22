@@ -133,7 +133,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
     List<SonarQubeServer> currentServers = null;
 
-    // try get the global settings that are currently being configured in the configurable, if it is open
+    // try items the global settings that are currently being configured in the configurable, if it is open
     DataContext ctx = DataManager.getInstance().getDataContextFromFocus().getResult();
     if (ctx != null) {
       Settings allSettings = Settings.KEY.getData(ctx);
@@ -145,7 +145,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       }
     }
 
-    // get saved settings if needed
+    // items saved settings if needed
     if (currentServers == null) {
       currentServers = SonarLintUtils.get(SonarLintGlobalSettings.class).getSonarQubeServers();
     }

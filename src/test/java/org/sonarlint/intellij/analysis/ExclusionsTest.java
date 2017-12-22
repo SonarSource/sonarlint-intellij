@@ -11,7 +11,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ExclusionsTest {
-  /*private Exclusions exclusions = new Exclusions()
+  /*private LocalFileExclusions exclusions = new LocalFileExclusions()
   @Test
   public void testShouldAnalyze() {
     assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isTrue();
