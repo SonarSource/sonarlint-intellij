@@ -31,8 +31,10 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +46,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   private boolean autoTrigger = true;
   private List<SonarQubeServer> servers = new LinkedList<>();
-  private List<String> fileExclusions = new ArrayList<>();
+  private List<String> fileExclusions = new LinkedList<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
@@ -88,8 +90,9 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public void setSonarQubeServers(List<SonarQubeServer> servers) {
-    this.servers = servers.stream().filter(s -> !SonarLintUtils.isBlank(s.getName())).collect(Collectors.toList());
-    this.servers = Collections.unmodifiableList(this.servers);
+    this.servers = Collections.unmodifiableList(servers.stream()
+      .filter(s -> !SonarLintUtils.isBlank(s.getName()))
+      .collect(Collectors.toList()));
   }
 
   public List<SonarQubeServer> getSonarQubeServers() {
@@ -101,6 +104,6 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public void setFileExclusions(List<String> fileExclusions) {
-    this.fileExclusions = fileExclusions;
+    this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
   }
 }

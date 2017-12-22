@@ -83,7 +83,6 @@ public class SonarDocumentListenerTest {
     when(docManager.getFile(doc)).thenReturn(file);
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
-    when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
     when(utils.isOpenFile(project, file)).thenReturn(true);
 
     listener.documentChanged(event);
@@ -105,7 +104,6 @@ public class SonarDocumentListenerTest {
     when(docManager.getFile(doc)).thenReturn(file);
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
-    when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
 
     listener.documentChanged(event);
     verifyZeroInteractions(submitter);
@@ -123,7 +121,6 @@ public class SonarDocumentListenerTest {
     when(docManager.getFile(doc)).thenReturn(file);
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
-    when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(false);
 
     listener.documentChanged(event);
     verifyZeroInteractions(submitter);
@@ -175,7 +172,6 @@ public class SonarDocumentListenerTest {
     when(docManager.getFile(doc)).thenReturn(file);
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
-    when(utils.shouldAnalyzeAutomatically(file, m1)).thenReturn(true);
 
     listener.documentChanged(event);
     listener.disposeComponent();

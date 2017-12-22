@@ -46,7 +46,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private SonarQubeServerMgmtPanel serversPanel;
   private SonarLintGlobalOptionsPanel globalPanel;
   private SonarLintAboutPanel about;
-  private ExclusionsPanel exclusions;
+  private GlobalExclusionsPanel exclusions;
 
   public SonarLintGlobalConfigurable() {
     this.app = ApplicationManager.getApplication();
@@ -126,7 +126,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private JPanel getPanel() {
     if (rootPanel == null) {
       about = new SonarLintAboutPanel(sonarApplication);
-      exclusions = new ExclusionsPanel();
+      exclusions = new GlobalExclusionsPanel();
       globalPanel = new SonarLintGlobalOptionsPanel();
       serversPanel = new SonarQubeServerMgmtPanel();
 
