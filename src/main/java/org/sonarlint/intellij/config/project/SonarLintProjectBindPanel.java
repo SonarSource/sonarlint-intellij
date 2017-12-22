@@ -146,7 +146,7 @@ public class SonarLintProjectBindPanel implements Disposable {
   }
 
   /**
-   * Updates server status label. If no server is selected, some components get disabled.
+   * Updates server status label. If no server is selected, some components items disabled.
    * Should be called when selected Server changes.
    */
   private void onServerSelected() {

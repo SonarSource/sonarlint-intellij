@@ -1,21 +1,27 @@
 /*
- * Copyright 2000-2014 JetBrains s.r.o.
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015 SonarSource
+ * sonarlint@sonarsource.com
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
 
 package org.sonarlint.intellij.config.project;
 
+import com.intellij.codeInsight.hint.HintManager;
+import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.help.HelpManager;
@@ -25,8 +31,19 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.changes.*;
 import com.intellij.ui.DocumentAdapter;
+import com.intellij.ui.HoverHyperlinkLabel;
+import com.intellij.ui.HyperlinkAdapter;
+import com.intellij.ui.HyperlinkLabel;
+import com.intellij.ui.awt.RelativePoint;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBTextField;
+import icons.SonarLintIcons;
+import java.awt.Cursor;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.annotation.CheckForNull;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.HyperlinkEvent;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -54,8 +71,10 @@ public class AddEditExclusionDialog extends DialogWrapper {
   private JRadioButton globRadioButton;
 
   private TextFieldWithBrowseButton directoryTextField;
-  private JTextField globTextField;
+  private JBTextField globTextField;
   private TextFieldWithBrowseButton fileTextField;
+  private HyperlinkLabel patternHelp;
+  private JBLabel helpLabel;
 
   public AddEditExclusionDialog(@Nullable final Project project) {
     super(project, false);
@@ -111,6 +130,8 @@ public class AddEditExclusionDialog extends DialogWrapper {
     directoryTextField.setEnabled(directoryRadioButton.isSelected());
     globTextField.setEnabled(globRadioButton.isSelected());
     fileTextField.setEnabled(fileRadioButton.isSelected());
+    helpLabel.setEnabled(globRadioButton.isSelected());
+
     updateOk();
   }
 
@@ -167,7 +188,28 @@ public class AddEditExclusionDialog extends DialogWrapper {
     }
   }
 
-  private String relative(String path) {
+  private void createUIComponents() {
+    patternHelp = new HyperlinkLabel("");
+    Icon infoIcon = SonarLintIcons.INFO;
+    patternHelp.setIcon(infoIcon);
+    //hoverHyperlinkLabel1.setUseIconAsLink(true);
+    patternHelp.addMouseListener(new MouseAdapter() {
+      public void mouseEntered(MouseEvent e) {
+        final JLabel label = new JLabel("<<html><body style=\"margin-bottom:1pt\">Configure GLOB patterns to be applied to files in all projects.<br/><br/><b>Examples:</b><br/><table border=\"1\" cellpadding=\"1\" cellspacing=\"0\"><tr><td><pre>**/*.js</pre></td><td>Exclude all javascript files</td></tr><tr><td><pre>src/main/test/**</pre></td><td>Exclude all test sources</td></tr><tr><td><pre>**/*{!.java}</pre></td><td>Exclude everything except Java files</td></tr></table></body></html>");
+        label.setBorder(HintUtil.createHintBorder());
+        label.setBackground(HintUtil.INFORMATION_COLOR);
+        label.setOpaque(true);
+        HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(patternHelp),
+          HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
+      }
+
+      public void mouseExited(MouseEvent e) {
+       HintManager.getInstance().hideAllHints();
+      }
+    });
+  }
+
+    private String relative(String path) {
     if (project == null) {
       return path;
     }

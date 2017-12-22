@@ -33,13 +33,13 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   private final JPanel root;
   private final JPanel rootBindPane;
   private final JPanel rootPropertiesPane;
-  private final ExclusionsPanel exclusionsPanel;
+  private final ProjectExclusionsPanel exclusionsPanel;
   private SonarLintProjectBindPanel bindPanel;
 
   public SonarLintProjectSettingsPanel(Project project) {
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
-    exclusionsPanel = new ExclusionsPanel(project);
+    exclusionsPanel = new ProjectExclusionsPanel(project);
     root = new JPanel(new BorderLayout());
     JBTabbedPane tabs = new JBTabbedPane();
 

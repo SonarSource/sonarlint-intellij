@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonarlint.intellij.analysis.Exclusions;
+import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
@@ -55,7 +55,7 @@ public class SonarLintSubmitterTest {
   @Mock
   private SonarLintTelemetry telemetry;
   @Mock
-  private Exclusions exclusions;
+  private LocalFileExclusions exclusions;
 
   private SonarLintGlobalSettings globalSettings;
 
@@ -74,7 +74,7 @@ public class SonarLintSubmitterTest {
     VirtualFile f1 = mock(VirtualFile.class);
     Module m1 = mock(Module.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(m1);
-    when(exclusions.checkExclusionAutomaticAnalysis(f1, m1)).thenReturn(Exclusions.Result.notExcluded());
+    when(exclusions.checkExclusionAutomaticAnalysis(f1, m1)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
@@ -97,7 +97,7 @@ public class SonarLintSubmitterTest {
     VirtualFile f1 = mock(VirtualFile.class);
     Module m1 = mock(Module.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(m1);
-    when(exclusions.checkExclusionAutomaticAnalysis(f1, m1)).thenReturn(Exclusions.Result.excluded(""));
+    when(exclusions.checkExclusionAutomaticAnalysis(f1, m1)).thenReturn(LocalFileExclusions.Result.excluded(""));
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
