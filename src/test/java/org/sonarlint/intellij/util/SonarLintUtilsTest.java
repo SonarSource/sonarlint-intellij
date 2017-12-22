@@ -79,35 +79,6 @@ public class SonarLintUtilsTest extends SonarTest {
   }
 
   @Test
-  public void testShouldAnalyze() {
-    assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isTrue();
-
-    assertThat(SonarLintUtils.shouldAnalyze(testFile, null)).isFalse();
-
-    when(testFile.getFileType()).thenReturn(binary);
-    assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isFalse();
-  }
-
-  @Test
-  public void testShouldAnalyzeDisposed() {
-    Project disposed = mock(Project.class);
-    Module module = mock(Module.class);
-
-    when(disposed.isDisposed()).thenReturn(true);
-    when(module.getProject()).thenReturn(disposed);
-
-    assertThat(SonarLintUtils.shouldAnalyze(testFile, module)).isFalse();
-  }
-
-  @Test
-  public void testShouldAnalyzeInvalid() {
-    VirtualFile f = mock(VirtualFile.class);
-    when(f.isValid()).thenReturn(false);
-
-    assertThat(SonarLintUtils.shouldAnalyze(f, module)).isFalse();
-  }
-
-  @Test
   public void testServerConfigurationToken() {
     SonarApplication app = mock(SonarApplication.class);
     when(app.getVersion()).thenReturn("1.0");

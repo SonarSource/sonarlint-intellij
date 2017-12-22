@@ -25,6 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,14 +61,17 @@ public class GlobalConfigurationListenerTest extends SonarTest {
 
     GlobalConfigurationListener listener = new GlobalConfigurationListener.Adapter() {
       @Override
-      public void applied(List<SonarQubeServer> serverList, boolean autoTrigger) {
-        servers.addAll(serverList);
-        bool.set(autoTrigger);
+      public void applied(SonarLintGlobalSettings settings) {
+        servers.addAll(settings.getSonarQubeServers());
+        bool.set(settings.isAutoTrigger());
       }
     };
 
     project.getMessageBus().connect().subscribe(GlobalConfigurationListener.TOPIC, listener);
-    project.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).applied(testList, true);
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    settings.setSonarQubeServers(testList);
+    settings.setAutoTrigger(true);
+    project.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).applied(settings);
 
     assertThat(servers).isEqualTo(testList);
     assertThat(bool.get()).isTrue();

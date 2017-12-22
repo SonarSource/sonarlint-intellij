@@ -13,7 +13,7 @@ import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.component.EditableList;
 
-public class ExclusionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
+public class GlobalExclusionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String EMPTY_LABEL = "No exclusions configured";
   private static final String BORDER_TITLE = "Exclusions";
 
@@ -39,7 +39,7 @@ public class ExclusionsPanel implements ConfigurationPanel<SonarLintGlobalSettin
     settings.setFileExclusions(list.get());
   }
 
-  public ExclusionsPanel() {
+  public GlobalExclusionsPanel() {
     create();
   }
 
