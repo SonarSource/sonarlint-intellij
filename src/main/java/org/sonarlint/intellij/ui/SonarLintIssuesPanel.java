@@ -52,7 +52,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     setToolbar(actions());
     JPanel issuesPanel = new JPanel(new BorderLayout());
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
-    issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
+    issuesPanel.add(new AutoTriggerStatusPanel(project, projectBindingManager).getPanel(), BorderLayout.SOUTH);
 
     super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 

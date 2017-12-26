@@ -58,6 +58,7 @@ import javax.swing.text.html.ImageView;
 import javax.swing.text.html.StyleSheet;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -89,21 +90,24 @@ public class SonarLintRulePanel {
     if (issue == null) {
       nothingToDisplay(false);
     } else {
+      try {
+        String description = projectBindingManager.getFacade().getDescription(issue.getRuleKey());
+        if (description == null) {
+          nothingToDisplay(true);
+          return;
+        }
 
-      String description = projectBindingManager.getFacadeForAnalysis().getDescription(issue.getRuleKey());
-      if (description == null) {
+        StringBuilder builder = new StringBuilder(description.length() + 64);
+        builder.append("<h2>")
+          .append(StringEscapeUtils.escapeHtml(issue.getRuleName()))
+          .append("</h2>");
+        createTable(issue, builder);
+        builder.append("<br />")
+          .append(description);
+        updateEditor(builder.toString());
+      } catch (InvalidBindingException e) {
         nothingToDisplay(true);
-        return;
       }
-
-      StringBuilder builder = new StringBuilder(description.length() + 64);
-      builder.append("<h2>")
-        .append(StringEscapeUtils.escapeHtml(issue.getRuleName()))
-        .append("</h2>");
-      createTable(issue, builder);
-      builder.append("<br />")
-        .append(description);
-      updateEditor(builder.toString());
     }
   }
 

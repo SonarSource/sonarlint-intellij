@@ -20,12 +20,14 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
@@ -59,6 +61,8 @@ public abstract class SonarLintFacade {
     props.putAll(projectSettings.getAdditionalProperties());
     return analyze(baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
   }
+
+  public abstract Collection<VirtualFile> removeExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
 
   @CheckForNull
   public String getDescription(String ruleKey) {

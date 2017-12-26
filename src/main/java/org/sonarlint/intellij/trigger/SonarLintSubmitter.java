@@ -27,12 +27,16 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.Exclusions;
+import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
+import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -44,10 +48,12 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   private final SonarLintJobManager sonarLintJobManager;
   private final SonarLintGlobalSettings globalSettings;
   private final SonarLintAppUtils utils;
-  private final Exclusions exclusions;
+  private final LocalFileExclusions localFileExclusions;
+  private final ProjectBindingManager projectBindingManager;
 
   public SonarLintSubmitter(Project project, SonarLintConsole console, FileEditorManager editorManager, SonarLintTelemetry telemetry,
-    SonarLintJobManager sonarLintJobManager, SonarLintGlobalSettings globalSettings, SonarLintAppUtils utils, Exclusions exclusions) {
+    SonarLintJobManager sonarLintJobManager, SonarLintGlobalSettings globalSettings, SonarLintAppUtils utils,
+    LocalFileExclusions localFileExclusions, ProjectBindingManager projectBindingManager) {
     super(project);
     this.console = console;
     this.editorManager = editorManager;
@@ -55,7 +61,8 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     this.sonarLintJobManager = sonarLintJobManager;
     this.globalSettings = globalSettings;
     this.utils = utils;
-    this.exclusions = exclusions;
+    this.localFileExclusions = localFileExclusions;
+    this.projectBindingManager = projectBindingManager;
   }
 
   public void submitOpenFilesAuto(TriggerType trigger) {
@@ -120,7 +127,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     for (VirtualFile file : files) {
       Module m = utils.findModuleForFile(file, myProject);
       if (autoTrigger) {
-        Exclusions.Result result = exclusions.checkExclusionAutomaticAnalysis(file, m);
+        LocalFileExclusions.Result result = localFileExclusions.checkExclusionAutomaticAnalysis(file, m);
         if (result.isExcluded()) {
           if (result.excludeReason() != null) {
             console.info("File '" + file.getName() + "' excluded: " + result.excludeReason());
@@ -128,13 +135,27 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
           continue;
         }
       } else {
-        if (!exclusions.shouldAnalyze(file, m)) {
+        if (!localFileExclusions.shouldAnalyze(file, m)) {
           console.info("File '" + file.getName() + "' can't be analyzed. Skipping: " + file.getPath());
           continue;
         }
       }
 
       filesByModule.put(m, file);
+    }
+
+    // Apply server file exclusions
+    SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
+    Iterator<Module> it = filesByModule.keySet().iterator();
+    while(it.hasNext()) {
+      Module module = it.next();
+      VirtualFileTestPredicate testPredicate = new VirtualFileTestPredicate(module);
+      Collection<VirtualFile> afterExclusion = sonarLintFacade.removeExcluded(filesByModule.get(module), testPredicate);
+      if (afterExclusion.isEmpty()) {
+        it.remove();
+      } else {
+        filesByModule.replaceValues(module, afterExclusion);
+      }
     }
 
     return filesByModule.asMap();

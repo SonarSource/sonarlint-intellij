@@ -56,7 +56,8 @@ public class SonarLintEngineManager implements ApplicationComponent {
     }.start();
   }
 
-  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey) {
+  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey)
+    throws InvalidBindingException {
     // Check if engine's global storage is OK
     ConnectedSonarLintEngine.State state = engine.getState();
     if (state != ConnectedSonarLintEngine.State.UPDATED) {
@@ -120,7 +121,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
     return standalone;
   }
 
-  public synchronized ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId, String projectKey) {
+  public synchronized ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId, String projectKey) throws InvalidBindingException {
     Preconditions.checkNotNull(notifications, "notifications");
     Preconditions.checkNotNull(serverId, "serverId");
     Preconditions.checkNotNull(projectKey, "projectKey");

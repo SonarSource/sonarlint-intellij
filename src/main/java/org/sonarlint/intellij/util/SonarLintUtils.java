@@ -289,7 +289,7 @@ public class SonarLintUtils {
 
   public static String getRelativePath(Project project, VirtualFile virtualFile) {
     if (project.getBasePath() == null) {
-      throw new IllegalStateException("no base path in default project");
+      throw new IllegalStateException("The project has no base path");
     }
     return Paths.get(project.getBasePath()).relativize(Paths.get(virtualFile.getPath())).toString();
   }
