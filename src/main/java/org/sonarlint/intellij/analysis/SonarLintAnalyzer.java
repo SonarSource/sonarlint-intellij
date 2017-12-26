@@ -79,7 +79,7 @@ public class SonarLintAnalyzer {
     }
 
     // configure files
-    VirtualFileTestPredicate testPredicate = new VirtualFileTestPredicate(module);
+    VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
     List<ClientInputFile> inputFiles = getInputFiles(testPredicate, filesToAnalyze);
 
     // Analyze

@@ -70,6 +70,6 @@ public class ExclusionItem {
   }
 
   public String toStringWithType() {
-    return StringUtils.capitalize(type.name().toLowerCase()) + ":" + item;
+    return StringUtils.capitalize(type.name()) + ":" + item;
   }
 }

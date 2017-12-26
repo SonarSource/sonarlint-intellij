@@ -1,6 +1,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.ModuleAdapter;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.function.Predicate;
 
-public class VirtualFileTestPredicate implements Predicate<VirtualFile> {
+public class VirtualFileTestPredicate extends ModuleAdapter implements Predicate<VirtualFile> {
   private final Collection<String> testFolderPrefixes;
   private final ModuleRootManager moduleRootManager;
 

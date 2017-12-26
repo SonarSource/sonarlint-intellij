@@ -36,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
+import org.apache.commons.lang.StringUtils;
 
 public class ExclusionTable {
   private final Supplier<ExclusionItem> onAdd;
@@ -85,7 +86,7 @@ public class ExclusionTable {
     panel.add(toolbarDecorator.createPanel(), BorderLayout.CENTER);
   }
 
-  public JComponent getComponent() {
+  public JPanel getComponent() {
     return panel;
   }
 
@@ -164,7 +165,7 @@ public class ExclusionTable {
     @Override public Object getValueAt(int rowIndex, int columnIndex) {
       ExclusionItem item = rows.get(rowIndex);
       if (columnIndex == 0) {
-        return item.type();
+        return StringUtils.capitalize(item.type().name().toLowerCase());
       }
       return item.item();
     }

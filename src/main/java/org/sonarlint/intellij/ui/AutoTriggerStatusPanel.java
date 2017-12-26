@@ -50,6 +50,7 @@ import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -58,8 +59,7 @@ public class AutoTriggerStatusPanel {
   private static final String FILE_DISABLED = "FILE_DISABLED";
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
 
-  private static final String TOOLTIP = "Some files are not automatically analyzed. For example, "
-    + "files that are excluded or Java files that don't belong the project's source root. Power saving mode disables all automatic analysis";
+  private static final String TOOLTIP = "Some files are not automatically analyzed. Check the SonarLint debug logs for details.";
 
   private final Project project;
   private final ProjectBindingManager projectBindingManager;
@@ -67,6 +67,7 @@ public class AutoTriggerStatusPanel {
   private final SonarLintGlobalSettings globalSettings;
   private final LocalFileExclusions localFileExclusions;
   private final SonarLintConsole console;
+
   private JPanel panel;
   private CardLayout layout;
 
@@ -93,6 +94,7 @@ public class AutoTriggerStatusPanel {
         switchCards();
       }
     });
+    busConnection.subscribe(ProjectConfigurationListener.TOPIC, s -> switchCards());
     busConnection.subscribe(PowerSaveMode.TOPIC, this::switchCards);
     busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerAdapter() {
       @Override
@@ -137,9 +139,9 @@ public class AutoTriggerStatusPanel {
   }
 
   private boolean isExcludedInServer(Module m, VirtualFile f) {
-    VirtualFileTestPredicate testPredicate = new VirtualFileTestPredicate(m);
-    Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().removeExcluded(Collections.singleton(f), testPredicate);
-    return afterExclusion.isEmpty();
+    VirtualFileTestPredicate testPredicate = SonarLintUtils.get(m, VirtualFileTestPredicate.class);
+    Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().getExcluded(Collections.singleton(f), testPredicate);
+    return !afterExclusion.isEmpty();
 
   }
 

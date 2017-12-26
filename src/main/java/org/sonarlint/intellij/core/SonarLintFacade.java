@@ -62,7 +62,7 @@ public abstract class SonarLintFacade {
     return analyze(baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
   }
 
-  public abstract Collection<VirtualFile> removeExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
+  public abstract Collection<VirtualFile> getExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
 
   @CheckForNull
   public String getDescription(String ruleKey) {

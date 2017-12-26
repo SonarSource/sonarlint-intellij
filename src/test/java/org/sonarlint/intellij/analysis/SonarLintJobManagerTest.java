@@ -40,16 +40,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarLintJobManagerTest extends SonarTest {
-  @Mock
-  private SonarLintTaskFactory factory;
-  @Mock
-  private SonarLintConsole console;
-  @Mock
-  private SonarLintStatus status;
-  @Mock
-  private SonarLintUserTask task;
-  @Mock
-  private ProgressManager progressManager;
+  private SonarLintTaskFactory factory = mock(SonarLintTaskFactory.class);
+  private SonarLintConsole console = mock(SonarLintConsole.class);
+  private SonarLintStatus status = mock(SonarLintStatus.class);
+  private SonarLintUserTask task = mock(SonarLintUserTask.class);
+  private ProgressManager progressManager = mock(ProgressManager.class);
 
   private SonarLintJobManager manager;
 
