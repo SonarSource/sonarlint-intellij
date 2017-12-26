@@ -21,12 +21,19 @@ package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
+import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -58,6 +65,17 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     console.debug("Starting analysis with configuration:\n" + config.toString());
 
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
+  }
+
+  @Override
+  public Collection<VirtualFile> removeExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
+    Map<String, VirtualFile> fileByPath = files.stream()
+      .collect(Collectors.toMap(f-> SonarLintUtils.getRelativePath(project, f), x->x, (x, y) -> x));
+
+    Set<String> excludedFiles = sonarlint.getExcludedFiles(moduleKey, fileByPath.keySet(), p -> testPredicate.test(fileByPath.get(p)));
+    excludedFiles.forEach(fileByPath::remove);
+
+    return fileByPath.values();
   }
 
   @Override protected RuleDetails ruleDetails(String ruleKey) {

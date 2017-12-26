@@ -49,10 +49,12 @@ public class ProjectBindingManager extends AbstractProjectComponent {
   }
 
   /**
-   * Will get a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
-   * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an IllegalStateException.
+   * Returns a Facade with the appropriate engine (standalone or connected) based on the current project and module configurations.
+   * In case of a problem, it handles the displaying of errors (Logging, user notifications, ..) and throws an InvalidBindingException.
+   *
+   * @throws InvalidBindingException If current project binding is invalid
    */
-  public synchronized SonarLintFacade getFacadeForAnalysis() {
+  public synchronized SonarLintFacade getFacade() throws InvalidBindingException {
     if (projectSettings.isBindingEnabled()) {
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
@@ -69,7 +71,7 @@ public class ProjectBindingManager extends AbstractProjectComponent {
     return engineManager.getConnectedEngine(projectSettings.getServerId());
   }
 
-  public synchronized ConnectedSonarLintEngine getConnectedEngine() {
+  public synchronized ConnectedSonarLintEngine getConnectedEngine() throws InvalidBindingException {
     if (!projectSettings.isBindingEnabled()) {
       throw new IllegalStateException("Project is not bound to a SonarQube project");
     }
@@ -81,7 +83,7 @@ public class ProjectBindingManager extends AbstractProjectComponent {
     return engineManager.getConnectedEngine(notifications, serverId, projectKey);
   }
 
-  public synchronized SonarQubeServer getSonarQubeServer() {
+  public synchronized SonarQubeServer getSonarQubeServer() throws InvalidBindingException {
     String serverId = projectSettings.getServerId();
     List<SonarQubeServer> servers = globalSettings.getSonarQubeServers();
 
@@ -89,7 +91,7 @@ public class ProjectBindingManager extends AbstractProjectComponent {
     return server.orElseThrow(() -> new InvalidBindingException("SonarQube server configuration does not exist for server id: " + serverId));
   }
 
-  private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) {
+  private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) throws InvalidBindingException {
     if (serverId == null) {
       notifications.notifyServerIdInvalid();
       throw new InvalidBindingException("Project has an invalid binding");

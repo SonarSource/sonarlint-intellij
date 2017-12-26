@@ -79,13 +79,13 @@ public class SonarLintAnalyzer {
     }
 
     // configure files
-    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-    List<ClientInputFile> inputFiles = getInputFiles(moduleRootManager, filesToAnalyze);
+    VirtualFileTestPredicate testPredicate = new VirtualFileTestPredicate(module);
+    List<ClientInputFile> inputFiles = getInputFiles(testPredicate, filesToAnalyze);
 
     // Analyze
     long start = System.currentTimeMillis();
 
-    SonarLintFacade facade = projectBindingManager.getFacadeForAnalysis();
+    SonarLintFacade facade = projectBindingManager.getFacade();
 
     String what;
     if (filesToAnalyze.size() == 1) {
@@ -105,14 +105,14 @@ public class SonarLintAnalyzer {
     return result;
   }
 
-  private List<ClientInputFile> getInputFiles(ModuleRootManager moduleRootManager, Collection<VirtualFile> filesToAnalyze) {
-    Collection<String> testFolderPrefix = findTestFolderPrefixes(moduleRootManager);
+  private List<ClientInputFile> getInputFiles(VirtualFileTestPredicate testPredicate, Collection<VirtualFile> filesToAnalyze) {
+
     List<ClientInputFile> inputFiles = new LinkedList<>();
 
     AccessToken token = app.acquireReadActionLock();
     try {
       for (VirtualFile f : filesToAnalyze) {
-        boolean test = isTestFile(testFolderPrefix, f);
+        boolean test = testPredicate.test(f);
         Charset charset = getEncoding(f);
         if (fileDocumentManager.isFileModified(f)) {
           inputFiles.add(new DefaultClientInputFile(f, test, charset, fileDocumentManager.getDocument(f)));
@@ -127,21 +127,6 @@ public class SonarLintAnalyzer {
     return inputFiles;
   }
 
-  private static Collection<String> findTestFolderPrefixes(ModuleRootManager moduleRootManager) {
-    Collection<String> testFolderPrefix = new ArrayList<>();
-    for (ContentEntry contentEntry : moduleRootManager.getContentEntries()) {
-      final SourceFolder[] sourceFolders = contentEntry.getSourceFolders();
-      for (SourceFolder sourceFolder : sourceFolders) {
-        final VirtualFile file = sourceFolder.getFile();
-        if (file != null && sourceFolder.isTestSource()) {
-          testFolderPrefix.add(file.getPath());
-        }
-      }
-    }
-
-    return testFolderPrefix;
-  }
-
   private Charset getEncoding(@Nullable VirtualFile f) {
     if (f != null) {
       Charset encoding = encodingProjectManager.getEncoding(f, true);
@@ -151,15 +136,4 @@ public class SonarLintAnalyzer {
     }
     return Charset.defaultCharset();
   }
-
-  private static boolean isTestFile(Collection<String> testFolderPrefix, VirtualFile f) {
-    String filePath = f.getPath();
-    for (String testPrefix : testFolderPrefix) {
-      if (filePath.startsWith(testPrefix)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
 }

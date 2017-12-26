@@ -21,8 +21,10 @@ package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -53,6 +55,11 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props);
     console.debug("Starting analysis with configuration:\n" + config.toString());
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
+  }
+
+  @Override
+  public Collection<VirtualFile> removeExcluded(Collection<VirtualFile> files) {
+    return files;
   }
 
   @Override protected RuleDetails ruleDetails(String ruleKey) {

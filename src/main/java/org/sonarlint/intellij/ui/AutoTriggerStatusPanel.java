@@ -37,16 +37,18 @@ import icons.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.analysis.Exclusions;
+import org.sonarlint.intellij.analysis.LocalFileExclusions;
+import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -60,17 +62,21 @@ public class AutoTriggerStatusPanel {
     + "files that are excluded or Java files that don't belong the project's source root. Power saving mode disables all automatic analysis";
 
   private final Project project;
+  private final ProjectBindingManager projectBindingManager;
   private final SonarLintAppUtils utils;
   private final SonarLintGlobalSettings globalSettings;
-  private final Exclusions exclusions;
+  private final LocalFileExclusions localFileExclusions;
+  private final SonarLintConsole console;
   private JPanel panel;
   private CardLayout layout;
 
-  public AutoTriggerStatusPanel(Project project) {
+  public AutoTriggerStatusPanel(Project project, ProjectBindingManager projectBindingManager) {
     this.project = project;
+    this.projectBindingManager = projectBindingManager;
     this.utils = SonarLintUtils.get(SonarLintAppUtils.class);
     this.globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-    this.exclusions = SonarLintUtils.get(project, Exclusions.class);
+    this.localFileExclusions = SonarLintUtils.get(project, LocalFileExclusions.class);
+    this.console = SonarLintUtils.get(project, SonarLintConsole.class);
     createPanel();
     switchCards();
     subscribeToEvents();
@@ -97,22 +103,44 @@ public class AutoTriggerStatusPanel {
   }
 
   private void switchCards() {
-    String card;
+    String card = getCard();
+    layout.show(panel, card);
+  }
 
-    if (globalSettings.isAutoTrigger()) {
-      VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
-      if (selectedFile != null) {
-        Module m = utils.findModuleForFile(selectedFile, project);
-        Exclusions.Result result = exclusions.checkExclusionAutomaticAnalysis(selectedFile, m);
-        card = result.isExcluded() ? FILE_DISABLED : AUTO_TRIGGER_ENABLED;
-      } else {
-        card = AUTO_TRIGGER_ENABLED;
-      }
-    } else {
-      card = AUTO_TRIGGER_DISABLED;
+  private String getCard() {
+    if (!globalSettings.isAutoTrigger()) {
+      return AUTO_TRIGGER_DISABLED;
     }
 
-    layout.show(panel, card);
+    VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
+    if (selectedFile == null) {
+      return AUTO_TRIGGER_ENABLED;
+    }
+
+    Module m = utils.findModuleForFile(selectedFile, project);
+    if (m == null) {
+      return FILE_DISABLED;
+    }
+
+    LocalFileExclusions.Result result = localFileExclusions.checkExclusionAutomaticAnalysis(selectedFile, m);
+    if (result.isExcluded()) {
+      console.debug("File " + selectedFile.getName() + " not automatically analyzed: " + result.excludeReason());
+      return FILE_DISABLED;
+    }
+
+    if (isExcludedInServer(m, selectedFile)) {
+      console.debug("File " + selectedFile.getName() + " not automatically analyzed due to exclusions configured in the SonarQube Server");
+      return FILE_DISABLED;
+    }
+
+    return AUTO_TRIGGER_ENABLED;
+  }
+
+  private boolean isExcludedInServer(Module m, VirtualFile f) {
+    VirtualFileTestPredicate testPredicate = new VirtualFileTestPredicate(m);
+    Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().removeExcluded(Collections.singleton(f), testPredicate);
+    return afterExclusion.isEmpty();
+
   }
 
   private void createPanel() {

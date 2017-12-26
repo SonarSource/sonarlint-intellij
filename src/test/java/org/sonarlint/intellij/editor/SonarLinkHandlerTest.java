@@ -45,7 +45,7 @@ public class SonarLinkHandlerTest extends SonarTest {
     editor = mock(Editor.class);
     handler = new SonarLinkHandler();
 
-    when(projectBindingManager.getFacadeForAnalysis()).thenReturn(sonarlint);
+    when(projectBindingManager.getFacade()).thenReturn(sonarlint);
     when(editor.getProject()).thenReturn(project);
     when(sonarlint.getDescription(RULE_KEY)).thenReturn("description");
     when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name");

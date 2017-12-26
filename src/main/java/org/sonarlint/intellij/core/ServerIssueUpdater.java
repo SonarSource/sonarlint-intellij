@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.ServerIssueTrackable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
@@ -82,28 +83,33 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       return;
     }
 
-    SonarQubeServer server = projectBindingManager.getSonarQubeServer();
-    ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
-    String moduleKey = projectSettings.getProjectKey();
-    boolean downloadAll = virtualFiles.size() >= FETCH_ALL_ISSUES_THRESHOLD;
-    String msg;
+    try {
+      SonarQubeServer server = projectBindingManager.getSonarQubeServer();
+      ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
 
-    if (downloadAll) {
-      msg = "Fetching all server issues";
-    } else {
-      msg = "Fetching server issues";
-    }
-    if (waitForCompletion) {
-      msg += " (waiting for results)";
-    }
-    console.debug(msg);
-    indicator.setText(msg);
+      String moduleKey = projectSettings.getProjectKey();
+      boolean downloadAll = virtualFiles.size() >= FETCH_ALL_ISSUES_THRESHOLD;
+      String msg;
 
-    // submit tasks
-    List<Future<Void>> updateTasks = fetchAndMatchServerIssues(virtualFiles, server, engine, moduleKey, downloadAll);
+      if (downloadAll) {
+        msg = "Fetching all server issues";
+      } else {
+        msg = "Fetching server issues";
+      }
+      if (waitForCompletion) {
+        msg += " (waiting for results)";
+      }
+      console.debug(msg);
+      indicator.setText(msg);
 
-    if (waitForCompletion) {
-      waitForTasks(updateTasks);
+      // submit tasks
+      List<Future<Void>> updateTasks = fetchAndMatchServerIssues(virtualFiles, server, engine, moduleKey, downloadAll);
+
+      if (waitForCompletion) {
+        waitForTasks(updateTasks);
+      }
+    } catch (InvalidBindingException e) {
+      // ignore, do nothing
     }
   }
 
