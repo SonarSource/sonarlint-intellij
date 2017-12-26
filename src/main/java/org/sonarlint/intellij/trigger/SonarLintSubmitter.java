@@ -40,6 +40,7 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintSubmitter extends AbstractProjectComponent {
   private final SonarLintConsole console;
@@ -149,13 +150,9 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     Iterator<Module> it = filesByModule.keySet().iterator();
     while(it.hasNext()) {
       Module module = it.next();
-      VirtualFileTestPredicate testPredicate = new VirtualFileTestPredicate(module);
-      Collection<VirtualFile> afterExclusion = sonarLintFacade.removeExcluded(filesByModule.get(module), testPredicate);
-      if (afterExclusion.isEmpty()) {
-        it.remove();
-      } else {
-        filesByModule.replaceValues(module, afterExclusion);
-      }
+      VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
+      Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(filesByModule.get(module), testPredicate);
+      filesByModule.get(module).removeAll(excluded);
     }
 
     return filesByModule.asMap();

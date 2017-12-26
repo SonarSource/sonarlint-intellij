@@ -7,7 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ExclusionItemTest {
   @Test
   public void should_parse() {
-    ExclusionItem item = ExclusionItem.parse("File:src/main/java/File.java");
+    ExclusionItem item = ExclusionItem.parse("FILE:src/main/java/File.java");
     assertThat(item.item()).isEqualTo("src/main/java/File.java");
     assertThat(item.type()).isEqualTo(ExclusionItem.Type.FILE);
   }
@@ -34,6 +34,6 @@ public class ExclusionItemTest {
   @Test
   public void string() {
     ExclusionItem item = new ExclusionItem(ExclusionItem.Type.DIRECTORY, "dir");
-    assertThat(item.toStringWithType()).isEqualTo("Directory:dir");
+    assertThat(item.toStringWithType()).isEqualTo("DIRECTORY:dir");
   }
 }

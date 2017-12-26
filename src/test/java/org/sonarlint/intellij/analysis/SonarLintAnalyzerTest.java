@@ -48,35 +48,24 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarLintAnalyzerTest extends SonarTest {
-  @Mock
-  private ProjectBindingManager projectBindingManager;
-  @Mock
-  private EncodingProjectManager encodingProjectManager;
-  @Mock
-  private SonarLintConsole console;
-  @Mock
-  private ModuleRootManager moduleRootManager;
-  @Mock
-  private AnalysisConfigurator configurator;
-  @Mock
-  private Module module;
-  @Mock
-  private SonarLintFacade facade;
-  @Mock
-  private FileDocumentManager fileDocumentManager;
+  private ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
+  private EncodingProjectManager encodingProjectManager = mock(EncodingProjectManager.class);
+  private SonarLintConsole console = mock(SonarLintConsole.class);
+  private AnalysisConfigurator configurator = mock(AnalysisConfigurator.class);
+  private Module module = mock(Module.class);
+  private SonarLintFacade facade = mock(SonarLintFacade.class);
+  private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
+  private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
 
   private SonarLintAnalyzer analyzer;
 
   @Before
   public void prepare() {
-    MockitoAnnotations.initMocks(this);
     analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app);
 
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(projectBindingManager.getFacade()).thenReturn(facade);
-    when(moduleRootManager.getContentEntries()).thenReturn(new ContentEntry[0]);
-
-    super.register(module, ModuleRootManager.class, moduleRootManager);
+    super.register(module, VirtualFileTestPredicate.class, testPredicate);
     super.register(module, AnalysisConfigurator.class, configurator);
     super.registerEP(AnalysisConfigurator.EP_NAME, AnalysisConfigurator.class);
   }
@@ -88,6 +77,6 @@ public class SonarLintAnalyzerTest extends SonarTest {
     IssueListener listener = mock(IssueListener.class);
     when(app.getDefaultModalityState()).thenReturn(ModalityState.NON_MODAL);
     analyzer.analyzeModule(module, Collections.singleton(file), listener, mock(ProgressMonitor.class));
-    verify(facade).startAnalysis(anyList(), eq(listener), anyMap(), any(ProgressMonitor.class));
+    verify(facade).startAnalysis(anyList(), eq(listener), eq(Collections.emptyMap()), any(ProgressMonitor.class));
   }
 }

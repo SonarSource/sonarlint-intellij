@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -51,11 +52,17 @@ import static org.sonarlint.intellij.util.SonarLintUtils.isJavaResource;
 public class LocalFileExclusions {
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
+  private Supplier<Boolean> powerSaveModeCheck;
 
   public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings) {
+    this(project, settings, projectSettings, () -> PowerSaveMode.isEnabled());
+  }
+
+  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, Supplier<Boolean> powerSaveModeCheck) {
     loadGlobalExclusions(settings);
     loadProjectExclusions(projectSettings);
     subscribeToSettingsChanges(project);
+    this.powerSaveModeCheck = powerSaveModeCheck;
   }
 
   private Set<String> getExclusionsOfType(Collection<ExclusionItem> exclusions, ExclusionItem.Type type) {
@@ -93,11 +100,11 @@ public class LocalFileExclusions {
   }
 
   public Result checkExclusionAutomaticAnalysis(VirtualFile file, @Nullable Module module) {
-    if (!shouldAnalyze(file, module)) {
+    if (!canAnalyze(file, module)) {
       return Result.excluded(null);
     }
 
-    if (PowerSaveMode.isEnabled()) {
+    if (powerSaveModeCheck.get()) {
       return Result.excluded("power save mode is enabled");
     }
 
@@ -156,7 +163,7 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  public boolean shouldAnalyze(VirtualFile file, @Nullable Module module) {
+  public boolean canAnalyze(VirtualFile file, @Nullable Module module) {
     if (module == null) {
       return false;
     }

@@ -24,8 +24,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
@@ -58,8 +60,8 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public Collection<VirtualFile> removeExcluded(Collection<VirtualFile> files) {
-    return files;
+  public Collection<VirtualFile> getExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
+    return Collections.emptyList();
   }
 
   @Override protected RuleDetails ruleDetails(String ruleKey) {

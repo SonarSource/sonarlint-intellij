@@ -9,7 +9,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ExcludeAction extends DumbAwareAction {
@@ -21,12 +24,14 @@ public class ExcludeAction extends DumbAwareAction {
 
     if (project == null || !project.isInitialized() || project.isDisposed()) {
       e.getPresentation().setEnabled(false);
+      return;
     }
 
     VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
     if (!ActionPlaces.isPopupPlace(e.getPlace()) || files == null || files.length == 0) {
       e.getPresentation().setEnabled(false);
       e.getPresentation().setVisible(false);
+      return;
     }
 
     SonarLintProjectSettings settings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
@@ -45,20 +50,32 @@ public class ExcludeAction extends DumbAwareAction {
     Project project = e.getProject();
     VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
 
-    if (project == null || files == null || files.length == 0) {
+    if (project == null || project.isDisposed() || files == null || files.length == 0) {
       return;
     }
 
     SonarLintProjectSettings settings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
     List<String> exclusions = new ArrayList<>(settings.getFileExclusions());
 
-    Arrays.stream(files)
-      .map(vf -> SonarLintUtils.getRelativePath(project, vf))
+    List<String> newExclusions = Arrays.stream(files)
+      .map(vf -> toExclusion(project, vf))
       .filter(path -> !exclusions.contains(path))
-      .forEach(exclusions::add);
+      .collect(Collectors.toList());
 
-    settings.setFileExclusions(exclusions);
-    // TODO trigger update
+    if (!newExclusions.isEmpty()) {
+      exclusions.addAll(newExclusions);
+      settings.setFileExclusions(exclusions);
+      ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
+      projectListener.changed(settings);
+    }
   }
 
+  private String toExclusion(Project project, VirtualFile virtualFile) {
+    String filePath = SonarLintUtils.getRelativePath(project, virtualFile);
+    if (virtualFile.isDirectory()) {
+      return new ExclusionItem(ExclusionItem.Type.DIRECTORY, filePath).toStringWithType();
+    } else {
+      return new ExclusionItem(ExclusionItem.Type.FILE, filePath).toStringWithType();
+    }
+  }
 }

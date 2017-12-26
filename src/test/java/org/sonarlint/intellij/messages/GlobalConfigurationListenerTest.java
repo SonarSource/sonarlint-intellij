@@ -36,7 +36,7 @@ public class GlobalConfigurationListenerTest extends SonarTest {
   @Before
   public void prepare() {
     testList = new LinkedList<>();
-    testList.add(SonarQubeServer.newBuilder().build());
+    testList.add(SonarQubeServer.newBuilder().setName("name").build());
   }
 
   @Test
