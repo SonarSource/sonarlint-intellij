@@ -13,11 +13,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ExcludeActionTest extends SonarTest {
+public class ExcludeFileActionTest extends SonarTest {
   private VirtualFile file1 = mock(VirtualFile.class);
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
 
-  private ExcludeAction action = new ExcludeAction();
+  private ExcludeFileAction action = new ExcludeFileAction();
 
   @Before
   public void setup() {
@@ -34,7 +34,7 @@ public class ExcludeActionTest extends SonarTest {
 
     action.actionPerformed(e);
 
-    assertThat(settings.getFileExclusions()).containsOnly("File:file1");
+    assertThat(settings.getFileExclusions()).containsOnly("FILE:file1");
   }
 
   @Test
@@ -44,11 +44,11 @@ public class ExcludeActionTest extends SonarTest {
     when(e.getProject()).thenReturn(project);
     when(project.getBasePath()).thenReturn("/root");
     when(file1.getPath()).thenReturn("/root/file1");
-    settings.setFileExclusions(Collections.singletonList("File:file1"));
+    settings.setFileExclusions(Collections.singletonList("FILE:file1"));
 
     action.actionPerformed(e);
 
-    assertThat(settings.getFileExclusions()).containsOnly("File:file1");
+    assertThat(settings.getFileExclusions()).containsOnly("FILE:file1");
   }
 
   @Test

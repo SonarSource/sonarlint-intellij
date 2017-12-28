@@ -27,7 +27,7 @@ import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 
 public class SonarConfigureProject extends AbstractSonarAction {
   @Override
-  protected boolean isEnabled(Project project, SonarLintStatus status) {
+  protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
     return !status.isRunning();
   }
 

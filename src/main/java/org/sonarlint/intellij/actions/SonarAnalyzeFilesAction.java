@@ -24,9 +24,15 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -36,12 +42,12 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
-  public SonarAnalyzeEditorFileAction() {
+public class SonarAnalyzeFilesAction extends AbstractSonarAction {
+  public SonarAnalyzeFilesAction() {
     super();
   }
 
-  public SonarAnalyzeEditorFileAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+  public SonarAnalyzeFilesAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);
   }
 
@@ -51,14 +57,10 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return false;
     }
 
-    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
-
-    if (files == null || files.length == 0) {
-      return false;
-    }
+    VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
 
     // TODO ideally we would already check if the files are analyzable
-    return true;
+    return file != null;
   }
 
   @Override
@@ -73,14 +75,15 @@ public class SonarAnalyzeEditorFileAction extends AbstractSonarAction {
       return;
     }
 
-    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+    VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
 
-    if (files == null || files.length == 0) {
-      SonarLintUtils.get(project, SonarLintConsole.class).error("No files for analysis");
+    if (file == null) {
+      SonarLintUtils.get(project, SonarLintConsole.class).error("No file for analysis");
       return;
     }
+
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    submitter.submitFiles(Arrays.asList(files), TriggerType.ACTION, new ShowIssuesCallable(project), executeBackground(e));
+    submitter.submitFiles(Collections.singleton(file), TriggerType.ACTION, new ShowIssuesCallable(project), executeBackground(e));
   }
 
   private class ShowIssuesCallable implements AnalysisCallback {

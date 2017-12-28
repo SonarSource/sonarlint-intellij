@@ -39,15 +39,29 @@ public abstract class AbstractSonarAction extends AnAction {
   public void update(AnActionEvent e) {
     Project p = e.getProject();
 
-    e.getPresentation().setVisible(true);
+    if (isVisible(e.getPlace())) {
+      e.getPresentation().setVisible(true);
+    } else {
+      e.getPresentation().setVisible(false);
+      e.getPresentation().setEnabled(false);
+      return;
+    }
 
     if (p == null || !p.isInitialized() || p.isDisposed()) {
       e.getPresentation().setEnabled(false);
     } else {
       SonarLintStatus status = SonarLintStatus.get(p);
-      e.getPresentation().setEnabled(isEnabled(p, status));
+      e.getPresentation().setEnabled(isEnabled(e, p, status));
     }
   }
 
-  protected abstract boolean isEnabled(Project project, SonarLintStatus status);
+  /**
+   * Whether the action should be visible in a place.
+   * Examples: MainMenu, ProjectViewPopup, GoToAction
+   */
+  protected boolean isVisible(String place) {
+    return true;
+  }
+
+  protected abstract boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status);
 }

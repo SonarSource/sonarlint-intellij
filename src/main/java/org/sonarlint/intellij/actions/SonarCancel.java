@@ -25,7 +25,7 @@ import org.sonarlint.intellij.analysis.SonarLintStatus;
 
 public class SonarCancel extends AbstractSonarAction {
   @Override
-  protected boolean isEnabled(Project project, SonarLintStatus status) {
+  protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
     return status.isRunning() && !status.isCanceled();
   }
 

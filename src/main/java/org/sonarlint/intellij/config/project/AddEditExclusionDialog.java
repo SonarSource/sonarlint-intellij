@@ -82,7 +82,8 @@ public class AddEditExclusionDialog extends DialogWrapper {
     setTitle("Add SonarLint File Exclusion");
     init();
 
-    FileChooserDescriptor fileChooser = new FileChooserDescriptor(true, false, false, true, false, false);
+    FileChooserDescriptor fileChooser = new FileChooserDescriptor(true, false, false,
+      true, false, false);
     if (project != null) {
       fileChooser.setRoots(project.getBaseDir());
     }

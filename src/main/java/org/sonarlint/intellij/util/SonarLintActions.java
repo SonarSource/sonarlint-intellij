@@ -27,7 +27,7 @@ import icons.SonarLintIcons;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
-import org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction;
+import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsole;
 import org.sonarlint.intellij.actions.SonarClearAnalysisResults;
 import org.sonarlint.intellij.actions.SonarClearIssues;
@@ -63,7 +63,7 @@ public class SonarLintActions implements ApplicationComponent {
     analyzeAllFilesAction = new SonarAnalyzeAllFilesAction("Analyze All Project Files",
       "Run a SonarLint analysis on all project files",
       SonarLintIcons.PLAY);
-    analyzeCurrentFileAction = new SonarAnalyzeEditorFileAction("Analyze Currently Selected File",
+    analyzeCurrentFileAction = new SonarAnalyzeFilesAction("Analyze Currently Selected File",
       "Run a SonarLint analysis on the file that is currently selected in the editor",
       SonarLintIcons.PLAY);
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
