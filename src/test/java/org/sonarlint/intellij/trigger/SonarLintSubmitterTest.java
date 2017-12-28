@@ -103,7 +103,7 @@ public class SonarLintSubmitterTest extends SonarTest{
   public void should_submit_manual() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
-    when(exclusions.shouldAnalyze(f1, module)).thenReturn(true);
+    when(exclusions.canAnalyze(f1, module)).thenReturn(true);
 
     submitter.submitFilesModal(Collections.singleton(f1), TriggerType.BINDING_CHANGE);
     verify(sonarLintJobManager).submitManual(eq(Collections.singletonMap(module, Collections.singleton(f1))), eq(TriggerType.BINDING_CHANGE), eq(true), eq(null));
@@ -141,7 +141,7 @@ public class SonarLintSubmitterTest extends SonarTest{
   public void should_not_submit_if_not_analyzable() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
-    when(exclusions.shouldAnalyze(f1, module)).thenReturn(false);
+    when(exclusions.canAnalyze(f1, module)).thenReturn(false);
     submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false);
 
     verifyZeroInteractions(sonarLintJobManager);

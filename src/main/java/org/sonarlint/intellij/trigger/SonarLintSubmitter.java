@@ -136,7 +136,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
           continue;
         }
       } else {
-        if (!localFileExclusions.shouldAnalyze(file, m)) {
+        if (!localFileExclusions.canAnalyze(file, m)) {
           console.info("File '" + file.getName() + "' can't be analyzed. Skipping: " + file.getPath());
           continue;
         }

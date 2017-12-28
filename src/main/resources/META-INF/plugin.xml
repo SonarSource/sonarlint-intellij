@@ -205,33 +205,32 @@
     </extensionPoints>
 
     <actions>
-        <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="true" icon="/images/ico-sonarlint-13.png">
+        <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
+        <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="false" icon="/images/ico-sonarlint-13.png">
             <add-to-group anchor="last" group-id="AnalyzeMenu"/>
         </group>
 
-        <group id="SonarLint.FileMenu" text="SonarLint">
-            <add-to-group group-id="ProjectViewPopupMenu"/>
-        </group>
-
-        <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
-        <action id="SonarLint.Exclude"
-                class="org.sonarlint.intellij.actions.ExcludeAction"
-                text="Exclude from SonarLint analysis"
-                description="Adds a file exclusion in the SonarLint project settings"
-                icon="SonarLintIcons.SONARLINT">
-            <add-to-group group-id="ProjectViewPopupMenu"/>
-        </action>
-
-        <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
         <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
-                class="org.sonarlint.intellij.actions.SonarAnalyzeEditorFileAction"
-                text="Analyze File with SonarLint"
-                description="Run SonarLint analysis on the file currently selected in the editor"
+                class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
+                text="Analyze with SonarLint"
+                description="Run SonarLint analysis on selected file(s)"
                 icon="SonarLintIcons.SONARLINT">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
+
+        <group>
+            <separator/>
+            <!--reference ref="SonarLint.AnalyzeCurrentEditorFilePopup"/-->
+            <action id="SonarLint.Exclude"
+                    class="org.sonarlint.intellij.actions.ExcludeFileAction"
+                    text="Exclude from SonarLint analysis"
+                    description="Adds resources to the list exclusions in the SonarLint project settings"
+                    icon="SonarLintIcons.SONARLINT">
+            </action>
+            <add-to-group group-id="ProjectViewPopupMenu"/>
+        </group>
 
         <action id="SonarLint.AnalyzeChangedFiles"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"

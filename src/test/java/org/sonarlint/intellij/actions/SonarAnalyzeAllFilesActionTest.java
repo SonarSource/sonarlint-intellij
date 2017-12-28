@@ -46,19 +46,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeAllFilesActionTest extends SonarTest {
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private SonarLintStatus status = mock(SonarLintStatus.class);
+  private AllFilesIssues issues = mock(AllFilesIssues.class);
+  private IssueManager issueManager = mock(IssueManager.class);
+  private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
+  private ProjectFileIndex projectFileIndex = mock(ProjectFileIndex.class);
+  private AnActionEvent event = mock(AnActionEvent.class);
+
   private SonarAnalyzeAllFilesAction action;
-  @Mock
-  private SonarLintSubmitter submitter;
-  @Mock
-  private SonarLintStatus status;
-  @Mock
-  private AllFilesIssues issues;
-  @Mock
-  private IssueManager issueManager;
-  @Mock
-  private ProjectRootManager projectRootManager;
-  @Mock
-  private ProjectFileIndex projectFileIndex;
 
   @Before
   public void before() {
@@ -74,10 +70,10 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
   @Test
   public void testEnabled() {
     when(status.isRunning()).thenReturn(true);
-    assertThat(action.isEnabled(project, status)).isFalse();
+    assertThat(action.isEnabled(event, project, status)).isFalse();
 
     when(status.isRunning()).thenReturn(false);
-    assertThat(action.isEnabled(project, status)).isTrue();
+    assertThat(action.isEnabled(event, project, status)).isTrue();
   }
 
   @Test

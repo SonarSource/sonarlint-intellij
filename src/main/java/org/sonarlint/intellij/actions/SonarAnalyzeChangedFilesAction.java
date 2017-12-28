@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
@@ -51,12 +52,17 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     super(text, description, icon);
   }
 
-  @Override protected boolean isEnabled(Project project, SonarLintStatus status) {
+  @Override protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
     if (status.isRunning()) {
       return false;
     }
     ChangeListManager changeListManager = ChangeListManager.getInstance(project);
     return !changeListManager.getAffectedFiles().isEmpty();
+  }
+
+  @Override
+  protected boolean isVisible(String place) {
+    return ActionPlaces.isMainMenuOrActionSearch(place);
   }
 
   @Override public void actionPerformed(AnActionEvent e) {

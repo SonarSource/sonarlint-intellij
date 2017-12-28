@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.lifecycle.PeriodicalTasksCloser;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
@@ -44,24 +45,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private SonarLintStatus status = mock(SonarLintStatus.class);
+  private ChangedFilesIssues issues = mock(ChangedFilesIssues.class);
+  private IssueManager issueManager = mock(IssueManager.class);
+  private PeriodicalTasksCloser tasksCloser = mock(PeriodicalTasksCloser.class);
+  private ChangeListManager changeListManager = mock(ChangeListManager.class);
+  private AnActionEvent event = mock(AnActionEvent.class);
+
   private SonarAnalyzeChangedFilesAction action;
-  @Mock
-  private SonarLintSubmitter submitter;
-  @Mock
-  private SonarLintStatus status;
-  @Mock
-  private ChangedFilesIssues issues;
-  @Mock
-  private IssueManager issueManager;
-  @Mock
-  private PeriodicalTasksCloser tasksCloser;
-  @Mock
-  private ChangeListManager changeListManager;
 
   @Before
   public void before() {
     action = new SonarAnalyzeChangedFilesAction();
-    MockitoAnnotations.initMocks(this);
     when(tasksCloser.safeGetComponent(project, ChangeListManager.class)).thenReturn(changeListManager);
 
     super.register(app, PeriodicalTasksCloser.class, tasksCloser);
@@ -73,15 +69,15 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
   @Test
   public void testEnabled() {
     when(status.isRunning()).thenReturn(true);
-    assertThat(action.isEnabled(project, status)).isFalse();
+    assertThat(action.isEnabled(event, project, status)).isFalse();
 
     when(status.isRunning()).thenReturn(false);
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.emptyList());
-    assertThat(action.isEnabled(project, status)).isFalse();
+    assertThat(action.isEnabled(event, project, status)).isFalse();
 
     when(status.isRunning()).thenReturn(false);
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(mock(VirtualFile.class)));
-    assertThat(action.isEnabled(project, status)).isTrue();
+    assertThat(action.isEnabled(event, project, status)).isTrue();
   }
 
   @Test
