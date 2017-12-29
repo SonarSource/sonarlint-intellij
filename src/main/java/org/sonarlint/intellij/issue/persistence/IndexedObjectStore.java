@@ -76,7 +76,13 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
    */
   public void deleteInvalid() {
     int counter = 0;
-    Collection<K> keys = index.keys();
+    Collection<K> keys;
+    try {
+      keys = index.keys();
+    } catch (Exception e) {
+      LOGGER.warn("Failed to read the store", e);
+      return;
+    }
 
     for (K k : keys) {
       if (!validator.apply(k)) {

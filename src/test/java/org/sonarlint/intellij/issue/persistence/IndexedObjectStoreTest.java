@@ -120,6 +120,12 @@ public class IndexedObjectStoreTest {
   }
 
   @Test
+  public void testErrorOnDeleteInvalid() {
+    when(index.keys()).thenThrow(new IllegalStateException("error"));
+    store.deleteInvalid();
+  }
+
+  @Test
   public void testClean() throws IOException {
     store.write("mykey", "myvalue");
     store.write("mykey2", "myvalue2");
