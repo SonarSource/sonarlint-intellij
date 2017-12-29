@@ -25,7 +25,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;

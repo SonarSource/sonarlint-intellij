@@ -29,9 +29,9 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
@@ -165,7 +165,7 @@ public class ExclusionTable {
     @Override public Object getValueAt(int rowIndex, int columnIndex) {
       ExclusionItem item = rows.get(rowIndex);
       if (columnIndex == 0) {
-        return StringUtils.capitalize(item.type().name().toLowerCase());
+        return StringUtils.capitalize(item.type().name().toLowerCase(Locale.US));
       }
       return item.item();
     }

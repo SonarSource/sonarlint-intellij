@@ -24,7 +24,6 @@ import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBList;
-import com.intellij.ui.table.JBTable;
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -33,7 +32,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 
 public class EditableList<T> {
@@ -54,11 +52,6 @@ public class EditableList<T> {
         if (evt.getClickCount() == 2) {
           editEntry();
         }
-      }
-    });
-    list.addListSelectionListener(e -> {
-      if (!e.getValueIsAdjusting()) {
-        // nothing to do?
       }
     });
     model = new CollectionListModel<>(new ArrayList<T>());

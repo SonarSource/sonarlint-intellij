@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.project;
 
+import java.util.Locale;
 import javax.annotation.CheckForNull;
 import org.apache.commons.lang.StringUtils;
 
@@ -49,7 +50,7 @@ public class ExclusionItem {
     if (StringUtils.trimToNull(item) == null) {
       return null;
     }
-    switch (text.substring(0, i).toUpperCase()) {
+    switch (text.substring(0, i).toUpperCase(Locale.US)) {
       case "FILE":
         return new ExclusionItem(FILE, item);
       case "DIRECTORY":
@@ -70,6 +71,6 @@ public class ExclusionItem {
   }
 
   public String toStringWithType() {
-    return StringUtils.capitalize(type.name()) + ":" + item;
+    return type.name() + ":" + item;
   }
 }

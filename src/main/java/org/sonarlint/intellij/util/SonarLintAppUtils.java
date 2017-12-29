@@ -28,7 +28,6 @@ import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 
 public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   protected SonarLintAppUtils() {
