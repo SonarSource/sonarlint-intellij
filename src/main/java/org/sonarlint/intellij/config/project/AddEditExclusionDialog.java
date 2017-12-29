@@ -29,30 +29,31 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
-import com.intellij.openapi.vcs.changes.*;
+import com.intellij.openapi.vcs.changes.ChangesUtil;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.ui.HoverHyperlinkLabel;
-import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
 import icons.SonarLintIcons;
-import java.awt.Cursor;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
+import javax.swing.Action;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.event.HyperlinkEvent;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import java.awt.event.ActionListener;
-import java.io.File;
 
 import static org.sonarlint.intellij.config.project.ExclusionItem.Type.DIRECTORY;
 import static org.sonarlint.intellij.config.project.ExclusionItem.Type.FILE;
@@ -62,7 +63,6 @@ import static org.sonarlint.intellij.config.project.ExclusionItem.Type.GLOB;
  * Based on IgnoreUnversionedDialog
  */
 public class AddEditExclusionDialog extends DialogWrapper {
-  @Nullable
   private final Project project;
   private JPanel panel;
 
@@ -76,7 +76,7 @@ public class AddEditExclusionDialog extends DialogWrapper {
   private HyperlinkLabel patternHelp;
   private JBLabel helpLabel;
 
-  public AddEditExclusionDialog(@Nullable final Project project) {
+  public AddEditExclusionDialog(Project project) {
     super(project, false);
     this.project = project;
     setTitle("Add SonarLint File Exclusion");
@@ -84,17 +84,13 @@ public class AddEditExclusionDialog extends DialogWrapper {
 
     FileChooserDescriptor fileChooser = new FileChooserDescriptor(true, false, false,
       true, false, false);
-    if (project != null) {
-      fileChooser.setRoots(project.getBaseDir());
-    }
+    fileChooser.setRoots(project.getBaseDir());
     fileTextField.addBrowseFolderListener("Select File to Exclude",
       "Select the file which will be excluded from SonarLint analysis",
       project, fileChooser);
 
     FileChooserDescriptor directoryChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-    if (project != null) {
-      directoryChooser.setRoots(project.getBaseDir());
-    }
+    directoryChooser.setRoots(project.getBaseDir());
     directoryTextField.addBrowseFolderListener("Select Directory to Exclude",
       "Select the directory which will be excluded from SonarLint analysis",
       project, directoryChooser);
@@ -151,7 +147,7 @@ public class AddEditExclusionDialog extends DialogWrapper {
     }
   }
 
-  @Nullable
+  @CheckForNull
   protected JComponent createCenterPanel() {
     return panel;
   }
@@ -193,10 +189,15 @@ public class AddEditExclusionDialog extends DialogWrapper {
     patternHelp = new HyperlinkLabel("");
     Icon infoIcon = SonarLintIcons.INFO;
     patternHelp.setIcon(infoIcon);
-    //hoverHyperlinkLabel1.setUseIconAsLink(true);
     patternHelp.addMouseListener(new MouseAdapter() {
+      @Override
       public void mouseEntered(MouseEvent e) {
-        final JLabel label = new JLabel("<<html><body style=\"margin-bottom:1pt\">Configure GLOB patterns to be applied to files in all projects.<br/><br/><b>Examples:</b><br/><table border=\"1\" cellpadding=\"1\" cellspacing=\"0\"><tr><td><pre>**/*.js</pre></td><td>Exclude all javascript files</td></tr><tr><td><pre>src/main/test/**</pre></td><td>Exclude all test sources</td></tr><tr><td><pre>**/*{!.java}</pre></td><td>Exclude everything except Java files</td></tr></table></body></html>");
+        final JLabel label = new JLabel("<<html><body style=\"margin-bottom:1pt\">"
+          + "Configure GLOB patterns to be applied to files in all projects.<br/><br/><b>Examples:</b><br/>"
+          + "<table border=\"1\" cellpadding=\"1\" cellspacing=\"0\"><tr><td><pre>**/*.js</pre></td>"
+          + "<td>Exclude all javascript files</td></tr><tr><td><pre>src/main/test/**</pre></td>"
+          + "<td>Exclude all test sources</td></tr><tr><td><pre>**/*{!.java}</pre></td>"
+          + "<td>Exclude everything except Java files</td></tr></table></body></html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.INFORMATION_COLOR);
         label.setOpaque(true);
@@ -204,13 +205,14 @@ public class AddEditExclusionDialog extends DialogWrapper {
           HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
       }
 
+      @Override
       public void mouseExited(MouseEvent e) {
-       HintManager.getInstance().hideAllHints();
+        HintManager.getInstance().hideAllHints();
       }
     });
   }
 
-    private String relative(String path) {
+  private String relative(String path) {
     if (project == null) {
       return path;
     }

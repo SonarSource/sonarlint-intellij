@@ -37,8 +37,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
@@ -55,7 +55,7 @@ public class LocalFileExclusions {
   private Supplier<Boolean> powerSaveModeCheck;
 
   public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings) {
-    this(project, settings, projectSettings, () -> PowerSaveMode.isEnabled());
+    this(project, settings, projectSettings, PowerSaveMode::isEnabled);
   }
 
   public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, Supplier<Boolean> powerSaveModeCheck) {
@@ -65,7 +65,7 @@ public class LocalFileExclusions {
     this.powerSaveModeCheck = powerSaveModeCheck;
   }
 
-  private Set<String> getExclusionsOfType(Collection<ExclusionItem> exclusions, ExclusionItem.Type type) {
+  private static Set<String> getExclusionsOfType(Collection<ExclusionItem> exclusions, ExclusionItem.Type type) {
     return exclusions.stream()
       .filter(e -> e.type() == type)
       .map(ExclusionItem::item)
@@ -124,7 +124,7 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  private Result checkFileInSourceFolders(VirtualFile file, Module module) {
+  private static Result checkFileInSourceFolders(VirtualFile file, Module module) {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     ContentEntry[] entries = moduleRootManager.getContentEntries();
 
@@ -153,7 +153,7 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  private Result checkSourceFolder(SourceFolder sourceFolder) {
+  private static Result checkSourceFolder(SourceFolder sourceFolder) {
     if (isJavaResource(sourceFolder)) {
       Result.excluded("file is under a resource folder");
     } else if (isJavaGeneratedSource(sourceFolder)) {

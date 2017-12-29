@@ -89,7 +89,7 @@ public class ExcludeFileAction extends DumbAwareAction {
     }
   }
 
-  private String toExclusion(Project project, VirtualFile virtualFile) {
+  private static String toExclusion(Project project, VirtualFile virtualFile) {
     String filePath = SonarLintUtils.getRelativePath(project, virtualFile);
     if (virtualFile.isDirectory()) {
       return new ExclusionItem(ExclusionItem.Type.DIRECTORY, filePath).toStringWithType();

@@ -41,8 +41,8 @@ public class GlobalExclusionsPanel implements ConfigurationPanel<SonarLintGlobal
 
   private JPanel panel;
   private JPanel patternList;
-  private JBLabel helpLabel;
   private EditableList<String> list;
+  private JBLabel helpLabel;
 
   public GlobalExclusionsPanel() {
     Border b = IdeBorderFactory.createTitledBorder(BORDER_TITLE);
@@ -75,7 +75,7 @@ public class GlobalExclusionsPanel implements ConfigurationPanel<SonarLintGlobal
       return StringUtils.stripToNull(s);
     };
 
-    Function<String, String> onEdit = (value) -> {
+    Function<String, String> onEdit = value -> {
       String s = Messages.showInputDialog(panel, "Modify exclusion pattern", "Edit File Exclusion", null, value,
         validator);
       return StringUtils.stripToNull(s);
