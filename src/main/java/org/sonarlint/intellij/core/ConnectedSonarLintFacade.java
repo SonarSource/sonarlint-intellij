@@ -74,6 +74,10 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     return excludedFiles.stream().map(fileByPath::get).collect(Collectors.toList());
   }
 
+  @Override public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
+    return sonarlint.getLoadedAnalyzers();
+  }
+
   @Override protected RuleDetails ruleDetails(String ruleKey) {
     return sonarlint.getRuleDetails(ruleKey);
   }

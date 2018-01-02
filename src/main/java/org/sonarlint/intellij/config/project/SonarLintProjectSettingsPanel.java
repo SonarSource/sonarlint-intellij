@@ -33,6 +33,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   private final JPanel root;
   private final JPanel rootBindPane;
   private final JPanel rootPropertiesPane;
+  private final SonarLintProjectAnalyzersPanel analyzersPanel;
   private final ProjectExclusionsPanel exclusionsPanel;
   private SonarLintProjectBindPanel bindPanel;
 
@@ -40,6 +41,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
+    analyzersPanel = new SonarLintProjectAnalyzersPanel(project);
     root = new JPanel(new BorderLayout());
     JBTabbedPane tabs = new JBTabbedPane();
 
@@ -52,7 +54,13 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     tabs.insertTab("Bind to SonarQube project", null, rootBindPane, "Configure the binding of modules to a SonarQube server", 0);
     tabs.insertTab("File Exclusions", null, exclusionsPanel.getComponent(), "Configure which files to exclude from analysis", 1);
     tabs.insertTab("Analysis properties", null, rootPropertiesPane, "Configure analysis properties", 2);
+    tabs.insertTab("Analyzers", null, analyzersPanel.getPanel(), "Check which analyzers are currently loaded", 3);
 
+    tabs.addChangeListener(e -> {
+      if (tabs.getSelectedComponent() == analyzersPanel.getPanel()) {
+        analyzersPanel.reload();
+      }
+    });
     root.add(tabs, BorderLayout.CENTER);
   }
 

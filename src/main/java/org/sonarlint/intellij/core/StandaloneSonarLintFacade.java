@@ -35,6 +35,7 @@ import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -61,6 +62,10 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   @Override
   public Collection<VirtualFile> getExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
     return Collections.emptyList();
+  }
+
+  @Override public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
+    return sonarlint.getLoadedAnalyzers();
   }
 
   @Override protected RuleDetails ruleDetails(String ruleKey) {
