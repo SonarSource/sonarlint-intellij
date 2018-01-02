@@ -35,6 +35,7 @@ import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
 
 public abstract class SonarLintFacade {
   protected final Project project;
@@ -75,6 +76,8 @@ public abstract class SonarLintFacade {
     }
     return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
   }
+
+  public abstract Collection<LoadedAnalyzer> getLoadedAnalyzers();
 
   @CheckForNull
   public String getRuleName(String ruleKey) {
