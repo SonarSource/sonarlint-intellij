@@ -112,17 +112,6 @@ public class AddEditExclusionDialog extends DialogWrapper {
     updateControls();
   }
 
-  @NotNull
-  @Override
-  protected Action[] createActions() {
-    return new Action[] {getOKAction(), getCancelAction(), getHelpAction()};
-  }
-
-  @Override
-  protected void doHelpAction() {
-    HelpManager.getInstance().invokeHelp("ignoreUnversionedFilesDialog");
-  }
-
   private void updateControls() {
     directoryTextField.setEnabled(directoryRadioButton.isSelected());
     globTextField.setEnabled(globRadioButton.isSelected());
