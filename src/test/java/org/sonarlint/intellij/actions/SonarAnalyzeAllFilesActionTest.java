@@ -69,6 +69,7 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
 
   @Test
   public void testEnabled() {
+    assertThat(action.isVisible("")).isTrue();
     when(status.isRunning()).thenReturn(true);
     assertThat(action.isEnabled(event, project, status)).isFalse();
 

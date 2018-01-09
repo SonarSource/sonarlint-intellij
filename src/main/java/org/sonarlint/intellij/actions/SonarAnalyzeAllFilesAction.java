@@ -62,7 +62,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
   @Override
   protected boolean isVisible(String place) {
-    return ActionPlaces.isMainMenuOrActionSearch(place);
+    return true;
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
