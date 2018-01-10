@@ -81,7 +81,7 @@ public class SonarLintAnalyzer {
     // Analyze
     long start = System.currentTimeMillis();
 
-    SonarLintFacade facade = projectBindingManager.getFacade();
+    SonarLintFacade facade = projectBindingManager.getFacade(true);
 
     String what;
     if (filesToAnalyze.size() == 1) {

@@ -64,7 +64,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
     analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app);
 
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
-    when(projectBindingManager.getFacade()).thenReturn(facade);
+    when(projectBindingManager.getFacade(true)).thenReturn(facade);
     super.register(module, VirtualFileTestPredicate.class, testPredicate);
     super.register(module, AnalysisConfigurator.class, configurator);
     super.registerEP(AnalysisConfigurator.EP_NAME, AnalysisConfigurator.class);

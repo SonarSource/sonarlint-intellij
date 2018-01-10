@@ -126,12 +126,10 @@ public class AutoTriggerStatusPanel {
 
     LocalFileExclusions.Result result = localFileExclusions.checkExclusionAutomaticAnalysis(selectedFile, m);
     if (result.isExcluded()) {
-      console.debug("File " + selectedFile.getName() + " not automatically analyzed: " + result.excludeReason());
       return FILE_DISABLED;
     }
 
     if (isExcludedInServer(m, selectedFile)) {
-      console.debug("File " + selectedFile.getName() + " not automatically analyzed due to exclusions configured in the SonarQube Server");
       return FILE_DISABLED;
     }
 

@@ -55,11 +55,17 @@ public class ProjectBindingManager extends AbstractProjectComponent {
    * @throws InvalidBindingException If current project binding is invalid
    */
   public synchronized SonarLintFacade getFacade() throws InvalidBindingException {
+    return getFacade(false);
+  }
+
+  public synchronized SonarLintFacade getFacade(boolean logDetails) throws InvalidBindingException {
     if (projectSettings.isBindingEnabled()) {
       String serverId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
       checkBindingStatus(notifications, serverId, projectKey);
-      console.info(String.format("Using configuration of '%s' in server '%s'", projectKey, serverId));
+      if (logDetails) {
+        console.info(String.format("Using configuration of '%s' in server '%s'", projectKey, serverId));
+      }
 
       ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, serverId, projectKey);
       return new ConnectedSonarLintFacade(engine, projectSettings, console, myProject, projectKey);

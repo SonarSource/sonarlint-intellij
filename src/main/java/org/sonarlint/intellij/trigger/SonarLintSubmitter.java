@@ -124,6 +124,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
   private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean autoTrigger) {
     HashMultimap<Module, VirtualFile> filesByModule = HashMultimap.create();
+    SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 
     for (VirtualFile file : files) {
       Module m = utils.findModuleForFile(file, myProject);
@@ -146,12 +147,15 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     }
 
     // Apply server file exclusions
-    SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
     Iterator<Module> it = filesByModule.keySet().iterator();
     while(it.hasNext()) {
       Module module = it.next();
       VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
       Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(filesByModule.get(module), testPredicate);
+      for (VirtualFile f : excluded) {
+        console.debug("File '" + f.getName() + "' not automatically analyzed due to exclusions configured in the SonarQube Server");
+      }
+
       filesByModule.get(module).removeAll(excluded);
     }
 
