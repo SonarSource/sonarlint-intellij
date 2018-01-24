@@ -31,6 +31,7 @@ import org.sonarlint.intellij.actions.SonarAnalyzeFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsole;
 import org.sonarlint.intellij.actions.SonarClearAnalysisResults;
 import org.sonarlint.intellij.actions.SonarClearIssues;
+import org.sonarlint.intellij.actions.SonarShowCodeAnalyzers;
 
 /**
  * Creates and keeps a single instance of actions used by SonarLint.
@@ -46,6 +47,7 @@ public class SonarLintActions implements ApplicationComponent {
   private AnAction analyzeChangedFilesAction;
   private AnAction analyzeAllFilesAction;
   private AnAction analyzeCurrentFileAction;
+  private AnAction showAnalyzersAction;
 
   private void init() {
     cancelAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel");
@@ -69,6 +71,8 @@ public class SonarLintActions implements ApplicationComponent {
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
       "Run a SonarLint analysis on VCS changed files",
       SonarLintIcons.PLAY);
+
+    showAnalyzersAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Analyzers");
   }
 
   public static SonarLintActions getInstance() {
@@ -117,5 +121,9 @@ public class SonarLintActions implements ApplicationComponent {
 
   @NotNull @Override public String getComponentName() {
     return this.getClass().getSimpleName();
+  }
+
+  public AnAction showAnalyzers() {
+    return showAnalyzersAction;
   }
 }

@@ -76,6 +76,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     SimpleActionGroup actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.configure());
     actionGroup.add(sonarLintActions.cleanConsole());
+    actionGroup.add(sonarLintActions.showAnalyzers());
     return actionGroup;
   }
 
