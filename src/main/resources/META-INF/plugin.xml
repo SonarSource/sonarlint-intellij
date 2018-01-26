@@ -257,9 +257,9 @@
 
         <action id="SonarLint.toolwindow.Analyzers"
                 class="org.sonarlint.intellij.actions.SonarShowCodeAnalyzers"
-                text="Show code analyzers"
-                description="Show code analyzers"
-                icon="SonarLintIcons.SONARLINT">
+                text="Show more information"
+                description="Show more information"
+                icon="SonarLintIcons.INFO">
         </action>
 
 

@@ -117,7 +117,7 @@ public class SonarLintProjectAnalyzersPanel {
     }
     @Override
     public String getColumnName(int column) {
-      return (column == 0) ? "Name" : "Version";
+      return (column == 0) ? "Code Analyzer" : "Version";
     }
 
     public void set(Collection<LoadedAnalyzer> rows) {

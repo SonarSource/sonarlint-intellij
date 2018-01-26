@@ -29,7 +29,7 @@ public class CodeAnalyzersDialog extends DialogWrapper {
 
   public CodeAnalyzersDialog(@Nullable Project project) {
     super(project);
-    super.setTitle("Code Analyzers In Use");
+    super.setTitle("SonarLint Additional Information");
     this.project = project;
     super.init();
   }

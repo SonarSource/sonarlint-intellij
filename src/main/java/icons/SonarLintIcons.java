@@ -37,6 +37,7 @@ public class SonarLintIcons {
   public static final Icon INFO = IconLoader.getIcon("/images/info.png");
   public static final Icon WARN = IconLoader.getIcon("/images/warn.png");
 
+
   private SonarLintIcons() {
     // only static
   }
