@@ -23,9 +23,11 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.nio.charset.Charset;
@@ -44,7 +46,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
-public class SonarLintAnalyzer {
+public class SonarLintAnalyzer extends AbstractProjectComponent {
   private static final Logger LOG = Logger.getInstance(SonarLintAnalyzer.class);
   private final ProjectBindingManager projectBindingManager;
   private final EncodingProjectManager encodingProjectManager;
@@ -52,8 +54,9 @@ public class SonarLintAnalyzer {
   private final FileDocumentManager fileDocumentManager;
   private final Application app;
 
-  public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
-    SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app) {
+  public SonarLintAnalyzer(Project project, ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
+                           SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app) {
+    super(project);
     this.projectBindingManager = projectBindingManager;
     this.encodingProjectManager = encodingProjectManager;
     this.console = console;
@@ -110,10 +113,11 @@ public class SonarLintAnalyzer {
       for (VirtualFile f : filesToAnalyze) {
         boolean test = testPredicate.test(f);
         Charset charset = getEncoding(f);
+        String relativePath = SonarLintUtils.getRelativePath(myProject, f);
         if (fileDocumentManager.isFileModified(f)) {
-          inputFiles.add(new DefaultClientInputFile(f, test, charset, fileDocumentManager.getDocument(f)));
+          inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset, fileDocumentManager.getDocument(f)));
         } else {
-          inputFiles.add(new DefaultClientInputFile(f, test, charset));
+          inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset));
         }
       }
     } finally {

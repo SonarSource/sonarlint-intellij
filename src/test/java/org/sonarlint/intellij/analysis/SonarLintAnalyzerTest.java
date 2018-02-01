@@ -23,15 +23,11 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.roots.ContentEntry;
-import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
@@ -41,7 +37,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -53,7 +48,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private AnalysisConfigurator configurator = mock(AnalysisConfigurator.class);
   private Module module = mock(Module.class);
-  private SonarLintFacade facade = mock(SonarLintFacade.class);
+    private SonarLintFacade facade = mock(SonarLintFacade.class);
   private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
   private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
 
@@ -61,7 +56,8 @@ public class SonarLintAnalyzerTest extends SonarTest {
 
   @Before
   public void prepare() {
-    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app);
+    when(getProject().getBasePath()).thenReturn("foo");
+    analyzer = new SonarLintAnalyzer(getProject(), projectBindingManager, encodingProjectManager, console, fileDocumentManager, app);
 
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(projectBindingManager.getFacade(true)).thenReturn(facade);

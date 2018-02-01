@@ -48,7 +48,7 @@ public class DefaultClientInputFileTest {
     when(vFile.contentsToByteArray()).thenReturn("test string".getBytes(StandardCharsets.UTF_8));
     when(vFile.getInputStream()).thenReturn(new ByteArrayInputStream("test string".getBytes(StandardCharsets.UTF_8)));
 
-    inputFile = new DefaultClientInputFile(vFile, true, StandardCharsets.UTF_8);
+    inputFile = new DefaultClientInputFile(vFile, "file", true, StandardCharsets.UTF_8);
 
     assertThat(inputFile.getCharset()).isEqualTo(StandardCharsets.UTF_8);
     assertThat(inputFile.isTest()).isTrue();
@@ -66,7 +66,7 @@ public class DefaultClientInputFileTest {
     Document doc = mock(Document.class);
     when(doc.getText()).thenReturn("test string");
 
-    inputFile = new DefaultClientInputFile(vFile, true, StandardCharsets.UTF_8, doc);
+    inputFile = new DefaultClientInputFile(vFile, "foo/Bar.php",true, StandardCharsets.UTF_8, doc);
 
     assertThat(inputFile.contents()).isEqualTo("test string");
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {

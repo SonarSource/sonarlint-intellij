@@ -30,25 +30,32 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 
 public class DefaultClientInputFile implements ClientInputFile {
   private final String path;
+  private final String relativePath;
   private final boolean test;
   private final Charset charset;
   private final VirtualFile vFile;
   private final Document doc;
 
-  DefaultClientInputFile(VirtualFile vFile, boolean isTest, Charset charset, @Nullable Document doc) {
+  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Document doc) {
     this.path = vFile.getPath();
+    this.relativePath = relativePath;
     this.test = isTest;
     this.charset = charset;
     this.vFile = vFile;
     this.doc = doc;
   }
 
-  DefaultClientInputFile(VirtualFile vFile, boolean isTest, Charset charset) {
-    this(vFile, isTest, charset, null);
+  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
+    this(vFile, relativePath, isTest, charset, null);
   }
 
   @Override public String getPath() {
     return path;
+  }
+
+  @Override
+  public String relativePath() {
+    return relativePath;
   }
 
   @Override public boolean isTest() {
