@@ -47,6 +47,7 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
@@ -284,10 +285,28 @@ public class SonarLintUtils {
   }
 
   public static String getRelativePath(Project project, VirtualFile virtualFile) {
+    return internalRelativePath(project, virtualFile).toString();
+  }
+
+  public static String getPortableRelativePath(Project project, VirtualFile virtualFile) {
+    return toPortableString(internalRelativePath(project, virtualFile));
+  }
+
+  private static Path internalRelativePath(Project project, VirtualFile virtualFile) {
     if (project.getBasePath() == null) {
       throw new IllegalStateException("The project has no base path");
     }
-    return Paths.get(project.getBasePath()).relativize(Paths.get(virtualFile.getPath())).toString();
+    return Paths.get(project.getBasePath()).relativize(Paths.get(virtualFile.getPath()));
+  }
+
+  private static String toPortableString(Path path) {
+    StringBuilder sb = new StringBuilder();
+    for(Path s : path) {
+      sb.append(s.toString());
+      sb.append("/");
+    }
+    sb.setLength(sb.length()-1);
+    return sb.toString();
   }
 
   /**

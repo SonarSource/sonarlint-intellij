@@ -28,6 +28,7 @@ import com.intellij.openapi.project.ProjectManager;
 import java.util.Arrays;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -96,9 +97,15 @@ public class SonarLintTelemetry implements ApplicationComponent {
     }
   }
 
-  public void usedAnalysis() {
+  public void analysisDoneOnMultipleFiles() {
     if (enabled()) {
-      telemetry.usedAnalysis();
+      telemetry.analysisDoneOnMultipleFiles();
+    }
+  }
+
+  public void analysisDoneOnSingleFile(@Nullable String fileExtension, int time) {
+    if (enabled()) {
+      telemetry.analysisDoneOnSingleFile(fileExtension, time);
     }
   }
 

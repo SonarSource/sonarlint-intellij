@@ -60,8 +60,6 @@ public class SonarLintSubmitterTest extends SonarTest{
   @Mock
   private Project project;
   @Mock
-  private SonarLintTelemetry telemetry;
-  @Mock
   private LocalFileExclusions exclusions;
   @Mock
   private ProjectBindingManager bindingManager;
@@ -84,7 +82,7 @@ public class SonarLintSubmitterTest extends SonarTest{
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
     super.register(module, VirtualFileTestPredicate.class, testPredicate);
-    submitter = new SonarLintSubmitter(project, console, fileEditorManager, telemetry, sonarLintJobManager, globalSettings, utils,
+    submitter = new SonarLintSubmitter(project, console, fileEditorManager, sonarLintJobManager, globalSettings, utils,
       exclusions, bindingManager);
   }
 

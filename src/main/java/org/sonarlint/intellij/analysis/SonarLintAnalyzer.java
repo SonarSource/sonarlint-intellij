@@ -23,11 +23,9 @@ import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.nio.charset.Charset;
@@ -39,6 +37,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
@@ -46,22 +45,23 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
-public class SonarLintAnalyzer extends AbstractProjectComponent {
+public class SonarLintAnalyzer {
   private static final Logger LOG = Logger.getInstance(SonarLintAnalyzer.class);
   private final ProjectBindingManager projectBindingManager;
   private final EncodingProjectManager encodingProjectManager;
   private final SonarLintConsole console;
   private final FileDocumentManager fileDocumentManager;
   private final Application app;
+  private final SonarLintTelemetry telemetry;
 
-  public SonarLintAnalyzer(Project project, ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
-                           SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app) {
-    super(project);
+  public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
+    SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app, SonarLintTelemetry telemetry) {
     this.projectBindingManager = projectBindingManager;
     this.encodingProjectManager = encodingProjectManager;
     this.console = console;
     this.fileDocumentManager = fileDocumentManager;
     this.app = app;
+    this.telemetry = telemetry;
   }
 
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ProgressMonitor progressMonitor) {
@@ -79,7 +79,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
 
     // configure files
     VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
-    List<ClientInputFile> inputFiles = getInputFiles(testPredicate, filesToAnalyze);
+    List<ClientInputFile> inputFiles = getInputFiles(module, testPredicate, filesToAnalyze);
 
     // Analyze
     long start = System.currentTimeMillis();
@@ -101,10 +101,15 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
     }
     AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps, progressMonitor);
     console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
+    if (filesToAnalyze.size() == 1) {
+      telemetry.analysisDoneOnSingleFile(filesToAnalyze.iterator().next().getExtension(), (int) (System.currentTimeMillis() - start));
+    } else {
+      telemetry.analysisDoneOnMultipleFiles();
+    }
     return result;
   }
 
-  private List<ClientInputFile> getInputFiles(VirtualFileTestPredicate testPredicate, Collection<VirtualFile> filesToAnalyze) {
+  private List<ClientInputFile> getInputFiles(Module module, VirtualFileTestPredicate testPredicate, Collection<VirtualFile> filesToAnalyze) {
 
     List<ClientInputFile> inputFiles = new LinkedList<>();
 
@@ -113,7 +118,7 @@ public class SonarLintAnalyzer extends AbstractProjectComponent {
       for (VirtualFile f : filesToAnalyze) {
         boolean test = testPredicate.test(f);
         Charset charset = getEncoding(f);
-        String relativePath = SonarLintUtils.getRelativePath(myProject, f);
+        String relativePath = SonarLintUtils.getPortableRelativePath(module.getProject(), f);
         if (fileDocumentManager.isFileModified(f)) {
           inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset, fileDocumentManager.getDocument(f)));
         } else {
