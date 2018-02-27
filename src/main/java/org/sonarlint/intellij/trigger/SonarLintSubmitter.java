@@ -37,7 +37,6 @@ import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -45,20 +44,18 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class SonarLintSubmitter extends AbstractProjectComponent {
   private final SonarLintConsole console;
   private final FileEditorManager editorManager;
-  private final SonarLintTelemetry telemetry;
   private final SonarLintJobManager sonarLintJobManager;
   private final SonarLintGlobalSettings globalSettings;
   private final SonarLintAppUtils utils;
   private final LocalFileExclusions localFileExclusions;
   private final ProjectBindingManager projectBindingManager;
 
-  public SonarLintSubmitter(Project project, SonarLintConsole console, FileEditorManager editorManager, SonarLintTelemetry telemetry,
+  public SonarLintSubmitter(Project project, SonarLintConsole console, FileEditorManager editorManager,
     SonarLintJobManager sonarLintJobManager, SonarLintGlobalSettings globalSettings, SonarLintAppUtils utils,
     LocalFileExclusions localFileExclusions, ProjectBindingManager projectBindingManager) {
     super(project);
     this.console = console;
     this.editorManager = editorManager;
-    this.telemetry = telemetry;
     this.sonarLintJobManager = sonarLintJobManager;
     this.globalSettings = globalSettings;
     this.utils = utils;
@@ -87,7 +84,6 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
-    telemetry.usedAnalysis();
     Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, false);
 
     if (!filesByModule.isEmpty()) {
@@ -109,7 +105,6 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
-    telemetry.usedAnalysis();
     Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, startInBackground);
 
     if (!filesByModule.isEmpty()) {

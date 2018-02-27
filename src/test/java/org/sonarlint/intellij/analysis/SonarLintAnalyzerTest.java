@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -51,14 +52,13 @@ public class SonarLintAnalyzerTest extends SonarTest {
     private SonarLintFacade facade = mock(SonarLintFacade.class);
   private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
   private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
+  private SonarLintTelemetry telemetry = mock(SonarLintTelemetry.class);
 
   private SonarLintAnalyzer analyzer;
 
   @Before
   public void prepare() {
-    when(getProject().getBasePath()).thenReturn("foo");
-    analyzer = new SonarLintAnalyzer(getProject(), projectBindingManager, encodingProjectManager, console, fileDocumentManager, app);
-
+    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app, telemetry);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
     super.register(module, VirtualFileTestPredicate.class, testPredicate);

@@ -79,6 +79,16 @@ public class SonarLintUtilsTest extends SonarTest {
   }
 
   @Test
+  public void testPortableRelativePath() {
+    Project project = mock(Project.class);
+    when(project.getBasePath()).thenReturn("/project");
+    VirtualFile vFile = mock(VirtualFile.class);
+    when (vFile.getPath()).thenReturn("/project/path/to/file");
+
+    assertThat(SonarLintUtils.getPortableRelativePath(project, vFile)).isEqualTo("path/to/file");
+  }
+
+  @Test
   public void testServerConfigurationToken() {
     SonarApplication app = mock(SonarApplication.class);
     when(app.getVersion()).thenReturn("1.0");

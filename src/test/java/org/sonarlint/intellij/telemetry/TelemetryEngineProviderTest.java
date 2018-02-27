@@ -55,7 +55,7 @@ public class TelemetryEngineProviderTest extends SonarTest {
 
     TelemetryManager telemetry = engineProvider.get();
     assertThat(path).doesNotExist();
-    telemetry.usedAnalysis();
+    telemetry.analysisDoneOnMultipleFiles();
     assertThat(path).exists();
   }
 }

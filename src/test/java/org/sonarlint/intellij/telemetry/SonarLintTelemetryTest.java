@@ -132,15 +132,15 @@ public class SonarLintTelemetryTest extends SonarTest {
   @Test
   public void usedAnalysis_should_trigger_usedAnalysis_when_enabled() {
     when(engine.isEnabled()).thenReturn(true);
-    telemetry.usedAnalysis();
+    telemetry.analysisDoneOnMultipleFiles();
     verify(engine).isEnabled();
-    verify(engine).usedAnalysis();
+    verify(engine).analysisDoneOnMultipleFiles();
   }
 
   @Test
   public void usedAnalysis_should_not_trigger_usedAnalysis_when_disabled() {
     when(engine.isEnabled()).thenReturn(false);
-    telemetry.usedAnalysis();
+    telemetry.analysisDoneOnMultipleFiles();
     verify(engine).isEnabled();
     verifyNoMoreInteractions(engine);
   }
