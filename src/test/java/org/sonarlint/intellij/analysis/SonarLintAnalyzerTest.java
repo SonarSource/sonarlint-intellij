@@ -22,7 +22,6 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.util.Collections;
@@ -48,8 +47,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
   private EncodingProjectManager encodingProjectManager = mock(EncodingProjectManager.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private AnalysisConfigurator configurator = mock(AnalysisConfigurator.class);
-  private Module module = mock(Module.class);
-    private SonarLintFacade facade = mock(SonarLintFacade.class);
+  private SonarLintFacade facade = mock(SonarLintFacade.class);
   private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
   private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
   private SonarLintTelemetry telemetry = mock(SonarLintTelemetry.class);
@@ -64,12 +62,13 @@ public class SonarLintAnalyzerTest extends SonarTest {
     super.register(module, VirtualFileTestPredicate.class, testPredicate);
     super.register(module, AnalysisConfigurator.class, configurator);
     super.registerEP(AnalysisConfigurator.EP_NAME, AnalysisConfigurator.class);
+    when(project.getBasePath()).thenReturn("project");
   }
 
   @Test
   public void testAnalysis() {
     VirtualFile file = mock(VirtualFile.class);
-    when(file.getPath()).thenReturn("testFile");
+    when(file.getPath()).thenReturn("project/testFile");
     IssueListener listener = mock(IssueListener.class);
     when(app.getDefaultModalityState()).thenReturn(ModalityState.NON_MODAL);
     analyzer.analyzeModule(module, Collections.singleton(file), listener, mock(ProgressMonitor.class));
