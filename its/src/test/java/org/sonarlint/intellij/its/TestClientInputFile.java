@@ -28,12 +28,14 @@ import java.nio.file.Path;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
 public class TestClientInputFile implements ClientInputFile {
-  private Path path;
-  private boolean isTest;
-  private Charset encoding;
+  private final Path path;
+  private final String relativePath;
+  private final boolean isTest;
+  private final Charset encoding;
 
-  public TestClientInputFile(final Path path, final boolean isTest, final Charset encoding) {
+  public TestClientInputFile(final Path path, String relativePath, final boolean isTest, final Charset encoding) {
     this.path = path;
+    this.relativePath = relativePath;
     this.isTest = isTest;
     this.encoding = encoding;
   }
@@ -66,5 +68,9 @@ public class TestClientInputFile implements ClientInputFile {
   @Override
   public String contents() throws IOException {
     return new String(Files.readAllBytes(path), encoding);
+  }
+
+  @Override public String relativePath() {
+    return relativePath;
   }
 }

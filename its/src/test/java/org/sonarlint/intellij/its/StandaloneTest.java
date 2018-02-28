@@ -146,6 +146,6 @@ public class StandaloneTest {
     Path testFile = temp.newFile(fileName).toPath();
     System.out.println("Writing: " + testFile);
     Files.write(testFile, content.getBytes(StandardCharsets.UTF_8));
-    return new TestClientInputFile(testFile, false, StandardCharsets.UTF_8);
+    return new TestClientInputFile(testFile, fileName,false, StandardCharsets.UTF_8);
   }
 }
