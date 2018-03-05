@@ -34,6 +34,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>3.2.1 - Bug fix for concurrent modification when all files of a module are excluded by server configuration</li>
         <li>3.2 - Support excluding files from the automatic analysis</li>
         <li>3.1 - Various minor improvements and bug fixes. Updated code analyzers.</li>
         <li>3.0 - Avoid saving files when possible. Improve support of cancellation</li>
