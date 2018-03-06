@@ -23,6 +23,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Predicate;
 import org.junit.Before;
@@ -48,7 +49,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLintSubmitterTest extends SonarTest{
+public class SonarLintSubmitterTest extends SonarTest {
   @Mock
   private SonarLintConsole console;
   @Mock
@@ -155,5 +156,31 @@ public class SonarLintSubmitterTest extends SonarTest{
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     verifyZeroInteractions(sonarLintJobManager);
+  }
+
+  @Test
+  public void should_not_crash_when_all_files_of_some_module_are_excluded() {
+    VirtualFile f1 = mock(VirtualFile.class);
+    when(utils.findModuleForFile(f1, project)).thenReturn(module);
+    when(exclusions.checkExclusionAutomaticAnalysis(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
+
+    VirtualFile f2 = mock(VirtualFile.class);
+    Module m2 = mock(Module.class);
+    register(m2, VirtualFileTestPredicate.class, testPredicate);
+
+    VirtualFile f3 = mock(VirtualFile.class);
+    Module m3 = mock(Module.class);
+    register(m3, VirtualFileTestPredicate.class, testPredicate);
+
+    when(utils.findModuleForFile(f2, project)).thenReturn(m2);
+    when(exclusions.checkExclusionAutomaticAnalysis(f2, m2)).thenReturn(LocalFileExclusions.Result.notExcluded());
+
+    when(utils.findModuleForFile(f3, project)).thenReturn(m3);
+    when(exclusions.checkExclusionAutomaticAnalysis(f3, m3)).thenReturn(LocalFileExclusions.Result.notExcluded());
+
+    when(facade.getExcluded(any(), any())).thenReturn(Arrays.asList(f1, f2));
+
+    submitter.submitFiles(Arrays.asList(f1, f2, f3), TriggerType.EDITOR_OPEN, true);
+    verify(sonarLintJobManager).submitBackground(eq(Collections.singletonMap(m3, Collections.singleton(f3))), eq(TriggerType.EDITOR_OPEN), eq(null));
   }
 }

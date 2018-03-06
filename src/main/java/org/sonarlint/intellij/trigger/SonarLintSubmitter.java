@@ -25,9 +25,10 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -142,9 +143,10 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     }
 
     // Apply server file exclusions
-    Iterator<Module> it = filesByModule.keySet().iterator();
-    while(it.hasNext()) {
-      Module module = it.next();
+    // Note: iterating over a copy of keys, because removal of last value removes the key,
+    // resulting in ConcurrentModificationException
+    List<Module> modules = new ArrayList<>(filesByModule.keySet());
+    for (Module module : modules) {
       VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
       Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(filesByModule.get(module), testPredicate);
       for (VirtualFile f : excluded) {
