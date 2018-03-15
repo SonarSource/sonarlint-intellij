@@ -28,8 +28,6 @@ import java.util.Collections;
 import java.util.function.Predicate;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
@@ -37,7 +35,6 @@ import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
@@ -50,34 +47,22 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarLintSubmitterTest extends SonarTest {
-  @Mock
-  private SonarLintConsole console;
-  @Mock
-  private FileEditorManager fileEditorManager;
-  @Mock
-  private SonarLintJobManager sonarLintJobManager;
-  @Mock
-  private SonarLintAppUtils utils;
-  @Mock
-  private Project project;
-  @Mock
-  private LocalFileExclusions exclusions;
-  @Mock
-  private ProjectBindingManager bindingManager;
-  @Mock
-  private Module module;
-  @Mock
-  private VirtualFileTestPredicate testPredicate;
-  @Mock
-  private SonarLintFacade facade;
+  private SonarLintConsole console = mock(SonarLintConsole.class);
+  private FileEditorManager fileEditorManager = mock(FileEditorManager.class);
+  private SonarLintJobManager sonarLintJobManager = mock(SonarLintJobManager.class);
+  private SonarLintAppUtils utils = mock(SonarLintAppUtils.class);
+  private Project project = mock(Project.class);
+  private LocalFileExclusions exclusions = mock(LocalFileExclusions.class);
+  private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
+  private Module module = mock(Module.class);
+  private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
+  private SonarLintFacade facade = mock(SonarLintFacade.class);
 
   private SonarLintGlobalSettings globalSettings;
-
   private SonarLintSubmitter submitter;
 
   @Before
   public void start() {
-    MockitoAnnotations.initMocks(this);
     when(bindingManager.getFacade()).thenReturn(facade);
     when(facade.getExcluded(anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     globalSettings = new SonarLintGlobalSettings();
@@ -91,7 +76,7 @@ public class SonarLintSubmitterTest extends SonarTest {
   public void should_submit_open_files() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
-    when(exclusions.checkExclusionAutomaticAnalysis(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
@@ -112,7 +97,7 @@ public class SonarLintSubmitterTest extends SonarTest {
   public void should_not_submit_if_fail_checks() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
-    when(exclusions.checkExclusionAutomaticAnalysis(f1, module)).thenReturn(LocalFileExclusions.Result.excluded(""));
+    when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.excluded(""));
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
@@ -123,7 +108,7 @@ public class SonarLintSubmitterTest extends SonarTest {
   public void should_not_submit_excluded_in_server() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
-    when(exclusions.checkExclusionAutomaticAnalysis(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(facade.getExcluded(anyCollection(), any(Predicate.class))).thenReturn(Collections.singleton(f1));
     submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false);
     verifyZeroInteractions(sonarLintJobManager);
@@ -141,18 +126,18 @@ public class SonarLintSubmitterTest extends SonarTest {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.canAnalyze(f1, module)).thenReturn(false);
-    submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false);
+    submitter.submitFiles(Collections.singleton(f1), TriggerType.ACTION, false);
 
     verifyZeroInteractions(sonarLintJobManager);
   }
 
   @Test
   public void should_not_submit_if_no_module() {
-    when(exclusions.checkExclusionAutomaticAnalysis(any(VirtualFile.class), any(Module.class))).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(any(VirtualFile.class), any(Module.class))).thenReturn(LocalFileExclusions.Result.notExcluded());
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(null);
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
-    when(exclusions.checkExclusionAutomaticAnalysis(f1, null)).thenReturn(LocalFileExclusions.Result.excluded(""));
+    when(exclusions.checkExclusions(f1, null)).thenReturn(LocalFileExclusions.Result.excluded(""));
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
     verifyZeroInteractions(sonarLintJobManager);
@@ -162,7 +147,7 @@ public class SonarLintSubmitterTest extends SonarTest {
   public void should_not_crash_when_all_files_of_some_module_are_excluded() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
-    when(exclusions.checkExclusionAutomaticAnalysis(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
     VirtualFile f2 = mock(VirtualFile.class);
     Module m2 = mock(Module.class);
@@ -173,10 +158,10 @@ public class SonarLintSubmitterTest extends SonarTest {
     register(m3, VirtualFileTestPredicate.class, testPredicate);
 
     when(utils.findModuleForFile(f2, project)).thenReturn(m2);
-    when(exclusions.checkExclusionAutomaticAnalysis(f2, m2)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f2, m2)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
     when(utils.findModuleForFile(f3, project)).thenReturn(m3);
-    when(exclusions.checkExclusionAutomaticAnalysis(f3, m3)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f3, m3)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
     when(facade.getExcluded(any(), any())).thenReturn(Arrays.asList(f1, f2));
 

@@ -106,7 +106,8 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
-    Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, startInBackground);
+    boolean checkExclusions = trigger != TriggerType.ACTION;
+    Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, checkExclusions);
 
     if (!filesByModule.isEmpty()) {
       console.debug("Trigger: " + trigger);
@@ -118,23 +119,23 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     }
   }
 
-  private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean autoTrigger) {
+  private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean checkExclusions) {
     HashMultimap<Module, VirtualFile> filesByModule = HashMultimap.create();
     SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 
     for (VirtualFile file : files) {
       Module m = utils.findModuleForFile(file, myProject);
-      if (autoTrigger) {
-        LocalFileExclusions.Result result = localFileExclusions.checkExclusionAutomaticAnalysis(file, m);
+      if (checkExclusions) {
+        LocalFileExclusions.Result result = localFileExclusions.checkExclusions(file, m);
         if (result.isExcluded()) {
           if (result.excludeReason() != null) {
-            console.info("File '" + file.getName() + "' excluded: " + result.excludeReason());
+            logExclusion(file, "excluded: " + result.excludeReason());
           }
           continue;
         }
       } else {
         if (!localFileExclusions.canAnalyze(file, m)) {
-          console.info("File '" + file.getName() + "' can't be analyzed. Skipping: " + file.getPath());
+          logExclusion(file, "can't be analyzed. Skipping it.");
           continue;
         }
       }
@@ -142,20 +143,27 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
       filesByModule.put(m, file);
     }
 
-    // Apply server file exclusions
-    // Note: iterating over a copy of keys, because removal of last value removes the key,
-    // resulting in ConcurrentModificationException
-    List<Module> modules = new ArrayList<>(filesByModule.keySet());
-    for (Module module : modules) {
-      VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
-      Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(filesByModule.get(module), testPredicate);
-      for (VirtualFile f : excluded) {
-        console.debug("File '" + f.getName() + "' not automatically analyzed due to exclusions configured in the SonarQube Server");
-      }
+    // Apply server file exclusions. This is an expensive operation, so we call the core only once per module.
+    if (checkExclusions) {
+      // Note: iterating over a copy of keys, because removal of last value removes the key,
+      // resulting in ConcurrentModificationException
+      List<Module> modules = new ArrayList<>(filesByModule.keySet());
+      for (Module module : modules) {
+        VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
+        Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(filesByModule.get(module), testPredicate);
+        for (VirtualFile f : excluded) {
+          logExclusion(f, "not automatically analyzed due to exclusions configured in the SonarQube Server");
+        }
 
-      filesByModule.get(module).removeAll(excluded);
+        filesByModule.get(module).removeAll(excluded);
+      }
     }
 
     return filesByModule.asMap();
+  }
+
+  private void logExclusion(VirtualFile f, String reason) {
+    console.debug("File '" + f.getName() + "' " + reason);
+
   }
 }
