@@ -46,7 +46,6 @@ public class SonarLintActionsTest extends SonarTest {
     assertAction(instance.configure());
     assertAction(instance.cancelAnalysis());
     assertActionFields(instance.analyzeChangedFiles());
-    assertActionFields(instance.analyzeCurrentFile());
     assertActionFields(instance.clearResults());
     assertActionFields(instance.clearIssues());
     assertActionFields(instance.cleanConsole());

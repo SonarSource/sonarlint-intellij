@@ -21,11 +21,13 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -47,16 +49,20 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
-  private SonarAnalyzeFilesAction editorFileAction;
+  private SonarLintStatus status;
+  private Presentation presentation = new Presentation();
+  private SonarAnalyzeFilesAction editorFileAction = new SonarAnalyzeFilesAction();
 
   @Before
   public void prepare() {
+    status = new SonarLintStatus(project);
     super.register(app, SonarLintAppUtils.class, utils);
     super.register(project, SonarLintConsole.class, console);
     super.register(project, SonarLintSubmitter.class, submitter);
-
-    editorFileAction = new SonarAnalyzeFilesAction();
+    super.register(project, SonarLintStatus.class, status);
     when(event.getProject()).thenReturn(project);
+    when(project.isInitialized()).thenReturn(true);
+    when(event.getPresentation()).thenReturn(presentation);
   }
 
   @Test
@@ -68,7 +74,7 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
   }
 
   private void mockSelectedFiles(VirtualFile file) {
-    when(event.getData(CommonDataKeys.VIRTUAL_FILE)).thenReturn(file);
+    when(event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[]{file});
   }
 
   @Test
@@ -89,11 +95,13 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
     VirtualFile f1 = mock(VirtualFile.class);
     mockSelectedFiles(f1);
 
-    SonarLintStatus status = new SonarLintStatus(project);
     status.tryRun();
-    assertThat(editorFileAction.isEnabled(event, project, status)).isFalse();
+
+    editorFileAction.update(event);
+    assertThat(presentation.isEnabled()).isFalse();
 
     status.stopRun();
-    assertThat(editorFileAction.isEnabled(event, project, status)).isTrue();
+    editorFileAction.update(event);
+    assertThat(presentation.isEnabled()).isTrue();
   }
 }
