@@ -44,7 +44,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarDocumentListenerTest {
+public class EditorChangeTriggerTest {
   @Mock
   private Project project;
   @Mock
@@ -57,7 +57,7 @@ public class SonarDocumentListenerTest {
   private FileDocumentManager docManager;
 
   private SonarLintGlobalSettings globalSettings;
-  private SonarDocumentListener listener;
+  private EditorChangeTrigger listener;
 
   @Before
   public void setUp() {
@@ -67,7 +67,7 @@ public class SonarDocumentListenerTest {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    listener = new SonarDocumentListener(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
+    listener = new EditorChangeTrigger(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
     listener.initComponent();
   }
 

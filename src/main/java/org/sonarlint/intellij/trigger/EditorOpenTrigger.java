@@ -32,11 +32,11 @@ import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
-public class FileEditorTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
+public class EditorOpenTrigger extends AbstractProjectComponent implements FileEditorManagerListener {
   private final SonarLintSubmitter submitter;
   private final SonarLintGlobalSettings globalSettings;
 
-  public FileEditorTrigger(Project project, SonarLintSubmitter submitter, SonarLintGlobalSettings globalSettings) {
+  public EditorOpenTrigger(Project project, SonarLintSubmitter submitter, SonarLintGlobalSettings globalSettings) {
     super(project);
     this.submitter = submitter;
     this.globalSettings = globalSettings;

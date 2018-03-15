@@ -28,8 +28,8 @@ import static org.sonarlint.intellij.config.project.ExclusionItem.Type.FILE;
 import static org.sonarlint.intellij.config.project.ExclusionItem.Type.GLOB;
 
 public class ExclusionItem {
-  private Type type;
-  private String item;
+  private final Type type;
+  private final String item;
 
   public enum Type {
     FILE, DIRECTORY, GLOB
