@@ -38,11 +38,11 @@ public class ExcludeFileAction extends DumbAwareAction {
   @Override
   public void update(AnActionEvent e) {
     super.update(e);
-    Project project = e.getProject();
-    e.getPresentation().setVisible(true);
 
+    Project project = e.getProject();
     if (project == null || !project.isInitialized() || project.isDisposed()) {
       e.getPresentation().setEnabled(false);
+      e.getPresentation().setVisible(true);
       return;
     }
 
@@ -52,6 +52,8 @@ public class ExcludeFileAction extends DumbAwareAction {
       e.getPresentation().setVisible(false);
       return;
     }
+
+    e.getPresentation().setVisible(true);
 
     SonarLintProjectSettings settings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
     List<String> exclusions = new ArrayList<>(settings.getFileExclusions());

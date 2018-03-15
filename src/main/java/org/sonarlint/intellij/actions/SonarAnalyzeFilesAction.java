@@ -23,10 +23,17 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
+import icons.SonarLintIcons;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -34,9 +41,10 @@ import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarAnalyzeFilesAction extends AbstractSonarAction {
+public class SonarAnalyzeFilesAction  extends DumbAwareAction {
   public SonarAnalyzeFilesAction() {
     super();
   }
@@ -46,38 +54,58 @@ public class SonarAnalyzeFilesAction extends AbstractSonarAction {
   }
 
   @Override
-  protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
-    if (status.isRunning()) {
-      return false;
+  public void update(AnActionEvent e) {
+    super.update(e);
+
+    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+    if (files == null || files.length == 0) {
+      e.getPresentation().setEnabled(false);
+      e.getPresentation().setVisible(false);
+      return;
     }
 
-    VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
+    if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(e.getPlace())) {
+      e.getPresentation().setIcon(SonarLintIcons.PLAY);
+    }
+    e.getPresentation().setVisible(true);
 
-    // TODO ideally we would already check if the files are analyzable
-    return file != null;
-  }
+    Project project = e.getProject();
+    if (project == null || !project.isInitialized() || project.isDisposed()) {
+      e.getPresentation().setEnabled(false);
+      return;
+    }
 
-  @Override
-  protected boolean isVisible(String place) {
-    return true;
+    SonarLintStatus status = SonarLintUtils.get(project, SonarLintStatus.class);
+    if (status.isRunning()) {
+      e.getPresentation().setEnabled(false);
+      return;
+    }
+
+    e.getPresentation().setEnabled(true);
   }
 
   @Override
   public void actionPerformed(AnActionEvent e) {
     Project project = e.getProject();
-    if (project == null) {
+    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+
+    if (project == null || project.isDisposed() || files == null || files.length == 0) {
       return;
     }
 
-    VirtualFile file = e.getData(CommonDataKeys.VIRTUAL_FILE);
-
-    if (file == null) {
-      SonarLintUtils.get(project, SonarLintConsole.class).error("No file for analysis");
-      return;
-    }
+    List<VirtualFile> fileList = Arrays.stream(files)
+      .flatMap(f -> {
+        if (f.isDirectory()) {
+          return VfsUtil.collectChildrenRecursively(f).stream();
+        } else {
+          return Stream.of(f);
+        }
+      })
+      .distinct()
+      .collect(Collectors.toList());
 
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    submitter.submitFiles(Collections.singleton(file), TriggerType.ACTION, new ShowIssuesCallable(project), executeBackground(e));
+    submitter.submitFiles(fileList, TriggerType.ACTION, new ShowIssuesCallable(project), executeBackground(e));
   }
 
   private class ShowIssuesCallable implements AnalysisCallback {

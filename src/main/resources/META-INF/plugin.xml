@@ -212,7 +212,7 @@
             <add-to-group anchor="last" group-id="AnalyzeMenu"/>
         </group>
 
-        <action id="SonarLint.AnalyzeCurrentEditorFilePopup"
+        <action id="SonarLint.AnalyzeFiles"
                 class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
                 text="Analyze with SonarLint"
                 description="Run SonarLint analysis on selected file(s)"
