@@ -22,7 +22,6 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
@@ -73,7 +72,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       || about.isModified(telemetry) || exclusions.isModified(globalSettings);
   }
 
-  @Override public void apply() throws ConfigurationException {
+  @Override public void apply() {
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
     about.save(telemetry);
@@ -96,18 +95,10 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @Override public void reset() {
-    if (serversPanel != null) {
-      serversPanel.load(globalSettings);
-    }
-    if (globalPanel != null) {
-      globalPanel.load(globalSettings);
-    }
-    if (about != null) {
-      about.load(telemetry);
-    }
-    if (exclusions != null) {
-      exclusions.load(globalSettings);
-    }
+    serversPanel.load(globalSettings);
+    globalPanel.load(globalSettings);
+    about.load(telemetry);
+    exclusions.load(globalSettings);
   }
 
   @Override public void disposeUIResources() {

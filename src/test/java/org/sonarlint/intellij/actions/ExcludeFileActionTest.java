@@ -85,6 +85,17 @@ public class ExcludeFileActionTest extends SonarTest {
   }
 
   @Test
+  public void reject_project() {
+    AnActionEvent e = mock(AnActionEvent.class);
+    when(e.getProject()).thenReturn(project);
+    when(project.getBasePath()).thenReturn("/root");
+    when(file1.getPath()).thenReturn("/root");
+
+    action.actionPerformed(e);
+    assertThat(settings.getFileExclusions()).isEmpty();
+  }
+
+  @Test
   public void do_nothing_if_there_are_no_files() {
     AnActionEvent e = mock(AnActionEvent.class);
     when(e.getProject()).thenReturn(project);
