@@ -58,6 +58,8 @@ public class ExcludeFileAction extends DumbAwareAction {
 
     boolean anyFileToAdd = Arrays.stream(files)
       .map(vf -> toExclusion(project, vf))
+      .filter(exclusion -> !exclusion.item().isEmpty())
+      .map(ExclusionItem::toStringWithType)
       .anyMatch(path -> !exclusions.contains(path));
 
     if (!anyFileToAdd) {
@@ -78,6 +80,8 @@ public class ExcludeFileAction extends DumbAwareAction {
 
     List<String> newExclusions = Arrays.stream(files)
       .map(vf -> toExclusion(project, vf))
+      .filter(exclusion -> !exclusion.item().isEmpty())
+      .map(ExclusionItem::toStringWithType)
       .filter(path -> !exclusions.contains(path))
       .collect(Collectors.toList());
 
@@ -89,12 +93,12 @@ public class ExcludeFileAction extends DumbAwareAction {
     }
   }
 
-  private static String toExclusion(Project project, VirtualFile virtualFile) {
+  private static ExclusionItem toExclusion(Project project, VirtualFile virtualFile) {
     String filePath = SonarLintUtils.getRelativePath(project, virtualFile);
     if (virtualFile.isDirectory()) {
-      return new ExclusionItem(ExclusionItem.Type.DIRECTORY, filePath).toStringWithType();
+      return new ExclusionItem(ExclusionItem.Type.DIRECTORY, filePath);
     } else {
-      return new ExclusionItem(ExclusionItem.Type.FILE, filePath).toStringWithType();
+      return new ExclusionItem(ExclusionItem.Type.FILE, filePath);
     }
   }
 }
