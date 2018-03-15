@@ -43,7 +43,7 @@ public class ExclusionTable {
   private final Function<ExclusionItem, ExclusionItem> onEdit;
   private final JBTable table;
   private final JPanel panel;
-  private Model model;
+  private final Model model;
 
   public ExclusionTable(String emptyLabel, Supplier<ExclusionItem> onAdd, Function<ExclusionItem, ExclusionItem> onEdit) {
     this.onAdd = onAdd;

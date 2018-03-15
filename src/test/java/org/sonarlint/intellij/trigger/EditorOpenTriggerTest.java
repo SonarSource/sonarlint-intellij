@@ -36,7 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-public class FileEditorTriggerTest extends SonarTest {
+public class EditorOpenTriggerTest extends SonarTest {
   @Mock
   private Project project;
   @Mock
@@ -44,7 +44,7 @@ public class FileEditorTriggerTest extends SonarTest {
 
   private SonarLintGlobalSettings globalSettings;
 
-  private FileEditorTrigger editorTrigger;
+  private EditorOpenTrigger editorTrigger;
 
   @Before
   public void start() {
@@ -52,7 +52,7 @@ public class FileEditorTriggerTest extends SonarTest {
     SonarLintTestUtils.mockMessageBus(project);
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    editorTrigger = new FileEditorTrigger(project, submitter, globalSettings);
+    editorTrigger = new EditorOpenTrigger(project, submitter, globalSettings);
   }
 
   @Test

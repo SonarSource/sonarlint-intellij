@@ -38,7 +38,7 @@ import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 @ThreadSafe
-public class SonarDocumentListener extends AbstractProjectComponent implements DocumentListener {
+public class EditorChangeTrigger extends AbstractProjectComponent implements DocumentListener {
   private static final int DEFAULT_TIMER_MS = 2000;
 
   private final SonarLintGlobalSettings globalSettings;
@@ -52,7 +52,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   private final EventWatcher watcher;
   private final int timerMs;
 
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
+  public EditorChangeTrigger(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager) {
     this(project, globalSettings, submitter, editorFactory, utils, docManager, DEFAULT_TIMER_MS);
   }
@@ -60,7 +60,7 @@ public class SonarDocumentListener extends AbstractProjectComponent implements D
   /**
    * For unit testing (pico container won't be able to inject timerMs)
    */
-  public SonarDocumentListener(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
+  public EditorChangeTrigger(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
     EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
     super(project);
     this.submitter = submitter;
