@@ -124,7 +124,7 @@ public class AutoTriggerStatusPanel {
       return FILE_DISABLED;
     }
 
-    LocalFileExclusions.Result result = localFileExclusions.checkExclusionAutomaticAnalysis(selectedFile, m);
+    LocalFileExclusions.Result result = localFileExclusions.checkExclusions(selectedFile, m);
     if (result.isExcluded()) {
       return FILE_DISABLED;
     }

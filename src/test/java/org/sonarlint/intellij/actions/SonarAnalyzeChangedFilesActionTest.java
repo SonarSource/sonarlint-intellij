@@ -98,6 +98,6 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
 
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ACTION), any(AnalysisCallback.class), eq(false));
+    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.CHANGED_FILES), any(AnalysisCallback.class), eq(false));
   }
 }

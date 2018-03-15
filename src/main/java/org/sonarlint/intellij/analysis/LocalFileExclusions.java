@@ -54,6 +54,9 @@ public class LocalFileExclusions {
   private FileExclusions globalExclusions;
   private Supplier<Boolean> powerSaveModeCheck;
 
+  /**
+   * Used by pico container
+   */
   public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings) {
     this(project, settings, projectSettings, PowerSaveMode::isEnabled);
   }
@@ -99,7 +102,11 @@ public class LocalFileExclusions {
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, this::loadProjectExclusions);
   }
 
-  public Result checkExclusionAutomaticAnalysis(VirtualFile file, @Nullable Module module) {
+  /**
+   * Checks if a file is excluded from analysis based on locally configured exclusions.
+   * It will also exclude files that cannot be analysed with {@link #canAnalyze(VirtualFile, Module)}.
+   */
+  public Result checkExclusions(VirtualFile file, @Nullable Module module) {
     if (!canAnalyze(file, module)) {
       return Result.excluded(null);
     }

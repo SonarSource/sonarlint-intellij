@@ -76,7 +76,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
 
     List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
     AnalysisCallback callback = new ShowIssuesCallable(project, affectedFiles);
-    submitter.submitFiles(affectedFiles, TriggerType.ACTION, callback, false);
+    submitter.submitFiles(affectedFiles, TriggerType.CHANGED_FILES, callback, false);
   }
 
   private static class ShowIssuesCallable implements AnalysisCallback {

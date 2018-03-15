@@ -22,6 +22,8 @@ package org.sonarlint.intellij.trigger;
 public enum TriggerType {
   EDITOR_OPEN("Editor open"),
   ACTION("Action"),
+  ALL("All files"),
+  CHANGED_FILES("Changed files"),
   COMPILATION("Compilation"),
   EDITOR_CHANGE("Editor change"),
   CHECK_IN("Pre-commit check"),

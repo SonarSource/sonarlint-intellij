@@ -103,6 +103,6 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
     Messages.setTestDialog(x -> Messages.OK);
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ACTION), any(AnalysisCallback.class), eq(false));
+    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));
   }
 }
