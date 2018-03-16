@@ -19,12 +19,14 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
@@ -47,6 +49,8 @@ import org.sonarlint.intellij.ui.scope.AllFilesScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
+  private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";
+
   public SonarAnalyzeAllFilesAction() {
     super();
   }
@@ -90,11 +94,20 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   private static boolean showWarning() {
-    int result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete. "
-        + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
-      "SonarLint - Analyze All Files",
-      "Proceed", "Cancel", Messages.getWarningIcon());
-    return result == Messages.OK;
+    if (!PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY)) {
+      int result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
+          + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
+        "SonarLint - Analyze All Files",
+        "Proceed", "Cancel", Messages.getWarningIcon(), new DoNotShowAgain());
+      return result == Messages.OK;
+    }
+    return true;
+  }
+
+  private static class DoNotShowAgain extends DialogWrapper.DoNotAskOption.Adapter {
+    @Override public void rememberChoice(boolean isSelected, int exitCode) {
+      PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, isSelected);
+    }
   }
 
   private static class ShowIssuesCallable implements AnalysisCallback {
