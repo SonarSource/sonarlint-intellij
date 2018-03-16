@@ -24,8 +24,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.issue.AllFilesIssues;
-import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarClearAnalysisResults extends AnAction {
@@ -39,10 +38,7 @@ public class SonarClearAnalysisResults extends AnAction {
       return;
     }
 
-    AllFilesIssues store = SonarLintUtils.get(project, AllFilesIssues.class);
+    AnalysisResultIssues store = SonarLintUtils.get(project, AnalysisResultIssues.class);
     store.clear();
-
-    ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
-    changedFilesIssues.clear();
   }
 }

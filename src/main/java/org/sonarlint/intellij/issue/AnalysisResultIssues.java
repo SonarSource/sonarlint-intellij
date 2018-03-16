@@ -17,7 +17,18 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-@ParametersAreNonnullByDefault
-package org.sonarlint.intellij.ui.scope;
+package org.sonarlint.intellij.issue;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.Topic;
+import org.sonarlint.intellij.messages.AnalysisResultsListener;
+
+public class AnalysisResultIssues extends IssueStore {
+  public AnalysisResultIssues(Project project) {
+    super(project);
+  }
+
+  @Override protected Topic<AnalysisResultsListener> getTopic() {
+    return AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC;
+  }
+}

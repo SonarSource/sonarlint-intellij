@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.scope;
+package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import java.time.Instant;
@@ -25,7 +25,7 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.issue.AllFilesIssues;
+import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintActions;
 
@@ -34,26 +34,24 @@ import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class AllFilesScopeTest extends SonarTest {
-  private AllFilesScope scope;
-  private AllFilesIssues issues;
+public class AnalysisResultsTest extends SonarTest {
+  private AnalysisResults analysisResults;
+  private AnalysisResultIssues issues;
 
   @Before
   public void prepare() {
     super.register(app, SonarLintActions.class, mock(SonarLintActions.class, RETURNS_DEEP_STUBS));
-    issues = mock(AllFilesIssues.class);
-    super.register(AllFilesIssues.class, issues);
-    scope = new AllFilesScope(project);
+    issues = mock(AnalysisResultIssues.class);
+    super.register(AnalysisResultIssues.class, issues);
+    analysisResults = new AnalysisResults(project);
   }
 
   @Test
   public void testNotAnalyzed() {
-    assertThat(scope.getDisplayName()).isEqualTo("All project files");
-    assertThat(scope.getLastAnalysisDate()).isNull();
-    assertThat(scope.getLabelText()).isEqualTo("Trigger the analysis to find issues in all project sources");
-    assertThat(scope.getEmptyText()).isEqualTo("No analysis done");
-    assertThat(scope.toolbarActionGroup()).isNotNull();
-    assertThat(scope.issues()).isEmpty();
+    assertThat(analysisResults.getLastAnalysisDate()).isNull();
+    assertThat(analysisResults.getLabelText()).isEqualTo("Trigger an analysis to find issues in the project sources");
+    assertThat(analysisResults.getEmptyText()).isEqualTo("No analysis done");
+    assertThat(analysisResults.issues()).isEmpty();
   }
 
   @Test
@@ -64,8 +62,8 @@ public class AllFilesScopeTest extends SonarTest {
     when(issues.wasAnalyzed()).thenReturn(true);
     when(issues.issues()).thenReturn(Collections.singletonMap(file, Collections.singleton(issue)));
 
-    assertThat(scope.getLastAnalysisDate()).isNotNull();
-    assertThat(scope.getEmptyText()).isEqualTo("No issues found");
-    assertThat(scope.issues()).hasSize(1);
+    assertThat(analysisResults.getLastAnalysisDate()).isNotNull();
+    assertThat(analysisResults.getEmptyText()).isEqualTo("No issues found");
+    assertThat(analysisResults.issues()).hasSize(1);
   }
 }

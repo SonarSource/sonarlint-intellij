@@ -21,18 +21,15 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.lifecycle.PeriodicalTasksCloser;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.vcs.changes.ChangeList;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -47,7 +44,7 @@ import static org.mockito.Mockito.when;
 public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private SonarLintStatus status = mock(SonarLintStatus.class);
-  private ChangedFilesIssues issues = mock(ChangedFilesIssues.class);
+  private AnalysisResultIssues issues = mock(AnalysisResultIssues.class);
   private IssueManager issueManager = mock(IssueManager.class);
   private PeriodicalTasksCloser tasksCloser = mock(PeriodicalTasksCloser.class);
   private ChangeListManager changeListManager = mock(ChangeListManager.class);
@@ -62,7 +59,7 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
 
     super.register(app, PeriodicalTasksCloser.class, tasksCloser);
     super.register(SonarLintSubmitter.class, submitter);
-    super.register(ChangedFilesIssues.class, issues);
+    super.register(AnalysisResultIssues.class, issues);
     super.register(IssueManager.class, issueManager);
   }
 

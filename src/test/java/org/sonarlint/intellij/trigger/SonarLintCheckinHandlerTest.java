@@ -26,19 +26,17 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -47,25 +45,20 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
   private SonarLintCheckinHandler handler;
   private CompletableFuture<Void> future;
   private SonarLintGlobalSettings globalSettings;
-  @Mock
-  private VirtualFile file;
-  @Mock
-  private SonarLintSubmitter submitter;
-  @Mock
-  private ChangedFilesIssues changedFilesIssues;
-  @Mock
-  private IssueManager issueManager;
-  @Mock
-  private CheckinProjectPanel checkinProjectPanel;
+
+  private VirtualFile file = mock(VirtualFile.class);
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private AnalysisResultIssues analysisResultIssues = mock(AnalysisResultIssues.class);
+  private IssueManager issueManager = mock(IssueManager.class);
+  private CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
 
   @Before
   public void prepare() {
-    MockitoAnnotations.initMocks(this);
     globalSettings = new SonarLintGlobalSettings();
     future = new CompletableFuture<>();
 
     super.register(project, SonarLintSubmitter.class, submitter);
-    super.register(project, ChangedFilesIssues.class, changedFilesIssues);
+    super.register(project, AnalysisResultIssues.class, analysisResultIssues);
     super.register(project, IssueManager.class, issueManager);
 
     when(checkinProjectPanel.getVirtualFiles()).thenReturn(Collections.singleton(file));
@@ -83,7 +76,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(changedFilesIssues).set(Collections.singletonMap(file, Collections.singleton(issue)));
+    verify(analysisResultIssues).set(Collections.singletonMap(file, Collections.singleton(issue)));
     verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 
@@ -98,7 +91,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
-    verify(changedFilesIssues).set(anyMap());
+    verify(analysisResultIssues).set(anyMap());
     verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 }

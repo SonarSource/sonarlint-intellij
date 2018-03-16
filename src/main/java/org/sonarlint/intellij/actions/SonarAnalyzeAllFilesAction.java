@@ -21,7 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectFileIndex;
@@ -29,23 +29,15 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ui.UIUtil;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.issue.AllFilesIssues;
-import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.ui.scope.AllFilesScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
@@ -60,7 +52,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   @Override protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
-    return !status.isRunning();
+    return !status.isRunning() && !getAllFiles(project).isEmpty();
   }
 
   @Override
@@ -77,7 +69,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
     Collection<VirtualFile> allFiles = getAllFiles(project);
-    AnalysisCallback callback = new ShowIssuesCallable(project, allFiles);
+    AnalysisCallback callback = new ShowAnalysisResultsCallable(project, allFiles);
     submitter.submitFiles(allFiles, TriggerType.ALL, callback, false);
   }
 
@@ -94,7 +86,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   private static boolean showWarning() {
-    if (!PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY)) {
+    if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY)) {
       int result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
           + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
         "SonarLint - Analyze All Files",
@@ -107,37 +99,6 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   private static class DoNotShowAgain extends DialogWrapper.DoNotAskOption.Adapter {
     @Override public void rememberChoice(boolean isSelected, int exitCode) {
       PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, isSelected);
-    }
-  }
-
-  private static class ShowIssuesCallable implements AnalysisCallback {
-    private final Project project;
-    private final AllFilesIssues allFilesIssues;
-    private final Collection<VirtualFile> affectedFiles;
-    private final IssueManager issueManager;
-
-    private ShowIssuesCallable(Project project, Collection<VirtualFile> affectedFiles) {
-      this.project = project;
-      this.allFilesIssues = SonarLintUtils.get(project, AllFilesIssues.class);
-      this.issueManager = SonarLintUtils.get(project, IssueManager.class);
-      this.affectedFiles = affectedFiles;
-    }
-
-    @Override public void onError(Throwable e) {
-      // nothing to do
-    }
-
-    @Override
-    public void onSuccess() {
-      Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
-        .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
-      allFilesIssues.set(map);
-      showAllFilesTab();
-    }
-
-    private void showAllFilesTab() {
-      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class)
-        .openProjectFiles(AllFilesScope.NAME));
     }
   }
 }

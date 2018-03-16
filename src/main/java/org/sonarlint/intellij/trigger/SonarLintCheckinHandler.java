@@ -47,10 +47,9 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.IssuesViewTabOpener;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.issue.ChangedFilesIssues;
+import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.ui.scope.ChangedFilesScope;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
@@ -116,7 +115,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private ReturnResult processResult(Collection<VirtualFile> affectedFiles) {
-    ChangedFilesIssues changedFilesIssues = SonarLintUtils.get(project, ChangedFilesIssues.class);
+    AnalysisResultIssues analysisResultIssues = SonarLintUtils.get(project, AnalysisResultIssues.class);
     IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
 
     Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
@@ -126,7 +125,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       .flatMap(e -> e.getValue().stream())
       .filter(i -> !i.isResolved())
       .count();
-    changedFilesIssues.set(map);
+    analysisResultIssues.set(map);
 
     long numBlockerIssues = map.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
@@ -182,7 +181,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    ServiceManager.getService(project, IssuesViewTabOpener.class).openProjectFiles(ChangedFilesScope.NAME);
+    ServiceManager.getService(project, IssuesViewTabOpener.class).openProjectFiles();
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent {

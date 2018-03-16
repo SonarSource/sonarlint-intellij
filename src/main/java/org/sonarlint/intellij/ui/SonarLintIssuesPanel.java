@@ -37,8 +37,6 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.ui.scope.AbstractScope;
-import org.sonarlint.intellij.ui.scope.CurrentFileController;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -92,10 +90,8 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
-    if (AbstractScope.SCOPE_DATA_KEY.is(dataId)) {
-      return scope;
-    } else if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
-      return  SonarLintUtils.getSelectedFile(project);
+    if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
+      return SonarLintUtils.getSelectedFile(project);
     }
 
     return null;

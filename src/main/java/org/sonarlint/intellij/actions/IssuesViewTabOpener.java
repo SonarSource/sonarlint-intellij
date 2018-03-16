@@ -27,7 +27,6 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
 import javax.annotation.CheckForNull;
 import javax.swing.JComponent;
-import org.sonarlint.intellij.ui.SonarLintAnalysisResultsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 public class IssuesViewTabOpener {
@@ -40,17 +39,11 @@ public class IssuesViewTabOpener {
   /**
    * Must run in EDT
    */
-  public void openProjectFiles(String scopeName) {
+  public void openProjectFiles() {
     ApplicationManager.getApplication().assertIsDispatchThread();
     ToolWindow toolWindow = getToolWindow();
     if (toolWindow != null) {
-      toolWindow.show(() -> {
-        JComponent component = selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS);
-        if (component != null) {
-          SonarLintAnalysisResultsPanel panel = (SonarLintAnalysisResultsPanel) component;
-          panel.switchScope(scopeName);
-        }
-      });
+      toolWindow.show(() -> selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS));
     }
   }
 

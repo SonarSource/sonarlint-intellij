@@ -28,12 +28,11 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.issue.AllFilesIssues;
+import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -48,7 +47,7 @@ import static org.mockito.Mockito.when;
 public class SonarAnalyzeAllFilesActionTest extends SonarTest {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private SonarLintStatus status = mock(SonarLintStatus.class);
-  private AllFilesIssues issues = mock(AllFilesIssues.class);
+  private AnalysisResultIssues issues = mock(AnalysisResultIssues.class);
   private IssueManager issueManager = mock(IssueManager.class);
   private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
   private ProjectFileIndex projectFileIndex = mock(ProjectFileIndex.class);
@@ -62,13 +61,16 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
     MockitoAnnotations.initMocks(this);
     when(projectRootManager.getFileIndex()).thenReturn(projectFileIndex);
     super.register(SonarLintSubmitter.class, submitter);
-    super.register(AllFilesIssues.class, issues);
+    super.register(AnalysisResultIssues.class, issues);
     super.register(IssueManager.class, issueManager);
     super.register(ProjectRootManager.class, projectRootManager);
   }
 
   @Test
   public void testEnabled() {
+    VirtualFile file = mock(VirtualFile.class);
+    mockProjectFiles(file);
+
     assertThat(action.isVisible("")).isTrue();
     when(status.isRunning()).thenReturn(true);
     assertThat(action.isEnabled(event, project, status)).isFalse();
@@ -88,21 +90,23 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
   public void testRun() {
     AnActionEvent event = mock(AnActionEvent.class);
     VirtualFile file = mock(VirtualFile.class);
+    mockProjectFiles(file);
+    when(event.getProject()).thenReturn(project);
+    Messages.setTestDialog(x -> Messages.OK);
+    action.actionPerformed(event);
+
+    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));
+  }
+
+  private void mockProjectFiles( VirtualFile file) {
     VirtualFile dir = mock(VirtualFile.class);
     when(file.isDirectory()).thenReturn(false);
     when(dir.isDirectory()).thenReturn(true);
     when(projectFileIndex.isInSourceContent(file)).thenReturn(true);
-
-    when(event.getProject()).thenReturn(project);
     when(projectFileIndex.iterateContent(any(ContentIterator.class))).then(i -> {
       ((ContentIterator) i.getArgument(0)).processFile(file);
       ((ContentIterator) i.getArgument(0)).processFile(dir);
       return true;
     });
-
-    Messages.setTestDialog(x -> Messages.OK);
-    action.actionPerformed(event);
-
-    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));
   }
 }
