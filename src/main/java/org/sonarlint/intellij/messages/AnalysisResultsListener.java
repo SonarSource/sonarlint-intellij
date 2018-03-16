@@ -27,8 +27,7 @@ import org.sonarlint.intellij.issue.LiveIssue;
 
 @FunctionalInterface
 public interface AnalysisResultsListener {
-  Topic<AnalysisResultsListener> ALL_FILES_TOPIC = Topic.create("All files results", AnalysisResultsListener.class);
-  Topic<AnalysisResultsListener> CHANGED_FILES_TOPIC = Topic.create("Changed files results", AnalysisResultsListener.class);
+  Topic<AnalysisResultsListener> ANALYSIS_RESULTS_TOPIC = Topic.create("Analysis results", AnalysisResultsListener.class);
 
   /**
    * Called when the store of issues is modified. It is modified only as a result of a user action to analyze files.

@@ -35,15 +35,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class ChangedFilesIssuesTest extends SonarTest {
-  private ChangedFilesIssues changedFilesIssues;
+public class AnalysisResultIssuesTest extends SonarTest {
+  private AnalysisResultIssues analysisResultIssues;
   private AnalysisResultsListener listener;
 
   @Before
   public void prepare() {
     listener = mock(AnalysisResultsListener.class);
-    project.getMessageBus().connect().subscribe(AnalysisResultsListener.CHANGED_FILES_TOPIC, listener);
-    changedFilesIssues = new ChangedFilesIssues(project);
+    project.getMessageBus().connect().subscribe(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC, listener);
+    analysisResultIssues = new AnalysisResultIssues(project);
   }
 
   @Test
@@ -52,22 +52,22 @@ public class ChangedFilesIssuesTest extends SonarTest {
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
-    changedFilesIssues.set(issues);
-    assertThat(changedFilesIssues.lastAnalysisDate())
+    analysisResultIssues.set(issues);
+    assertThat(analysisResultIssues.lastAnalysisDate())
       .isLessThanOrEqualTo(Instant.now())
       .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
-    assertThat(changedFilesIssues.issues()).isEqualTo(issues);
+    assertThat(analysisResultIssues.issues()).isEqualTo(issues);
 
     verify(listener).update(issues);
 
     // everything should be done even if it's an empty map
-    changedFilesIssues.set(Collections.emptyMap());
-    assertThat(changedFilesIssues.lastAnalysisDate())
+    analysisResultIssues.set(Collections.emptyMap());
+    assertThat(analysisResultIssues.lastAnalysisDate())
       .isLessThanOrEqualTo(Instant.now())
       .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
-    assertThat(changedFilesIssues.wasAnalyzed()).isTrue();
-    assertThat(changedFilesIssues.issues()).isEmpty();
-    assertThat(changedFilesIssues.getTopic()).isEqualTo(AnalysisResultsListener.CHANGED_FILES_TOPIC);
+    assertThat(analysisResultIssues.wasAnalyzed()).isTrue();
+    assertThat(analysisResultIssues.issues()).isEmpty();
+    assertThat(analysisResultIssues.getTopic()).isEqualTo(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC);
 
     verify(listener).update(Collections.emptyMap());
   }
@@ -78,13 +78,13 @@ public class ChangedFilesIssuesTest extends SonarTest {
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
-    changedFilesIssues.set(issues);
-    changedFilesIssues.clear();
+    analysisResultIssues.set(issues);
+    analysisResultIssues.clear();
 
     verify(listener).update(Collections.emptyMap());
-    assertThat(changedFilesIssues.lastAnalysisDate()).isNull();
-    assertThat(changedFilesIssues.issues()).isEmpty();
-    assertThat(changedFilesIssues.wasAnalyzed()).isFalse();
+    assertThat(analysisResultIssues.lastAnalysisDate()).isNull();
+    assertThat(analysisResultIssues.issues()).isEmpty();
+    assertThat(analysisResultIssues.wasAnalyzed()).isFalse();
 
   }
 }

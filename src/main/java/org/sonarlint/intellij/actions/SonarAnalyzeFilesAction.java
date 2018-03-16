@@ -30,7 +30,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -40,7 +39,6 @@ import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 

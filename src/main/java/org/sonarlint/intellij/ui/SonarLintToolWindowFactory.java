@@ -26,7 +26,6 @@ import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.ui.scope.CurrentFileController;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 /**
@@ -37,7 +36,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TOOL_WINDOW_ID = "SonarLint";
   public static final String TAB_LOGS = "Log";
   public static final String TAB_CURRENT_FILE = "Current file";
-  public static final String TAB_ANALYSIS_RESULTS = "Project files";
+  public static final String TAB_ANALYSIS_RESULTS = "Analysis results";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
