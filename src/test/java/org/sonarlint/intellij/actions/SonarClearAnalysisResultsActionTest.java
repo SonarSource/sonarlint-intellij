@@ -19,26 +19,40 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.project.Project;
-import javax.swing.Icon;
-import org.jetbrains.annotations.Nullable;
+import org.junit.Before;
+import org.junit.Test;
+import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarClearAnalysisResults extends AnAction {
-  public SonarClearAnalysisResults(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
-    super(text, description, icon);
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+public class SonarClearAnalysisResultsActionTest extends SonarTest {
+  private SonarClearAnalysisResultsAction action;
+
+  @Before
+  public void prepare() {
+    action = new SonarClearAnalysisResultsAction(null, null, null);
   }
 
-  @Override public void actionPerformed(AnActionEvent e) {
-    Project project = e.getProject();
-    if (project == null) {
-      return;
-    }
+  @Test
+  public void clear() {
+    AnalysisResultIssues analysisResultIssues = mock(AnalysisResultIssues.class);
+    super.register(AnalysisResultIssues.class, analysisResultIssues);
 
-    AnalysisResultIssues store = SonarLintUtils.get(project, AnalysisResultIssues.class);
-    store.clear();
+    AnActionEvent event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(project);
+    action.actionPerformed(event);
+
+    verify(analysisResultIssues).clear();
+  }
+
+  @Test
+  public void noProject() {
+    AnActionEvent event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(null);
+    action.actionPerformed(event);
   }
 }
