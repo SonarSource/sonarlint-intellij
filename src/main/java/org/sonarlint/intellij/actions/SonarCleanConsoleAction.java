@@ -19,20 +19,21 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import javax.swing.Icon;
+import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 
-public class SonarCancel extends AbstractSonarAction {
-  @Override
-  protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
-    return status.isRunning() && !status.isCanceled();
+public class SonarCleanConsoleAction extends AnAction {
+  public SonarCleanConsoleAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+    super(text, description, icon);
   }
 
   @Override
   public void actionPerformed(AnActionEvent e) {
     if (e.getProject() != null) {
-      SonarLintStatus.get(e.getProject()).cancel();
+      SonarLintConsole.get(e.getProject()).clear();
     }
   }
 }

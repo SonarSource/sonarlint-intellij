@@ -31,8 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarCancelTest extends SonarTest {
-  private SonarCancel sonarCancel;
+public class SonarCancelActionTest extends SonarTest {
+  private SonarCancelAction sonarCancelAction;
   private Presentation presentation;
   private AnActionEvent event;
 
@@ -40,7 +40,7 @@ public class SonarCancelTest extends SonarTest {
   public void prepare() {
     register(SonarLintStatus.class, new SonarLintStatus(project));
     presentation = new Presentation();
-    sonarCancel = new SonarCancel();
+    sonarCancelAction = new SonarCancelAction();
     event = SonarLintTestUtils.createAnActionEvent(project);
     when(event.getPresentation()).thenReturn(presentation);
     when(project.isDisposed()).thenReturn(false);
@@ -56,7 +56,7 @@ public class SonarCancelTest extends SonarTest {
     assertThat(status.isRunning()).isTrue();
     assertThat(status.isCanceled()).isFalse();
 
-    sonarCancel.actionPerformed(event);
+    sonarCancelAction.actionPerformed(event);
 
     assertThat(status.isRunning()).isTrue();
     assertThat(status.isCanceled()).isTrue();
@@ -64,24 +64,24 @@ public class SonarCancelTest extends SonarTest {
 
   @Test
   public void testUpdate() {
-    sonarCancel.update(event);
+    sonarCancelAction.update(event);
     assertThat(presentation.isVisible()).isTrue();
     assertThat(presentation.isEnabled()).isFalse();
 
     SonarLintStatus status = SonarLintStatus.get(project);
     status.tryRun();
-    sonarCancel.update(event);
+    sonarCancelAction.update(event);
     assertThat(presentation.isEnabled()).isTrue();
 
     when(project.isInitialized()).thenReturn(false);
-    sonarCancel.update(event);
+    sonarCancelAction.update(event);
     assertThat(presentation.isEnabled()).isFalse();
   }
 
   @Test
   public void testCancelWithoutProject() {
     event = SonarLintTestUtils.createAnActionEvent(null);
-    sonarCancel.actionPerformed(event);
+    sonarCancelAction.actionPerformed(event);
 
     assertThat(SonarLintStatus.get(project).isRunning()).isFalse();
     assertThat(SonarLintStatus.get(project).isCanceled()).isFalse();
@@ -91,7 +91,7 @@ public class SonarCancelTest extends SonarTest {
   public void testDisableIfNotRunning() {
     SonarLintStatus status = mock(SonarLintStatus.class);
     when(status.isRunning()).thenReturn(false);
-    assertThat(sonarCancel.isEnabled(event, project, status)).isFalse();
+    assertThat(sonarCancelAction.isEnabled(event, project, status)).isFalse();
   }
 
   @Test
@@ -99,14 +99,14 @@ public class SonarCancelTest extends SonarTest {
     SonarLintStatus status = mock(SonarLintStatus.class);
     when(status.isRunning()).thenReturn(true);
     when(status.isCanceled()).thenReturn(true);
-    assertThat(sonarCancel.isEnabled(event, project, status)).isFalse();
+    assertThat(sonarCancelAction.isEnabled(event, project, status)).isFalse();
   }
 
   @Test
   public void testEnableIfRunning() {
     SonarLintStatus status = mock(SonarLintStatus.class);
     when(status.isRunning()).thenReturn(true);
-    assertThat(sonarCancel.isEnabled(event, project, status)).isTrue();
+    assertThat(sonarCancelAction.isEnabled(event, project, status)).isTrue();
   }
 
 }

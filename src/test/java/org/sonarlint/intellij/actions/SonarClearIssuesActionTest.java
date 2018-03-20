@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarClearIssuesTest extends SonarTest {
+public class SonarClearIssuesActionTest extends SonarTest {
   @Mock
   private FileEditorManager editorManager;
   @Mock
@@ -50,7 +50,7 @@ public class SonarClearIssuesTest extends SonarTest {
   @Mock
   private AnActionEvent event;
 
-  private SonarClearIssues clearIssues;
+  private SonarClearIssuesAction clearIssues;
 
   @Before
   public void prepare() {
@@ -63,7 +63,7 @@ public class SonarClearIssuesTest extends SonarTest {
     super.register(FileEditorManager.class, editorManager);
     super.register(PsiManager.class, psiManager);
 
-    clearIssues = new SonarClearIssues(null, null, null);
+    clearIssues = new SonarClearIssuesAction(null, null, null);
   }
 
   @Test

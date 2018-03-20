@@ -28,7 +28,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarCleanConsoleTest extends SonarTest {
+public class SonarCleanConsoleActionTest extends SonarTest {
 
   @Test
   public void testAction() {
@@ -38,7 +38,7 @@ public class SonarCleanConsoleTest extends SonarTest {
     when(event.getProject()).thenReturn(project);
     super.register(project, SonarLintConsole.class, console);
 
-    SonarCleanConsole clean = new SonarCleanConsole(null, null, null);
+    SonarCleanConsoleAction clean = new SonarCleanConsoleAction(null, null, null);
 
     clean.actionPerformed(event);
     verify(console).clear();
@@ -47,7 +47,7 @@ public class SonarCleanConsoleTest extends SonarTest {
   @Test
   public void testNoOpIfNoProject() {
     AnActionEvent event = mock(AnActionEvent.class);
-    SonarCleanConsole clean = new SonarCleanConsole(null, null, null);
+    SonarCleanConsoleAction clean = new SonarCleanConsoleAction(null, null, null);
     clean.actionPerformed(event);
   }
 }

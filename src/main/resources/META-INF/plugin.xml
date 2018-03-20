@@ -248,7 +248,7 @@
         </action>
 
         <action id="SonarLint.toolwindow.Cancel"
-                class="org.sonarlint.intellij.actions.SonarCancel"
+                class="org.sonarlint.intellij.actions.SonarCancelAction"
                 text="Cancel SonarLint Analysis"
                 description="Cancel the SonarLint analysis running"
                 icon="SonarLintIcons.SUSPEND">

@@ -27,9 +27,9 @@ import icons.SonarLintIcons;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
-import org.sonarlint.intellij.actions.SonarCleanConsole;
-import org.sonarlint.intellij.actions.SonarClearAnalysisResults;
-import org.sonarlint.intellij.actions.SonarClearIssues;
+import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
+import org.sonarlint.intellij.actions.SonarClearAnalysisResultsAction;
+import org.sonarlint.intellij.actions.SonarClearIssuesAction;
 
 /**
  * Creates and keeps a single instance of actions used by SonarLint.
@@ -50,13 +50,13 @@ public class SonarLintActions implements ApplicationComponent {
     cancelAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel");
     configureAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure");
 
-    clearResultsAction = new SonarClearAnalysisResults("Clear Project Files Issues",
+    clearResultsAction = new SonarClearAnalysisResultsAction("Clear Project Files Issues",
       "Clear analysis results",
       SonarLintIcons.CLEAN);
-    clearIssuesAction = new SonarClearIssues("Clear SonarLint Issues",
+    clearIssuesAction = new SonarClearIssuesAction("Clear SonarLint Issues",
       "Clear SonarLint issues",
       SonarLintIcons.CLEAN);
-    cleanConsoleAction = new SonarCleanConsole("Clear SonarLint Console",
+    cleanConsoleAction = new SonarCleanConsoleAction("Clear SonarLint Console",
       "Clear SonarLint console",
       SonarLintIcons.CLEAN);
     analyzeAllFilesAction = new SonarAnalyzeAllFilesAction("Analyze All Project Files",
