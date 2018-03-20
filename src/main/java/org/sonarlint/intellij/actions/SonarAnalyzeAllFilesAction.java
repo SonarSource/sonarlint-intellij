@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
@@ -57,13 +58,13 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
   @Override
   protected boolean isVisible(String place) {
-    return true;
+    return !ActionPlaces.PROJECT_VIEW_POPUP.equals(place);
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
     Project project = e.getProject();
 
-    if (project == null || !showWarning()) {
+    if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace()) || !showWarning()) {
       return;
     }
 

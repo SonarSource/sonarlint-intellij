@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
@@ -51,13 +52,13 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
 
   @Override
   protected boolean isVisible(String place) {
-    return true;
+    return !ActionPlaces.PROJECT_VIEW_POPUP.equals(place);
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
     Project project = e.getProject();
 
-    if (project == null) {
+    if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace())) {
       return;
     }
 
