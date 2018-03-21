@@ -69,7 +69,14 @@ public class IssueProcessor extends AbstractProjectComponent {
       transformedIssues = transformIssues(rawIssues, job.allFiles(), failedAnalysisFiles);
 
       // this might be updated later after tracking with server issues
-      manager.store(transformedIssues);
+
+      if (job.trigger() == TriggerType.CHANGED_FILES || job.trigger() == TriggerType.ALL) {
+        // clear old issues on files with errors
+        Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
+        manager.store(transformedIssues, failedVirtualFiles);
+      } else {
+        manager.store(transformedIssues, Collections.emptyList());
+      }
 
     } finally {
       // closeable only introduced in 2016.2

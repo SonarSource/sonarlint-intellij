@@ -20,21 +20,17 @@
 package org.sonarlint.intellij.analysis;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 
 public class AnalysisThreadFactory implements ThreadFactory {
-  private static int counter = 0;
+  private static AtomicInteger counter = new AtomicInteger(0);
 
   @Override public Thread newThread(@NotNull Runnable r) {
     Thread t = new Thread(r);
-    t.setName("SonarLintAnalysis" + id());
+    t.setName("SonarLintAnalysis" + counter.incrementAndGet());
     t.setDaemon(true);
     t.setPriority(Thread.MIN_PRIORITY);
     return t;
-  }
-
-  private static int id() {
-    counter++;
-    return counter;
   }
 }

@@ -109,10 +109,11 @@ public class IssueManager extends AbstractProjectComponent {
     return store.contains(storeKey);
   }
 
-  public void store(Map<VirtualFile, Collection<LiveIssue>> map) {
+  public void store(Map<VirtualFile, Collection<LiveIssue>> map, Collection<VirtualFile> filesToClear) {
     for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
       store(e.getKey(), e.getValue());
     }
+    filesToClear.forEach(cache::clearFile);
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
   }
 

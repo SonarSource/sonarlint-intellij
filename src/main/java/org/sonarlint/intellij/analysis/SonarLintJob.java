@@ -50,9 +50,7 @@ public class SonarLintJob {
     Preconditions.checkNotNull(trigger);
     Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
 
-    Map<Module, Collection<VirtualFile>> fileMap = new HashMap<>();
-    fileMap.putAll(files);
-    this.files = Collections.unmodifiableMap(fileMap);
+    this.files = Collections.unmodifiableMap(new HashMap<>(files));
     this.trigger = trigger;
     this.creationTime = System.currentTimeMillis();
   }
