@@ -110,7 +110,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     if (e.getMessage() != null) {
       msg = msg + ": " + e.getMessage();
     }
-    LOGGER.error("msg", e);
+    LOGGER.info(msg, e);
     Messages.showErrorDialog(project, msg, "Error Analysing Files");
   }
 

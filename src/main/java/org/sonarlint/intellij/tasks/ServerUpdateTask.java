@@ -112,7 +112,7 @@ public class ServerUpdateTask {
       LOGGER.info("Error updating from server '" + server.getName() + "'", e);
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
-        @Override public void doRun() throws Exception {
+        @Override public void doRun() {
           Messages.showErrorDialog((Project) null, msg, "Update Failed");
         }
       }, ModalityState.any());
@@ -174,7 +174,7 @@ public class ServerUpdateTask {
       log.log("Module '" + moduleKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       projects.forEach(ServerUpdateTask::analyzeOpenFiles);
     } catch (Exception e) {
-      LOGGER.error(e.getMessage(), e);
+      LOGGER.info(e.getMessage(), e);
       // in case of error, show a message box and keep updating other modules
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
