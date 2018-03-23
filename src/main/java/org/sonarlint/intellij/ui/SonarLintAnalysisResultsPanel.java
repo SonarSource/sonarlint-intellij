@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.ide.OccurenceNavigator;
-import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.tools.SimpleActionGroup;
@@ -34,7 +32,7 @@ import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 
-public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implements OccurenceNavigator, DataProvider {
+public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
@@ -58,7 +56,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     subscribeToEvents();
   }
 
-  private SimpleActionGroup createActionGroup() {
+  private static SimpleActionGroup createActionGroup() {
     SonarLintActions sonarLintActions = SonarLintActions.getInstance();
     SimpleActionGroup actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.analyzeAllFiles());

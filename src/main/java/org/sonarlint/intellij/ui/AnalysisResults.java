@@ -30,6 +30,7 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AnalysisResults {
+  private static final String LABEL = "Trigger an analysis to find issues in the project sources";
   private final Project project;
   private final AnalysisResultIssues issues;
 
@@ -61,7 +62,7 @@ public class AnalysisResults {
   }
 
   public String getLabelText() {
-    return "Trigger an analysis to find issues in the project sources";
+    return LABEL;
   }
 
 }
