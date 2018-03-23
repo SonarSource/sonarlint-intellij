@@ -37,6 +37,7 @@ public class AnalysisResults {
     this.project = project;
     this.issues = SonarLintUtils.get(project, AnalysisResultIssues.class);
   }
+
   public String getEmptyText() {
     if (issues.wasAnalyzed()) {
       return "No issues found";

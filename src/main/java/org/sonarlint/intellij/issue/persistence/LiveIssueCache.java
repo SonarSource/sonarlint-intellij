@@ -118,7 +118,7 @@ public class LiveIssueCache extends AbstractProjectComponent {
   /**
    * Clear a file from cache. Note that this won't clear the underlying persistent store.
    */
-  public synchronized  void clearFile(VirtualFile virtualFile) {
+  public synchronized void clearFile(VirtualFile virtualFile) {
     cache.remove(virtualFile);
 
   }

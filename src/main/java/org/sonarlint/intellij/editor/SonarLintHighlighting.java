@@ -78,9 +78,9 @@ public class SonarLintHighlighting {
    * it similarly to the way {@link com.intellij.codeHighlighting.Pass} do it.
    * Tooltip will be displayed on mouse hover by {@link com.intellij.codeInsight.daemon.impl.DaemonListeners}.
    * Creating the {@link HighlightInfo} with high severity will ensure that it will override most other highlighters.
-   *
    * The alternative would be to get and manage directly {@link RangeHighlighter} with a {@link MarkupModel} from the
    * document (or editors). This would allow to use a custom renderer, but we would have to manage tooltips by ourselves, separately.
+   *
    * @see com.intellij.codeInsight.hint.HintManager
    * @see com.intellij.codeInsight.hint.ShowParameterInfoHandler
    * @see HintHint

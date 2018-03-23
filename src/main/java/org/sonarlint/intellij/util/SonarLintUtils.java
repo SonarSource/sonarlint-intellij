@@ -301,11 +301,11 @@ public class SonarLintUtils {
 
   private static String toPortableString(Path path) {
     StringBuilder sb = new StringBuilder();
-    for(Path s : path) {
+    for (Path s : path) {
       sb.append(s.toString());
       sb.append("/");
     }
-    sb.setLength(sb.length()-1);
+    sb.setLength(sb.length() - 1);
     return sb.toString();
   }
 

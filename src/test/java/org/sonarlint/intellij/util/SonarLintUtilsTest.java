@@ -21,7 +21,6 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
@@ -83,7 +82,7 @@ public class SonarLintUtilsTest extends SonarTest {
     Project project = mock(Project.class);
     when(project.getBasePath()).thenReturn("/project");
     VirtualFile vFile = mock(VirtualFile.class);
-    when (vFile.getPath()).thenReturn("/project/path/to/file");
+    when(vFile.getPath()).thenReturn("/project/path/to/file");
 
     assertThat(SonarLintUtils.getPortableRelativePath(project, vFile)).isEqualTo("path/to/file");
   }

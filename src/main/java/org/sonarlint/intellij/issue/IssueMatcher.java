@@ -55,7 +55,6 @@ public class IssueMatcher extends AbstractProjectComponent {
 
   /**
    * Tries to match an SQ issue to an IntelliJ file.
-   *
    * <b>Can only be called with getLive access</b>.
    */
   public RangeMarker match(PsiFile file, IssueLocation issueLocation) throws NoMatchException {

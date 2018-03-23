@@ -47,6 +47,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
 
   /**
    * Handles the approximate fraction of the task completed.
+   *
    * @param fraction Number between 0.0f and 1.0f
    */
   @Override

@@ -23,7 +23,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.config.global.wizard.LengthRestrictedDocument;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

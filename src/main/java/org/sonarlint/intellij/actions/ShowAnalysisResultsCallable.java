@@ -31,7 +31,6 @@ import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ShowAnalysisResultsCallable implements AnalysisCallback {

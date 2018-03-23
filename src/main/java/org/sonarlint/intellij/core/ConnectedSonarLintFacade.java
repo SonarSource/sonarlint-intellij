@@ -68,7 +68,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   @Override
   public Collection<VirtualFile> getExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
     Map<String, VirtualFile> fileByPath = files.stream()
-      .collect(Collectors.toMap(f-> SonarLintUtils.getRelativePath(project, f), x->x, (x, y) -> x));
+      .collect(Collectors.toMap(f -> SonarLintUtils.getRelativePath(project, f), x -> x, (x, y) -> x));
 
     Set<String> excludedFiles = sonarlint.getExcludedFiles(moduleKey, fileByPath.keySet(), p -> testPredicate.test(fileByPath.get(p)));
     return excludedFiles.stream().map(fileByPath::get).collect(Collectors.toList());

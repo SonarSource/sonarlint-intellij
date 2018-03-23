@@ -64,6 +64,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * It might queue the submission of the job in the thread pool.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
+   *
    * @see #submitManual(Map, TriggerType, boolean, AnalysisCallback)
    */
   public void submitBackground(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
@@ -77,6 +78,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    * Runs SonarLint analysis synchronously, if no manual (foreground) analysis is already on going.
    * If a foreground analysis is already on going, this method simply returns an empty AnalysisResult.
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
+   *
    * @see #submitBackground(Map, TriggerType, AnalysisCallback)
    */
   public void submitManual(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, boolean modal, @Nullable AnalysisCallback callback) {

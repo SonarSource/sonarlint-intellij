@@ -183,6 +183,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   /**
    * Must be consistent with {@link #getSeverity}.
+   *
    * @see Annotation#getTextAttributes
    */
   private static ProblemHighlightType getType(@Nullable String severity) {
@@ -195,6 +196,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   /**
    * Must be consistent with {@link #getType}.
+   *
    * @see Annotation#getTextAttributes
    */
   private static HighlightSeverity getSeverity(@Nullable String severity) {
