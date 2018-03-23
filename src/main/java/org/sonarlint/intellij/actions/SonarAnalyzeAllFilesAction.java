@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import javax.swing.Icon;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
@@ -97,9 +98,26 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     return true;
   }
 
-  private static class DoNotShowAgain extends DialogWrapper.DoNotAskOption.Adapter {
-    @Override public void rememberChoice(boolean isSelected, int exitCode) {
-      PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, isSelected);
+  // Don't use DialogWrapper.DoNotAskOption.Adapter because it's not implemented in older versions of intellij
+  private static class DoNotShowAgain implements DialogWrapper.DoNotAskOption {
+    @Override public boolean isToBeShown() {
+      return true;
+    }
+
+    @Override public void setToBeShown(boolean toBeShown, int exitCode) {
+      PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, !toBeShown);
+    }
+
+    @Override public boolean canBeHidden() {
+      return true;
+    }
+
+    @Override public boolean shouldSaveOptionsOnCancel() {
+      return false;
+    }
+
+    @NotNull @Override public String getDoNotShowMessage() {
+      return "Don't show again";
     }
   }
 }
