@@ -35,7 +35,6 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
-import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class CurrentFileController {

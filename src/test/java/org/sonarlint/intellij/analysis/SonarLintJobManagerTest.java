@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.trigger.TriggerType;

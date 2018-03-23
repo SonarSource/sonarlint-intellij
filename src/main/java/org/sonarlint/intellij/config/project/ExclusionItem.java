@@ -46,7 +46,7 @@ public class ExclusionItem {
     if (i < 0) {
       return null;
     }
-    String item = text.substring(i+1);
+    String item = text.substring(i + 1);
     if (StringUtils.trimToNull(item) == null) {
       return null;
     }

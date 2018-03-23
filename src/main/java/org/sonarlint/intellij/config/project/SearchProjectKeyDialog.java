@@ -31,7 +31,6 @@ import com.intellij.util.containers.Convertor;
 import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;

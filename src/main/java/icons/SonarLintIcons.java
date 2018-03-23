@@ -39,7 +39,6 @@ public class SonarLintIcons {
   public static final Icon SCM = IconLoader.getIcon("/images/toolWindowChanges.png");
   public static final Icon PROJECT = IconLoader.getIcon("/images/ideaProject.png");
 
-
   private SonarLintIcons() {
     // only static
   }

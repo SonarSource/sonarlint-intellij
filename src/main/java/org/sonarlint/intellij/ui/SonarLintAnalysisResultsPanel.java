@@ -51,7 +51,6 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     issuesPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
     setToolbar(createActionGroup());
 
-
     // Put everything together
     super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 

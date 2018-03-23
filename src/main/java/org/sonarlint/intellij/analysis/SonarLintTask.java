@@ -59,7 +59,8 @@ public class SonarLintTask extends Task.Backgroundable {
 
   /**
    * An IntelliJ task, that will run with its Progress Manager.
-   * @param modal If true and background is false, it will be a blocking task, without the possibility to send it to background.
+   *
+   * @param modal      If true and background is false, it will be a blocking task, without the possibility to send it to background.
    * @param background Whether it should start in the foreground or background.
    */
   protected SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean modal, boolean background) {

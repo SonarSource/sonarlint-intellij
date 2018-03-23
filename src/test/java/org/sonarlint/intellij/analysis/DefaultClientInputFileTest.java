@@ -66,7 +66,7 @@ public class DefaultClientInputFileTest {
     Document doc = mock(Document.class);
     when(doc.getText()).thenReturn("test string");
 
-    inputFile = new DefaultClientInputFile(vFile, "foo/Bar.php",true, StandardCharsets.UTF_8, doc);
+    inputFile = new DefaultClientInputFile(vFile, "foo/Bar.php", true, StandardCharsets.UTF_8, doc);
 
     assertThat(inputFile.contents()).isEqualTo("test string");
     try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {

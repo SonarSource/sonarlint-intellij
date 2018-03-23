@@ -85,7 +85,7 @@ public class GlobalExclusionsPanel implements ConfigurationPanel<SonarLintGlobal
     patternList = list.getComponent();
   }
 
-  private static final InputValidator validator = new  InputValidator() {
+  private static final InputValidator validator = new InputValidator() {
     @Override public boolean checkInput(String inputString) {
       if (inputString.isEmpty()) {
         return false;

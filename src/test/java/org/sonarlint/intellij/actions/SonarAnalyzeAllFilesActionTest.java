@@ -98,7 +98,7 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
     verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));
   }
 
-  private void mockProjectFiles( VirtualFile file) {
+  private void mockProjectFiles(VirtualFile file) {
     VirtualFile dir = mock(VirtualFile.class);
     when(file.isDirectory()).thenReturn(false);
     when(dir.isDirectory()).thenReturn(true);

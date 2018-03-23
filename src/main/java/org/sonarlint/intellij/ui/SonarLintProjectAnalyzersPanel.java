@@ -61,7 +61,7 @@ public class SonarLintProjectAnalyzersPanel {
     try {
       Collection<LoadedAnalyzer> loadedAnalyzers = bindingManager.getFacade().getLoadedAnalyzers();
       tableModel.set(loadedAnalyzers);
-    } catch(Exception e) {
+    } catch (Exception e) {
       LOGGER.error(e);
       tableModel.set(Collections.emptyList());
     }
@@ -111,10 +111,12 @@ public class SonarLintProjectAnalyzersPanel {
     public boolean isCellEditable(int row, int column) {
       return false;
     }
+
     @Override
     public Class<?> getColumnClass(int columnIndex) {
       return String.class;
     }
+
     @Override
     public String getColumnName(int column) {
       return (column == 0) ? "Code Analyzer" : "Version";

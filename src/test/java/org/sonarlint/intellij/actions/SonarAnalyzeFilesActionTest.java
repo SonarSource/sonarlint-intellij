@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -81,7 +80,7 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
   }
 
   private void mockSelectedFiles(VirtualFile file) {
-    when(event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[]{file});
+    when(event.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file});
   }
 
   @Test
