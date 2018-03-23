@@ -88,7 +88,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   private static boolean showWarning() {
-    if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY)) {
+    if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY, false)) {
       int result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
           + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
         "SonarLint - Analyze All Files",
@@ -105,7 +105,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     }
 
     @Override public void setToBeShown(boolean toBeShown, int exitCode) {
-      PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, !toBeShown);
+      PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, Boolean.toString(!toBeShown));
     }
 
     @Override public boolean canBeHidden() {
