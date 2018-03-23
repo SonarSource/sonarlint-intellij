@@ -144,8 +144,12 @@ public class SearchProjectKeyDialog extends DialogWrapper {
   /**
    * Render modules in combo box
    */
-  private class ProjectListRenderer extends ColoredListCellRenderer<RemoteModule> {
+  private static class ProjectListRenderer extends ColoredListCellRenderer<RemoteModule> {
     @Override protected void customizeCellRenderer(JList list, @Nullable RemoteModule value, int index, boolean selected, boolean hasFocus) {
+      if (value == null) {
+        // should never happen
+        return;
+      }
       SimpleTextAttributes attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
       append(value.getName(), attrs, true);
       // it is not working: appendTextPadding
