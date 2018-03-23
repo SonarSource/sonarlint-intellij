@@ -125,7 +125,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       .flatMap(e -> e.getValue().stream())
       .filter(i -> !i.isResolved())
       .count();
-    analysisResultIssues.set(map);
+    analysisResultIssues.set(map, "SCM changed files");
 
     long numBlockerIssues = map.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
@@ -181,7 +181,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    ServiceManager.getService(project, IssuesViewTabOpener.class).openProjectFiles();
+    ServiceManager.getService(project, IssuesViewTabOpener.class).openAnalysisResults();
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent {

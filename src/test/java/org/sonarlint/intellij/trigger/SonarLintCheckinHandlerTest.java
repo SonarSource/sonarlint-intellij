@@ -76,7 +76,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(analysisResultIssues).set(Collections.singletonMap(file, Collections.singleton(issue)));
+    verify(analysisResultIssues).set(Collections.singletonMap(file, Collections.singleton(issue)), "SCM changed files");
     verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 
@@ -91,7 +91,7 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
-    verify(analysisResultIssues).set(anyMap());
+    verify(analysisResultIssues).set(anyMap(), eq("SCM changed files"));
     verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 }

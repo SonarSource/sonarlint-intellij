@@ -61,10 +61,10 @@ public class SonarLintActions implements ApplicationComponent {
       SonarLintIcons.CLEAN);
     analyzeAllFilesAction = new SonarAnalyzeAllFilesAction("Analyze All Project Files",
       "Run a SonarLint analysis on all project files",
-      SonarLintIcons.PLAY);
+      SonarLintIcons.PROJECT);
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
       "Run a SonarLint analysis on VCS changed files",
-      SonarLintIcons.PLAY);
+      SonarLintIcons.SCM);
 
     showAnalyzersAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Analyzers");
   }

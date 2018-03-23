@@ -39,7 +39,7 @@ public class IssuesViewTabOpener {
   /**
    * Must run in EDT
    */
-  public void openProjectFiles() {
+  public void openAnalysisResults() {
     ApplicationManager.getApplication().assertIsDispatchThread();
     ToolWindow toolWindow = getToolWindow();
     if (toolWindow != null) {

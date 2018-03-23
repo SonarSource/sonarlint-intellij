@@ -22,12 +22,10 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
 import java.util.Arrays;
 import java.util.List;
@@ -42,7 +40,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarAnalyzeFilesAction  extends DumbAwareAction {
+public class SonarAnalyzeFilesAction extends DumbAwareAction {
   public SonarAnalyzeFilesAction() {
     super();
   }
@@ -103,27 +101,22 @@ public class SonarAnalyzeFilesAction  extends DumbAwareAction {
       .collect(Collectors.toList());
 
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
-    submitter.submitFiles(fileList, TriggerType.ACTION, new ShowIssuesCallable(project), executeBackground(e));
+    AnalysisCallback callback;
+
+    if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(e.getPlace())) {
+      callback = new ShowCurrentFileCallable(project);
+    } else {
+      callback = new ShowAnalysisResultsCallable(project, fileList, whatAnalyzed(fileList.size()));
+    }
+
+    submitter.submitFiles(fileList, TriggerType.ACTION, callback, executeBackground(e));
   }
 
-  private class ShowIssuesCallable implements AnalysisCallback {
-    private final Project project;
-
-    private ShowIssuesCallable(Project project) {
-      this.project = project;
-    }
-
-    @Override public void onError(Throwable e) {
-      // do nothing
-    }
-
-    @Override
-    public void onSuccess() {
-      showCurrentFileTab();
-    }
-
-    private void showCurrentFileTab() {
-      UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).openCurrentFile());
+  private String whatAnalyzed(int numFiles) {
+    if (numFiles == 1) {
+      return "1 file";
+    } else {
+      return numFiles + " files";
     }
   }
 

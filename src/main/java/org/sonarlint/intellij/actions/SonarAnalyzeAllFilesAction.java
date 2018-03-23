@@ -70,7 +70,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
     Collection<VirtualFile> allFiles = getAllFiles(project);
-    AnalysisCallback callback = new ShowAnalysisResultsCallable(project, allFiles);
+    AnalysisCallback callback = new ShowAnalysisResultsCallable(project, allFiles, "all project files");
     submitter.submitFiles(allFiles, TriggerType.ALL, callback, false);
   }
 

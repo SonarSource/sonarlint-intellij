@@ -52,7 +52,7 @@ public class AnalysisResultIssuesTest extends SonarTest {
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
-    analysisResultIssues.set(issues);
+    analysisResultIssues.set(issues, "3 files");
     assertThat(analysisResultIssues.lastAnalysisDate())
       .isLessThanOrEqualTo(Instant.now())
       .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
@@ -61,7 +61,7 @@ public class AnalysisResultIssuesTest extends SonarTest {
     verify(listener).update(issues);
 
     // everything should be done even if it's an empty map
-    analysisResultIssues.set(Collections.emptyMap());
+    analysisResultIssues.set(Collections.emptyMap(), "3 files");
     assertThat(analysisResultIssues.lastAnalysisDate())
       .isLessThanOrEqualTo(Instant.now())
       .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
@@ -78,7 +78,7 @@ public class AnalysisResultIssuesTest extends SonarTest {
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
-    analysisResultIssues.set(issues);
+    analysisResultIssues.set(issues, "3 files");
     analysisResultIssues.clear();
 
     verify(listener).update(Collections.emptyMap());

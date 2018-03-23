@@ -31,19 +31,22 @@ import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ShowAnalysisResultsCallable implements AnalysisCallback {
   private final Project project;
   private final AnalysisResultIssues analysisResultIssues;
   private final Collection<VirtualFile> affectedFiles;
+  private final String whatAnalyzed;
   private final IssueManager issueManager;
 
-  public ShowAnalysisResultsCallable(Project project, Collection<VirtualFile> affectedFiles) {
+  public ShowAnalysisResultsCallable(Project project, Collection<VirtualFile> affectedFiles, String whatAnalyzed) {
     this.project = project;
     this.analysisResultIssues = SonarLintUtils.get(project, AnalysisResultIssues.class);
     this.issueManager = SonarLintUtils.get(project, IssueManager.class);
     this.affectedFiles = affectedFiles;
+    this.whatAnalyzed = whatAnalyzed;
   }
 
   @Override public void onError(Throwable e) {
@@ -54,12 +57,12 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   public void onSuccess() {
     Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
-    analysisResultIssues.set(map);
-    showAllFilesTab();
+    analysisResultIssues.set(map, whatAnalyzed);
+    showAnalysisResultsTab();
   }
 
-  private void showAllFilesTab() {
+  private void showAnalysisResultsTab() {
     UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class)
-      .openProjectFiles());
+      .openAnalysisResults());
   }
 }
