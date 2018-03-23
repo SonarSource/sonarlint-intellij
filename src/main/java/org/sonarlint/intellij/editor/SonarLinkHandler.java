@@ -26,6 +26,7 @@ import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLinkHandler extends TooltipLinkHandler {
@@ -38,10 +39,15 @@ public class SonarLinkHandler extends TooltipLinkHandler {
     }
 
     ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
-    SonarLintFacade sonarlint = projectBindingManager.getFacade();
-    String description = sonarlint.getDescription(refSuffix);
-    String name = sonarlint.getRuleName(refSuffix);
-    return transform(refSuffix, name, description);
+    try {
+      SonarLintFacade sonarlint = projectBindingManager.getFacade();
+      String description = sonarlint.getDescription(refSuffix);
+      String name = sonarlint.getRuleName(refSuffix);
+      return transform(refSuffix, name, description);
+    } catch (InvalidBindingException e) {
+      return "";
+    }
+
   }
 
   private static String transform(String ruleKey, @Nullable String ruleName, @Nullable String description) {

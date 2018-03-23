@@ -80,7 +80,7 @@ public class SonarLintEngineManagerTest {
   }
 
   @Test
-  public void should_fail_invalid_server() {
+  public void should_fail_invalid_server() throws InvalidBindingException {
     manager.initComponent();
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Invalid server name");
@@ -88,7 +88,7 @@ public class SonarLintEngineManagerTest {
   }
 
   @Test
-  public void should_fail_not_updated() {
+  public void should_fail_not_updated() throws InvalidBindingException {
     globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager(globalSettings, engineFactory);
 
@@ -100,7 +100,7 @@ public class SonarLintEngineManagerTest {
   }
 
   @Test
-  public void should_pass_checks() {
+  public void should_pass_checks() throws InvalidBindingException {
     when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
     when(connectedEngine.getModuleStorageStatus("project1")).thenReturn(moduleOk);
 

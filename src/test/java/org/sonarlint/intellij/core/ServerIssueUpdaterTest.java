@@ -38,6 +38,7 @@ import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -101,7 +102,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
   }
 
   @Test
-  public void testServerIssueTracking() {
+  public void testServerIssueTracking() throws InvalidBindingException {
     VirtualFile file = mock(VirtualFile.class);
     ServerIssue serverIssue = mock(ServerIssue.class);
     String filename = "MyFile.txt";
@@ -132,7 +133,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
   }
 
   @Test
-  public void testDownloadAllServerIssues() {
+  public void testDownloadAllServerIssues() throws InvalidBindingException {
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
       VirtualFile file = mock(VirtualFile.class);

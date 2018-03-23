@@ -54,7 +54,7 @@ public class ProjectBindingManagerTest {
   public ExpectedException exception = ExpectedException.none();
 
   @Before
-  public void setUp() {
+  public void setUp() throws InvalidBindingException {
     SonarLintConsole console = mock(SonarLintConsole.class);
     Project project = mock(Project.class);
     engineManager = mock(SonarLintEngineManager.class);
@@ -72,12 +72,12 @@ public class ProjectBindingManagerTest {
   }
 
   @Test
-  public void should_create_facade_standalone() {
+  public void should_create_facade_standalone() throws InvalidBindingException {
     assertThat(projectBindingManager.getFacade()).isInstanceOf(StandaloneSonarLintFacade.class);
   }
 
   @Test
-  public void should_get_connected_engine() {
+  public void should_get_connected_engine() throws InvalidBindingException {
     settings.setBindingEnabled(true);
     settings.setProjectKey("project1");
     settings.setServerId("server1");
@@ -87,13 +87,13 @@ public class ProjectBindingManagerTest {
   }
 
   @Test
-  public void fail_get_connected_engine_if_not_connected() {
+  public void fail_get_connected_engine_if_not_connected() throws InvalidBindingException {
     exception.expect(IllegalStateException.class);
     projectBindingManager.getConnectedEngine();
   }
 
   @Test
-  public void should_create_facade_connected() {
+  public void should_create_facade_connected() throws InvalidBindingException {
     settings.setBindingEnabled(true);
     settings.setProjectKey("project1");
     settings.setServerId("server1");
@@ -101,7 +101,7 @@ public class ProjectBindingManagerTest {
   }
 
   @Test
-  public void should_find_sq_server() {
+  public void should_find_sq_server() throws InvalidBindingException {
     settings.setBindingEnabled(true);
     settings.setProjectKey("project1");
     settings.setServerId("server1");
@@ -112,7 +112,7 @@ public class ProjectBindingManagerTest {
   }
 
   @Test
-  public void fail_if_cant_find_server() {
+  public void fail_if_cant_find_server() throws InvalidBindingException {
     settings.setBindingEnabled(true);
     settings.setProjectKey("project1");
     settings.setServerId("server1");
@@ -124,7 +124,7 @@ public class ProjectBindingManagerTest {
   }
 
   @Test
-  public void fail_invalid_server_binding() {
+  public void fail_invalid_server_binding() throws InvalidBindingException {
     settings.setBindingEnabled(true);
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
@@ -132,7 +132,7 @@ public class ProjectBindingManagerTest {
   }
 
   @Test
-  public void fail_invalid_module_binding() {
+  public void fail_invalid_module_binding() throws InvalidBindingException {
     settings.setBindingEnabled(true);
     settings.setServerId("server1");
     settings.setProjectKey(null);

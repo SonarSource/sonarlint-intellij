@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
@@ -28,17 +27,14 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.IdeBorderFactory;
-import com.intellij.ui.ListSpeedSearch;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBCheckBox;
-import com.intellij.ui.components.JBList;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.util.containers.Convertor;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import java.awt.BorderLayout;
@@ -48,24 +44,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.AbstractAction;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.ListSelectionModel;
 import javax.swing.border.Border;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
@@ -73,32 +63,22 @@ import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteModule;
-import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 
-import static org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine.State;
-
-public class SonarLintProjectBindPanel implements Disposable {
+public class SonarLintProjectBindPanel {
   private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
-  private static final String PROJECT_NO_SERVER = "<No server selected>";
-  private static final String PROJECT_EMPTY = "<No projects to display>";
-  private static final String PROJECT_NO_LOCAL_CONFIG = "<Update server binding first>";
 
   private JPanel rootPanel;
   private JBCheckBox bindEnable;
 
   // server mgmt
   private JComboBox<SonarQubeServer> serverComboBox;
-  private StateListener serverStateListener;
   private JButton configureServerButton;
-  private ConnectedSonarLintEngine engine;
 
   // binding mgmt
   private JPanel bindPanel;
-  private JButton downloadProjectListButton;
+  private JBTextField projectKeyTextField;
+  private JButton searchProjectButton;
 
-  // generic list only introduced in 2016.3
-  private JBList projectList;
-  private String lastSelectedProjectKey;
   private Project project;
 
   public JPanel create(Project project) {
@@ -116,10 +96,12 @@ public class SonarLintProjectBindPanel implements Disposable {
   public void load(Collection<SonarQubeServer> servers, boolean enabled, @Nullable String selectedServerId, @Nullable String selectedProjectKey) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     this.bindEnable.setSelected(enabled);
-    this.lastSelectedProjectKey = selectedProjectKey;
 
     serverComboBox.removeAllItems();
     setServerList(servers, selectedServerId);
+    if (selectedProjectKey != null) {
+      projectKeyTextField.setText(selectedProjectKey);
+    }
   }
 
   @CheckForNull
@@ -141,114 +123,46 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   @CheckForNull
   public String getSelectedProjectKey() {
-    RemoteModule module = (RemoteModule) projectList.getSelectedValue();
-    return module == null ? null : module.getKey();
+    return projectKeyTextField.getText();
   }
 
   /**
-   * Updates server status label. If no server is selected, some components items disabled.
+   * If no server is selected, some components items disabled.
    * Should be called when selected Server changes.
    */
   private void onServerSelected() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    String selectedStorageId = getSelectedStorageId();
-    SonarLintEngineManager core = SonarLintUtils.get(SonarLintEngineManager.class);
-
-    if (engine != null) {
-      engine.removeStateListener(serverStateListener);
-    }
-
-    if (selectedStorageId == null) {
-      engine = null;
-      serverStateListener = null;
-      downloadProjectListButton.setEnabled(false);
-    } else {
-      // assuming that server ID is valid!
-      engine = core.getConnectedEngine(selectedStorageId);
-      serverStateListener = new ServerStateListener();
-      engine.addStateListener(serverStateListener);
-      downloadProjectListButton.setEnabled(true);
-    }
-    setProjects();
-  }
-
-  private void setProjectsInList(Collection<RemoteModule> modules) {
-    Comparator<RemoteModule> moduleComparator = (o1, o2) -> {
-      int c1 = o1.getName().compareToIgnoreCase(o2.getName());
-      if (c1 != 0) {
-        return c1;
-      }
-      return o1.getKey().compareToIgnoreCase(o2.getKey());
-    };
-
-    List<RemoteModule> sortedModules = modules.stream()
-      .filter(RemoteModule::isRoot)
-      .sorted(moduleComparator)
-      .collect(Collectors.toList());
-
-    RemoteModule selected = null;
-    if (lastSelectedProjectKey != null) {
-      selected = sortedModules.stream()
-        .filter(module -> lastSelectedProjectKey.equals(module.getKey()))
-        .findAny().orElse(null);
-    }
-    CollectionListModel<RemoteModule> projectListModel = new CollectionListModel<>(sortedModules);
-
-    projectList.setModel(projectListModel);
-    projectList.setCellRenderer(new ProjectListRenderer());
-    setSelectedProject(selected);
-
-    // it can be happen because server has no projects, no server selected, or server not updated
-    if (projectList.isEmpty()) {
-      projectList.setEmptyText(getProjectEmptyText());
-      projectList.setEnabled(false);
-    } else {
-      projectList.setEnabled(bindEnable.isSelected());
-    }
-  }
-
-  private void setSelectedProject(@Nullable RemoteModule selected) {
-    if (selected != null) {
-      projectList.setSelectedValue(selected, true);
-    } else if (!projectList.isEmpty() && lastSelectedProjectKey == null) {
-      projectList.setSelectedIndex(0);
-    } else {
-      projectList.setSelectedValue(null, true);
-    }
-  }
-
-  private void setProjects() {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-
-    if (engine != null && engine.getState() == State.UPDATED) {
-      setProjectsInList(engine.allModulesByKey().values());
-    } else {
-      projectList.setEnabled(false);
-      projectList.setModel(new DefaultListModel<>());
-      projectList.setEmptyText(getProjectEmptyText());
-    }
+    boolean serverSelected = getSelectedStorageId() != null;
+    projectKeyTextField.setEnabled(serverSelected);
+    projectKeyTextField.setEditable(serverSelected);
+    searchProjectButton.setEnabled(serverSelected);
   }
 
   /**
    * Assumes that it's bound and a server is selected
    */
-  private void downloadProjectList() {
+  @CheckForNull
+  private Map<String, RemoteModule> downloadProjectList() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     SonarQubeServer selectedServer = getSelectedServer();
-    if (selectedServer == null) {
-      return;
+    String storageId = getSelectedStorageId();
+    if (selectedServer == null || storageId == null) {
+      return null;
     }
+
+    SonarLintEngineManager core = SonarLintUtils.get(SonarLintEngineManager.class);
+    ConnectedSonarLintEngine engine = core.getConnectedEngine(storageId);
     ServerDownloadProjectTask downloadTask = new ServerDownloadProjectTask(project, engine, selectedServer);
 
     try {
       ProgressManager.getInstance().run(downloadTask);
-      Map<String, RemoteModule> map = downloadTask.getResult();
-      setProjectsInList(map.values());
+      return downloadTask.getResult();
     } catch (Exception e) {
       String msg = e.getMessage() != null ? e.getMessage() : "Failed to download list of projects";
       Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List");
+      return null;
     }
   }
 
@@ -259,22 +173,6 @@ public class SonarLintProjectBindPanel implements Disposable {
     String previousSelectedStorageId = getSelectedStorageId();
     serverComboBox.removeAllItems();
     setServerList(serverList, previousSelectedStorageId);
-  }
-
-  private String getProjectEmptyText() {
-    // a server is selected
-    if (getSelectedStorageId() != null) {
-      if (engine.getState() != State.UPDATED) {
-        // not updated
-        return PROJECT_NO_LOCAL_CONFIG;
-      } else {
-        // there are no projects in the server
-        return PROJECT_EMPTY;
-      }
-    } else {
-      // no server selected
-      return PROJECT_NO_SERVER;
-    }
   }
 
   /**
@@ -319,34 +217,13 @@ public class SonarLintProjectBindPanel implements Disposable {
     bindPanel = new JPanel(new GridBagLayout());
     bindPanel.setBorder(b);
 
-    JLabel projectListLabel = new JLabel("SonarQube project:");
-    projectList = new JBList();
-    projectList.setCellRenderer(new ProjectListRenderer());
-    projectList.addListSelectionListener(new ProjectItemListener());
-    projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    Convertor<Object, String> convertor = o -> {
-      RemoteModule module = (RemoteModule) o;
-      return module.getName() + " " + module.getKey();
-    };
-    new ListSpeedSearch(projectList, convertor);
-
-    JPanel serverPanel = new JPanel(new GridLayoutManager(1, 3));
-
-    downloadProjectListButton = new JButton();
-    downloadProjectListButton.setAction(new AbstractAction() {
-      @Override public void actionPerformed(ActionEvent e) {
-        downloadProjectList();
-      }
-    });
-    downloadProjectListButton.setText("Update project list");
-
     configureServerButton = new JButton();
     configureServerButton.setAction(new AbstractAction() {
       @Override public void actionPerformed(ActionEvent e) {
         actionConfigureServers();
       }
     });
-    configureServerButton.setText("Configure servers...");
+    configureServerButton.setText("Configure servers..");
 
     // generic ComboBox only introduced in 2016.2.5
     serverComboBox = new ComboBox();
@@ -355,21 +232,45 @@ public class SonarLintProjectBindPanel implements Disposable {
     serverComboBox.setRenderer(new ServerComboBoxRenderer());
     serverComboBox.addItemListener(new ServerItemListener());
 
+    JLabel projectListLabel = new JLabel("SonarQube project:");
+    projectKeyTextField = new JBTextField();
+    projectKeyTextField.getEmptyText().setText("Input project key or search one");
+
+    searchProjectButton = new JButton();
+    searchProjectButton.setAction(new AbstractAction() {
+      @Override public void actionPerformed(ActionEvent e) {
+        Map<String, RemoteModule> map = downloadProjectList();
+        if (map != null) {
+          SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map);
+          if (dialog.showAndGet()) {
+            projectKeyTextField.setText(dialog.getSelectedProjectKey() != null ? dialog.getSelectedProjectKey() : "");
+          }
+        }
+      }
+    });
+    searchProjectButton.setText("Search in list..");
+
     serverListLabel.setLabelFor(serverComboBox);
 
+    JPanel serverPanel = new JPanel(new GridLayoutManager(1, 2));
     serverPanel.add(ScrollPaneFactory.createScrollPane(serverComboBox), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
       GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     serverPanel.add(configureServerButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
       GridConstraints.SIZEPOLICY_CAN_SHRINK, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    serverPanel.add(downloadProjectListButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+
+    JPanel projectPanel = new JPanel(new GridLayoutManager(1, 3));
+    projectPanel.add(projectListLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+      GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    projectPanel.add(projectKeyTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+      GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    projectPanel.add(searchProjectButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
       GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
     bindPanel.add(serverListLabel, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 0, 0, 0), 0, 0));
     bindPanel.add(serverPanel, new GridBagConstraints(1, 0, 1, 1, 1, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 3, 0, 0), 0, 0));
-    bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0, 1, GridBagConstraints.NORTH, GridBagConstraints.NONE, JBUI.insets(2, 0, 0, 0), 0, 0));
-    bindPanel.add(ScrollPaneFactory.createScrollPane(projectList),
-      new GridBagConstraints(1, 1, 1, 1, 1, 1, GridBagConstraints.LINE_START, GridBagConstraints.BOTH, JBUI.insets(2, 3, 0, 0), 0, 0));
 
+    // bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0, 1, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 0, 0, 0), 0, 0));
+    bindPanel.add(projectPanel, new GridBagConstraints(0, 1, 2, 1, 1, 1, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 3, 0, 0), 0, 0));
   }
 
   /**
@@ -390,12 +291,6 @@ public class SonarLintProjectBindPanel implements Disposable {
 
   public boolean isBindingEnabled() {
     return bindEnable.isSelected();
-  }
-
-  @Override public void dispose() {
-    if (serverStateListener != null) {
-      engine.removeStateListener(serverStateListener);
-    }
   }
 
   /**
@@ -433,39 +328,6 @@ public class SonarLintProjectBindPanel implements Disposable {
     }
   }
 
-  /**
-   * Render modules in combo box
-   */
-  private class ProjectListRenderer extends ColoredListCellRenderer<RemoteModule> {
-    @Override protected void customizeCellRenderer(JList list, @Nullable RemoteModule value, int index, boolean selected, boolean hasFocus) {
-      if (list.getModel().getSize() == 0) {
-        if (bindEnable.isSelected()) {
-          append(getProjectEmptyText(), SimpleTextAttributes.ERROR_ATTRIBUTES);
-        } else {
-          append(getProjectEmptyText(), SimpleTextAttributes.GRAYED_ATTRIBUTES);
-        }
-        return;
-      }
-
-      if (value == null) {
-        return;
-      }
-
-      SimpleTextAttributes attrs;
-      if (projectList.isEnabled()) {
-        attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
-      } else {
-        attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
-      }
-      append(value.getName(), attrs, true);
-      // it is not working: appendTextPadding
-      append(" ");
-      if (index >= 0) {
-        append("(" + value.getKey() + ")", SimpleTextAttributes.GRAY_ATTRIBUTES, false);
-      }
-    }
-  }
-
   private class ServerItemListener implements ItemListener {
     @Override
     public void itemStateChanged(ItemEvent event) {
@@ -479,29 +341,11 @@ public class SonarLintProjectBindPanel implements Disposable {
     @Override
     public void itemStateChanged(ItemEvent e) {
       boolean bound = e.getStateChange() == ItemEvent.SELECTED;
-      boolean updated = engine != null && engine.getState() == State.UPDATED;
 
       bindPanel.setEnabled(bound);
       serverComboBox.setEnabled(bound);
       configureServerButton.setEnabled(bound);
-      downloadProjectListButton.setEnabled(bound && updated);
-      projectList.setEnabled(bound && updated);
-      setProjects();
-    }
-  }
-
-  private class ProjectItemListener implements ListSelectionListener {
-    @Override public void valueChanged(ListSelectionEvent event) {
-      if (projectList.isEnabled()) {
-        lastSelectedProjectKey = getSelectedProjectKey();
-      }
-    }
-  }
-
-  private class ServerStateListener implements StateListener {
-    @Override public void stateChanged(State newState) {
-      // invoke in EDT
-      ApplicationManager.getApplication().invokeLater(SonarLintProjectBindPanel.this::setProjects);
+      //updateProjectKeyStatus();
     }
   }
 }

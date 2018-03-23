@@ -37,6 +37,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -84,29 +85,34 @@ public class SonarLintAnalyzer {
     // Analyze
     long start = System.currentTimeMillis();
 
-    SonarLintFacade facade = projectBindingManager.getFacade(true);
+    try {
+      SonarLintFacade facade = projectBindingManager.getFacade(true);
 
-    String what;
-    if (filesToAnalyze.size() == 1) {
-      what = "'" + filesToAnalyze.iterator().next().getName() + "'";
-    } else {
-      what = Integer.toString(filesToAnalyze.size()) + " files";
-    }
+      String what;
+      if (filesToAnalyze.size() == 1) {
+        what = "'" + filesToAnalyze.iterator().next().getName() + "'";
+      } else {
+        what = Integer.toString(filesToAnalyze.size()) + " files";
+      }
 
-    console.info("Analysing " + what + "...");
-    if (facade.requiresSavingFiles()) {
-      console.debug("Saving files");
-      LOG.assertTrue(!ApplicationManager.getApplication().isReadAccessAllowed(), "Should not be in a read action (risk of dead lock)");
-      ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(filesToAnalyze), ModalityState.defaultModalityState());
+      console.info("Analysing " + what + "...");
+      if (facade.requiresSavingFiles()) {
+        console.debug("Saving files");
+        LOG.assertTrue(!ApplicationManager.getApplication().isReadAccessAllowed(), "Should not be in a read action (risk of dead lock)");
+        ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(filesToAnalyze), ModalityState.defaultModalityState());
+      }
+      AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps, progressMonitor);
+      console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
+      if (filesToAnalyze.size() == 1) {
+        telemetry.analysisDoneOnSingleFile(filesToAnalyze.iterator().next().getExtension(), (int) (System.currentTimeMillis() - start));
+      } else {
+        telemetry.analysisDoneOnMultipleFiles();
+      }
+      return result;
+    } catch (InvalidBindingException e) {
+      // should not happen, as analysis should not have been submitted in this case.
+      throw new IllegalStateException(e);
     }
-    AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps, progressMonitor);
-    console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
-    if (filesToAnalyze.size() == 1) {
-      telemetry.analysisDoneOnSingleFile(filesToAnalyze.iterator().next().getExtension(), (int) (System.currentTimeMillis() - start));
-    } else {
-      telemetry.analysisDoneOnMultipleFiles();
-    }
-    return result;
   }
 
   private List<ClientInputFile> getInputFiles(Module module, VirtualFileTestPredicate testPredicate, Collection<VirtualFile> filesToAnalyze) {
