@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -53,8 +54,9 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   }
 
   @Override
-  public void onSuccess() {
+  public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
+      .filter(f -> !failedVirtualFiles.contains(f))
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
     analysisResultIssues.set(map, whatAnalyzed);
     showAnalysisResultsTab();

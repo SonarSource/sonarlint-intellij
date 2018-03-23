@@ -37,6 +37,7 @@ import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -86,7 +87,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     try {
       AtomicBoolean error = new AtomicBoolean(false);
       AnalysisCallback callback = new AnalysisCallback() {
-        @Override public void onSuccess() {
+        @Override public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
           // do nothing
         }
 
