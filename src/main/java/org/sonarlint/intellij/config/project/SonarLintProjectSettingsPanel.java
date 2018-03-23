@@ -111,7 +111,6 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   @Override public void dispose() {
     if (bindPanel != null) {
-      bindPanel.dispose();
       bindPanel = null;
     }
   }

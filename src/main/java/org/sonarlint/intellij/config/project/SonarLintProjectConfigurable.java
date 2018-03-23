@@ -38,6 +38,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.tasks.ServerUpdateTask;
@@ -96,7 +97,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   }
 
   @Override
-  public void apply() throws ConfigurationException {
+  public void apply() {
     if (panel != null) {
       panel.save(projectSettings);
       onSave();
@@ -110,17 +111,22 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
    * - Clear all issues and submit an analysis on all open files
    */
   private void onSave() {
+    SonarLintProjectNotifications.get(project).reset();
     ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
 
     if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getServerId() != null) {
       ProjectBindingManager bindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
 
-      SonarQubeServer server = bindingManager.getSonarQubeServer();
-      ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
-      String moduleKey = projectSettings.getProjectKey();
+      try {
+        SonarQubeServer server = bindingManager.getSonarQubeServer();
+        ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
+        String moduleKey = projectSettings.getProjectKey();
 
-      ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(moduleKey, Collections.singletonList(project)), true);
-      ProgressManager.getInstance().run(task.asModal());
+        ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(moduleKey, Collections.singletonList(project)), true);
+        ProgressManager.getInstance().run(task.asModal());
+      } catch (InvalidBindingException e) {
+        // nothing to do, SonarLintEngineManager should have already shown a warning
+      }
     }
     projectListener.changed(projectSettings);
   }

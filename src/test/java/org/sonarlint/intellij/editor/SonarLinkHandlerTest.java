@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -39,7 +40,7 @@ public class SonarLinkHandlerTest extends SonarTest {
   private SonarLintFacade sonarlint;
 
   @Before
-  public void prepare() {
+  public void prepare() throws InvalidBindingException {
     ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
     sonarlint = mock(SonarLintFacade.class);
     editor = mock(Editor.class);

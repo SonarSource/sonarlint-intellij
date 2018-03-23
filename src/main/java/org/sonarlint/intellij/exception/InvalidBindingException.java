@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.exception;
 
-public class InvalidBindingException extends RuntimeException {
+public class InvalidBindingException extends Exception {
   public InvalidBindingException(String msg) {
     super(msg, null, false, false);
   }

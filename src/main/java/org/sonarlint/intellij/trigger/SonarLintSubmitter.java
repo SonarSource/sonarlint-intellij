@@ -38,6 +38,7 @@ import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -85,11 +86,15 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
-    Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, false);
+    try {
+      Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, false);
 
-    if (!filesByModule.isEmpty()) {
-      console.debug("Trigger: " + trigger);
-      sonarLintJobManager.submitManual(filesByModule, trigger, true, callback);
+      if (!filesByModule.isEmpty()) {
+        console.debug("Trigger: " + trigger);
+        sonarLintJobManager.submitManual(filesByModule, trigger, true, callback);
+      }
+    } catch (InvalidBindingException e) {
+      // nothing to do, SonarLintEngineManager already showed notification
     }
   }
 
@@ -107,19 +112,23 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
     boolean checkExclusions = trigger != TriggerType.ACTION;
-    Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, checkExclusions);
+    try {
+      Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, checkExclusions);
 
-    if (!filesByModule.isEmpty()) {
-      console.debug("Trigger: " + trigger);
-      if (startInBackground) {
-        sonarLintJobManager.submitBackground(filesByModule, trigger, callback);
-      } else {
-        sonarLintJobManager.submitManual(filesByModule, trigger, false, callback);
+      if (!filesByModule.isEmpty()) {
+        console.debug("Trigger: " + trigger);
+        if (startInBackground) {
+          sonarLintJobManager.submitBackground(filesByModule, trigger, callback);
+        } else {
+          sonarLintJobManager.submitManual(filesByModule, trigger, false, callback);
+        }
       }
+    } catch (InvalidBindingException e) {
+      // nothing to do, SonarLintEngineManager already showed notification
     }
   }
 
-  private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean checkExclusions) {
+  private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean checkExclusions) throws InvalidBindingException {
     HashMultimap<Module, VirtualFile> filesByModule = HashMultimap.create();
     SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 

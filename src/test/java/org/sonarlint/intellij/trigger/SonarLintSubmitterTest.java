@@ -35,6 +35,7 @@ import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
@@ -62,7 +63,7 @@ public class SonarLintSubmitterTest extends SonarTest {
   private SonarLintSubmitter submitter;
 
   @Before
-  public void start() {
+  public void start() throws InvalidBindingException {
     when(bindingManager.getFacade()).thenReturn(facade);
     when(facade.getExcluded(anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     globalSettings = new SonarLintGlobalSettings();

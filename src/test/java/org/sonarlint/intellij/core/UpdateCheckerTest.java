@@ -30,6 +30,7 @@ import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -59,7 +60,7 @@ public class UpdateCheckerTest extends SonarTest {
   private ConnectedSonarLintEngine engine;
 
   @Before
-  public void before() {
+  public void before() throws InvalidBindingException {
     MockitoAnnotations.initMocks(this);
     settings = new SonarLintProjectSettings();
     settings.setProjectKey("key");
@@ -74,7 +75,7 @@ public class UpdateCheckerTest extends SonarTest {
   }
 
   @Test
-  public void do_nothing_if_no_engine() {
+  public void do_nothing_if_no_engine() throws InvalidBindingException {
     when(bindingManager.getConnectedEngine()).thenThrow(new IllegalStateException());
     updateChecker.checkForUpdate();
 

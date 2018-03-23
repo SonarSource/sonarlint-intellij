@@ -49,6 +49,7 @@ import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -138,9 +139,13 @@ public class AutoTriggerStatusPanel {
 
   private boolean isExcludedInServer(Module m, VirtualFile f) {
     VirtualFileTestPredicate testPredicate = SonarLintUtils.get(m, VirtualFileTestPredicate.class);
-    Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().getExcluded(Collections.singleton(f), testPredicate);
-    return !afterExclusion.isEmpty();
-
+    try {
+      Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().getExcluded(Collections.singleton(f), testPredicate);
+      return !afterExclusion.isEmpty();
+    } catch (InvalidBindingException e) {
+      // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager
+      return false;
+    }
   }
 
   private void createPanel() {

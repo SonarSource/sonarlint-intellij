@@ -160,7 +160,7 @@ public class ServerUpdateTask {
       log.log("The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), LogOutput.Level.WARN);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
-        @Override public void doRun() throws Exception {
+        @Override public void doRun() {
           Messages.showWarningDialog((Project) null,
             "The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), "Modules Not Updated");
         }
