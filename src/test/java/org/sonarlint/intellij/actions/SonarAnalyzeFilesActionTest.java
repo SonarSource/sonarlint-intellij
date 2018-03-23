@@ -29,6 +29,8 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.issue.AnalysisResultIssues;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -48,6 +50,8 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private AnActionEvent event = mock(AnActionEvent.class);
+  private AnalysisResultIssues analysisResults = mock(AnalysisResultIssues.class);
+  private IssueManager issueManager = mock(IssueManager.class);
 
   private SonarLintStatus status;
   private Presentation presentation = new Presentation();
@@ -60,6 +64,9 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
     super.register(project, SonarLintConsole.class, console);
     super.register(project, SonarLintSubmitter.class, submitter);
     super.register(project, SonarLintStatus.class, status);
+    super.register(project, AnalysisResultIssues.class, analysisResults);
+    super.register(project, IssueManager.class, issueManager);
+
     when(event.getProject()).thenReturn(project);
     when(project.isInitialized()).thenReturn(true);
     when(event.getPresentation()).thenReturn(presentation);

@@ -50,6 +50,11 @@ public class AnalysisResults {
     return issues.lastAnalysisDate();
   }
 
+  @CheckForNull
+  public String whatAnalyzed() {
+    return issues.whatAnalyzed();
+  }
+
   public Map<VirtualFile, Collection<LiveIssue>> issues() {
     return issues.issues();
   }

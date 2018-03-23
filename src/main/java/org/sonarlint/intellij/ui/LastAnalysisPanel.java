@@ -38,8 +38,10 @@ import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 public class LastAnalysisPanel implements Disposable {
   private static final String NO_ANALYSIS = "NO_ANALYSIS";
   private static final String WITH_ANALYSIS = "WITH_ANALYSIS";
-
+  @Nullable
   private Instant lastAnalysis;
+  @Nullable
+  private String whatAnalyzed;
   private Timer lastAnalysisTimeUpdater;
   private JLabel lastAnalysisLabel;
   private JLabel noAnalysisLabel;
@@ -56,8 +58,9 @@ public class LastAnalysisPanel implements Disposable {
     return panel;
   }
 
-  public void update(@Nullable Instant lastAnalysis, String emptyText) {
+  public void update(@Nullable Instant lastAnalysis, @Nullable String whatAnalyzed, String emptyText) {
     this.lastAnalysis = lastAnalysis;
+    this.whatAnalyzed = whatAnalyzed;
     setLabel(emptyText);
   }
 
@@ -67,10 +70,14 @@ public class LastAnalysisPanel implements Disposable {
       noAnalysisLabel.setText(emptyText);
     } else {
       layout.show(panel, WITH_ANALYSIS);
-      lastAnalysisLabel.setText("Analysis done " + DateUtils.toAge(lastAnalysis.toEpochMilli()));
+      setLastAnalysisLabel();
     }
 
     panel.repaint();
+  }
+
+  private void setLastAnalysisLabel() {
+    lastAnalysisLabel.setText("Analysis of " + whatAnalyzed + " done " + DateUtils.toAge(lastAnalysis.toEpochMilli()));
   }
 
   private void createComponents() {
@@ -106,7 +113,7 @@ public class LastAnalysisPanel implements Disposable {
   private void setTimer() {
     lastAnalysisTimeUpdater = new Timer(5000, e -> {
       if (lastAnalysis != null) {
-        lastAnalysisLabel.setText("Analysis done " + DateUtils.toAge(lastAnalysis.toEpochMilli()));
+        setLastAnalysisLabel();
         panel.repaint();
       }
     });

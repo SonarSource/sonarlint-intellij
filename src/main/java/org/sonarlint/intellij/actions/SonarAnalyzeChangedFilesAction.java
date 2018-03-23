@@ -66,7 +66,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     ChangeListManager changeListManager = ChangeListManager.getInstance(project);
 
     List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
-    AnalysisCallback callback = new ShowAnalysisResultsCallable(project, affectedFiles);
+    AnalysisCallback callback = new ShowAnalysisResultsCallable(project, affectedFiles, "SCM changed files");
     submitter.submitFiles(affectedFiles, TriggerType.CHANGED_FILES, callback, false);
   }
 }
