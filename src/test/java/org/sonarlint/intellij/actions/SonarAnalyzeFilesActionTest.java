@@ -74,6 +74,7 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
   @Test
   public void should_submit() {
     VirtualFile f1 = mock(VirtualFile.class);
+    when(f1.getPath()).thenReturn("file");
     mockSelectedFiles(f1);
     editorFileAction.actionPerformed(event);
     verify(submitter).submitFiles(anyCollection(), eq(TriggerType.ACTION), any(AnalysisCallback.class), eq(false));
