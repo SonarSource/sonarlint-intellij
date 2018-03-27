@@ -36,7 +36,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TOOL_WINDOW_ID = "SonarLint";
   public static final String TAB_LOGS = "Log";
   public static final String TAB_CURRENT_FILE = "Current file";
-  public static final String TAB_ANALYSIS_RESULTS = "Analysis results";
+  public static final String TAB_ANALYSIS_RESULTS = "Report";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
