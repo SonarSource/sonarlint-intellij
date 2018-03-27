@@ -29,7 +29,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -142,47 +142,40 @@ public class ServerUpdateTask {
     return false;
   }
 
+  /**
+   * Updates all known modules belonging to a server configuration.
+   * It assumes that the server binding is updated.
+   */
   private void updateModules(ServerConfiguration serverConfiguration, TaskProgressMonitor monitor) {
-    //here we assume that server is updated, or this won't work
-    final Set<String> existingProjectKeys = engine.allModulesByKey().keySet();
-    final Set<String> invalidModules = new HashSet<>();
-
+    Set<String> failedModules = new LinkedHashSet<>();
     for (Map.Entry<String, List<Project>> entry : projectsPerModule.entrySet()) {
-      String moduleKey = entry.getKey();
-      if (existingProjectKeys.contains(moduleKey)) {
-        updateModule(serverConfiguration, moduleKey, entry.getValue(), monitor);
-      } else {
-        invalidModules.add(moduleKey);
+      try {
+        updateModule(serverConfiguration, entry.getKey(), entry.getValue(), monitor);
+      } catch (Exception e) {
+        // in case of error, save module key and keep updating other modules
+        LOGGER.info(e.getMessage(), e);
+        failedModules.add(entry.getKey());
       }
     }
 
-    if (!projectsPerModule.isEmpty() && !invalidModules.isEmpty()) {
-      log.log("The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), LogOutput.Level.WARN);
+    if (!projectsPerModule.isEmpty() && !failedModules.isEmpty()) {
+      String errorMsg = "Failed to update the following modules. "
+        + "Please check if the server bindings are updated and the module key is correct: "
+        + failedModules.toString();
+      log.log(errorMsg, LogOutput.Level.WARN);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override public void doRun() {
-          Messages.showWarningDialog((Project) null,
-            "The following modules could not be updated because they don't exist in the SonarQube server: " + invalidModules.toString(), "Modules Not Updated");
+          Messages.showWarningDialog((Project) null, errorMsg, "Modules Not Updated");
         }
       }, ModalityState.any());
     }
   }
 
   private void updateModule(ServerConfiguration serverConfiguration, String moduleKey, List<Project> projects, TaskProgressMonitor monitor) {
-    try {
-      engine.updateModule(serverConfiguration, moduleKey, monitor);
-      log.log("Module '" + moduleKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
-      projects.forEach(ServerUpdateTask::analyzeOpenFiles);
-    } catch (Exception e) {
-      LOGGER.info(e.getMessage(), e);
-      // in case of error, show a message box and keep updating other modules
-      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
-      ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
-        @Override public void doRun() throws Exception {
-          Messages.showErrorDialog((Project) null, msg, "Update Failed");
-        }
-      }, ModalityState.any());
-    }
+    engine.updateModule(serverConfiguration, moduleKey, monitor);
+    log.log("Module '" + moduleKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+    projects.forEach(ServerUpdateTask::analyzeOpenFiles);
   }
 
   private static void analyzeOpenFiles(Project project) {
