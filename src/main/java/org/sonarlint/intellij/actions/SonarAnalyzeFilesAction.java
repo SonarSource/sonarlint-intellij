@@ -89,6 +89,13 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       return;
     }
 
+    boolean hasProject = Arrays.stream(files)
+      .anyMatch(f -> f.getPath().equals(project.getBasePath()));
+
+    if (hasProject && !SonarAnalyzeAllFilesAction.showWarning()) {
+      return;
+    }
+
     List<VirtualFile> fileList = Arrays.stream(files)
       .flatMap(f -> {
         if (f.isDirectory()) {

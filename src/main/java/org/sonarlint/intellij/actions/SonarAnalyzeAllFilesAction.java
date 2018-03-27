@@ -87,7 +87,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     return fileList;
   }
 
-  private static boolean showWarning() {
+  static boolean showWarning() {
     if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY, false)) {
       int result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
           + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
@@ -99,7 +99,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   // Don't use DialogWrapper.DoNotAskOption.Adapter because it's not implemented in older versions of intellij
-  private static class DoNotShowAgain implements DialogWrapper.DoNotAskOption {
+  static class DoNotShowAgain implements DialogWrapper.DoNotAskOption {
     @Override public boolean isToBeShown() {
       return true;
     }
