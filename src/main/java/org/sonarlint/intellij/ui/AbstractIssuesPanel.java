@@ -98,7 +98,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
       rulePanel.getPanel(),
       ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
     detailsTab = new JBTabbedPane();
