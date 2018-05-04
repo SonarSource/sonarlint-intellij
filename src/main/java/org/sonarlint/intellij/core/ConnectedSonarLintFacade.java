@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -45,9 +47,11 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
   private final String moduleKey;
   private final SonarLintConsole console;
+  private final SonarLintAppUtils appUtils;
 
-  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, String moduleKey) {
+  ConnectedSonarLintFacade(SonarLintAppUtils appUtils, ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, String moduleKey) {
     super(project, projectSettings);
+    this.appUtils = appUtils;
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
@@ -66,9 +70,11 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public Collection<VirtualFile> getExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
+  public Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
+
+    //FIXME collisions might happen here
     Map<String, VirtualFile> fileByPath = files.stream()
-      .collect(Collectors.toMap(f -> SonarLintUtils.getRelativePath(project, f), x -> x, (x, y) -> x));
+      .collect(Collectors.toMap(f -> appUtils.getRelativePathForAnalysis(module, f), x -> x, (x, y) -> x));
 
     Set<String> excludedFiles = sonarlint.getExcludedFiles(moduleKey, fileByPath.keySet(), p -> testPredicate.test(fileByPath.get(p)));
     return excludedFiles.stream().map(fileByPath::get).collect(Collectors.toList());

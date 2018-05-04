@@ -40,6 +40,7 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -48,21 +49,24 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 public class SonarLintAnalyzer {
   private static final Logger LOG = Logger.getInstance(SonarLintAnalyzer.class);
+
   private final ProjectBindingManager projectBindingManager;
   private final EncodingProjectManager encodingProjectManager;
   private final SonarLintConsole console;
   private final FileDocumentManager fileDocumentManager;
   private final Application app;
   private final SonarLintTelemetry telemetry;
+  private final SonarLintAppUtils appUtils;
 
   public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
-    SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app, SonarLintTelemetry telemetry) {
+    SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app, SonarLintTelemetry telemetry, SonarLintAppUtils appUtils) {
     this.projectBindingManager = projectBindingManager;
     this.encodingProjectManager = encodingProjectManager;
     this.console = console;
     this.fileDocumentManager = fileDocumentManager;
     this.app = app;
     this.telemetry = telemetry;
+    this.appUtils = appUtils;
   }
 
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ProgressMonitor progressMonitor) {
@@ -124,7 +128,7 @@ public class SonarLintAnalyzer {
       for (VirtualFile f : filesToAnalyze) {
         boolean test = testPredicate.test(f);
         Charset charset = getEncoding(f);
-        String relativePath = SonarLintUtils.getPortableRelativePath(module.getProject(), f);
+        String relativePath = appUtils.getRelativePathForAnalysis(module, f);
         if (fileDocumentManager.isFileModified(f)) {
           inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset, fileDocumentManager.getDocument(f)));
         } else {

@@ -44,7 +44,7 @@ import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.tracking.Tracker;
 import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.IssueStoreListener;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 /**
  * Stores issues associated to a {@link PsiElement}, {@link RangeMarker} or  {@link PsiFile}.
@@ -55,12 +55,14 @@ public class IssueManager extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueManager.class);
   private final MessageBus messageBus;
   private final IssuePersistence store;
+  private final SonarLintAppUtils appUtils;
   private final LiveIssueCache cache;
 
   private final Lock matchingInProgress = new ReentrantLock();
 
-  public IssueManager(Project project, LiveIssueCache cache, IssuePersistence store) {
+  public IssueManager(SonarLintAppUtils appUtils, Project project, LiveIssueCache cache, IssuePersistence store) {
     super(project);
+    this.appUtils = appUtils;
     this.cache = cache;
     this.messageBus = project.getMessageBus();
     this.store = store;
@@ -91,7 +93,7 @@ public class IssueManager extends AbstractProjectComponent {
       return liveIssues.stream().filter(LiveIssue::isValid).collect(Collectors.toList());
     }
 
-    String storeKey = SonarLintUtils.getRelativePath(myProject, file);
+    String storeKey = appUtils.getRelativePathForAnalysis(myProject, file);
     try {
       Collection<LocalIssueTrackable> storeIssues = store.read(storeKey);
       return storeIssues != null ? Collections.unmodifiableCollection(storeIssues) : Collections.emptyList();
@@ -105,7 +107,7 @@ public class IssueManager extends AbstractProjectComponent {
     if (cache.contains(file)) {
       return true;
     }
-    String storeKey = SonarLintUtils.getRelativePath(myProject, file);
+    String storeKey = appUtils.getRelativePathForAnalysis(myProject, file);
     return store.contains(storeKey);
   }
 

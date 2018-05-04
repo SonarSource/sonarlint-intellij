@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -35,12 +36,13 @@ import static org.mockito.Mockito.when;
 public class ExcludeFileActionTest extends SonarTest {
   private VirtualFile file1 = mock(VirtualFile.class);
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
-
+  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private ExcludeFileAction action = new ExcludeFileAction();
 
   @Before
   public void setup() {
     super.register(project, SonarLintProjectSettings.class, settings);
+    super.register(app, SonarLintAppUtils.class, appUtils);
   }
 
   @Test
@@ -48,9 +50,7 @@ public class ExcludeFileActionTest extends SonarTest {
     AnActionEvent e = mock(AnActionEvent.class);
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file1});
     when(e.getProject()).thenReturn(project);
-    when(project.getBasePath()).thenReturn("/root");
-    when(file1.getPath()).thenReturn("/root/file1");
-
+    when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("file1");
     action.actionPerformed(e);
 
     assertThat(settings.getFileExclusions()).containsOnly("FILE:file1");
@@ -61,8 +61,7 @@ public class ExcludeFileActionTest extends SonarTest {
     AnActionEvent e = mock(AnActionEvent.class);
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file1});
     when(e.getProject()).thenReturn(project);
-    when(project.getBasePath()).thenReturn("/root");
-    when(file1.getPath()).thenReturn("/root/file1");
+    when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("file1");
     settings.setFileExclusions(Collections.singletonList("FILE:file1"));
 
     action.actionPerformed(e);
@@ -76,8 +75,7 @@ public class ExcludeFileActionTest extends SonarTest {
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file1});
     when(e.getProject()).thenReturn(project);
     when(project.isDisposed()).thenReturn(true);
-    when(project.getBasePath()).thenReturn("/root");
-    when(file1.getPath()).thenReturn("/root/file1");
+    when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("file1");
 
     action.actionPerformed(e);
 
@@ -88,8 +86,7 @@ public class ExcludeFileActionTest extends SonarTest {
   public void reject_project() {
     AnActionEvent e = mock(AnActionEvent.class);
     when(e.getProject()).thenReturn(project);
-    when(project.getBasePath()).thenReturn("/root");
-    when(file1.getPath()).thenReturn("/root");
+    when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("");
 
     action.actionPerformed(e);
     assertThat(settings.getFileExclusions()).isEmpty();
@@ -100,8 +97,7 @@ public class ExcludeFileActionTest extends SonarTest {
     AnActionEvent e = mock(AnActionEvent.class);
     when(e.getProject()).thenReturn(project);
     when(project.isDisposed()).thenReturn(true);
-    when(project.getBasePath()).thenReturn("/root");
-    when(file1.getPath()).thenReturn("/root/file1");
+    when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("file1");
 
     action.actionPerformed(e);
 

@@ -28,6 +28,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -41,23 +42,22 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class LiveIssueCacheTest {
-  private LiveIssueCache cache;
-  private IssuePersistence store;
 
+  private IssuePersistence store = mock(IssuePersistence.class);
+  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
+  private Project project = mock(Project.class);
   @Rule
   public ExpectedException exception = ExpectedException.none();
 
+  private LiveIssueCache cache = new LiveIssueCache(project, store, appUtils, 10);
+
   @Before
   public void setUp() {
-    Project project = mock(Project.class);
-    store = mock(IssuePersistence.class);
-    cache = new LiveIssueCache(project, store);
-
     when(project.getBasePath()).thenReturn("/root");
   }
 
   @Test
-  public void should_save_and_read_cache_only() throws IOException {
+  public void should_save_and_read_cache_only() {
     VirtualFile file = createTestFile("file1");
     LiveIssue issue1 = createTestIssue("will be overwritten");
     LiveIssue issue2 = createTestIssue("r1");
@@ -73,7 +73,7 @@ public class LiveIssueCacheTest {
   }
 
   @Test
-  public void should_return_contains_even_if_empty() throws IOException {
+  public void should_return_contains_even_if_empty() {
     VirtualFile file = createTestFile("file1");
     cache.save(file, Collections.emptyList());
     assertThat(cache.contains(file)).isTrue();
@@ -81,7 +81,7 @@ public class LiveIssueCacheTest {
   }
 
   @Test
-  public void should_not_fallback_persistence() throws IOException {
+  public void should_not_fallback_persistence() {
     VirtualFile file = createTestFile("file1");
     LiveIssue issue1 = createTestIssue("r1");
     cache.save(file, Collections.singleton(issue1));
@@ -98,7 +98,7 @@ public class LiveIssueCacheTest {
     VirtualFile file0 = createTestFile("file0");
     cache.save(file0, Collections.singleton(issue1));
 
-    for (int i = 1; i < LiveIssueCache.MAX_ENTRIES; i++) {
+    for (int i = 1; i < 10; i++) {
       VirtualFile file = createTestFile("file" + i);
       cache.save(file, Collections.singleton(issue1));
     }
@@ -157,7 +157,7 @@ public class LiveIssueCacheTest {
     doThrow(new IOException()).when(store).save(anyString(), anyCollection());
 
     LiveIssue issue1 = createTestIssue("r1");
-    for (int i = 0; i < LiveIssueCache.MAX_ENTRIES; i++) {
+    for (int i = 0; i < 10; i++) {
       VirtualFile file = createTestFile("file" + i);
       cache.save(file, Collections.singleton(issue1));
     }
@@ -195,7 +195,7 @@ public class LiveIssueCacheTest {
   private VirtualFile createTestFile(String path) {
     VirtualFile file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
-    when(file.getPath()).thenReturn("/root/" + path);
+    when(appUtils.getRelativePathForAnalysis(project, file)).thenReturn(path);
     return file;
   }
 }

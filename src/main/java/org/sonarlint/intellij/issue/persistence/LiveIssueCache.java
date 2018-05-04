@@ -30,17 +30,25 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 public class LiveIssueCache extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(LiveIssueCache.class);
-  static final int MAX_ENTRIES = 10_000;
+  static final int DEFAULT_MAX_ENTRIES = 10_000;
   private final Map<VirtualFile, Collection<LiveIssue>> cache;
   private final IssuePersistence store;
+  private final SonarLintAppUtils appUtils;
+  private final int maxEntries;
 
-  public LiveIssueCache(Project project, IssuePersistence store) {
+  public LiveIssueCache(Project project, IssuePersistence store, SonarLintAppUtils appUtils) {
+    this(project, store, appUtils, DEFAULT_MAX_ENTRIES);
+  }
+
+  LiveIssueCache(Project project, IssuePersistence store, SonarLintAppUtils appUtils, int maxEntries) {
     super(project);
     this.store = store;
+    this.appUtils = appUtils;
+    this.maxEntries = maxEntries;
     this.cache = new LimitedSizeLinkedHashMap();
   }
 
@@ -50,12 +58,12 @@ public class LiveIssueCache extends AbstractProjectComponent {
    */
   private class LimitedSizeLinkedHashMap extends LinkedHashMap<VirtualFile, Collection<LiveIssue>> {
     LimitedSizeLinkedHashMap() {
-      super(MAX_ENTRIES, 0.75f, true);
+      super(maxEntries, 0.75f, true);
     }
 
     @Override
     protected boolean removeEldestEntry(Map.Entry<VirtualFile, Collection<LiveIssue>> eldest) {
-      if (size() <= MAX_ENTRIES) {
+      if (size() <= maxEntries) {
         return false;
       }
 
@@ -120,6 +128,6 @@ public class LiveIssueCache extends AbstractProjectComponent {
   }
 
   private String createKey(VirtualFile virtualFile) {
-    return SonarLintUtils.getRelativePath(myProject, virtualFile);
+    return appUtils.getRelativePathForAnalysis(myProject, virtualFile);
   }
 }

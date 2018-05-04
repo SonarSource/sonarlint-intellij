@@ -65,7 +65,7 @@ public class SonarLintSubmitterTest extends SonarTest {
   @Before
   public void start() throws InvalidBindingException {
     when(bindingManager.getFacade()).thenReturn(facade);
-    when(facade.getExcluded(anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
+    when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
     super.register(module, VirtualFileTestPredicate.class, testPredicate);
@@ -110,7 +110,7 @@ public class SonarLintSubmitterTest extends SonarTest {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
-    when(facade.getExcluded(anyCollection(), any(Predicate.class))).thenReturn(Collections.singleton(f1));
+    when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.singleton(f1));
     submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false);
     verifyZeroInteractions(sonarLintJobManager);
   }
@@ -164,7 +164,7 @@ public class SonarLintSubmitterTest extends SonarTest {
     when(utils.findModuleForFile(f3, project)).thenReturn(m3);
     when(exclusions.checkExclusions(f3, m3)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
-    when(facade.getExcluded(any(), any())).thenReturn(Arrays.asList(f1, f2));
+    when(facade.getExcluded(any(Module.class), any(), any())).thenReturn(Arrays.asList(f1, f2));
 
     submitter.submitFiles(Arrays.asList(f1, f2, f3), TriggerType.EDITOR_OPEN, true);
     verify(sonarLintJobManager).submitBackground(eq(Collections.singletonMap(m3, Collections.singleton(f3))), eq(TriggerType.EDITOR_OPEN), eq(null));

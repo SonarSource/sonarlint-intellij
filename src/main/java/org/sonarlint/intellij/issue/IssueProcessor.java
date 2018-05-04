@@ -116,11 +116,10 @@ public class IssueProcessor extends AbstractProjectComponent {
   }
 
   private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
-    Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
     Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
 
     for (VirtualFile f : analyzed) {
-      if (failedVirtualFiles.contains(f)) {
+      if (failedAnalysisFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
         // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
@@ -133,8 +132,8 @@ public class IssueProcessor extends AbstractProjectComponent {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<LiveIssue>> transformIssues(
-    Collection<Issue> issues, Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
+  private Map<VirtualFile, Collection<LiveIssue>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analyzed,
+    Collection<ClientInputFile> failedAnalysisFiles) {
 
     Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
 
@@ -150,7 +149,7 @@ public class IssueProcessor extends AbstractProjectComponent {
         continue;
       }
       try {
-        LiveIssue toStore = transformIssue(issue, vFile);
+        LiveIssue toStore = transformIssue(issue, inputFile);
         map.get(vFile).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         console.error("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
@@ -163,8 +162,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     return map;
   }
 
-  private LiveIssue transformIssue(Issue issue, VirtualFile vFile) throws IssueMatcher.NoMatchException {
-    PsiFile psiFile = matcher.findFile(vFile);
+  private LiveIssue transformIssue(Issue issue, ClientInputFile inputFile) throws IssueMatcher.NoMatchException {
+    PsiFile psiFile = matcher.findFile(inputFile.getClientObject());
     if (issue.getStartLine() != null) {
       RangeMarker rangeMarker = matcher.match(psiFile, issue);
       List<LiveIssue.Flow> flows = transformFlows(psiFile, issue.flows(), issue.getRuleKey());

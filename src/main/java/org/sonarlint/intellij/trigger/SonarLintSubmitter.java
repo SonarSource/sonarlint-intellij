@@ -159,7 +159,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
       List<Module> modules = new ArrayList<>(filesByModule.keySet());
       for (Module module : modules) {
         VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
-        Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(filesByModule.get(module), testPredicate);
+        Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, filesByModule.get(module), testPredicate);
         for (VirtualFile f : excluded) {
           logExclusion(f, "not automatically analyzed due to exclusions configured in the SonarQube Server");
         }
