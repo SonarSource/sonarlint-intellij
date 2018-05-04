@@ -32,8 +32,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -41,6 +39,7 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
@@ -64,22 +63,17 @@ public class ServerIssueUpdaterTest extends SonarTest {
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
 
-  @Mock
-  private Project project;
-  @Mock
-  private IssueManager issueManager;
-  @Mock
-  private ProjectBindingManager bindingManager;
-  @Mock
-  private SonarLintConsole console;
-  @Mock
-  private ProgressIndicator indicator;
+  private Project project = mock(Project.class);
+  private IssueManager issueManager = mock(IssueManager.class);
+  private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
+  private SonarLintConsole console = mock(SonarLintConsole.class);
+  private ProgressIndicator indicator = mock(ProgressIndicator.class);
+  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   private Path projectBaseDir;
 
   @Before
   public void prepare() throws IOException {
-    MockitoAnnotations.initMocks(this);
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
 
     projectBaseDir = temp.newFolder().toPath();
@@ -88,7 +82,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     when(project.getBasePath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.toString()));
     settings = new SonarLintProjectSettings();
     settings.setProjectKey(PROJECT_KEY);
-    updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console);
+    updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console, appUtils);
   }
 
   @Test
@@ -106,7 +100,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     ServerIssue serverIssue = mock(ServerIssue.class);
     String filename = "MyFile.txt";
-    when(file.getPath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.resolve(filename).toString()));
+    when(appUtils.getRelativePathForAnalysis(project, file)).thenReturn(filename);
 
     // mock creation of engine / server
     ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
@@ -137,8 +131,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
       VirtualFile file = mock(VirtualFile.class);
-      String filename = "MyFile" + i + ".txt";
-      when(file.getPath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.resolve(filename).toString()));
+      when(appUtils.getRelativePathForAnalysis(project, file)).thenReturn("MyFile" + i + ".txt");
       files.add(file);
     }
     ServerIssue serverIssue = mock(ServerIssue.class);

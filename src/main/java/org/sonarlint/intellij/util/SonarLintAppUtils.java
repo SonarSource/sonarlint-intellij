@@ -25,6 +25,8 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectLocator;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import javax.annotation.CheckForNull;
@@ -52,5 +54,54 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   public boolean isOpenFile(Project project, VirtualFile file) {
     VirtualFile[] openFiles = FileEditorManager.getInstance(project).getOpenFiles();
     return Arrays.stream(openFiles).anyMatch(f -> f.equals(file));
+  }
+
+  /**
+   * If you already know the module where the file belongs, use {@link #getRelativePathForAnalysis(Module, VirtualFile)}
+   * Path will always contain forward slashes.
+   */
+  @CheckForNull
+  public String getRelativePathForAnalysis(Project project, VirtualFile virtualFile) {
+    Module module = findModuleForFile(virtualFile, project);
+    if (module == null) {
+      return null;
+    }
+    return getRelativePathForAnalysis(module, virtualFile);
+  }
+
+  /**
+   * Path will always contain forward slashes.
+   */
+  @CheckForNull
+  public String getRelativePathForAnalysis(Module module, VirtualFile virtualFile) {
+    if (module.getProject().getBasePath() != null) {
+      String relativePathToProject = VfsUtil.getRelativePath(virtualFile, module.getProject().getBaseDir());
+      if (relativePathToProject != null) {
+        return relativePathToProject;
+      }
+    }
+
+    String relativePathToModule = getPathRelativeToModuleBaseDir(module, virtualFile);
+    if (relativePathToModule != null) {
+      return relativePathToModule;
+    }
+
+    return getPathRelativeToContentRoot(module, virtualFile);
+  }
+
+  @CheckForNull
+  public String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
+    return VfsUtil.getRelativePath(file, module.getModuleFile().getParent());
+  }
+
+  @CheckForNull
+  public String getPathRelativeToContentRoot(Module module, VirtualFile file) {
+    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+    for (VirtualFile root : moduleRootManager.getContentRoots()) {
+      if (VfsUtil.isAncestor(root, file, true)) {
+        return VfsUtil.getRelativePath(root, file);
+      }
+    }
+    return null;
   }
 }

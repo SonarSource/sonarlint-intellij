@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
@@ -60,7 +61,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public Collection<VirtualFile> getExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
+  public Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
     return Collections.emptyList();
   }
 

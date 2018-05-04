@@ -67,7 +67,6 @@ public class AutoTriggerStatusPanel {
   private final SonarLintAppUtils utils;
   private final SonarLintGlobalSettings globalSettings;
   private final LocalFileExclusions localFileExclusions;
-  private final SonarLintConsole console;
 
   private JPanel panel;
   private CardLayout layout;
@@ -78,7 +77,6 @@ public class AutoTriggerStatusPanel {
     this.utils = SonarLintUtils.get(SonarLintAppUtils.class);
     this.globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
     this.localFileExclusions = SonarLintUtils.get(project, LocalFileExclusions.class);
-    this.console = SonarLintUtils.get(project, SonarLintConsole.class);
     createPanel();
     switchCards();
     subscribeToEvents();
@@ -116,22 +114,16 @@ public class AutoTriggerStatusPanel {
     }
 
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
-    if (selectedFile == null) {
-      return AUTO_TRIGGER_ENABLED;
-    }
+    if (selectedFile != null) {
+      Module m = utils.findModuleForFile(selectedFile, project);
+      LocalFileExclusions.Result result = localFileExclusions.checkExclusions(selectedFile, m);
+      if (result.isExcluded()) {
+        return FILE_DISABLED;
+      }
 
-    Module m = utils.findModuleForFile(selectedFile, project);
-    if (m == null) {
-      return FILE_DISABLED;
-    }
-
-    LocalFileExclusions.Result result = localFileExclusions.checkExclusions(selectedFile, m);
-    if (result.isExcluded()) {
-      return FILE_DISABLED;
-    }
-
-    if (isExcludedInServer(m, selectedFile)) {
-      return FILE_DISABLED;
+      if (isExcludedInServer(m, selectedFile)) {
+        return FILE_DISABLED;
+      }
     }
 
     return AUTO_TRIGGER_ENABLED;
@@ -140,7 +132,7 @@ public class AutoTriggerStatusPanel {
   private boolean isExcludedInServer(Module m, VirtualFile f) {
     VirtualFileTestPredicate testPredicate = SonarLintUtils.get(m, VirtualFileTestPredicate.class);
     try {
-      Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().getExcluded(Collections.singleton(f), testPredicate);
+      Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().getExcluded(m, Collections.singleton(f), testPredicate);
       return !afterExclusion.isEmpty();
     } catch (InvalidBindingException e) {
       // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager

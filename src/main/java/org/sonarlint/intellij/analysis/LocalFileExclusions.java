@@ -42,7 +42,7 @@ import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isExcludedOrUnderExcludedDirectory;
@@ -50,6 +50,7 @@ import static org.sonarlint.intellij.util.SonarLintUtils.isJavaGeneratedSource;
 import static org.sonarlint.intellij.util.SonarLintUtils.isJavaResource;
 
 public class LocalFileExclusions {
+  private final SonarLintAppUtils appUtils;
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
   private Supplier<Boolean> powerSaveModeCheck;
@@ -57,11 +58,13 @@ public class LocalFileExclusions {
   /**
    * Used by pico container
    */
-  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings) {
-    this(project, settings, projectSettings, PowerSaveMode::isEnabled);
+  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils) {
+    this(project, settings, projectSettings, appUtils, PowerSaveMode::isEnabled);
   }
 
-  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, Supplier<Boolean> powerSaveModeCheck) {
+  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
+    Supplier<Boolean> powerSaveModeCheck) {
+    this.appUtils = appUtils;
     loadGlobalExclusions(settings);
     loadProjectExclusions(projectSettings);
     subscribeToSettingsChanges(project);
@@ -120,7 +123,10 @@ public class LocalFileExclusions {
       return r;
     }
 
-    String relativePath = SonarLintUtils.getRelativePath(module.getProject(), file);
+    String relativePath = appUtils.getRelativePathForAnalysis(module, file);
+    if (relativePath == null) {
+      return Result.excluded("Could not create a relative path");
+    }
     if (globalExclusions.test(relativePath)) {
       return Result.excluded("file matches exclusions defined in the SonarLint Global Settings");
     }

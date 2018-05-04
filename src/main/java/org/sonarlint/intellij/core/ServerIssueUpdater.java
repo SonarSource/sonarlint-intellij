@@ -45,6 +45,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.ServerIssueTrackable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -67,17 +68,19 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private final SonarLintProjectSettings projectSettings;
   private final ProjectBindingManager projectBindingManager;
   private final SonarLintConsole console;
+  private final SonarLintAppUtils appUtils;
 
   ServerIssueUpdater(Project project, IssueManager issueManager, SonarLintProjectSettings projectSettings,
-    ProjectBindingManager projectBindingManager, SonarLintConsole console) {
+    ProjectBindingManager projectBindingManager, SonarLintConsole console, SonarLintAppUtils appUtils) {
     super(project);
     this.issueManager = issueManager;
     this.projectSettings = projectSettings;
     this.projectBindingManager = projectBindingManager;
     this.console = console;
+    this.appUtils = appUtils;
   }
 
-  public void fetchAndMatchServerIssues(Collection<VirtualFile> virtualFiles, ProgressIndicator indicator, boolean waitForCompletion) {
+  public void fetchAndMatchServerIssues(Collection<VirtualFile> files, ProgressIndicator indicator, boolean waitForCompletion) {
     if (!projectSettings.isBindingEnabled()) {
       // not in connected mode
       return;
@@ -88,7 +91,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
 
       String moduleKey = projectSettings.getProjectKey();
-      boolean downloadAll = virtualFiles.size() >= FETCH_ALL_ISSUES_THRESHOLD;
+      boolean downloadAll = files.size() >= FETCH_ALL_ISSUES_THRESHOLD;
       String msg;
 
       if (downloadAll) {
@@ -103,7 +106,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       indicator.setText(msg);
 
       // submit tasks
-      List<Future<Void>> updateTasks = fetchAndMatchServerIssues(virtualFiles, server, engine, moduleKey, downloadAll);
+      List<Future<Void>> updateTasks = fetchAndMatchServerIssues(files, server, engine, moduleKey, downloadAll);
 
       if (waitForCompletion) {
         waitForTasks(updateTasks);
@@ -132,17 +135,21 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     IssueUpdater issueUpdater = new IssueUpdater(server, engine, moduleKey);
 
     if (!downloadAll) {
-      for (VirtualFile virtualFile : files) {
-        String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
-        Runnable task = () -> issueUpdater.downloadAndMatchFile(virtualFile, relativePath);
-        futureList.add(submit(task, moduleKey, relativePath));
+      for (VirtualFile file : files) {
+        String relativePath = appUtils.getRelativePathForAnalysis(myProject, file);
+        if (relativePath != null) {
+          Runnable task = () -> issueUpdater.downloadAndMatchFile(file, relativePath);
+          futureList.add(submit(task, moduleKey, relativePath));
+        }
       }
     } else {
       Runnable task = () -> {
         issueUpdater.downloadAllServerIssues();
-        for (VirtualFile virtualFile : files) {
-          String relativePath = SonarLintUtils.getRelativePath(myProject, virtualFile);
-          issueUpdater.fetchAndMatchFile(virtualFile, relativePath);
+        for (VirtualFile file : files) {
+          String relativePath = appUtils.getRelativePathForAnalysis(myProject, file);
+          if (relativePath != null) {
+            issueUpdater.fetchAndMatchFile(file, relativePath);
+          }
         }
       };
       futureList.add(submit(task, moduleKey, null));

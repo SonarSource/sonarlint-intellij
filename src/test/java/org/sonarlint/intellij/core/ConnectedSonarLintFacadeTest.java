@@ -23,10 +23,9 @@ import com.intellij.openapi.project.Project;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -43,22 +42,19 @@ import static org.mockito.Mockito.when;
 public class ConnectedSonarLintFacadeTest {
   private final String moduleKey = "module1";
 
-  @Mock
-  private ConnectedSonarLintEngine engine;
-  @Mock
-  private Project project;
-  @Mock
-  private SonarLintConsole console;
+  private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
+  private Project project = mock(Project.class);
+  private SonarLintConsole console = mock(SonarLintConsole.class);
+  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   private SonarLintProjectSettings settings;
   private ConnectedSonarLintFacade facade;
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
     settings = new SonarLintProjectSettings();
     when(project.getBasePath()).thenReturn("");
-    facade = new ConnectedSonarLintFacade(engine, settings, console, project, moduleKey);
+    facade = new ConnectedSonarLintFacade(appUtils, engine, settings, console, project, moduleKey);
   }
 
   @Test

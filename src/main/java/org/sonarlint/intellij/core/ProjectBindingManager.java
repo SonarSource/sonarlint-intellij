@@ -29,18 +29,21 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 public class ProjectBindingManager extends AbstractProjectComponent {
+  private final SonarLintAppUtils appUtils;
   private final SonarLintEngineManager engineManager;
   private final SonarLintProjectSettings projectSettings;
   private final SonarLintGlobalSettings globalSettings;
   private final SonarLintProjectNotifications notifications;
   private final SonarLintConsole console;
 
-  public ProjectBindingManager(Project project, SonarLintEngineManager engineManager, SonarLintProjectSettings projectSettings,
+  public ProjectBindingManager(SonarLintAppUtils appUtils, Project project, SonarLintEngineManager engineManager, SonarLintProjectSettings projectSettings,
     SonarLintGlobalSettings globalSettings, SonarLintProjectNotifications notifications, SonarLintConsole console) {
     super(project);
+    this.appUtils = appUtils;
     this.engineManager = engineManager;
     this.projectSettings = projectSettings;
     this.globalSettings = globalSettings;
@@ -68,7 +71,7 @@ public class ProjectBindingManager extends AbstractProjectComponent {
       }
 
       ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, serverId, projectKey);
-      return new ConnectedSonarLintFacade(engine, projectSettings, console, myProject, projectKey);
+      return new ConnectedSonarLintFacade(appUtils, engine, projectSettings, console, myProject, projectKey);
     }
     return new StandaloneSonarLintFacade(projectSettings, console, myProject, engineManager.getStandaloneEngine());
   }

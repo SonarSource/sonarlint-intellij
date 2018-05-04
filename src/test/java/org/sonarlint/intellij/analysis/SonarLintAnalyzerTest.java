@@ -33,6 +33,7 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
@@ -52,12 +53,13 @@ public class SonarLintAnalyzerTest extends SonarTest {
   private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
   private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
   private SonarLintTelemetry telemetry = mock(SonarLintTelemetry.class);
+  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   private SonarLintAnalyzer analyzer;
 
   @Before
   public void prepare() throws InvalidBindingException {
-    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app, telemetry);
+    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app, telemetry, appUtils);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
     super.register(module, VirtualFileTestPredicate.class, testPredicate);

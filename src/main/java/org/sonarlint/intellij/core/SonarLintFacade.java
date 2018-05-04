@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
@@ -63,7 +64,7 @@ public abstract class SonarLintFacade {
     return analyze(baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
   }
 
-  public abstract Collection<VirtualFile> getExcluded(Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
+  public abstract Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
 
   @CheckForNull
   public String getDescription(String ruleKey) {

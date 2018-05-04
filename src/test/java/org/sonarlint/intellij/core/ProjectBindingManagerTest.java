@@ -30,6 +30,7 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -43,12 +44,13 @@ import static org.mockito.Mockito.when;
 
 public class ProjectBindingManagerTest {
   private ProjectBindingManager projectBindingManager;
-  private SonarLintProjectSettings settings;
-  private SonarLintGlobalSettings globalSettings;
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
 
-  private StandaloneSonarLintEngine standaloneEngine;
-  private ConnectedSonarLintEngine connectedEngine;
-  private SonarLintEngineManager engineManager;
+  private StandaloneSonarLintEngine standaloneEngine = mock(StandaloneSonarLintEngine.class);
+  private ConnectedSonarLintEngine connectedEngine = mock(ConnectedSonarLintEngine.class);
+  private SonarLintEngineManager engineManager = mock(SonarLintEngineManager.class);
+  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
@@ -57,18 +59,12 @@ public class ProjectBindingManagerTest {
   public void setUp() throws InvalidBindingException {
     SonarLintConsole console = mock(SonarLintConsole.class);
     Project project = mock(Project.class);
-    engineManager = mock(SonarLintEngineManager.class);
     SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
 
-    standaloneEngine = mock(StandaloneSonarLintEngine.class);
-    connectedEngine = mock(ConnectedSonarLintEngine.class);
-
-    settings = new SonarLintProjectSettings();
-    globalSettings = new SonarLintGlobalSettings();
     when(engineManager.getStandaloneEngine()).thenReturn(standaloneEngine);
     when(engineManager.getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), anyString())).thenReturn(connectedEngine);
     when(project.getBasePath()).thenReturn("");
-    projectBindingManager = new ProjectBindingManager(project, engineManager, settings, globalSettings, notifications, console);
+    projectBindingManager = new ProjectBindingManager(appUtils, project, engineManager, settings, globalSettings, notifications, console);
   }
 
   @Test
