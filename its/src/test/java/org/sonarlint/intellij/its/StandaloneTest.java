@@ -119,7 +119,7 @@ public class StandaloneTest {
     assertThat(issues)
       .extracting("ruleKey", "startLine", "inputFile.path", "severity")
       .containsOnly(
-        tuple("python:PrintStatementUsage", 1, inputFile.getPath(), "BLOCKER"));
+        tuple("python:PrintStatementUsage", 1, inputFile.getPath(), "MAJOR"));
   }
 
   @Test
