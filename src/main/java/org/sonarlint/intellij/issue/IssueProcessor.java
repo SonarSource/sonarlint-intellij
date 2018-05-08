@@ -117,9 +117,10 @@ public class IssueProcessor extends AbstractProjectComponent {
 
   private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
+    Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
     for (VirtualFile f : analyzed) {
-      if (failedAnalysisFiles.contains(f)) {
+      if (failedVirtualFiles.contains(f)) {
         console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
         // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
