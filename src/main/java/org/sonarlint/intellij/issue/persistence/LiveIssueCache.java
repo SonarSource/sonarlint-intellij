@@ -110,8 +110,11 @@ public class LiveIssueCache extends AbstractProjectComponent {
     });
   }
 
+  /**
+   * Use {@link #projectClosed} instead of {@link #disposeComponent} because the latter can't access the project index anymore.
+   */
   @Override
-  public synchronized void disposeComponent() {
+  public synchronized void projectClosed() {
     flushAll();
   }
 
