@@ -99,7 +99,7 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     for (VirtualFile root : moduleRootManager.getContentRoots()) {
       if (VfsUtil.isAncestor(root, file, true)) {
-        return VfsUtil.getRelativePath(root, file);
+        return VfsUtil.getRelativePath(file, root);
       }
     }
     return null;

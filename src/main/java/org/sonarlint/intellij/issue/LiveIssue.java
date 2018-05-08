@@ -221,7 +221,7 @@ public class LiveIssue implements Trackable {
     private final RangeMarker location;
     private final String message;
 
-    public IssueLocation(RangeMarker location, String message) {
+    public IssueLocation(RangeMarker location, @Nullable String message) {
       this.location = location;
       this.message = message;
     }
