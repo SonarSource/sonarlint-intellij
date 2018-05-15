@@ -91,24 +91,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static String getLanguageLevelOption(LanguageLevel level) {
-    switch (level) {
-      case JDK_1_3:
-        return "1.3";
-      case JDK_1_4:
-        return "1.4";
-      case JDK_1_5:
-        return "1.5";
-      case JDK_1_6:
-        return "1.6";
-      case JDK_1_7:
-        return "1.7";
-      case JDK_1_8:
-        return "8";
-      case JDK_1_9:
-        return "9";
-      default:
-        return "";
-    }
+    return level.getCompilerComplianceDefaultOption();
   }
 
   private static void configureBinaries(Module ijModule, Map<String, String> properties) {
