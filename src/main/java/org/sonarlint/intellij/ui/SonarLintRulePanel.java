@@ -29,6 +29,7 @@ import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
 import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.SwingHelper;
 import icons.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
@@ -75,8 +76,8 @@ public class SonarLintRulePanel {
     this.kit = new CustomHTMLEditorKit();
     StyleSheet styleSheet = kit.getStyleSheet();
     EditorColorsScheme scheme = EditorColorsManager.getInstance().getGlobalScheme();
-    String fontName = scheme.getFontPreferences().getFontFamily();
-    styleSheet.addRule("body {font-family:" + fontName + "; font-size: " + FontSize.SMALL.getSize() + ";}");
+    //String fontName = scheme.getFontPreferences().getFontFamily();
+    //styleSheet.addRule("body {font-family:" + fontName + "; font-size: " + FontSize.SMALL.getSize() + ";}");
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
 
@@ -96,6 +97,7 @@ public class SonarLintRulePanel {
           nothingToDisplay(true);
           return;
         }
+
 
         StringBuilder builder = new StringBuilder(description.length() + 64);
         builder.append("<h2>")
@@ -154,7 +156,7 @@ public class SonarLintRulePanel {
       panel.add(editor, BorderLayout.CENTER);
     }
 
-    editor.setText(text);
+    SwingHelper.setHtml(editor, text, null);
     editor.setCaretPosition(0);
     panel.revalidate();
   }
