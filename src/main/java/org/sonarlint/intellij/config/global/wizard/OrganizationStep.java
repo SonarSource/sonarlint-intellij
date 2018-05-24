@@ -20,13 +20,17 @@
 package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
-import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.ListSpeedSearch;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBList;
 import com.intellij.util.containers.Convertor;
-import java.util.List;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import javax.swing.DefaultListModel;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -39,16 +43,39 @@ import static javax.swing.JList.VERTICAL;
 
 public class OrganizationStep extends AbstractWizardStepEx {
   private final WizardModel model;
-  private JList orgList;
+  private JList<RemoteOrganization> orgList;
   private JPanel panel;
+  private JButton selectOtherOrganizationButton;
+  private DefaultListModel<RemoteOrganization> listModel;
 
   public OrganizationStep(WizardModel model) {
     super("Organization");
     this.model = model;
+
+    orgList.addListSelectionListener(e -> fireStateChanged());
+    orgList.addMouseListener(new MouseAdapter() {
+      @Override public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2 && isComplete()) {
+          OrganizationStep.super.fireGoNext();
+        }
+      }
+    });
+    selectOtherOrganizationButton.addActionListener(e -> {
+      String organizationKey = Messages.showInputDialog(panel, "Please enter the organization key", "Add Another Organization", null);
+      if (StringUtil.isNotEmpty(organizationKey)) {
+        boolean found = selectOrganizationIfExists(organizationKey);
+        if (!found) {
+          RemoteOrganization newOrg = new Organization(organizationKey);
+          listModel.add(0, newOrg);
+          orgList.setSelectedIndex(0);
+          orgList.ensureIndexIsVisible(0);
+        }
+      }
+    });
   }
 
   private void save() {
-    RemoteOrganization org = (RemoteOrganization) orgList.getSelectedValue();
+    RemoteOrganization org = orgList.getSelectedValue();
     if (org != null) {
       model.setOrganization(org.getKey());
     } else {
@@ -58,20 +85,49 @@ public class OrganizationStep extends AbstractWizardStepEx {
 
   @Override
   public void _init() {
-    List<RemoteOrganization> list = model.getOrganizationList();
-    int size = list.size();
-    orgList.setListData(list.toArray(new RemoteOrganization[size]));
-    orgList.addListSelectionListener(e -> fireStateChanged());
+    listModel = new DefaultListModel<>();
+    model.getOrganizationList().forEach(listModel::addElement);
+    orgList.setModel(listModel);
+    // automatically focus and select a row to be possible to search immediately
+    orgList.grabFocus();
     if (model.getOrganization() != null) {
-      for (int i = 0; i < orgList.getModel().getSize(); i++) {
-        RemoteOrganization org = (RemoteOrganization) orgList.getModel().getElementAt(i);
-        if (model.getOrganization().equals(org.getKey())) {
-          orgList.setSelectedIndex(i);
-          orgList.ensureIndexIsVisible(i);
-          break;
-        }
+      // this won't work if it was a custom organization
+      selectOrganizationIfExists(model.getOrganization());
+    } else if (!listModel.isEmpty()) {
+      orgList.setSelectedIndex(0);
+    }
+  }
+
+  private static class Organization implements RemoteOrganization {
+    private final String key;
+
+    Organization(String key) {
+      this.key = key;
+    }
+
+    @Override public String getKey() {
+      return key;
+    }
+
+    @Override public String getName() {
+      return getKey();
+    }
+
+    @Override public String getDescription() {
+      return "";
+    }
+  }
+
+  private boolean selectOrganizationIfExists(String organizationKey) {
+    for (int i = 0; i < listModel.getSize(); i++) {
+      RemoteOrganization org = listModel.getElementAt(i);
+      if (organizationKey.equals(org.getKey())) {
+        orgList.setSelectedIndex(i);
+        orgList.ensureIndexIsVisible(i);
+        return true;
       }
     }
+    return false;
   }
 
   @NotNull @Override public Object getStepId() {
@@ -87,11 +143,12 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   @Override public boolean isComplete() {
-    return model.getOrganizationList().size() <= 1 || orgList.getSelectedValue() != null;
+    return orgList.getSelectedValue() != null;
   }
 
-  @Override public void commit(CommitType commitType) throws CommitStepException {
+  @Override public void commit(CommitType commitType) {
     if (commitType == CommitType.Finish || commitType == CommitType.Next) {
+      // FIXME check if org exists?
       save();
     }
   }
@@ -105,7 +162,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    JBList list = new JBList();
+    JBList<RemoteOrganization> list = new JBList<>();
     list.setLayoutOrientation(VERTICAL);
     list.setVisibleRowCount(8);
     list.setEnabled(true);
@@ -117,7 +174,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
       return org.getName() + " " + org.getKey();
     };
     new ListSpeedSearch(list, convertor);
-    this.orgList = list;
+    orgList = list;
   }
 
   private static class ListRenderer extends ColoredListCellRenderer<RemoteOrganization> {

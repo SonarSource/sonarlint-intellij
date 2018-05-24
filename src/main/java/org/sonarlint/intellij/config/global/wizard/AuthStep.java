@@ -119,7 +119,7 @@ public class AuthStep extends AbstractWizardStepEx {
     }
   }
 
-  public void save() {
+  private void save() {
     if (authComboBox.getSelectedItem().equals(LOGIN_ITEM)) {
       model.setToken(null);
       model.setLogin(loginField.getText());

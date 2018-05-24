@@ -57,7 +57,7 @@ public class InformationFetchTask extends Task.Modal {
       indicator.setText("Checking support of notifications");
       notificationsSupported = SonarQubeNotifications.get().isSupported(serverConfiguration);
       WsHelper wsHelper = new WsHelperImpl();
-      organizations = wsHelper.listOrganizations(serverConfiguration, new TaskProgressMonitor(indicator));
+      organizations = wsHelper.listUserOrganizations(serverConfiguration, new TaskProgressMonitor(indicator));
     } catch (UnsupportedServerException e) {
       organizations = Collections.emptyList();
     } catch (Exception e) {
