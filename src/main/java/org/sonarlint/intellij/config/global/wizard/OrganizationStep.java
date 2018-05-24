@@ -87,6 +87,8 @@ public class OrganizationStep extends AbstractWizardStepEx {
         } else {
           Messages.showErrorDialog(String.format("Organization '%s' not found. Please enter the key of an existing organization.", organizationKey), "Organization Not Found");
         }
+      } else {
+        break;
       }
     }
   }
