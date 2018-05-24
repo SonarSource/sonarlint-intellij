@@ -158,7 +158,8 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    JBList<RemoteOrganization> list = new JBList<>();
+    // JBList is not generic in intellij < 2016.3.2
+    JBList list = new JBList();
     list.setLayoutOrientation(VERTICAL);
     list.setVisibleRowCount(8);
     list.setEnabled(true);
