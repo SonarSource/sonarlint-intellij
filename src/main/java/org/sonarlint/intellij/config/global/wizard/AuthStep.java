@@ -183,11 +183,6 @@ public class AuthStep extends AbstractWizardStepEx {
     ProgressManager.getInstance().run(task);
     if (task.getException() == null) {
       model.setOrganizationList(task.organizations());
-      if (task.organizations().size() == 1) {
-        model.setOrganization(task.organizations().iterator().next().getKey());
-      } else if (task.organizations().isEmpty()) {
-        model.setOrganization(null);
-      }
       model.setNotificationsSupported(task.notificationsSupported());
       return;
     }

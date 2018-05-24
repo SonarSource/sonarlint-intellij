@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.ColoredListCellRenderer;
@@ -37,6 +38,7 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
 import static javax.swing.JList.VERTICAL;
@@ -60,18 +62,33 @@ public class OrganizationStep extends AbstractWizardStepEx {
         }
       }
     });
-    selectOtherOrganizationButton.addActionListener(e -> {
+    selectOtherOrganizationButton.addActionListener(e -> enterCustomOrganizationKey());
+  }
+
+  private void enterCustomOrganizationKey() {
+    while (true) {
       String organizationKey = Messages.showInputDialog(panel, "Please enter the organization key", "Add Another Organization", null);
       if (StringUtil.isNotEmpty(organizationKey)) {
         boolean found = selectOrganizationIfExists(organizationKey);
-        if (!found) {
-          RemoteOrganization newOrg = new Organization(organizationKey);
-          listModel.add(0, newOrg);
+        if (found) {
+          break;
+        }
+
+        GetOrganizationTask task = new GetOrganizationTask(model.createServerWithoutOrganization(), organizationKey);
+        ProgressManager.getInstance().run(task);
+
+        if (task.organization() != null) {
+          listModel.add(0, task.organization());
           orgList.setSelectedIndex(0);
           orgList.ensureIndexIsVisible(0);
+          break;
+        } else if (task.getException() != null) {
+          Messages.showErrorDialog("Failed to fetch organization from SonarQube server: " + task.getException().getMessage(), "Connection Failure");
+        } else {
+          Messages.showErrorDialog(String.format("Organization '%s' not found. Please enter the key of an existing organization.", organizationKey), "Organization Not Found");
         }
       }
-    });
+    }
   }
 
   private void save() {
@@ -95,26 +112,6 @@ public class OrganizationStep extends AbstractWizardStepEx {
       selectOrganizationIfExists(model.getOrganization());
     } else if (!listModel.isEmpty()) {
       orgList.setSelectedIndex(0);
-    }
-  }
-
-  private static class Organization implements RemoteOrganization {
-    private final String key;
-
-    Organization(String key) {
-      this.key = key;
-    }
-
-    @Override public String getKey() {
-      return key;
-    }
-
-    @Override public String getName() {
-      return getKey();
-    }
-
-    @Override public String getDescription() {
-      return "";
     }
   }
 
@@ -148,7 +145,6 @@ public class OrganizationStep extends AbstractWizardStepEx {
 
   @Override public void commit(CommitType commitType) {
     if (commitType == CommitType.Finish || commitType == CommitType.Next) {
-      // FIXME check if org exists?
       save();
     }
   }
