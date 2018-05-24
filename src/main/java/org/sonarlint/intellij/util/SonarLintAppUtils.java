@@ -91,7 +91,8 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
 
   @CheckForNull
   public String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
-    return VfsUtil.getRelativePath(file, module.getModuleFile().getParent());
+    VirtualFile moduleFile = module.getModuleFile();
+    return moduleFile == null ? null : VfsUtil.getRelativePath(file, moduleFile.getParent());
   }
 
   @CheckForNull
