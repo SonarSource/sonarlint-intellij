@@ -96,9 +96,9 @@ public class OrganizationStep extends AbstractWizardStepEx {
   private void save() {
     RemoteOrganization org = orgList.getSelectedValue();
     if (org != null) {
-      model.setOrganization(org.getKey());
+      model.setOrganizationKey(org.getKey());
     } else {
-      model.setOrganization(null);
+      model.setOrganizationKey(null);
     }
   }
 
@@ -109,9 +109,9 @@ public class OrganizationStep extends AbstractWizardStepEx {
     orgList.setModel(listModel);
     // automatically focus and select a row to be possible to search immediately
     orgList.grabFocus();
-    if (model.getOrganization() != null) {
+    if (model.getOrganizationKey() != null) {
       // this won't work if it was a custom organization
-      selectOrganizationIfExists(model.getOrganization());
+      selectOrganizationIfExists(model.getOrganizationKey());
     } else if (!listModel.isEmpty()) {
       orgList.setSelectedIndex(0);
     }

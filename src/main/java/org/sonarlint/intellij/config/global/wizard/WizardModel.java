@@ -34,7 +34,7 @@ public class WizardModel {
   private String login;
   private char[] password;
   private String name;
-  private String organization;
+  private String organizationKey;
   private boolean proxyEnabled;
   private boolean notificationsEnabled = true;
   private boolean notificationsSupported = false;
@@ -64,7 +64,7 @@ public class WizardModel {
     if (pass != null) {
       this.password = pass.toCharArray();
     }
-    this.organization = serverToEdit.getOrganizationKey();
+    this.organizationKey = serverToEdit.getOrganizationKey();
     this.notificationsEnabled = serverToEdit.enableNotifications();
     this.name = serverToEdit.getName();
   }
@@ -167,12 +167,12 @@ public class WizardModel {
   }
 
   @CheckForNull
-  public String getOrganization() {
-    return organization;
+  public String getOrganizationKey() {
+    return organizationKey;
   }
 
-  public WizardModel setOrganization(@Nullable String organization) {
-    this.organization = organization;
+  public WizardModel setOrganizationKey(@Nullable String organization) {
+    this.organizationKey = organization;
     return this;
   }
 
@@ -181,7 +181,7 @@ public class WizardModel {
   }
 
   public SonarQubeServer createServer() {
-    return createServer(organization);
+    return createServer(organizationKey);
   }
 
   private SonarQubeServer createServer(@Nullable String organizationKey) {

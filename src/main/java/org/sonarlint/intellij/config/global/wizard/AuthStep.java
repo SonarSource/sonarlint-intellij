@@ -42,6 +42,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
+import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.InformationFetchTask;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
@@ -181,17 +182,29 @@ public class AuthStep extends AbstractWizardStepEx {
     SonarQubeServer tmpServer = model.createServerWithoutOrganization();
     InformationFetchTask task = new InformationFetchTask(tmpServer);
     ProgressManager.getInstance().run(task);
-    if (task.getException() == null) {
-      model.setOrganizationList(task.organizations());
-      model.setNotificationsSupported(task.notificationsSupported());
-      return;
+    if (task.getException() != null) {
+      String msg = "Failed to fetch information from the server. Please check the configuration and try again.";
+      if (task.getException().getMessage() != null) {
+        msg = msg + " Error: " + task.getException().getMessage();
+      }
+      throw new CommitStepException(msg);
     }
 
-    String msg = "Failed to fetch information from the server. Please check the configuration and try again.";
-    if (task.getException().getMessage() != null) {
-      msg = msg + " Error: " + task.getException().getMessage();
+    model.setOrganizationList(task.organizations());
+    model.setNotificationsSupported(task.notificationsSupported());
+
+    if (model.getOrganizationKey() != null) {
+      GetOrganizationTask getOrganizationTask = new GetOrganizationTask(tmpServer, model.getOrganizationKey());
+      ProgressManager.getInstance().run(getOrganizationTask);
+      if (getOrganizationTask.getException() != null || getOrganizationTask.organization() == null) {
+        // ignore and reset organization
+        model.setOrganizationKey(null);
+      } else {
+        model.getOrganizationList().add(getOrganizationTask.organization());
+      }
     }
-    throw new CommitStepException(msg);
+
+    return;
   }
 
   private void checkConnection() throws CommitStepException {

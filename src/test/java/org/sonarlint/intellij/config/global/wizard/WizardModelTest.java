@@ -39,7 +39,7 @@ public class WizardModelTest {
     assertThat(model.getLogin()).isNull();
     assertThat(model.getPassword()).isNull();
     assertThat(model.getToken()).isEqualTo("token");
-    assertThat(model.getOrganization()).isEqualTo("org");
+    assertThat(model.getOrganizationKey()).isEqualTo("org");
     assertThat(model.getOrganizationList()).isNull();
     assertThat(model.getName()).isEqualTo("name");
     assertThat(model.getServerUrl()).isEqualTo("url");
@@ -49,7 +49,7 @@ public class WizardModelTest {
   public void testExportToConfig() {
     WizardModel model = new WizardModel();
     model.setName("name");
-    model.setOrganization("org");
+    model.setOrganizationKey("org");
     model.setServerUrl("url");
     model.setLogin("login");
     model.setProxyEnabled(true);
@@ -70,7 +70,7 @@ public class WizardModelTest {
   public void testExportSonarCloud() {
     WizardModel model = new WizardModel();
     model.setName("name");
-    model.setOrganization("org");
+    model.setOrganizationKey("org");
     model.setToken("token");
     model.setPassword(new char[] {'p', 'a', 's', 's'});
 
