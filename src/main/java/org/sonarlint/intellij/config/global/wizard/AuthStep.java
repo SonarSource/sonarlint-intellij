@@ -194,13 +194,16 @@ public class AuthStep extends AbstractWizardStepEx {
     model.setNotificationsSupported(task.notificationsSupported());
 
     if (model.getOrganizationKey() != null) {
-      GetOrganizationTask getOrganizationTask = new GetOrganizationTask(tmpServer, model.getOrganizationKey());
-      ProgressManager.getInstance().run(getOrganizationTask);
-      if (getOrganizationTask.getException() != null || getOrganizationTask.organization() == null) {
-        // ignore and reset organization
-        model.setOrganizationKey(null);
-      } else {
-        model.getOrganizationList().add(getOrganizationTask.organization());
+      boolean orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(model.getOrganizationKey()));
+      if (!orgExists) {
+        GetOrganizationTask getOrganizationTask = new GetOrganizationTask(tmpServer, model.getOrganizationKey());
+        ProgressManager.getInstance().run(getOrganizationTask);
+        if (getOrganizationTask.getException() != null || getOrganizationTask.organization() == null) {
+          // ignore and reset organization
+          model.setOrganizationKey(null);
+        } else {
+          model.getOrganizationList().add(getOrganizationTask.organization());
+        }
       }
     }
 
