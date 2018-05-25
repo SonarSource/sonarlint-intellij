@@ -20,9 +20,6 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.editor.colors.EditorColorsManager;
-import com.intellij.openapi.editor.colors.EditorColorsScheme;
-import com.intellij.openapi.options.FontSize;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.IdeBorderFactory;
@@ -38,6 +35,8 @@ import java.net.URL;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -64,6 +63,7 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintRulePanel {
+  private static final Pattern SPACES_BEGINNING_LINE = Pattern.compile("\n(\\p{Blank}*)");
   private final Project project;
   private final ProjectBindingManager projectBindingManager;
   private final JPanel panel;
@@ -75,9 +75,6 @@ public class SonarLintRulePanel {
     this.projectBindingManager = projectBindingManager;
     this.kit = new CustomHTMLEditorKit();
     StyleSheet styleSheet = kit.getStyleSheet();
-    EditorColorsScheme scheme = EditorColorsManager.getInstance().getGlobalScheme();
-    //String fontName = scheme.getFontPreferences().getFontFamily();
-    //styleSheet.addRule("body {font-family:" + fontName + "; font-size: " + FontSize.SMALL.getSize() + ";}");
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
 
@@ -98,7 +95,6 @@ public class SonarLintRulePanel {
           return;
         }
 
-
         StringBuilder builder = new StringBuilder(description.length() + 64);
         builder.append("<h2>")
           .append(StringEscapeUtils.escapeHtml(issue.getRuleName()))
@@ -106,7 +102,10 @@ public class SonarLintRulePanel {
         createTable(issue, builder);
         builder.append("<br />")
           .append(description);
-        updateEditor(builder.toString());
+        String htmlBody = builder.toString();
+        htmlBody = fixPreformatedText(htmlBody);
+
+        updateEditor(htmlBody);
       } catch (InvalidBindingException e) {
         nothingToDisplay(true);
       }
@@ -181,6 +180,50 @@ public class SonarLintRulePanel {
     return newEditor;
   }
 
+  /**
+   * Unfortunately it looks like the default html editor kit doesn't support CSS related to white-space. Therefore,
+   * all text within the pre tags doesn't wrap.
+   * So we replace all 'pre' tags by 'div' tags with font monospace.
+   * In the preformated text, we replace '\n' by the 'br' tag, and all the spaces in the beginning of each line by
+   * the non-breaking space 'nbsp'.
+   */
+  private String fixPreformatedText(String htmlBody) {
+    StringBuilder builder = new StringBuilder();
+    int current = 0;
+
+    while (true) {
+      int start = htmlBody.indexOf("<pre>", current);
+      if (start < 0) {
+        break;
+      }
+
+      int end = htmlBody.indexOf("</pre>", start);
+
+      if (end < 0) {
+        break;
+      }
+
+      builder.append(htmlBody.substring(current, start));
+      builder.append("<div style=\"font-family: monospace\">");
+      String preformated = htmlBody.substring(start + 5, end);
+
+      Matcher m = SPACES_BEGINNING_LINE.matcher(preformated);
+      int previous = 0;
+      while (m.find()) {
+        String replacement = "<br/>" + StringUtil.repeat("&nbsp;", m.group().length());
+        builder.append(preformated.substring(previous, m.start()));
+        builder.append(replacement);
+        previous = m.end();
+      }
+      builder.append(preformated.substring(previous));
+      builder.append("</div>");
+      current = end + 6;
+    }
+
+    builder.append(htmlBody.substring(current));
+    return builder.toString();
+  }
+
   public JComponent getPanel() {
     return panel;
   }
@@ -190,7 +233,7 @@ public class SonarLintRulePanel {
   }
 
   public static class CustomHTMLEditorKit extends HTMLEditorKit {
-    private static HTMLFactory factory = null;
+    private static HTMLFactory factory;
 
     static {
       factory = new HTMLFactory() {
