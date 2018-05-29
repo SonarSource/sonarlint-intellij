@@ -193,7 +193,11 @@ public class AuthStep extends AbstractWizardStepEx {
     model.setOrganizationList(task.organizations());
     model.setNotificationsSupported(task.notificationsSupported());
 
-    if (model.getOrganizationKey() != null) {
+    if (task.organizations().size() == 1) {
+      // for sonarqube not supporting organizations, there will only be the default one
+      model.setOrganizationKey(task.organizations().iterator().next().getKey());
+    } else if (model.getOrganizationKey() != null) {
+      // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
       boolean orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(model.getOrganizationKey()));
       if (!orgExists) {
         GetOrganizationTask getOrganizationTask = new GetOrganizationTask(tmpServer, model.getOrganizationKey());

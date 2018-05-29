@@ -142,7 +142,9 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   @Override public boolean isComplete() {
-    return orgList.getSelectedValue() != null;
+    // if this step is skipped because there is only one organization, we still need to return true so that the wizard
+    // can finish
+    return model.getOrganizationList().size() <= 1 ||  orgList.getSelectedValue() != null;
   }
 
   @Override public void commit(CommitType commitType) {
