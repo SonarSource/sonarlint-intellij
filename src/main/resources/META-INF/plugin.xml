@@ -34,7 +34,7 @@
                 bugs and quality issues as you code (Java, JavaScript, PHP and Python).
             </p>
             <p>
-                If your project is analyzed on SonarQube (formerly known as "Sonar"), SonarLint can connect to 
+                If your project is analyzed on SonarQube or on SonarCloud, SonarLint can connect to 
                 the server to retrieve the appropriate quality profiles and settings for that project. Java 8 
                 is required to run SonarLint.
             </p>
