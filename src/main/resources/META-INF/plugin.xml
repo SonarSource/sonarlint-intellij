@@ -208,6 +208,13 @@
     </extensionPoints>
 
     <actions>
+        <action id="SonarLint.RuleExclude"
+                class="org.sonarlint.intellij.actions.ExcludeRuleAction"
+                text="Exclude rule from SonarLint analysis"
+                description="Adds resources to the list exclusions in the SonarLint project settings"
+                icon="SonarLintIcons.SONARLINT">
+        </action>
+
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
         <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="false" icon="/images/ico-sonarlint-13.png">
             <add-to-group anchor="last" group-id="AnalyzeMenu"/>

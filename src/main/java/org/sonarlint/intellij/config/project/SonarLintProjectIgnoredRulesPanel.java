@@ -28,7 +28,8 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBList;
 
 import javax.swing.*;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class SonarLintProjectIgnoredRulesPanel
 {
@@ -36,12 +37,12 @@ public class SonarLintProjectIgnoredRulesPanel
 
   private JBList<String> list;
 
-  public List<String> getExclusions()
+  public Set<String> getExclusions()
   {
-    return listModel.getItems();
+    return new HashSet<>(listModel.getItems());
   }
 
-  public void setExclusions(List<String> data)
+  public void setExclusions(Set<String> data)
   {
     listModel.addAll(data);
     list.setModel(listModel);
