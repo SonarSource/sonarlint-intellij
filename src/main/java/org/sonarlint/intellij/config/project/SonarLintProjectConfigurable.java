@@ -24,25 +24,19 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ex.Settings;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
-import java.util.Collections;
-import java.util.List;
-import javax.annotation.Nullable;
-import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.tasks.ServerUpdateTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+
+import javax.annotation.Nullable;
+import javax.swing.*;
+import java.util.List;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.
@@ -110,24 +104,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
    * - Clear all issues and submit an analysis on all open files
    */
   private void onSave() {
-    SonarLintProjectNotifications.get(project).reset();
-    ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
-
-    if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getServerId() != null) {
-      ProjectBindingManager bindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
-
-      try {
-        SonarQubeServer server = bindingManager.getSonarQubeServer();
-        ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
-        String moduleKey = projectSettings.getProjectKey();
-
-        ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(moduleKey, Collections.singletonList(project)), true);
-        ProgressManager.getInstance().run(task.asModal());
-      } catch (InvalidBindingException e) {
-        // nothing to do, SonarLintEngineManager should have already shown a warning
-      }
-    }
-    projectListener.changed(projectSettings);
+    SonarLintUtils.triggerAnalysis(project, projectSettings);
   }
 
   @Override

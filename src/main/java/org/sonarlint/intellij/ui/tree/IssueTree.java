@@ -37,15 +37,17 @@ import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
 import com.intellij.util.ui.UIUtil;
+import org.jetbrains.annotations.NonNls;
+import org.sonarlint.intellij.core.SonarLintDataKeys;
+import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.ui.nodes.FileNode;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
-import org.jetbrains.annotations.NonNls;
-import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.ui.nodes.FileNode;
-import org.sonarlint.intellij.ui.nodes.IssueNode;
 
 /**
  * Extends {@link Tree} to provide context data for actions and initialize it
@@ -66,6 +68,8 @@ public class IssueTree extends Tree implements DataProvider {
     this.expandRow(0);
 
     DefaultActionGroup group = new DefaultActionGroup();
+    group.add(ActionManager.getInstance().getAction("SonarLint.RuleExclude"));
+    group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
@@ -93,6 +97,16 @@ public class IssueTree extends Tree implements DataProvider {
     } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
       VirtualFile f = getSelectedFile();
       return f != null ? (new VirtualFile[] {f}) : null;
+    } else if (SonarLintDataKeys.SELECTED_ISSUE.is(dataId)) {
+      DefaultMutableTreeNode node = getSelectedNode();
+      if (!(node instanceof IssueNode)) {
+        return null;
+      }
+      LiveIssue issue = ((IssueNode) node).issue();
+      if (!issue.isValid()) {
+        return null;
+      }
+      return issue;
     }
 
     return null;
