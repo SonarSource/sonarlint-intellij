@@ -22,23 +22,27 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
-import java.awt.BorderLayout;
-import java.util.List;
-import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
+  private final SonarLintProjectIgnoredRulesPanel ignoredRulesPanel;
   private final JPanel root;
   private final JPanel rootBindPane;
   private final JPanel rootPropertiesPane;
+  private final JPanel rootIgnoredRulesPane;
   private final ProjectExclusionsPanel exclusionsPanel;
   private SonarLintProjectBindPanel bindPanel;
 
   public SonarLintProjectSettingsPanel(Project project) {
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
+    ignoredRulesPanel = new SonarLintProjectIgnoredRulesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
     root = new JPanel(new BorderLayout());
     JBTabbedPane tabs = new JBTabbedPane();
@@ -49,9 +53,13 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     rootPropertiesPane = new JPanel(new BorderLayout());
     rootPropertiesPane.add(propsPanel.create(), BorderLayout.CENTER);
 
+    rootIgnoredRulesPane= new JPanel(new BorderLayout());
+    rootIgnoredRulesPane.add(ignoredRulesPanel.create(), BorderLayout.CENTER);
+
     tabs.insertTab("Bind to SonarQube project", null, rootBindPane, "Configure the binding of modules to a SonarQube server", 0);
     tabs.insertTab("File Exclusions", null, exclusionsPanel.getComponent(), "Configure which files to exclude from analysis", 1);
     tabs.insertTab("Analysis properties", null, rootPropertiesPane, "Configure analysis properties", 2);
+    tabs.insertTab("Ignored rules", null, rootIgnoredRulesPane, "Ignore rules locally", 3);
 
     root.add(tabs, BorderLayout.CENTER);
   }
@@ -62,6 +70,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   public void load(List<SonarQubeServer> servers, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
+    ignoredRulesPanel.setExclusions(projectSettings.getRuleExclusions());
     bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getServerId(), projectSettings.getProjectKey());
     exclusionsPanel.load(projectSettings);
   }
@@ -69,6 +78,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   public void save(SonarLintProjectSettings projectSettings) {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
+    projectSettings.setRuleExclusions(ignoredRulesPanel.getExclusions());
     exclusionsPanel.save(projectSettings);
 
     if (bindPanel.isBindingEnabled()) {
@@ -106,6 +116,11 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     if (exclusionsPanel.isModified(projectSettings)) {
       return true;
     }
+
+    if(!ignoredRulesPanel.getExclusions().equals(projectSettings.getRuleExclusions())) {
+      return true;
+    }
+
     return bindingChanged(projectSettings);
   }
 

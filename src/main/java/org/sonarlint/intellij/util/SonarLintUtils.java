@@ -26,6 +26,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.SourceFolder;
@@ -34,12 +35,23 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.net.ssl.CertificateManager;
-import java.awt.Graphics2D;
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.GraphicsEnvironment;
-import java.awt.Image;
-import java.awt.Transparency;
+import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
+import org.jetbrains.jps.model.java.JavaSourceRootProperties;
+import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.core.SonarLintProjectNotifications;
+import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.tasks.ServerUpdateTask;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
+import javax.swing.*;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.lang.reflect.Field;
@@ -49,17 +61,9 @@ import java.net.Proxy;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
-import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
-import org.jetbrains.jps.model.java.JavaSourceRootProperties;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 public class SonarLintUtils {
 
@@ -295,4 +299,25 @@ public class SonarLintUtils {
     return relativePath;
   }
 
+  public static void triggerAnalysis(Project project, SonarLintProjectSettings newSettings)
+  {
+    SonarLintProjectNotifications.get(project).reset();
+    ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
+
+    if (newSettings.isBindingEnabled() && newSettings.getProjectKey() != null && newSettings.getServerId() != null) {
+      ProjectBindingManager bindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+
+      try {
+        SonarQubeServer server = bindingManager.getSonarQubeServer();
+        ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
+        String projectKey = newSettings.getProjectKey();
+
+        ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(projectKey, Collections.singletonList(project)), true);
+        ProgressManager.getInstance().run(task.asModal());
+      } catch (InvalidBindingException ex) {
+        // nothing to do, SonarLintEngineManager should have already shown a warning
+      }
+    }
+    projectListener.changed(newSettings);
+  }
 }
