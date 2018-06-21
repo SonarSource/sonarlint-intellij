@@ -23,7 +23,7 @@
     <id>org.sonarlint.idea</id>
     <name>SonarLint</name>
     <version>${project.version}</version>
-    <vendor email="sonarlint@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
+    <vendor email="contact@sonarsource.com" url="http://www.sonarsource.com">SonarSource</vendor>
 
     <description><![CDATA[
         SonarLint is an IntelliJ IDEA plugin that provides on the fly feedback to developers on new bugs and quality issues injected into Java, JavaScript, PHP and Python code.
