@@ -23,7 +23,6 @@
     <id>org.sonarlint.idea</id>
     <name>SonarLint</name>
     <version>${project.version}</version>
-    <vendor email="sonarlint@googlegroups.com" url="http://www.sonarsource.com">SonarSource</vendor>
 
     <description><![CDATA[
         <html>
