@@ -28,6 +28,17 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.SonarLintJob;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.core.ServerIssueUpdater;
+import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,14 +48,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintJob;
-import org.sonarlint.intellij.core.ServerIssueUpdater;
-import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
@@ -139,6 +142,9 @@ public class IssueProcessor extends AbstractProjectComponent {
     Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
 
     for (Issue issue : issues) {
+      if (hasFilteredRule(issue)) {
+        continue;
+      }
       ClientInputFile inputFile = issue.getInputFile();
       if (inputFile == null || inputFile.getPath() == null || failedAnalysisFiles.contains(inputFile)) {
         // ignore project level issues and files that had errors
@@ -196,5 +202,11 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
 
     return transformedFlows;
+  }
+
+  private boolean hasFilteredRule(Issue issue)
+  {
+    SonarLintProjectSettings settings = SonarLintUtils.get(this.myProject, SonarLintProjectSettings.class);
+    return settings.getRuleExclusions().contains(issue.getRuleKey());
   }
 }

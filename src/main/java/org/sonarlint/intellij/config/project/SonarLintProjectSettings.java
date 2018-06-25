@@ -26,13 +26,16 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
+import java.util.Set;
 
 @State(
   name = "SonarLintProjectSettings",
@@ -49,6 +52,7 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   private String serverId = null;
   private String projectKey = null;
   private List<String> fileExclusions = new ArrayList<>();
+  private Set<String> ruleExclusions = new HashSet<>();
 
   /**
    * Constructor called by the XML serialization and deserialization (no args).
@@ -136,5 +140,15 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
 
   public void setFileExclusions(List<String> fileExclusions) {
     this.fileExclusions = new ArrayList<>(fileExclusions);
+  }
+
+  public Set<String> getRuleExclusions()
+  {
+    return ruleExclusions;
+  }
+
+  public void setRuleExclusions(Set<String> ruleExclusions)
+  {
+    this.ruleExclusions = ruleExclusions;
   }
 }
