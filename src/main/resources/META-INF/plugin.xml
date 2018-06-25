@@ -23,6 +23,7 @@
     <id>org.sonarlint.idea</id>
     <name>SonarLint</name>
     <version>${project.version}</version>
+    <vendor url="http://www.sonarsource.com">SonarSource</vendor>
 
     <description><![CDATA[
         <html>
