@@ -107,7 +107,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     String htmlMsg = getHtmlMessage(issue);
 
-    Annotation annotation = annotationHolder.createAnnotation(getSeverity(issue.getSeverity()), textRange, issue.getMessage(), htmlMsg);
+    Annotation annotation = annotationHolder
+      .createAnnotation(getSeverity(issue.getSeverity()), textRange, issue.getMessage(), htmlMsg);
+    annotation.registerFix(new DisableRuleQuickFix(issue.getRuleKey()));
 
     if (!issue.flows().isEmpty()) {
       annotation.registerFix(new ShowLocationsIntention(issue.getRange(), issue.getMessage(), issue.flows()));
