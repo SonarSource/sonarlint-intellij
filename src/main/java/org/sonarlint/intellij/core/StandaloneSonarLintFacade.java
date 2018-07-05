@@ -26,13 +26,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.common.RuleKey;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -43,19 +47,25 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 final class StandaloneSonarLintFacade extends SonarLintFacade {
   private final StandaloneSonarLintEngine sonarlint;
   private final SonarLintConsole console;
+  private final SonarLintGlobalSettings globalSettings;
 
-  StandaloneSonarLintFacade(SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, StandaloneSonarLintEngine engine) {
+  StandaloneSonarLintFacade(SonarLintGlobalSettings globalSettings, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project,
+    StandaloneSonarLintEngine engine) {
     super(project, projectSettings);
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
     this.console = console;
+    this.globalSettings = globalSettings;
     this.sonarlint = engine;
   }
 
   @Override protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
-    StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props);
+    List<RuleKey> excluded = globalSettings.getExcludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
+    List<RuleKey> included = globalSettings.getIncludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
+
+    StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props, excluded, included);
     console.debug("Starting analysis with configuration:\n" + config.toString());
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
   }

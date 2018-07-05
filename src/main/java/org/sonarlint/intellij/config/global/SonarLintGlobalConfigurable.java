@@ -31,6 +31,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
@@ -46,6 +47,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private SonarLintGlobalOptionsPanel globalPanel;
   private SonarLintAboutPanel about;
   private GlobalExclusionsPanel exclusions;
+  private RuleConfigurationPanel rules;
 
   public SonarLintGlobalConfigurable() {
     this.app = ApplicationManager.getApplication();
@@ -69,13 +71,14 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override public boolean isModified() {
     return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
-      || about.isModified(telemetry) || exclusions.isModified(globalSettings);
+      || about.isModified(telemetry) || exclusions.isModified(globalSettings) || rules.isModified(globalSettings);
   }
 
   @Override public void apply() {
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
     about.save(telemetry);
+    rules.save(globalSettings);
     exclusions.save(globalSettings);
 
     GlobalConfigurationListener globalConfigurationListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
@@ -98,6 +101,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     serversPanel.load(globalSettings);
     globalPanel.load(globalSettings);
     about.load(telemetry);
+    rules.load(globalSettings);
     exclusions.load(globalSettings);
   }
 
@@ -111,12 +115,14 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       serversPanel = null;
     }
     about = null;
+    rules = null;
     serverManager.reloadServers();
   }
 
   private JPanel getPanel() {
     if (rootPanel == null) {
       about = new SonarLintAboutPanel(sonarApplication);
+      rules = new RuleConfigurationPanel(serverManager.getStandaloneEngine());
       exclusions = new GlobalExclusionsPanel();
       globalPanel = new SonarLintGlobalOptionsPanel();
       serversPanel = new SonarQubeServerMgmtPanel();
@@ -129,7 +135,8 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       JBTabbedPane tabs = new JBTabbedPane();
       tabs.insertTab("Settings", null, settingsPanel, "Configure SonarLint for all projects", 0);
       tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", 1);
-      tabs.insertTab("About", null, about.getComponent(), "About SonarLint", 2);
+      tabs.insertTab("Rules", null, rules.getComponent(), "Configure rules", 2);
+      tabs.insertTab("About", null, about.getComponent(), "About SonarLint", 3);
       rootPanel.add(tabs, BorderLayout.CENTER);
     }
 

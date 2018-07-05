@@ -73,7 +73,7 @@ public class ProjectBindingManager extends AbstractProjectComponent {
       ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, serverId, projectKey);
       return new ConnectedSonarLintFacade(appUtils, engine, projectSettings, console, myProject, projectKey);
     }
-    return new StandaloneSonarLintFacade(projectSettings, console, myProject, engineManager.getStandaloneEngine());
+    return new StandaloneSonarLintFacade(globalSettings, projectSettings, console, myProject, engineManager.getStandaloneEngine());
   }
 
   public synchronized ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
