@@ -116,10 +116,11 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     rootNode.removeAllChildren();
 
     for (Map.Entry<String, List<RuleDetails>> e : rulesByLanguage.entrySet()) {
-      RulesTreeNode languageNode = new RulesTreeNode.Language(e.getKey());
+      RulesTreeNode.Language languageNode = new RulesTreeNode.Language(e.getKey());
       for (RuleDetails ruleDetails : e.getValue()) {
         languageNode.add(new RulesTreeNode.Rule(ruleDetails, ruleActivation.apply(ruleDetails)));
       }
+      model.refreshLanguageActivation(languageNode);
       rootNode.add(languageNode);
     }
 

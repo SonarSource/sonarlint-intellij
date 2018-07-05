@@ -22,6 +22,8 @@ package org.sonarlint.intellij.ui.tree;
 import com.intellij.ide.DefaultTreeExpander;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
@@ -71,6 +73,9 @@ public class IssueTree extends Tree implements DataProvider {
     group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
+    group.addSeparator();
+    group.add(new DisableRuleAction());
+
     PopupHandler.installPopupHandler(this, group, ActionPlaces.TODO_VIEW_POPUP, ActionManager.getInstance());
 
     EditSourceOnDoubleClickHandler.install(this);
@@ -93,6 +98,8 @@ public class IssueTree extends Tree implements DataProvider {
     } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
       VirtualFile f = getSelectedFile();
       return f != null ? (new VirtualFile[] {f}) : null;
+    } else if (DisableRuleAction.ISSUE_DATA_KEY.is(dataId)) {
+      return getSelectedIssue();
     }
 
     return null;
@@ -100,12 +107,8 @@ public class IssueTree extends Tree implements DataProvider {
 
   @CheckForNull
   private OpenFileDescriptor navigate() {
-    DefaultMutableTreeNode node = getSelectedNode();
-    if (!(node instanceof IssueNode)) {
-      return null;
-    }
-    LiveIssue issue = ((IssueNode) node).issue();
-    if (!issue.isValid()) {
+    LiveIssue issue = getSelectedIssue();
+    if (issue == null || !issue.isValid()) {
       return null;
     }
 
@@ -117,6 +120,15 @@ public class IssueTree extends Tree implements DataProvider {
       offset = 0;
     }
     return new OpenFileDescriptor(project, issue.psiFile().getVirtualFile(), offset);
+  }
+
+  @CheckForNull
+  private LiveIssue getSelectedIssue() {
+    DefaultMutableTreeNode node = getSelectedNode();
+    if (!(node instanceof IssueNode)) {
+      return null;
+    }
+    return ((IssueNode) node).issue();
   }
 
   @CheckForNull

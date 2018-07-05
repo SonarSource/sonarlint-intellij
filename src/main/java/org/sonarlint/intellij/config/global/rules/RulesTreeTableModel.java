@@ -99,7 +99,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     refreshLanguageActivation(lang);
   }
 
-  private static void refreshLanguageActivation(RulesTreeNode.Language lang) {
+  static void refreshLanguageActivation(RulesTreeNode.Language lang) {
     boolean seenActive = false;
     boolean seenInactive = false;
     boolean isChanged = false;
