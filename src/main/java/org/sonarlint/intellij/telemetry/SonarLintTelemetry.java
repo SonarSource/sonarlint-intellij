@@ -103,9 +103,9 @@ public class SonarLintTelemetry implements ApplicationComponent {
     }
   }
 
-  public void analysisDoneOnSingleFile(@Nullable String fileExtension, int time) {
+  public void analysisDoneOnSingleFile(@Nullable String language, int time) {
     if (enabled()) {
-      telemetry.analysisDoneOnSingleFile(fileExtension, time);
+      telemetry.analysisDoneOnSingleLanguage(language, time);
     }
   }
 

@@ -107,8 +107,8 @@ public class SonarLintAnalyzer {
       }
       AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps, progressMonitor);
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
-      if (filesToAnalyze.size() == 1) {
-        telemetry.analysisDoneOnSingleFile(filesToAnalyze.iterator().next().getExtension(), (int) (System.currentTimeMillis() - start));
+      if (result.languagePerFile().size() == 1) {
+        telemetry.analysisDoneOnSingleFile(result.languagePerFile().values().iterator().next(), (int) (System.currentTimeMillis() - start));
       } else {
         telemetry.analysisDoneOnMultipleFiles();
       }

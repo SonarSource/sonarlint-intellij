@@ -36,9 +36,11 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
+import org.sonarsource.sonarlint.core.container.model.DefaultAnalysisResult;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -62,6 +64,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
     analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, app, telemetry, appUtils);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
+    when(facade.startAnalysis(anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
     super.register(module, VirtualFileTestPredicate.class, testPredicate);
     super.register(module, AnalysisConfigurator.class, configurator);
     super.registerEP(AnalysisConfigurator.EP_NAME, AnalysisConfigurator.class);
