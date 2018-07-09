@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.global.rules;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
+import java.util.HashMap;
 import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.table.AbstractTableModel;
@@ -95,7 +96,8 @@ public class RulesTreeTableModelTest {
 
   @Test
   public void get_current_rule_activation() {
-    Map<String, Boolean> ruleActivation = model.getCurrentRuleActivation();
+    Map<String, Boolean> ruleActivation = new HashMap<>();
+    model.saveCurrentRuleActivation(ruleActivation);
     assertThat(ruleActivation).containsExactly(entry("key", true));
   }
 

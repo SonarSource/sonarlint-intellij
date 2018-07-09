@@ -24,7 +24,6 @@ import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
-import java.util.HashMap;
 import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.JTree;
@@ -112,15 +111,13 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     }
   }
 
-  public Map<String, Boolean> getCurrentRuleActivation() {
-    Map<String, Boolean> currentActivationByRuleKey = new HashMap<>();
+  public void saveCurrentRuleActivation(Map<String, Boolean> map) {
     RulesTreeNode.Root rootNode = (RulesTreeNode.Root) root;
     for (RulesTreeNode.Language lang : rootNode.childrenIterable()) {
       for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
-        currentActivationByRuleKey.put(rule.getKey(), rule.isActivated());
+        map.put(rule.getKey(), rule.isActivated());
       }
     }
-    return currentActivationByRuleKey;
   }
 
   private void activateRule(RulesTreeNode.Rule rule, boolean activate) {

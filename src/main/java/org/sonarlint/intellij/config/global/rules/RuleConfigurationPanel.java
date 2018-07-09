@@ -19,6 +19,13 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import com.intellij.ide.CommonActionsManager;
+import com.intellij.ide.DefaultTreeExpander;
+import com.intellij.ide.TreeExpander;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionPlaces;
+import com.intellij.openapi.actionSystem.ActionToolbar;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.FilterComponent;
 import com.intellij.ui.IdeBorderFactory;
@@ -37,9 +44,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -47,7 +52,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -64,11 +68,13 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private static final String SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
 
   private final StandaloneSonarLintEngine engine;
+  private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private RulesTreeTable table;
   private JEditorPane descriptionBrowser;
   private JPanel panel;
   private RulesTreeTableModel model;
   private FilterComponent filterComponent;
+  private TreeExpander myTreeExpander;
 
   private Map<String, Boolean> currentActivationByRuleKey;
 
@@ -108,49 +114,34 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private void saveCurrentActivation() {
-    currentActivationByRuleKey = model.getCurrentRuleActivation();
-  }
-
-  private static boolean filter(RuleDetails ruleDetails, @Nullable List<String> filter) {
-    if (filter == null || filter.isEmpty()) {
-      return true;
-    }
-
-    List<String> split = tokenize(ruleDetails.getName());
-    return Collections.indexOfSubList(split, filter) != -1;
-  }
-
-  @CheckForNull
-  private static List<String> tokenize(@Nullable String str) {
-    if (str == null || str.isEmpty()) {
-      return null;
-    }
-    String lower = str.toLowerCase(Locale.US);
-    return Arrays.asList(lower.split("\\s"));
+    model.saveCurrentRuleActivation(currentActivationByRuleKey);
   }
 
   @Override public void load(SonarLintGlobalSettings settings) {
+    filterModel.reset(false);
     filterComponent.reset();
+
     currentActivationByRuleKey = engine.getAllRuleDetails().stream()
       .collect(Collectors.toMap(RuleDetails::getKey, r -> loadRuleActivation(settings, r)));
     updateModel();
   }
 
   private void updateModel() {
-    List<String> filter = tokenize(filterComponent.getFilter());
-
-    Collection<RuleDetails> filteredRules = engine.getAllRuleDetails();
-    Map<String, List<RuleDetails>> rulesByLanguage = filteredRules.stream()
-      .filter(r -> filter(r, filter))
-      .collect(Collectors.groupingBy(RuleDetails::getLanguage));
+    saveCurrentActivation();
+    filterComponent.getTextEditor().setText(filterModel.getText());
+    Collection<RuleDetails> ruleDetails = engine.getAllRuleDetails();
+    Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = ruleDetails.stream()
+      .map(r -> new RulesTreeNode.Rule(r, currentActivationByRuleKey.get(r.getKey())))
+      .filter(filterModel::filter)
+      .collect(Collectors.groupingBy(RulesTreeNode.Rule::language));
 
     RulesTreeNode rootNode = (RulesTreeNode) model.getRoot();
     rootNode.removeAllChildren();
 
-    for (Map.Entry<String, List<RuleDetails>> e : rulesByLanguage.entrySet()) {
+    for (Map.Entry<String, List<RulesTreeNode.Rule>> e : rulesByLanguage.entrySet()) {
       RulesTreeNode.Language languageNode = new RulesTreeNode.Language(e.getKey());
-      for (RuleDetails ruleDetails : e.getValue()) {
-        languageNode.add(new RulesTreeNode.Rule(ruleDetails, currentActivationByRuleKey.get(ruleDetails.getKey())));
+      for (RulesTreeNode.Rule r : e.getValue()) {
+        languageNode.add(r);
       }
       model.refreshLanguageActivation(languageNode);
       rootNode.add(languageNode);
@@ -158,6 +149,9 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
     TreeUtil.sort(rootNode, Comparator.comparing(Object::toString));
     model.reload();
+    if (!filterModel.isEmpty()) {
+      TreeUtil.expandAll(table.getTree());
+    }
   }
 
   private static boolean loadRuleActivation(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
@@ -187,36 +181,27 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     }
   }
 
+  private ActionToolbar createTreeToolbarPanel() {
+    DefaultActionGroup actions = new DefaultActionGroup();
+
+    actions.add(new RulesFilterAction(filterModel));
+    actions.addSeparator();
+
+    CommonActionsManager actionManager = CommonActionsManager.getInstance();
+    actions.add(actionManager.createExpandAllAction(myTreeExpander, table));
+    actions.add(actionManager.createCollapseAllAction(myTreeExpander, table));
+    ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.UNKNOWN, actions, true);
+    actionToolbar.setTargetComponent(panel);
+    return actionToolbar;
+  }
+
   private void createUIComponents() {
     panel = new JPanel(new GridBagLayout());
-    // filter
-    filterComponent = new FilterComponent("sonarlint_rule_filter", 10) {
-      @Override public void filter() {
-        String filter = getFilter();
-        saveCurrentActivation();
-        updateModel();
-        if (filter != null && !filter.isEmpty()) {
-          TreeUtil.expandAll(table.getTree());
-        }
-      }
-    };
-    filterComponent.setPreferredSize(new Dimension(20, filterComponent.getPreferredSize().height));
-    GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 0.5, 0,
-      GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
-    panel.add(filterComponent, gbc);
-
-    // top button
-    JButton restoreDefaults = new JButton("Restore defaults");
-    restoreDefaults.addActionListener(l -> model.restoreDefaults());
-
-    gbc = new GridBagConstraints(1, 0, 1, 1, 1, 0,
-      GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, JBUI.insets(5, 0, 2, 10), 0, 0);
-    panel.add(restoreDefaults, gbc);
 
     // create tree table
     model = new RulesTreeTableModel(new RulesTreeNode.Root());
     table = new RulesTreeTable(model);
-    table.setTreeCellRenderer(new RulesTreeTableRenderer(() -> filterComponent.getFilter()));
+    table.setTreeCellRenderer(new RulesTreeTableRenderer(filterModel::getText));
     table.setRootVisible(false);
     UIUtil.setLineStyleAngled(table.getTree());
     TreeUtil.installActions(table.getTree());
@@ -242,6 +227,41 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.LEFT + SideBorder.TOP));
 
+    // filters
+    myTreeExpander = new DefaultTreeExpander(table.getTree()) {
+      @Override
+      public boolean canExpand() {
+        return table.isShowing();
+      }
+
+      @Override
+      public boolean canCollapse() {
+        return table.isShowing();
+      }
+    };
+
+    filterComponent = new FilterComponent("sonarlint_rule_filter", 10) {
+      @Override public void filter() {
+        filterModel.setText(getFilter());
+      }
+    };
+    filterComponent.setPreferredSize(new Dimension(20, filterComponent.getPreferredSize().height));
+    GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 0.5, 0,
+      GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
+    panel.add(filterComponent, gbc);
+
+    gbc = new GridBagConstraints(1, 0, 1, 1, 0.5, 0,
+      GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
+    panel.add(createTreeToolbarPanel().getComponent(), gbc);
+
+    // top button
+    JButton restoreDefaults = new JButton("Restore defaults");
+    restoreDefaults.addActionListener(l -> model.restoreDefaults());
+
+    gbc = new GridBagConstraints(2, 0, 1, 1, 1, 0,
+      GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, JBUI.insets(5, 0, 2, 10), 0, 0);
+    panel.add(restoreDefaults, gbc);
+
     // description pane
     descriptionBrowser = new JEditorPane(UIUtil.HTML_MIME, "<html><body></body></html>");
     descriptionBrowser.setEditable(false);
@@ -258,7 +278,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     mainSplitter.setFirstComponent(scrollPane);
     mainSplitter.setSecondComponent(descriptionPanel);
 
-    gbc = new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
+    gbc = new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
       GridBagConstraints.CENTER, GridBagConstraints.BOTH, JBUI.insets(5, 0, 2, 10), 0, 0);
     panel.add(mainSplitter, gbc);
   }

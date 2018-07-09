@@ -22,6 +22,7 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,6 +65,7 @@ public class SonarLintSubmitterTest extends SonarTest {
 
   @Before
   public void start() throws InvalidBindingException {
+    when(super.app.runReadAction(any(Computable.class))).thenAnswer(i ->((Computable)i.getArgument(0)).compute());
     when(bindingManager.getFacade()).thenReturn(facade);
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     globalSettings = new SonarLintGlobalSettings();
