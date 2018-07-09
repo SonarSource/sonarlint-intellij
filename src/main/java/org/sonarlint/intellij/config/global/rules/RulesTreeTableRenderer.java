@@ -27,10 +27,17 @@ import com.intellij.util.ui.PlatformColors;
 import com.intellij.util.ui.UIUtil;
 import java.awt.Color;
 import java.awt.Component;
+import java.util.function.Supplier;
 import javax.swing.JTree;
 import org.jdesktop.swingx.renderer.DefaultTreeRenderer;
 
 public class RulesTreeTableRenderer extends DefaultTreeRenderer {
+  private final Supplier<String> filterSupplier;
+
+  public RulesTreeTableRenderer(Supplier<String> filterSupplier) {
+    this.filterSupplier = filterSupplier;
+  }
+
   @Override
   public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row,
     boolean hasFocus) {
@@ -53,7 +60,7 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
     }
 
     if (text != null) {
-      SearchUtil.appendFragments(null, text, style, foreground, background, component);
+      SearchUtil.appendFragments(filterSupplier.get(), text, style, foreground, background, component);
     }
     component.setForeground(foreground);
     return component;

@@ -22,12 +22,19 @@ package org.sonarlint.intellij.config.global.rules;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
+import com.intellij.util.ui.JBUI;
+import icons.SonarLintIcons;
+import java.util.HashMap;
+import java.util.Map;
+import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.util.CompoundIcon;
 
+import static org.sonarlint.intellij.config.global.rules.RulesTreeTable.ICONS_COLUMN;
 import static org.sonarlint.intellij.config.global.rules.RulesTreeTable.IS_ENABLED_COLUMN;
 import static org.sonarlint.intellij.config.global.rules.RulesTreeTable.TREE_COLUMN;
 
@@ -39,7 +46,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
   }
 
   @Override public int getColumnCount() {
-    return 2;
+    return 3;
   }
 
   @Nullable
@@ -53,10 +60,13 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     switch (column) {
       case TREE_COLUMN:
         return TreeTableModel.class;
+      case ICONS_COLUMN:
+        return Icon.class;
       case IS_ENABLED_COLUMN:
         return Boolean.class;
+      default:
+        throw new IllegalArgumentException();
     }
-    throw new IllegalArgumentException();
   }
 
   @Nullable
@@ -65,9 +75,18 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     if (column == TREE_COLUMN) {
       return null;
     }
+
+    if (column == ICONS_COLUMN) {
+      if (node instanceof RulesTreeNode.Rule) {
+        RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
+        int gap = JBUI.isHiDPI() ? 8 : 4;
+        return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(rule.type()), SonarLintIcons.severity12(rule.severity()));
+      }
+      return null;
+    }
     if (column == IS_ENABLED_COLUMN) {
-      RulesTreeNode rule = (RulesTreeNode) node;
-      return rule.isActivated();
+      RulesTreeNode treeNode = (RulesTreeNode) node;
+      return treeNode.isActivated();
     }
 
     throw new IllegalArgumentException();
@@ -93,13 +112,24 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     }
   }
 
+  public Map<String, Boolean> getCurrentRuleActivation() {
+    Map<String, Boolean> currentActivationByRuleKey = new HashMap<>();
+    RulesTreeNode.Root rootNode = (RulesTreeNode.Root) root;
+    for (RulesTreeNode.Language lang : rootNode.childrenIterable()) {
+      for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
+        currentActivationByRuleKey.put(rule.getKey(), rule.isActivated());
+      }
+    }
+    return currentActivationByRuleKey;
+  }
+
   private void activateRule(RulesTreeNode.Rule rule, boolean activate) {
     rule.setIsActivated(activate);
     RulesTreeNode.Language lang = (RulesTreeNode.Language) rule.getParent();
     refreshLanguageActivation(lang);
   }
 
-  static void refreshLanguageActivation(RulesTreeNode.Language lang) {
+  void refreshLanguageActivation(RulesTreeNode.Language lang) {
     boolean seenActive = false;
     boolean seenInactive = false;
     boolean isChanged = false;
@@ -127,11 +157,12 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     lang.setIsChanged(isChanged);
   }
 
-  private static void activateLanguage(RulesTreeNode.Language lang, boolean activate) {
+  private void activateLanguage(RulesTreeNode.Language lang, boolean activate) {
     lang.setIsActivated(activate);
     for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
       rule.setIsActivated(activate);
     }
+    refreshLanguageActivation(lang);
   }
 
   public void restoreDefaults() {

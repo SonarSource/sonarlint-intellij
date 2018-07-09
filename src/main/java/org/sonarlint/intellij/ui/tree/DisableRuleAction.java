@@ -23,8 +23,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKey;
 import com.intellij.openapi.project.Project;
-import java.util.HashSet;
-import java.util.Set;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -47,7 +45,6 @@ public class DisableRuleAction extends AnAction {
 
     LiveIssue issue = e.getData(ISSUE_DATA_KEY);
     if (issue != null) {
-      System.out.println("DISABLE RULE");
       disableRule(issue.getRuleKey());
       SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
@@ -70,14 +67,10 @@ public class DisableRuleAction extends AnAction {
     e.getPresentation().setVisible(enabled);
   }
 
-  private void disableRule(String ruleKey) {
+  private static void disableRule(String ruleKey) {
     SonarLintGlobalSettings settings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-    Set<String> includedRules = new HashSet<>(settings.getIncludedRules());
-    Set<String> excludedRules = new HashSet<>(settings.getExcludedRules());
-    includedRules.remove(ruleKey);
-    excludedRules.add(ruleKey);
-    settings.setIncludedRules(includedRules);
-    settings.setExcludedRules(excludedRules);
+    settings.getIncludedRules().remove(ruleKey);
+    settings.getExcludedRules().add(ruleKey);
   }
 
 }

@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
@@ -48,15 +49,15 @@ public class StandaloneSonarLintFacadeTest {
   @Mock
   private SonarLintConsole console;
 
-  private SonarLintProjectSettings settings;
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
   private StandaloneSonarLintFacade facade;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    settings = new SonarLintProjectSettings();
     when(project.getBasePath()).thenReturn("");
-    facade = new StandaloneSonarLintFacade(settings, console, project, engine);
+    facade = new StandaloneSonarLintFacade(globalSettings, settings, console, project, engine);
   }
 
   @Test
