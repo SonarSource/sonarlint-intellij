@@ -30,7 +30,6 @@ import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -48,8 +47,8 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private boolean autoTrigger = true;
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
-  private Set<String> includedRules = Collections.emptySet();
-  private Set<String> excludedRules = Collections.emptySet();
+  private Set<String> includedRules = new HashSet<>();
+  private Set<String> excludedRules = new HashSet<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
@@ -92,12 +91,12 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     return excludedRules;
   }
 
-  public void setIncludedRules(Collection<String> includedRules) {
-    this.includedRules = Collections.unmodifiableSet(new HashSet<>(includedRules));
+  public void setIncludedRules(Set<String> includedRules) {
+    this.includedRules = includedRules;
   }
 
-  public void setExcludedRules(Collection<String> excludedRules) {
-    this.excludedRules = Collections.unmodifiableSet(new HashSet<>(excludedRules));
+  public void setExcludedRules(Set<String> excludedRules) {
+    this.excludedRules = excludedRules;
   }
 
   public boolean isAutoTrigger() {

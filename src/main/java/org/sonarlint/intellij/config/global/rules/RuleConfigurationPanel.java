@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.global.rules;
 
 import com.intellij.ui.BrowserHyperlinkListener;
+import com.intellij.ui.FilterComponent;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ScrollPaneFactory;
@@ -31,18 +32,23 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -55,15 +61,16 @@ import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final String SPLITTER_KEY = "sonarlint_rule_configuration";
+  private static final String SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
 
   private final StandaloneSonarLintEngine engine;
   private RulesTreeTable table;
   private JEditorPane descriptionBrowser;
   private JPanel panel;
-  private JBScrollPane scrollPane;
   private RulesTreeTableModel model;
-  private JButton restoreDefaults;
+  private FilterComponent filterComponent;
+
+  private Map<String, Boolean> currentActivationByRuleKey;
 
   public RuleConfigurationPanel(StandaloneSonarLintEngine engine) {
     this.engine = engine;
@@ -77,40 +84,65 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   @Override public boolean isModified(SonarLintGlobalSettings settings) {
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
-    collectIncludedAndExcluded(excluded, included);
+    getIncludedAndExcluded(included, excluded);
     return !included.equals(settings.getIncludedRules()) || !excluded.equals(settings.getExcludedRules());
   }
 
   @Override public void save(SonarLintGlobalSettings settings) {
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
-    collectIncludedAndExcluded(excluded, included);
+    getIncludedAndExcluded(included, excluded);
     settings.setExcludedRules(excluded);
     settings.setIncludedRules(included);
   }
 
-  private void collectIncludedAndExcluded(Set<String> excluded, Set<String> included) {
-    RulesTreeNode.Root rootNode = (RulesTreeNode.Root) model.getRoot();
-    for (RulesTreeNode.Language lang : rootNode.childrenIterable()) {
-      for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
-        if (rule.isChanged()) {
-          if (rule.isActivated()) {
-            included.add(rule.getKey());
-          } else {
-            excluded.add(rule.getKey());
-          }
-        }
+  private void getIncludedAndExcluded(Set<String> included, Set<String> excluded) {
+    for (RuleDetails r : engine.getAllRuleDetails()) {
+      boolean valueSet = currentActivationByRuleKey.get(r.getKey());
+      if (r.isActiveByDefault() && !valueSet) {
+        excluded.add(r.getKey());
+      } else if (!r.isActiveByDefault() && valueSet) {
+        included.add(r.getKey());
       }
     }
   }
 
-  @Override public void load(SonarLintGlobalSettings settings) {
-    load(ruleDetails -> loadRuleActivation(settings, ruleDetails));
+  private void saveCurrentActivation() {
+    currentActivationByRuleKey = model.getCurrentRuleActivation();
   }
 
-  private void load(Function<RuleDetails, Boolean> ruleActivation) {
-    Collection<RuleDetails> allRuleDetails = engine.getAllRuleDetails();
-    Map<String, List<RuleDetails>> rulesByLanguage = allRuleDetails.stream().collect(Collectors.groupingBy(RuleDetails::getLanguage));
+  private static boolean filter(RuleDetails ruleDetails, @Nullable List<String> filter) {
+    if (filter == null || filter.isEmpty()) {
+      return true;
+    }
+
+    List<String> split = tokenize(ruleDetails.getName());
+    return Collections.indexOfSubList(split, filter) != -1;
+  }
+
+  @CheckForNull
+  private static List<String> tokenize(@Nullable String str) {
+    if (str == null || str.isEmpty()) {
+      return null;
+    }
+    String lower = str.toLowerCase(Locale.US);
+    return Arrays.asList(lower.split("\\s"));
+  }
+
+  @Override public void load(SonarLintGlobalSettings settings) {
+    filterComponent.reset();
+    currentActivationByRuleKey = engine.getAllRuleDetails().stream()
+      .collect(Collectors.toMap(RuleDetails::getKey, r -> loadRuleActivation(settings, r)));
+    updateModel();
+  }
+
+  private void updateModel() {
+    List<String> filter = tokenize(filterComponent.getFilter());
+
+    Collection<RuleDetails> filteredRules = engine.getAllRuleDetails();
+    Map<String, List<RuleDetails>> rulesByLanguage = filteredRules.stream()
+      .filter(r -> filter(r, filter))
+      .collect(Collectors.groupingBy(RuleDetails::getLanguage));
 
     RulesTreeNode rootNode = (RulesTreeNode) model.getRoot();
     rootNode.removeAllChildren();
@@ -118,7 +150,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     for (Map.Entry<String, List<RuleDetails>> e : rulesByLanguage.entrySet()) {
       RulesTreeNode.Language languageNode = new RulesTreeNode.Language(e.getKey());
       for (RuleDetails ruleDetails : e.getValue()) {
-        languageNode.add(new RulesTreeNode.Rule(ruleDetails, ruleActivation.apply(ruleDetails)));
+        languageNode.add(new RulesTreeNode.Rule(ruleDetails, currentActivationByRuleKey.get(ruleDetails.getKey())));
       }
       model.refreshLanguageActivation(languageNode);
       rootNode.add(languageNode);
@@ -138,7 +170,16 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     }
   }
 
-  private void setDescription(String html) {
+  private void setDescription(@Nullable RulesTreeNode.Rule rule) {
+    String html;
+
+    if (rule == null) {
+      html = "Select a rule to see the description";
+    } else {
+      String attributes = rule.severity() + " " + rule.type();
+      attributes = attributes.toLowerCase(Locale.US).replace('_', ' ');
+      html = "<b>" + rule.getKey() + "</b> | " + attributes + "<br/>" + rule.getHtmlDescription();
+    }
     try {
       descriptionBrowser.read(new StringReader(html), null);
     } catch (IOException e) {
@@ -148,19 +189,34 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   private void createUIComponents() {
     panel = new JPanel(new GridBagLayout());
+    // filter
+    filterComponent = new FilterComponent("sonarlint_rule_filter", 10) {
+      @Override public void filter() {
+        String filter = getFilter();
+        saveCurrentActivation();
+        updateModel();
+        if (filter != null && !filter.isEmpty()) {
+          TreeUtil.expandAll(table.getTree());
+        }
+      }
+    };
+    filterComponent.setPreferredSize(new Dimension(20, filterComponent.getPreferredSize().height));
+    GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 0.5, 0,
+      GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
+    panel.add(filterComponent, gbc);
 
     // top button
-    restoreDefaults = new JButton("Restore defaults");
+    JButton restoreDefaults = new JButton("Restore defaults");
     restoreDefaults.addActionListener(l -> model.restoreDefaults());
 
-    GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 0, 0,
+    gbc = new GridBagConstraints(1, 0, 1, 1, 1, 0,
       GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, JBUI.insets(5, 0, 2, 10), 0, 0);
     panel.add(restoreDefaults, gbc);
 
     // create tree table
     model = new RulesTreeTableModel(new RulesTreeNode.Root());
     table = new RulesTreeTable(model);
-    table.setTreeCellRenderer(new RulesTreeTableRenderer());
+    table.setTreeCellRenderer(new RulesTreeTableRenderer(() -> filterComponent.getFilter()));
     table.setRootVisible(false);
     UIUtil.setLineStyleAngled(table.getTree());
     TreeUtil.installActions(table.getTree());
@@ -175,13 +231,13 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         Object node = path.getLastPathComponent();
         if (node instanceof RulesTreeNode.Rule) {
           RulesTreeNode.Rule r = (RulesTreeNode.Rule) node;
-          setDescription(r.getHtmlDescription());
+          setDescription(r);
           return;
         }
       }
-      setDescription("Select a rule to see the description");
+      setDescription(null);
     });
-    scrollPane = new JBScrollPane(table);
+    JBScrollPane scrollPane = new JBScrollPane(table);
     table.getTree().setShowsRootHandles(true);
     scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.LEFT + SideBorder.TOP));
@@ -191,6 +247,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     descriptionBrowser.setEditable(false);
     descriptionBrowser.setBorder(IdeBorderFactory.createEmptyBorder(5, 5, 5, 5));
     descriptionBrowser.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
+    setDescription(null);
 
     JPanel descriptionPanel = new JPanel(new BorderLayout());
     descriptionPanel.setBorder(IdeBorderFactory.createTitledBorder("Rule description", false,
@@ -201,7 +258,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     mainSplitter.setFirstComponent(scrollPane);
     mainSplitter.setSecondComponent(descriptionPanel);
 
-    gbc = new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+    gbc = new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
       GridBagConstraints.CENTER, GridBagConstraints.BOTH, JBUI.insets(5, 0, 2, 10), 0, 0);
     panel.add(mainSplitter, gbc);
   }

@@ -19,16 +19,28 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import com.intellij.ide.IdeTooltip;
+import com.intellij.ide.IdeTooltipManager;
 import com.intellij.openapi.util.SystemInfo;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.profile.codeInspection.ui.table.ThreeStateCheckBoxRenderer;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
+import com.intellij.util.ui.table.IconTableCellRenderer;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Locale;
+import javax.swing.Icon;
 import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JTable;
 import javax.swing.KeyStroke;
 import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
@@ -36,7 +48,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class RulesTreeTable extends TreeTable {
   static final int TREE_COLUMN = 0;
-  static final int IS_ENABLED_COLUMN = 1;
+  static final int ICONS_COLUMN = 1;
+  static final int IS_ENABLED_COLUMN = 2;
   private final RulesTreeTableModel treeTableModel;
 
   public RulesTreeTable(RulesTreeTableModel treeTableModel) {
@@ -72,6 +85,32 @@ public class RulesTreeTable extends TreeTable {
       }
       updateUI();
     }, KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, 0), JComponent.WHEN_FOCUSED);
+
+    addMouseMotionListener(new MouseAdapter() {
+      @Override
+      public void mouseMoved(final MouseEvent e) {
+        Point point = e.getPoint();
+        int column = columnAtPoint(point);
+        if (column != ICONS_COLUMN) {
+          return;
+        }
+        int row = rowAtPoint(point);
+        final TreePath path = getTree().getPathForRow(row);
+        if (path == null) {
+          return;
+        }
+
+        Object obj = path.getLastPathComponent();
+
+        if (obj instanceof RulesTreeNode.Rule) {
+          RulesTreeNode.Rule rule = (RulesTreeNode.Rule) obj;
+          JLabel label = new JLabel();
+          String l = rule.severity() + " " + rule.type();
+          label.setText(StringUtil.capitalize(l.replace('_', ' ').toLowerCase(Locale.US)));
+          IdeTooltipManager.getInstance().show(new IdeTooltip(RulesTreeTable.this, point, label), false);
+        }
+      }
+    });
   }
 
   private void setUpColumns() {
@@ -81,6 +120,24 @@ public class RulesTreeTable extends TreeTable {
     boxRenderer.setOpaque(true);
     isEnabledColumn.setCellRenderer(boxRenderer);
     isEnabledColumn.setCellEditor(new ThreeStateCheckBoxRenderer());
+
+    TableColumn iconsColumn = getColumnModel().getColumn(ICONS_COLUMN);
+    iconsColumn.setCellRenderer(new IconTableCellRenderer<Icon>() {
+      @Override
+      public Component getTableCellRendererComponent(JTable table, Object value, boolean selected, boolean focus, int row, int column) {
+        Component component = super.getTableCellRendererComponent(table, value, false, focus, row, column);
+        Color bg = selected ? table.getSelectionBackground() : table.getBackground();
+        component.setBackground(bg);
+        ((JLabel) component).setText("");
+        return component;
+      }
+
+      @Override
+      protected Icon getIcon(@NotNull Icon value, JTable table, int row) {
+        return value;
+      }
+    });
+    iconsColumn.setMaxWidth(JBUI.scale(40));
   }
 
   private static int getAdditionalPadding() {

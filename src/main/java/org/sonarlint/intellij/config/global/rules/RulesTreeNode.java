@@ -59,10 +59,6 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       this.label = label;
     }
 
-    public Boolean isActivated() {
-      return activated;
-    }
-
     @Override
     public boolean isChanged() {
       return changed;
@@ -111,6 +107,14 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
     public boolean getDefaultActivation() {
       return details.isActiveByDefault();
+    }
+
+    public String severity() {
+      return details.getSeverity();
+    }
+
+    public String type() {
+      return details.getType();
     }
 
     @Override
