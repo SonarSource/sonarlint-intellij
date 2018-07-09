@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
@@ -38,6 +39,7 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
 
   @CheckForNull
   public Module findModuleForFile(VirtualFile file, Project project) {
+    ApplicationManager.getApplication().assertReadAccessAllowed();
     return ModuleUtil.findModuleForFile(file, project);
   }
 

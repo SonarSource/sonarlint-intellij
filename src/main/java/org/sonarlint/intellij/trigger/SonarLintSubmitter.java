@@ -20,10 +20,12 @@
 package org.sonarlint.intellij.trigger;
 
 import com.google.common.collect.HashMultimap;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -133,7 +135,8 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 
     for (VirtualFile file : files) {
-      Module m = utils.findModuleForFile(file, myProject);
+      Computable<Module> c = () -> utils.findModuleForFile(file, myProject);
+      Module m = ApplicationManager.getApplication().runReadAction(c);
       if (checkExclusions) {
         LocalFileExclusions.Result result = localFileExclusions.checkExclusions(file, m);
         if (result.isExcluded()) {
