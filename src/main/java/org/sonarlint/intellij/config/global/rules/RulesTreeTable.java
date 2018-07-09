@@ -27,11 +27,9 @@ import com.intellij.profile.codeInspection.ui.table.ThreeStateCheckBoxRenderer;
 import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.table.IconTableCellRenderer;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -142,11 +140,5 @@ public class RulesTreeTable extends TreeTable {
 
   private static int getAdditionalPadding() {
     return SystemInfo.isMac ? 10 : 0;
-  }
-
-  @Override
-  public void paint(@NotNull Graphics g) {
-    super.paint(g);
-    UIUtil.fixOSXEditorBackground(this);
   }
 }
