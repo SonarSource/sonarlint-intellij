@@ -30,6 +30,7 @@ import javax.swing.Icon;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class IssueNode extends AbstractNode {
@@ -63,9 +64,13 @@ public class IssueNode extends AbstractNode {
       renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
 
-    renderer.append(" ");
+    if (!issue.flows().isEmpty()) {
+      String flows = String.format(" [+%d %s]", issue.flows().size(), SonarLintUtils.pluralize("location", issue.flows().size()));
+      renderer.append(flows, SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
+    }
 
     if (issue.getCreationDate() != null) {
+      renderer.append(" ");
       String creationDate = DateUtils.toAge(issue.getCreationDate());
       renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }

@@ -282,6 +282,13 @@ public class SonarLintUtils {
     return false;
   }
 
+  public static String pluralize(String str, int i) {
+    if (i == 1) {
+      return str;
+    }
+    return str + "s";
+  }
+
   /**
    * Convert relative path to SonarQube file key
    *

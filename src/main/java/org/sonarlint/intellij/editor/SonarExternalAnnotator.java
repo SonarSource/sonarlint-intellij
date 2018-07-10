@@ -167,7 +167,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
     String flows = "";
     if (!issue.flows().isEmpty()) {
-      flows = " [context] ";
+      flows = String.format(" [+%d %s]", issue.flows().size(), SonarLintUtils.pluralize("location", issue.flows().size()));
     }
 
     @NonNls final String link = " <a "
