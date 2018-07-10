@@ -88,6 +88,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   @Override public boolean isModified(SonarLintGlobalSettings settings) {
+    saveCurrentActivation();
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
     getIncludedAndExcluded(included, excluded);
@@ -95,6 +96,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   @Override public void save(SonarLintGlobalSettings settings) {
+    saveCurrentActivation();
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
     getIncludedAndExcluded(included, excluded);
@@ -128,7 +130,6 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   private void updateModel() {
     saveCurrentActivation();
-    filterComponent.getTextEditor().setText(filterModel.getText());
     Collection<RuleDetails> ruleDetails = engine.getAllRuleDetails();
     Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = ruleDetails.stream()
       .map(r -> new RulesTreeNode.Rule(r, currentActivationByRuleKey.get(r.getKey())))
