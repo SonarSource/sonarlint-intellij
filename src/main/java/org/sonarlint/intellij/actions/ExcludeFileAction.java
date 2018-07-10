@@ -93,7 +93,7 @@ public class ExcludeFileAction extends DumbAwareAction {
     }
   }
 
-  private Stream<String> toStringStream(Project project, VirtualFile[] files) {
+  private static Stream<String> toStringStream(Project project, VirtualFile[] files) {
     SonarLintAppUtils appUtils = SonarLintUtils.get(SonarLintAppUtils.class);
     return Arrays.stream(files)
       .map(vf -> toExclusion(appUtils, project, vf))
