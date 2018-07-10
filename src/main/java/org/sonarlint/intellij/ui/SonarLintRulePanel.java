@@ -61,6 +61,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 
 public class SonarLintRulePanel {
   private static final Pattern SPACES_BEGINNING_LINE = Pattern.compile("\n(\\p{Blank}*)");
@@ -89,8 +90,9 @@ public class SonarLintRulePanel {
       nothingToDisplay(false);
     } else {
       try {
+        RuleDetails rule = projectBindingManager.getFacade().ruleDetails(issue.getRuleKey());
         String description = projectBindingManager.getFacade().getDescription(issue.getRuleKey());
-        if (description == null) {
+        if (rule == null || description == null) {
           nothingToDisplay(true);
           return;
         }
@@ -99,7 +101,7 @@ public class SonarLintRulePanel {
         builder.append("<h2>")
           .append(StringEscapeUtils.escapeHtml(issue.getRuleName()))
           .append("</h2>");
-        createTable(issue, builder);
+        createTable(rule, builder);
         builder.append("<br />")
           .append(description);
         String htmlBody = builder.toString();
@@ -112,18 +114,18 @@ public class SonarLintRulePanel {
     }
   }
 
-  private static void createTable(LiveIssue issue, StringBuilder builder) {
+  private static void createTable(RuleDetails rule, StringBuilder builder) {
     // apparently some css properties are not supported
     String imgAttributes = "valign=\"top\" hspace=\"3\"";
 
     builder.append("<table><tr>");
-    if (issue.getType() != null) {
-      builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///type/").append(issue.getType()).append("\"/></td>")
-        .append("<td class=\"pad\"><b>").append(clean(issue.getType())).append("</b></td>");
+    if (rule.getType() != null) {
+      builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///type/").append(rule.getType()).append("\"/></td>")
+        .append("<td class=\"pad\"><b>").append(clean(rule.getType())).append("</b></td>");
     }
-    builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///severity/").append(issue.getSeverity()).append("\"/></td>")
-      .append("<td class=\"pad\"><b>").append(clean(issue.getSeverity())).append("</b></td>")
-      .append("<td><b>").append(issue.getRuleKey()).append("</b></td>")
+    builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///severity/").append(rule.getSeverity()).append("\"/></td>")
+      .append("<td class=\"pad\"><b>").append(clean(rule.getSeverity())).append("</b></td>")
+      .append("<td><b>").append(rule.getKey()).append("</b></td>")
       .append("</tr></table>");
   }
 
