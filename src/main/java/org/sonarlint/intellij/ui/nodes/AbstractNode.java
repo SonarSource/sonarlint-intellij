@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.Enumeration;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
@@ -76,7 +77,7 @@ public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutabl
     super.add(newChild);
   }
 
-  public int getInsertIdx(T newChild, Comparator<T> comparator) {
+  public int getInsertIdx(T newChild, Comparator<? super TreeNode> comparator) {
     if (children == null) {
       insert(newChild, 0);
       return 0;
