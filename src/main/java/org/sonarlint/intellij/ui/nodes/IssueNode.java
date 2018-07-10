@@ -24,6 +24,7 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
@@ -33,7 +34,12 @@ import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
+import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
+
 public class IssueNode extends AbstractNode {
+  // not available in IJ15
+  private static final SimpleTextAttributes GRAYED_SMALL_ATTRIBUTES = new SimpleTextAttributes(STYLE_SMALLER, UIUtil.getInactiveTextColor());
+
   private final LiveIssue issue;
 
   public IssueNode(LiveIssue issue) {
@@ -66,7 +72,7 @@ public class IssueNode extends AbstractNode {
 
     if (!issue.flows().isEmpty()) {
       String flows = String.format(" [+%d %s]", issue.flows().size(), SonarLintUtils.pluralize("location", issue.flows().size()));
-      renderer.append(flows, SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES);
+      renderer.append(flows, GRAYED_SMALL_ATTRIBUTES);
     }
 
     if (issue.getCreationDate() != null) {
