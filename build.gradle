@@ -77,7 +77,7 @@ dependencies {
   //compile 'com.google.protobuf:protobuf-java:3.1.0'
   testCompile 'junit:junit:4.12'
   testCompile 'org.assertj:assertj-core:3.6.2'
-  testCompile 'org.mockito:mockito-core:2.7.6'
+  testCompile 'org.mockito:mockito-core:2.19.0'
   sqplugins (
     'org.sonarsource.java:sonar-java-plugin:5.3.0.13828',
     'org.sonarsource.javascript:sonar-javascript-plugin:4.1.0.6085',
