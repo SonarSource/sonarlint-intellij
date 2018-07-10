@@ -45,6 +45,7 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConf
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
+  private static final String[] UNSUPPORTED_ANALYZERS = {"cpp", "typescript"};
   private final GlobalLogOutput globalLogOutput;
 
   public SonarLintEngineFactory(GlobalLogOutput globalLogOutput) {
@@ -55,6 +56,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
+      .addExcludedCodeAnalyzers(UNSUPPORTED_ANALYZERS)
       .setWorkDir(getWorkDir())
       .setServerId(serverId)
       .build();
