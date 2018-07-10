@@ -187,7 +187,7 @@ public class SonarLintRulePanel {
    * In the preformated text, we replace '\n' by the 'br' tag, and all the spaces in the beginning of each line by
    * the non-breaking space 'nbsp'.
    */
-  private String fixPreformatedText(String htmlBody) {
+  private static String fixPreformatedText(String htmlBody) {
     StringBuilder builder = new StringBuilder();
     int current = 0;
 

@@ -210,8 +210,6 @@ public class AuthStep extends AbstractWizardStepEx {
         }
       }
     }
-
-    return;
   }
 
   private void checkConnection() throws CommitStepException {

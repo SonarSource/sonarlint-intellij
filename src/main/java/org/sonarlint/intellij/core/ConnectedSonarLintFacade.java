@@ -33,7 +33,6 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -49,7 +48,8 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   private final SonarLintConsole console;
   private final SonarLintAppUtils appUtils;
 
-  ConnectedSonarLintFacade(SonarLintAppUtils appUtils, ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project, String moduleKey) {
+  ConnectedSonarLintFacade(SonarLintAppUtils appUtils, ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings,
+    SonarLintConsole console, Project project, String moduleKey) {
     super(project, projectSettings);
     this.appUtils = appUtils;
     Preconditions.checkNotNull(project, "project");
