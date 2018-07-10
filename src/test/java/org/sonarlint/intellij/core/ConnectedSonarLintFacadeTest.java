@@ -47,12 +47,11 @@ public class ConnectedSonarLintFacadeTest {
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
-  private SonarLintProjectSettings settings;
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private ConnectedSonarLintFacade facade;
 
   @Before
   public void setUp() {
-    settings = new SonarLintProjectSettings();
     when(project.getBasePath()).thenReturn("");
     facade = new ConnectedSonarLintFacade(appUtils, engine, settings, console, project, moduleKey);
   }
@@ -64,6 +63,13 @@ public class ConnectedSonarLintFacadeTest {
     when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
     assertThat(facade.getRuleName("invalid")).isNull();
+  }
+
+  @Test
+  public void should_get_rule_details() {
+    RuleDetails ruleDetails = mock(RuleDetails.class);
+    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test

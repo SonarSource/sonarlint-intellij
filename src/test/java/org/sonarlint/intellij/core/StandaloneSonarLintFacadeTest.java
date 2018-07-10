@@ -23,8 +23,6 @@ import com.intellij.openapi.project.Project;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -42,20 +40,15 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class StandaloneSonarLintFacadeTest {
-  @Mock
-  private StandaloneSonarLintEngine engine;
-  @Mock
-  private Project project;
-  @Mock
-  private SonarLintConsole console;
-
+  private StandaloneSonarLintEngine engine = mock(StandaloneSonarLintEngine.class);
+  private Project project = mock(Project.class);
+  private SonarLintConsole console = mock(SonarLintConsole.class);
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
   private StandaloneSonarLintFacade facade;
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
     when(project.getBasePath()).thenReturn("");
     facade = new StandaloneSonarLintFacade(globalSettings, settings, console, project, engine);
   }
@@ -67,6 +60,13 @@ public class StandaloneSonarLintFacadeTest {
     when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
     assertThat(facade.getRuleName("invalid")).isNull();
+  }
+
+  @Test
+  public void should_get_rule_details() {
+    RuleDetails ruleDetails = mock(RuleDetails.class);
+    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test

@@ -50,7 +50,8 @@ public abstract class SonarLintFacade {
   protected abstract AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor);
 
-  protected abstract RuleDetails ruleDetails(String ruleKey);
+  @CheckForNull
+  public abstract RuleDetails ruleDetails(String ruleKey);
 
   public abstract boolean requiresSavingFiles();
 

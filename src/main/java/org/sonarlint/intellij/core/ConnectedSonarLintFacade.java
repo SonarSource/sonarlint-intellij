@@ -84,7 +84,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     return sonarlint.getLoadedAnalyzers();
   }
 
-  @Override protected RuleDetails ruleDetails(String ruleKey) {
+  @Override public RuleDetails ruleDetails(String ruleKey) {
     return sonarlint.getRuleDetails(ruleKey);
   }
 
