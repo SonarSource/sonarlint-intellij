@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +34,7 @@ public class RulesFilterModel {
   private boolean showOnlyEnabled;
   private boolean showOnlyDisabled;
   private String text;
-  private List<String> tokenizedText;
+  private List<String> tokenizedText = Collections.emptyList();
 
   public RulesFilterModel(Runnable onChange) {
     this.onChange = onChange;
@@ -112,18 +113,19 @@ public class RulesFilterModel {
       return false;
     }
 
-    if (tokenizedText == null || tokenizedText.isEmpty()) {
+    if (tokenizedText.isEmpty()) {
       return true;
     }
 
-    List<String> split = tokenize(rule.getName());
+    List<String> split = new ArrayList<>();
+    split.addAll(tokenize(rule.getName()));
+    split.addAll(tokenize(rule.getKey()));
     return Collections.indexOfSubList(split, tokenizedText) != -1;
   }
 
-  @CheckForNull
   private static List<String> tokenize(@Nullable String str) {
     if (str == null || str.isEmpty()) {
-      return null;
+      return Collections.emptyList();
     }
     String lower = str.toLowerCase(Locale.US);
     return Arrays.asList(lower.split("\\s"));
