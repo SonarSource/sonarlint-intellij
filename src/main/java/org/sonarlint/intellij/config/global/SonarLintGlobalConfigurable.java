@@ -135,7 +135,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       JBTabbedPane tabs = new JBTabbedPane();
       tabs.insertTab("Settings", null, settingsPanel, "Configure SonarLint for all projects", 0);
       tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", 1);
-      tabs.insertTab("Rules", null, rules.getComponent(), "Configure rules", 2);
+      tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not connected to SonarQube", 2);
       tabs.insertTab("About", null, about.getComponent(), "About SonarLint", 3);
       rootPanel.add(tabs, BorderLayout.CENTER);
     }
