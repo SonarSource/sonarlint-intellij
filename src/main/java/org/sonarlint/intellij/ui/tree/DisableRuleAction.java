@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui.tree;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKey;
@@ -34,7 +35,7 @@ public class DisableRuleAction extends AnAction {
   public static final DataKey<LiveIssue> ISSUE_DATA_KEY = DataKey.create("sonarlint_issue");
 
   public DisableRuleAction() {
-    super("Disable rule", "Disable the SonarLint rule that activated this rule", null);
+    super("Disable rule", "Disable the SonarLint rule that activated this rule", AllIcons.Actions.Cancel);
   }
 
   @Override public void actionPerformed(AnActionEvent e) {

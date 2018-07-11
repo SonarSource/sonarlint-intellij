@@ -20,9 +20,13 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.intention.IntentionAction;
+import com.intellij.codeInsight.intention.LowPriorityAction;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
+import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -31,7 +35,7 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class DisableRuleQuickFix implements IntentionAction {
+public class DisableRuleQuickFix implements IntentionAction, LowPriorityAction, Iconable {
   private final String ruleKey;
   private final SonarLintGlobalSettings settings;
 
@@ -71,5 +75,9 @@ public class DisableRuleQuickFix implements IntentionAction {
 
   private boolean isAlreadyDisabled() {
     return settings.getExcludedRules().contains(ruleKey);
+  }
+
+  @Override public Icon getIcon(int flags) {
+    return AllIcons.Actions.Cancel;
   }
 }
