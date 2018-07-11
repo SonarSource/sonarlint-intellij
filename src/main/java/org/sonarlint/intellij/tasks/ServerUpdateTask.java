@@ -120,7 +120,7 @@ public class ServerUpdateTask {
   }
 
   private static String buildMinimumVersionFailMessage(Collection<SonarAnalyzer> failingAnalyzers) {
-    String msg = "The following plugins do not meet the required minimum versions, please upgrade them: ";
+    String msg = "The following plugins do not meet the required minimum versions, please upgrade them in SonarQube: ";
 
     return msg + failingAnalyzers.stream()
       .map(ServerUpdateTask::analyzerToString)
