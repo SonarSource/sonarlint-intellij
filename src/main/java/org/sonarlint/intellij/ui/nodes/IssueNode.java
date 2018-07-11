@@ -71,7 +71,8 @@ public class IssueNode extends AbstractNode {
     }
 
     if (!issue.flows().isEmpty()) {
-      String flows = String.format(" [+%d %s]", issue.flows().size(), SonarLintUtils.pluralize("location", issue.flows().size()));
+      int numLocations = issue.flows().stream().mapToInt(f -> f.locations().size()).sum();
+      String flows = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
       renderer.append(flows, GRAYED_SMALL_ATTRIBUTES);
     }
 
