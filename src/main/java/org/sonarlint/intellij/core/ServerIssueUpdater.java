@@ -19,14 +19,17 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -133,28 +136,37 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     String moduleKey, boolean downloadAll) {
     List<Future<Void>> futureList = new LinkedList<>();
     IssueUpdater issueUpdater = new IssueUpdater(server, engine, moduleKey);
+    Map<VirtualFile, String> relativePathPerFile = getRelativePaths(files);
 
     if (!downloadAll) {
-      for (VirtualFile file : files) {
-        String relativePath = appUtils.getRelativePathForAnalysis(myProject, file);
-        if (relativePath != null) {
-          Runnable task = () -> issueUpdater.downloadAndMatchFile(file, relativePath);
-          futureList.add(submit(task, moduleKey, relativePath));
-        }
+      for (Map.Entry<VirtualFile, String> e : relativePathPerFile.entrySet()) {
+        Runnable task = () -> issueUpdater.downloadAndMatchFile(e.getKey(), e.getValue());
+        futureList.add(submit(task, moduleKey, e.getValue()));
       }
     } else {
       Runnable task = () -> {
         issueUpdater.downloadAllServerIssues();
-        for (VirtualFile file : files) {
-          String relativePath = appUtils.getRelativePathForAnalysis(myProject, file);
-          if (relativePath != null) {
-            issueUpdater.fetchAndMatchFile(file, relativePath);
-          }
+        for (Map.Entry<VirtualFile, String> e : relativePathPerFile.entrySet()) {
+          issueUpdater.fetchAndMatchFile(e.getKey(), e.getValue());
         }
       };
       futureList.add(submit(task, moduleKey, null));
     }
     return futureList;
+  }
+
+  private Map<VirtualFile, String> getRelativePaths(Collection<VirtualFile> files) {
+    Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
+
+    ApplicationManager.getApplication().runReadAction(() -> {
+      for (VirtualFile file : files) {
+        String relativePath = appUtils.getRelativePathForAnalysis(myProject, file);
+        if (relativePath != null) {
+          relativePathPerFile.put(file, relativePath);
+        }
+      }
+    });
+    return relativePathPerFile;
   }
 
   private Future<Void> submit(Runnable task, String moduleKey, @Nullable String relativePath) {
