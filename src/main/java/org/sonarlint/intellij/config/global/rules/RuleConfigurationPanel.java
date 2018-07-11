@@ -33,6 +33,7 @@ import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SideBorder;
 import com.intellij.ui.TreeSpeedSearch;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
@@ -40,6 +41,7 @@ import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.IOException;
@@ -228,6 +230,11 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.LEFT + SideBorder.TOP));
 
+    GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 1, 0,
+      GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 5, 5, 5), 0, 0);
+    JBLabel label = new JBLabel("<html><b>Note: </b>When a project is connected to a SonarQube server or SonarCloud, configuration from the server applies.</html>");
+    panel.add(label, gbc);
+
     // filters
     myTreeExpander = new DefaultTreeExpander(table.getTree()) {
       @Override
@@ -246,22 +253,18 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         filterModel.setText(getFilter());
       }
     };
-    filterComponent.setPreferredSize(new Dimension(20, filterComponent.getPreferredSize().height));
-    GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 0.5, 0,
-      GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
-    panel.add(filterComponent, gbc);
 
-    gbc = new GridBagConstraints(1, 0, 1, 1, 0.5, 0,
-      GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
-    panel.add(createTreeToolbarPanel().getComponent(), gbc);
-
-    // top button
     JButton restoreDefaults = new JButton("Restore defaults");
     restoreDefaults.addActionListener(l -> model.restoreDefaults());
 
-    gbc = new GridBagConstraints(2, 0, 1, 1, 1, 0,
-      GridBagConstraints.NORTHWEST, GridBagConstraints.NONE, JBUI.insets(5, 0, 2, 10), 0, 0);
-    panel.add(restoreDefaults, gbc);
+    JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+    optionsPanel.add(filterComponent);
+    optionsPanel.add(createTreeToolbarPanel().getComponent());
+    optionsPanel.add(restoreDefaults, gbc);
+
+    gbc = new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+      GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
+    panel.add(optionsPanel, gbc);
 
     // description pane
     descriptionBrowser = new JEditorPane(UIUtil.HTML_MIME, "<html><body></body></html>");
@@ -279,7 +282,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     mainSplitter.setFirstComponent(scrollPane);
     mainSplitter.setSecondComponent(descriptionPanel);
 
-    gbc = new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
+    gbc = new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
       GridBagConstraints.CENTER, GridBagConstraints.BOTH, JBUI.insets(5, 0, 2, 10), 0, 0);
     panel.add(mainSplitter, gbc);
   }
