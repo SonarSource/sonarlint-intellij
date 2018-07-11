@@ -22,6 +22,8 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
@@ -32,9 +34,13 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private final SonarLintEngineManager serverManager;
@@ -75,6 +81,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @Override public void apply() {
+    boolean rulesChanged = rules.isModified(globalSettings);
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
     about.save(telemetry);
@@ -84,6 +91,21 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     GlobalConfigurationListener globalConfigurationListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings);
     serverManager.reloadServers();
+
+    if (rulesChanged) {
+      analyzeOpenFilesInUnconnectedProjects();
+    }
+  }
+
+  private void analyzeOpenFilesInUnconnectedProjects() {
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+
+    for (Project p : openProjects) {
+      SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
+      if (!projectSettings.isBindingEnabled()) {
+        SonarLintUtils.get(p, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
+      }
+    }
   }
 
   @CheckForNull

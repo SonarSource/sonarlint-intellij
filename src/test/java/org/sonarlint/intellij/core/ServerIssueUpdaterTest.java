@@ -57,8 +57,7 @@ import static org.mockito.Mockito.when;
 
 public class ServerIssueUpdaterTest extends SonarTest {
   public static final String PROJECT_KEY = "foo";
-  private ServerIssueUpdater updater;
-  private SonarLintProjectSettings settings;
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -69,20 +68,17 @@ public class ServerIssueUpdaterTest extends SonarTest {
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private ProgressIndicator indicator = mock(ProgressIndicator.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
-
-  private Path projectBaseDir;
+  private ServerIssueUpdater updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console, appUtils);
 
   @Before
   public void prepare() throws IOException {
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
 
-    projectBaseDir = temp.newFolder().toPath();
+    Path projectBaseDir = temp.newFolder().toPath();
 
     when(indicator.isModal()).thenReturn(false);
     when(project.getBasePath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.toString()));
-    settings = new SonarLintProjectSettings();
     settings.setProjectKey(PROJECT_KEY);
-    updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console, appUtils);
   }
 
   @Test
