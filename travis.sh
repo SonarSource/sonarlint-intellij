@@ -45,6 +45,7 @@ function prepareBuildVersion {
 }
 
 unset DISPLAY
+git fetch --unshallow
 
 case "$TARGET" in
 
