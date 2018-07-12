@@ -72,6 +72,7 @@ CI)
 
   elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN-}" ]; then
     strongEcho 'Build and analyze pull request'                                                                                                                              
+    prepareBuildVersion
     # this pull request must be built and analyzed
     ./gradlew buildPlugin check sonarqube artifactory \
         -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace \
