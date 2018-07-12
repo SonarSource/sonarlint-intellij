@@ -174,7 +174,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
       + (isDark() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;
-    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString(issue.getMessage()) + flows + link);
+    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + flows + link);
   }
 
   private boolean isDark() {

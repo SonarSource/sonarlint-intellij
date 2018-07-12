@@ -128,7 +128,7 @@ public class SonarLintHighlighting {
       .textAttributes(SonarLintTextAttributes.SELECTED);
 
     if (message != null && !message.isEmpty() && !"...".equals(message)) {
-      builder.descriptionAndTooltip(message);
+      builder.descriptionAndTooltip("SonarLint: " + message);
     }
     return builder.create();
   }
