@@ -158,13 +158,17 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   private Map<VirtualFile, String> getRelativePaths(Collection<VirtualFile> files) {
     Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
-    try (AccessToken token = ApplicationManager.getApplication().acquireReadActionLock()) {
+    // autocloseable not supported in older versions
+    AccessToken token = ApplicationManager.getApplication().acquireReadActionLock();
+    try {
       for (VirtualFile file : files) {
         String relativePath = appUtils.getRelativePathForAnalysis(myProject, file);
         if (relativePath != null) {
           relativePathPerFile.put(file, relativePath);
         }
       }
+    } finally {
+      token.finish();
     }
     return relativePathPerFile;
   }
