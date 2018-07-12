@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.actions;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -39,6 +40,14 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ExcludeFileAction extends DumbAwareAction {
+  public ExcludeFileAction() {
+
+  }
+
+  public ExcludeFileAction(String text) {
+    super(text, null, AllIcons.Actions.Cancel);
+  }
+
   @Override
   public void update(AnActionEvent e) {
     super.update(e);
