@@ -43,6 +43,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NonNls;
+import org.sonarlint.intellij.actions.DisableRuleAction;
+import org.sonarlint.intellij.actions.ExcludeFileAction;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
@@ -72,6 +74,7 @@ public class IssueTree extends Tree implements DataProvider {
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
     group.addSeparator();
+    group.add(new ExcludeFileAction("Exclude file(s) from automatic analysis"));
     group.add(new DisableRuleAction());
 
     PopupHandler.installPopupHandler(this, group, ActionPlaces.TODO_VIEW_POPUP, ActionManager.getInstance());
@@ -95,7 +98,8 @@ public class IssueTree extends Tree implements DataProvider {
       return null;
     } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
       VirtualFile f = getSelectedFile();
-      return f != null ? (new VirtualFile[] {f}) : null;
+      // return empty so that it doesn't find it in parent components
+      return f != null ? (new VirtualFile[] {f}) : new VirtualFile[0];
     } else if (DisableRuleAction.ISSUE_DATA_KEY.is(dataId)) {
       return getSelectedIssue();
     }
