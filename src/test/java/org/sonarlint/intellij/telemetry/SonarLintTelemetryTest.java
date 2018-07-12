@@ -117,7 +117,7 @@ public class SonarLintTelemetryTest extends SonarTest {
     when(engine.isEnabled()).thenReturn(true);
     telemetry.upload();
     verify(engine).isEnabled();
-    verify(engine).usedConnectedMode(anyBoolean());
+    verify(engine).usedConnectedMode(anyBoolean(), anyBoolean());
     verify(engine).uploadLazily();
   }
 

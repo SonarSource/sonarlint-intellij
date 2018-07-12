@@ -31,6 +31,8 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
@@ -92,7 +94,7 @@ public class SonarLintTelemetry implements ApplicationComponent {
   @VisibleForTesting
   void upload() {
     if (enabled()) {
-      telemetry.usedConnectedMode(isAnyProjectConnected());
+      telemetry.usedConnectedMode(isAnyProjectConnected(), isAnyProjectConnectedToSonarCloud());
       telemetry.uploadLazily();
     }
   }
@@ -135,5 +137,17 @@ public class SonarLintTelemetry implements ApplicationComponent {
   private boolean isAnyProjectConnected() {
     Project[] openProjects = projectManager.getOpenProjects();
     return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.get(p, SonarLintProjectSettings.class).isBindingEnabled());
+  }
+
+  private boolean isAnyProjectConnectedToSonarCloud() {
+    Project[] openProjects = projectManager.getOpenProjects();
+    return Arrays.stream(openProjects).anyMatch(p -> {
+      try {
+        ProjectBindingManager bindingManager = SonarLintUtils.get(p, ProjectBindingManager.class);
+        return bindingManager.getSonarQubeServer().isSonarCloud();
+      } catch (InvalidBindingException e) {
+        return false;
+      }
+    });
   }
 }
