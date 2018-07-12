@@ -130,6 +130,7 @@ jacocoTestReport.doFirst {
 artifactory {
   clientConfig.setIncludeEnvVars(true)
   clientConfig.setEnvVarsExcludePatterns('*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*')
+  clientConfig.info.addEnvironmentProperty('ARTIFACTS_TO_DOWNLOAD', 'org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip')
   contextUrl = System.getenv('ARTIFACTORY_URL')
   publish {    
     repository {
