@@ -84,7 +84,7 @@ public class LastAnalysisPanel implements Disposable {
     layout = new CardLayout();
     panel = new JPanel(layout);
     lastAnalysisLabel = new JLabel("");
-    noAnalysisLabel = new JLabel("");
+    noAnalysisLabel = new JLabel("No analysis done");
 
     GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(2, 2, 2, 2), 0, 0);
     gc.fill = GridBagConstraints.HORIZONTAL;
