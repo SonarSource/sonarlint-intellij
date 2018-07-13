@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
@@ -31,6 +32,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -51,6 +53,7 @@ import static org.sonarlint.intellij.util.SonarLintUtils.isJavaResource;
 
 public class LocalFileExclusions {
   private final SonarLintAppUtils appUtils;
+  private final ApplicationInfo applicationInfo;
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
   private Supplier<Boolean> powerSaveModeCheck;
@@ -58,13 +61,15 @@ public class LocalFileExclusions {
   /**
    * Used by pico container
    */
-  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils) {
-    this(project, settings, projectSettings, appUtils, PowerSaveMode::isEnabled);
+  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
+    ApplicationInfo applicationInfo) {
+    this(project, settings, projectSettings, appUtils, applicationInfo, PowerSaveMode::isEnabled);
   }
 
   public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    Supplier<Boolean> powerSaveModeCheck) {
+    ApplicationInfo applicationInfo, Supplier<Boolean> powerSaveModeCheck) {
     this.appUtils = appUtils;
+    this.applicationInfo = applicationInfo;
     loadGlobalExclusions(settings);
     loadProjectExclusions(projectSettings);
     subscribeToSettingsChanges(project);
@@ -110,8 +115,9 @@ public class LocalFileExclusions {
    * It will also exclude files that cannot be analysed with {@link #canAnalyze(VirtualFile, Module)}.
    */
   public Result checkExclusions(VirtualFile file, @Nullable Module module) {
-    if (!canAnalyze(file, module)) {
-      return Result.excluded(null);
+    Result result = canAnalyze(file, module);
+    if (result.isExcluded()) {
+      return result;
     }
 
     if (powerSaveModeCheck.get()) {
@@ -176,26 +182,27 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  public boolean canAnalyze(VirtualFile file, @Nullable Module module) {
+  public Result canAnalyze(VirtualFile file, @Nullable Module module) {
     if (module == null) {
-      return false;
+      return Result.excluded("file is not part of any module in IntelliJ's project structure");
     }
 
     if (module.isDisposed() || module.getProject().isDisposed()) {
-      return false;
+      return Result.excluded("module is disposed");
     }
 
     if (!file.isInLocalFileSystem() || file.getFileType().isBinary() || !file.isValid()
       || ".idea".equals(file.getParent().getName())) {
-      return false;
+      return Result.excluded("file's type or location are not supported");
     }
 
     // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-    if ("html".equalsIgnoreCase(file.getFileType().getName())) {
-      return false;
+    String ijFlavor = applicationInfo.getVersionName().toLowerCase(Locale.US);
+    if (ijFlavor.contains("phpstorm") && "html".equalsIgnoreCase(file.getFileType().getName())) {
+      return Result.excluded(null);
     }
 
-    return true;
+    return Result.notExcluded();
   }
 
   public static class Result {

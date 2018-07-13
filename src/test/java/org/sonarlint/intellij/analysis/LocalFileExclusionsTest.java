@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -46,17 +47,18 @@ public class LocalFileExclusionsTest extends SonarTest {
   private VirtualFile testFile = mock(VirtualFile.class);
   private Supplier<Boolean> powerModeCheck = mock(Supplier.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
+  private ApplicationInfo info = mock(ApplicationInfo.class);
 
   @Before
   public void prepare() {
-    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, powerModeCheck);
+    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, info, powerModeCheck);
     when(powerModeCheck.get()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));
     when(testFile.getFileType()).thenReturn(type);
     when(testFile.isInLocalFileSystem()).thenReturn(true);
     when(testFile.isValid()).thenReturn(true);
-
+    when(info.getVersionName()).thenReturn("Intellij IDEA");
     super.register(module, ModuleRootManager.class, moduleRootManager);
   }
 
@@ -68,18 +70,18 @@ public class LocalFileExclusionsTest extends SonarTest {
 
   @Test
   public void should_analyze_file() {
-    assertThat(exclusions.canAnalyze(testFile, module)).isTrue();
+    assertThat(exclusions.canAnalyze(testFile, module).isExcluded()).isFalse();
   }
 
   @Test
   public void should_not_analyze_if_file_is_binary() {
     when(type.isBinary()).thenReturn(true);
-    assertThat(exclusions.canAnalyze(testFile, module)).isFalse();
+    assertThat(exclusions.canAnalyze(testFile, module).isExcluded()).isTrue();
   }
 
   @Test
   public void should_not_analyze_if_module_is_null() {
-    assertThat(exclusions.canAnalyze(testFile, null)).isFalse();
+    assertThat(exclusions.canAnalyze(testFile, null).isExcluded()).isTrue();
   }
 
   @Test
@@ -90,7 +92,7 @@ public class LocalFileExclusionsTest extends SonarTest {
     when(project.isDisposed()).thenReturn(true);
     when(module.getProject()).thenReturn(project);
 
-    assertThat(exclusions.canAnalyze(testFile, module)).isFalse();
+    assertThat(exclusions.canAnalyze(testFile, module).isExcluded()).isTrue();
   }
 
   @Test
@@ -98,6 +100,6 @@ public class LocalFileExclusionsTest extends SonarTest {
     VirtualFile f = mock(VirtualFile.class);
     when(f.isValid()).thenReturn(false);
 
-    assertThat(exclusions.canAnalyze(f, module)).isFalse();
+    assertThat(exclusions.canAnalyze(f, module).isExcluded()).isTrue();
   }
 }

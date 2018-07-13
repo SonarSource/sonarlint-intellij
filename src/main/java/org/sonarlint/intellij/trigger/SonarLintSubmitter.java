@@ -146,8 +146,9 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
           continue;
         }
       } else {
-        if (!localFileExclusions.canAnalyze(file, m)) {
-          logExclusion(file, "can't be analyzed. Skipping it.");
+        LocalFileExclusions.Result result = localFileExclusions.canAnalyze(file, m);
+        if (result.isExcluded()) {
+          logExclusion(file, "excluded: " + result.excludeReason());
           continue;
         }
       }
