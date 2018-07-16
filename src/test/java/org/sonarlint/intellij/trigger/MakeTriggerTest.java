@@ -26,8 +26,6 @@ import com.intellij.openapi.project.Project;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
@@ -39,23 +37,16 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class MakeTriggerTest extends SonarTest {
-  @Mock
-  private SonarLintSubmitter submitter;
-  @Mock
-  private Project project;
-  @Mock
-  private SonarLintConsole console;
-  @Mock
-  private CompileContext context;
-  @Mock
-  private CompilerManager compilerManager;
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private Project project = mock(Project.class);
+  private SonarLintConsole console = mock(SonarLintConsole.class);
+  private CompileContext context = mock(CompileContext.class);
+  private CompilerManager compilerManager = mock(CompilerManager.class);
 
-  private MakeTrigger trigger;
+  private MakeTrigger trigger = new MakeTrigger(project, submitter, console, compilerManager);
 
   @Before
   public void prepare() {
-    MockitoAnnotations.initMocks(this);
-    trigger = new MakeTrigger(project, submitter, console, compilerManager);
     when(context.getProject()).thenReturn(project);
   }
 

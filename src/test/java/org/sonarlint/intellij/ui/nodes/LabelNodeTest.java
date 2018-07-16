@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.ui.SimpleTextAttributes;
-import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
@@ -28,12 +27,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class LabelNodeTest {
-  private LabelNode node;
-
-  @Before
-  public void setUp() {
-    node = new LabelNode("msg");
-  }
+  private LabelNode node = new LabelNode("msg");
 
   @Test
   public void testRenderer() {

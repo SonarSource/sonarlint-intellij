@@ -35,15 +35,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 public class RulesFilterActionTest extends SonarTest {
+  private ActionManager actionManager = register(app, ActionManager.class);
   private RulesFilterModel model = mock(RulesFilterModel.class);
-  private RulesFilterAction action;
   private AnActionEvent event = mock(AnActionEvent.class);
   private Presentation presentation = new Presentation();
-  private ActionManager actionManager = mock(ActionManager.class);
+  private RulesFilterAction action;
 
   @Before
   public void prepare() {
-    super.register(app, ActionManager.class, actionManager);
     when(event.getPresentation()).thenReturn(presentation);
     action = new RulesFilterAction(model);
   }

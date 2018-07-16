@@ -35,22 +35,18 @@ import static org.mockito.Mockito.when;
 
 public class SonarLinkHandlerTest extends SonarTest {
   private static final String RULE_KEY = "setRuleKey";
-  private SonarLinkHandler handler;
-  private Editor editor;
-  private SonarLintFacade sonarlint;
+  private SonarLinkHandler handler = new SonarLinkHandler();
+  private Editor editor = mock(Editor.class);
+  private SonarLintFacade sonarlint = mock(SonarLintFacade.class);
 
   @Before
   public void prepare() throws InvalidBindingException {
-    ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
-    sonarlint = mock(SonarLintFacade.class);
-    editor = mock(Editor.class);
-    handler = new SonarLinkHandler();
+    ProjectBindingManager projectBindingManager = register(ProjectBindingManager.class);
 
     when(projectBindingManager.getFacade()).thenReturn(sonarlint);
     when(editor.getProject()).thenReturn(project);
     when(sonarlint.getDescription(RULE_KEY)).thenReturn("description");
     when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name");
-    register(ProjectBindingManager.class, projectBindingManager);
   }
 
   @Test

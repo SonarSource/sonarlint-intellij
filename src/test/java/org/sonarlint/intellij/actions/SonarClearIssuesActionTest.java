@@ -28,8 +28,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.IssueManager;
 
@@ -39,31 +37,18 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarClearIssuesActionTest extends SonarTest {
-  @Mock
-  private FileEditorManager editorManager;
-  @Mock
-  private DaemonCodeAnalyzer codeAnalyzer;
-  @Mock
-  private IssueManager issueManager;
-  @Mock
-  private PsiManager psiManager;
-  @Mock
-  private AnActionEvent event;
+  private FileEditorManager editorManager = register(FileEditorManager.class);
+  private DaemonCodeAnalyzer codeAnalyzer = register(DaemonCodeAnalyzer.class);
+  private IssueManager issueManager = register(IssueManager.class);
+  private PsiManager psiManager = register(PsiManager.class);
+  private AnActionEvent event = mock(AnActionEvent.class);
 
-  private SonarClearIssuesAction clearIssues;
+  private SonarClearIssuesAction clearIssues = new SonarClearIssuesAction(null, null, null);
 
   @Before
   public void prepare() {
-    MockitoAnnotations.initMocks(this);
     when(event.getProject()).thenReturn(project);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
-
-    super.register(IssueManager.class, issueManager);
-    super.register(DaemonCodeAnalyzer.class, codeAnalyzer);
-    super.register(FileEditorManager.class, editorManager);
-    super.register(PsiManager.class, psiManager);
-
-    clearIssues = new SonarClearIssuesAction(null, null, null);
   }
 
   @Test

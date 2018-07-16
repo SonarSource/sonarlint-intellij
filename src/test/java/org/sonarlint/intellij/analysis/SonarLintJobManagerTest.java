@@ -45,7 +45,7 @@ public class SonarLintJobManagerTest extends SonarTest {
   private SonarLintUserTask task = mock(SonarLintUserTask.class);
   private ProgressManager progressManager = mock(ProgressManager.class);
 
-  private SonarLintJobManager manager;
+  private SonarLintJobManager manager = new SonarLintJobManager(project, factory, progressManager, status, console);
 
   @Before
   public void prepare() {
@@ -56,8 +56,6 @@ public class SonarLintJobManagerTest extends SonarTest {
     when(status.tryRun()).thenReturn(true);
     when(factory.createTask(any(SonarLintJob.class), eq(true))).thenReturn(task);
     when(factory.createUserTask(any(SonarLintJob.class), eq(true))).thenReturn(task);
-
-    manager = new SonarLintJobManager(project, factory, progressManager, status, console);
   }
 
   @Test

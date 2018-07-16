@@ -17,45 +17,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes;
+package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.project.Project;
 import org.junit.Test;
-import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import org.sonarlint.intellij.issue.IssueProcessor;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SummaryNodeTest {
-  private SummaryNode node = new SummaryNode();
+public class SonarLintTaskFactoryTest {
+  private SonarLintTaskFactory sonarLintTaskFactory = new SonarLintTaskFactory(mock(Project.class),
+    mock(SonarLintStatus.class), mock(IssueProcessor.class));
 
   @Test
-  public void testText() {
-    AbstractNode child1 = mock(AbstractNode.class);
-    when(child1.getIssueCount()).thenReturn(3);
-
-    node.add(child1);
-
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
-    node.render(renderer);
-
-    verify(renderer).append("Found 3 issues in 1 file");
-  }
-
-  @Test
-  public void testNoIssues() {
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
-    node.render(renderer);
-
-    verify(renderer).append("No issues to display");
-  }
-
-  @Test
-  public void testEmptyText() {
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
-    node.setEmptyText("Empty");
-    node.render(renderer);
-
-    verify(renderer).append("Empty");
+  public void should_create_tasks() {
+    Project project = mock(Project.class);
+    SonarLintJob job = mock(SonarLintJob.class);
+    when(job.project()).thenReturn(project);
+    assertThat(sonarLintTaskFactory.createTask(job, false)).isNotNull();
+    assertThat(sonarLintTaskFactory.createUserTask(job, false)).isNotNull();
   }
 }

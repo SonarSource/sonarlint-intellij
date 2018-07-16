@@ -45,15 +45,13 @@ public class IndexedObjectStoreTest {
   public TemporaryFolder temp = new TemporaryFolder();
 
   private IndexedObjectStore<String, String> store;
-  private StoreIndex<String> index;
+  private StoreIndex<String> index = mock(StoreIndex.class);
   private Path root;
-  private StoreKeyValidator<String> validator;
+  private StoreKeyValidator<String> validator = mock(StoreKeyValidator.class);
 
   @Before
   public void setUp() {
     root = temp.getRoot().toPath();
-    index = mock(StoreIndex.class);
-    validator = mock(StoreKeyValidator.class);
     PathMapper<String> mapper = str -> root.resolve("a").resolve(str);
     Reader<String> reader = (stream) -> new Scanner(stream).next();
     Writer<String> writer = (stream, str) -> {

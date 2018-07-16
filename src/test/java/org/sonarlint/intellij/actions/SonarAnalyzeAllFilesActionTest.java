@@ -28,7 +28,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
@@ -45,25 +44,19 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeAllFilesActionTest extends SonarTest {
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private SonarLintSubmitter submitter = register(SonarLintSubmitter.class);
   private SonarLintStatus status = mock(SonarLintStatus.class);
-  private AnalysisResultIssues issues = mock(AnalysisResultIssues.class);
-  private IssueManager issueManager = mock(IssueManager.class);
-  private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
+  private AnalysisResultIssues issues = register(AnalysisResultIssues.class);
+  private IssueManager issueManager = register(IssueManager.class);
+  private ProjectRootManager projectRootManager = register(ProjectRootManager.class);
   private ProjectFileIndex projectFileIndex = mock(ProjectFileIndex.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
-  private SonarAnalyzeAllFilesAction action;
+  private SonarAnalyzeAllFilesAction action = new SonarAnalyzeAllFilesAction();
 
   @Before
   public void before() {
-    action = new SonarAnalyzeAllFilesAction();
-    MockitoAnnotations.initMocks(this);
     when(projectRootManager.getFileIndex()).thenReturn(projectFileIndex);
-    super.register(SonarLintSubmitter.class, submitter);
-    super.register(AnalysisResultIssues.class, issues);
-    super.register(IssueManager.class, issueManager);
-    super.register(ProjectRootManager.class, projectRootManager);
   }
 
   @Test

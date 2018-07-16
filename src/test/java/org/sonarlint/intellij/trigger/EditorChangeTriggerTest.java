@@ -30,8 +30,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -45,23 +43,17 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class EditorChangeTriggerTest {
-  @Mock
-  private Project project;
-  @Mock
-  private SonarLintSubmitter submitter;
-  @Mock
-  private EditorFactory editorFactory;
-  @Mock
-  private SonarLintAppUtils utils;
-  @Mock
-  private FileDocumentManager docManager;
+  private Project project = mock(Project.class);
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private EditorFactory editorFactory = mock(EditorFactory.class);
+  private SonarLintAppUtils utils = mock(SonarLintAppUtils.class);
+  private FileDocumentManager docManager = mock(FileDocumentManager.class);
 
   private SonarLintGlobalSettings globalSettings;
   private EditorChangeTrigger listener;
 
   @Before
   public void setUp() {
-    MockitoAnnotations.initMocks(this);
     SonarLintTestUtils.mockMessageBus(project);
 
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));

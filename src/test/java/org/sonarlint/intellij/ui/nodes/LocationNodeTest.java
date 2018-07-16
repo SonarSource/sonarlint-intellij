@@ -32,11 +32,10 @@ import static org.mockito.Mockito.when;
 
 public class LocationNodeTest {
   private LocationNode node;
-  private RangeMarker range;
+  private RangeMarker range = mock(RangeMarker.class);
 
   @Before
   public void setUp() {
-    range = mock(RangeMarker.class);
     MockDocument doc = new MockDocument();
     doc.replaceText("my document test", System.currentTimeMillis());
     when(range.getDocument()).thenReturn(doc);

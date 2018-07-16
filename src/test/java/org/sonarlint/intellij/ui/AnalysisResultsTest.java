@@ -35,15 +35,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AnalysisResultsTest extends SonarTest {
-  private AnalysisResults analysisResults;
-  private AnalysisResultIssues issues;
+  private AnalysisResultIssues issues = register(AnalysisResultIssues.class);
+  private AnalysisResults analysisResults = new AnalysisResults(project);
 
   @Before
   public void prepare() {
     super.register(app, SonarLintActions.class, mock(SonarLintActions.class, RETURNS_DEEP_STUBS));
-    issues = mock(AnalysisResultIssues.class);
-    super.register(AnalysisResultIssues.class, issues);
-    analysisResults = new AnalysisResults(project);
   }
 
   @Test

@@ -38,7 +38,7 @@ public class TelemetryEngineProviderTest extends SonarTest {
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
   @Before
-  public void start() throws Exception {
+  public void start() {
     super.register(CertificateManager.class, mock(CertificateManager.class));
   }
 

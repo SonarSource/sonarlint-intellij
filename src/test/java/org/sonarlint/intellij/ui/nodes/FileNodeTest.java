@@ -32,18 +32,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class FileNodeTest {
-  private VirtualFile file;
-  private FileNode node;
+  private VirtualFile file = mock(VirtualFile.class);
+  private FileNode node = new FileNode(file);
 
   @Before
   public void setUp() {
-    file = mock(VirtualFile.class);
     FileType type = mock(FileType.class);
     when(type.getIcon()).thenReturn(AllIcons.FileTypes.Java);
 
     when(file.getFileType()).thenReturn(type);
     when(file.getName()).thenReturn("fileName");
-    node = new FileNode(file);
   }
 
   @Test

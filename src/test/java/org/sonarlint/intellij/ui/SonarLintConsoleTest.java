@@ -22,30 +22,19 @@ package org.sonarlint.intellij.ui;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.project.Project;
-import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class SonarLintConsoleTest {
-  private SonarLintConsole console;
-  private SonarLintProjectSettings settings;
-  @Mock
-  private Project project;
-  @Mock
-  private ConsoleView consoleView;
-
-  @Before
-  public void setUp() {
-    MockitoAnnotations.initMocks(this);
-    settings = new SonarLintProjectSettings();
-    console = new SonarLintConsole(project, consoleView, settings);
-  }
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private Project project = mock(Project.class);
+  private ConsoleView consoleView = mock(ConsoleView.class);
+  private SonarLintConsole console = new SonarLintConsole(project, consoleView, settings);
 
   @Test
   public void testClear() {

@@ -25,11 +25,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExclusionItemTest {
   @Test
-  public void should_parse() {
+  public void should_parse_file() {
     ExclusionItem item = ExclusionItem.parse("FILE:src/main/java/File.java");
     assertThat(item.item()).isEqualTo("src/main/java/File.java");
     assertThat(item.type()).isEqualTo(ExclusionItem.Type.FILE);
   }
+
+  @Test
+  public void should_parse_dir() {
+    ExclusionItem item = ExclusionItem.parse("DIRECTORY:src/main/java");
+    assertThat(item.item()).isEqualTo("src/main/java");
+    assertThat(item.type()).isEqualTo(ExclusionItem.Type.DIRECTORY);
+  }
+
+  @Test
+  public void should_parse_regex() {
+    ExclusionItem item = ExclusionItem.parse("GLOB:*.java");
+    assertThat(item.item()).isEqualTo("*.java");
+    assertThat(item.type()).isEqualTo(ExclusionItem.Type.GLOB);
+  }
+
 
   @Test
   public void return_null_if_fail_to_parse() {
@@ -40,6 +55,12 @@ public class ExclusionItemTest {
   @Test
   public void return_null_if_fail_to_parse2() {
     ExclusionItem item = ExclusionItem.parse("Unknown:");
+    assertThat(item).isNull();
+  }
+
+  @Test
+  public void return_null_if_fail_to_parse3() {
+    ExclusionItem item = ExclusionItem.parse("Unknown");
     assertThat(item).isNull();
   }
 

@@ -30,8 +30,6 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarTest;
 
 import static org.mockito.Mockito.mock;
@@ -41,25 +39,17 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class CodeAnalyzerRestarterTest extends SonarTest {
-  @Mock
-  private Project project;
-  @Mock
-  private PsiManager psiManager;
-  @Mock
-  private DaemonCodeAnalyzer codeAnalyzer;
-  @Mock
-  private FileEditorManager fileEditorManager;
-  @Mock
-  private MessageBus bus;
-
-  private CodeAnalyzerRestarter analyzerRestarter;
+  private Project project = mock(Project.class);
+  private PsiManager psiManager = mock(PsiManager.class);
+  private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);
+  private FileEditorManager fileEditorManager = mock(FileEditorManager.class);
+  private MessageBus bus = mock(MessageBus.class);
+  private CodeAnalyzerRestarter analyzerRestarter = new CodeAnalyzerRestarter(project, fileEditorManager, codeAnalyzer, psiManager, bus);
 
   @Before
   public void prepare() {
-    MockitoAnnotations.initMocks(this);
     MessageBusConnection connection = mock(MessageBusConnection.class);
     when(bus.connect(project)).thenReturn(connection);
-    analyzerRestarter = new CodeAnalyzerRestarter(project, fileEditorManager, codeAnalyzer, psiManager, bus);
   }
 
   @Test

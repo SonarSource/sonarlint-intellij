@@ -60,15 +60,14 @@ public class SonarLintSubmitterTest extends SonarTest {
   private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
   private SonarLintFacade facade = mock(SonarLintFacade.class);
 
-  private SonarLintGlobalSettings globalSettings;
+  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
   private SonarLintSubmitter submitter;
 
   @Before
   public void start() throws InvalidBindingException {
-    when(super.app.runReadAction(any(Computable.class))).thenAnswer(i ->((Computable)i.getArgument(0)).compute());
+    when(super.app.runReadAction(any(Computable.class))).thenAnswer(i -> ((Computable) i.getArgument(0)).compute());
     when(bindingManager.getFacade()).thenReturn(facade);
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
-    globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
     super.register(module, VirtualFileTestPredicate.class, testPredicate);
     submitter = new SonarLintSubmitter(project, console, fileEditorManager, sonarLintJobManager, globalSettings, utils,

@@ -29,7 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class IssueTreeIndexTest {
-  private IssueTreeIndex idx;
+  private IssueTreeIndex idx = new IssueTreeIndex();
 
   private VirtualFile file1;
   private VirtualFile file2;
@@ -39,8 +39,6 @@ public class IssueTreeIndexTest {
 
   @Before
   public void setUp() {
-    idx = new IssueTreeIndex();
-
     file1 = createFile("file1");
     file2 = createFile("file1");
     node1 = new FileNode(file1);

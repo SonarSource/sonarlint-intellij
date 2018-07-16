@@ -31,11 +31,10 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class GlobalConfigurationListenerTest extends SonarTest {
-  private List<SonarQubeServer> testList;
+  private List<SonarQubeServer> testList = new LinkedList<>();
 
   @Before
   public void prepare() {
-    testList = new LinkedList<>();
     testList.add(SonarQubeServer.newBuilder().setName("name").build());
   }
 

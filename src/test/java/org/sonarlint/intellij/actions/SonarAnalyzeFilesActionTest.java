@@ -45,12 +45,12 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeFilesActionTest extends SonarTest {
-  private SonarLintAppUtils utils = mock(SonarLintAppUtils.class);
-  private SonarLintConsole console = mock(SonarLintConsole.class);
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private SonarLintAppUtils utils = register(app, SonarLintAppUtils.class);
+  private SonarLintConsole console = register(SonarLintConsole.class);
+  private SonarLintSubmitter submitter = register(SonarLintSubmitter.class);
   private AnActionEvent event = mock(AnActionEvent.class);
-  private AnalysisResultIssues analysisResults = mock(AnalysisResultIssues.class);
-  private IssueManager issueManager = mock(IssueManager.class);
+  private AnalysisResultIssues analysisResults = register(AnalysisResultIssues.class);
+  private IssueManager issueManager = register(IssueManager.class);
 
   private SonarLintStatus status;
   private Presentation presentation = new Presentation();
@@ -59,12 +59,7 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
   @Before
   public void prepare() {
     status = new SonarLintStatus(project);
-    super.register(app, SonarLintAppUtils.class, utils);
-    super.register(project, SonarLintConsole.class, console);
-    super.register(project, SonarLintSubmitter.class, submitter);
     super.register(project, SonarLintStatus.class, status);
-    super.register(project, AnalysisResultIssues.class, analysisResults);
-    super.register(project, IssueManager.class, issueManager);
 
     when(event.getProject()).thenReturn(project);
     when(project.isInitialized()).thenReturn(true);

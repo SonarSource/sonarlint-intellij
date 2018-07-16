@@ -30,16 +30,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class ToolWindowVerboseModeActionTest extends SonarTest {
-  private ToolWindowVerboseModeAction action;
-  private SonarLintProjectSettings settings;
-  private AnActionEvent event;
+  private ToolWindowVerboseModeAction action = new ToolWindowVerboseModeAction();
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private AnActionEvent event = SonarLintTestUtils.createAnActionEvent(project);
 
   @Before
   public void prepare() {
-    settings = new SonarLintProjectSettings();
     super.register(SonarLintProjectSettings.class, settings);
-    action = new ToolWindowVerboseModeAction();
-    event = SonarLintTestUtils.createAnActionEvent(project);
   }
 
   @Test

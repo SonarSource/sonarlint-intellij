@@ -26,8 +26,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -37,22 +35,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class EditorOpenTriggerTest extends SonarTest {
-  @Mock
-  private Project project;
-  @Mock
-  private SonarLintSubmitter submitter;
+  private Project project = mock(Project.class);
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
 
-  private SonarLintGlobalSettings globalSettings;
-
-  private EditorOpenTrigger editorTrigger;
+  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
+  private EditorOpenTrigger editorTrigger = new EditorOpenTrigger(project, submitter, globalSettings);
 
   @Before
   public void start() {
-    MockitoAnnotations.initMocks(this);
     SonarLintTestUtils.mockMessageBus(project);
-    globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    editorTrigger = new EditorOpenTrigger(project, submitter, globalSettings);
   }
 
   @Test

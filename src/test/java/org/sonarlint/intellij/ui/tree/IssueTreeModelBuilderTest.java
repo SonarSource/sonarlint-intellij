@@ -31,7 +31,6 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
-import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
@@ -44,14 +43,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class IssueTreeModelBuilderTest {
-  private IssueTreeModelBuilder treeBuilder;
-  private DefaultTreeModel model;
-
-  @Before
-  public void setUp() {
-    treeBuilder = new IssueTreeModelBuilder();
-    model = treeBuilder.createModel();
-  }
+  private IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
+  private DefaultTreeModel model  = treeBuilder.createModel();
 
   @Test
   public void createModel() {

@@ -42,16 +42,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public abstract class SonarTest {
-  protected Project project;
-  protected Module module;
+  protected Project project = createProject();
+  protected Module module = createModule();
   protected VirtualFile root;
-  protected Application app;
+  protected Application app =  mock(Application.class);
 
   @Before
   public final void setUp() {
-    project = createProject();
-    module = createModule();
-    app = mock(Application.class);
     ApplicationManager.setApplication(app, mock(Disposable.class));
     when(app.isUnitTestMode()).thenReturn(true);
     when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
@@ -93,6 +90,18 @@ public abstract class SonarTest {
 
   protected Project getProject() {
     return project;
+  }
+
+  protected <T> T register(Class<T> clazz) {
+    T t = mock(clazz);
+    register(clazz, t);
+    return t;
+  }
+
+  protected <T> T register(ComponentManager comp, Class<T> clazz) {
+    T t = mock(clazz);
+    register(comp, clazz, t);
+    return t;
   }
 
   protected void register(Class<?> clazz, Object instance) {

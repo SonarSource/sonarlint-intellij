@@ -39,19 +39,16 @@ import static org.mockito.Mockito.when;
 public class LocalFileExclusionsTest extends SonarTest {
   private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
   private SonarLintProjectSettings projectSettings = new SonarLintProjectSettings();
-
-  private LocalFileExclusions exclusions;
-
   private ModuleRootManager moduleRootManager = mock(ModuleRootManager.class);
   private FileType type = mock(FileType.class);
   private VirtualFile testFile = mock(VirtualFile.class);
   private Supplier<Boolean> powerModeCheck = mock(Supplier.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private ApplicationInfo info = mock(ApplicationInfo.class);
+  private LocalFileExclusions exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, info, powerModeCheck);
 
   @Before
   public void prepare() {
-    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, info, powerModeCheck);
     when(powerModeCheck.get()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));

@@ -23,7 +23,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.ui.SimpleTextAttributes;
 import icons.SonarLintIcons;
 import java.io.IOException;
-import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
@@ -36,12 +35,7 @@ import static org.mockito.Mockito.when;
 
 public class IssueNodeTest {
   private IssueNode node;
-  private TreeCellRenderer renderer;
-
-  @Before
-  public void setUp() {
-    renderer = mock(TreeCellRenderer.class);
-  }
+  private TreeCellRenderer renderer = mock(TreeCellRenderer.class);
 
   @Test
   public void testAge() {

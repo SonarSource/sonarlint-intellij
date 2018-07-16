@@ -43,8 +43,8 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintCheckinHandlerTest extends SonarTest {
   private SonarLintCheckinHandler handler;
-  private CompletableFuture<Void> future;
-  private SonarLintGlobalSettings globalSettings;
+  private CompletableFuture<Void> future = new CompletableFuture<>();
+  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
 
   private VirtualFile file = mock(VirtualFile.class);
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
@@ -54,9 +54,6 @@ public class SonarLintCheckinHandlerTest extends SonarTest {
 
   @Before
   public void prepare() {
-    globalSettings = new SonarLintGlobalSettings();
-    future = new CompletableFuture<>();
-
     super.register(project, SonarLintSubmitter.class, submitter);
     super.register(project, AnalysisResultIssues.class, analysisResultIssues);
     super.register(project, IssueManager.class, issueManager);

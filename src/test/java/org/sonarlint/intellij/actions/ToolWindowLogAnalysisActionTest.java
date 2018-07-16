@@ -30,16 +30,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class ToolWindowLogAnalysisActionTest extends SonarTest {
-  private ToolWindowLogAnalysisAction action;
-  private SonarLintProjectSettings settings;
-  private AnActionEvent event;
+  private ToolWindowLogAnalysisAction action = new ToolWindowLogAnalysisAction();
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private AnActionEvent event = SonarLintTestUtils.createAnActionEvent(project);
 
   @Before
   public void prepare() {
-    settings = new SonarLintProjectSettings();
     super.register(SonarLintProjectSettings.class, settings);
-    action = new ToolWindowLogAnalysisAction();
-    event = SonarLintTestUtils.createAnActionEvent(project);
   }
 
   @Test

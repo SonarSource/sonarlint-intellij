@@ -34,6 +34,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class DisableRuleActionTest extends SonarTest {
@@ -91,6 +92,22 @@ public class DisableRuleActionTest extends SonarTest {
 
     assertThat(presentation.isEnabled()).isFalse();
     assertThat(presentation.isVisible()).isTrue();
+  }
+
+  @Test
+  public void should_be_disabled_if_project_is_null() {
+    when(event.getProject()).thenReturn(null);
+    action.update(event);
+
+    assertThat(presentation.isEnabled()).isFalse();
+    assertThat(presentation.isVisible()).isFalse();
+  }
+
+  @Test
+  public void no_op_if_project_is_null() {
+    when(event.getProject()).thenReturn(null);
+    action.update(event);
+    verifyZeroInteractions(submitter);
   }
 
   @Test

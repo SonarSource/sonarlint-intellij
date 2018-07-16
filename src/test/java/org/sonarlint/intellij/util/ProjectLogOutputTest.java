@@ -33,16 +33,13 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class ProjectLogOutputTest {
-  private ProjectLogOutput logOutput;
-  private SonarLintProjectSettings settings;
-  private SonarLintConsole mockConsole;
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private SonarLintConsole mockConsole = mock(SonarLintConsole.class);
+  private ProjectLogOutput logOutput = new ProjectLogOutput(mockConsole, settings);
 
   @Before
   public void setUp() {
-    mockConsole = mock(SonarLintConsole.class);
-    settings = new SonarLintProjectSettings();
     settings.setAnalysisLogsEnabled(true);
-    logOutput = new ProjectLogOutput(mockConsole, settings);
   }
 
   @After

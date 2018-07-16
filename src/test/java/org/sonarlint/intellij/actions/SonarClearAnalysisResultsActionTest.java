@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
@@ -30,12 +29,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarClearAnalysisResultsActionTest extends SonarTest {
-  private SonarClearAnalysisResultsAction action;
-
-  @Before
-  public void prepare() {
-    action = new SonarClearAnalysisResultsAction(null, null, null);
-  }
+  private SonarClearAnalysisResultsAction action = new SonarClearAnalysisResultsAction(null, null, null);
 
   @Test
   public void clear() {

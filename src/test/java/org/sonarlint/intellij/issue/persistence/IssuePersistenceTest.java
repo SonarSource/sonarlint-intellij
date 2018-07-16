@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class IssuePersistenceTest {
-  private Project project;
+  private Project project = mock(Project.class);
   private IssuePersistence persistence;
 
   @Rule
@@ -46,13 +46,11 @@ public class IssuePersistenceTest {
 
   @Before
   public void setUp() {
-    project = mock(Project.class);
     VirtualFile baseDir = mock(VirtualFile.class);
 
     when(project.getBaseDir()).thenReturn(baseDir);
     when(baseDir.getPath()).thenReturn(temp.getRoot().getAbsolutePath());
     when(baseDir.findFileByRelativePath(anyString())).thenReturn(baseDir);
-
     persistence = new IssuePersistence(project);
   }
 

@@ -37,11 +37,10 @@ import static org.mockito.Mockito.verify;
 
 public class AnalysisResultIssuesTest extends SonarTest {
   private AnalysisResultIssues analysisResultIssues;
-  private AnalysisResultsListener listener;
+  private AnalysisResultsListener listener = mock(AnalysisResultsListener.class);
 
   @Before
   public void prepare() {
-    listener = mock(AnalysisResultsListener.class);
     project.getMessageBus().connect().subscribe(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC, listener);
     analysisResultIssues = new AnalysisResultIssues(project);
   }

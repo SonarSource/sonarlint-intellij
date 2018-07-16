@@ -20,21 +20,14 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.progress.ProgressIndicator;
-import org.junit.Before;
 import org.junit.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class TaskProgressMonitorTest {
-  private ProgressIndicator wrapped;
-  private TaskProgressMonitor monitor;
-
-  @Before
-  public void setUp() {
-    wrapped = mock(ProgressIndicator.class);
-    monitor = new TaskProgressMonitor(wrapped);
-  }
+  private ProgressIndicator wrapped = mock(ProgressIndicator.class);
+  private TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped);
 
   @Test
   public void should_wrap() {

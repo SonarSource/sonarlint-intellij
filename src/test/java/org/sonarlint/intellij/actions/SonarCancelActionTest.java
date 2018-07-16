@@ -32,16 +32,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SonarCancelActionTest extends SonarTest {
-  private SonarCancelAction sonarCancelAction;
-  private Presentation presentation;
-  private AnActionEvent event;
+  private SonarCancelAction sonarCancelAction = new SonarCancelAction();
+  private Presentation presentation = new Presentation();
+  private AnActionEvent event = SonarLintTestUtils.createAnActionEvent(project);
 
   @Before
   public void prepare() {
     register(SonarLintStatus.class, new SonarLintStatus(project));
-    presentation = new Presentation();
-    sonarCancelAction = new SonarCancelAction();
-    event = SonarLintTestUtils.createAnActionEvent(project);
     when(event.getPresentation()).thenReturn(presentation);
     when(project.isDisposed()).thenReturn(false);
     when(project.isInitialized()).thenReturn(true);
