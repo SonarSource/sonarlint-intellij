@@ -22,8 +22,11 @@ package org.sonarlint.intellij.util;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Random;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -37,6 +40,9 @@ public class SonarLintUtilsTest extends SonarTest {
   private VirtualFile testFile = mock(VirtualFile.class);
   private FileType binary = mock(FileType.class);
   private FileType notBinary = mock(FileType.class);
+
+  @Rule
+  public ExpectedException exception = ExpectedException.none();
 
   @Before
   public void prepare() {
@@ -106,6 +112,13 @@ public class SonarLintUtilsTest extends SonarTest {
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());
+  }
+
+  @Test
+  public void throw_exception_if_component_not_available() {
+    exception.expect(AssertionError.class);
+    exception.expectMessage("Could not find class in container: ");
+    SonarLintUtils.get(Random.class);
   }
 
 }
