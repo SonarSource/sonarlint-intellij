@@ -45,7 +45,7 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConf
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
-  private static final String[] UNSUPPORTED_ANALYZERS = {"cpp", "typescript"};
+  private static final String[] UNSUPPORTED_ANALYZERS = {"cpp", "typescript", "web"};
   private final GlobalLogOutput globalLogOutput;
 
   public SonarLintEngineFactory(GlobalLogOutput globalLogOutput) {
@@ -98,7 +98,6 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     }
 
     if ("file".equalsIgnoreCase(pluginsDir.toURI().getScheme())) {
-
       return getPluginsUrls(pluginsDir);
     } else {
       return getPluginsUrlsWithFs(pluginsDir);
@@ -130,7 +129,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
         pluginsUrls.add(newUrl);
       }
     }
-    return pluginsUrls.toArray(new URL[pluginsUrls.size()]);
+    return pluginsUrls.toArray(new URL[0]);
   }
 
   private static Path getSonarLintHome() {
