@@ -27,7 +27,9 @@ import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.table.AbstractTableModel;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -42,8 +44,10 @@ public class RulesTreeTableModelTest {
   private RuleDetails ruleDetails = mock(RuleDetails.class);
   private RulesTreeNode.Rule rule = new RulesTreeNode.Rule(ruleDetails, true);
   private AbstractTableModel tableModel = mock(AbstractTableModel.class);
-
   private RulesTreeTableModel model = new RulesTreeTableModel(root);
+
+  @Rule
+  public ExpectedException exception = ExpectedException.none();
 
   @Before
   public void setUp() {
@@ -81,6 +85,20 @@ public class RulesTreeTableModelTest {
 
     // not set yet
     assertThat(model.getValueAt(lang, 2)).isNull();
+
+    assertThat(model.getColumnName(0)).isNull();
+  }
+
+  @Test
+  public void throw_exception_if_get_value_from_invalid_column() {
+    exception.expect(IllegalArgumentException.class);
+    model.getValueAt(rule, 3);
+  }
+
+  @Test
+  public void throw_exception_if_get_class_from_invalid_column() {
+    exception.expect(IllegalArgumentException.class);
+    model.getColumnClass(4);
   }
 
   @Test
@@ -99,6 +117,20 @@ public class RulesTreeTableModelTest {
     Map<String, Boolean> ruleActivation = new HashMap<>();
     model.saveCurrentRuleActivation(ruleActivation);
     assertThat(ruleActivation).containsExactly(entry("key", true));
+  }
+
+  @Test
+  public void should_set_value_in_rule() {
+    model.setValueAt(false, rule, 2);
+    assertThat(rule.isActivated()).isFalse();
+    assertThat(lang.isActivated()).isFalse();
+  }
+
+  @Test
+  public void should_set_value_in_lang() {
+    model.setValueAt(false, lang, 2);
+    assertThat(rule.isActivated()).isFalse();
+    assertThat(lang.isActivated()).isFalse();
   }
 
   @Test

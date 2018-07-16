@@ -36,6 +36,7 @@ public class RulesTreeNodeTest {
     when(details.isActiveByDefault()).thenReturn(true);
     when(details.getSeverity()).thenReturn("severity");
     when(details.getType()).thenReturn("type");
+    when(details.getLanguage()).thenReturn("lang");
 
     RulesTreeNode.Rule node = new RulesTreeNode.Rule(details, false);
     assertThat(node.getKey()).isEqualTo("key");
@@ -46,6 +47,14 @@ public class RulesTreeNodeTest {
     assertThat(node.isChanged()).isTrue();
     assertThat(node.severity()).isEqualTo("severity");
     assertThat(node.type()).isEqualTo("type");
+    assertThat(node.language()).isEqualTo("lang");
+  }
+
+  @Test
+  public void getters_root() {
+    RulesTreeNode.Root root = new RulesTreeNode.Root();
+    assertThat(root.toString()).isEqualTo("root");
+    assertThat(root.isChanged()).isFalse();
   }
 
   @Test
