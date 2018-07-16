@@ -44,7 +44,7 @@ public interface GlobalConfigurationListener {
     }
 
     @Override
-    public void applied(SonarLintGlobalSettings settigns) {
+    public void applied(SonarLintGlobalSettings settings) {
       // nothing done by default
     }
   }

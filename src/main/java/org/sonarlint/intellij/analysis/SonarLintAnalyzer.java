@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -142,12 +141,10 @@ public class SonarLintAnalyzer {
     return inputFiles;
   }
 
-  private Charset getEncoding(@Nullable VirtualFile f) {
-    if (f != null) {
-      Charset encoding = encodingProjectManager.getEncoding(f, true);
-      if (encoding != null) {
-        return encoding;
-      }
+  private Charset getEncoding(VirtualFile f) {
+    Charset encoding = encodingProjectManager.getEncoding(f, true);
+    if (encoding != null) {
+      return encoding;
     }
     return Charset.defaultCharset();
   }

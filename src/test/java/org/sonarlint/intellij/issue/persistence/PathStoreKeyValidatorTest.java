@@ -28,15 +28,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class PathStoreKeyValidatorTest {
-  public PathStoreKeyValidator validator;
-  private VirtualFile projectBaseDir;
-  private VirtualFile file;
+  private VirtualFile projectBaseDir = mock(VirtualFile.class);
+  public PathStoreKeyValidator validator = new PathStoreKeyValidator(projectBaseDir);
+  private VirtualFile file = mock(VirtualFile.class);
 
   @Before
   public void setUp() {
-    projectBaseDir = mock(VirtualFile.class);
-    file = mock(VirtualFile.class);
-    validator = new PathStoreKeyValidator(projectBaseDir);
     when(projectBaseDir.findFileByRelativePath("file1")).thenReturn(file);
   }
 

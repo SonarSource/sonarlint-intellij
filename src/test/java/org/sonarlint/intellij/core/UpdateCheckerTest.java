@@ -24,8 +24,6 @@ import com.intellij.openapi.project.ProjectManager;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -47,22 +45,15 @@ import static org.mockito.Mockito.when;
 
 public class UpdateCheckerTest extends SonarTest {
   private UpdateChecker updateChecker;
-  private SonarLintProjectSettings settings;
+  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private SonarQubeServer server;
-
-  @Mock
-  private Project project;
-  @Mock
-  private SonarLintProjectNotifications notifications;
-  @Mock
-  private ProjectBindingManager bindingManager;
-  @Mock
-  private ConnectedSonarLintEngine engine;
+  private Project project = mock(Project.class);
+  private SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
+  private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
+  private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
 
   @Before
   public void before() throws InvalidBindingException {
-    MockitoAnnotations.initMocks(this);
-    settings = new SonarLintProjectSettings();
     settings.setProjectKey("key");
     settings.setServerId("serverId");
     server = createServer();

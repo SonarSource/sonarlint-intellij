@@ -143,6 +143,6 @@ public class SonarExternalAnnotatorTest extends SonarTest {
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(text);
-    return new LiveIssue(issue, null, range, Collections.emptyList());
+    return new LiveIssue(issue, mock(PsiFile.class), range, Collections.emptyList());
   }
 }

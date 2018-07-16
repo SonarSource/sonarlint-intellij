@@ -51,12 +51,12 @@ import org.jetbrains.annotations.NotNull;
 import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
 public class JavaAnalysisConfigurator implements AnalysisConfigurator {
-  static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
-  static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
-  static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
-  static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
-  static final String JAVA_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
-  static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
+  private static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
+  private static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
+  private static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
+  private static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
+  private static final String JAVA_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
+  private static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
 
   private static final char SEPARATOR = ',';
 
@@ -145,7 +145,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
         found.addAll(getLibraryEntries(lib));
       }
     }
-    return found.toArray(new VirtualFile[found.size()]);
+    return found.toArray(new VirtualFile[0]);
   }
 
   private static Collection<VirtualFile> getLibraryEntries(@Nullable Library lib) {

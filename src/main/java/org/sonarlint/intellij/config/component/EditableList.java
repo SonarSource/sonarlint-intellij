@@ -54,7 +54,7 @@ public class EditableList<T> {
         }
       }
     });
-    model = new CollectionListModel<>(new ArrayList<T>());
+    model = new CollectionListModel<>(new ArrayList<>());
     list.setModel(model);
 
     ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(list)

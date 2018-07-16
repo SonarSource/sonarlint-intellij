@@ -187,7 +187,7 @@ public class SonarQubeServer {
       return this;
     }
 
-    public Builder setOrganizationKey(String organizationKey) {
+    public Builder setOrganizationKey(@Nullable String organizationKey) {
       this.organizationKey = organizationKey;
       return this;
     }

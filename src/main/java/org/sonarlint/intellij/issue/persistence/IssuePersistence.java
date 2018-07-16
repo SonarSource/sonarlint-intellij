@@ -98,7 +98,6 @@ public class IssuePersistence extends AbstractProjectComponent {
   private static Collection<LocalIssueTrackable> transform(Sonarlint.Issues protoIssues) {
     return protoIssues.getIssueList().stream()
       .map(IssuePersistence::transform)
-      .filter(Objects::nonNull)
       .collect(Collectors.toList());
   }
 
@@ -106,7 +105,6 @@ public class IssuePersistence extends AbstractProjectComponent {
     Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
     localIssues.stream()
       .map(IssuePersistence::transform)
-      .filter(Objects::nonNull)
       .forEach(builder::addIssue);
 
     return builder.build();
