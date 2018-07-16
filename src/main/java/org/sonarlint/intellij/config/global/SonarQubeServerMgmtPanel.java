@@ -253,7 +253,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     servers.clear();
     deletedServerIds.clear();
 
-    CollectionListModel<SonarQubeServer> listModel = new CollectionListModel<>(new ArrayList<SonarQubeServer>());
+    CollectionListModel<SonarQubeServer> listModel = new CollectionListModel<>(new ArrayList<>());
     listModel.add(settings.getSonarQubeServers());
     servers.addAll(settings.getSonarQubeServers());
     serverList.setModel(listModel);

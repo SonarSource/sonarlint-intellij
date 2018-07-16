@@ -27,10 +27,12 @@ import org.sonarlint.intellij.ui.CodeAnalyzersDialog;
 public class SonarShowCodeAnalyzers extends AbstractSonarAction {
 
   @Override protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
-    return true;
+    return e.getProject() != null;
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
-    new CodeAnalyzersDialog(e.getProject()).showAndGet();
+    if (e.getProject() != null) {
+      new CodeAnalyzersDialog(e.getProject()).showAndGet();
+    }
   }
 }

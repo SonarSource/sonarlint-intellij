@@ -117,7 +117,6 @@ public class SonarLintTask extends Task.Backgroundable {
       processor.process(job, indicator, issues, allFailedAnalysisFiles);
     } catch (CanceledException e1) {
       console.info("Analysis canceled");
-      return;
     } catch (Throwable e) {
       handleError(e, indicator);
     } finally {

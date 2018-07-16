@@ -53,7 +53,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = false;
   }
 
-  public void notifyServerIdInvalid() {
+  void notifyServerIdInvalid() {
     if (shown) {
       return;
     }
@@ -66,7 +66,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
-  public void notifyModuleInvalid() {
+  void notifyModuleInvalid() {
     if (shown) {
       return;
     }
@@ -79,7 +79,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
-  public void notifyModuleStale() {
+  void notifyModuleStale() {
     if (shown) {
       return;
     }
@@ -92,7 +92,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
-  public void notifyServerNotUpdated() {
+  void notifyServerNotUpdated() {
     if (shown) {
       return;
     }
@@ -105,7 +105,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
-  public void notifyServerStorageNeedsUpdate(String serverId) {
+  void notifyServerStorageNeedsUpdate(String serverId) {
     if (shown) {
       return;
     }
@@ -118,7 +118,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
-  public void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
+  void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
     Notification notification = new Notification(GROUP_UPDATE_NOTIFICATION,
       "Configuration update",
       "Configuration changed on SonarQube server '" + serverId + "'. <a href=\"#update\">Update now</a>",
@@ -135,7 +135,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
   private static class OpenProjectSettingsNotificationListener extends NotificationListener.Adapter {
     private final Project project;
 
-    public OpenProjectSettingsNotificationListener(@Nullable Project project) {
+    private OpenProjectSettingsNotificationListener(@Nullable Project project) {
       this.project = project;
     }
 
@@ -153,7 +153,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
   private static class OpenGeneralSettingsNotificationListener extends NotificationListener.Adapter {
     private final Project project;
 
-    public OpenGeneralSettingsNotificationListener(@Nullable Project project) {
+    private OpenGeneralSettingsNotificationListener(@Nullable Project project) {
       this.project = project;
     }
 

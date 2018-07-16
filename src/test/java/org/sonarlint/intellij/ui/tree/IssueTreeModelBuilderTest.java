@@ -94,8 +94,7 @@ public class IssueTreeModelBuilderTest {
     list.add(mockIssuePointer("f1", 50, "rule4", "MINOR", null));
     list.add(mockIssuePointer("f1", 100, "rule5", "MAJOR", null));
 
-    List<LiveIssue> sorted = new ArrayList<>();
-    sorted.addAll(list);
+    List<LiveIssue> sorted = new ArrayList<>(list);
     sorted.sort(new IssueTreeModelBuilder.IssueComparator());
 
     // criteria: creation date (most recent, nulls last), getSeverity (highest first), rule alphabetically

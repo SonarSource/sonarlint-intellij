@@ -34,7 +34,6 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   @Override
   public JComponent getComponent() {
     if (rootPane == null) {
-
       rootPane = new JPanel(new BorderLayout());
       rootPane.add(createTopPanel(), BorderLayout.NORTH);
     }

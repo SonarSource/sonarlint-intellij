@@ -34,17 +34,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SonarLintUtilsTest extends SonarTest {
-  private VirtualFile testFile;
-
-  private FileType binary;
-  private FileType notBinary;
+  private VirtualFile testFile = mock(VirtualFile.class);
+  private FileType binary = mock(FileType.class);
+  private FileType notBinary = mock(FileType.class);
 
   @Before
   public void prepare() {
-    testFile = mock(VirtualFile.class);
-
-    notBinary = mock(FileType.class);
-    binary = mock(FileType.class);
     when(binary.isBinary()).thenReturn(true);
 
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));
