@@ -97,7 +97,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     }
   }
 
-  private void analyzeOpenFilesInUnconnectedProjects() {
+  private static void analyzeOpenFilesInUnconnectedProjects() {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
     for (Project p : openProjects) {

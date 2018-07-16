@@ -119,7 +119,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
     submitter.submitFiles(fileList, TriggerType.ACTION, callback, executeBackground(e));
   }
 
-  private String whatAnalyzed(int numFiles) {
+  private static String whatAnalyzed(int numFiles) {
     if (numFiles == 1) {
       return "1 file";
     } else {

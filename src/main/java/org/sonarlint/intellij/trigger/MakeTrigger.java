@@ -27,6 +27,7 @@ import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import java.util.UUID;
+import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
@@ -52,7 +53,7 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
     // nothing to do
   }
 
-  @Override public void buildFinished(Project project, UUID sessionId, boolean isAutomake) {
+  @Override public void buildFinished(@Nullable Project project, UUID sessionId, boolean isAutomake) {
     // project is null in DummyCompileContext
     if (project == null || !project.equals(myProject) || !isAutomake) {
       // covered by compilationFinished

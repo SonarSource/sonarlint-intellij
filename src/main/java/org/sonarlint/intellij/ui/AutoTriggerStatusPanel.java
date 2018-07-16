@@ -121,6 +121,7 @@ public class AutoTriggerStatusPanel {
         return FILE_DISABLED;
       }
 
+      // Module can't be null here, otherwise it's excluded
       if (isExcludedInServer(m, selectedFile)) {
         return FILE_DISABLED;
       }
