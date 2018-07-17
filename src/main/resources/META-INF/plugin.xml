@@ -43,6 +43,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>3.5 - Manage rules when not connected to SonarQube or SonarCloud</li>
         <li>3.4.2 - Fix a regression in the SonarQube server configuration wizard</li>
         <li>3.4.1 - Fix of several bugs: binding to SonarCloud organizations, support of Java 10, rendering of rule descriptions</li>
         <li>3.4 - Update of embedded code analyzers. Fix analysis of files located outside of the project base directory</li>
