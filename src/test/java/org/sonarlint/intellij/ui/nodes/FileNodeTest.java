@@ -24,11 +24,9 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class FileNodeTest {
@@ -60,27 +58,6 @@ public class FileNodeTest {
   @Test
   public void testGetFile() {
     assertThat(node.file()).isEqualTo(file);
-  }
-
-  @Test
-  public void testRender() {
-    node.add(createTestIssueNode());
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
-    node.render(renderer);
-
-    verify(renderer).append("fileName");
-    verify(renderer).setIcon(AllIcons.FileTypes.Java);
-  }
-
-  @Test
-  public void testRenderMultiple() {
-    node.add(createTestIssueNode());
-    node.add(createTestIssueNode());
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
-    node.render(renderer);
-
-    verify(renderer).append("fileName");
-    verify(renderer).setIcon(AllIcons.FileTypes.Java);
   }
 
   private static IssueNode createTestIssueNode() {

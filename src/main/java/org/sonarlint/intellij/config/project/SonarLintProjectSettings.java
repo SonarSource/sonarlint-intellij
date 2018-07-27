@@ -23,8 +23,6 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
-import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -34,12 +32,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 
-@State(
-  name = "SonarLintProjectSettings",
-  storages = {
-    @Storage(file = StoragePathMacros.PROJECT_FILE, id = "default"),
-    @Storage(file = StoragePathMacros.PROJECT_CONFIG_DIR + "/sonarlint.xml", scheme = StorageScheme.DIRECTORY_BASED, id = "dir")
-  })
+@State(name = "SonarLintProjectSettings", storages = {@Storage("sonarlint.xml")})
 public final class SonarLintProjectSettings extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectSettings> {
 
   private boolean verboseEnabled = false;
