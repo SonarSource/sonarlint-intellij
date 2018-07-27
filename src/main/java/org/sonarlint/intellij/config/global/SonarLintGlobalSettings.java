@@ -41,7 +41,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintBundle;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-@State(name = "SonarLintGlobalSettings", storages = {@Storage(id = "sonarlint", file = StoragePathMacros.APP_CONFIG + "/sonarlint.xml")})
+@State(name = "SonarLintGlobalSettings", storages = {@Storage("sonarlint.xml")})
 public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private boolean autoTrigger = true;

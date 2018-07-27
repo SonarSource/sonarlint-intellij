@@ -23,8 +23,6 @@ import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
-import com.intellij.openapi.components.StorageScheme;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import com.intellij.util.xmlb.annotations.Tag;
 import java.time.Instant;
@@ -33,12 +31,7 @@ import java.time.ZonedDateTime;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
 
-@State(
-  name = "SonarLintProjectState",
-  storages = {
-    @Storage(file = StoragePathMacros.PROJECT_FILE, id = "default"),
-    @Storage(file = StoragePathMacros.PROJECT_CONFIG_DIR + "/sonarlint-state.xml", scheme = StorageScheme.DIRECTORY_BASED, id = "dir")
-  })
+@State(name = "SonarLintProjectState", storages = {@Storage("sonarlint-state.xml")})
 public class SonarLintProjectState extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectState> {
   // Xml serializer doesn't handle ZonedDateTime, so we keep milliseconds since epoch
   @Tag

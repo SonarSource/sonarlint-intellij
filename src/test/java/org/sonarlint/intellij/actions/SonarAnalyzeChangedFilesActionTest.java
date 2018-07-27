@@ -57,6 +57,7 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
     action = new SonarAnalyzeChangedFilesAction();
     when(tasksCloser.safeGetComponent(project, ChangeListManager.class)).thenReturn(changeListManager);
 
+    super.register(ChangeListManager.class, changeListManager);
     super.register(app, PeriodicalTasksCloser.class, tasksCloser);
     super.register(SonarLintSubmitter.class, submitter);
     super.register(AnalysisResultIssues.class, issues);

@@ -20,53 +20,16 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.psi.PsiFile;
-import com.intellij.ui.SimpleTextAttributes;
-import icons.SonarLintIcons;
-import java.io.IOException;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class IssueNodeTest {
   private IssueNode node;
-  private TreeCellRenderer renderer = mock(TreeCellRenderer.class);
-
-  @Test
-  public void testAge() {
-    LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
-    node = new IssueNode(i);
-    node.render(renderer);
-
-    verify(renderer).append("few seconds ago", SimpleTextAttributes.GRAY_ATTRIBUTES);
-    verify(renderer).append("rule");
-  }
-
-  @Test
-  public void testHoursAndSeverity() throws IOException {
-    LiveIssue i = createIssue(System.currentTimeMillis() - 3600 * 1000, "rule");
-    node = new IssueNode(i);
-    node.render(renderer);
-
-    verify(renderer).append("1 hour ago", SimpleTextAttributes.GRAY_ATTRIBUTES);
-    verify(renderer).append("rule");
-    verify(renderer).setIcon(SonarLintIcons.severity("MAJOR"));
-  }
-
-  @Test
-  public void testInvalidIssue() {
-    LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
-    when(i.isValid()).thenReturn(false);
-    node = new IssueNode(i);
-    node.render(renderer);
-
-    verify(renderer).append("rule", SimpleTextAttributes.GRAY_ATTRIBUTES);
-  }
 
   @Test
   public void testCount() {

@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.google.common.collect.HashMultimap;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -30,6 +29,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -131,7 +134,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   }
 
   private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean checkExclusions) throws InvalidBindingException {
-    HashMultimap<Module, VirtualFile> filesByModule = HashMultimap.create();
+    Map<Module, Collection<VirtualFile>> filesByModule = new HashMap<>();
     SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 
     for (VirtualFile file : files) {
@@ -153,7 +156,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
         }
       }
 
-      filesByModule.put(m, file);
+      filesByModule.computeIfAbsent(m, mod -> new LinkedHashSet<>()).add(file);
     }
 
     // Apply server file exclusions. This is an expensive operation, so we call the core only once per module.
@@ -162,17 +165,20 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
       // resulting in ConcurrentModificationException
       List<Module> modules = new ArrayList<>(filesByModule.keySet());
       for (Module module : modules) {
+        Collection<VirtualFile> virtualFiles = filesByModule.get(module);
         VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
-        Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, filesByModule.get(module), testPredicate);
+        Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
         for (VirtualFile f : excluded) {
           logExclusion(f, "not automatically analyzed due to exclusions configured in the SonarQube Server");
         }
-
-        filesByModule.get(module).removeAll(excluded);
+        virtualFiles.removeAll(excluded);
+        if (virtualFiles.isEmpty()) {
+          filesByModule.remove(module);
+        }
       }
     }
 
-    return filesByModule.asMap();
+    return filesByModule;
   }
 
   private void logExclusion(VirtualFile f, String reason) {
