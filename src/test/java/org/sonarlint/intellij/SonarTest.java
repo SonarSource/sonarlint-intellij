@@ -20,6 +20,7 @@
 package org.sonarlint.intellij;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
@@ -53,6 +54,7 @@ public abstract class SonarTest {
     when(app.isUnitTestMode()).thenReturn(true);
     when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
     when(app.isHeadlessEnvironment()).thenReturn(true);
+    when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     register(app, CertificateManager.class, new CertificateManager());
     createModuleRoot();
   }

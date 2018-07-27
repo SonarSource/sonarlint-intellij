@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.issue;
 
+import com.intellij.openapi.application.AccessToken;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
@@ -103,7 +105,12 @@ public class LiveIssue implements Trackable {
   @Override
   public Integer getLine() {
     if (range != null && isValid()) {
-      return range.getDocument().getLineNumber(range.getStartOffset()) + 1;
+      AccessToken accessToken = ApplicationManager.getApplication().acquireReadActionLock();
+      try {
+        return range.getDocument().getLineNumber(range.getStartOffset()) + 1;
+      } finally {
+        accessToken.finish();
+      }
     }
 
     return null;
