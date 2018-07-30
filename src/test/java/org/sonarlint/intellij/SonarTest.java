@@ -31,13 +31,17 @@ import com.intellij.openapi.extensions.ExtensionsArea;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.impl.MessageBusImpl;
 import com.intellij.util.net.ssl.CertificateManager;
 import java.lang.reflect.Modifier;
 import org.junit.After;
 import org.junit.Before;
+import org.mockito.stubbing.Answer;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -46,7 +50,7 @@ public abstract class SonarTest {
   protected Project project = createProject();
   protected Module module = createModule();
   protected VirtualFile root;
-  protected Application app =  mock(Application.class);
+  protected Application app = mock(Application.class);
 
   @Before
   public final void setUp() {
@@ -56,6 +60,12 @@ public abstract class SonarTest {
     when(app.isHeadlessEnvironment()).thenReturn(true);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
+    Answer<Void> runArg = invocation -> {
+      ((ThrowableComputable) invocation.getArgument(0)).compute();
+      return null;
+    };
+
+    doAnswer(runArg).when(app).runReadAction(any(ThrowableComputable.class));
     register(app, CertificateManager.class, new CertificateManager());
     createModuleRoot();
   }

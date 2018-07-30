@@ -46,13 +46,13 @@ public class SonarApplication extends ApplicationComponent.Adapter {
   public void initComponent() {
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     Language.getRegisteredLanguages().stream()
-      .filter(this::doesNotImplementMetaLanguage)
+      .filter(SonarApplication::doesNotImplementMetaLanguage)
       .forEach(this::registerExternalAnnotatorFor);
     registerNotifications();
     cleanOldWorkDir();
   }
 
-  private boolean doesNotImplementMetaLanguage(Language lang) {
+  private static boolean doesNotImplementMetaLanguage(Language lang) {
     Class<?> superclass = lang.getClass().getSuperclass();
     while (superclass != null) {
       if ("com.intellij.lang.MetaLanguage".equals(superclass.getName())) {

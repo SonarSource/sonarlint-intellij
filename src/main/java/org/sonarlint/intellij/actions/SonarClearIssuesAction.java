@@ -22,7 +22,6 @@ package org.sonarlint.intellij.actions;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
@@ -55,8 +54,7 @@ public class SonarClearIssuesAction extends AnAction {
       IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
       DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.get(project, DaemonCodeAnalyzer.class);
 
-      AccessToken token = ReadAction.start();
-      try {
+      ReadAction.run(() -> {
         issueManager.clear();
 
         // run annotator to remove highlighting of issues
@@ -64,10 +62,7 @@ public class SonarClearIssuesAction extends AnAction {
         VirtualFile[] openFiles = editorManager.getOpenFiles();
         Collection<PsiFile> psiFiles = findFiles(project, openFiles);
         psiFiles.forEach(codeAnalyzer::restart);
-      } finally {
-        // closeable only introduced in 2016.2
-        token.finish();
-      }
+      });
     }
   }
 

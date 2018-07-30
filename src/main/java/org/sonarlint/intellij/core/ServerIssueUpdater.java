@@ -19,8 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.AccessToken;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -158,18 +157,15 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
   private Map<VirtualFile, String> getRelativePaths(Collection<VirtualFile> files) {
     Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
-    // autocloseable not supported in older versions
-    AccessToken token = ApplicationManager.getApplication().acquireReadActionLock();
-    try {
+
+    ReadAction.run(() -> {
       for (VirtualFile file : files) {
         String relativePath = appUtils.getRelativePathForAnalysis(myProject, file);
         if (relativePath != null) {
           relativePathPerFile.put(file, relativePath);
         }
       }
-    } finally {
-      token.finish();
-    }
+    });
     return relativePathPerFile;
   }
 

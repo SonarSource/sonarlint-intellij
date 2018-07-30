@@ -19,10 +19,10 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
@@ -122,8 +122,7 @@ public class SonarLintAnalyzer {
 
     List<ClientInputFile> inputFiles = new LinkedList<>();
 
-    AccessToken token = app.acquireReadActionLock();
-    try {
+    ReadAction.run(() -> {
       for (VirtualFile f : filesToAnalyze) {
         boolean test = testPredicate.test(f);
         Charset charset = getEncoding(f);
@@ -134,9 +133,7 @@ public class SonarLintAnalyzer {
           inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset));
         }
       }
-    } finally {
-      token.finish();
-    }
+    });
 
     return inputFiles;
   }
