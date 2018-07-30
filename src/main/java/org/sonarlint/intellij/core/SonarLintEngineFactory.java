@@ -44,7 +44,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
-public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
+public class SonarLintEngineFactory implements ApplicationComponent {
   private static final String[] UNSUPPORTED_ANALYZERS = {"cpp", "typescript", "web"};
   private final GlobalLogOutput globalLogOutput;
 

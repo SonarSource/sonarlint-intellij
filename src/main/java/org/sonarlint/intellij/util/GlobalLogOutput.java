@@ -26,23 +26,23 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.util.messages.MessageBusConnection;
 import java.util.LinkedList;
 import java.util.List;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 public class GlobalLogOutput extends ApplicationComponent.Adapter implements LogOutput, Disposable {
-  private final ProjectManager projectManager;
   private final List<SonarLintConsole> consoles;
 
-  public GlobalLogOutput(ProjectManager projectManager) {
+  public GlobalLogOutput() {
     this.consoles = new LinkedList<>();
-    this.projectManager = projectManager;
   }
 
   @Override
   public void initComponent() {
-    projectManager.addProjectManagerListener(new ProjectListener(), this);
+    MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect(this);
+    busConnection.subscribe(ProjectManager.TOPIC, new ProjectListener());
   }
 
   public static GlobalLogOutput get() {
@@ -87,7 +87,6 @@ public class GlobalLogOutput extends ApplicationComponent.Adapter implements Log
   }
 
   @Override public void dispose() {
-    // should remove listener in ProjectManager
     Disposer.dispose(this);
   }
 

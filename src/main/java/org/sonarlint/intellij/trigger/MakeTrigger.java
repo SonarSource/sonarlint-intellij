@@ -23,9 +23,10 @@ import com.intellij.compiler.server.BuildManagerListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompileContext;
-import com.intellij.openapi.compiler.CompilerManager;
+import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
+import com.intellij.util.messages.MessageBusConnection;
 import java.util.UUID;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
@@ -33,18 +34,18 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class MakeTrigger extends AbstractProjectComponent implements BuildManagerListener, CompilationStatusListener {
   private final SonarLintConsole console;
-  private final CompilerManager compilerManager;
   private final SonarLintSubmitter submitter;
 
-  public MakeTrigger(Project project, SonarLintSubmitter submitter, SonarLintConsole console, CompilerManager compilerManager) {
+  public MakeTrigger(Project project, SonarLintSubmitter submitter, SonarLintConsole console) {
     super(project);
     this.submitter = submitter;
     this.console = console;
-    this.compilerManager = compilerManager;
-    ApplicationManager.getApplication().getMessageBus().connect(project).subscribe(BuildManagerListener.TOPIC, this);
+    MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
+    busConnection.subscribe(BuildManagerListener.TOPIC, this);
+    busConnection.subscribe(CompilerTopics.COMPILATION_STATUS, this);
   }
 
-  // introduced with IDEA 15
+  @Override
   public void beforeBuildProcessStarted(Project project, UUID sessionId) {
     //nothing to do
   }
@@ -85,15 +86,4 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
   public String getComponentName() {
     return "MakeTrigger";
   }
-
-  @Override
-  public void projectOpened() {
-    compilerManager.addCompilationStatusListener(this);
-  }
-
-  @Override
-  public void projectClosed() {
-    compilerManager.removeCompilationStatusListener(this);
-  }
-
 }

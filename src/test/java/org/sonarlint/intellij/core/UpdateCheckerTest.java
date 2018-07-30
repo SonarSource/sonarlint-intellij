@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -58,7 +57,7 @@ public class UpdateCheckerTest extends SonarTest {
     settings.setServerId("serverId");
     server = createServer();
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
-    super.register(app, GlobalLogOutput.class, new GlobalLogOutput(mock(ProjectManager.class)));
+    super.register(app, GlobalLogOutput.class, new GlobalLogOutput());
     when(bindingManager.getSonarQubeServer()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 

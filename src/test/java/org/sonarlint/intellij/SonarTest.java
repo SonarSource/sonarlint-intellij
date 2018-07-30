@@ -55,6 +55,7 @@ public abstract class SonarTest {
     when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
     when(app.isHeadlessEnvironment()).thenReturn(true);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
+    when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
     register(app, CertificateManager.class, new CertificateManager());
     createModuleRoot();
   }

@@ -19,9 +19,6 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.Disposable;
-import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.project.ProjectManagerListener;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
@@ -29,18 +26,15 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class GlobalLogOutputTest extends SonarTest {
-  private ProjectManager manager;
   private GlobalLogOutput output;
 
   @Before
   public void prepare() {
-    manager = mock(ProjectManager.class);
-    output = new GlobalLogOutput(manager);
+    output = new GlobalLogOutput();
     super.register(app, GlobalLogOutput.class, output);
   }
 
@@ -62,12 +56,6 @@ public class GlobalLogOutputTest extends SonarTest {
 
     output.log("trace", LogOutput.Level.TRACE);
     verify(console).debug("trace");
-  }
-
-  @Test
-  public void should_register_listener() {
-    output.initComponent();
-    verify(manager).addProjectManagerListener(any(ProjectManagerListener.class), any(Disposable.class));
   }
 
   @Test

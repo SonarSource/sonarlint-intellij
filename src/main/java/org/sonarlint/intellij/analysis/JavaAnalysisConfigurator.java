@@ -90,8 +90,12 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     }
   }
 
+  /**
+   * Replace with JpsJavaSdkType.complianceOption() when available in the oldest support IJ
+   */
   private static String getLanguageLevelOption(LanguageLevel level) {
-    return level.getCompilerComplianceDefaultOption();
+    int feature = level.toJavaVersion().feature;
+    return feature <= 8 ? ("1." + feature) : String.valueOf(feature);
   }
 
   private static void configureBinaries(Module ijModule, Map<String, String> properties) {

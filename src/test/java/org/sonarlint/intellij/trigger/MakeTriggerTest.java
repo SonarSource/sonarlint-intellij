@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompileContext;
-import com.intellij.openapi.compiler.CompilerManager;
 import com.intellij.openapi.project.Project;
 import java.util.UUID;
 import org.junit.Before;
@@ -30,7 +28,6 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
@@ -41,13 +38,13 @@ public class MakeTriggerTest extends SonarTest {
   private Project project = mock(Project.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private CompileContext context = mock(CompileContext.class);
-  private CompilerManager compilerManager = mock(CompilerManager.class);
 
-  private MakeTrigger trigger = new MakeTrigger(project, submitter, console, compilerManager);
+  private MakeTrigger trigger;
 
   @Before
   public void prepare() {
     when(context.getProject()).thenReturn(project);
+    trigger = new MakeTrigger(project, submitter, console);
   }
 
   @Test
@@ -103,14 +100,5 @@ public class MakeTriggerTest extends SonarTest {
   public void other_events_should_be_noop() {
     trigger.buildStarted(project, UUID.randomUUID(), true);
     verifyZeroInteractions(submitter);
-  }
-
-  @Test
-  public void should_register_compiler_manager() {
-    trigger.projectOpened();
-    verify(compilerManager).addCompilationStatusListener(any(CompilationStatusListener.class));
-
-    trigger.projectClosed();
-    verify(compilerManager).removeCompilationStatusListener(any(CompilationStatusListener.class));
   }
 }
