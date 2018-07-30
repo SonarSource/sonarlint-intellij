@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
@@ -53,17 +52,15 @@ public class SonarLintAnalyzer {
   private final EncodingProjectManager encodingProjectManager;
   private final SonarLintConsole console;
   private final FileDocumentManager fileDocumentManager;
-  private final Application app;
   private final SonarLintTelemetry telemetry;
   private final SonarLintAppUtils appUtils;
 
   public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
-    SonarLintConsole console, FileDocumentManager fileDocumentManager, Application app, SonarLintTelemetry telemetry, SonarLintAppUtils appUtils) {
+    SonarLintConsole console, FileDocumentManager fileDocumentManager, SonarLintTelemetry telemetry, SonarLintAppUtils appUtils) {
     this.projectBindingManager = projectBindingManager;
     this.encodingProjectManager = encodingProjectManager;
     this.console = console;
     this.fileDocumentManager = fileDocumentManager;
-    this.app = app;
     this.telemetry = telemetry;
     this.appUtils = appUtils;
   }

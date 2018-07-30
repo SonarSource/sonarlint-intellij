@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
@@ -64,17 +63,12 @@ public class IssueProcessor extends AbstractProjectComponent {
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> transformedIssues;
     long start = System.currentTimeMillis();
-    AccessToken token = ReadAction.start();
-    try {
-      transformedIssues = transformIssues(rawIssues, job.allFiles(), failedAnalysisFiles);
-
+    transformedIssues = ReadAction.compute(() -> {
+      Map<VirtualFile, Collection<LiveIssue>> issues = transformIssues(rawIssues, job.allFiles(), failedAnalysisFiles);
       // this might be updated later after tracking with server issues
-      manager.store(transformedIssues);
-
-    } finally {
-      // closeable only introduced in 2016.2
-      token.finish();
-    }
+      manager.store(issues);
+      return issues;
+    });
 
     String issueStr = rawIssues.size() == 1 ? "issue" : "issues";
     console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
