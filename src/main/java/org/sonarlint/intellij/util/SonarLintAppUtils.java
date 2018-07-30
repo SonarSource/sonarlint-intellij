@@ -32,7 +32,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import javax.annotation.CheckForNull;
 
-public class SonarLintAppUtils implements ApplicationComponent {
+public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   @CheckForNull
   public Module findModuleForFile(VirtualFile file, Project project) {
     ApplicationManager.getApplication().assertReadAccessAllowed();

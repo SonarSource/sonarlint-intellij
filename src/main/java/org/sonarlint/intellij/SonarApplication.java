@@ -23,9 +23,7 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageExtensionPoint;
-import com.intellij.lang.MetaLanguage;
 import com.intellij.notification.NotificationGroup;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.extensions.Extensions;
@@ -34,7 +32,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
@@ -42,21 +39,28 @@ import org.sonarlint.intellij.core.SonarQubeEventNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
-public class SonarApplication implements ApplicationComponent {
+public class SonarApplication extends ApplicationComponent.Adapter {
   private IdeaPluginDescriptor plugin;
 
   @Override
   public void initComponent() {
-    Predicate<Language> filter = l -> true;
-    if (ApplicationInfo.getInstance().getBuild().getBaselineVersion() >= 182) {
-      filter = l -> !(l instanceof MetaLanguage);
-    }
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     Language.getRegisteredLanguages().stream()
-      .filter(filter)
+      .filter(this::doesNotImplementMetaLanguage)
       .forEach(this::registerExternalAnnotatorFor);
     registerNotifications();
     cleanOldWorkDir();
+  }
+
+  private boolean doesNotImplementMetaLanguage(Language lang) {
+    Class<?> superclass = lang.getClass().getSuperclass();
+    while (superclass != null) {
+      if ("com.intellij.lang.MetaLanguage".equals(superclass.getName())) {
+        return false;
+      }
+      superclass = superclass.getSuperclass();
+    }
+    return true;
   }
 
   public String getVersion() {
