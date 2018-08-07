@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
@@ -98,6 +97,7 @@ public class DefaultClientInputFile implements ClientInputFile {
     return vFile;
   }
 
+  @Override
   public URI uri() {
     return uri;
   }
