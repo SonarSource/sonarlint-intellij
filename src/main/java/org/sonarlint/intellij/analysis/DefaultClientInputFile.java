@@ -24,7 +24,10 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
@@ -35,6 +38,7 @@ public class DefaultClientInputFile implements ClientInputFile {
   private final Charset charset;
   private final VirtualFile vFile;
   private final Document doc;
+  private final URI uri;
 
   DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Document doc) {
     this.path = vFile.getPath();
@@ -43,6 +47,7 @@ public class DefaultClientInputFile implements ClientInputFile {
     this.charset = charset;
     this.vFile = vFile;
     this.doc = doc;
+    this.uri = createURI();
   }
 
   DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
@@ -74,6 +79,14 @@ public class DefaultClientInputFile implements ClientInputFile {
     return new ByteArrayInputStream(doc.getText().getBytes(charset));
   }
 
+  private URI createURI() {
+    try {
+      return new URI(vFile.getUrl());
+    } catch (Exception e) {
+      return Paths.get(getPath()).toUri();
+    }
+  }
+
   @Override public String contents() throws IOException {
     if (doc == null) {
       return new String(vFile.contentsToByteArray(), charset);
@@ -83,5 +96,9 @@ public class DefaultClientInputFile implements ClientInputFile {
 
   @Override public VirtualFile getClientObject() {
     return vFile;
+  }
+
+  public URI uri() {
+    return uri;
   }
 }

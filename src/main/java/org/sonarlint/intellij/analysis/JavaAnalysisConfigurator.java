@@ -38,7 +38,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -131,11 +130,11 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     }
   }
 
-  private static VirtualFile[] getProjectClasspath(@Nullable final Module module) {
+  private static List<VirtualFile> getProjectClasspath(@Nullable final Module module) {
     if (module == null) {
-      return new VirtualFile[0];
+      return Collections.emptyList();
     }
-    final List<VirtualFile> found = new LinkedList<>();
+    final List<VirtualFile> found = new ArrayList<>();
     final ModuleRootManager mrm = ModuleRootManager.getInstance(module);
     final OrderEntry[] orderEntries = mrm.getOrderEntries();
     for (final OrderEntry entry : orderEntries) {
@@ -148,7 +147,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
         found.addAll(getLibraryEntries(lib));
       }
     }
-    return found.toArray(new VirtualFile[0]);
+    return found;
   }
 
   private static Collection<VirtualFile> getLibraryEntries(@Nullable Library lib) {

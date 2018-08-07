@@ -25,6 +25,8 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 import org.junit.Rule;
@@ -42,14 +44,16 @@ public class DefaultClientInputFileTest {
   public ExpectedException exception = ExpectedException.none();
 
   @Test
-  public void testNoDoc() throws IOException {
+  public void testNoDoc() throws IOException, URISyntaxException {
     VirtualFile vFile = mock(VirtualFile.class);
     when(vFile.getPath()).thenReturn("file");
     when(vFile.contentsToByteArray()).thenReturn("test string".getBytes(StandardCharsets.UTF_8));
     when(vFile.getInputStream()).thenReturn(new ByteArrayInputStream("test string".getBytes(StandardCharsets.UTF_8)));
+    when(vFile.getUrl()).thenReturn("file://file");
 
     inputFile = new DefaultClientInputFile(vFile, "file", true, StandardCharsets.UTF_8);
 
+    assertThat(inputFile.uri()).isEqualTo(new URI("file://file"));
     assertThat(inputFile.getCharset()).isEqualTo(StandardCharsets.UTF_8);
     assertThat(inputFile.isTest()).isTrue();
     assertThat(inputFile.getPath()).isEqualTo("file");
@@ -65,7 +69,7 @@ public class DefaultClientInputFileTest {
     VirtualFile vFile = mock(VirtualFile.class);
     Document doc = mock(Document.class);
     when(doc.getText()).thenReturn("test string");
-
+    when(vFile.getUrl()).thenReturn("file://foo/Bar.php");
     inputFile = new DefaultClientInputFile(vFile, "foo/Bar.php", true, StandardCharsets.UTF_8, doc);
 
     assertThat(inputFile.contents()).isEqualTo("test string");

@@ -185,7 +185,11 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  public Result canAnalyze(VirtualFile file, FileType fileType, @Nullable Module module) {
+  public Result canAnalyze(VirtualFile file, @Nullable Module module) {
+    return canAnalyze(file, file.getFileType(), module);
+  }
+
+  private Result canAnalyze(VirtualFile file, FileType fileType, @Nullable Module module) {
     if (module == null) {
       return Result.excluded("file is not part of any module in IntelliJ's project structure");
     }
