@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
@@ -112,10 +113,12 @@ public class LocalFileExclusions {
 
   /**
    * Checks if a file is excluded from analysis based on locally configured exclusions.
-   * It will also exclude files that cannot be analysed with {@link #canAnalyze(VirtualFile, Module)}.
+   * It will also exclude files that cannot be analysed with {@link #canAnalyze(VirtualFile, FileType, Module)}.
    */
   public Result checkExclusions(VirtualFile file, @Nullable Module module) {
-    Result result = canAnalyze(file, module);
+    // this can be expensive, do only  once
+    FileType fileType = file.getFileType();
+    Result result = canAnalyze(file, fileType, module);
     if (result.isExcluded()) {
       return result;
     }
@@ -124,7 +127,7 @@ public class LocalFileExclusions {
       return Result.excluded("power save mode is enabled");
     }
 
-    Result r = checkFileInSourceFolders(file, module);
+    Result r = checkFileInSourceFolders(file, fileType, module);
     if (r.isExcluded) {
       return r;
     }
@@ -143,7 +146,7 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  private static Result checkFileInSourceFolders(VirtualFile file, Module module) {
+  private static Result checkFileInSourceFolders(VirtualFile file, FileType fileType, Module module) {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     ContentEntry[] entries = moduleRootManager.getContentEntries();
 
@@ -166,7 +169,7 @@ public class LocalFileExclusions {
     }
 
     // java must be in a source root. For other files, we always analyze them.
-    if ("java".equalsIgnoreCase(file.getFileType().getDefaultExtension())) {
+    if ("java".equalsIgnoreCase(fileType.getDefaultExtension())) {
       return Result.excluded("java file not under a source root");
     }
     return Result.notExcluded();
@@ -182,7 +185,7 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  public Result canAnalyze(VirtualFile file, @Nullable Module module) {
+  public Result canAnalyze(VirtualFile file, FileType fileType, @Nullable Module module) {
     if (module == null) {
       return Result.excluded("file is not part of any module in IntelliJ's project structure");
     }
@@ -191,14 +194,14 @@ public class LocalFileExclusions {
       return Result.excluded("module is disposed");
     }
 
-    if (!file.isInLocalFileSystem() || file.getFileType().isBinary() || !file.isValid()
+    if (!file.isInLocalFileSystem() || fileType.isBinary() || !file.isValid()
       || ".idea".equals(file.getParent().getName())) {
       return Result.excluded("file's type or location are not supported");
     }
 
     // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
     String ijFlavor = applicationInfo.getVersionName().toLowerCase(Locale.US);
-    if (ijFlavor.contains("phpstorm") && "html".equalsIgnoreCase(file.getFileType().getName())) {
+    if (ijFlavor.contains("phpstorm") && "html".equalsIgnoreCase(fileType.getName())) {
       return Result.excluded(null);
     }
 

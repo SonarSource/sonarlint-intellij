@@ -149,7 +149,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
           continue;
         }
       } else {
-        LocalFileExclusions.Result result = localFileExclusions.canAnalyze(file, m);
+        LocalFileExclusions.Result result = localFileExclusions.canAnalyze(file, file.getFileType(), m);
         if (result.isExcluded()) {
           logExclusion(file, "excluded: " + result.excludeReason());
           continue;
