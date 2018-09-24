@@ -130,4 +130,6 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   public void setFileExclusions(List<String> fileExclusions) {
     this.fileExclusions = new ArrayList<>(fileExclusions);
   }
+
+
 }

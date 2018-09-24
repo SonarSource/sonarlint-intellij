@@ -30,7 +30,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ModuleStorageStatus;
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -102,7 +102,7 @@ public class SonarLintEngineManagerTest {
   @Test
   public void should_pass_checks() throws InvalidBindingException {
     when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
-    when(connectedEngine.getModuleStorageStatus("project1")).thenReturn(moduleOk);
+    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
     globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager(globalSettings, engineFactory);
@@ -118,7 +118,7 @@ public class SonarLintEngineManagerTest {
     return SonarQubeServer.newBuilder().setName(name).build();
   }
 
-  private static ModuleStorageStatus moduleOk = new ModuleStorageStatus() {
+  private static ProjectStorageStatus projectOk = new ProjectStorageStatus() {
     @Override public Date getLastUpdateDate() {
       return new Date(System.currentTimeMillis());
     }

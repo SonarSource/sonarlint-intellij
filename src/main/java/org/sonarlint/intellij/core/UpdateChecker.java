@@ -88,9 +88,9 @@ public class UpdateChecker extends AbstractProjectComponent {
   }
 
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration) {
-    StorageUpdateCheckResult moduleUpdateCheckResult = engine.checkIfModuleStorageNeedUpdate(serverConfiguration, projectSettings.getProjectKey(), null);
-    if (moduleUpdateCheckResult.needUpdate()) {
-      changelog.addAll(moduleUpdateCheckResult.changelog());
+    StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConfiguration, projectSettings.getProjectKey(), null);
+    if (projectUpdateCheckResult.needUpdate()) {
+      changelog.addAll(projectUpdateCheckResult.changelog());
     }
   }
 

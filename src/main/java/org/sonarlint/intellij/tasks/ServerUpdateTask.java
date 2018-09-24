@@ -23,6 +23,8 @@ import com.intellij.history.utils.RunnableAdapter;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
@@ -36,6 +38,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -55,14 +58,14 @@ public class ServerUpdateTask {
   private static final Logger LOGGER = Logger.getInstance(ServerUpdateTask.class);
   private final ConnectedSonarLintEngine engine;
   private final SonarQubeServer server;
-  private final Map<String, List<Project>> projectsPerModule;
+  private final Map<String, List<Project>> projectsPerProjectKey;
   private final boolean onlyModules;
   private final GlobalLogOutput log;
 
-  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Map<String, List<Project>> projectsPerModule, boolean onlyModules) {
+  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Map<String, List<Project>> projectsPerProjectKey, boolean onlyModules) {
     this.engine = engine;
     this.server = server;
-    this.projectsPerModule = projectsPerModule;
+    this.projectsPerProjectKey = projectsPerProjectKey;
     this.onlyModules = onlyModules;
     this.log = GlobalLogOutput.get();
   }
@@ -103,7 +106,7 @@ public class ServerUpdateTask {
         log.log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       }
 
-      updateModules(serverConfiguration, monitor);
+      updateProjects(serverConfiguration, monitor);
 
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + server.getName() + "' was cancelled");
@@ -143,39 +146,48 @@ public class ServerUpdateTask {
   }
 
   /**
-   * Updates all known modules belonging to a server configuration.
+   * Updates all known projects belonging to a server configuration.
    * It assumes that the server binding is updated.
    */
-  private void updateModules(ServerConfiguration serverConfiguration, TaskProgressMonitor monitor) {
-    Set<String> failedModules = new LinkedHashSet<>();
-    for (Map.Entry<String, List<Project>> entry : projectsPerModule.entrySet()) {
+  private void updateProjects(ServerConfiguration serverConfiguration, TaskProgressMonitor monitor) {
+    Set<String> failedProjects = new LinkedHashSet<>();
+    for (Map.Entry<String, List<Project>> entry : projectsPerProjectKey.entrySet()) {
       try {
-        updateModule(serverConfiguration, entry.getKey(), entry.getValue(), monitor);
+        updateProject(serverConfiguration, entry.getKey(), entry.getValue(), monitor);
       } catch (Exception e) {
-        // in case of error, save module key and keep updating other modules
+        // in case of error, save project key and keep updating other projects
         LOGGER.info(e.getMessage(), e);
-        failedModules.add(entry.getKey());
+        failedProjects.add(entry.getKey());
       }
     }
 
-    if (!projectsPerModule.isEmpty() && !failedModules.isEmpty()) {
-      String errorMsg = "Failed to update the following modules. "
+    if (!projectsPerProjectKey.isEmpty() && !failedProjects.isEmpty()) {
+      String errorMsg = "Failed to update the following projects. "
         + "Please check if the server bindings are updated and the module key is correct: "
-        + failedModules.toString();
+        + failedProjects.toString();
       log.log(errorMsg, LogOutput.Level.WARN);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override public void doRun() {
-          Messages.showWarningDialog((Project) null, errorMsg, "Modules Not Updated");
+          Messages.showWarningDialog((Project) null, errorMsg, "Projects Not Updated");
         }
       }, ModalityState.any());
     }
   }
 
-  private void updateModule(ServerConfiguration serverConfiguration, String moduleKey, List<Project> projects, TaskProgressMonitor monitor) {
-    engine.updateModule(serverConfiguration, moduleKey, monitor);
-    log.log("Module '" + moduleKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+  private void updateProject(ServerConfiguration serverConfiguration, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
+    engine.updateProject(serverConfiguration, projectKey, monitor);
+    log.log("Project '" + projectKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+    projects.forEach(this::updateModules);
     projects.forEach(ServerUpdateTask::analyzeOpenFiles);
+  }
+
+  private void updateModules(Project project) {
+    Module[] modules = ModuleManager.getInstance(project).getModules();
+
+    for (Module m : modules) {
+      SonarLintUtils.get(m, ModuleBindingManager.class).updateBinding(engine);
+    }
   }
 
   private static void analyzeOpenFiles(Project project) {

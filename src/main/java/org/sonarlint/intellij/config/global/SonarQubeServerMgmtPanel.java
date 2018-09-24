@@ -343,9 +343,9 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
 
     for (Project p : openProjects) {
       SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
-      String moduleKey = projectSettings.getProjectKey();
-      if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && moduleKey != null) {
-        List<Project> projects = projectsPerModule.computeIfAbsent(moduleKey, k -> new ArrayList<>());
+      String projectKey = projectSettings.getProjectKey();
+      if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && projectKey != null) {
+        List<Project> projects = projectsPerModule.computeIfAbsent(projectKey, k -> new ArrayList<>());
         projects.add(p);
       }
     }

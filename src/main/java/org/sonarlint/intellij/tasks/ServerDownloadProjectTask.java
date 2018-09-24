@@ -29,7 +29,7 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteModule;
+import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 // we can't use Task.WithResult because it was only introduced recently
@@ -39,7 +39,7 @@ public class ServerDownloadProjectTask extends Task.Modal {
   private final SonarQubeServer server;
 
   private Exception exception;
-  private Map<String, RemoteModule> result;
+  private Map<String, RemoteProject> result;
 
   public ServerDownloadProjectTask(Project project, ConnectedSonarLintEngine engine, SonarQubeServer server) {
     super(project, "Downloading Project List", true);
@@ -51,14 +51,14 @@ public class ServerDownloadProjectTask extends Task.Modal {
     try {
       TaskProgressMonitor monitor = new TaskProgressMonitor(indicator);
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      this.result = engine.downloadAllModules(serverConfiguration, monitor);
+      this.result = engine.downloadAllProjects(serverConfiguration, monitor);
     } catch (Exception e) {
       LOGGER.info("Failed to download list of projects", e);
       this.exception = e;
     }
   }
 
-  public Map<String, RemoteModule> getResult() throws Exception {
+  public Map<String, RemoteProject> getResult() throws Exception {
     if (exception != null) {
       throw exception;
     }

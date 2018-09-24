@@ -62,7 +62,7 @@ import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteModule;
+import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
 
 public class SonarLintProjectBindPanel {
   private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
@@ -143,7 +143,7 @@ public class SonarLintProjectBindPanel {
    * Assumes that it's bound and a server is selected
    */
   @CheckForNull
-  private Map<String, RemoteModule> downloadProjectList() {
+  private Map<String, RemoteProject> downloadProjectList() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     SonarQubeServer selectedServer = getSelectedServer();
@@ -239,7 +239,7 @@ public class SonarLintProjectBindPanel {
     searchProjectButton = new JButton();
     searchProjectButton.setAction(new AbstractAction() {
       @Override public void actionPerformed(ActionEvent e) {
-        Map<String, RemoteModule> map = downloadProjectList();
+        Map<String, RemoteProject> map = downloadProjectList();
         if (map != null) {
           SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map);
           if (dialog.showAndGet()) {
@@ -269,7 +269,6 @@ public class SonarLintProjectBindPanel {
     bindPanel.add(serverListLabel, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 0, 0, 0), 0, 0));
     bindPanel.add(serverPanel, new GridBagConstraints(1, 0, 1, 1, 1, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 3, 0, 0), 0, 0));
 
-    // bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0, 1, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 0, 0, 0), 0, 0));
     bindPanel.add(projectPanel, new GridBagConstraints(0, 1, 2, 1, 1, 1, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 3, 0, 0), 0, 0));
   }
 
@@ -345,7 +344,6 @@ public class SonarLintProjectBindPanel {
       bindPanel.setEnabled(bound);
       serverComboBox.setEnabled(bound);
       configureServerButton.setEnabled(bound);
-      //updateProjectKeyStatus();
     }
   }
 }

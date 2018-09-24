@@ -23,6 +23,7 @@ import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -61,9 +62,8 @@ public class IssueProcessor extends AbstractProjectComponent {
   }
 
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
-    Map<VirtualFile, Collection<LiveIssue>> transformedIssues;
     long start = System.currentTimeMillis();
-    transformedIssues = ReadAction.compute(() -> {
+    Map<VirtualFile, Collection<LiveIssue>> transformedIssues = ReadAction.compute(() -> {
       Map<VirtualFile, Collection<LiveIssue>> issues = transformIssues(rawIssues, job.allFiles(), failedAnalysisFiles);
       // this might be updated later after tracking with server issues
       manager.store(issues);
@@ -77,16 +77,24 @@ public class IssueProcessor extends AbstractProjectComponent {
       .mapToLong(e -> e.getValue().size())
       .sum();
 
-    Collection<VirtualFile> filesWithIssues = transformedIssues.entrySet().stream()
-      .filter(e -> !e.getValue().isEmpty())
-      .map(Map.Entry::getKey)
-      .collect(Collectors.toList());
-
     String end = issuesToShow == 1 ? " issue" : " issues";
     console.info("Found " + issuesToShow + end);
 
-    if (!filesWithIssues.isEmpty() && shouldUpdateServerIssues(job.trigger())) {
-      serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssues, indicator, job.waitForServerIssues());
+    if (shouldUpdateServerIssues(job.trigger())) {
+      Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new HashMap<>();
+
+      for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
+        Collection<VirtualFile> moduleFilesWithIssues = e.getValue().stream()
+          .filter(f -> !transformedIssues.getOrDefault(f, Collections.emptyList()).isEmpty())
+          .collect(Collectors.toList());
+        if (!moduleFilesWithIssues.isEmpty()) {
+          filesWithIssuesPerModule.put(e.getKey(), moduleFilesWithIssues);
+        }
+      }
+
+      if (!filesWithIssuesPerModule.isEmpty()) {
+        serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, job.waitForServerIssues());
+      }
     }
 
     AnalysisCallback callback = job.callback();

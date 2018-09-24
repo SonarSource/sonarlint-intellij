@@ -196,7 +196,12 @@
         <component>
             <implementation-class>org.sonarlint.intellij.analysis.VirtualFileTestPredicate</implementation-class>
         </component>
-
+        <component>
+            <implementation-class>org.sonarlint.intellij.core.ModuleBindingManager</implementation-class>
+        </component>
+        <component>
+            <implementation-class>org.sonarlint.intellij.config.module.SonarLintModuleSettings</implementation-class>
+        </component>
     </module-components>
 
     <extensions defaultExtensionNs="com.intellij">

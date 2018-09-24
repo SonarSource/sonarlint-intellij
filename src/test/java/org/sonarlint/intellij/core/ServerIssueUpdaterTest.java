@@ -42,6 +42,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 
@@ -58,6 +59,7 @@ import static org.mockito.Mockito.when;
 
 public class ServerIssueUpdaterTest extends SonarTest {
   public static final String PROJECT_KEY = "foo";
+  public static final ProjectBinding PROJECT_BINDING = new ProjectBinding(PROJECT_KEY, "", "");
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
 
   @Rule
@@ -68,18 +70,28 @@ public class ServerIssueUpdaterTest extends SonarTest {
   private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private ProgressIndicator indicator = mock(ProgressIndicator.class);
+  private ModuleBindingManager moduleBindingManager = mock(ModuleBindingManager.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
+  private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
+
   private ServerIssueUpdater updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console, appUtils);
 
   @Before
-  public void prepare() throws IOException {
+  public void prepare() throws IOException, InvalidBindingException {
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
+    super.register(module, ModuleBindingManager.class, moduleBindingManager);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     Path projectBaseDir = temp.newFolder().toPath();
-
+    when(moduleBindingManager.getBinding()).thenReturn(new ProjectBinding(PROJECT_KEY, "", ""));
     when(indicator.isModal()).thenReturn(false);
     when(project.getBasePath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.toString()));
     settings.setProjectKey(PROJECT_KEY);
+
+    // mock creation of engine / server
+    when(bindingManager.getConnectedEngine()).thenReturn(engine);
+    SonarQubeServer server = mock(SonarQubeServer.class);
+    when(server.getHostUrl()).thenReturn("http://dummyserver:9000");
+    when(bindingManager.getSonarQubeServer()).thenReturn(server);
   }
 
   @Test
@@ -87,7 +99,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     settings.setBindingEnabled(false);
 
-    updater.fetchAndMatchServerIssues(Collections.singletonList(file), indicator, false);
+    updater.fetchAndMatchServerIssues(Collections.singletonMap(module, Collections.singletonList(file)), indicator, false);
     verifyZeroInteractions(bindingManager);
     verifyZeroInteractions(issueManager);
   }
@@ -97,24 +109,17 @@ public class ServerIssueUpdaterTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     ServerIssue serverIssue = mock(ServerIssue.class);
     String filename = "MyFile.txt";
-    when(appUtils.getRelativePathForAnalysis(project, file)).thenReturn(filename);
-
-    // mock creation of engine / server
-    ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
-    when(bindingManager.getConnectedEngine()).thenReturn(engine);
-    SonarQubeServer server = mock(SonarQubeServer.class);
-    when(server.getHostUrl()).thenReturn("http://dummyserver:9000");
-    when(bindingManager.getSonarQubeServer()).thenReturn(server);
+    when(appUtils.getRelativePathForAnalysis(module, file)).thenReturn(filename);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY), eq(filename)))
+    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(filename)))
       .thenReturn(Collections.singletonList(serverIssue));
 
     // run
     settings.setBindingEnabled(true);
 
     updater.initComponent();
-    updater.fetchAndMatchServerIssues(Collections.singletonList(file), indicator, false);
+    updater.fetchAndMatchServerIssues(Collections.singletonMap(module, Collections.singletonList(file)), indicator, false);
 
     verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
@@ -128,26 +133,19 @@ public class ServerIssueUpdaterTest extends SonarTest {
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
       VirtualFile file = mock(VirtualFile.class);
-      when(appUtils.getRelativePathForAnalysis(project, file)).thenReturn("MyFile" + i + ".txt");
+      when(appUtils.getRelativePathForAnalysis(module, file)).thenReturn("MyFile" + i + ".txt");
       files.add(file);
     }
     ServerIssue serverIssue = mock(ServerIssue.class);
 
-    // mock creation of engine / server
-    ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
-    when(bindingManager.getConnectedEngine()).thenReturn(engine);
-    SonarQubeServer server = mock(SonarQubeServer.class);
-    when(server.getHostUrl()).thenReturn("http://dummyserver:9000");
-    when(bindingManager.getSonarQubeServer()).thenReturn(server);
-
     // mock issues fetched
-    when(engine.getServerIssues(eq(PROJECT_KEY), anyString())).thenReturn(Collections.singletonList(serverIssue));
+    when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(Collections.singletonList(serverIssue));
 
     // run
     settings.setBindingEnabled(true);
 
     updater.initComponent();
-    updater.fetchAndMatchServerIssues(files, indicator, false);
+    updater.fetchAndMatchServerIssues(Collections.singletonMap(module, files), indicator, false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
     verify(engine).downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY));

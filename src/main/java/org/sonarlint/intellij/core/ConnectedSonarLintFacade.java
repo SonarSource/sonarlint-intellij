@@ -25,14 +25,14 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -44,12 +44,12 @@ import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
-  private final String moduleKey;
+  private final String projectKey;
   private final SonarLintConsole console;
   private final SonarLintAppUtils appUtils;
 
   ConnectedSonarLintFacade(SonarLintAppUtils appUtils, ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings,
-    SonarLintConsole console, Project project, String moduleKey) {
+    SonarLintConsole console, Project project, String projectKey) {
     super(project, projectSettings);
     this.appUtils = appUtils;
     Preconditions.checkNotNull(project, "project");
@@ -57,13 +57,13 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     Preconditions.checkNotNull(engine, "engine");
     this.console = console;
     this.sonarlint = engine;
-    this.moduleKey = moduleKey;
+    this.projectKey = projectKey;
   }
 
   @Override
   protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
-    ConnectedAnalysisConfiguration config = new ConnectedAnalysisConfiguration(moduleKey, baseDir, workDir, inputFiles, props);
+    ConnectedAnalysisConfiguration config = new ConnectedAnalysisConfiguration(projectKey, baseDir, workDir, inputFiles, props);
     console.debug("Starting analysis with configuration:\n" + config.toString());
 
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
@@ -71,13 +71,14 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
+    ModuleBindingManager binding = SonarLintUtils.get(module, ModuleBindingManager.class);
+    if (binding.getBinding() == null) {
+      // should never happen since the project should be bound!
+      return Collections.emptyList();
+    }
 
-    //FIXME collisions might happen here
-    Map<String, VirtualFile> fileByPath = files.stream()
-      .collect(Collectors.toMap(f -> appUtils.getRelativePathForAnalysis(module, f), x -> x, (x, y) -> x));
-
-    Set<String> excludedFiles = sonarlint.getExcludedFiles(moduleKey, fileByPath.keySet(), p -> testPredicate.test(fileByPath.get(p)));
-    return excludedFiles.stream().map(fileByPath::get).collect(Collectors.toList());
+    return sonarlint.getExcludedFiles(binding.getBinding(), files,
+      s -> appUtils.getRelativePathForAnalysis(module, s), testPredicate);
   }
 
   @Override public Collection<LoadedAnalyzer> getLoadedAnalyzers() {

@@ -71,7 +71,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Project bound to an invalid remote module</b>",
+      "<b>SonarLint - Project bound to an invalid remote project</b>",
       UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);

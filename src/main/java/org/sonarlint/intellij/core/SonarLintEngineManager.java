@@ -32,7 +32,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ModuleStorageStatus;
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintEngineManager implements ApplicationComponent {
@@ -69,9 +69,9 @@ public class SonarLintEngineManager implements ApplicationComponent {
       throw new InvalidBindingException("Server is not updated: " + serverId);
     }
 
-    // Check if module's storage is OK. Global storage was updated and all project's binding that were open too,
+    // Check if project's storage is OK. Global storage was updated and all project's binding that were open too,
     // but we might have now opened a new project with a different binding.
-    ModuleStorageStatus moduleStorageStatus = engine.getModuleStorageStatus(projectKey);
+    ProjectStorageStatus moduleStorageStatus = engine.getProjectStorageStatus(projectKey);
 
     if (moduleStorageStatus == null) {
       notifications.notifyModuleInvalid();

@@ -106,7 +106,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   /**
    * When we save the binding, we need to:
    * - Send a message for listeners interested in it
-   * - If we are bound to a module, update it (even if we detected no changes)
+   * - If we are bound to a project, update it (even if we detected no changes)
    * - Clear all issues and submit an analysis on all open files
    */
   private void onSave() {
@@ -119,9 +119,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       try {
         SonarQubeServer server = bindingManager.getSonarQubeServer();
         ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
-        String moduleKey = projectSettings.getProjectKey();
+        String projectKey = projectSettings.getProjectKey();
 
-        ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(moduleKey, Collections.singletonList(project)), true);
+        ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(projectKey, Collections.singletonList(project)), true);
         ProgressManager.getInstance().run(task.asModal());
       } catch (InvalidBindingException e) {
         // nothing to do, SonarLintEngineManager should have already shown a warning

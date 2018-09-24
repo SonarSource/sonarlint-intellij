@@ -78,13 +78,13 @@ public class UpdateCheckerTest extends SonarTest {
     StorageUpdateCheckResult result = mock(StorageUpdateCheckResult.class);
     when(result.needUpdate()).thenReturn(false);
 
-    when(engine.checkIfModuleStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull())).thenReturn(result);
+    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull())).thenReturn(result);
     when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull())).thenReturn(result);
 
     updateChecker.checkForUpdate();
 
     verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull());
-    verify(engine).checkIfModuleStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull());
 
     verifyZeroInteractions(notifications);
   }
@@ -95,13 +95,13 @@ public class UpdateCheckerTest extends SonarTest {
     when(result.needUpdate()).thenReturn(true);
     when(result.changelog()).thenReturn(Collections.singletonList("change1"));
 
-    when(engine.checkIfModuleStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull())).thenReturn(result);
+    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull())).thenReturn(result);
     when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull())).thenReturn(result);
 
     updateChecker.checkForUpdate();
 
     verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull());
-    verify(engine).checkIfModuleStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull());
     verify(notifications).notifyServerHasUpdates("serverId", engine, server, false);
 
     verifyNoMoreInteractions(engine);

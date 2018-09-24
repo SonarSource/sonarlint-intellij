@@ -44,10 +44,10 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteModule;
+import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
 
 public class SearchProjectKeyDialog extends DialogWrapper {
-  private final Map<String, RemoteModule> moduleList;
+  private final Map<String, RemoteProject> projectsByKey;
 
   private String lastSelectedProjectKey;
   private JPanel contentPane;
@@ -55,17 +55,17 @@ public class SearchProjectKeyDialog extends DialogWrapper {
   // generic list only introduced in 2016.3
   private JBList projectList;
 
-  public SearchProjectKeyDialog(Component parent, String selectedProjectKey, Map<String, RemoteModule> moduleList) {
+  public SearchProjectKeyDialog(Component parent, String selectedProjectKey, Map<String, RemoteProject> projectsByKey) {
     super(parent, false);
     this.lastSelectedProjectKey = selectedProjectKey;
-    this.moduleList = moduleList;
+    this.projectsByKey = projectsByKey;
     setTitle("Search Project in SonarQube Server");
     init();
   }
 
   private void createUIComponents() {
     createProjectList();
-    setProjectsInList(moduleList.values());
+    setProjectsInList(projectsByKey.values());
   }
 
   private boolean updateOk() {
@@ -76,8 +76,8 @@ public class SearchProjectKeyDialog extends DialogWrapper {
 
   @CheckForNull
   public String getSelectedProjectKey() {
-    RemoteModule module = (RemoteModule) projectList.getSelectedValue();
-    return module == null ? null : module.getKey();
+    RemoteProject project = (RemoteProject) projectList.getSelectedValue();
+    return project == null ? null : project.getKey();
   }
 
   private void createProjectList() {
@@ -90,8 +90,8 @@ public class SearchProjectKeyDialog extends DialogWrapper {
     projectList.setVisibleRowCount(10);
     projectList.setBorder(IdeBorderFactory.createBorder());
     Convertor<Object, String> convertor = o -> {
-      RemoteModule module = (RemoteModule) o;
-      return module.getName() + " " + module.getKey();
+      RemoteProject project = (RemoteProject) o;
+      return project.getName() + " " + project.getKey();
     };
     new ListSpeedSearch(projectList, convertor);
 
@@ -99,8 +99,8 @@ public class SearchProjectKeyDialog extends DialogWrapper {
 
   }
 
-  private void setProjectsInList(Collection<RemoteModule> modules) {
-    Comparator<RemoteModule> moduleComparator = (o1, o2) -> {
+  private void setProjectsInList(Collection<RemoteProject> projects) {
+    Comparator<RemoteProject> projectComparator = (o1, o2) -> {
       int c1 = o1.getName().compareToIgnoreCase(o2.getName());
       if (c1 != 0) {
         return c1;
@@ -108,25 +108,24 @@ public class SearchProjectKeyDialog extends DialogWrapper {
       return o1.getKey().compareToIgnoreCase(o2.getKey());
     };
 
-    List<RemoteModule> sortedModules = modules.stream()
-      .filter(RemoteModule::isRoot)
-      .sorted(moduleComparator)
+    List<RemoteProject> sortedProjects = projects.stream()
+      .sorted(projectComparator)
       .collect(Collectors.toList());
 
-    RemoteModule selected = null;
+    RemoteProject selected = null;
     if (lastSelectedProjectKey != null) {
-      selected = sortedModules.stream()
-        .filter(module -> lastSelectedProjectKey.equals(module.getKey()))
+      selected = sortedProjects.stream()
+        .filter(project -> lastSelectedProjectKey.equals(project.getKey()))
         .findAny().orElse(null);
     }
-    CollectionListModel<RemoteModule> projectListModel = new CollectionListModel<>(sortedModules);
+    CollectionListModel<RemoteProject> projectListModel = new CollectionListModel<>(sortedProjects);
 
     projectList.setModel(projectListModel);
     projectList.setCellRenderer(new ProjectListRenderer());
     setSelectedProject(selected);
   }
 
-  private void setSelectedProject(@Nullable RemoteModule selected) {
+  private void setSelectedProject(@Nullable RemoteProject selected) {
     if (selected != null) {
       projectList.setSelectedValue(selected, true);
     } else if (!projectList.isEmpty() && lastSelectedProjectKey == null) {
@@ -142,10 +141,10 @@ public class SearchProjectKeyDialog extends DialogWrapper {
   }
 
   /**
-   * Render modules in combo box
+   * Render projects in combo box
    */
-  private static class ProjectListRenderer extends ColoredListCellRenderer<RemoteModule> {
-    @Override protected void customizeCellRenderer(JList list, @Nullable RemoteModule value, int index, boolean selected, boolean hasFocus) {
+  private static class ProjectListRenderer extends ColoredListCellRenderer<RemoteProject> {
+    @Override protected void customizeCellRenderer(JList list, @Nullable RemoteProject value, int index, boolean selected, boolean hasFocus) {
       if (value == null) {
         // should never happen
         return;
