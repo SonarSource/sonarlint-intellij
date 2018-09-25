@@ -69,6 +69,18 @@ public final class SonarLintModuleSettings implements PersistentStateComponent<S
 
   @Override
   public void moduleAdded() {
+    // for backward compatibility
+  }
 
+  @Deprecated
+  @Override
+  public void projectOpened() {
+    // for backward compatibility
+  }
+
+  @Deprecated
+  @Override
+  public void projectClosed() {
+    // for backward compatibility
   }
 }
