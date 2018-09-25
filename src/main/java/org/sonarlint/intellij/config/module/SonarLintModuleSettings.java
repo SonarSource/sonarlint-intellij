@@ -66,4 +66,9 @@ public final class SonarLintModuleSettings implements PersistentStateComponent<S
   public void setIdePathPrefix(String idePathPrefix) {
     this.idePathPrefix = idePathPrefix;
   }
+
+  @Override
+  public void moduleAdded() {
+
+  }
 }
