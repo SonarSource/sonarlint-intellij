@@ -83,4 +83,21 @@ public class ModuleBindingManager implements ModuleComponent {
     }
     return paths;
   }
+
+  @Override
+  public void moduleAdded() {
+    // for backward compatibility
+  }
+
+  @Deprecated
+  @Override
+  public void projectOpened() {
+    // for backward compatibility
+  }
+
+  @Deprecated
+  @Override
+  public void projectClosed() {
+    // for backward compatibility
+  }
 }
