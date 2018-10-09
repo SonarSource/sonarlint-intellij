@@ -23,13 +23,13 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
-import com.intellij.openapi.module.ModuleComponent;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.util.AbstractModuleComponent;
 
 @State(name = "SonarLintModuleSettings", storages = @Storage(StoragePathMacros.MODULE_FILE))
-public final class SonarLintModuleSettings implements PersistentStateComponent<SonarLintModuleSettings>, ModuleComponent {
+public final class SonarLintModuleSettings extends AbstractModuleComponent implements PersistentStateComponent<SonarLintModuleSettings> {
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
 
@@ -65,22 +65,5 @@ public final class SonarLintModuleSettings implements PersistentStateComponent<S
 
   public void setIdePathPrefix(String idePathPrefix) {
     this.idePathPrefix = idePathPrefix;
-  }
-
-  @Override
-  public void moduleAdded() {
-    // for backward compatibility
-  }
-
-  @Deprecated
-  @Override
-  public void projectOpened() {
-    // for backward compatibility
-  }
-
-  @Deprecated
-  @Override
-  public void projectClosed() {
-    // for backward compatibility
   }
 }

@@ -22,18 +22,18 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleComponent;
 import com.intellij.openapi.roots.ModuleRootManager;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.AbstractModuleComponent;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
-public class ModuleBindingManager implements ModuleComponent {
+public class ModuleBindingManager extends AbstractModuleComponent {
   private final SonarLintAppUtils appUtils;
   private final Module module;
   private final SonarLintProjectSettings projectSettings;
@@ -82,22 +82,5 @@ public class ModuleBindingManager implements ModuleComponent {
       accessToken.finish();
     }
     return paths;
-  }
-
-  @Override
-  public void moduleAdded() {
-    // for backward compatibility
-  }
-
-  @Deprecated
-  @Override
-  public void projectOpened() {
-    // for backward compatibility
-  }
-
-  @Deprecated
-  @Override
-  public void projectClosed() {
-    // for backward compatibility
   }
 }
