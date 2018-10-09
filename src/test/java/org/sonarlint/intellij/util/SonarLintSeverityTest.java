@@ -39,8 +39,8 @@ public class SonarLintSeverityTest {
 
   @Test
   public void testBlockerSeverity() {
-    assertThat(SonarLintSeverity.BLOCKER.highlightSeverity()).isEqualTo(HighlightSeverity.ERROR);
+    assertThat(SonarLintSeverity.BLOCKER.highlightSeverity()).isEqualTo(HighlightSeverity.WARNING);
     assertThat(SonarLintSeverity.BLOCKER.highlightType()).isEqualTo(ProblemHighlightType.GENERIC_ERROR_OR_WARNING);
-    assertThat(SonarLintSeverity.BLOCKER.defaultTextAttributes()).isEqualTo(CodeInsightColors.ERRORS_ATTRIBUTES);
+    assertThat(SonarLintSeverity.BLOCKER.defaultTextAttributes()).isEqualTo(CodeInsightColors.WARNINGS_ATTRIBUTES);
   }
 }
