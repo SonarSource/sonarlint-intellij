@@ -82,7 +82,9 @@ dependencies {
     'org.sonarsource.java:sonar-java-plugin:5.5.0.14655',
     'org.sonarsource.javascript:sonar-javascript-plugin:4.1.0.6085',
     'org.sonarsource.php:sonar-php-plugin:2.12.0.2871',
-    'org.sonarsource.python:sonar-python-plugin:1.10.0.2131'
+    'org.sonarsource.python:sonar-python-plugin:1.10.0.2131',
+    'org.sonarsource.slang:sonar-kotlin-plugin:1.1.0.1552@jar',
+    'org.sonarsource.slang:sonar-ruby-plugin:1.1.0.1552@jar'
   )
 }
 
