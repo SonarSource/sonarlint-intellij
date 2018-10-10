@@ -29,6 +29,8 @@ import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import javax.annotation.CheckForNull;
 
@@ -51,7 +53,7 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
 
   public boolean isOpenFile(Project project, VirtualFile file) {
     VirtualFile[] openFiles = FileEditorManager.getInstance(project).getOpenFiles();
-    return Arrays.stream(openFiles).anyMatch(f -> f.equals(file));
+    return Arrays.asList(openFiles).contains(file);
   }
 
   /**
@@ -89,12 +91,17 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
 
   @CheckForNull
   public String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
-    VirtualFile moduleFile = module.getModuleFile();
-    return moduleFile == null ? null : VfsUtil.getRelativePath(file, moduleFile.getParent());
+    String moduleFile = module.getModuleFilePath();
+    Path baseDir = Paths.get(moduleFile).getParent();
+    Path filePath = Paths.get(file.getPath());
+    if (!filePath.startsWith(baseDir)) {
+      return null;
+    }
+    return baseDir.relativize(filePath).toString();
   }
 
   @CheckForNull
-  public String getPathRelativeToContentRoot(Module module, VirtualFile file) {
+  private String getPathRelativeToContentRoot(Module module, VirtualFile file) {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     for (VirtualFile root : moduleRootManager.getContentRoots()) {
       if (VfsUtil.isAncestor(root, file, true)) {
