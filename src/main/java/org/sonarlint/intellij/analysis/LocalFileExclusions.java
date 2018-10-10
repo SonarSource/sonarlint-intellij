@@ -24,10 +24,9 @@ import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ContentEntry;
-import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectFileIndex;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.SourceFolder;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collection;
@@ -46,35 +45,36 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
-
-import static org.sonarlint.intellij.util.SonarLintUtils.isExcludedOrUnderExcludedDirectory;
-import static org.sonarlint.intellij.util.SonarLintUtils.isJavaGeneratedSource;
-import static org.sonarlint.intellij.util.SonarLintUtils.isJavaResource;
 
 public class LocalFileExclusions {
   private final SonarLintAppUtils appUtils;
   private final ApplicationInfo applicationInfo;
+  private final ProjectRootManager projectRootManager;
+  private final Supplier<Boolean> powerSaveModeCheck;
+
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
-  private Supplier<Boolean> powerSaveModeCheck;
 
   /**
    * Used by pico container
    */
   public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    ApplicationInfo applicationInfo) {
-    this(project, settings, projectSettings, appUtils, applicationInfo, PowerSaveMode::isEnabled);
+    ApplicationInfo applicationInfo, ProjectRootManager projectRootManager) {
+    this(project, settings, projectSettings, appUtils, applicationInfo, projectRootManager, PowerSaveMode::isEnabled);
   }
 
-  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    ApplicationInfo applicationInfo, Supplier<Boolean> powerSaveModeCheck) {
+  LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
+    ApplicationInfo applicationInfo, ProjectRootManager projectRootManager, Supplier<Boolean> powerSaveModeCheck) {
     this.appUtils = appUtils;
     this.applicationInfo = applicationInfo;
+    this.projectRootManager = projectRootManager;
+    this.powerSaveModeCheck = powerSaveModeCheck;
+
+    subscribeToSettingsChanges(project);
     loadGlobalExclusions(settings);
     loadProjectExclusions(projectSettings);
-    subscribeToSettingsChanges(project);
-    this.powerSaveModeCheck = powerSaveModeCheck;
   }
 
   private static Set<String> getExclusionsOfType(Collection<ExclusionItem> exclusions, ExclusionItem.Type type) {
@@ -113,12 +113,10 @@ public class LocalFileExclusions {
 
   /**
    * Checks if a file is excluded from analysis based on locally configured exclusions.
-   * It will also exclude files that cannot be analysed with {@link #canAnalyze(VirtualFile, FileType, Module)}.
+   * It will also exclude files that cannot be analysed with {@link #canAnalyze(VirtualFile, Module)}.
    */
   public Result checkExclusions(VirtualFile file, @Nullable Module module) {
-    // this can be expensive, do only  once
-    FileType fileType = file.getFileType();
-    Result result = canAnalyze(file, fileType, module);
+    Result result = canAnalyze(file, module);
     if (result.isExcluded()) {
       return result;
     }
@@ -127,9 +125,9 @@ public class LocalFileExclusions {
       return Result.excluded("power save mode is enabled");
     }
 
-    Result r = checkFileInSourceFolders(file, fileType, module);
-    if (r.isExcluded) {
-      return r;
+    result = checkFileInSourceFolders(file, module);
+    if (result.isExcluded) {
+      return result;
     }
 
     String relativePath = appUtils.getRelativePathForAnalysis(module, file);
@@ -146,50 +144,31 @@ public class LocalFileExclusions {
     return Result.notExcluded();
   }
 
-  private static Result checkFileInSourceFolders(VirtualFile file, FileType fileType, Module module) {
-    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-    ContentEntry[] entries = moduleRootManager.getContentEntries();
+  private Result checkFileInSourceFolders(VirtualFile file, Module module) {
+    ProjectFileIndex fileIndex = projectRootManager.getFileIndex();
 
-    for (ContentEntry e : entries) {
-      if (isExcludedOrUnderExcludedDirectory(file, e)) {
-        return Result.excluded("file is excluded in Project Structure");
+    if (fileIndex.isExcluded(file)) {
+      return Result.excluded("file is excluded or ignored in IntelliJ's project structure");
+    }
+
+    SourceFolder sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
+    if (sourceFolder != null) {
+      System.out.println(sourceFolder.getRootType());
+      if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
+        return Result.excluded("file is classified as generated in IntelliJ's project structure");
       }
-
-      SourceFolder[] sourceFolders = e.getSourceFolders();
-
-      for (SourceFolder sourceFolder : sourceFolders) {
-        if (sourceFolder.getFile() == null || sourceFolder.isSynthetic()) {
-          continue;
-        }
-
-        if (VfsUtil.isAncestor(sourceFolder.getFile(), file, false)) {
-          return checkSourceFolder(sourceFolder);
-        }
+      if (SonarLintUtils.isJavaResource(sourceFolder)) {
+        return Result.excluded("file is classified as resource in IntelliJ's project structure");
       }
     }
 
-    // java must be in a source root. For other files, we always analyze them.
-    if ("java".equalsIgnoreCase(fileType.getDefaultExtension())) {
-      return Result.excluded("java file not under a source root");
-    }
-    return Result.notExcluded();
-  }
-
-  private static Result checkSourceFolder(SourceFolder sourceFolder) {
-    if (isJavaResource(sourceFolder)) {
-      Result.excluded("file is under a resource folder");
-    } else if (isJavaGeneratedSource(sourceFolder)) {
-      Result.excluded("file belongs to generated source folder");
-    }
-
+    // the fact that the file doesn't explicitly belong to sources doesn't mean it's not sources.
+    // In WebStorm, for example, everything is considered to be sources unless it is explicitly marked otherwise.
     return Result.notExcluded();
   }
 
   public Result canAnalyze(VirtualFile file, @Nullable Module module) {
-    return canAnalyze(file, file.getFileType(), module);
-  }
-
-  private Result canAnalyze(VirtualFile file, FileType fileType, @Nullable Module module) {
+    FileType fileType = file.getFileType();
     if (module == null) {
       return Result.excluded("file is not part of any module in IntelliJ's project structure");
     }

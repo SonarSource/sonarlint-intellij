@@ -23,6 +23,7 @@ import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.function.Supplier;
 import org.junit.Before;
@@ -45,7 +46,8 @@ public class LocalFileExclusionsTest extends SonarTest {
   private Supplier<Boolean> powerModeCheck = mock(Supplier.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private ApplicationInfo info = mock(ApplicationInfo.class);
-  private LocalFileExclusions exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, info, powerModeCheck);
+  private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
+  private LocalFileExclusions exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, info, projectRootManager, powerModeCheck);
 
   @Before
   public void prepare() {
