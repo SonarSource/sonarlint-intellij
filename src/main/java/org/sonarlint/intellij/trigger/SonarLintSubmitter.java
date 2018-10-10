@@ -90,7 +90,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
     try {
-      Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, false);
+      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, false);
 
       if (!filesByModule.isEmpty()) {
         console.debug("Trigger: " + trigger);
@@ -116,7 +116,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
     boolean checkExclusions = trigger != TriggerType.ACTION;
     try {
-      Map<Module, Collection<VirtualFile>> filesByModule = filterAndgetByModule(files, checkExclusions);
+      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, checkExclusions);
 
       if (!filesByModule.isEmpty()) {
         console.debug("Trigger: " + trigger);
@@ -131,7 +131,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     }
   }
 
-  private Map<Module, Collection<VirtualFile>> filterAndgetByModule(Collection<VirtualFile> files, boolean checkExclusions) throws InvalidBindingException {
+  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkExclusions) throws InvalidBindingException {
     Map<Module, Collection<VirtualFile>> filesByModule = new HashMap<>();
     SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 

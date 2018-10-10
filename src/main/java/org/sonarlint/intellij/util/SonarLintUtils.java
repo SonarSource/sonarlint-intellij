@@ -26,8 +26,10 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
+import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -56,6 +58,7 @@ import javax.annotation.Nullable;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
+import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -173,15 +176,6 @@ public class SonarLintUtils {
     return false;
   }
 
-  public static boolean isExcludedOrUnderExcludedDirectory(final VirtualFile file, ContentEntry contentEntry) {
-    for (VirtualFile excludedDir : contentEntry.getExcludeFolderFiles()) {
-      if (VfsUtil.isAncestor(excludedDir, file, false)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
   public static void configureProxy(String host, ServerConfiguration.Builder builder) {
     HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
     if (!isHttpProxyEnabledForUrl(httpConfigurable, host)) {
@@ -216,10 +210,26 @@ public class SonarLintUtils {
     }
   }
 
-  public static boolean isJavaGeneratedSource(SourceFolder source) {
-    // only return non-null if source has root type in JavaModuleSourceRootTypes.SOURCES
-    JavaSourceRootProperties properties = source.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
-    return properties != null && properties.isForGeneratedSources();
+  public static boolean isGeneratedSource(SourceFolder sourceFolder) {
+    // copied from JavaProjectRootsUtil. Don't use that class because it's not available in other flavors of Intellij
+    JavaSourceRootProperties properties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
+    JavaResourceRootProperties resourceProperties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.RESOURCES);
+    return properties != null && properties.isForGeneratedSources() || resourceProperties != null && resourceProperties.isForGeneratedSources();
+  }
+
+  @Nullable
+  public static SourceFolder getSourceFolder(@CheckForNull VirtualFile source, Module module) {
+    if (source == null) {
+      return null;
+    }
+    for (ContentEntry entry : ModuleRootManager.getInstance(module).getContentEntries()) {
+      for (SourceFolder folder : entry.getSourceFolders()) {
+        if (source.equals(folder.getFile())) {
+          return folder;
+        }
+      }
+    }
+    return null;
   }
 
   public static boolean isJavaResource(SourceFolder source) {

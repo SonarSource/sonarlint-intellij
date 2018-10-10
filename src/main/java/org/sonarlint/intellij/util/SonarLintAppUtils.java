@@ -23,10 +23,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
@@ -38,7 +38,7 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   @CheckForNull
   public Module findModuleForFile(VirtualFile file, Project project) {
     ApplicationManager.getApplication().assertReadAccessAllowed();
-    return ModuleUtil.findModuleForFile(file, project);
+    return ProjectFileIndex.SERVICE.getInstance(project).getModuleForFile(file, false);
   }
 
   @CheckForNull
