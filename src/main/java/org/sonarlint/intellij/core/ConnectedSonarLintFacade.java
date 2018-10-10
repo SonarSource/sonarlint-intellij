@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -41,6 +42,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
@@ -71,14 +73,15 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
-    ModuleBindingManager binding = SonarLintUtils.get(module, ModuleBindingManager.class);
-    if (binding.getBinding() == null) {
+    ModuleBindingManager bindingManager = SonarLintUtils.get(module, ModuleBindingManager.class);
+    ProjectBinding binding = bindingManager.getBinding();
+    if (binding == null) {
       // should never happen since the project should be bound!
       return Collections.emptyList();
     }
 
-    return sonarlint.getExcludedFiles(binding.getBinding(), files,
-      s -> appUtils.getRelativePathForAnalysis(module, s), testPredicate);
+    Function<VirtualFile, String> filePathExtractor = s -> appUtils.getRelativePathForAnalysis(module, s);
+    return sonarlint.getExcludedFiles(binding, files, filePathExtractor, testPredicate);
   }
 
   @Override public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
