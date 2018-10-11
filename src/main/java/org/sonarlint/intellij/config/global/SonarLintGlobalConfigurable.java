@@ -37,7 +37,7 @@ import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -46,7 +46,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private final SonarLintEngineManager serverManager;
   private final Application app;
   private final SonarLintGlobalSettings globalSettings;
-  private final SonarLintTelemetry telemetry;
+  private final SonarLintTelemetryImpl telemetry;
   private final SonarApplication sonarApplication;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
@@ -59,7 +59,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     this.app = ApplicationManager.getApplication();
     this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
     this.serverManager = app.getComponent(SonarLintEngineManager.class);
-    this.telemetry = app.getComponent(SonarLintTelemetry.class);
+    this.telemetry = app.getComponent(SonarLintTelemetryImpl.class);
     this.sonarApplication = app.getComponent(SonarApplication.class);
   }
 

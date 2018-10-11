@@ -36,8 +36,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLintTelemetryTest extends SonarTest {
-  private SonarLintTelemetry telemetry;
+public class SonarLintTelemetryImplTest extends SonarTest {
+  private SonarLintTelemetryImpl telemetry;
   private TelemetryManager engine = mock(TelemetryManager.class);
 
   @Before
@@ -48,19 +48,19 @@ public class SonarLintTelemetryTest extends SonarTest {
 
   @After
   public void after() {
-    System.clearProperty(SonarLintTelemetry.DISABLE_PROPERTY_KEY);
+    System.clearProperty(SonarLintTelemetryImpl.DISABLE_PROPERTY_KEY);
   }
 
-  private SonarLintTelemetry createTelemetry() {
+  private SonarLintTelemetryImpl createTelemetry() {
     when(engine.isEnabled()).thenReturn(true);
 
-    TelemetryEngineProvider engineProvider = mock(TelemetryEngineProvider.class);
+    TelemetryManagerProvider engineProvider = mock(TelemetryManagerProvider.class);
     when(engineProvider.get()).thenReturn(engine);
 
     ProjectManager projectManager = mock(ProjectManager.class);
     when(projectManager.getOpenProjects()).thenReturn(new Project[0]);
 
-    SonarLintTelemetry telemetry = new SonarLintTelemetry(engineProvider, projectManager);
+    SonarLintTelemetryImpl telemetry = new SonarLintTelemetryImpl(engineProvider, projectManager);
     telemetry.initComponent();
     return telemetry;
   }
@@ -69,7 +69,7 @@ public class SonarLintTelemetryTest extends SonarTest {
   public void disable_property_should_disable_telemetry() throws Exception {
     assertThat(createTelemetry().enabled()).isTrue();
 
-    System.setProperty(SonarLintTelemetry.DISABLE_PROPERTY_KEY, "true");
+    System.setProperty(SonarLintTelemetryImpl.DISABLE_PROPERTY_KEY, "true");
     assertThat(createTelemetry().enabled()).isFalse();
   }
 

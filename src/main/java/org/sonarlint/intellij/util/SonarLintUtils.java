@@ -292,7 +292,7 @@ public class SonarLintUtils {
     return false;
   }
 
-  public static String pluralize(String str, int i) {
+  public static String pluralize(String str, long i) {
     if (i == 1) {
       return str;
     }

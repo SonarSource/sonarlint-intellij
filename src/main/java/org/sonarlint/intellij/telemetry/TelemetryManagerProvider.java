@@ -31,7 +31,7 @@ import org.sonarsource.sonarlint.core.telemetry.TelemetryClient;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
 
-public class TelemetryEngineProvider {
+public class TelemetryManagerProvider {
   private static final String TELEMETRY_PRODUCT_KEY = "idea";
   private static final String PRODUCT = "SonarLint IntelliJ";
 
@@ -39,7 +39,7 @@ public class TelemetryEngineProvider {
 
   private final SonarApplication application;
 
-  public TelemetryEngineProvider(SonarApplication application) {
+  public TelemetryManagerProvider(SonarApplication application) {
     this.application = application;
   }
 
@@ -68,4 +68,5 @@ public class TelemetryEngineProvider {
   private static Path getOldStorageFilePath() {
     return Paths.get(PathManager.getSystemPath()).resolve(OLD_STORAGE_FILENAME);
   }
+
 }

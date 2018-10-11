@@ -36,7 +36,7 @@ import java.util.Map;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -52,11 +52,11 @@ public class SonarLintAnalyzer {
   private final EncodingProjectManager encodingProjectManager;
   private final SonarLintConsole console;
   private final FileDocumentManager fileDocumentManager;
-  private final SonarLintTelemetry telemetry;
+  private final SonarLintTelemetryImpl telemetry;
   private final SonarLintAppUtils appUtils;
 
   public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
-    SonarLintConsole console, FileDocumentManager fileDocumentManager, SonarLintTelemetry telemetry, SonarLintAppUtils appUtils) {
+    SonarLintConsole console, FileDocumentManager fileDocumentManager, SonarLintTelemetryImpl telemetry, SonarLintAppUtils appUtils) {
     this.projectBindingManager = projectBindingManager;
     this.encodingProjectManager = encodingProjectManager;
     this.console = console;
@@ -103,7 +103,7 @@ public class SonarLintAnalyzer {
       }
       AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps, progressMonitor);
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
-      if (result.languagePerFile().size() == 1) {
+      if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
         telemetry.analysisDoneOnSingleFile(result.languagePerFile().values().iterator().next(), (int) (System.currentTimeMillis() - start));
       } else {
         telemetry.analysisDoneOnMultipleFiles();
@@ -116,7 +116,6 @@ public class SonarLintAnalyzer {
   }
 
   private List<ClientInputFile> getInputFiles(Module module, VirtualFileTestPredicate testPredicate, Collection<VirtualFile> filesToAnalyze) {
-
     List<ClientInputFile> inputFiles = new LinkedList<>();
 
     ReadAction.run(() -> {
@@ -124,10 +123,12 @@ public class SonarLintAnalyzer {
         boolean test = testPredicate.test(f);
         Charset charset = getEncoding(f);
         String relativePath = appUtils.getRelativePathForAnalysis(module, f);
-        if (fileDocumentManager.isFileModified(f)) {
-          inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset, fileDocumentManager.getDocument(f)));
-        } else {
-          inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset));
+        if (relativePath != null) {
+          if (fileDocumentManager.isFileModified(f)) {
+            inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset, fileDocumentManager.getDocument(f)));
+          } else {
+            inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset));
+          }
         }
       }
     });
