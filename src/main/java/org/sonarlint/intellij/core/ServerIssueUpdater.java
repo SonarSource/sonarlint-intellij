@@ -275,7 +275,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       try {
         ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
         LOGGER.debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
-        String fileKey = SonarLintUtils.toFileKey(relativePath);
+        String fileKey = SonarLintUtils.toForwardSlashes(relativePath);
         return engine.downloadServerIssues(serverConfiguration, projectBinding, fileKey);
       } catch (DownloadException e) {
         console.info(e.getMessage());

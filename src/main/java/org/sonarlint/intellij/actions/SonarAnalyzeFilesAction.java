@@ -24,14 +24,18 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileVisitor;
 import icons.SonarLintIcons;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.Icon;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
@@ -99,7 +103,9 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
     List<VirtualFile> fileList = Arrays.stream(files)
       .flatMap(f -> {
         if (f.isDirectory()) {
-          return VfsUtil.collectChildrenRecursively(f).stream();
+          CollectFilesVisitor visitor = new CollectFilesVisitor();
+          VfsUtil.visitChildrenRecursively(f, visitor);
+          return visitor.files.stream();
         } else {
           return Stream.of(f);
         }
@@ -124,6 +130,23 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       return "1 file";
     } else {
       return numFiles + " files";
+    }
+  }
+
+  private static class CollectFilesVisitor extends VirtualFileVisitor {
+    private List<VirtualFile> files = new ArrayList<>();
+
+    public CollectFilesVisitor() {
+      super(VirtualFileVisitor.NO_FOLLOW_SYMLINKS);
+    }
+
+    @Override
+    public boolean visitFile(@NotNull VirtualFile file) {
+      boolean projectFile = ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.getFileType());
+      if (!file.isDirectory() && !file.getFileType().isBinary() && !projectFile) {
+        files.add(file);
+      }
+      return !projectFile && !".git".equals(file.getName());
     }
   }
 
