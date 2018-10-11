@@ -300,12 +300,10 @@ public class SonarLintUtils {
   }
 
   /**
-   * Convert relative path to SonarQube file key
-   *
-   * @param relativePath relative path string in the local OS
-   * @return SonarQube file key
+   * Convert a relative path on a platform not using forward slashes as a path separator to a path
+   * with forward slashes.
    */
-  public static String toFileKey(String relativePath) {
+  public static String toForwardSlashes(String relativePath) {
     if (File.separatorChar != '/') {
       return relativePath.replaceAll(PATH_SEPARATOR_PATTERN, "/");
     }
