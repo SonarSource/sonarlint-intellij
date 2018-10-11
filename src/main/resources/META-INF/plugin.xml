@@ -113,10 +113,11 @@
             <implementation-class>org.sonarlint.intellij.util.SonarLintActions</implementation-class>
         </component>
         <component>
-            <implementation-class>org.sonarlint.intellij.telemetry.SonarLintTelemetry</implementation-class>
+            <implementation-class>org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl</implementation-class>
+            <interface-class>org.sonarlint.intellij.telemetry.SonarLintTelemetry</interface-class>
         </component>
         <component>
-            <implementation-class>org.sonarlint.intellij.telemetry.TelemetryEngineProvider</implementation-class>
+            <implementation-class>org.sonarlint.intellij.telemetry.TelemetryManagerProvider</implementation-class>
         </component>
     </application-components>
 

@@ -32,7 +32,7 @@ import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class TelemetryEngineProviderTest extends SonarTest {
+public class TelemetryManagerProviderTest extends SonarTest {
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -46,7 +46,7 @@ public class TelemetryEngineProviderTest extends SonarTest {
   public void testCreation() throws Exception {
     Path path = temporaryFolder.newFolder().toPath().resolve("usage");
 
-    TelemetryEngineProvider engineProvider = new TelemetryEngineProvider(mock(SonarApplication.class)) {
+    TelemetryManagerProvider engineProvider = new TelemetryManagerProvider(mock(SonarApplication.class)) {
       @Override
       Path getStorageFilePath() {
         return path;

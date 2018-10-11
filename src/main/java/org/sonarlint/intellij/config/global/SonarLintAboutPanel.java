@@ -41,12 +41,12 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.ConfigurationPanel;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
 
-public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
+public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetryImpl> {
   private final SonarApplication application;
   private JPanel panel;
-  private JCheckBox enableCheckBox;
+  private JCheckBox enableTelemetryCheckBox;
 
   public SonarLintAboutPanel(SonarApplication application) {
     this.application = application;
@@ -118,11 +118,11 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
       + "information. And we don't share the data with anyone else.</html>");
 
     // checkbox
-    enableCheckBox = new JCheckBox("Share anonymous SonarLint statistics");
-    enableCheckBox.setFocusable(false);
+    enableTelemetryCheckBox = new JCheckBox("Share anonymous SonarLint statistics");
+    enableTelemetryCheckBox.setFocusable(false);
     JPanel tickOptions = new JPanel(new VerticalFlowLayout());
     tickOptions.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
-    tickOptions.add(enableCheckBox);
+    tickOptions.add(enableTelemetryCheckBox);
 
     // all telemetry together
     JPanel infoPanel = new JPanel(new GridBagLayout());
@@ -154,17 +154,18 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   }
 
   @Override
-  public void load(SonarLintTelemetry telemetry) {
-    enableCheckBox.setSelected(telemetry.enabled());
+  public void load(SonarLintTelemetryImpl telemetry) {
+    enableTelemetryCheckBox.setEnabled(telemetry.canBeEnabled());
+    enableTelemetryCheckBox.setSelected(telemetry.enabled());
   }
 
   @Override
-  public void save(SonarLintTelemetry telemetry) {
-    telemetry.optOut(!enableCheckBox.isSelected());
+  public void save(SonarLintTelemetryImpl telemetry) {
+    telemetry.optOut(!enableTelemetryCheckBox.isSelected());
   }
 
   @Override
-  public boolean isModified(SonarLintTelemetry telemetry) {
-    return telemetry.enabled() != enableCheckBox.isSelected();
+  public boolean isModified(SonarLintTelemetryImpl telemetry) {
+    return telemetry.enabled() != enableTelemetryCheckBox.isSelected();
   }
 }

@@ -42,6 +42,7 @@ import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
@@ -70,15 +71,15 @@ public class IssueProcessor extends AbstractProjectComponent {
       return issues;
     });
 
-    String issueStr = rawIssues.size() == 1 ? "issue" : "issues";
+    String issueStr = SonarLintUtils.pluralize("issue", rawIssues.size());
     console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
 
     long issuesToShow = transformedIssues.entrySet().stream()
       .mapToLong(e -> e.getValue().size())
       .sum();
 
-    String end = issuesToShow == 1 ? " issue" : " issues";
-    console.info("Found " + issuesToShow + end);
+    String end = SonarLintUtils.pluralize("issue", issuesToShow);
+    console.info("Found " + issuesToShow + " " + end);
 
     if (shouldUpdateServerIssues(job.trigger())) {
       Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new HashMap<>();

@@ -31,7 +31,7 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
@@ -54,7 +54,7 @@ public class SonarLintAnalyzerTest extends SonarTest {
   private SonarLintFacade facade = mock(SonarLintFacade.class);
   private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
   private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
-  private SonarLintTelemetry telemetry = mock(SonarLintTelemetry.class);
+  private SonarLintTelemetryImpl telemetry = mock(SonarLintTelemetryImpl.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   private SonarLintAnalyzer analyzer;

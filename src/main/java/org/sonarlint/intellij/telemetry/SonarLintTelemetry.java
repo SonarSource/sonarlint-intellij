@@ -19,135 +19,16 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.intellij.concurrency.JobScheduler;
-import com.intellij.openapi.components.ApplicationComponent;
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import java.util.Arrays;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
-public class SonarLintTelemetry implements ApplicationComponent {
-  public static final String DISABLE_PROPERTY_KEY = "sonarlint.telemetry.disabled";
-  private static final Logger LOGGER = Logger.getInstance(SonarLintTelemetry.class);
+public interface SonarLintTelemetry {
+  void optOut(boolean optOut);
 
-  private final TelemetryEngineProvider engineProvider;
-  private final ProjectManager projectManager;
-  private TelemetryManager telemetry;
+  boolean enabled();
 
-  @VisibleForTesting
-  ScheduledFuture<?> scheduledFuture;
+  boolean canBeEnabled();
 
-  public SonarLintTelemetry(TelemetryEngineProvider engineProvider, ProjectManager projectManager) {
-    this.engineProvider = engineProvider;
-    this.projectManager = projectManager;
-  }
+  void analysisDoneOnMultipleFiles();
 
-  public void optOut(boolean optOut) {
-    if (telemetry != null) {
-      if (optOut) {
-        if (telemetry.isEnabled()) {
-          telemetry.disable();
-        }
-      } else {
-        if (!telemetry.isEnabled()) {
-          telemetry.enable();
-        }
-      }
-    }
-  }
-
-  public boolean enabled() {
-    return telemetry != null && telemetry.isEnabled();
-  }
-
-  @Override
-  public void initComponent() {
-    if ("true".equals(System.getProperty(DISABLE_PROPERTY_KEY))) {
-      // can't log with GlobalLogOutput to the tool window since at this point no project is open yet
-      LOGGER.info("Telemetry disabled by system property");
-      return;
-    }
-    telemetry = engineProvider.get();
-    try {
-      this.scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(this::upload,
-        1, TimeUnit.HOURS.toMinutes(6), TimeUnit.MINUTES);
-    } catch (Exception e) {
-      if (org.sonarsource.sonarlint.core.client.api.util.SonarLintUtils.isInternalDebugEnabled()) {
-        String msg = "Failed to schedule telemetry job";
-        LOGGER.error(msg, e);
-        GlobalLogOutput.get().logError(msg, e);
-      }
-    }
-  }
-
-  @VisibleForTesting
-  void upload() {
-    if (enabled()) {
-      telemetry.usedConnectedMode(isAnyProjectConnected(), isAnyProjectConnectedToSonarCloud());
-      telemetry.uploadLazily();
-    }
-  }
-
-  public void analysisDoneOnMultipleFiles() {
-    if (enabled()) {
-      telemetry.analysisDoneOnMultipleFiles();
-    }
-  }
-
-  public void analysisDoneOnSingleFile(@Nullable String language, int time) {
-    if (enabled()) {
-      telemetry.analysisDoneOnSingleLanguage(language, time);
-    }
-  }
-
-  @VisibleForTesting
-  void stop() {
-    if (enabled()) {
-      telemetry.stop();
-    }
-
-    if (scheduledFuture != null) {
-      scheduledFuture.cancel(false);
-      scheduledFuture = null;
-    }
-  }
-
-  @Override
-  public void disposeComponent() {
-    stop();
-  }
-
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return "SonarLintTelemetry";
-  }
-
-  private boolean isAnyProjectConnected() {
-    Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.get(p, SonarLintProjectSettings.class).isBindingEnabled());
-  }
-
-  private boolean isAnyProjectConnectedToSonarCloud() {
-    Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> {
-      try {
-        ProjectBindingManager bindingManager = SonarLintUtils.get(p, ProjectBindingManager.class);
-        return bindingManager.getSonarQubeServer().isSonarCloud();
-      } catch (InvalidBindingException e) {
-        return false;
-      }
-    });
-  }
+  void analysisDoneOnSingleFile(@Nullable String language, int time);
 }
