@@ -80,8 +80,8 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
       return Collections.emptyList();
     }
 
-    Function<VirtualFile, String> filePathExtractor = s -> appUtils.getRelativePathForAnalysis(module, s);
-    return sonarlint.getExcludedFiles(binding, files, filePathExtractor, testPredicate);
+    Function<VirtualFile, String> ideFilePathExtractor = s -> appUtils.getPathRelativeToModuleBaseDir(module, s);
+    return sonarlint.getExcludedFiles(binding, files, ideFilePathExtractor, testPredicate);
   }
 
   @Override public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
