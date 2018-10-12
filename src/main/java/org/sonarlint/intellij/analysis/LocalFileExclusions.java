@@ -153,7 +153,6 @@ public class LocalFileExclusions {
 
     SourceFolder sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
     if (sourceFolder != null) {
-      System.out.println(sourceFolder.getRootType());
       if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
         return Result.excluded("file is classified as generated in IntelliJ's project structure");
       }

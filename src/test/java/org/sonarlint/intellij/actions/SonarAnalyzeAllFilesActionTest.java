@@ -25,6 +25,7 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileFilter;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -95,8 +96,7 @@ public class SonarAnalyzeAllFilesActionTest extends SonarTest {
     VirtualFile dir = mock(VirtualFile.class);
     when(file.isDirectory()).thenReturn(false);
     when(dir.isDirectory()).thenReturn(true);
-    when(projectFileIndex.isInSourceContent(file)).thenReturn(true);
-    when(projectFileIndex.iterateContent(any(ContentIterator.class))).then(i -> {
+    when(projectFileIndex.iterateContent(any(ContentIterator.class), any(VirtualFileFilter.class))).then(i -> {
       ((ContentIterator) i.getArgument(0)).processFile(file);
       ((ContentIterator) i.getArgument(0)).processFile(dir);
       return true;
