@@ -211,6 +211,7 @@
         <projectConfigurable order="AFTER SonarLintApp" displayName="SonarLint Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable"
                              nonDefaultProject="true"/>
         <applicationConfigurable id="SonarLintApp" displayName="SonarLint General Settings" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
+        <moduleConfigurable id="SonarLint" displayName="SonarLint" instance="org.sonarlint.intellij.config.module.SonarLintModuleConfigurable"/>
         <colorSettingsPage implementation="org.sonarlint.intellij.config.SonarLintColorSettingsPage"/>
         <checkinHandlerFactory implementation="org.sonarlint.intellij.trigger.SonarLintCheckinHandlerFactory"/>
         <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>

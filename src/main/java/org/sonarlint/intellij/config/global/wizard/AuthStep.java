@@ -202,11 +202,11 @@ public class AuthStep extends AbstractWizardStepEx {
       if (!orgExists) {
         GetOrganizationTask getOrganizationTask = new GetOrganizationTask(tmpServer, model.getOrganizationKey());
         ProgressManager.getInstance().run(getOrganizationTask);
-        if (getOrganizationTask.getException() != null || getOrganizationTask.organization() == null) {
+        if (getOrganizationTask.getException() != null || !getOrganizationTask.organization().isPresent()) {
           // ignore and reset organization
           model.setOrganizationKey(null);
         } else {
-          model.getOrganizationList().add(getOrganizationTask.organization());
+          model.getOrganizationList().add(getOrganizationTask.organization().get());
         }
       }
     }

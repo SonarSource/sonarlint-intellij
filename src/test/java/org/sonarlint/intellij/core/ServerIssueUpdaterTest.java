@@ -80,6 +80,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
   public void prepare() throws IOException, InvalidBindingException {
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
     super.register(module, ModuleBindingManager.class, moduleBindingManager);
+    when(module.getProject()).thenReturn(project);
     when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     Path projectBaseDir = temp.newFolder().toPath();
     when(moduleBindingManager.getBinding()).thenReturn(new ProjectBinding(PROJECT_KEY, "", ""));
@@ -109,7 +110,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     ServerIssue serverIssue = mock(ServerIssue.class);
     String filename = "MyFile.txt";
-    when(appUtils.getPathRelativeToModuleBaseDir(module, file)).thenReturn(filename);
+    when(appUtils.getPathRelativeToProjectBaseDir(project, file)).thenReturn(filename);
 
     // mock issues downloaded
     when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(filename)))
@@ -133,7 +134,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
       VirtualFile file = mock(VirtualFile.class);
-      when(appUtils.getPathRelativeToModuleBaseDir(module, file)).thenReturn("MyFile" + i + ".txt");
+      when(appUtils.getPathRelativeToProjectBaseDir(project, file)).thenReturn("MyFile" + i + ".txt");
       files.add(file);
     }
     ServerIssue serverIssue = mock(ServerIssue.class);

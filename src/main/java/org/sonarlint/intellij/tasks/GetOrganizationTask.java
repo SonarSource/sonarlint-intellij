@@ -22,6 +22,7 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -37,7 +38,7 @@ public class GetOrganizationTask extends Task.Modal {
   private final String organizationKey;
 
   private Exception exception;
-  private RemoteOrganization organization;
+  private Optional<RemoteOrganization> organization;
 
   public GetOrganizationTask(SonarQubeServer server, String organizationKey) {
     super(null, "Fetch Organization From SonarQube Server", true);
@@ -65,7 +66,7 @@ public class GetOrganizationTask extends Task.Modal {
     return exception;
   }
 
-  public RemoteOrganization organization() {
+  public Optional<RemoteOrganization> organization() {
     return organization;
   }
 }

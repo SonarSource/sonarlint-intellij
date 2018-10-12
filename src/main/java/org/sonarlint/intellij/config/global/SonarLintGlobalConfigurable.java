@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
@@ -37,16 +36,15 @@ import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private final SonarLintEngineManager serverManager;
-  private final Application app;
   private final SonarLintGlobalSettings globalSettings;
-  private final SonarLintTelemetryImpl telemetry;
+  private final SonarLintTelemetry telemetry;
   private final SonarApplication sonarApplication;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
@@ -56,11 +54,10 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private RuleConfigurationPanel rules;
 
   public SonarLintGlobalConfigurable() {
-    this.app = ApplicationManager.getApplication();
-    this.globalSettings = app.getComponent(SonarLintGlobalSettings.class);
-    this.serverManager = app.getComponent(SonarLintEngineManager.class);
-    this.telemetry = app.getComponent(SonarLintTelemetryImpl.class);
-    this.sonarApplication = app.getComponent(SonarApplication.class);
+    this.globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
+    this.serverManager = SonarLintUtils.get(SonarLintEngineManager.class);
+    this.telemetry = SonarLintUtils.get(SonarLintTelemetry.class);
+    this.sonarApplication = SonarLintUtils.get(SonarApplication.class);
   }
 
   @Nls @Override public String getDisplayName() {
@@ -88,7 +85,8 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     rules.save(globalSettings);
     exclusions.save(globalSettings);
 
-    GlobalConfigurationListener globalConfigurationListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
+    GlobalConfigurationListener globalConfigurationListener = ApplicationManager.getApplication()
+      .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings);
     serverManager.reloadServers();
 
@@ -119,7 +117,8 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     return null;
   }
 
-  @Override public void reset() {
+  @Override
+  public void reset() {
     serversPanel.load(globalSettings);
     globalPanel.load(globalSettings);
     about.load(telemetry);
@@ -127,7 +126,8 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     exclusions.load(globalSettings);
   }
 
-  @Override public void disposeUIResources() {
+  @Override
+  public void disposeUIResources() {
     if (rootPanel != null) {
       rootPanel.setVisible(false);
       rootPanel = null;

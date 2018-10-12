@@ -38,7 +38,6 @@ public class ProjectExclusionsPanel implements ConfigurationPanel<SonarLintProje
   private JPanel panel;
 
   public ProjectExclusionsPanel(Project project) {
-
     this.project = project;
   }
 

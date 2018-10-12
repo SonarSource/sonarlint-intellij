@@ -159,7 +159,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
       for (Map.Entry<Module, Collection<VirtualFile>> e : filesPerModule.entrySet()) {
         ProjectBinding binding = getProjectBinding(e.getKey());
-        Map<VirtualFile, String> moduleRelativePathPerFile = getModuleRelativePaths(e.getKey(), e.getValue());
+        Map<VirtualFile, String> moduleRelativePathPerFile = getRelativePaths(e.getKey().getProject(), e.getValue());
 
         for (Map.Entry<VirtualFile, String> entry : moduleRelativePathPerFile.entrySet()) {
           issueUpdater.fetchAndMatchFile(binding, entry.getKey(), entry.getValue());
@@ -178,24 +178,24 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private List<Future<Void>> fetchAndMatchServerIssues(String projectKey, Module module, Collection<VirtualFile> files, SonarQubeServer server, ConnectedSonarLintEngine engine) {
     List<Future<Void>> futureList = new LinkedList<>();
     ProjectBinding binding = getProjectBinding(module);
-    Map<VirtualFile, String> moduleRelativePathPerFile = getModuleRelativePaths(module, files);
+    Map<VirtualFile, String> relativePathPerFile = getRelativePaths(module.getProject(), files);
     IssueUpdater issueUpdater = new IssueUpdater(server, engine);
 
-    for (Map.Entry<VirtualFile, String> e : moduleRelativePathPerFile.entrySet()) {
+    for (Map.Entry<VirtualFile, String> e : relativePathPerFile.entrySet()) {
       Runnable task = () -> issueUpdater.downloadAndMatchFile(binding, e.getKey(), e.getValue());
       futureList.add(submit(task, projectKey, e.getValue()));
     }
     return futureList;
   }
 
-  private Map<VirtualFile, String> getModuleRelativePaths(Module module, Collection<VirtualFile> files) {
+  private Map<VirtualFile, String> getRelativePaths(Project project, Collection<VirtualFile> files) {
     Map<VirtualFile, String> moduleRelativePathPerFile = new HashMap<>();
 
     ReadAction.run(() -> {
       for (VirtualFile file : files) {
-        String moduleRelativePath = appUtils.getPathRelativeToModuleBaseDir(module, file);
-        if (moduleRelativePath != null) {
-          moduleRelativePathPerFile.put(file, moduleRelativePath);
+        String relativePath = appUtils.getPathRelativeToProjectBaseDir(project, file);
+        if (relativePath != null) {
+          moduleRelativePathPerFile.put(file, relativePath);
         }
       }
     });
@@ -238,13 +238,13 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       this.engine = engine;
     }
 
-    public void fetchAndMatchFile(ProjectBinding projectBinding, VirtualFile virtualFile, String moduleRelativePath) {
-      List<ServerIssue> serverIssues = engine.getServerIssues(projectBinding, moduleRelativePath);
+    public void fetchAndMatchFile(ProjectBinding projectBinding, VirtualFile virtualFile, String relativePath) {
+      List<ServerIssue> serverIssues = engine.getServerIssues(projectBinding, relativePath);
       matchFile(virtualFile, serverIssues);
     }
 
-    public void downloadAndMatchFile(ProjectBinding projectBinding, VirtualFile virtualFile, String moduleRelativePath) {
-      List<ServerIssue> serverIssues = fetchServerIssuesForFile(projectBinding, moduleRelativePath);
+    public void downloadAndMatchFile(ProjectBinding projectBinding, VirtualFile virtualFile, String relativePath) {
+      List<ServerIssue> serverIssues = fetchServerIssuesForFile(projectBinding, relativePath);
       matchFile(virtualFile, serverIssues);
     }
 
@@ -271,15 +271,14 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       }
     }
 
-    private List<ServerIssue> fetchServerIssuesForFile(ProjectBinding projectBinding, String moduleRelativePath) {
+    private List<ServerIssue> fetchServerIssuesForFile(ProjectBinding projectBinding, String relativePath) {
       try {
         ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
-        LOGGER.debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + moduleRelativePath);
-        String fileKey = SonarLintUtils.toForwardSlashes(moduleRelativePath);
-        return engine.downloadServerIssues(serverConfiguration, projectBinding, fileKey);
+        LOGGER.debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
+        return engine.downloadServerIssues(serverConfiguration, projectBinding, relativePath);
       } catch (DownloadException e) {
         console.info(e.getMessage());
-        return engine.getServerIssues(projectBinding, moduleRelativePath);
+        return engine.getServerIssues(projectBinding, relativePath);
       }
     }
   }

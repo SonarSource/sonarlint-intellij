@@ -75,11 +75,9 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
    */
   @CheckForNull
   public String getRelativePathForAnalysis(Module module, VirtualFile virtualFile) {
-    if (module.getProject().getBasePath() != null) {
-      String relativePathToProject = VfsUtil.getRelativePath(virtualFile, module.getProject().getBaseDir());
-      if (relativePathToProject != null) {
-        return relativePathToProject;
-      }
+    String relativePathToProject = getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
+    if (relativePathToProject != null) {
+      return relativePathToProject;
     }
 
     String relativePathToModule = getPathRelativeToModuleBaseDir(module, virtualFile);
@@ -88,6 +86,18 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
     }
 
     return getPathRelativeToContentRoot(module, virtualFile);
+  }
+
+  @CheckForNull
+  public String getPathRelativeToProjectBaseDir(Project project, VirtualFile file) {
+    if (project.getBasePath() == null) {
+      return null;
+    }
+    String relativePathToProject = VfsUtil.getRelativePath(file, project.getBaseDir());
+    if (relativePathToProject != null) {
+      return relativePathToProject;
+    }
+    return null;
   }
 
   /**

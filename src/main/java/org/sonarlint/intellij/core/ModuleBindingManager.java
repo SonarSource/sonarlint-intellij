@@ -72,7 +72,7 @@ public class ModuleBindingManager extends AbstractModuleComponent {
     try {
       ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
       moduleRootManager.getFileIndex().iterateContent(virtualFile -> {
-        String path = appUtils.getPathRelativeToModuleBaseDir(module, virtualFile);
+        String path = appUtils.getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
         if (path != null) {
           paths.add(path);
         }

@@ -41,9 +41,9 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.ConfigurationPanel;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 
-public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetryImpl> {
+public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
   private final SonarApplication application;
   private JPanel panel;
   private JCheckBox enableTelemetryCheckBox;
@@ -154,18 +154,18 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   }
 
   @Override
-  public void load(SonarLintTelemetryImpl telemetry) {
+  public void load(SonarLintTelemetry telemetry) {
     enableTelemetryCheckBox.setEnabled(telemetry.canBeEnabled());
     enableTelemetryCheckBox.setSelected(telemetry.enabled());
   }
 
   @Override
-  public void save(SonarLintTelemetryImpl telemetry) {
+  public void save(SonarLintTelemetry telemetry) {
     telemetry.optOut(!enableTelemetryCheckBox.isSelected());
   }
 
   @Override
-  public boolean isModified(SonarLintTelemetryImpl telemetry) {
+  public boolean isModified(SonarLintTelemetry telemetry) {
     return telemetry.enabled() != enableTelemetryCheckBox.isSelected();
   }
 }

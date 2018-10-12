@@ -83,7 +83,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
         fileList.add(vFile);
       }
       return true;
-    }, file -> !ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.getFileType()));
+    });
     return fileList;
   }
 
