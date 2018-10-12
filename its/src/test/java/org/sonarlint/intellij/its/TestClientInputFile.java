@@ -21,10 +21,10 @@ package org.sonarlint.intellij.its;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
 public class TestClientInputFile implements ClientInputFile {
@@ -72,5 +72,9 @@ public class TestClientInputFile implements ClientInputFile {
 
   @Override public String relativePath() {
     return relativePath;
+  }
+
+  @Override public URI uri() {
+    return path.toUri();
   }
 }
