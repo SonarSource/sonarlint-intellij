@@ -23,32 +23,23 @@ import com.google.common.annotations.VisibleForTesting;
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import java.util.Arrays;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 public class SonarLintTelemetryImpl implements ApplicationComponent, SonarLintTelemetry {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTelemetryImpl.class);
   static final String DISABLE_PROPERTY_KEY = "sonarlint.telemetry.disabled";
 
-  private final ProjectManager projectManager;
   private final TelemetryManager telemetry;
 
   @VisibleForTesting
   ScheduledFuture<?> scheduledFuture;
 
-  public SonarLintTelemetryImpl(TelemetryManagerProvider telemetryManagerProvider, ProjectManager projectManager) {
-    this.projectManager = projectManager;
+  public SonarLintTelemetryImpl(TelemetryManagerProvider telemetryManagerProvider) {
     if ("true".equals(System.getProperty(DISABLE_PROPERTY_KEY))) {
       // can't log with GlobalLogOutput to the tool window since at this point no project is open yet
       LOGGER.info("Telemetry disabled by system property");
@@ -99,7 +90,6 @@ public class SonarLintTelemetryImpl implements ApplicationComponent, SonarLintTe
   @VisibleForTesting
   void upload() {
     if (enabled()) {
-      telemetry.usedConnectedMode(isAnyProjectConnected(), isAnyProjectConnectedToSonarCloud());
       telemetry.uploadLazily();
     }
   }
@@ -141,20 +131,4 @@ public class SonarLintTelemetryImpl implements ApplicationComponent, SonarLintTe
     return "SonarLintTelemetry";
   }
 
-  private boolean isAnyProjectConnected() {
-    Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.get(p, SonarLintProjectSettings.class).isBindingEnabled());
-  }
-
-  private boolean isAnyProjectConnectedToSonarCloud() {
-    Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> {
-      try {
-        ProjectBindingManager bindingManager = SonarLintUtils.get(p, ProjectBindingManager.class);
-        return bindingManager.getSonarQubeServer().isSonarCloud();
-      } catch (InvalidBindingException e) {
-        return false;
-      }
-    });
-  }
 }

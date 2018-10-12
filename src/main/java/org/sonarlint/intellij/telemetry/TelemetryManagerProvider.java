@@ -21,10 +21,16 @@ package org.sonarlint.intellij.telemetry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryClient;
@@ -38,15 +44,17 @@ public class TelemetryManagerProvider {
   private static final String OLD_STORAGE_FILENAME = "sonarlint_usage";
 
   private final SonarApplication application;
+  private final ProjectManager projectManager;
 
-  public TelemetryManagerProvider(SonarApplication application) {
+  public TelemetryManagerProvider(SonarApplication application, ProjectManager projectManager) {
     this.application = application;
+    this.projectManager = projectManager;
   }
 
   public TelemetryManager get() {
     TelemetryClientConfig clientConfig = getTelemetryClientConfig();
     TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, application.getVersion());
-    return new TelemetryManager(getStorageFilePath(), client);
+    return new TelemetryManager(getStorageFilePath(), client, this::isAnyProjectConnected, this::isAnyProjectConnectedToSonarCloud);
   }
 
   private static TelemetryClientConfig getTelemetryClientConfig() {
@@ -69,4 +77,20 @@ public class TelemetryManagerProvider {
     return Paths.get(PathManager.getSystemPath()).resolve(OLD_STORAGE_FILENAME);
   }
 
+  private boolean isAnyProjectConnected() {
+    Project[] openProjects = projectManager.getOpenProjects();
+    return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.get(p, SonarLintProjectSettings.class).isBindingEnabled());
+  }
+
+  private boolean isAnyProjectConnectedToSonarCloud() {
+    Project[] openProjects = projectManager.getOpenProjects();
+    return Arrays.stream(openProjects).anyMatch(p -> {
+      try {
+        ProjectBindingManager bindingManager = SonarLintUtils.get(p, ProjectBindingManager.class);
+        return bindingManager.getSonarQubeServer().isSonarCloud();
+      } catch (InvalidBindingException e) {
+        return false;
+      }
+    });
+  }
 }
