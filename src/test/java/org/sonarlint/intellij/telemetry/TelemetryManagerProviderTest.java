@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.telemetry;
 
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import org.junit.Before;
@@ -46,7 +47,7 @@ public class TelemetryManagerProviderTest extends SonarTest {
   public void testCreation() throws Exception {
     Path path = temporaryFolder.newFolder().toPath().resolve("usage");
 
-    TelemetryManagerProvider engineProvider = new TelemetryManagerProvider(mock(SonarApplication.class)) {
+    TelemetryManagerProvider engineProvider = new TelemetryManagerProvider(mock(SonarApplication.class), mock(ProjectManager.class)) {
       @Override
       Path getStorageFilePath() {
         return path;

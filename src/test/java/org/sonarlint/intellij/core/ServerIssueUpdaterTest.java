@@ -109,7 +109,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     VirtualFile file = mock(VirtualFile.class);
     ServerIssue serverIssue = mock(ServerIssue.class);
     String filename = "MyFile.txt";
-    when(appUtils.getRelativePathForAnalysis(module, file)).thenReturn(filename);
+    when(appUtils.getPathRelativeToModuleBaseDir(module, file)).thenReturn(filename);
 
     // mock issues downloaded
     when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(filename)))
@@ -133,7 +133,7 @@ public class ServerIssueUpdaterTest extends SonarTest {
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
       VirtualFile file = mock(VirtualFile.class);
-      when(appUtils.getRelativePathForAnalysis(module, file)).thenReturn("MyFile" + i + ".txt");
+      when(appUtils.getPathRelativeToModuleBaseDir(module, file)).thenReturn("MyFile" + i + ".txt");
       files.add(file);
     }
     ServerIssue serverIssue = mock(ServerIssue.class);

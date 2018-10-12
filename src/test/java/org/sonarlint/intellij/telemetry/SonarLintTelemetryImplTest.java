@@ -30,7 +30,6 @@ import org.sonarlint.intellij.SonarTest;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -60,7 +59,7 @@ public class SonarLintTelemetryImplTest extends SonarTest {
     ProjectManager projectManager = mock(ProjectManager.class);
     when(projectManager.getOpenProjects()).thenReturn(new Project[0]);
 
-    SonarLintTelemetryImpl telemetry = new SonarLintTelemetryImpl(engineProvider, projectManager);
+    SonarLintTelemetryImpl telemetry = new SonarLintTelemetryImpl(engineProvider);
     telemetry.initComponent();
     return telemetry;
   }
@@ -117,7 +116,6 @@ public class SonarLintTelemetryImplTest extends SonarTest {
     when(engine.isEnabled()).thenReturn(true);
     telemetry.upload();
     verify(engine).isEnabled();
-    verify(engine).usedConnectedMode(anyBoolean(), anyBoolean());
     verify(engine).uploadLazily();
   }
 
