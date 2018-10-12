@@ -94,6 +94,9 @@ public class IssueManager extends AbstractProjectComponent {
     }
 
     String storeKey = appUtils.getRelativePathForAnalysis(myProject, file);
+    if (storeKey == null) {
+      return Collections.emptyList();
+    }
     try {
       Collection<LocalIssueTrackable> storeIssues = store.read(storeKey);
       return storeIssues != null ? Collections.unmodifiableCollection(storeIssues) : Collections.emptyList();
@@ -108,6 +111,9 @@ public class IssueManager extends AbstractProjectComponent {
       return true;
     }
     String storeKey = appUtils.getRelativePathForAnalysis(myProject, file);
+    if (storeKey == null) {
+      return false;
+    }
     return store.contains(storeKey);
   }
 

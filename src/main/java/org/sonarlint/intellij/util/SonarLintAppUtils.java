@@ -29,6 +29,7 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.PathUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -89,19 +90,21 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
     return getPathRelativeToContentRoot(module, virtualFile);
   }
 
+  /**
+   * Path will always contain forward slashes.
+   */
   @CheckForNull
   public String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
-    String moduleFile = module.getModuleFilePath();
-    Path baseDir = Paths.get(moduleFile).getParent();
+    Path baseDir = Paths.get(module.getModuleFilePath()).getParent();
     Path filePath = Paths.get(file.getPath());
     if (!filePath.startsWith(baseDir)) {
       return null;
     }
-    return baseDir.relativize(filePath).toString();
+    return PathUtil.toSystemIndependentName(baseDir.relativize(filePath).toString());
   }
 
   @CheckForNull
-  private String getPathRelativeToContentRoot(Module module, VirtualFile file) {
+  private static String getPathRelativeToContentRoot(Module module, VirtualFile file) {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     for (VirtualFile root : moduleRootManager.getContentRoots()) {
       if (VfsUtil.isAncestor(root, file, true)) {
