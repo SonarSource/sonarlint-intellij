@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -67,6 +69,7 @@ public class SonarLintAnalyzer {
 
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ProgressMonitor progressMonitor) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
+    long start = System.currentTimeMillis();
     Map<String, String> pluginProps = new HashMap<>();
     AnalysisConfigurator[] analysisConfigurators = AnalysisConfigurator.EP_NAME.getExtensions();
     if (analysisConfigurators.length > 0) {
@@ -83,7 +86,6 @@ public class SonarLintAnalyzer {
     List<ClientInputFile> inputFiles = getInputFiles(module, testPredicate, filesToAnalyze);
 
     // Analyze
-    long start = System.currentTimeMillis();
 
     try {
       SonarLintFacade facade = projectBindingManager.getFacade(true);
@@ -118,22 +120,27 @@ public class SonarLintAnalyzer {
   private List<ClientInputFile> getInputFiles(Module module, VirtualFileTestPredicate testPredicate, Collection<VirtualFile> filesToAnalyze) {
     List<ClientInputFile> inputFiles = new LinkedList<>();
 
-    ReadAction.run(() -> {
-      for (VirtualFile f : filesToAnalyze) {
-        boolean test = testPredicate.test(f);
-        Charset charset = getEncoding(f);
-        String relativePath = appUtils.getRelativePathForAnalysis(module, f);
-        if (relativePath != null) {
-          if (fileDocumentManager.isFileModified(f)) {
-            inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset, fileDocumentManager.getDocument(f)));
-          } else {
-            inputFiles.add(new DefaultClientInputFile(f, relativePath, test, charset));
-          }
-        }
-      }
-    });
+    ReadAction.run(() -> filesToAnalyze.stream()
+      .map(f -> createClientInputFile(module, f, testPredicate))
+      .filter(Objects::nonNull)
+      .forEach(inputFiles::add));
 
     return inputFiles;
+  }
+
+  @CheckForNull
+  private ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, VirtualFileTestPredicate testPredicate) {
+    boolean test = testPredicate.test(virtualFile);
+    Charset charset = getEncoding(virtualFile);
+    String relativePath = appUtils.getRelativePathForAnalysis(module, virtualFile);
+    if (relativePath != null) {
+      if (fileDocumentManager.isFileModified(virtualFile)) {
+        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, fileDocumentManager.getDocument(virtualFile));
+      } else {
+        return new DefaultClientInputFile(virtualFile, relativePath, test, charset);
+      }
+    }
+    return null;
   }
 
   private Charset getEncoding(VirtualFile f) {
