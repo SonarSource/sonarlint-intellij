@@ -159,9 +159,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
       for (Map.Entry<Module, Collection<VirtualFile>> e : filesPerModule.entrySet()) {
         ProjectBinding binding = getProjectBinding(e.getKey());
-        Map<VirtualFile, String> moduleRelativePathPerFile = getRelativePaths(e.getKey().getProject(), e.getValue());
+        Map<VirtualFile, String> relativePathPerFile = getRelativePaths(e.getKey().getProject(), e.getValue());
 
-        for (Map.Entry<VirtualFile, String> entry : moduleRelativePathPerFile.entrySet()) {
+        for (Map.Entry<VirtualFile, String> entry : relativePathPerFile.entrySet()) {
           issueUpdater.fetchAndMatchFile(binding, entry.getKey(), entry.getValue());
         }
       }
@@ -189,17 +189,17 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private Map<VirtualFile, String> getRelativePaths(Project project, Collection<VirtualFile> files) {
-    Map<VirtualFile, String> moduleRelativePathPerFile = new HashMap<>();
+    Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
 
     ReadAction.run(() -> {
       for (VirtualFile file : files) {
         String relativePath = appUtils.getPathRelativeToProjectBaseDir(project, file);
         if (relativePath != null) {
-          moduleRelativePathPerFile.put(file, relativePath);
+          relativePathPerFile.put(file, relativePath);
         }
       }
     });
-    return moduleRelativePathPerFile;
+    return relativePathPerFile;
   }
 
   private Future<Void> submit(Runnable task, String projectKey, @Nullable String moduleRelativePath) {
@@ -260,7 +260,9 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
 
     private void matchFile(VirtualFile virtualFile, List<ServerIssue> serverIssues) {
       try {
-        Collection<Trackable> serverIssuesTrackable = serverIssues.stream().map(ServerIssueTrackable::new).collect(Collectors.toList());
+        Collection<Trackable> serverIssuesTrackable = serverIssues.stream()
+          .map(ServerIssueTrackable::new)
+          .collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
           issueManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);

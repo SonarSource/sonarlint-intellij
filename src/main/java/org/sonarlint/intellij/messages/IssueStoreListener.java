@@ -22,6 +22,7 @@ package org.sonarlint.intellij.messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import org.sonarlint.intellij.issue.LiveIssue;
 
@@ -32,6 +33,10 @@ public interface IssueStoreListener {
   Topic<IssueStoreListener> SONARLINT_ISSUE_STORE_TOPIC = Topic.create("Issue store changed", IssueStoreListener.class);
 
   void filesChanged(Map<VirtualFile, Collection<LiveIssue>> map);
+
+  default void fileChanged(VirtualFile virtualFile, Collection<LiveIssue> issues) {
+    filesChanged(Collections.singletonMap(virtualFile, issues));
+  }
 
   void allChanged();
 }

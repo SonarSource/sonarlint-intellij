@@ -152,9 +152,7 @@ public class IssueManager extends AbstractProjectComponent {
 
     updateTrackedIssues(file, baseInput, rawInput, true);
     matchingInProgress.unlock();
-
-    Map<VirtualFile, Collection<LiveIssue>> map = Collections.singletonMap(file, cache.getLive(file));
-    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
+    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).fileChanged(file, cache.getLive(file));
   }
 
   private <T extends Trackable> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LiveIssue> rawInput, boolean isServerIssueMatching) {
