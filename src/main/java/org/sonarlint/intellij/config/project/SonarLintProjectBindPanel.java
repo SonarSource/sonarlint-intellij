@@ -29,12 +29,10 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.IdeBorderFactory;
-import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import java.awt.BorderLayout;
@@ -63,6 +61,12 @@ import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
+
+import static java.awt.GridBagConstraints.HORIZONTAL;
+import static java.awt.GridBagConstraints.LINE_START;
+import static java.awt.GridBagConstraints.NONE;
+import static java.awt.GridBagConstraints.NORTHWEST;
+import static java.awt.GridBagConstraints.WEST;
 
 public class SonarLintProjectBindPanel {
   private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
@@ -252,24 +256,21 @@ public class SonarLintProjectBindPanel {
 
     serverListLabel.setLabelFor(serverComboBox);
 
-    JPanel serverPanel = new JPanel(new GridLayoutManager(1, 2));
-    serverPanel.add(ScrollPaneFactory.createScrollPane(serverComboBox), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    serverPanel.add(configureServerButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    JBInsets insets = JBUI.insets(2, 0, 0, 0);
 
-    JPanel projectPanel = new JPanel(new GridLayoutManager(1, 3));
-    projectPanel.add(projectListLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-      GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    projectPanel.add(projectKeyTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    projectPanel.add(searchProjectButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-      GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    bindPanel.add(serverListLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+      WEST, NONE, insets, 0, 0));
+    bindPanel.add(serverComboBox, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+      WEST, HORIZONTAL, insets, 0, 0));
+    bindPanel.add(configureServerButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+      WEST, NONE, insets, 0, 0));
 
-    bindPanel.add(serverListLabel, new GridBagConstraints(0, 0, 1, 1, 0, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 0, 0, 0), 0, 0));
-    bindPanel.add(serverPanel, new GridBagConstraints(1, 0, 1, 1, 1, 0, GridBagConstraints.LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 3, 0, 0), 0, 0));
-
-    bindPanel.add(projectPanel, new GridBagConstraints(0, 1, 2, 1, 1, 1, GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(2, 3, 0, 0), 0, 0));
+    bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 1.0,
+      NORTHWEST, NONE, insets, 0, 0));
+    bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
+      NORTHWEST, HORIZONTAL, insets, 0, 0));
+    bindPanel.add(searchProjectButton, new GridBagConstraints(2, 1, 1, 1, 0.0, 1.0,
+      NORTHWEST, NONE, insets, 0, 0));
   }
 
   /**
