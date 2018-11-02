@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -82,7 +83,7 @@ public class IssueProcessor extends AbstractProjectComponent {
     console.info("Found " + issuesToShow + " " + end);
 
     if (shouldUpdateServerIssues(job.trigger())) {
-      Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new HashMap<>();
+      Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
 
       for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
         Collection<VirtualFile> moduleFilesWithIssues = e.getValue().stream()
@@ -100,7 +101,9 @@ public class IssueProcessor extends AbstractProjectComponent {
 
     AnalysisCallback callback = job.callback();
     if (callback != null) {
-      Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
+      Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream()
+        .map(f -> (VirtualFile) f.getClientObject())
+        .collect(Collectors.toSet());
       callback.onSuccess(failedVirtualFiles);
     }
   }

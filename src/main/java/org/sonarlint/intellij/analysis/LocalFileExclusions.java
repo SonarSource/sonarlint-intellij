@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
@@ -52,7 +53,7 @@ public class LocalFileExclusions {
   private final SonarLintAppUtils appUtils;
   private final ApplicationInfo applicationInfo;
   private final ProjectRootManager projectRootManager;
-  private final Supplier<Boolean> powerSaveModeCheck;
+  private final BooleanSupplier powerSaveModeCheck;
 
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
@@ -66,7 +67,7 @@ public class LocalFileExclusions {
   }
 
   LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    ApplicationInfo applicationInfo, ProjectRootManager projectRootManager, Supplier<Boolean> powerSaveModeCheck) {
+    ApplicationInfo applicationInfo, ProjectRootManager projectRootManager, BooleanSupplier powerSaveModeCheck) {
     this.appUtils = appUtils;
     this.applicationInfo = applicationInfo;
     this.projectRootManager = projectRootManager;
@@ -121,7 +122,7 @@ public class LocalFileExclusions {
       return result;
     }
 
-    if (powerSaveModeCheck.get()) {
+    if (powerSaveModeCheck.getAsBoolean()) {
       return Result.excluded("power save mode is enabled");
     }
 

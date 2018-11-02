@@ -25,6 +25,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class LocalFileExclusionsTest extends SonarTest {
   private ModuleRootManager moduleRootManager = mock(ModuleRootManager.class);
   private FileType type = mock(FileType.class);
   private VirtualFile testFile = mock(VirtualFile.class);
-  private Supplier<Boolean> powerModeCheck = mock(Supplier.class);
+  private BooleanSupplier powerModeCheck = mock(BooleanSupplier.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private ApplicationInfo info = mock(ApplicationInfo.class);
   private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
@@ -51,7 +52,7 @@ public class LocalFileExclusionsTest extends SonarTest {
 
   @Before
   public void prepare() {
-    when(powerModeCheck.get()).thenReturn(false);
+    when(powerModeCheck.getAsBoolean()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));
     when(testFile.getFileType()).thenReturn(type);
