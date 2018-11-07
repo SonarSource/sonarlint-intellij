@@ -76,7 +76,9 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.tasks.ServerUpdateTask;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
@@ -344,6 +346,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     for (Project p : openProjects) {
       SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
       String projectKey = projectSettings.getProjectKey();
+      GlobalLogOutput.get().log("PROJECT KEY LOADED: " + projectKey, LogOutput.Level.INFO);
       if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && projectKey != null) {
         List<Project> projects = projectsPerModule.computeIfAbsent(projectKey, k -> new ArrayList<>());
         projects.add(p);

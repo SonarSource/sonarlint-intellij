@@ -27,6 +27,8 @@ import java.util.List;
 import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
@@ -73,6 +75,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
     if (bindPanel.isBindingEnabled()) {
       projectSettings.setServerId(bindPanel.getSelectedStorageId());
+      GlobalLogOutput.get().log("PROJECT KEY SET IN PANEL: " + bindPanel.getSelectedProjectKey(), LogOutput.Level.INFO);
       projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
     } else {
       projectSettings.setServerId(null);

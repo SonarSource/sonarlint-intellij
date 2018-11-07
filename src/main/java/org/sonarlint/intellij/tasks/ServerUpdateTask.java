@@ -153,6 +153,7 @@ public class ServerUpdateTask {
     Set<String> failedProjects = new LinkedHashSet<>();
     for (Map.Entry<String, List<Project>> entry : projectsPerProjectKey.entrySet()) {
       try {
+        GlobalLogOutput.get().log("UPDATING PROJECT: " + entry.getKey(), LogOutput.Level.INFO);
         updateProject(serverConfiguration, entry.getKey(), entry.getValue(), monitor);
       } catch (Exception e) {
         // in case of error, save project key and keep updating other projects
