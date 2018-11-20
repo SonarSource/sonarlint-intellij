@@ -1,5 +1,20 @@
 # SonarLint IntelliJ Plugin
 
+SonarLint is an IDE extension that helps you detect and fix quality issues as you write code.
+
+## Useful links
+- [SonarLint website](https://www.sonarlint.org)
+- [Features](https://www.sonarlint.org/features/)
+- Supported languages:
+    - [Java](https://rules.sonarsource.com/java)
+    - [JavaScript](https://rules.sonarsource.com/javascript)
+    - [Python](https://rules.sonarsource.com/python)
+    - [Kotlin](https://rules.sonarsource.com/kotlin)
+    - [Ruby](https://rules.sonarsource.com/ruby)
+    - [PHP](https://rules.sonarsource.com/php)
+- [Install](https://plugins.jetbrains.com/plugin/7973-sonarlint)
+- [SonarLint community](https://community.sonarsource.com/c/help/sl)
+
 [![Build Status](https://travis-ci.org/SonarSource/sonarlint-intellij.svg?branch=master)](https://travis-ci.org/SonarSource/sonarlint-intellij)
 
 ## How to build
@@ -38,10 +53,6 @@ As the `clean` task may be inconvenient, an easier workaround is to delete the j
     ./gradlew release
 
 Deploy on Jetbrains plugin repository (todo try to use publish task).
-
-## More information
-
-**[SonarLint website](https://www.sonarlint.org)**
 
 ### License
 
