@@ -1,5 +1,7 @@
-# SonarLint IntelliJ Plugin
-
+SonarLint IntelliJ Plugin 
+[![Build Status](https://travis-ci.org/SonarSource/sonarlint-intellij.svg?branch=master)](https://travis-ci.org/SonarSource/sonarlint-intellij) [![Quality Gate](https://next.sonarqube.com/sonarqube/api/project_badges/measure?project=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij&metric=alert_status
+)](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
+=========
 SonarLint is an IDE extension that helps you detect and fix quality issues as you write code.
 
 ## Useful links
@@ -14,8 +16,6 @@ SonarLint is an IDE extension that helps you detect and fix quality issues as yo
     - [PHP](https://rules.sonarsource.com/php)
 - [Install](https://plugins.jetbrains.com/plugin/7973-sonarlint)
 - [SonarLint community](https://community.sonarsource.com/c/help/sl)
-
-[![Build Status](https://travis-ci.org/SonarSource/sonarlint-intellij.svg?branch=master)](https://travis-ci.org/SonarSource/sonarlint-intellij)
 
 ## How to build
 
