@@ -7,7 +7,7 @@ SonarLint is an IDE extension that helps you detect and fix quality issues as yo
 ## Useful links
 - [SonarLint website](https://www.sonarlint.org)
 - [Features](https://www.sonarlint.org/features/)
-- Supported languages:
+- List of static code analysis rules per language:
     - [Java](https://rules.sonarsource.com/java)
     - [JavaScript](https://rules.sonarsource.com/javascript)
     - [Python](https://rules.sonarsource.com/python)
