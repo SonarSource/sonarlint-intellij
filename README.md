@@ -15,7 +15,6 @@ Like a spell checker, SonarLint squiggles flaws so they can be fixed before comm
     - [Kotlin](https://rules.sonarsource.com/kotlin)
     - [Ruby](https://rules.sonarsource.com/ruby)
     - [PHP](https://rules.sonarsource.com/php)
-- [Install](https://plugins.jetbrains.com/plugin/7973-sonarlint)
 - [SonarLint community](https://community.sonarsource.com/c/help/sl)
 
 ## How to build
