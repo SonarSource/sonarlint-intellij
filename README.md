@@ -17,6 +17,9 @@ Like a spell checker, SonarLint squiggles flaws so they can be fixed before comm
     - [PHP](https://rules.sonarsource.com/php)
 - [SonarLint community](https://community.sonarsource.com/c/help/sl)
 
+## How to install
+You can install SonarLint from the [IntelliJ IDEA Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly available in IntelliJ preferences.
+
 ## How to build
 
     ./gradlew buildPlugin
