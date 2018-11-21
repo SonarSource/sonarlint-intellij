@@ -3,6 +3,7 @@ SonarLint IntelliJ Plugin
 )](https://next.sonarqube.com/sonarqube/dashboard?id=org.sonarsource.sonarlint.intellij%3Asonarlint-intellij)
 =========
 SonarLint is an IDE extension that helps you detect and fix quality issues as you write code.
+Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code.
 
 ## Useful links
 - [SonarLint website](https://www.sonarlint.org)
