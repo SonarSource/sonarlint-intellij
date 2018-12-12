@@ -47,6 +47,7 @@ public class SonarApplication extends ApplicationComponent.Adapter {
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     Language.getRegisteredLanguages().stream()
       .filter(SonarApplication::doesNotImplementMetaLanguage)
+      .filter(SonarApplication::doesNotHaveBaseLanguage)
       .forEach(this::registerExternalAnnotatorFor);
     registerNotifications();
     cleanOldWorkDir();
@@ -61,6 +62,10 @@ public class SonarApplication extends ApplicationComponent.Adapter {
       superclass = superclass.getSuperclass();
     }
     return true;
+  }
+
+  private static boolean doesNotHaveBaseLanguage(Language lang) {
+    return lang.getBaseLanguage() == null;
   }
 
   public String getVersion() {
