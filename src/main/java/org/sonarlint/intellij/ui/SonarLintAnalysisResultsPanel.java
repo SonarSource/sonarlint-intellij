@@ -23,6 +23,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.treeStructure.actions.ExpandAllAction;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
@@ -56,7 +57,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel {
     subscribeToEvents();
   }
 
-  private static SimpleActionGroup createActionGroup() {
+  private SimpleActionGroup createActionGroup() {
     SonarLintActions sonarLintActions = SonarLintActions.getInstance();
     SimpleActionGroup actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.analyzeChangedFiles());
@@ -64,6 +65,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel {
     actionGroup.add(sonarLintActions.cancelAnalysis());
     actionGroup.add(sonarLintActions.configure());
     actionGroup.add(sonarLintActions.clearResults());
+    actionGroup.add(new ExpandAllAction(tree));
     return actionGroup;
   }
 
