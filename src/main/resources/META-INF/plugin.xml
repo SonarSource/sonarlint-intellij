@@ -43,6 +43,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.0.1 - Fix duplicated highlighting in WebStorm and connection to a server with more than 10k rules</li>
         <li>4.0 - Improved matching of issues with SonarQube</li>
         <li>3.5.1 - Fixed error with read access and repeated annotations</li>
         <li>3.5 - Manage rules when not connected to SonarQube or SonarCloud</li>
