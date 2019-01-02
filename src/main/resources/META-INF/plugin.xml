@@ -230,7 +230,8 @@
     <actions>
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
         <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="false" icon="/images/ico-sonarlint-13.png">
-            <add-to-group anchor="last" group-id="AnalyzeMenu"/>
+            <separator/>
+            <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
 
         <action id="SonarLint.AnalyzeFiles"

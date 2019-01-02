@@ -21,6 +21,7 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import icons.SonarLintIcons;
@@ -37,6 +38,7 @@ import org.sonarlint.intellij.actions.SonarClearIssuesAction;
  * ActionManager, becoming accessible from the action search.
  */
 public class SonarLintActions implements ApplicationComponent {
+  private final ActionManager actionManager;
   private AnAction clearResultsAction;
   private AnAction clearIssuesAction;
   private AnAction cleanConsoleAction;
@@ -46,9 +48,22 @@ public class SonarLintActions implements ApplicationComponent {
   private AnAction analyzeAllFilesAction;
   private AnAction showAnalyzersAction;
 
+  public SonarLintActions(ActionManager actionManager) {
+    this.actionManager = actionManager;
+  }
+
   private void init() {
-    cancelAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel");
-    configureAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure");
+    AnAction analyzeMenu = actionManager.getAction("AnalyzeMenu");
+    // some flavors of IDEA don't have the analyze menu
+    if (analyzeMenu instanceof DefaultActionGroup) {
+      AnAction sonarLintAnalyzeMenu = actionManager.getAction("SonarLint.AnalyzeMenu");
+      DefaultActionGroup analyzeMenuGroup = (DefaultActionGroup) analyzeMenu;
+      analyzeMenuGroup.add(sonarLintAnalyzeMenu);
+    }
+
+    cancelAction = actionManager.getAction("SonarLint.toolwindow.Cancel");
+    configureAction = actionManager.getAction("SonarLint.toolwindow.Configure");
+    showAnalyzersAction = actionManager.getAction("SonarLint.toolwindow.Analyzers");
 
     clearResultsAction = new SonarClearAnalysisResultsAction("Clear Project Files Issues",
       "Clear analysis results",
@@ -65,8 +80,6 @@ public class SonarLintActions implements ApplicationComponent {
     analyzeChangedFilesAction = new SonarAnalyzeChangedFilesAction("Analyze VCS Changed Files",
       "Run a SonarLint analysis on VCS changed files",
       SonarLintIcons.SCM);
-
-    showAnalyzersAction = ActionManager.getInstance().getAction("SonarLint.toolwindow.Analyzers");
   }
 
   public static SonarLintActions getInstance() {

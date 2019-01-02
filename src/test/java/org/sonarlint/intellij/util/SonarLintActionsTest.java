@@ -21,6 +21,7 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
@@ -28,19 +29,25 @@ import org.sonarlint.intellij.SonarTest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class SonarLintActionsTest extends SonarTest {
+  private ActionManager actionManager = mock(ActionManager.class, RETURNS_DEEP_STUBS);
+  private DefaultActionGroup analyzeMenuGroup = new DefaultActionGroup();
+  private AnAction sonarlintAnalyzeMenuGroup = mock(AnAction.class);
+  private SonarLintActions instance;
+
   @Before
   public void prepare() {
-    super.register(app, SonarLintActions.class, new SonarLintActions());
+    super.register(app, ActionManager.class, actionManager);
+    instance = new SonarLintActions(actionManager);
+    when(actionManager.getAction("SonarLint.AnalyzeMenu")).thenReturn(sonarlintAnalyzeMenuGroup);
   }
 
   @Test
-  public void testActions() {
-    super.register(app, ActionManager.class, mock(ActionManager.class, RETURNS_DEEP_STUBS));
-
-    SonarLintActions instance = SonarLintActions.getInstance();
+  public void should_create_actions() {
     instance.initComponent();
+
     assertActionFields(instance.analyzeAllFiles());
     assertActionFields(instance.clearResults());
     assertAction(instance.configure());
@@ -51,6 +58,19 @@ public class SonarLintActionsTest extends SonarTest {
     assertActionFields(instance.cleanConsole());
 
     assertThat(instance.getComponentName()).isEqualTo("SonarLintActions");
+  }
+
+  @Test
+  public void should_register_analyze_group_when_analyze_menu_exists() {
+    when(actionManager.getAction("AnalyzeMenu")).thenReturn(analyzeMenuGroup);
+    instance.initComponent();
+    assertThat(analyzeMenuGroup.getChildActionsOrStubs()).contains(sonarlintAnalyzeMenuGroup);
+  }
+
+  @Test
+  public void should_not_register_analyze_group_when_analyze_menu_does_not_exist() {
+    instance.initComponent();
+    assertThat(analyzeMenuGroup.getChildActionsOrStubs()).isEmpty();
   }
 
   private void assertAction(AnAction action) {
