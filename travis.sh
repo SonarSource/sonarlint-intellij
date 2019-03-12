@@ -11,12 +11,6 @@
 
 set -euo pipefail
 
-function installTravisTools {
-  mkdir ~/.local
-  curl -sSL https://github.com/SonarSource/travis-utils/tarball/v55 | tar zx --strip-components 1 -C ~/.local
-  source ~/.local/bin/install
-}
-
 function strongEcho {
   echo ""
   echo "================ $1 ================="
@@ -53,10 +47,9 @@ CI)
   if [ "${TRAVIS_BRANCH}" == "master" ] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
     strongEcho 'Build and analyze commit in master and publish in artifactory'
     # this commit is master must be built and analyzed (with upload of report)
-    git fetch --unshallow || true
     prepareBuildVersion
     ./gradlew buildPlugin check sonarqube artifactory \
-        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace --info \
+        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace -i \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.projectVersion=$CURRENT_VERSION \
         -Dsonar.login=$SONAR_TOKEN \
@@ -65,26 +58,12 @@ CI)
         -Dsonar.analysis.sha1=$TRAVIS_COMMIT  \
         -Dsonar.analysis.repository=$TRAVIS_REPO_SLUG
   
-  elif [[ "${TRAVIS_BRANCH}" == "branch-"* ]] && [ "$TRAVIS_PULL_REQUEST" == "false" ]; then
-    strongEcho 'Build and publish in artifactory'
-    prepareBuildVersion
-    ./gradlew buildPlugin check artifactory \
-        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace --info
-
   elif [ "$TRAVIS_PULL_REQUEST" != "false" ] && [ -n "${GITHUB_TOKEN-}" ]; then
     strongEcho 'Build and analyze pull request'                                                                                                                              
     prepareBuildVersion
     # this pull request must be built and analyzed
     ./gradlew buildPlugin check sonarqube artifactory \
-        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace \
-        -Dsonar.analysis.mode=issues \
-        -Dsonar.github.pullRequest=$TRAVIS_PULL_REQUEST \
-        -Dsonar.github.repository=$TRAVIS_REPO_SLUG \
-        -Dsonar.github.oauth=$GITHUB_TOKEN \
-        -Dsonar.host.url=$SONAR_HOST_URL \
-        -Dsonar.login=$SONAR_TOKEN
-
-    ./gradlew sonarqube \
+        -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace -i \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN \
         -Dsonar.analysis.buildNumber=$TRAVIS_BUILD_NUMBER \
@@ -92,8 +71,10 @@ CI)
         -Dsonar.analysis.sha1=$TRAVIS_PULL_REQUEST_SHA  \
         -Dsonar.analysis.repository=$TRAVIS_REPO_SLUG \
         -Dsonar.analysis.prNumber=$TRAVIS_PULL_REQUEST \
-        -Dsonar.branch.name=$TRAVIS_PULL_REQUEST_BRANCH \
-        -Dsonar.branch.target=$TRAVIS_BRANCH
+        -Dsonar.pullrequest.branch=$TRAVIS_PULL_REQUEST_BRANCH \
+	-Dsonar.pullrequest.key=$TRAVIS_PULL_REQUEST \
+        -Dsonar.pullrequest.base=$TRAVIS_BRANCH \
+	-Dsonar.pullrequest.github.repository=$TRAVIS_REPO_SLUG
 
   else
     strongEcho 'Build, no analysis'
