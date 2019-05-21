@@ -34,6 +34,8 @@ import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
+import java.util.Locale;
+
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
 
 public class IssueNode extends AbstractNode {
@@ -47,11 +49,11 @@ public class IssueNode extends AbstractNode {
   }
 
   @Override public void render(TreeCellRenderer renderer) {
-    String severity = StringUtil.capitalize(StringUtil.toLowerCase(issue.getSeverity()));
+    String severity = StringUtil.capitalize(issue.getSeverity().toLowerCase(Locale.ENGLISH));
     String type = issue.getType();
 
     if (type != null) {
-      String typeStr = StringUtil.toLowerCase(type.replace('_', ' '));
+      String typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
       renderer.setIconToolTip(severity + " " + typeStr);
       int gap = JBUI.isHiDPI() ? 8 : 4;
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
