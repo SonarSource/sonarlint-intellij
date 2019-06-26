@@ -80,7 +80,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   }
 
   @Override public RuleDetails ruleDetails(String ruleKey) {
-    return sonarlint.getRuleDetails(ruleKey);
+    return sonarlint.getRuleDetails(ruleKey).orElse(null);
   }
 
   @Override
