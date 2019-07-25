@@ -53,8 +53,6 @@ public abstract class SonarLintFacade {
   @CheckForNull
   public abstract RuleDetails ruleDetails(String ruleKey);
 
-  public abstract boolean requiresSavingFiles();
-
   public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener,
     Map<String, String> additionalProps, ProgressMonitor progressMonitor) {
     Path baseDir = Paths.get(project.getBasePath());

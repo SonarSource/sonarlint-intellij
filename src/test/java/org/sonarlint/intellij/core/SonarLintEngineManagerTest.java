@@ -95,7 +95,7 @@ public class SonarLintEngineManagerTest {
     manager.initComponent();
 
     exception.expect(InvalidBindingException.class);
-    exception.expectMessage("Server is not updated");
+    exception.expectMessage("Connection local storage is not updated");
     manager.getConnectedEngine(notifications, "server1", "project1");
   }
 

@@ -50,7 +50,6 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
@@ -121,23 +120,6 @@ public class SonarLintUtils {
   }
 
   /**
-   * Must be called from EDT
-   */
-  public static boolean saveFiles(final Collection<VirtualFile> virtualFiles) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-    boolean[] success = new boolean[] {true};
-
-    ApplicationManager.getApplication().runWriteAction(() -> {
-      for (VirtualFile file : virtualFiles) {
-        if (!saveFile(file)) {
-          success[0] = false;
-        }
-      }
-    });
-    return success[0];
-  }
-
-  /**
    * FileEditorManager#getSelectedFiles does not work as expected. In split editors, the order of the files does not change depending
    * on which one of the split editors is selected.
    * This seems to work well with split editors.
@@ -157,23 +139,6 @@ public class SonarLintUtils {
     }
 
     return null;
-  }
-
-  /**
-   * Must be called from EDT
-   */
-  private static boolean saveFile(final VirtualFile virtualFile) {
-    ApplicationManager.getApplication().assertIsDispatchThread();
-
-    final FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
-    if (fileDocumentManager.isFileModified(virtualFile)) {
-      final Document document = fileDocumentManager.getDocument(virtualFile);
-      if (document != null) {
-        fileDocumentManager.saveDocument(document);
-        return true;
-      }
-    }
-    return false;
   }
 
   public static void configureProxy(String host, ServerConfiguration.Builder builder) {
@@ -214,7 +179,7 @@ public class SonarLintUtils {
     // copied from JavaProjectRootsUtil. Don't use that class because it's not available in other flavors of Intellij
     JavaSourceRootProperties properties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
     JavaResourceRootProperties resourceProperties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.RESOURCES);
-    return properties != null && properties.isForGeneratedSources() || resourceProperties != null && resourceProperties.isForGeneratedSources();
+    return (properties != null && properties.isForGeneratedSources()) || (resourceProperties != null && resourceProperties.isForGeneratedSources());
   }
 
   @Nullable

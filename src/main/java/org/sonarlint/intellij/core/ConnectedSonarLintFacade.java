@@ -46,12 +46,11 @@ import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
-  private final String projectKey;
   private final SonarLintConsole console;
   private final SonarLintAppUtils appUtils;
 
   ConnectedSonarLintFacade(SonarLintAppUtils appUtils, ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings,
-    SonarLintConsole console, Project project, String projectKey) {
+    SonarLintConsole console, Project project) {
     super(project, projectSettings);
     this.appUtils = appUtils;
     Preconditions.checkNotNull(project, "project");
@@ -59,13 +58,16 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     Preconditions.checkNotNull(engine, "engine");
     this.console = console;
     this.sonarlint = engine;
-    this.projectKey = projectKey;
   }
 
   @Override
   protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
-    ConnectedAnalysisConfiguration config = new ConnectedAnalysisConfiguration(projectKey, baseDir, workDir, inputFiles, props);
+    ConnectedAnalysisConfiguration config = ConnectedAnalysisConfiguration.builder()
+      .setBaseDir(baseDir)
+      .addInputFiles(inputFiles)
+      .putAllExtraProperties(props)
+      .build();
     console.debug("Starting analysis with configuration:\n" + config.toString());
 
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
@@ -84,16 +86,14 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     return sonarlint.getExcludedFiles(binding, files, ideFilePathExtractor, testPredicate);
   }
 
-  @Override public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
+  @Override
+  public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
     return sonarlint.getLoadedAnalyzers();
   }
 
-  @Override public RuleDetails ruleDetails(String ruleKey) {
+  @Override
+  public RuleDetails ruleDetails(String ruleKey) {
     return sonarlint.getRuleDetails(ruleKey);
   }
 
-  @Override
-  public boolean requiresSavingFiles() {
-    return !sonarlint.getLoadedAnalyzers().stream().allMatch(LoadedAnalyzer::supportsContentStream);
-  }
 }

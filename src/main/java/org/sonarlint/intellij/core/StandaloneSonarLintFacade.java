@@ -60,12 +60,19 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     this.sonarlint = engine;
   }
 
-  @Override protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
+  @Override
+  protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
     List<RuleKey> excluded = globalSettings.getExcludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
     List<RuleKey> included = globalSettings.getIncludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
 
-    StandaloneAnalysisConfiguration config = new StandaloneAnalysisConfiguration(baseDir, workDir, inputFiles, props, excluded, included);
+    StandaloneAnalysisConfiguration config = StandaloneAnalysisConfiguration.builder()
+      .setBaseDir(baseDir)
+      .addInputFiles(inputFiles)
+      .putAllExtraProperties(props)
+      .addExcludedRules(excluded)
+      .addIncludedRules(included)
+      .build();
     console.debug("Starting analysis with configuration:\n" + config.toString());
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
   }
@@ -75,16 +82,14 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     return Collections.emptyList();
   }
 
-  @Override public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
+  @Override
+  public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
     return sonarlint.getLoadedAnalyzers();
   }
 
-  @Override public RuleDetails ruleDetails(String ruleKey) {
-    return sonarlint.getRuleDetails(ruleKey);
+  @Override
+  public RuleDetails ruleDetails(String ruleKey) {
+    return sonarlint.getRuleDetails(ruleKey).orElse(null);
   }
 
-  @Override
-  public boolean requiresSavingFiles() {
-    return false;
-  }
 }

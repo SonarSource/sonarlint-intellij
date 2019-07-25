@@ -40,7 +40,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class ConnectedSonarLintFacadeTest {
-  private final String projectKey = "module1";
 
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
   private Project project = mock(Project.class);
@@ -53,7 +52,7 @@ public class ConnectedSonarLintFacadeTest {
   @Before
   public void setUp() {
     when(project.getBasePath()).thenReturn("");
-    facade = new ConnectedSonarLintFacade(appUtils, engine, settings, console, project, projectKey);
+    facade = new ConnectedSonarLintFacade(appUtils, engine, settings, console, project);
   }
 
   @Test

@@ -66,7 +66,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
       } else if (state == ConnectedSonarLintEngine.State.NEVER_UPDATED) {
         notifications.notifyServerNeverUpdated(serverId);
       }
-      throw new InvalidBindingException("Connection is not updated: '" + serverId + "'");
+      throw new InvalidBindingException("Connection local storage is not updated: '" + serverId + "'");
     }
 
     // Check if project's storage is OK. Global storage was updated and all project's binding that were open too,

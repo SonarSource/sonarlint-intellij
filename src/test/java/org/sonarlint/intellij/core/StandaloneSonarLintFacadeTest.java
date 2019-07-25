@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.project.Project;
 import java.util.Collections;
+import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -57,7 +58,7 @@ public class StandaloneSonarLintFacadeTest {
   public void should_get_rule_name() {
     RuleDetails ruleDetails = mock(RuleDetails.class);
     when(ruleDetails.getName()).thenReturn("name");
-    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
     assertThat(facade.getRuleName("invalid")).isNull();
   }
@@ -65,7 +66,7 @@ public class StandaloneSonarLintFacadeTest {
   @Test
   public void should_get_rule_details() {
     RuleDetails ruleDetails = mock(RuleDetails.class);
-    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
@@ -74,7 +75,7 @@ public class StandaloneSonarLintFacadeTest {
     RuleDetails ruleDetails = mock(RuleDetails.class);
     when(ruleDetails.getExtendedDescription()).thenReturn("desc");
     when(ruleDetails.getHtmlDescription()).thenReturn("html");
-    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.getDescription("rule1")).isEqualTo("html<br/><br/>desc");
     assertThat(facade.getDescription("invalid")).isNull();
   }

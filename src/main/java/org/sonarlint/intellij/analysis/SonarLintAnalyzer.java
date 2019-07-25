@@ -19,10 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -48,7 +45,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 public class SonarLintAnalyzer {
-  private static final Logger LOG = Logger.getInstance(SonarLintAnalyzer.class);
 
   private final ProjectBindingManager projectBindingManager;
   private final EncodingProjectManager encodingProjectManager;
@@ -94,15 +90,10 @@ public class SonarLintAnalyzer {
       if (filesToAnalyze.size() == 1) {
         what = "'" + filesToAnalyze.iterator().next().getName() + "'";
       } else {
-        what = Integer.toString(filesToAnalyze.size()) + " files";
+        what = filesToAnalyze.size() + " files";
       }
 
       console.info("Analysing " + what + "...");
-      if (facade.requiresSavingFiles()) {
-        console.debug("Saving files");
-        LOG.assertTrue(!ApplicationManager.getApplication().isReadAccessAllowed(), "Should not be in a read action (risk of dead lock)");
-        ApplicationManager.getApplication().invokeAndWait(() -> SonarLintUtils.saveFiles(filesToAnalyze), ModalityState.defaultModalityState());
-      }
       AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps, progressMonitor);
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
       if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
