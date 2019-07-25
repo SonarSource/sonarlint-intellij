@@ -52,7 +52,7 @@ public class SonarLintCheckinHandlerFactoryTest {
 
   @Test
   public void testFactory() {
-    CheckinHandler handler = sonarLintCheckinHandlerFactory.createHandler(panel, mock(CommitContext.class));
+    CheckinHandler handler = sonarLintCheckinHandlerFactory.createHandler(panel, new CommitContext());
     assertThat(handler).isInstanceOf(SonarLintCheckinHandler.class);
 
     verify(panel).getProject();

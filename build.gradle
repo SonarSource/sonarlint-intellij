@@ -25,15 +25,18 @@ description = 'SonarLint for IntelliJ IDEA'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+if (!project.hasProperty("ijVersion")) {
+  ext.ijVersion = '2019.2'
+}
+
 intellij {
-  if (project.hasProperty("ijVersion")) {
-    version ijVersion
-  } else {
-    version '2018.2'
-  }
+  version ijVersion
   pluginName 'SonarLint'
   updateSinceUntilBuild false
   type 'IC'
+  if (!ijVersion.startsWith("2016") && !ijVersion.startsWith("2018")) {
+    plugins = ['java']
+  }
 }
 
 protobuf {
