@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.progress.DumbProgressIndicator;
 import com.intellij.openapi.project.Project;
 import java.util.Collections;
 import org.junit.Before;
@@ -35,7 +36,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckRes
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -67,7 +67,7 @@ public class UpdateCheckerTest extends SonarTest {
   @Test
   public void do_nothing_if_no_engine() throws InvalidBindingException {
     when(bindingManager.getConnectedEngine()).thenThrow(new IllegalStateException());
-    updateChecker.checkForUpdate();
+    updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
 
     verifyZeroInteractions(engine);
     verifyZeroInteractions(notifications);
@@ -78,13 +78,13 @@ public class UpdateCheckerTest extends SonarTest {
     StorageUpdateCheckResult result = mock(StorageUpdateCheckResult.class);
     when(result.needUpdate()).thenReturn(false);
 
-    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull())).thenReturn(result);
-    when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull())).thenReturn(result);
+    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any())).thenReturn(result);
+    when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any())).thenReturn(result);
 
-    updateChecker.checkForUpdate();
+    updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
 
-    verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull());
-    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull());
+    verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any());
 
     verifyZeroInteractions(notifications);
   }
@@ -95,13 +95,13 @@ public class UpdateCheckerTest extends SonarTest {
     when(result.needUpdate()).thenReturn(true);
     when(result.changelog()).thenReturn(Collections.singletonList("change1"));
 
-    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull())).thenReturn(result);
-    when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull())).thenReturn(result);
+    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any())).thenReturn(result);
+    when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any())).thenReturn(result);
 
-    updateChecker.checkForUpdate();
+    updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
 
-    verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), isNull());
-    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), isNull());
+    verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any());
     verify(notifications).notifyServerHasUpdates("serverId", engine, server, false);
 
     verifyNoMoreInteractions(engine);
