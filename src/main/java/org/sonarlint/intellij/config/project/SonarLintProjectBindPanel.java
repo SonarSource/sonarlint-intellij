@@ -63,13 +63,11 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
-import static java.awt.GridBagConstraints.LINE_START;
 import static java.awt.GridBagConstraints.NONE;
-import static java.awt.GridBagConstraints.NORTHWEST;
 import static java.awt.GridBagConstraints.WEST;
 
 public class SonarLintProjectBindPanel {
-  private static final String SERVER_EMPTY_TEXT = "<No servers configured>";
+  private static final String SERVER_EMPTY_TEXT = "<No connections configured>";
 
   private JPanel rootPanel;
   private JBCheckBox bindEnable;
@@ -88,7 +86,7 @@ public class SonarLintProjectBindPanel {
   public JPanel create(Project project) {
     this.project = project;
     rootPanel = new JPanel(new BorderLayout());
-    bindEnable = new JBCheckBox("Enable binding to remote SonarQube server", true);
+    bindEnable = new JBCheckBox("Bind project to SonarQube / SonarCloud", true);
     bindEnable.addItemListener(new BindItemListener());
     createBindPanel();
 
@@ -227,16 +225,16 @@ public class SonarLintProjectBindPanel {
         actionConfigureServers();
       }
     });
-    configureServerButton.setText("Configure servers..");
+    configureServerButton.setText("Configure the connection...");
 
     // generic ComboBox only introduced in 2016.2.5
     serverComboBox = new ComboBox();
-    JLabel serverListLabel = new JLabel("Bind to server:");
+    JLabel serverListLabel = new JLabel("Connection:");
 
     serverComboBox.setRenderer(new ServerComboBoxRenderer());
     serverComboBox.addItemListener(new ServerItemListener());
 
-    JLabel projectListLabel = new JLabel("SonarQube project:");
+    JLabel projectListLabel = new JLabel("Project:");
     projectKeyTextField = new JBTextField();
     projectKeyTextField.getEmptyText().setText("Input project key or search one");
 
@@ -252,7 +250,7 @@ public class SonarLintProjectBindPanel {
         }
       }
     });
-    searchProjectButton.setText("Search in list..");
+    searchProjectButton.setText("Search in list...");
 
     serverListLabel.setLabelFor(serverComboBox);
 
@@ -265,12 +263,16 @@ public class SonarLintProjectBindPanel {
     bindPanel.add(configureServerButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
 
-    bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 1.0,
-      NORTHWEST, NONE, insets, 0, 0));
-    bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
-      NORTHWEST, HORIZONTAL, insets, 0, 0));
-    bindPanel.add(searchProjectButton, new GridBagConstraints(2, 1, 1, 1, 0.0, 1.0,
-      NORTHWEST, NONE, insets, 0, 0));
+    bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+      WEST, NONE, insets, 0, 0));
+    bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+      WEST, HORIZONTAL, insets, 0, 0));
+    bindPanel.add(searchProjectButton, new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+      WEST, HORIZONTAL, insets, 0, 0));
+
+    // Consume extra space
+    bindPanel.add(new JPanel(), new GridBagConstraints(0, 2, 3, 1, 0.0, 1.0,
+      WEST, HORIZONTAL, insets, 0, 0));
   }
 
   /**
@@ -319,7 +321,7 @@ public class SonarLintProjectBindPanel {
       }
 
       append(value.getName(), attrs, true);
-      setToolTipText("Connect to this SonarQube server");
+      setToolTipText("Bind project using this connection");
       if (value.isSonarCloud()) {
         setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
       } else {

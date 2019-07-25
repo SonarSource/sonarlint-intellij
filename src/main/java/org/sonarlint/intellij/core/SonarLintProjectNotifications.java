@@ -37,7 +37,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 public class SonarLintProjectNotifications extends AbstractProjectComponent {
   public static final String GROUP_UPDATE_NOTIFICATION = "SonarLint: Configuration update";
   public static final String GROUP_BINDING_PROBLEM = "SonarLint: Server Binding Errors";
-  private static final String UPDATE_SERVER_MSG = "\n<br>Please update the SonarQube server in the <a href='#'>SonarLint General Settings</a>";
+  private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the <a href='#'>SonarLint General Settings</a>";
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the <a href='#'>SonarLint project configuration</a>";
   private volatile boolean shown = false;
 
@@ -58,7 +58,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Project bound to invalid SonarQube server</b>",
+      "<b>SonarLint - Project bound to an invalid connection</b>",
       UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
@@ -92,12 +92,12 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
     shown = true;
   }
 
-  void notifyServerNotUpdated() {
+  void notifyServerNotUpdated(String serverId) {
     if (shown) {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - No data for SonarQube server</b>",
+      "<b>SonarLint - Missing binding data for connection '" + serverId + "'</b>",
       UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
@@ -110,7 +110,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Binding for server '" + serverId + "' outdated</b>",
+      "<b>SonarLint - Binding data for connection '" + serverId + "' outdated</b>",
       UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
@@ -120,8 +120,8 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
 
   void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
     Notification notification = new Notification(GROUP_UPDATE_NOTIFICATION,
-      "Configuration update",
-      "Configuration changed on SonarQube server '" + serverId + "'. <a href=\"#update\">Update now</a>",
+      "Binding update",
+      "Configuration changed for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
       NotificationType.INFORMATION, new NotificationListener.Adapter() {
       @Override
       public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {

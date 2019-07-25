@@ -83,7 +83,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final String LABEL_NO_SERVERS = "No servers";
+  private static final String LABEL_NO_SERVERS = "Add a connection to SonarQube or SonarCloud";
 
   // UI
   private JPanel panel;
@@ -137,11 +137,11 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     splitter.setFirstComponent(serversPanel);
     splitter.setSecondComponent(createServerStatus());
 
-    JBLabel emptyLabel = new JBLabel("No server selected", SwingConstants.CENTER);
+    JBLabel emptyLabel = new JBLabel("No connection selected", SwingConstants.CENTER);
     emptyPanel = new JPanel(new BorderLayout());
     emptyPanel.add(emptyLabel, BorderLayout.CENTER);
 
-    Border b = IdeBorderFactory.createTitledBorder("SonarQube servers");
+    Border b = IdeBorderFactory.createTitledBorder("SonarQube / SonarCloud connections");
     panel = new JPanel(new BorderLayout());
     panel.setBorder(b);
     panel.add(splitter);
@@ -176,7 +176,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
-        final JLabel label = new JLabel("<html>Click to fetch data from the selected SonarQube server, such as the list of projects,<br>"
+        final JLabel label = new JLabel("<html>Click to fetch data from the selected connection, such as the list of projects,<br>"
           + " rules, quality profiles, etc. This needs to be done before being able to select a project.");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.INFORMATION_COLOR);
@@ -292,7 +292,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
       setStatus(state);
       engine.addStateListener(engineListener);
     } else {
-      serverStatus.setText("[ no server selected ]");
+      serverStatus.setText("[ no connection selected ]");
       updateServerButton.setEnabled(false);
     }
   }
@@ -410,8 +410,8 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
       if (!projectsUsingNames.isEmpty()) {
         String projects = projectsUsingNames.stream().collect(Collectors.joining("<br>"));
         int response = Messages.showYesNoDialog(serversPanel,
-          "<html>The following opened projects are bound to this server configuration:<br><b>" +
-            projects + "</b><br>Delete the server?</html>", "Server Configuration In Use", Messages.getWarningIcon());
+          "<html>The following opened projects are bound to this connection:<br><b>" +
+            projects + "</b><br>Delete the connection?</html>", "Connection In Use", Messages.getWarningIcon());
         if (response == Messages.NO) {
           return;
         }

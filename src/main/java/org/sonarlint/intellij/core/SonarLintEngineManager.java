@@ -62,11 +62,11 @@ public class SonarLintEngineManager implements ApplicationComponent {
     ConnectedSonarLintEngine.State state = engine.getState();
     if (state != ConnectedSonarLintEngine.State.UPDATED) {
       if (state != ConnectedSonarLintEngine.State.NEED_UPDATE) {
-        notifications.notifyServerNotUpdated();
+        notifications.notifyServerNotUpdated(serverId);
       } else if (state != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
         notifications.notifyServerStorageNeedsUpdate(serverId);
       }
-      throw new InvalidBindingException("Server is not updated: " + serverId);
+      throw new InvalidBindingException("Connection is not updated: '" + serverId + "'");
     }
 
     // Check if project's storage is OK. Global storage was updated and all project's binding that were open too,
@@ -75,10 +75,10 @@ public class SonarLintEngineManager implements ApplicationComponent {
 
     if (moduleStorageStatus == null) {
       notifications.notifyModuleInvalid();
-      throw new InvalidBindingException("Project is bound to a module that doesn't exist: " + projectKey);
+      throw new InvalidBindingException("Project is bound to a project that doesn't exist: " + projectKey);
     } else if (moduleStorageStatus.isStale()) {
       notifications.notifyModuleStale();
-      throw new InvalidBindingException("Stale module's storage: " + projectKey);
+      throw new InvalidBindingException("Stale project's storage: " + projectKey);
     }
   }
 
