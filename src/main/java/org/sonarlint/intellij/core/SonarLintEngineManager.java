@@ -61,10 +61,10 @@ public class SonarLintEngineManager implements ApplicationComponent {
     // Check if engine's global storage is OK
     ConnectedSonarLintEngine.State state = engine.getState();
     if (state != ConnectedSonarLintEngine.State.UPDATED) {
-      if (state != ConnectedSonarLintEngine.State.NEED_UPDATE) {
-        notifications.notifyServerNotUpdated(serverId);
-      } else if (state != ConnectedSonarLintEngine.State.NEVER_UPDATED) {
+      if (state == ConnectedSonarLintEngine.State.NEED_UPDATE) {
         notifications.notifyServerStorageNeedsUpdate(serverId);
+      } else if (state == ConnectedSonarLintEngine.State.NEVER_UPDATED) {
+        notifications.notifyServerNeverUpdated(serverId);
       }
       throw new InvalidBindingException("Connection is not updated: '" + serverId + "'");
     }

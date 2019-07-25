@@ -58,8 +58,8 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Project bound to an invalid connection</b>",
-      UPDATE_BINDING_MSG,
+      "<b>SonarLint - Invalid binding</b>",
+      "Project bound to an invalid connection" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -71,8 +71,8 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Project bound to an invalid remote project</b>",
-      UPDATE_BINDING_MSG,
+      "<b>SonarLint - Invalid binding</b>",
+      "Project bound to an invalid remote project" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -84,21 +84,21 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Project's binding data is invalid</b>",
-      UPDATE_BINDING_MSG,
+      "<b>SonarLint - Invalid binding</b>",
+      "Local storage is outdated" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
     shown = true;
   }
 
-  void notifyServerNotUpdated(String serverId) {
+  void notifyServerNeverUpdated(String serverId) {
     if (shown) {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Missing binding data for connection '" + serverId + "'</b>",
-      UPDATE_SERVER_MSG,
+      "<b>SonarLint - Invalid binding</b>",
+      "Missing local storage for connection '" + serverId + "'" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -110,8 +110,8 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       return;
     }
     Notification notification = new Notification(GROUP_BINDING_PROBLEM,
-      "<b>SonarLint - Binding data for connection '" + serverId + "' outdated</b>",
-      UPDATE_SERVER_MSG,
+      "<b>SonarLint - Invalid binding</b>",
+      "Local storage for connection '" + serverId + "' must be updated" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -120,8 +120,8 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
 
   void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
     Notification notification = new Notification(GROUP_UPDATE_NOTIFICATION,
-      "Binding update",
-      "Configuration changed for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
+      "SonarLint - Binding update available",
+      "Change detected for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
       NotificationType.INFORMATION, new NotificationListener.Adapter() {
       @Override
       public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
