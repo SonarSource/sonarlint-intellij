@@ -83,7 +83,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
           orgList.ensureIndexIsVisible(0);
           break;
         } else if (task.getException() != null) {
-          Messages.showErrorDialog("Failed to fetch organization from SonarQube server: " + task.getException().getMessage(), "Connection Failure");
+          Messages.showErrorDialog("Failed to fetch organization from server: " + task.getException().getMessage(), "Connection Failure");
         } else {
           Messages.showErrorDialog(String.format("Organization '%s' not found. Please enter the key of an existing organization.", organizationKey), "Organization Not Found");
         }

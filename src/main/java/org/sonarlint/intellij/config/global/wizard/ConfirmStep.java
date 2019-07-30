@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
 public class ConfirmStep extends AbstractWizardStepEx {
-  private static final String TEXT1 = "SonarQube Server connection successfully created.";
+  private static final String TEXT1 = "Connection successfully created.";
   private static final String TEXT2 = "Click finish to save your changes and schedule an update of all project bindings.";
   private final WizardModel model;
   private final boolean editing;

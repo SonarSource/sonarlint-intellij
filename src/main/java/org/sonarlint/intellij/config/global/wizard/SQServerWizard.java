@@ -45,7 +45,7 @@ public class SQServerWizard {
   private void init(WizardModel model, boolean editing, Set<String> existingNames) {
     List<AbstractWizardStepEx> steps = createSteps(model, editing, existingNames);
     String title = editing ? "Edit " : "New ";
-    title = title + "SonarQube Server Configuration";
+    title = title + "Connection";
     wizard = new SonarQubeWizard(steps, title);
   }
 
