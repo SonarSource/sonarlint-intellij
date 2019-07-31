@@ -19,6 +19,7 @@ Useful links
     - [Kotlin](https://rules.sonarsource.com/kotlin)
     - [Ruby](https://rules.sonarsource.com/ruby)
     - [PHP](https://rules.sonarsource.com/php)
+    - [HTML](https://rules.sonarsource.com/html)
 - [SonarLint community](https://community.sonarsource.com/c/help/sl)
 
 How to install
