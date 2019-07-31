@@ -48,6 +48,8 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFileInPhpStorm;
+
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
   private final boolean unitTest;
 
@@ -62,7 +64,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   @Override
   public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
     // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-    if ("html".equalsIgnoreCase(file.getFileType().getName())) {
+    if (isPhpFileInPhpStorm(file.getFileType())) {
       return;
     }
 

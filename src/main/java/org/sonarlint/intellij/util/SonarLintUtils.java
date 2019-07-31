@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -26,6 +27,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
@@ -51,6 +53,7 @@ import java.net.Proxy;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -275,4 +278,13 @@ public class SonarLintUtils {
     return relativePath;
   }
 
+  public static boolean isPhpFileInPhpStorm(FileType fileType) {
+    try {
+      ApplicationInfo applicationInfo = ApplicationInfo.getInstance();
+      String ijFlavor = applicationInfo.getVersionName().toLowerCase(Locale.US);
+      return ijFlavor.contains("phpstorm") && "php".equalsIgnoreCase(fileType.getName());
+    } catch (NullPointerException noAppInfo) {
+      return false;
+    }
+  }
 }

@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -32,11 +31,9 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -51,7 +48,6 @@ import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
 
 public class LocalFileExclusions {
   private final SonarLintAppUtils appUtils;
-  private final ApplicationInfo applicationInfo;
   private final ProjectRootManager projectRootManager;
   private final BooleanSupplier powerSaveModeCheck;
 
@@ -62,14 +58,13 @@ public class LocalFileExclusions {
    * Used by pico container
    */
   public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    ApplicationInfo applicationInfo, ProjectRootManager projectRootManager) {
-    this(project, settings, projectSettings, appUtils, applicationInfo, projectRootManager, PowerSaveMode::isEnabled);
+    ProjectRootManager projectRootManager) {
+    this(project, settings, projectSettings, appUtils, projectRootManager, PowerSaveMode::isEnabled);
   }
 
   LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    ApplicationInfo applicationInfo, ProjectRootManager projectRootManager, BooleanSupplier powerSaveModeCheck) {
+    ProjectRootManager projectRootManager, BooleanSupplier powerSaveModeCheck) {
     this.appUtils = appUtils;
-    this.applicationInfo = applicationInfo;
     this.projectRootManager = projectRootManager;
     this.powerSaveModeCheck = powerSaveModeCheck;
 
@@ -180,12 +175,6 @@ public class LocalFileExclusions {
     if (!file.isInLocalFileSystem() || fileType.isBinary() || !file.isValid()
       || ".idea".equals(file.getParent().getName())) {
       return Result.excluded("file's type or location are not supported");
-    }
-
-    // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-    String ijFlavor = applicationInfo.getVersionName().toLowerCase(Locale.US);
-    if (ijFlavor.contains("phpstorm") && "html".equalsIgnoreCase(fileType.getName())) {
-      return Result.excluded(null);
     }
 
     return Result.notExcluded();

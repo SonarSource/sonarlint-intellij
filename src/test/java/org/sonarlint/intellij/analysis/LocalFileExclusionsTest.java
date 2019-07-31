@@ -19,20 +19,19 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.function.BooleanSupplier;
-import java.util.function.Supplier;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+
+import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -46,9 +45,8 @@ public class LocalFileExclusionsTest extends SonarTest {
   private VirtualFile testFile = mock(VirtualFile.class);
   private BooleanSupplier powerModeCheck = mock(BooleanSupplier.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
-  private ApplicationInfo info = mock(ApplicationInfo.class);
   private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
-  private LocalFileExclusions exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, info, projectRootManager, powerModeCheck);
+  private LocalFileExclusions exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, projectRootManager, powerModeCheck);
 
   @Before
   public void prepare() {
@@ -58,7 +56,6 @@ public class LocalFileExclusionsTest extends SonarTest {
     when(testFile.getFileType()).thenReturn(type);
     when(testFile.isInLocalFileSystem()).thenReturn(true);
     when(testFile.isValid()).thenReturn(true);
-    when(info.getVersionName()).thenReturn("Intellij IDEA");
     super.register(module, ModuleRootManager.class, moduleRootManager);
   }
 
