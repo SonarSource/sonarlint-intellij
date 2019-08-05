@@ -43,7 +43,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>4.1 - Enable analysis of HTML. Add support of XML in connected mode.</li>
+        <li>4.1 - Enable analysis of HTML. Add support of XML in connected mode. 10 new Java rules.</li>
         <li>4.0.2 - Fix error on startup registering actions affecting all IDEs other than IntelliJ</li>
         <li>4.0.1 - Fix duplicated highlighting in WebStorm and connection to a server with more than 10k rules</li>
         <li>4.0 - Improved matching of issues with SonarQube</li>
