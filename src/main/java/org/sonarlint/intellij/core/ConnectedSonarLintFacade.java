@@ -66,6 +66,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     ConnectedAnalysisConfiguration config = ConnectedAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
+      .setProjectKey(projectSettings.getProjectKey())
       .putAllExtraProperties(props)
       .build();
     console.debug("Starting analysis with configuration:\n" + config.toString());

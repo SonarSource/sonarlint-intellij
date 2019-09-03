@@ -23,6 +23,7 @@ import com.intellij.openapi.project.Project;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -34,6 +35,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -46,12 +48,13 @@ public class ConnectedSonarLintFacadeTest {
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private SonarLintProjectSettings settings;
   private ConnectedSonarLintFacade facade;
 
   @Before
   public void setUp() {
     when(project.getBasePath()).thenReturn("");
+    settings = new SonarLintProjectSettings();
     facade = new ConnectedSonarLintFacade(appUtils, engine, settings, console, project);
   }
 
@@ -83,8 +86,13 @@ public class ConnectedSonarLintFacadeTest {
 
   @Test
   public void should_start_analysis() {
+    String projectKey = "project-key";
+    settings.setProjectKey(projectKey);
     AnalysisResults results = mock(AnalysisResults.class);
-    when(engine.analyze(any(ConnectedAnalysisConfiguration.class), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
+    ArgumentCaptor<ConnectedAnalysisConfiguration> configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
+    when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
     assertThat(facade.startAnalysis(Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
+    ConnectedAnalysisConfiguration config = configCaptor.getValue();
+    assertThat(config.projectKey()).isEqualTo(projectKey);
   }
 }
