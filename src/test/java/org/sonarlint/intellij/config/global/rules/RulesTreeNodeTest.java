@@ -47,7 +47,7 @@ public class RulesTreeNodeTest {
     assertThat(node.isChanged()).isTrue();
     assertThat(node.severity()).isEqualTo("severity");
     assertThat(node.type()).isEqualTo("type");
-    assertThat(node.language()).isEqualTo("lang");
+    assertThat(node.languageKey()).isEqualTo("lang");
   }
 
   @Test

@@ -132,16 +132,17 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private void updateModel() {
     saveCurrentActivation();
     Collection<RuleDetails> ruleDetails = engine.getAllRuleDetails();
+    Map<String, String> languagesNameByKey = engine.getAllLanguagesNameByKey();
     Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = ruleDetails.stream()
       .map(r -> new RulesTreeNode.Rule(r, currentActivationByRuleKey.get(r.getKey())))
       .filter(filterModel::filter)
-      .collect(Collectors.groupingBy(RulesTreeNode.Rule::language));
+      .collect(Collectors.groupingBy(RulesTreeNode.Rule::languageKey));
 
     RulesTreeNode rootNode = (RulesTreeNode) model.getRoot();
     rootNode.removeAllChildren();
 
     for (Map.Entry<String, List<RulesTreeNode.Rule>> e : rulesByLanguage.entrySet()) {
-      RulesTreeNode.Language languageNode = new RulesTreeNode.Language(e.getKey());
+      RulesTreeNode.Language languageNode = new RulesTreeNode.Language(languagesNameByKey.get(e.getKey()));
       for (RulesTreeNode.Rule r : e.getValue()) {
         languageNode.add(r);
       }
