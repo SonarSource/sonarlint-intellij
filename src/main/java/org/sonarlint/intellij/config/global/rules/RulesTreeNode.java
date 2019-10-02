@@ -118,7 +118,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public String language() {
-      return details.getLanguage();
+      return details.getLanguageKey();
     }
 
     @Override

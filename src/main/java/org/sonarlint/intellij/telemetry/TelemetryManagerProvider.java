@@ -53,7 +53,7 @@ public class TelemetryManagerProvider {
 
   public TelemetryManager get() {
     TelemetryClientConfig clientConfig = getTelemetryClientConfig();
-    TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, application.getVersion());
+    TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, application.getVersion(), SonarLintUtils.getIdeVersionForTelemetry());
     return new TelemetryManager(getStorageFilePath(), client, this::isAnyProjectConnected, this::isAnyProjectConnectedToSonarCloud);
   }
 

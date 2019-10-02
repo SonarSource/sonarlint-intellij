@@ -36,7 +36,7 @@ public class RulesTreeNodeTest {
     when(details.isActiveByDefault()).thenReturn(true);
     when(details.getSeverity()).thenReturn("severity");
     when(details.getType()).thenReturn("type");
-    when(details.getLanguage()).thenReturn("lang");
+    when(details.getLanguageKey()).thenReturn("lang");
 
     RulesTreeNode.Rule node = new RulesTreeNode.Rule(details, false);
     assertThat(node.getKey()).isEqualTo("key");

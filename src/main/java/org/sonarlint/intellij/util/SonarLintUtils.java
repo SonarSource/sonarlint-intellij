@@ -279,12 +279,31 @@ public class SonarLintUtils {
   }
 
   public static boolean isPhpFileInPhpStorm(FileType fileType) {
+    return isPhpStorm() && "php".equalsIgnoreCase(fileType.getName());
+  }
+
+  private static boolean isPhpStorm() {
+    return getApplicationVersionName().toLowerCase(Locale.US).contains("phpstorm");
+  }
+
+  private static String getApplicationVersionName() {
     try {
-      ApplicationInfo applicationInfo = ApplicationInfo.getInstance();
-      String ijFlavor = applicationInfo.getVersionName().toLowerCase(Locale.US);
-      return ijFlavor.contains("phpstorm") && "php".equalsIgnoreCase(fileType.getName());
+      return getAppInfo().getVersionName();
     } catch (NullPointerException noAppInfo) {
-      return false;
+      return "<!unknown!>";
     }
+  }
+
+  @CheckForNull
+  public static String getIdeVersionForTelemetry() {
+    try {
+      return getAppInfo().getFullApplicationName();
+    } catch (NullPointerException noAppInfo) {
+      return null;
+    }
+  }
+
+  private static ApplicationInfo getAppInfo() {
+    return ApplicationInfo.getInstance();
   }
 }
