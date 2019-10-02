@@ -297,7 +297,8 @@ public class SonarLintUtils {
   @CheckForNull
   public static String getIdeVersionForTelemetry() {
     try {
-      return getAppInfo().getFullApplicationName();
+      ApplicationInfo appInfo = getAppInfo();
+      return appInfo.getVersionName() + " " + appInfo.getFullVersion();
     } catch (NullPointerException noAppInfo) {
       return null;
     }
