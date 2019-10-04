@@ -56,6 +56,8 @@ public class CurrentFileController {
   private String getEmptyText(@Nullable VirtualFile selectedFile) {
     if (selectedFile == null) {
       return "No file opened in the editor";
+    } else if (store.hasAnalysisErrors(selectedFile)) {
+      return "File not refreshed due to analysis errors";
     } else if (store.getForFileOrNull(selectedFile) == null) {
       return "No analysis done on the current opened file";
     } else {

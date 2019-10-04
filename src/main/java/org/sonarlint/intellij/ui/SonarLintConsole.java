@@ -71,6 +71,10 @@ public class SonarLintConsole extends AbstractProjectComponent {
     getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
   }
 
+  public void warn(String msg) {
+    getConsoleView().print(msg + "\n", ConsoleViewContentType.LOG_WARNING_OUTPUT);
+  }
+
   public void error(String msg) {
     getConsoleView().print(msg + "\n", ConsoleViewContentType.ERROR_OUTPUT);
   }

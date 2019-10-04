@@ -75,8 +75,8 @@ public class IssueProcessor extends AbstractProjectComponent {
     String issueStr = SonarLintUtils.pluralize("issue", rawIssues.size());
     console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
 
-    long issuesToShow = transformedIssues.entrySet().stream()
-      .mapToLong(e -> e.getValue().size())
+    long issuesToShow = transformedIssues.values().stream()
+      .mapToLong(Collection::size)
       .sum();
 
     String end = SonarLintUtils.pluralize("issue", issuesToShow);
@@ -121,17 +121,19 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
   }
 
-  private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
+  private Map<VirtualFile, Collection<LiveIssue>> flagFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
     Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
 
     for (VirtualFile f : analyzed) {
       if (failedVirtualFiles.contains(f)) {
-        console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
+        console.warn("File won't be refreshed because there were errors during analysis: " + f.getPath());
+        manager.addFileWithErrors(f);
       } else {
-        // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
-        map.put(f, new ArrayList<>());
+        manager.removeFileWithErrors(f);
       }
+      // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
+      map.put(f, new ArrayList<>());
     }
     return map;
   }
@@ -142,7 +144,7 @@ public class IssueProcessor extends AbstractProjectComponent {
   private Map<VirtualFile, Collection<LiveIssue>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analyzed,
     Collection<ClientInputFile> failedAnalysisFiles) {
 
-    Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
+    Map<VirtualFile, Collection<LiveIssue>> map = flagFailedFiles(analyzed, failedAnalysisFiles);
 
     for (Issue issue : issues) {
       ClientInputFile inputFile = issue.getInputFile();
