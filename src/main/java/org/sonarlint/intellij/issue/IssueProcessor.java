@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.components.ProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.module.Module;
@@ -48,7 +48,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
-public class IssueProcessor extends AbstractProjectComponent {
+public class IssueProcessor implements ProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
   private final IssueManager manager;
@@ -56,7 +56,6 @@ public class IssueProcessor extends AbstractProjectComponent {
   private final ServerIssueUpdater serverIssueUpdater;
 
   public IssueProcessor(Project project, IssueMatcher matcher, IssueManager manager, ServerIssueUpdater serverIssueUpdater) {
-    super(project);
     this.matcher = matcher;
     this.manager = manager;
     this.console = SonarLintConsole.get(project);
@@ -72,15 +71,10 @@ public class IssueProcessor extends AbstractProjectComponent {
       return issues;
     });
 
-    String issueStr = SonarLintUtils.pluralize("issue", rawIssues.size());
-    console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
-
-    long issuesToShow = transformedIssues.values().stream()
-      .mapToLong(Collection::size)
-      .sum();
-
-    String end = SonarLintUtils.pluralize("issue", issuesToShow);
-    console.info("Found " + issuesToShow + " " + end);
+    Set<VirtualFile> failedVirtualFiles = asVirtualFiles(failedAnalysisFiles);
+    if (! failedVirtualFiles.containsAll(job.allFiles())) {
+      logFoundIssuesIfAny(rawIssues, start, transformedIssues);
+    }
 
     if (shouldUpdateServerIssues(job.trigger())) {
       Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
@@ -101,11 +95,24 @@ public class IssueProcessor extends AbstractProjectComponent {
 
     AnalysisCallback callback = job.callback();
     if (callback != null) {
-      Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream()
-        .map(f -> (VirtualFile) f.getClientObject())
-        .collect(Collectors.toSet());
       callback.onSuccess(failedVirtualFiles);
     }
+  }
+
+  private static Set<VirtualFile> asVirtualFiles(Collection<ClientInputFile> failedAnalysisFiles) {
+    return failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
+  }
+
+  private void logFoundIssuesIfAny(Collection<Issue> rawIssues, long start, Map<VirtualFile, Collection<LiveIssue>> transformedIssues) {
+    String issueStr = SonarLintUtils.pluralize("issue", rawIssues.size());
+    console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
+
+    long issuesToShow = transformedIssues.values().stream()
+      .mapToLong(Collection::size)
+      .sum();
+
+    String end = SonarLintUtils.pluralize("issue", issuesToShow);
+    console.info("Found " + issuesToShow + " " + end);
   }
 
   private static boolean shouldUpdateServerIssues(TriggerType trigger) {
@@ -123,7 +130,7 @@ public class IssueProcessor extends AbstractProjectComponent {
 
   private Map<VirtualFile, Collection<LiveIssue>> flagFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
-    Set<VirtualFile> failedVirtualFiles = failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
+    Set<VirtualFile> failedVirtualFiles = asVirtualFiles(failedAnalysisFiles);
 
     for (VirtualFile f : analyzed) {
       if (failedVirtualFiles.contains(f)) {
