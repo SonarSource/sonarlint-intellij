@@ -134,7 +134,6 @@ public class IssueProcessor implements ProjectComponent {
 
     for (VirtualFile f : analyzed) {
       if (failedVirtualFiles.contains(f)) {
-        console.error("File won't be refreshed because there were errors during analysis: " + f.getPath());
         manager.addFileWithErrors(f);
       } else {
         manager.removeFileWithErrors(f);
