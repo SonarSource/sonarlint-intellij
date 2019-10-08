@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.components.ProjectComponent;
+import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.module.Module;
@@ -48,7 +48,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
-public class IssueProcessor implements ProjectComponent {
+public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
   private final IssueManager manager;
@@ -56,6 +56,7 @@ public class IssueProcessor implements ProjectComponent {
   private final ServerIssueUpdater serverIssueUpdater;
 
   public IssueProcessor(Project project, IssueMatcher matcher, IssueManager manager, ServerIssueUpdater serverIssueUpdater) {
+    super(project);
     this.matcher = matcher;
     this.manager = manager;
     this.console = SonarLintConsole.get(project);
