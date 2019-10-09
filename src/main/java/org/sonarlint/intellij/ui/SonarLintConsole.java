@@ -41,6 +41,11 @@ public class SonarLintConsole extends AbstractProjectComponent {
     settings = myProject.getComponent(SonarLintProjectSettings.class);
   }
 
+  /**
+   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
+   * @deprecated in 4.2 to silence a check in 2019.3
+   */
+  @Deprecated
   SonarLintConsole(Project project, ConsoleView consoleView, SonarLintProjectSettings settings) {
     super(project);
     this.consoleView = consoleView;

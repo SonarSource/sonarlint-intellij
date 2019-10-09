@@ -35,7 +35,7 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -50,11 +50,11 @@ public class SonarLintAnalyzer {
   private final EncodingProjectManager encodingProjectManager;
   private final SonarLintConsole console;
   private final FileDocumentManager fileDocumentManager;
-  private final SonarLintTelemetryImpl telemetry;
+  private final SonarLintTelemetry telemetry;
   private final SonarLintAppUtils appUtils;
 
   public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
-    SonarLintConsole console, FileDocumentManager fileDocumentManager, SonarLintTelemetryImpl telemetry, SonarLintAppUtils appUtils) {
+                           SonarLintConsole console, FileDocumentManager fileDocumentManager, SonarLintTelemetry telemetry, SonarLintAppUtils appUtils) {
     this.projectBindingManager = projectBindingManager;
     this.encodingProjectManager = encodingProjectManager;
     this.console = console;

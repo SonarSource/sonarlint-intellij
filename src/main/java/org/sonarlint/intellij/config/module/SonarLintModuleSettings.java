@@ -36,6 +36,11 @@ public final class SonarLintModuleSettings extends AbstractModuleComponent imple
   public SonarLintModuleSettings() {
   }
 
+  /**
+   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
+   * @deprecated in 4.2 to silence a check in 2019.3
+   */
+  @Deprecated
   public SonarLintModuleSettings(SonarLintModuleSettings toCopy) {
     XmlSerializerUtil.copyBean(toCopy, this);
   }

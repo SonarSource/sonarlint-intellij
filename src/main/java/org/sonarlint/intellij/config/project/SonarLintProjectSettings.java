@@ -51,6 +51,11 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
     super(null);
   }
 
+  /**
+   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
+   * @deprecated in 4.2 to silence a check in 2019.3
+   */
+  @Deprecated
   public SonarLintProjectSettings(SonarLintProjectSettings toCopy) {
     super(null);
     XmlSerializerUtil.copyBean(toCopy, this);

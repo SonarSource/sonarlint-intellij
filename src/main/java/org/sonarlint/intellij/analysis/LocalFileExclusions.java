@@ -62,6 +62,11 @@ public class LocalFileExclusions {
     this(project, settings, projectSettings, appUtils, projectRootManager, PowerSaveMode::isEnabled);
   }
 
+  /**
+   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
+   * @deprecated in 4.2 to silence a check in 2019.3
+   */
+  @Deprecated
   LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
     ProjectRootManager projectRootManager, BooleanSupplier powerSaveModeCheck) {
     this.appUtils = appUtils;
