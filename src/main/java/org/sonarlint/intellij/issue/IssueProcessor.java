@@ -129,18 +129,17 @@ public class IssueProcessor extends AbstractProjectComponent {
     }
   }
 
-  private Map<VirtualFile, Collection<LiveIssue>> flagFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
+  private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
     Set<VirtualFile> failedVirtualFiles = asVirtualFiles(failedAnalysisFiles);
 
     for (VirtualFile f : analyzed) {
       if (failedVirtualFiles.contains(f)) {
-        manager.addFileWithErrors(f);
+        console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
-        manager.removeFileWithErrors(f);
+        // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
+        map.put(f, new ArrayList<>());
       }
-      // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
-      map.put(f, new ArrayList<>());
     }
     return map;
   }
@@ -151,7 +150,7 @@ public class IssueProcessor extends AbstractProjectComponent {
   private Map<VirtualFile, Collection<LiveIssue>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analyzed,
     Collection<ClientInputFile> failedAnalysisFiles) {
 
-    Map<VirtualFile, Collection<LiveIssue>> map = flagFailedFiles(analyzed, failedAnalysisFiles);
+    Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
 
     for (Issue issue : issues) {
       ClientInputFile inputFile = issue.getInputFile();
