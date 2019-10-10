@@ -31,9 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -59,7 +57,6 @@ public class IssueManager extends AbstractProjectComponent {
   private final IssuePersistence store;
   private final SonarLintAppUtils appUtils;
   private final LiveIssueCache cache;
-  private final Set<VirtualFile> filesWithErrors;
 
   private final Lock matchingInProgress = new ReentrantLock();
 
@@ -69,12 +66,10 @@ public class IssueManager extends AbstractProjectComponent {
     this.cache = cache;
     this.messageBus = project.getMessageBus();
     this.store = store;
-    this.filesWithErrors = new HashSet<>();
   }
 
   public void clear() {
     cache.clear();
-    filesWithErrors.clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
   }
 
@@ -139,18 +134,6 @@ public class IssueManager extends AbstractProjectComponent {
     } else {
       matchWithPreviousIssues(file, rawIssues);
     }
-  }
-
-  void addFileWithErrors(VirtualFile file) {
-    filesWithErrors.add(file);
-  }
-
-  void removeFileWithErrors(VirtualFile file) {
-    filesWithErrors.remove(file);
-  }
-
-  public boolean hasAnalysisErrors(VirtualFile file) {
-    return filesWithErrors.contains(file);
   }
 
   private void matchWithPreviousIssues(VirtualFile file, Collection<LiveIssue> rawIssues) {
