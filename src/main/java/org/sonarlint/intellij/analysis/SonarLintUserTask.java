@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.issue.IssueProcessor;
 
 /**
@@ -29,8 +30,8 @@ import org.sonarlint.intellij.issue.IssueProcessor;
 class SonarLintUserTask extends SonarLintTask {
   private final SonarLintStatus status;
 
-  SonarLintUserTask(IssueProcessor processor, SonarLintJob job, SonarLintStatus status, boolean modal) {
-    super(processor, job, modal, false);
+  SonarLintUserTask(IssueProcessor processor, SonarLintJob job, SonarLintStatus status, boolean modal, SonarApplication sonarApplication) {
+    super(processor, job, modal, false, sonarApplication);
     this.status = status;
   }
 

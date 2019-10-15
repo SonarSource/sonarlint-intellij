@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -61,6 +62,8 @@ public class SonarLintTaskTest extends SonarTest {
   private SonarLintAnalyzer sonarLintAnalyzer;
   @Mock
   private AnalysisResults analysisResults;
+  @Mock
+  private SonarApplication sonarApplication;
 
   @Before
   public void prepare() {
@@ -79,7 +82,7 @@ public class SonarLintTaskTest extends SonarTest {
     super.register(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     super.register(IssueManager.class, mock(IssueManager.class));
 
-    task = new SonarLintTask(processor, job, false, true);
+    task = new SonarLintTask(processor, job, false, true, sonarApplication);
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();
@@ -95,10 +98,12 @@ public class SonarLintTaskTest extends SonarTest {
     assertThat(task.getJob()).isEqualTo(job);
     task.run(progress);
 
+    verify(sonarApplication).registerExternalAnnotator();
     verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
     verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
+    verifyNoMoreInteractions(sonarApplication);
     verifyNoMoreInteractions(sonarLintAnalyzer);
     verifyNoMoreInteractions(processor);
   }
@@ -115,6 +120,7 @@ public class SonarLintTaskTest extends SonarTest {
     verifyZeroInteractions(processor);
 
     // still called
+    verify(sonarApplication).registerExternalAnnotator();
     verify(listener).ended(job);
     verifyNoMoreInteractions(listener);
   }
