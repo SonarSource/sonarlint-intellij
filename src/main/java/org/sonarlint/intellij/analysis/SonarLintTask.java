@@ -33,6 +33,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -52,9 +54,10 @@ public class SonarLintTask extends Task.Backgroundable {
   protected final boolean modal;
   private final boolean startInBackground;
   private final SonarLintConsole console;
+  private final SonarApplication sonarApplication;
 
-  public SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background) {
-    this(processor, job, false, background);
+  public SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background, SonarApplication sonarApplication) {
+    this(processor, job, false, background, sonarApplication);
   }
 
   /**
@@ -63,13 +66,14 @@ public class SonarLintTask extends Task.Backgroundable {
    * @param modal      If true and background is false, it will be a blocking task, without the possibility to send it to background.
    * @param background Whether it should start in the foreground or background.
    */
-  protected SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean modal, boolean background) {
+  protected SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean modal, boolean background, SonarApplication sonarApplication) {
     super(job.project(), "SonarLint Analysis", true);
     this.processor = processor;
     this.job = job;
     this.modal = modal;
     this.startInBackground = background;
     this.console = SonarLintConsole.get(job.project());
+    this.sonarApplication = sonarApplication;
   }
 
   @Override
@@ -93,6 +97,7 @@ public class SonarLintTask extends Task.Backgroundable {
   @Override
   public void run(ProgressIndicator indicator) {
     AccumulatorIssueListener listener = new AccumulatorIssueListener();
+    sonarApplication.registerExternalAnnotator();
 
     try {
       checkCanceled(indicator, myProject);

@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.project.Project;
 import org.junit.Test;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.issue.IssueProcessor;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -29,7 +30,7 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintTaskFactoryTest {
   private SonarLintTaskFactory sonarLintTaskFactory = new SonarLintTaskFactory(mock(Project.class),
-    mock(SonarLintStatus.class), mock(IssueProcessor.class));
+    mock(SonarLintStatus.class), mock(IssueProcessor.class), mock(SonarApplication.class));
 
   @Test
   public void should_create_tasks() {

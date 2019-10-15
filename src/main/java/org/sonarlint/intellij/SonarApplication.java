@@ -26,12 +26,17 @@ import com.intellij.lang.LanguageExtensionPoint;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
@@ -41,16 +46,25 @@ import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
 public class SonarApplication extends ApplicationComponent.Adapter {
   private IdeaPluginDescriptor plugin;
+  private ConcurrentMap<String, LanguageExtensionPoint> annotatorsByLanguage;
 
   @Override
   public void initComponent() {
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
+    annotatorsByLanguage = new ConcurrentHashMap<>();
+    registerExternalAnnotator();
+    registerNotifications();
+    cleanOldWorkDir();
+  }
+
+  public void registerExternalAnnotator() {
     Language.getRegisteredLanguages().stream()
       .filter(SonarApplication::doesNotImplementMetaLanguage)
       .filter(SonarApplication::doesNotHaveBaseLanguage)
+      .filter(language -> !(annotatorsByLanguage.containsKey(language.getID())))
       .forEach(this::registerExternalAnnotatorFor);
-    registerNotifications();
-    cleanOldWorkDir();
+
+    deregisterRemovedLanguages();
   }
 
   private static boolean doesNotImplementMetaLanguage(Language lang) {
@@ -68,6 +82,23 @@ public class SonarApplication extends ApplicationComponent.Adapter {
     return lang.getBaseLanguage() == null;
   }
 
+  private void deregisterRemovedLanguages() {
+    Set<String> toRemove = annotatorsByLanguage.keySet()
+      .stream()
+      .filter(id -> Language.findLanguageByID(id) == null)
+      .collect(Collectors.toSet());
+
+    toRemove.forEach(l -> {
+      getExternalAnnotatorExtensionPoint().unregisterExtension(annotatorsByLanguage.get(l));
+      annotatorsByLanguage.remove(l);
+    });
+  }
+
+  @NotNull
+  private static ExtensionPoint<Object> getExternalAnnotatorExtensionPoint() {
+    return Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
+  }
+
   public String getVersion() {
     return plugin.getVersion();
   }
@@ -77,10 +108,11 @@ public class SonarApplication extends ApplicationComponent.Adapter {
     ep.language = language.getID();
     ep.implementationClass = SonarExternalAnnotator.class.getName();
     ep.setPluginDescriptor(plugin);
-    Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator").registerExtension(ep);
+    getExternalAnnotatorExtensionPoint().registerExtension(ep);
+    annotatorsByLanguage.put(language.getID(), ep);
   }
 
-  public void registerNotifications() {
+  private static void registerNotifications() {
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_BINDING_PROBLEM);
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_UPDATE_NOTIFICATION);
     NotificationGroup.balloonGroup(SonarQubeEventNotifications.GROUP_SONARQUBE_EVENT);
