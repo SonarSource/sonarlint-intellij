@@ -125,7 +125,7 @@ public class SonarLintProjectNotifications extends AbstractProjectComponent {
       NotificationType.INFORMATION, new NotificationListener.Adapter() {
       @Override
       public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-        notification.hideBalloon();
+        notification.expire();
         SonarQubeServerMgmtPanel.updateServerBinding(server, engine, onlyProjects);
       }
     });
