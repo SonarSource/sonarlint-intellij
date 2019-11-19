@@ -1,0 +1,7 @@
+To produce SVG images:
+* download from marketing design system
+* remove borders
+* change color to 128,128,128
+
+To produce PNG:
+* export to PNG with the correct size (12x12 16x16 24x24 32x32)
