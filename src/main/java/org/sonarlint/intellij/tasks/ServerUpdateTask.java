@@ -154,7 +154,7 @@ public class ServerUpdateTask {
     for (Map.Entry<String, List<Project>> entry : projectsPerProjectKey.entrySet()) {
       try {
         updateProject(serverConfiguration, entry.getKey(), entry.getValue(), monitor);
-      } catch (Exception e) {
+      } catch (Throwable e) {
         // in case of error, save project key and keep updating other projects
         LOGGER.info(e.getMessage(), e);
         failedProjects.add(entry.getKey());
@@ -183,10 +183,12 @@ public class ServerUpdateTask {
   }
 
   private void updateModules(Project project) {
-    Module[] modules = ModuleManager.getInstance(project).getModules();
+    if (!project.isDisposed()) {
+      Module[] modules = ModuleManager.getInstance(project).getModules();
 
-    for (Module m : modules) {
-      SonarLintUtils.get(m, ModuleBindingManager.class).updateBinding(engine);
+      for (Module m : modules) {
+        SonarLintUtils.get(m, ModuleBindingManager.class).updateBinding(engine);
+      }
     }
   }
 
