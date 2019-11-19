@@ -43,6 +43,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.3 - Supports SonarJS 6.x in connected mode. Updated issue type icons.</li>
         <li>4.2 - Analyze HTML in Vue.js single file components. 8 new HTML rules. Support 'Ignore Issues on Files' and 'Ignore Issues in Blocks' in connected mode.</li>
         <li>4.1.1 - Fix regression on quality profile in connected mode</li>
         <li>4.1 - Enable analysis of HTML. Add support of XML in connected mode. 10 new Java rules.</li>
