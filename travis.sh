@@ -48,7 +48,7 @@ CI)
     strongEcho 'Build and analyze commit in master and publish in artifactory'
     # this commit is master must be built and analyzed (with upload of report)
     prepareBuildVersion
-    ./gradlew buildPlugin check sonarqube artifactory \
+    ./gradlew buildPlugin check jacocoTestReport sonarqube artifactory \
         -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace -i \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.projectVersion=$CURRENT_VERSION \
@@ -62,7 +62,7 @@ CI)
     strongEcho 'Build and analyze pull request'                                                                                                                              
     prepareBuildVersion
     # this pull request must be built and analyzed
-    ./gradlew buildPlugin check sonarqube artifactory \
+    ./gradlew buildPlugin check jacocoTestReport sonarqube artifactory \
         -Djava.awt.headless=true -Dawt.toolkit=sun.awt.HeadlessToolkit --stacktrace -i \
         -Dsonar.host.url=$SONAR_HOST_URL \
         -Dsonar.login=$SONAR_TOKEN \
@@ -72,9 +72,9 @@ CI)
         -Dsonar.analysis.repository=$TRAVIS_REPO_SLUG \
         -Dsonar.analysis.prNumber=$TRAVIS_PULL_REQUEST \
         -Dsonar.pullrequest.branch=$TRAVIS_PULL_REQUEST_BRANCH \
-	-Dsonar.pullrequest.key=$TRAVIS_PULL_REQUEST \
+	    -Dsonar.pullrequest.key=$TRAVIS_PULL_REQUEST \
         -Dsonar.pullrequest.base=$TRAVIS_BRANCH \
-	-Dsonar.pullrequest.github.repository=$TRAVIS_REPO_SLUG
+	    -Dsonar.pullrequest.github.repository=$TRAVIS_REPO_SLUG
 
   else
     strongEcho 'Build, no analysis'

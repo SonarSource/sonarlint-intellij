@@ -47,13 +47,6 @@ protobuf {
   }
 }
 
-idea {
-  module {
-    sourceDirs += file('build/generated/source/proto/main/java')
-    generatedSourceDirs += file('build/generated/source/proto/main/java')
-  }
-}
-
 runIde {
   systemProperty 'sonarlint.telemetry.disabled', 'true'
 }
@@ -125,12 +118,13 @@ license {
   strictCheck true
 }
 
-// Avoids IllegalStateException "Can't add different class with same name":
-jacocoTestReport.doFirst {
-  sourceDirectories = files('src/main/java')
-  classDirectories = files('build/classes/main')
-  additionalClassDirs = files()
-  additionalSourceDirs = files()
+jacocoTestReport {
+  afterEvaluate {
+    classDirectories.setFrom(files('build/classes/java/main-instrumented'))
+  }
+  reports {
+    xml.enabled true
+  }
 }
 
 artifactory {
