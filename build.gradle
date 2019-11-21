@@ -8,7 +8,7 @@ plugins {
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
   id "com.jfrog.artifactory" version "4.5.4"
-  id 'com.google.protobuf' version "0.8.5"
+  id 'com.google.protobuf' version "0.8.10"
 }
 
 apply plugin: 'org.jetbrains.intellij'
@@ -43,7 +43,7 @@ protobuf {
   // Configure the protoc executable
   protoc {
     // Download from repositories. Must be the same as the one used in sonarlint-core
-    artifact = 'com.google.protobuf:protoc:3.1.0'
+    artifact = 'com.google.protobuf:protoc:3.9.1'
   }
 }
 
