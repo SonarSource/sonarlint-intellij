@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015 SonarSource
+ * Copyright (C) 2019 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -17,7 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.codeInsight.hint.HintManager;
