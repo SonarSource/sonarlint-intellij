@@ -1,8 +1,0 @@
-# Definition of QA pipeline at SonarSource
-
-IDEA_VERSION:
-  - 2016.3.8
-  - 2018.2
-  - 2019.2
-
-exclude:
