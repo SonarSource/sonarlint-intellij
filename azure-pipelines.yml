@@ -37,7 +37,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: buildPlugin artifactory
+          tasks: buildPlugin artifactoryDeploy
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         env:
