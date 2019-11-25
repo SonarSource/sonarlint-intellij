@@ -140,10 +140,10 @@ artifactory {
     }
     defaults {
       properties = [
-        'vcs.revision': (System.getenv('GIT_COMMIT') ?: System.getenv('TRAVIS_COMMIT')),
-        'vcs.branch': (System.getenv('GIT_BRANCH') ?: System.getenv('TRAVIS_BRANCH')),
+        'vcs.revision': System.getenv('BUILD_SOURCEVERSION'),
+        'vcs.branch': (System.getenv('SYSTEM_PULLREQUEST_TARGETBRANCH') ?: System.getenv('BUILD_SOURCEBRANCHNAME')),
         'build.name': 'sonarlint-intellij',
-        'build.number': (System.getenv('BUILD_ID') ?: System.getenv('TRAVIS_BUILD_NUMBER'))
+        'build.number': System.getenv('BUILD_BUILDID')
       ]
       publishConfigs('archives')
       publishPom = true // Publish generated POM files to Artifactory (true by default)
