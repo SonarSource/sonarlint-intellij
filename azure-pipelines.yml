@@ -154,7 +154,7 @@ stages:
           publishJUnitResults: false
           javaHomeOption: 'JDKVersion'
           jdkVersionOption: $(JDKVersion)
-        displayName: Build and run UTs with a diffeernt version of IntelliJ
+        displayName: Build and run UTs with a different version of IntelliJ
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i -p its
