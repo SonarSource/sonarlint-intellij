@@ -9,7 +9,7 @@ resources:
     - repository: commonTemplates
       type: git
       name: pipelines-yaml-templates
-      ref:  refs/heads/gradle
+      ref:  refs/tags/v1.0.7
 
 
 stages:
