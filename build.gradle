@@ -7,7 +7,7 @@ plugins {
   id "java"
   id "com.github.hierynomus.license" version "0.14.0"
   id "net.researchgate.release" version "2.6.0"
-  id "com.jfrog.artifactory" version "4.5.4"
+  id "com.jfrog.artifactory" version "4.11.0"
   id 'com.google.protobuf' version "0.8.10"
 }
 
@@ -128,6 +128,8 @@ jacocoTestReport {
 }
 
 artifactory {
+  clientConfig.info.setBuildName('sonarlint-intellij')
+  clientConfig.info.setBuildNumber(System.getenv('BUILD_BUILDID'))
   clientConfig.setIncludeEnvVars(true)
   clientConfig.setEnvVarsExcludePatterns('*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*')
   clientConfig.info.addEnvironmentProperty('ARTIFACTS_TO_DOWNLOAD', 'org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip')
@@ -140,10 +142,10 @@ artifactory {
     }
     defaults {
       properties = [
-        'vcs.revision': (System.getenv('GIT_COMMIT') ?: System.getenv('TRAVIS_COMMIT')),
-        'vcs.branch': (System.getenv('GIT_BRANCH') ?: System.getenv('TRAVIS_BRANCH')),
+        'vcs.revision': System.getenv('BUILD_SOURCEVERSION'),
+        'vcs.branch': (System.getenv('SYSTEM_PULLREQUEST_TARGETBRANCH') ?: System.getenv('BUILD_SOURCEBRANCHNAME')),
         'build.name': 'sonarlint-intellij',
-        'build.number': (System.getenv('BUILD_ID') ?: System.getenv('TRAVIS_BUILD_NUMBER'))
+        'build.number': System.getenv('BUILD_BUILDID')
       ]
       publishConfigs('archives')
       publishPom = true // Publish generated POM files to Artifactory (true by default)

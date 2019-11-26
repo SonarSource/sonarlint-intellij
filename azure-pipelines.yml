@@ -1,0 +1,179 @@
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  - group: sonarsource-build-variables
+
+resources:
+  repositories:
+    - repository: commonTemplates
+      type: git
+      name: pipelines-yaml-templates
+      ref:  refs/heads/gradle
+
+
+stages:
+- template: stage-with-burgr-notifications.yml@commonTemplates
+  parameters:
+    burgrName: 'build'
+    burgrType: 'build'
+    stageName: 'build'
+    stageDisplayName: Build and stage to repox
+    jobs:
+    - job: build
+      displayName: Build and stage to repox
+      variables:
+        GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+      steps:
+      - checkout: self
+        fetchDepth: 1
+      - task: Cache@2
+        inputs:
+          key: 'gradle | "$(Agent.OS)"'
+          restoreKeys: gradle
+          path: $(GRADLE_USER_HOME)
+        displayName: Gradle build cache
+      - template: update-gradle-version-steps.yml
+      - task: Gradle@2
+        inputs:
+          options: --build-cache --stacktrace -i
+          tasks: buildPlugin artifactoryDeploy
+          publishJUnitResults: false
+          jdkVersionOption: '1.11'
+        env:
+          ARTIFACTORY_DEPLOY_USERNAME: $(ARTIFACTORY_DEPLOY_USERNAME)
+          ARTIFACTORY_DEPLOY_PASSWORD: $(ARTIFACTORY_DEPLOY_PASSWORD)
+        displayName: 'Run Gradle build and deploy'
+      - task: Gradle@2
+        inputs:
+          options: --stop
+          tasks: c
+          publishJUnitResults: false
+          jdkVersionOption: '1.11'
+        displayName: 'Stop Gradle daemon'
+- template: stage-with-burgr-notifications.yml@commonTemplates
+  parameters:
+    burgrName: 'validate'
+    burgrType: 'validate'
+    stageName: 'validate'
+    stageDisplayName: Run UTs and trigger SonarQube analysis
+    jobs:
+    - job: test_windows
+      displayName: Run unit tests on Windows
+      pool:
+        vmImage: 'windows-latest'
+      variables:
+        GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+      steps:
+      - checkout: self
+        fetchDepth: 1
+      - task: Cache@2
+        inputs:
+          key: 'gradle | "$(Agent.OS)"'
+          restoreKeys: gradle
+          path: $(GRADLE_USER_HOME)
+        displayName: Gradle build cache
+      - task: Gradle@2
+        inputs:
+          options: --build-cache --stacktrace -i
+          tasks: check
+          publishJUnitResults: true
+          testRunTitle: 'UTs on Windows'
+          jdkVersionOption: '1.11'
+        displayName: 'Run UTs'
+      - task: Gradle@2
+        inputs:
+          options: --stop
+          tasks: c
+          publishJUnitResults: false
+          jdkVersionOption: '1.11'
+        displayName: 'Stop Gradle daemon'
+    - job: sonarqube
+      displayName: SonarQube analysis on Next
+      variables:
+        GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+      steps:
+      - task: Cache@2
+        inputs:
+          key: 'gradle | "$(Agent.OS)"'
+          restoreKeys: gradle
+          path: $(GRADLE_USER_HOME)
+        displayName: Gradle build cache
+      - template: prepare-sq-analysis-steps.yml
+      - task: Gradle@2
+        inputs:
+          options: --build-cache --stacktrace -i
+          tasks: check jacocoTestReport
+          publishJUnitResults: false
+          jdkVersionOption: '1.11'
+          sonarQubeRunAnalysis: true
+          sqGradlePluginVersionChoice: 'build'
+      - task: Gradle@2
+        inputs:
+          options: --stop
+          tasks: c
+          publishJUnitResults: false
+          jdkVersionOption: '1.11'
+        displayName: 'Stop Gradle daemon'
+- template: stage-with-burgr-notifications.yml@commonTemplates
+  parameters:
+    burgrName: 'qa'
+    burgrType: 'qa'
+    stageName: 'qa'
+    stageDisplayName: Run ITs
+    stageDependencies: build
+    jobs:
+    - job: its
+      displayName: Run ITs
+      strategy:
+        matrix:
+          Idea2016:
+            IDEA_VERSION: '2016.3.8'
+            JDKVersion: '1.8'
+          Idea2018:
+            IDEA_VERSION: '2018.2'
+            JDKVersion: '1.11'
+          Idea2019:
+            IDEA_VERSION: '2019.2'
+            JDKVersion: '1.11'
+      variables:
+        GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+      steps:
+      - checkout: self
+        fetchDepth: 1
+      - task: Cache@2
+        inputs:
+          key: 'gradle | "$(Agent.OS)"'
+          restoreKeys: gradle
+          path: $(GRADLE_USER_HOME)
+        displayName: Gradle build cache
+      - task: Gradle@2
+        inputs:
+          options: --build-cache --stacktrace -i -PijVersion=$(IDEA_VERSION)
+          tasks: buildPlugin check
+          publishJUnitResults: false
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: $(JDKVersion)
+        displayName: Build and run UTs with a different version of IntelliJ
+      - task: Gradle@2
+        inputs:
+          options: --build-cache --stacktrace -i -p its
+          tasks: check
+          publishJUnitResults: true
+          testRunTitle: 'Sanity checks'
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: $(JDKVersion)
+        displayName: Run sanity checks
+      - task: Gradle@2
+        inputs:
+          options: --stop
+          tasks: c
+          publishJUnitResults: false
+          javaHomeOption: 'JDKVersion'
+          jdkVersionOption: $(JDKVersion)
+        displayName: 'Stop Gradle daemon'
+- template: promote-stage.yml@commonTemplates
+  parameters:
+    stageDependencies:
+    - validate
+    - qa
