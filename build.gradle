@@ -31,7 +31,7 @@ if (!project.hasProperty("ijVersion")) {
 
 intellij {
   version ijVersion
-  pluginName 'SonarLint'
+  pluginName 'sonarlint-intellij'
   updateSinceUntilBuild false
   type 'IC'
   if (!ijVersion.startsWith("2016") && !ijVersion.startsWith("2018")) {
