@@ -195,7 +195,7 @@ stages:
             versionSpec: '3.x'
         - bash: pip3 install requests
         - task: PythonScript@0
-          name: promoteRepox
+          name: updateInternalSiteOnRepox
           inputs:
             scriptSource: 'inline'
             script: |
