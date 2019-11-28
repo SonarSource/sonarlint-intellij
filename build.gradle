@@ -2,20 +2,18 @@
 // The above triggers groovy syntax highlighting in vim
 
 plugins {
-  id "org.jetbrains.intellij" version "0.4.11"
+  id "org.jetbrains.intellij" version "0.4.14"
   id "org.sonarqube" version "2.7.1"
   id "java"
   id "com.github.hierynomus.license" version "0.14.0"
-  id "net.researchgate.release" version "2.6.0"
   id "com.jfrog.artifactory" version "4.11.0"
   id 'com.google.protobuf' version "0.8.10"
 }
 
+apply plugin: 'java'
 apply plugin: 'org.jetbrains.intellij'
 apply plugin: 'jacoco'
 apply plugin: 'com.jfrog.artifactory'
-apply plugin: 'maven'
-apply plugin: 'java'
 apply plugin: 'com.google.protobuf'
 apply plugin: 'idea'
 
@@ -54,7 +52,6 @@ runIde {
 repositories {
   jcenter()
   mavenLocal()
-  mavenCentral()
   maven {
     url "https://repox.jfrog.io/repox/sonarsource"
   }
@@ -71,9 +68,9 @@ dependencies {
   compile 'com.google.code.findbugs:jsr305:2.0.2'
   // provided by the core:
   //compile 'com.google.protobuf:protobuf-java:3.1.0'
-  testCompile 'junit:junit:4.12'
-  testCompile 'org.assertj:assertj-core:3.6.2'
-  testCompile 'org.mockito:mockito-core:2.19.0'
+  testImplementation 'junit:junit:4.12'
+  testImplementation 'org.assertj:assertj-core:3.6.2'
+  testImplementation 'org.mockito:mockito-core:2.19.0'
   sqplugins (
     'org.sonarsource.java:sonar-java-plugin:5.14.0.18788@jar',
     'org.sonarsource.javascript:sonar-javascript-plugin:5.2.1.7778',
@@ -95,21 +92,13 @@ task downloadSQPlugins(type: Copy, dependsOn: cleanSQPlugins) {
   into 'src/main/resources/plugins'
 }
 
-
 classes.dependsOn downloadSQPlugins
-
-release {
-  failOnSnapshotDependencies = false
-  failOnCommitNeeded = false
-}
 
 sonarqube {
   properties {
     property 'sonar.projectName', 'SonarLint for IntelliJ IDEA'
   }
 }
-
-
 
 license {
   mapping {
