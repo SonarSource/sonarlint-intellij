@@ -177,3 +177,44 @@ stages:
     stageDependencies:
     - validate
     - qa
+- template: stage-with-burgr-notifications.yml@commonTemplates
+  parameters:
+    burgrName: 'internal-plugin-repo'
+    burgrType: 'promotion'
+    stageName: 'internal-plugin-repo'
+    stageDisplayName: Update internal plugin repo
+    stageDependencies: promote
+    jobs:
+    - job: updateInternalSite
+      displayName: Update internal plugin repo on repox
+      steps:
+        - checkout: none
+        - task: UsePythonVersion@0
+          inputs:
+            versionSpec: '3.x'
+        - bash: pip3 install requests
+        - task: PythonScript@0
+          name: promoteRepox
+          inputs:
+            scriptSource: 'inline'
+            script: |
+              import requests
+              import os
+              import sys
+              import json
+
+              githubSlug = '$(Build.Repository.ID)'
+              githubProject = githubSlug.split("/", 1)[1]
+              buildNumber = '$(Build.BuildId)'
+
+              buildInfoUrl = f'$(ARTIFACTORY_URL)/api/build/{githubProject}/{buildNumber}'
+              buildInfoResp = requests.get(url=buildInfoUrl, auth=('$(ARTIFACTORY_API_USER)', '$(ARTIFACTORY_API_KEY)'))
+              buildInfoJson = buildInfoResp.json()
+
+              buildInfo = buildInfoJson.get('buildInfo', {})
+              buildInfoProperties = buildInfo.get('properties', {})
+
+              # PROJECT_VERSION is set by the compute-build-version-step.yml
+              version = buildInfoProperties.get('buildInfo.env.PROJECT_VERSION', 'NOT_FOUND')
+
+              repoxUrl = f"$(ARTIFACTORY_URL)/webapp/builds/{githubProject}/{buildNumber}"
