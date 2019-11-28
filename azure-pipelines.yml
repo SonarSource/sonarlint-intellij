@@ -180,7 +180,7 @@ stages:
 - template: stage-with-burgr-notifications.yml@commonTemplates
   parameters:
     burgrName: 'dogfood'
-    burgrType: 'promotion'
+    burgrType: 'dogfood'
     stageName: 'update_dogfood_repo'
     stageDisplayName: Update internal dogfooding plugin repo
     stageDependencies: promote
@@ -222,4 +222,7 @@ stages:
               </plugins>"""
 
               updatePluginsXmlUrl = "$(ARTIFACTORY_URL)/sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/updatePlugins.xml"
-              requests.put(url=updatePluginsXmlUrl, data=xml, auth=('$(ARTIFACTORY_API_USER)', '$(ARTIFACTORY_API_KEY)'))
+              response = requests.put(url=updatePluginsXmlUrl, data=xml, auth=('$(ARTIFACTORY_API_USER)', '$(ARTIFACTORY_API_KEY)'))
+              if not response.status_code == 200:
+                sys.exit('[!] [{0}] Server Error'.format(response.status_code))
+
