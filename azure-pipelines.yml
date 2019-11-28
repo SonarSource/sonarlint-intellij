@@ -218,11 +218,11 @@ stages:
               version = buildInfoProperties.get('buildInfo.env.PROJECT_VERSION', 'NOT_FOUND')
 
               xml = f"""<plugins>
-                <plugin id="org.sonarlint.idea" url="$(ARTIFACTORY_URL)/sonarsource-public-releases/org/sonarsource/sonarlint/intellij/sonarlint-intellij/{version}/sonarlint-intellij-{version}.zip" version="{version}"/>
+                <plugin id="org.sonarlint.idea" url="$(ARTIFACTORY_URL)/sonarsource/org/sonarsource/sonarlint/intellij/sonarlint-intellij/{version}/sonarlint-intellij-{version}.zip" version="{version}"/>
               </plugins>"""
 
               updatePluginsXmlUrl = "$(ARTIFACTORY_URL)/sonarsource-public-builds/org/sonarsource/sonarlint/intellij/sonarlint-intellij/updatePlugins.xml"
               response = requests.put(url=updatePluginsXmlUrl, data=xml, auth=('$(ARTIFACTORY_API_USER)', '$(ARTIFACTORY_API_KEY)'))
-              if not response.status_code == 200:
+              if not response.status_code == 201:
                 sys.exit('[!] [{0}] Server Error'.format(response.status_code))
 
