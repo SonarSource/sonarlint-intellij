@@ -179,10 +179,10 @@ stages:
     - qa
 - template: stage-with-burgr-notifications.yml@commonTemplates
   parameters:
-    burgrName: 'internal-plugin-repo'
+    burgrName: 'dogfood'
     burgrType: 'promotion'
-    stageName: 'internal-plugin-repo'
-    stageDisplayName: Update internal plugin repo
+    stageName: 'update_dogfood_repo'
+    stageDisplayName: Update internal dogfooding plugin repo
     stageDependencies: promote
     jobs:
     - job: updateInternalSite
