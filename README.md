@@ -66,7 +66,7 @@ Import the project as a Gradle project.
 Note: whenever you change a Gradle setting (for example in `build.gradle`),
 don't forget to **Refresh all Gradle projects** in the **Gradle** toolbar.
 
-To run an IntelliJ instance with the plugin installed, execute the Gradle task `runIdea` using the command line,
+To run an IntelliJ instance with the plugin installed, execute the Gradle task `runIde` using the command line,
 or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij`.
 The instance files are stored under `build/idea-sandbox`.
 
