@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.config.project;
 
-import com.intellij.codeInsight.hint.HintManager;
-import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
@@ -29,20 +27,13 @@ import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vcs.changes.ChangesUtil;
 import com.intellij.ui.DocumentAdapter;
-import com.intellij.ui.HyperlinkLabel;
-import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
-import icons.SonarLintIcons;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.io.File;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import javax.swing.Icon;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
@@ -69,7 +60,6 @@ public class AddEditExclusionDialog extends DialogWrapper {
   private TextFieldWithBrowseButton directoryTextField;
   private JBTextField globTextField;
   private TextFieldWithBrowseButton fileTextField;
-  private HyperlinkLabel patternHelp;
   private JBLabel helpLabel;
 
   public AddEditExclusionDialog(Project project) {
@@ -168,33 +158,6 @@ public class AddEditExclusionDialog extends DialogWrapper {
       }
       updateControls();
     }
-  }
-
-  private void createUIComponents() {
-    patternHelp = new HyperlinkLabel("");
-    Icon infoIcon = SonarLintIcons.INFO;
-    patternHelp.setIcon(infoIcon);
-    patternHelp.addMouseListener(new MouseAdapter() {
-      @Override
-      public void mouseEntered(MouseEvent e) {
-        final JLabel label = new JLabel("<<html><body style=\"margin-bottom:1pt\">"
-          + "Configure GLOB patterns to be applied to files in all projects.<br/><br/><b>Examples:</b><br/>"
-          + "<table border=\"1\" cellpadding=\"1\" cellspacing=\"0\"><tr><td><pre>**/*.js</pre></td>"
-          + "<td>Exclude all javascript files</td></tr><tr><td><pre>src/main/test/**</pre></td>"
-          + "<td>Exclude all test sources</td></tr><tr><td><pre>**/*{!.java}</pre></td>"
-          + "<td>Exclude everything except Java files</td></tr></table></body></html>");
-        label.setBorder(HintUtil.createHintBorder());
-        label.setBackground(HintUtil.INFORMATION_COLOR);
-        label.setOpaque(true);
-        HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(patternHelp),
-          HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
-      }
-
-      @Override
-      public void mouseExited(MouseEvent e) {
-        HintManager.getInstance().hideAllHints();
-      }
-    });
   }
 
   private String relative(String path) {

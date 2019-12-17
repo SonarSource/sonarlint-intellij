@@ -30,7 +30,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class ToolWindowVerboseModeAction extends ToggleAction implements DumbAware {
   public ToolWindowVerboseModeAction() {
     super("Verbose output", "Enable verbose output for SonarLint analysis",
-      AllIcons.General.Debug);
+      AllIcons.Actions.StartDebugger);
   }
 
   @Override

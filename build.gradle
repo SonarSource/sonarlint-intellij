@@ -32,7 +32,7 @@ intellij {
   pluginName 'sonarlint-intellij'
   updateSinceUntilBuild false
   type 'IC'
-  if (!ijVersion.startsWith("2016") && !ijVersion.startsWith("2018")) {
+  if (!ijVersion.startsWith("2017") && !ijVersion.startsWith("2018")) {
     plugins = ['java']
   }
 }

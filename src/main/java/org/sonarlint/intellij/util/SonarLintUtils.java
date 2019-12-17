@@ -155,26 +155,10 @@ public class SonarLintUtils {
     builder.proxy(proxy);
 
     if (httpConfigurable.PROXY_AUTHENTICATION) {
-      // Different ways to fetch login based on runtime version (SLI-95)
-      try {
-        Object proxyLogin = tryGetProxyLogin(httpConfigurable);
-        if (proxyLogin != null) {
-          builder.proxyCredentials(proxyLogin.toString(), httpConfigurable.getPlainProxyPassword());
-        }
-      } catch (Exception ex) {
-        LOG.warn("Could not fetch value for proxy login", ex);
+      String proxyLogin = httpConfigurable.getProxyLogin();
+      if (proxyLogin != null) {
+        builder.proxyCredentials(proxyLogin, httpConfigurable.getPlainProxyPassword());
       }
-    }
-  }
-
-  private static Object tryGetProxyLogin(HttpConfigurable httpConfigurable) throws Exception {
-    try {
-      Field proxyLoginField = HttpConfigurable.class.getField("PROXY_LOGIN");
-      return proxyLoginField.get(httpConfigurable);
-    } catch (NoSuchFieldException ex) {
-      // field doesn't exist -> we are in version >= 2016.2
-      Method proxyLoginMethod = HttpConfigurable.class.getMethod("getProxyLogin");
-      return proxyLoginMethod.invoke(httpConfigurable);
     }
   }
 

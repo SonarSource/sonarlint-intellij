@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.ToggleAction;
 import com.intellij.openapi.project.DumbAware;
@@ -29,7 +28,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ToolWindowLogAnalysisAction extends ToggleAction implements DumbAware {
   public ToolWindowLogAnalysisAction() {
-    super("Analysis logs", "Enable logging of SonarLint analysis", AllIcons.General.Progress);
+    super("Analysis logs", "Enable logging of SonarLint analysis", null);
   }
 
   @Override

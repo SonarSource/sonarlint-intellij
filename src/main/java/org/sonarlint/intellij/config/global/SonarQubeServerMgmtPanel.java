@@ -89,7 +89,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
   private JPanel panel;
   private Splitter splitter;
   private JPanel serversPanel;
-  private JBList serverList;
+  private JBList<SonarQubeServer> serverList;
   private JPanel emptyPanel;
   private JLabel serverStatus;
   private JButton updateServerButton;
@@ -106,7 +106,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     Application app = ApplicationManager.getApplication();
     serverManager = app.getComponent(SonarLintEngineManager.class);
     serverChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
-    serverList = new JBList();
+    serverList = new JBList<>();
     serverList.getEmptyText().setText(LABEL_NO_SERVERS);
     serverList.addMouseListener(new MouseAdapter() {
       @Override
@@ -146,10 +146,9 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     panel.setBorder(b);
     panel.add(splitter);
 
-    serverList.setCellRenderer(new ColoredListCellRenderer() {
+    serverList.setCellRenderer(new ColoredListCellRenderer<SonarQubeServer>() {
       @Override
-      protected void customizeCellRenderer(JList list, Object value, int index, boolean selected, boolean hasFocus) {
-        SonarQubeServer server = (SonarQubeServer) value;
+      protected void customizeCellRenderer(JList list, SonarQubeServer server, int index, boolean selected, boolean hasFocus) {
         if (server.isSonarCloud()) {
           setIcon(SonarLintIcons.ICON_SONARCLOUD_16);
         } else {
@@ -171,7 +170,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     serverStatus = new JLabel();
 
     final HyperlinkLabel link = new HyperlinkLabel("");
-    link.setIcon(AllIcons.General.Help_small);
+    link.setIcon(AllIcons.General.ContextHelp);
     link.setUseIconAsLink(true);
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
@@ -179,7 +178,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
         final JLabel label = new JLabel("<html>Click to fetch data from the selected connection, such as the list of projects,<br>"
           + " rules, quality profiles, etc. This needs to be done before being able to select a project.");
         label.setBorder(HintUtil.createHintBorder());
-        label.setBackground(HintUtil.INFORMATION_COLOR);
+        label.setBackground(HintUtil.getInformationColor());
         label.setOpaque(true);
         HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
       }
@@ -265,7 +264,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
 
   @Nullable
   private SonarQubeServer getSelectedServer() {
-    return (SonarQubeServer) serverList.getSelectedValue();
+    return serverList.getSelectedValue();
   }
 
   private void onServerSelect() {
@@ -362,7 +361,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
       SQServerWizard serverEditor = new SQServerWizard(selectedServer);
       if (serverEditor.showAndGet()) {
         SonarQubeServer newServer = serverEditor.getServer();
-        ((CollectionListModel) serverList.getModel()).setElementAt(newServer, selectedIndex);
+        ((CollectionListModel<SonarQubeServer>) serverList.getModel()).setElementAt(newServer, selectedIndex);
         servers.set(servers.indexOf(selectedServer), newServer);
         serverChangeListener.changed(servers);
       }
@@ -385,7 +384,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
       if (wizard.showAndGet()) {
         SonarQubeServer created = wizard.getServer();
         servers.add(created);
-        ((CollectionListModel) serverList.getModel()).add(created);
+        ((CollectionListModel<SonarQubeServer>) serverList.getModel()).add(created);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
         ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
@@ -417,7 +416,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
         }
       }
 
-      CollectionListModel model = (CollectionListModel) serverList.getModel();
+      CollectionListModel<SonarQubeServer> model = (CollectionListModel<SonarQubeServer>) serverList.getModel();
       // it's not removed from serverIds and editorList
       model.remove(server);
       servers.remove(server);
