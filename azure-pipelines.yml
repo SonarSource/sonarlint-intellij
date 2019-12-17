@@ -127,8 +127,8 @@ stages:
       displayName: Run ITs
       strategy:
         matrix:
-          Idea2016:
-            IDEA_VERSION: '2016.3.8'
+          Idea2017:
+            IDEA_VERSION: '2017.3'
             JDKVersion: '1.8'
           Idea2018:
             IDEA_VERSION: '2018.2'

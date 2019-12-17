@@ -27,7 +27,7 @@ import com.intellij.ui.ListSpeedSearch;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBList;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.util.containers.Convertor;
+import com.intellij.util.Function;
 import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -52,8 +52,7 @@ public class SearchProjectKeyDialog extends DialogWrapper {
   private String lastSelectedProjectKey;
   private JPanel contentPane;
   private JBScrollPane scrollPane;
-  // generic list only introduced in 2016.3
-  private JBList projectList;
+  private JBList<RemoteProject> projectList;
 
   public SearchProjectKeyDialog(Component parent, String selectedProjectKey, Map<String, RemoteProject> projectsByKey) {
     super(parent, false);
@@ -76,12 +75,12 @@ public class SearchProjectKeyDialog extends DialogWrapper {
 
   @CheckForNull
   public String getSelectedProjectKey() {
-    RemoteProject project = (RemoteProject) projectList.getSelectedValue();
+    RemoteProject project = projectList.getSelectedValue();
     return project == null ? null : project.getKey();
   }
 
   private void createProjectList() {
-    projectList = new JBList();
+    projectList = new JBList<>();
     projectList.setEmptyText("No projects found in the selected SonarQube Server");
     projectList.setCellRenderer(new ProjectListRenderer());
     projectList.addListSelectionListener(new ProjectItemListener());
@@ -89,11 +88,7 @@ public class SearchProjectKeyDialog extends DialogWrapper {
     projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     projectList.setVisibleRowCount(10);
     projectList.setBorder(IdeBorderFactory.createBorder());
-    Convertor<Object, String> convertor = o -> {
-      RemoteProject project = (RemoteProject) o;
-      return project.getName() + " " + project.getKey();
-    };
-    new ListSpeedSearch(projectList, convertor);
+    new ListSpeedSearch<>(projectList, (Function<RemoteProject, String>) o -> o.getName() + " " + o.getKey());
 
     scrollPane = new JBScrollPane(projectList);
 

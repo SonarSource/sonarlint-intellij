@@ -27,7 +27,7 @@ import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.ListSpeedSearch;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBList;
-import com.intellij.util.containers.Convertor;
+import com.intellij.util.Function;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.DefaultListModel;
@@ -162,19 +162,13 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    // JBList is not generic in intellij < 2016.3.2
-    JBList list = new JBList();
+    JBList<RemoteOrganization> list = new JBList<>();
     list.setLayoutOrientation(VERTICAL);
     list.setVisibleRowCount(8);
     list.setEnabled(true);
     list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     list.setCellRenderer(new ListRenderer());
-
-    Convertor<Object, String> convertor = o -> {
-      RemoteOrganization org = (RemoteOrganization) o;
-      return org.getName() + " " + org.getKey();
-    };
-    new ListSpeedSearch(list, convertor);
+    new ListSpeedSearch<>(list, (Function<RemoteOrganization, String>) o -> o.getName() + " " + o.getKey());
     orgList = list;
   }
 

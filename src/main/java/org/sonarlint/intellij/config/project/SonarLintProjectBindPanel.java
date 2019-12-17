@@ -227,8 +227,7 @@ public class SonarLintProjectBindPanel {
     });
     configureServerButton.setText("Configure the connection...");
 
-    // generic ComboBox only introduced in 2016.2.5
-    serverComboBox = new ComboBox();
+    serverComboBox = new ComboBox<>();
     JLabel serverListLabel = new JLabel("Connection:");
 
     serverComboBox.setRenderer(new ServerComboBoxRenderer());
