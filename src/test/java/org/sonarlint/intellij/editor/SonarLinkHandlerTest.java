@@ -45,12 +45,12 @@ public class SonarLinkHandlerTest extends SonarTest {
 
     when(projectBindingManager.getFacade()).thenReturn(sonarlint);
     when(editor.getProject()).thenReturn(project);
-    when(sonarlint.getDescription(RULE_KEY)).thenReturn("description");
-    when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name");
   }
 
   @Test
   public void testDescription() {
+    when(sonarlint.getDescription(RULE_KEY)).thenReturn("description");
+    when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name");
     String desc = handler.getDescription(RULE_KEY, editor);
     assertThat(desc).contains("description");
     assertThat(desc).contains("name");
@@ -85,6 +85,17 @@ public class SonarLinkHandlerTest extends SonarTest {
 
     String desc = handler.getDescription(RULE_KEY, editor);
     assertThat(desc).contains("text1\ntext2");
+    verify(sonarlint).getDescription(RULE_KEY);
+    verify(sonarlint).getRuleName(RULE_KEY);
+  }
+  @Test
+  public void testEscapeHtmlInName() {
+    when(sonarlint.getDescription(RULE_KEY)).thenReturn("description");
+    when(sonarlint.getRuleName(RULE_KEY)).thenReturn("name with <html> tag");
+
+    String desc = handler.getDescription(RULE_KEY, editor);
+    assertThat(desc).contains("&lt;html&gt;");
+    assertThat(desc).contains("description");
     verify(sonarlint).getDescription(RULE_KEY);
     verify(sonarlint).getRuleName(RULE_KEY);
   }

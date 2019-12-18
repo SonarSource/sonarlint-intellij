@@ -23,6 +23,7 @@ import com.intellij.codeInsight.highlighting.TooltipLinkHandler;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import javax.annotation.Nullable;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
@@ -56,7 +57,7 @@ public class SonarLinkHandler extends TooltipLinkHandler {
     }
 
     return "<html><body>"
-      + "<h2>" + ruleName + "</h2>"
+      + "<h2>" + StringEscapeUtils.escapeHtml(ruleName) + "</h2>"
       + "<code>" + ruleKey + "</code></br>"
       + removeEmptyLines(description)
       + "</body></html>";
