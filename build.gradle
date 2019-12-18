@@ -75,7 +75,7 @@ dependencies {
     'org.sonarsource.java:sonar-java-plugin:5.14.0.18788@jar',
     'org.sonarsource.javascript:sonar-javascript-plugin:5.2.1.7778',
     'org.sonarsource.php:sonar-php-plugin:3.2.0.4868',
-    'org.sonarsource.python:sonar-python-plugin:1.14.1.3143',
+    'org.sonarsource.python:sonar-python-plugin:2.3.0.5351@jar',
     'org.sonarsource.slang:sonar-kotlin-plugin:1.5.0.315@jar',
     'org.sonarsource.slang:sonar-ruby-plugin:1.5.0.315@jar',
     'org.sonarsource.html:sonar-html-plugin:3.2.0.2082@jar'
