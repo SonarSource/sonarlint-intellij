@@ -108,7 +108,7 @@ public class StandaloneTest {
       .extracting("ruleKey", "startLine", "inputFile.path", "severity")
       .containsOnly(
         tuple("javascript:S2189", 1, inputFile.getPath(), "BLOCKER"),
-        tuple("javascript:EmptyBlock", 1, inputFile.getPath(), "MAJOR"),
+        tuple("javascript:S108", 1, inputFile.getPath(), "MAJOR"),
         tuple("javascript:S1264", 1, inputFile.getPath(), "MINOR"));
   }
 
