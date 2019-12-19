@@ -43,7 +43,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>4.4 - 22 new rules and engine improvements for Python. Ensure compatibility with JetBrains 2020.x release train.</li>
+        <li>4.4 - Ensure compatibility with JetBrains 2020.x release train. 22 new rules and engine improvements for Python. Support for PHP 7.4. New engine for JavaScript, 8 new rules.</li>
         <li>4.3 - Supports SonarJS 6.x in connected mode. Updated issue type icons.</li>
         <li>4.2 - Analyze HTML in Vue.js single file components. 8 new HTML rules. Support 'Ignore Issues on Files' and 'Ignore Issues in Blocks' in connected mode.</li>
         <li>4.1.1 - Fix regression on quality profile in connected mode</li>
