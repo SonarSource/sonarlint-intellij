@@ -158,6 +158,10 @@ public class SonarLintUtils {
 
   private static void configureProxy(String host, Consumer<Proxy> proxyConsumer, BiConsumer<String, String> credentialsConsumer) {
     HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
+    if (httpConfigurable == null) {
+      // Unit tests
+      return;
+    }
     if (!isHttpProxyEnabledForUrl(httpConfigurable, host)) {
       return;
     }
