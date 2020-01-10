@@ -46,14 +46,14 @@ import java.awt.Image;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -64,6 +64,7 @@ import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 public class SonarLintUtils {
@@ -145,19 +146,34 @@ public class SonarLintUtils {
   }
 
   public static void configureProxy(String host, ServerConfiguration.Builder builder) {
+    configureProxy(host, builder::proxy, builder::proxyCredentials);
+  }
+
+  public static void configureProxy(String host, TelemetryClientConfig.Builder builder) {
+    configureProxy(host, builder::proxy, (user, pwd) -> {
+      builder.proxyLogin(user);
+      builder.proxyPassword(pwd);
+    });
+  }
+
+  private static void configureProxy(String host, Consumer<Proxy> proxyConsumer, BiConsumer<String, String> credentialsConsumer) {
     HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
+    if (httpConfigurable == null) {
+      // Unit tests
+      return;
+    }
     if (!isHttpProxyEnabledForUrl(httpConfigurable, host)) {
       return;
     }
     Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
 
     Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
-    builder.proxy(proxy);
+    proxyConsumer.accept(proxy);
 
     if (httpConfigurable.PROXY_AUTHENTICATION) {
       String proxyLogin = httpConfigurable.getProxyLogin();
       if (proxyLogin != null) {
-        builder.proxyCredentials(proxyLogin, httpConfigurable.getPlainProxyPassword());
+        credentialsConsumer.accept(proxyLogin, httpConfigurable.getPlainProxyPassword());
       }
     }
   }

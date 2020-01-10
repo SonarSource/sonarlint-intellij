@@ -64,6 +64,8 @@ public class TelemetryManagerProvider {
       .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
       .sslTrustManager(certificateManager.getCustomTrustManager());
 
+    SonarLintUtils.configureProxy(TelemetryManager.TELEMETRY_ENDPOINT, clientConfigBuilder);
+
     return clientConfigBuilder.build();
   }
 
