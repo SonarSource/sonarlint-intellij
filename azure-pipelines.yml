@@ -9,7 +9,7 @@ resources:
     - repository: commonTemplates
       type: git
       name: pipelines-yaml-templates
-      ref:  refs/heads/feature/stage-condition
+      ref:  refs/tags/v1.0.8
 
 
 stages:
