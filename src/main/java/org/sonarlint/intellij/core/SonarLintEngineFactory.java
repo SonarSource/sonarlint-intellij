@@ -41,11 +41,24 @@ import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.Language;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
-  private static final String[] UNSUPPORTED_ANALYZERS = {"cpp", "typescript"};
+
+  private static final Language[] ENABLED_LANGUAGES = {
+    Language.HTML,
+    Language.JAVA,
+    Language.JS,
+    Language.KOTLIN,
+    Language.PHP,
+    Language.PYTHON,
+    Language.RUBY,
+    Language.SCALA,
+    Language.SWIFT,
+    Language.XML
+  };
   private final GlobalLogOutput globalLogOutput;
 
   public SonarLintEngineFactory(GlobalLogOutput globalLogOutput) {
@@ -56,7 +69,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
-      .addExcludedCodeAnalyzers(UNSUPPORTED_ANALYZERS)
+      .addEnabledLanguages(ENABLED_LANGUAGES)
       .setWorkDir(getWorkDir())
       .setServerId(serverId)
       .build();
