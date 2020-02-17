@@ -93,9 +93,9 @@ public class StandaloneTest {
     assertThat(issues)
       .extracting("ruleKey", "startLine", "inputFile.path", "severity")
       .containsOnly(
-        tuple("squid:S106", 4, inputFile.getPath(), "MAJOR"),
-        tuple("squid:S1220", null, inputFile.getPath(), "MINOR"),
-        tuple("squid:S1481", 3, inputFile.getPath(), "MINOR"));
+        tuple("java:S106", 4, inputFile.getPath(), "MAJOR"),
+        tuple("java:S1220", null, inputFile.getPath(), "MINOR"),
+        tuple("java:S1481", 3, inputFile.getPath(), "MINOR"));
   }
 
   @Test
