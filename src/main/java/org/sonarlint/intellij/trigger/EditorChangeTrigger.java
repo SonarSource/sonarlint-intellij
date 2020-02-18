@@ -26,11 +26,11 @@ import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -111,7 +111,7 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
   /**
    * Marks a file as launched, resetting its state to unchanged
    */
-  public void removeFiles(Collection<VirtualFile> files) {
+  public void removeFiles(Stream<VirtualFile> files) {
     files.forEach(eventMap::remove);
   }
 

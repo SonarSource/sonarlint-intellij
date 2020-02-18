@@ -126,6 +126,6 @@ public class SonarLintTaskTest extends SonarTest {
   }
 
   private SonarLintJob createJob() {
-    return new SonarLintJob(module, files, TriggerType.ACTION);
+    return new SonarLintJob(module, files, Collections.emptyList(), TriggerType.ACTION);
   }
 }

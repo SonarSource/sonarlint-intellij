@@ -29,6 +29,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -102,22 +103,27 @@ public class SonarLintTask extends Task.Backgroundable {
     try {
       checkCanceled(indicator, myProject);
 
-      List<AnalysisResults> results = analyze(myProject, indicator, listener);
+      List<ClientInputFile> allFailedAnalysisFiles;
+      if (getJob().allFiles().findAny().isPresent()) {
 
-      //last chance to cancel (to avoid the possibility of having interrupt flag set)
-      checkCanceled(indicator, myProject);
+        List<AnalysisResults> results = analyze(myProject, indicator, listener);
 
-      LOGGER.info("SonarLint analysis done");
+        //last chance to cancel (to avoid the possibility of having interrupt flag set)
+        checkCanceled(indicator, myProject);
 
-      indicator.setIndeterminate(false);
-      indicator.setFraction(.9);
+        LOGGER.info("SonarLint analysis done");
 
+        indicator.setIndeterminate(false);
+        indicator.setFraction(.9);
+
+        allFailedAnalysisFiles = results.stream()
+          .flatMap(r -> r.failedAnalysisFiles().stream())
+          .collect(Collectors.toList());
+      } else {
+        allFailedAnalysisFiles = Collections.emptyList();
+      }
       List<Issue> issues = listener.getIssues();
-      indicator.setText("Creating SonarLint issues: " + issues.size());
-
-      List<ClientInputFile> allFailedAnalysisFiles = results.stream()
-        .flatMap(r -> r.failedAnalysisFiles().stream())
-        .collect(Collectors.toList());
+      indicator.setText("Updating SonarLint issues: " + issues.size());
 
       processor.process(job, indicator, issues, allFailedAnalysisFiles);
     } catch (CanceledException e1) {
@@ -165,11 +171,11 @@ public class SonarLintTask extends Task.Backgroundable {
       suffix = String.format(" in %d modules", numModules);
     }
 
-    int numFiles = job.allFiles().size();
+    long numFiles = job.allFiles().count();
     if (numFiles > 1) {
       indicator.setText("Running SonarLint Analysis for " + numFiles + " files" + suffix);
     } else {
-      indicator.setText("Running SonarLint Analysis for '" + getFileName(job.allFiles().iterator().next()) + "'");
+      indicator.setText("Running SonarLint Analysis for '" + getFileName(job.allFiles().findFirst().get()) + "'");
     }
 
     LOGGER.info(indicator.getText());

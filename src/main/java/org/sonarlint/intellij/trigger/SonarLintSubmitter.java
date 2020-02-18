@@ -29,7 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -90,11 +90,12 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
     try {
-      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, false);
+      List<VirtualFile> filesToClearIssues = new ArrayList<>();
+      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, false, filesToClearIssues);
 
-      if (!filesByModule.isEmpty()) {
+      if (!files.isEmpty()) {
         console.debug("Trigger: " + trigger);
-        sonarLintJobManager.submitManual(filesByModule, trigger, true, callback);
+        sonarLintJobManager.submitManual(filesByModule, filesToClearIssues, trigger, true, callback);
       }
     } catch (InvalidBindingException e) {
       // nothing to do, SonarLintEngineManager already showed notification
@@ -116,14 +117,15 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
     boolean checkExclusions = trigger != TriggerType.ACTION;
     try {
-      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, checkExclusions);
+      List<VirtualFile> filesToClearIssues = new ArrayList<>();
+      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, checkExclusions, filesToClearIssues);
 
-      if (!filesByModule.isEmpty()) {
+      if (!files.isEmpty()) {
         console.debug("Trigger: " + trigger);
         if (startInBackground) {
-          sonarLintJobManager.submitBackground(filesByModule, trigger, callback);
+          sonarLintJobManager.submitBackground(filesByModule, filesToClearIssues, trigger, callback);
         } else {
-          sonarLintJobManager.submitManual(filesByModule, trigger, false, callback);
+          sonarLintJobManager.submitManual(filesByModule, filesToClearIssues, trigger, false, callback);
         }
       }
     } catch (InvalidBindingException e) {
@@ -131,25 +133,26 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     }
   }
 
-  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkExclusions) throws InvalidBindingException {
-    Map<Module, Collection<VirtualFile>> filesByModule = new HashMap<>();
+  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkExclusions, List<VirtualFile> filesToClearIssues) throws InvalidBindingException {
+    Map<Module, Collection<VirtualFile>> filesByModule = new LinkedHashMap<>();
     SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 
     for (VirtualFile file : files) {
       Computable<Module> c = () -> utils.findModuleForFile(file, myProject);
       Module m = ApplicationManager.getApplication().runReadAction(c);
+      LocalFileExclusions.Result result = localFileExclusions.canAnalyze(file, m);
+      if (result.isExcluded()) {
+        logExclusion(file, "excluded: " + result.excludeReason());
+        filesToClearIssues.add(file);
+        continue;
+      }
       if (checkExclusions) {
-        LocalFileExclusions.Result result = localFileExclusions.checkExclusions(file, m);
+        result = localFileExclusions.checkExclusions(file, m);
         if (result.isExcluded()) {
           if (result.excludeReason() != null) {
             logExclusion(file, "excluded: " + result.excludeReason());
           }
-          continue;
-        }
-      } else {
-        LocalFileExclusions.Result result = localFileExclusions.canAnalyze(file, m);
-        if (result.isExcluded()) {
-          logExclusion(file, "excluded: " + result.excludeReason());
+          filesToClearIssues.add(file);
           continue;
         }
       }
@@ -168,6 +171,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
         Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
         for (VirtualFile f : excluded) {
           logExclusion(f, "not automatically analyzed due to exclusions configured in the SonarQube Server");
+          filesToClearIssues.add(f);
         }
         virtualFiles.removeAll(excluded);
         if (virtualFiles.isEmpty()) {

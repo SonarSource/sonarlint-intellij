@@ -114,19 +114,9 @@ public class LocalFileExclusions {
 
   /**
    * Checks if a file is excluded from analysis based on locally configured exclusions.
-   * It will also exclude files that cannot be analysed with {@link #canAnalyze(VirtualFile, Module)}.
    */
   public Result checkExclusions(VirtualFile file, @Nullable Module module) {
-    Result result = canAnalyze(file, module);
-    if (result.isExcluded()) {
-      return result;
-    }
-
-    if (powerSaveModeCheck.getAsBoolean()) {
-      return Result.excluded("power save mode is enabled");
-    }
-
-    result = checkFileInSourceFolders(file, module);
+    Result result = checkFileInSourceFolders(file, module);
     if (result.isExcluded) {
       return result;
     }
@@ -168,6 +158,10 @@ public class LocalFileExclusions {
   }
 
   public Result canAnalyze(VirtualFile file, @Nullable Module module) {
+    if (powerSaveModeCheck.getAsBoolean()) {
+      return Result.excluded("power save mode is enabled");
+    }
+
     FileType fileType = file.getFileType();
     if (module == null) {
       return Result.excluded("file is not part of any module in IntelliJ's project structure");

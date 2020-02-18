@@ -24,7 +24,6 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Predicate;
 import org.junit.Before;
@@ -40,6 +39,12 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
@@ -79,10 +84,11 @@ public class SonarLintSubmitterTest extends SonarTest {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitBackground(eq(Collections.singletonMap(module, Collections.singleton(f1))), eq(TriggerType.BINDING_CHANGE), eq(null));
+    verify(sonarLintJobManager).submitBackground(eq(singletonMap(module, singleton(f1))), eq(emptyList()), eq(TriggerType.BINDING_CHANGE), eq(null));
   }
 
   @Test
@@ -91,29 +97,32 @@ public class SonarLintSubmitterTest extends SonarTest {
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
-    submitter.submitFilesModal(Collections.singleton(f1), TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitManual(eq(Collections.singletonMap(module, Collections.singleton(f1))), eq(TriggerType.BINDING_CHANGE), eq(true), eq(null));
+    submitter.submitFilesModal(singleton(f1), TriggerType.BINDING_CHANGE);
+    verify(sonarLintJobManager).submitManual(eq(singletonMap(module, singleton(f1))), eq(emptyList()), eq(TriggerType.BINDING_CHANGE), eq(true), eq(null));
   }
 
   @Test
-  public void should_not_submit_if_fail_checks() {
+  public void should_clear_issues_if_excluded() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.excluded(""));
+    when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
-    verifyZeroInteractions(sonarLintJobManager);
+    verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.BINDING_CHANGE), eq(null));
   }
 
   @Test
-  public void should_not_submit_excluded_in_server() {
+  public void should_clear_issues_if_excluded_in_server() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
-    when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.singleton(f1));
-    submitter.submitFiles(Collections.singleton(f1), TriggerType.BINDING_CHANGE, false);
-    verifyZeroInteractions(sonarLintJobManager);
+    when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(singleton(f1));
+    submitter.submitFiles(singleton(f1), TriggerType.BINDING_CHANGE, false);
+
+    verify(sonarLintJobManager).submitManual(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.BINDING_CHANGE), eq(false), eq(null));
   }
 
   @Test
@@ -124,25 +133,25 @@ public class SonarLintSubmitterTest extends SonarTest {
   }
 
   @Test
-  public void should_not_submit_if_not_analyzable() {
+  public void should_clear_issues_if_not_analyzable() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.excluded(null));
-    submitter.submitFiles(Collections.singleton(f1), TriggerType.ACTION, false);
+    submitter.submitFiles(singleton(f1), TriggerType.ACTION, false);
 
-    verifyZeroInteractions(sonarLintJobManager);
+    verify(sonarLintJobManager).submitManual(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.ACTION), eq(false), eq(null));
   }
 
   @Test
-  public void should_not_submit_if_no_module() {
-    when(exclusions.checkExclusions(any(VirtualFile.class), any(Module.class))).thenReturn(LocalFileExclusions.Result.notExcluded());
+  public void should_clear_issues_if_cant_analyze() {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(null);
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
-    when(exclusions.checkExclusions(f1, null)).thenReturn(LocalFileExclusions.Result.excluded(""));
+    when(exclusions.checkExclusions(f1, null)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.canAnalyze(f1, null)).thenReturn(LocalFileExclusions.Result.excluded("Because"));
 
     submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
-    verifyZeroInteractions(sonarLintJobManager);
+    verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.BINDING_CHANGE), eq(null));
   }
 
   @Test
@@ -150,6 +159,7 @@ public class SonarLintSubmitterTest extends SonarTest {
     VirtualFile f1 = mock(VirtualFile.class);
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
     VirtualFile f2 = mock(VirtualFile.class);
     Module m2 = mock(Module.class);
@@ -161,13 +171,16 @@ public class SonarLintSubmitterTest extends SonarTest {
 
     when(utils.findModuleForFile(f2, project)).thenReturn(m2);
     when(exclusions.checkExclusions(f2, m2)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.canAnalyze(f2, m2)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
     when(utils.findModuleForFile(f3, project)).thenReturn(m3);
     when(exclusions.checkExclusions(f3, m3)).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.canAnalyze(f3, m3)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
-    when(facade.getExcluded(any(Module.class), any(), any())).thenReturn(Arrays.asList(f1, f2));
+    when(facade.getExcluded(eq(module), any(), any())).thenReturn(singletonList(f1));
+    when(facade.getExcluded(eq(m2), any(), any())).thenReturn(singletonList(f2));
 
-    submitter.submitFiles(Arrays.asList(f1, f2, f3), TriggerType.EDITOR_OPEN, true);
-    verify(sonarLintJobManager).submitBackground(eq(Collections.singletonMap(m3, Collections.singleton(f3))), eq(TriggerType.EDITOR_OPEN), eq(null));
+    submitter.submitFiles(asList(f1, f2, f3), TriggerType.EDITOR_OPEN, true);
+    verify(sonarLintJobManager).submitBackground(eq(singletonMap(m3, singleton(f3))), eq(asList(f1, f2)), eq(TriggerType.EDITOR_OPEN), eq(null));
   }
 }
