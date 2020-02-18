@@ -116,7 +116,7 @@ public class SonarLintRulePanel {
 
   private static void createTable(RuleDetails rule, StringBuilder builder) {
     // apparently some css properties are not supported
-    String imgAttributes = "valign=\"top\" hspace=\"3\"";
+    String imgAttributes = "valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\"";
 
     builder.append("<table><tr>");
     if (rule.getType() != null) {
