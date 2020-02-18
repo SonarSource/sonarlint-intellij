@@ -209,7 +209,7 @@ public class SonarLintUtils {
   }
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server, int connectTimeout, int readTimeout) {
-    CertificateManager certificateManager = get(CertificateManager.class);
+    CertificateManager certificateManager = CertificateManager.getInstance();
     SonarApplication sonarlint = get(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
