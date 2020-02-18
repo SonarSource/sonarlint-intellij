@@ -58,7 +58,7 @@ public class TelemetryManagerProvider {
   }
 
   private static TelemetryClientConfig getTelemetryClientConfig() {
-    CertificateManager certificateManager = SonarLintUtils.get(CertificateManager.class);
+    CertificateManager certificateManager = CertificateManager.getInstance();
     TelemetryClientConfig.Builder clientConfigBuilder = new TelemetryClientConfig.Builder()
       .userAgent("SonarLint")
       .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
