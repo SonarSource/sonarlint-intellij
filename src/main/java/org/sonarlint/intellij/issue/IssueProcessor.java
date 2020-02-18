@@ -48,6 +48,8 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
+import static java.util.stream.Collectors.toList;
+
 public class IssueProcessor extends AbstractProjectComponent {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
@@ -66,14 +68,14 @@ public class IssueProcessor extends AbstractProjectComponent {
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
     long start = System.currentTimeMillis();
     Map<VirtualFile, Collection<LiveIssue>> transformedIssues = ReadAction.compute(() -> {
-      Map<VirtualFile, Collection<LiveIssue>> issues = transformIssues(rawIssues, job.allFiles(), failedAnalysisFiles);
+      Map<VirtualFile, Collection<LiveIssue>> issues = transformIssues(rawIssues, job.allFiles().collect(toList()), failedAnalysisFiles, job.filesToClearIssues());
       // this might be updated later after tracking with server issues
       manager.store(issues);
       return issues;
     });
 
     Set<VirtualFile> failedVirtualFiles = asVirtualFiles(failedAnalysisFiles);
-    if (! failedVirtualFiles.containsAll(job.allFiles())) {
+    if (!failedVirtualFiles.containsAll(job.allFiles().collect(toList()))) {
       logFoundIssuesIfAny(rawIssues, start, transformedIssues);
     }
 
@@ -83,7 +85,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
         Collection<VirtualFile> moduleFilesWithIssues = e.getValue().stream()
           .filter(f -> !transformedIssues.getOrDefault(f, Collections.emptyList()).isEmpty())
-          .collect(Collectors.toList());
+          .collect(toList());
         if (!moduleFilesWithIssues.isEmpty()) {
           filesWithIssuesPerModule.put(e.getKey(), moduleFilesWithIssues);
         }
@@ -148,9 +150,10 @@ public class IssueProcessor extends AbstractProjectComponent {
    * Transforms issues and organizes them per file
    */
   private Map<VirtualFile, Collection<LiveIssue>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analyzed,
-    Collection<ClientInputFile> failedAnalysisFiles) {
+    Collection<ClientInputFile> failedAnalysisFiles, Collection<VirtualFile> filesToClearIssues) {
 
     Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
+    filesToClearIssues.forEach( f -> map.put(f, Collections.emptyList()));
 
     for (Issue issue : issues) {
       ClientInputFile inputFile = issue.getInputFile();

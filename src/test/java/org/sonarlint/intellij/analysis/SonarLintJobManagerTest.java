@@ -60,7 +60,7 @@ public class SonarLintJobManagerTest extends SonarTest {
 
   @Test
   public void testUserTask() {
-    manager.submitManual(mockFiles(), TriggerType.ACTION, true, null);
+    manager.submitManual(mockFiles(), Collections.emptyList(), TriggerType.ACTION, true, null);
     verify(factory).createUserTask(any(SonarLintJob.class), eq(true));
     verify(app).isDispatchThread();
     verify(progressManager).run(task);
@@ -68,7 +68,7 @@ public class SonarLintJobManagerTest extends SonarTest {
 
   @Test
   public void testRunBackground() {
-    manager.submitBackground(mockFiles(), TriggerType.ACTION, null);
+    manager.submitBackground(mockFiles(), Collections.emptyList(), TriggerType.ACTION, null);
     verify(factory).createTask(any(SonarLintJob.class), eq(true));
     verify(app).isDispatchThread();
     verify(progressManager).run(task);

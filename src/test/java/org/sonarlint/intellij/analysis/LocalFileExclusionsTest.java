@@ -61,7 +61,7 @@ public class LocalFileExclusionsTest extends SonarTest {
 
   @Test
   public void should_not_analyze_automatically_if_module_is_null() {
-    LocalFileExclusions.Result result = exclusions.checkExclusions(testFile, null);
+    LocalFileExclusions.Result result = exclusions.canAnalyze(testFile, null);
     assertThat(result.isExcluded()).isTrue();
   }
 

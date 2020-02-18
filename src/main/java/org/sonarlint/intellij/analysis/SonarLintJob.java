@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -37,18 +37,21 @@ public class SonarLintJob {
   private final TriggerType trigger;
   private final long creationTime;
   private final boolean waitForServerIssues;
+  private final Project project;
+  private final Collection<VirtualFile> filesToClearIssues;
   @Nullable private final AnalysisCallback callback;
 
-  SonarLintJob(Module module, Collection<VirtualFile> files, TriggerType trigger) {
-    this(Collections.singletonMap(module, files), trigger, false, null);
+  SonarLintJob(Module module, Collection<VirtualFile> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger) {
+    this(module.getProject(), Collections.singletonMap(module, files), filesToClearIssues, trigger, false, null);
   }
 
-  SonarLintJob(Map<Module, Collection<VirtualFile>> files, TriggerType trigger, boolean waitForServerIssues, @Nullable AnalysisCallback callback) {
+  SonarLintJob(Project project, Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean waitForServerIssues, @Nullable AnalysisCallback callback) {
+    this.project = project;
+    this.filesToClearIssues = Collections.unmodifiableCollection(filesToClearIssues);
     this.callback = callback;
     this.waitForServerIssues = waitForServerIssues;
     Preconditions.checkNotNull(files);
     Preconditions.checkNotNull(trigger);
-    Preconditions.checkArgument(!files.isEmpty(), "List of files is empty");
 
     this.files = Collections.unmodifiableMap(new HashMap<>(files));
     this.trigger = trigger;
@@ -56,7 +59,7 @@ public class SonarLintJob {
   }
 
   public Project project() {
-    return files.keySet().iterator().next().getProject();
+    return project;
   }
 
   @CheckForNull
@@ -72,10 +75,9 @@ public class SonarLintJob {
     return files;
   }
 
-  public Collection<VirtualFile> allFiles() {
+  public Stream<VirtualFile> allFiles() {
     return files.entrySet().stream()
-      .flatMap(e -> e.getValue().stream())
-      .collect(Collectors.toList());
+      .flatMap(e -> e.getValue().stream());
   }
 
   public boolean waitForServerIssues() {
@@ -86,4 +88,7 @@ public class SonarLintJob {
     return trigger;
   }
 
+  public Collection<VirtualFile> filesToClearIssues() {
+    return filesToClearIssues;
+  }
 }
