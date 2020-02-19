@@ -86,7 +86,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public void apply() {
-    boolean rulesChanged = rules.isModified(globalSettings);
+    final boolean exclusionsModified = exclusions.isModified(globalSettings);
+    final boolean rulesModified = rules.isModified(globalSettings);
+
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
     about.save(telemetry);
@@ -98,18 +100,20 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     globalConfigurationListener.applied(globalSettings);
     serverManager.reloadServers();
 
-    if (rulesChanged) {
-      analyzeOpenFilesInUnconnectedProjects();
+    if (exclusionsModified) {
+      analyzeOpenFiles(false);
+    } else if (rulesModified) {
+      analyzeOpenFiles(true);
     }
   }
 
-  private static void analyzeOpenFilesInUnconnectedProjects() {
+  private static void analyzeOpenFiles(boolean unboundOnly) {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
     for (Project p : openProjects) {
       SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
-      if (!projectSettings.isBindingEnabled()) {
-        SonarLintUtils.get(p, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
+      if (!unboundOnly || !projectSettings.isBindingEnabled()) {
+        SonarLintUtils.get(p, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }
     }
   }

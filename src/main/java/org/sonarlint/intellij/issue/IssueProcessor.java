@@ -122,7 +122,7 @@ public class IssueProcessor extends AbstractProjectComponent {
   private static boolean shouldUpdateServerIssues(TriggerType trigger) {
     switch (trigger) {
       case ACTION:
-      case BINDING_CHANGE:
+      case CONFIG_CHANGE:
       case BINDING_UPDATE:
       case CHECK_IN:
       case EDITOR_OPEN:

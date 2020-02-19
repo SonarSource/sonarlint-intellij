@@ -103,10 +103,14 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       return true;
     }
 
-    if (exclusionsPanel.isModified(projectSettings)) {
+    if (isExclusionsModified(projectSettings)) {
       return true;
     }
     return bindingChanged(projectSettings);
+  }
+
+  public boolean isExclusionsModified(SonarLintProjectSettings projectSettings) {
+    return exclusionsPanel.isModified(projectSettings);
   }
 
   @Override public void dispose() {
