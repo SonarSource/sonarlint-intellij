@@ -68,6 +68,15 @@ public class IssuePersistenceTest {
   }
 
   @Test
+  public void should_clear_specific_key() throws IOException {
+    persistence.save("key1", Collections.singleton(testTrackable));
+    persistence.save("key2", Collections.singleton(testTrackable));
+    persistence.clear("key2");
+    assertThat(persistence.read("key1")).isNotNull();
+    assertThat(persistence.read("key2")).isNull();
+  }
+
+  @Test
   public void should_not_read_if_not_stored() throws IOException {
     assertThat(persistence.read("key")).isNull();
   }

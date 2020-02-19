@@ -126,6 +126,16 @@ public class LiveIssueCache extends AbstractProjectComponent {
     cache.clear();
   }
 
+  public synchronized void clear(VirtualFile virtualFile) {
+    String key = createKey(virtualFile);
+    cache.remove(virtualFile);
+    try {
+      store.clear(key);
+    } catch (IOException e) {
+      throw new IllegalStateException("Failed to clear cache", e);
+    }
+  }
+
   public synchronized boolean contains(VirtualFile virtualFile) {
     return getLive(virtualFile) != null;
   }
