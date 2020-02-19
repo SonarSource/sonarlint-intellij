@@ -41,6 +41,8 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.tasks.ServerUpdateTask;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
@@ -61,7 +63,8 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     this.projectSettings = project.getComponent(SonarLintProjectSettings.class);
     this.busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
     this.busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void changed(List<SonarQubeServer> newServerList) {
+      @Override
+      public void changed(List<SonarQubeServer> newServerList) {
         if (panel != null) {
           panel.serversChanged(newServerList);
         }
@@ -98,8 +101,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public void apply() {
     if (panel != null) {
+      boolean exclusionsModified = panel.isExclusionsModified(projectSettings);
       panel.save(projectSettings);
-      onSave();
+      onSave(exclusionsModified);
     }
   }
 
@@ -109,7 +113,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
    * - If we are bound to a project, update it (even if we detected no changes)
    * - Clear all issues and submit an analysis on all open files
    */
-  private void onSave() {
+  private void onSave(boolean exclusionsModified) {
     SonarLintProjectNotifications.get(project).reset();
     ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
 
@@ -128,6 +132,10 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       }
     }
     projectListener.changed(projectSettings);
+
+    if (exclusionsModified) {
+      SonarLintUtils.get(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+    }
   }
 
   @Override

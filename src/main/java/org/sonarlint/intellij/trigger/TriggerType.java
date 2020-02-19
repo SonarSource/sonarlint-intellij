@@ -27,7 +27,7 @@ public enum TriggerType {
   COMPILATION("Compilation"),
   EDITOR_CHANGE("Editor change"),
   CHECK_IN("Pre-commit check"),
-  BINDING_CHANGE("Binding change"),
+  CONFIG_CHANGE("Config change"),
   BINDING_UPDATE("Binding update");
 
   private final String name;

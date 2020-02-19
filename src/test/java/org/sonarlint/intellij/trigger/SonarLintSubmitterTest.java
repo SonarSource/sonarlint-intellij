@@ -87,8 +87,8 @@ public class SonarLintSubmitterTest extends SonarTest {
     when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
-    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitBackground(eq(singletonMap(module, singleton(f1))), eq(emptyList()), eq(TriggerType.BINDING_CHANGE), eq(null));
+    submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+    verify(sonarLintJobManager).submitBackground(eq(singletonMap(module, singleton(f1))), eq(emptyList()), eq(TriggerType.CONFIG_CHANGE), eq(null));
   }
 
   @Test
@@ -97,8 +97,8 @@ public class SonarLintSubmitterTest extends SonarTest {
     when(utils.findModuleForFile(f1, project)).thenReturn(module);
     when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
 
-    submitter.submitFilesModal(singleton(f1), TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitManual(eq(singletonMap(module, singleton(f1))), eq(emptyList()), eq(TriggerType.BINDING_CHANGE), eq(true), eq(null));
+    submitter.submitFilesModal(singleton(f1), TriggerType.CONFIG_CHANGE);
+    verify(sonarLintJobManager).submitManual(eq(singletonMap(module, singleton(f1))), eq(emptyList()), eq(TriggerType.CONFIG_CHANGE), eq(true), eq(null));
   }
 
   @Test
@@ -109,8 +109,8 @@ public class SonarLintSubmitterTest extends SonarTest {
     when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {f1});
 
-    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.BINDING_CHANGE), eq(null));
+    submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+    verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.CONFIG_CHANGE), eq(null));
   }
 
   @Test
@@ -120,15 +120,15 @@ public class SonarLintSubmitterTest extends SonarTest {
     when(exclusions.checkExclusions(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(exclusions.canAnalyze(f1, module)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(singleton(f1));
-    submitter.submitFiles(singleton(f1), TriggerType.BINDING_CHANGE, false);
+    submitter.submitFiles(singleton(f1), TriggerType.CONFIG_CHANGE, false);
 
-    verify(sonarLintJobManager).submitManual(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.BINDING_CHANGE), eq(false), eq(null));
+    verify(sonarLintJobManager).submitManual(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.CONFIG_CHANGE), eq(false), eq(null));
   }
 
   @Test
   public void should_not_submit_if_auto_disable() {
     globalSettings.setAutoTrigger(false);
-    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
+    submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     verifyZeroInteractions(sonarLintJobManager);
   }
 
@@ -150,8 +150,8 @@ public class SonarLintSubmitterTest extends SonarTest {
     when(exclusions.checkExclusions(f1, null)).thenReturn(LocalFileExclusions.Result.notExcluded());
     when(exclusions.canAnalyze(f1, null)).thenReturn(LocalFileExclusions.Result.excluded("Because"));
 
-    submitter.submitOpenFilesAuto(TriggerType.BINDING_CHANGE);
-    verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.BINDING_CHANGE), eq(null));
+    submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+    verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.CONFIG_CHANGE), eq(null));
   }
 
   @Test
