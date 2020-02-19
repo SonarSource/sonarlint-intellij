@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -71,6 +72,15 @@ public class IssueManager extends AbstractProjectComponent {
   public void clear() {
     cache.clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
+  }
+
+  public void clear(Collection<VirtualFile> files) {
+    Map<VirtualFile, Collection<LiveIssue>> mapToNotify = new HashMap<>();
+    for (VirtualFile f : files) {
+      cache.clear(f);
+      mapToNotify.put(f, Collections.emptyList());
+    }
+    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(mapToNotify);
   }
 
   /**

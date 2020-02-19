@@ -126,6 +126,22 @@ public class LiveIssueCacheTest {
   }
 
   @Test
+  public void should_clear_specific_files() throws IOException {
+    LiveIssue issue1 = createTestIssue("r1");
+    VirtualFile file0 = createTestFile("file0");
+    cache.save(file0, Collections.singleton(issue1));
+
+    LiveIssue issue2 = createTestIssue("r2");
+    VirtualFile file1 = createTestFile("file1");
+    cache.save(file1, Collections.singleton(issue2));
+
+    cache.clear(file1);
+    verify(store).clear("file1");
+    assertThat(cache.getLive(file1)).isNull();
+    assertThat(cache.getLive(file0)).isNotNull();
+  }
+
+  @Test
   public void should_flush_when_requested() throws IOException {
     LiveIssue issue1 = createTestIssue("r1");
     VirtualFile file0 = createTestFile("file0");

@@ -133,9 +133,9 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     }
   }
 
-  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkExclusions, List<VirtualFile> filesToClearIssues) throws InvalidBindingException {
+  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkExclusions, List<VirtualFile> filesToClearIssues)
+    throws InvalidBindingException {
     Map<Module, Collection<VirtualFile>> filesByModule = new LinkedHashMap<>();
-    SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
 
     for (VirtualFile file : files) {
       Computable<Module> c = () -> utils.findModuleForFile(file, myProject);
@@ -159,7 +159,14 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
 
       filesByModule.computeIfAbsent(m, mod -> new LinkedHashSet<>()).add(file);
     }
+    filterWithServerExclusions(checkExclusions, filesToClearIssues, filesByModule);
 
+    return filesByModule;
+  }
+
+  private void filterWithServerExclusions(boolean checkExclusions, List<VirtualFile> filesToClearIssues, Map<Module, Collection<VirtualFile>> filesByModule)
+    throws InvalidBindingException {
+    SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
     // Apply server file exclusions. This is an expensive operation, so we call the core only once per module.
     if (checkExclusions) {
       // Note: iterating over a copy of keys, because removal of last value removes the key,
@@ -179,8 +186,6 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
         }
       }
     }
-
-    return filesByModule;
   }
 
   private void logExclusion(VirtualFile f, String reason) {

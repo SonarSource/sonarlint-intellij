@@ -68,7 +68,8 @@ public class IssueProcessor extends AbstractProjectComponent {
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
     long start = System.currentTimeMillis();
     Map<VirtualFile, Collection<LiveIssue>> transformedIssues = ReadAction.compute(() -> {
-      Map<VirtualFile, Collection<LiveIssue>> issues = transformIssues(rawIssues, job.allFiles().collect(toList()), failedAnalysisFiles, job.filesToClearIssues());
+      manager.clear(job.filesToClearIssues());
+      Map<VirtualFile, Collection<LiveIssue>> issues = transformIssues(rawIssues, job.allFiles().collect(toList()), failedAnalysisFiles);
       // this might be updated later after tracking with server issues
       manager.store(issues);
       return issues;
@@ -150,10 +151,9 @@ public class IssueProcessor extends AbstractProjectComponent {
    * Transforms issues and organizes them per file
    */
   private Map<VirtualFile, Collection<LiveIssue>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analyzed,
-    Collection<ClientInputFile> failedAnalysisFiles, Collection<VirtualFile> filesToClearIssues) {
+    Collection<ClientInputFile> failedAnalysisFiles) {
 
     Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
-    filesToClearIssues.forEach( f -> map.put(f, Collections.emptyList()));
 
     for (Issue issue : issues) {
       ClientInputFile inputFile = issue.getInputFile();

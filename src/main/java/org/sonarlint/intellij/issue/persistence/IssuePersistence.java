@@ -74,6 +74,10 @@ public class IssuePersistence extends AbstractProjectComponent {
     store.write(key, transform(issues));
   }
 
+  public synchronized void clear(String key) throws IOException {
+    store.delete(key);
+  }
+
   @CheckForNull
   public synchronized Collection<LocalIssueTrackable> read(String key) throws IOException {
     Optional<Sonarlint.Issues> issues = store.read(key);
