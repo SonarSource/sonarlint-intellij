@@ -37,7 +37,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 public class SonarLintProjectNotifications extends AbstractProjectComponent {
   public static final String GROUP_UPDATE_NOTIFICATION = "SonarLint: Configuration update";
   public static final String GROUP_BINDING_PROBLEM = "SonarLint: Server Binding Errors";
-  private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the <a href='#'>SonarLint General Settings</a>";
+  private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the <a href='#'>SonarLint Settings</a>";
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the <a href='#'>SonarLint project configuration</a>";
   private volatile boolean shown = false;
 

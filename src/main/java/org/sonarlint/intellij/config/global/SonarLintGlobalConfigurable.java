@@ -60,24 +60,32 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     this.sonarApplication = SonarLintUtils.get(SonarApplication.class);
   }
 
-  @Nls @Override public String getDisplayName() {
-    return "SonarLint General Settings";
+  @Nls
+  @Override
+  public String getDisplayName() {
+    return "SonarLint";
   }
 
-  @Nullable @Override public String getHelpTopic() {
+  @Nullable
+  @Override
+  public String getHelpTopic() {
     return null;
   }
 
-  @Nullable @Override public JComponent createComponent() {
+  @Nullable
+  @Override
+  public JComponent createComponent() {
     return getPanel();
   }
 
-  @Override public boolean isModified() {
+  @Override
+  public boolean isModified() {
     return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
       || about.isModified(telemetry) || exclusions.isModified(globalSettings) || rules.isModified(globalSettings);
   }
 
-  @Override public void apply() {
+  @Override
+  public void apply() {
     boolean rulesChanged = rules.isModified(globalSettings);
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
