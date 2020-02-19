@@ -72,7 +72,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Nls
   @Override
   public String getDisplayName() {
-    return "SonarLint";
+    return "Project Settings";
   }
 
   @Nullable
