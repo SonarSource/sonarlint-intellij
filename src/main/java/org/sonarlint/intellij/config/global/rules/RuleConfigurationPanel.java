@@ -272,7 +272,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     // description pane
     descriptionBrowser = new JEditorPane(UIUtil.HTML_MIME, "<html><body></body></html>");
     descriptionBrowser.setEditable(false);
-    descriptionBrowser.setBorder(IdeBorderFactory.createEmptyBorder(5, 5, 5, 5));
+    descriptionBrowser.setBorder(JBUI.Borders.empty(5));
     descriptionBrowser.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
     setDescription(null);
 
