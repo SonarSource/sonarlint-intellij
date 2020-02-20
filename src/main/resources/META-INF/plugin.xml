@@ -227,6 +227,7 @@
         <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
         <projectService serviceImplementation="org.sonarlint.intellij.actions.IssuesViewTabOpener"/>
+        <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
     </extensions>
 
     <extensionPoints>
