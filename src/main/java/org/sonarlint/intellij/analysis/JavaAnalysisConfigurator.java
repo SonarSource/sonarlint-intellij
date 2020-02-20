@@ -30,7 +30,6 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
 import java.util.ArrayList;
@@ -46,6 +45,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.java.JpsJavaSdkType;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
@@ -74,7 +74,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
     try {
       LanguageLevel languageLevel = ApplicationManager.getApplication()
-        .runReadAction((Computable<LanguageLevel>) () -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
+        .<LanguageLevel>runReadAction(() -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
       final String languageLevelStr = getLanguageLevelOption(languageLevel);
       String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
       if (isEmpty(bytecodeTarget)) {
@@ -89,11 +89,8 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     }
   }
 
-  /**
-   * Replace with JpsJavaSdkType.complianceOption() when available in the oldest support IJ
-   */
   private static String getLanguageLevelOption(LanguageLevel level) {
-    return level.getCompilerComplianceDefaultOption();
+    return JpsJavaSdkType.complianceOption(level.toJavaVersion());
   }
 
   private static void configureBinaries(Module ijModule, Map<String, String> properties) {
