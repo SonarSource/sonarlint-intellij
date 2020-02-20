@@ -74,11 +74,12 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
   }
 
   @Override
-  public void initComponent() {
+  public void projectOpened() {
     myProject.getMessageBus()
       .connect(myProject)
       .subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
-        @Override public void started(SonarLintJob job) {
+        @Override
+        public void started(SonarLintJob job) {
           removeFiles(job.allFiles());
         }
       });
@@ -86,11 +87,13 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
     editorFactory.getEventMulticaster().addDocumentListener(this);
   }
 
-  @Override public void beforeDocumentChange(DocumentEvent event) {
-    //nothing to do
+  @Override
+  public void beforeDocumentChange(DocumentEvent event) {
+    // nothing to do
   }
 
-  @Override public void documentChanged(DocumentEvent event) {
+  @Override
+  public void documentChanged(DocumentEvent event) {
     if (!globalSettings.isAutoTrigger()) {
       return;
     }
@@ -172,9 +175,9 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
   }
 
   @Override
-  public void disposeComponent() {
+  public void projectClosed() {
     editorFactory.getEventMulticaster().removeDocumentListener(this);
-    watcher.stopWatcher();
     eventMap.clear();
+    watcher.stopWatcher();
   }
 }

@@ -19,12 +19,10 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,8 +136,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
     Map<Module, Collection<VirtualFile>> filesByModule = new LinkedHashMap<>();
 
     for (VirtualFile file : files) {
-      Computable<Module> c = () -> utils.findModuleForFile(file, myProject);
-      Module m = ApplicationManager.getApplication().runReadAction(c);
+      Module m = utils.findModuleForFile(file, myProject);
       LocalFileExclusions.Result result = localFileExclusions.canAnalyze(file, m);
       if (result.isExcluded()) {
         logExclusion(file, "excluded: " + result.excludeReason());

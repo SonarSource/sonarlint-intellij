@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
@@ -35,16 +34,17 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import javax.annotation.CheckForNull;
 
+import static com.intellij.openapi.application.ApplicationManager.getApplication;
+
 public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   @CheckForNull
   public Module findModuleForFile(VirtualFile file, Project project) {
-    ApplicationManager.getApplication().assertReadAccessAllowed();
-    return ProjectFileIndex.SERVICE.getInstance(project).getModuleForFile(file, false);
-  }
-
-  @CheckForNull
-  public VirtualFile getSelectedFile(Project project) {
-    return SonarLintUtils.getSelectedFile(project);
+    return getApplication().<Module>runReadAction(() -> {
+      if (!project.isOpen()) {
+        return null;
+      }
+      return ProjectFileIndex.SERVICE.getInstance(project).getModuleForFile(file, false);
+    });
   }
 
   @CheckForNull
@@ -53,8 +53,13 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   }
 
   public boolean isOpenFile(Project project, VirtualFile file) {
-    VirtualFile[] openFiles = FileEditorManager.getInstance(project).getOpenFiles();
-    return Arrays.asList(openFiles).contains(file);
+    return getApplication().<Boolean>runReadAction(() -> {
+      if (!project.isOpen()) {
+        return false;
+      }
+      VirtualFile[] openFiles = FileEditorManager.getInstance(project).getOpenFiles();
+      return Arrays.asList(openFiles).contains(file);
+    });
   }
 
   /**
