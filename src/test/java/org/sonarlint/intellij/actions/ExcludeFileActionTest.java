@@ -28,17 +28,22 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static com.intellij.openapi.actionSystem.ActionPlaces.EDITOR_POPUP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class ExcludeFileActionTest extends SonarTest {
   private VirtualFile file1 = mock(VirtualFile.class);
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private ExcludeFileAction action = new ExcludeFileAction();
   private AnActionEvent e = mock(AnActionEvent.class);
   private Presentation presentation = new Presentation();
@@ -47,6 +52,7 @@ public class ExcludeFileActionTest extends SonarTest {
   public void setup() {
     super.register(project, SonarLintProjectSettings.class, settings);
     super.register(app, SonarLintAppUtils.class, appUtils);
+    super.register(project, SonarLintSubmitter.class, submitter);
     when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("file1");
     when(project.isInitialized()).thenReturn(true);
     when(e.getProject()).thenReturn(project);
@@ -60,6 +66,7 @@ public class ExcludeFileActionTest extends SonarTest {
     action.actionPerformed(e);
 
     assertThat(settings.getFileExclusions()).containsOnly("FILE:file1");
+    verify(submitter).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
   }
 
   @Test
@@ -69,6 +76,7 @@ public class ExcludeFileActionTest extends SonarTest {
     action.actionPerformed(e);
 
     assertThat(settings.getFileExclusions()).containsOnly("FILE:file1");
+    verifyZeroInteractions(submitter);
   }
 
   @Test
@@ -78,6 +86,7 @@ public class ExcludeFileActionTest extends SonarTest {
     action.actionPerformed(e);
 
     assertThat(settings.getFileExclusions()).isEmpty();
+    verifyZeroInteractions(submitter);
   }
 
   @Test
@@ -86,6 +95,7 @@ public class ExcludeFileActionTest extends SonarTest {
 
     action.actionPerformed(e);
     assertThat(settings.getFileExclusions()).isEmpty();
+    verifyZeroInteractions(submitter);
   }
 
   @Test
@@ -95,6 +105,7 @@ public class ExcludeFileActionTest extends SonarTest {
     action.actionPerformed(e);
 
     assertThat(settings.getFileExclusions()).isEmpty();
+    verifyZeroInteractions(submitter);
   }
 
   @Test
