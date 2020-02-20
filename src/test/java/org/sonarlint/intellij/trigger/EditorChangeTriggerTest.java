@@ -50,7 +50,7 @@ public class EditorChangeTriggerTest {
   private FileDocumentManager docManager = mock(FileDocumentManager.class);
 
   private SonarLintGlobalSettings globalSettings;
-  private EditorChangeTrigger listener;
+  private EditorChangeTrigger underTest;
 
   @Before
   public void setUp() {
@@ -59,8 +59,8 @@ public class EditorChangeTriggerTest {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    listener = new EditorChangeTrigger(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
-    listener.initComponent();
+    underTest = new EditorChangeTrigger(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
+    underTest.projectOpened();
   }
 
   @Test
@@ -77,8 +77,8 @@ public class EditorChangeTriggerTest {
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
     when(utils.isOpenFile(project, file)).thenReturn(true);
 
-    listener.documentChanged(event);
-    assertThat(listener.getEvents()).hasSize(1);
+    underTest.documentChanged(event);
+    assertThat(underTest.getEvents()).hasSize(1);
     verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
     verifyNoMoreInteractions(submitter);
   }
@@ -97,7 +97,7 @@ public class EditorChangeTriggerTest {
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
 
-    listener.documentChanged(event);
+    underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
   }
 
@@ -114,7 +114,7 @@ public class EditorChangeTriggerTest {
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
 
-    listener.documentChanged(event);
+    underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
   }
 
@@ -129,7 +129,7 @@ public class EditorChangeTriggerTest {
     when(docManager.getFile(doc)).thenReturn(file);
     when(utils.guessProjectForFile(file)).thenReturn(null);
 
-    listener.documentChanged(event);
+    underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
   }
 
@@ -141,13 +141,13 @@ public class EditorChangeTriggerTest {
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(null);
 
-    listener.documentChanged(event);
+    underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
   }
 
   @Test
   public void nothing_to_do_before_doc_change() {
-    listener.beforeDocumentChange(null);
+    underTest.beforeDocumentChange(null);
     verifyZeroInteractions(submitter);
     verifyZeroInteractions(utils);
   }
@@ -165,8 +165,8 @@ public class EditorChangeTriggerTest {
     when(utils.guessProjectForFile(file)).thenReturn(project);
     when(utils.findModuleForFile(file, project)).thenReturn(m1);
 
-    listener.documentChanged(event);
-    listener.disposeComponent();
-    assertThat(listener.getEvents()).isEmpty();
+    underTest.documentChanged(event);
+    underTest.projectClosed();
+    assertThat(underTest.getEvents()).isEmpty();
   }
 }
