@@ -19,9 +19,11 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.Collection;
@@ -29,27 +31,37 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
-public class LiveIssueCache extends AbstractProjectComponent {
+public class LiveIssueCache implements ProjectManagerListener, Disposable {
   private static final Logger LOGGER = Logger.getInstance(LiveIssueCache.class);
   static final int DEFAULT_MAX_ENTRIES = 10_000;
   private final Map<VirtualFile, Collection<LiveIssue>> cache;
+  private final Project project;
+  private final ProjectManager projectManager;
   private final IssuePersistence store;
   private final SonarLintAppUtils appUtils;
   private final int maxEntries;
 
-  public LiveIssueCache(Project project, IssuePersistence store, SonarLintAppUtils appUtils) {
-    this(project, store, appUtils, DEFAULT_MAX_ENTRIES);
+  public LiveIssueCache(Project project, ProjectManager projectManager, IssuePersistence store, SonarLintAppUtils appUtils) {
+    this(project, projectManager, store, appUtils, DEFAULT_MAX_ENTRIES);
   }
 
-  LiveIssueCache(Project project, IssuePersistence store, SonarLintAppUtils appUtils, int maxEntries) {
-    super(project);
+  LiveIssueCache(Project project, ProjectManager projectManager, IssuePersistence store, SonarLintAppUtils appUtils, int maxEntries) {
+    this.project = project;
+    this.projectManager = projectManager;
     this.store = store;
     this.appUtils = appUtils;
     this.maxEntries = maxEntries;
     this.cache = new LimitedSizeLinkedHashMap();
+    projectManager.addProjectManagerListener(this.project, this);
+  }
+
+  @Override
+  public void dispose() {
+    projectManager.removeProjectManagerListener(this.project, this);
   }
 
   /**
@@ -110,11 +122,9 @@ public class LiveIssueCache extends AbstractProjectComponent {
     });
   }
 
-  /**
-   * Use {@link #projectClosed} instead of {@link #disposeComponent} because the latter can't access the project index anymore.
-   */
   @Override
-  public synchronized void projectClosed() {
+  public void projectClosing(@NotNull Project project) {
+    // Flush issues before project is closed, because we need to resolve module paths to compute the key
     flushAll();
   }
 
@@ -141,6 +151,6 @@ public class LiveIssueCache extends AbstractProjectComponent {
   }
 
   private String createKey(VirtualFile virtualFile) {
-    return appUtils.getRelativePathForAnalysis(myProject, virtualFile);
+    return appUtils.getRelativePathForAnalysis(this.project, virtualFile);
   }
 }
