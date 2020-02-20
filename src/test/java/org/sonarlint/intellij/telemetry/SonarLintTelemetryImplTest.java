@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.net.ssl.CertificateManager;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -55,9 +53,6 @@ public class SonarLintTelemetryImplTest extends SonarTest {
 
     TelemetryManagerProvider engineProvider = mock(TelemetryManagerProvider.class);
     when(engineProvider.get()).thenReturn(engine);
-
-    ProjectManager projectManager = mock(ProjectManager.class);
-    when(projectManager.getOpenProjects()).thenReturn(new Project[0]);
 
     SonarLintTelemetryImpl telemetry = new SonarLintTelemetryImpl(engineProvider);
     telemetry.initComponent();
