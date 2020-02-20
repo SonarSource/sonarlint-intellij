@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.Collections;
@@ -49,7 +50,7 @@ public class LiveIssueCacheTest {
   @Rule
   public ExpectedException exception = ExpectedException.none();
 
-  private LiveIssueCache cache = new LiveIssueCache(project, store, appUtils, 10);
+  private LiveIssueCache cache = new LiveIssueCache(project, mock(ProjectManager.class), store, appUtils, 10);
 
   @Before
   public void setUp() {
@@ -183,14 +184,14 @@ public class LiveIssueCacheTest {
   }
 
   @Test
-  public void should_flush_on_project_closed() throws IOException {
+  public void should_flush_on_project_closing() throws IOException {
     LiveIssue issue1 = createTestIssue("r1");
     VirtualFile file0 = createTestFile("file0");
     cache.save(file0, Collections.singleton(issue1));
     VirtualFile file1 = createTestFile("file1");
     cache.save(file1, Collections.singleton(issue1));
 
-    cache.projectClosed();
+    cache.projectClosing(project);
 
     verify(store).save(eq("file0"), anyCollection());
     verify(store).save(eq("file1"), anyCollection());
