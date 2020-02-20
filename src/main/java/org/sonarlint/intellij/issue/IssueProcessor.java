@@ -167,7 +167,8 @@ public class IssueProcessor extends AbstractProjectComponent {
         LiveIssue toStore = transformIssue(issue, inputFile);
         map.get(vFile).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
-        console.error("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
+        // File content is likely to have changed during the analysis, should be fixed in next analysis
+        console.debug("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
         map.remove(vFile);
       } catch (Exception e) {
         LOGGER.error("Error finding location for issue", e);
@@ -194,15 +195,17 @@ public class IssueProcessor extends AbstractProjectComponent {
     for (Issue.Flow f : flows) {
       List<LiveIssue.IssueLocation> newLocations = new LinkedList<>();
       for (IssueLocation loc : f.locations()) {
-        RangeMarker range;
         try {
-          range = matcher.match(psiFile, loc);
+          RangeMarker range = matcher.match(psiFile, loc);
+          newLocations.add(new LiveIssue.IssueLocation(range, loc.getMessage()));
+        } catch (IssueMatcher.NoMatchException e) {
+          // File content is likely to have changed during the analysis, should be fixed in next analysis
+          console.debug("Failed to find secondary location of issue for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
         } catch (Exception e) {
           LOGGER.error("Error finding secondary location for issue", e, rule,
             String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));
           return Collections.emptyList();
         }
-        newLocations.add(new LiveIssue.IssueLocation(range, loc.getMessage()));
       }
       LiveIssue.Flow newFlow = new LiveIssue.Flow(newLocations);
       transformedFlows.add(newFlow);
