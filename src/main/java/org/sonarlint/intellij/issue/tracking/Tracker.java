@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue.tracking;
 
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,8 +33,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
   public Tracking<RAW, BASE> track(Input<RAW> rawInput, Input<BASE> baseInput) {
-    AccessToken accessToken = ApplicationManager.getApplication().acquireReadActionLock();
-    try {
+    return ApplicationManager.getApplication().<Tracking<RAW, BASE>>runReadAction(() -> {
       Tracking<RAW, BASE> tracking = new Tracking<>(rawInput, baseInput);
 
       // 1. match issues with same rule, same line and same text range hash, but not necessarily with same message
@@ -61,9 +59,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       match(tracking, ServerIssueSearchKeyFactory.INSTANCE);
 
       return tracking;
-    } finally {
-      accessToken.finish();
-    }
+    });
   }
 
   private void match(Tracking<RAW, BASE> tracking, SearchKeyFactory factory) {

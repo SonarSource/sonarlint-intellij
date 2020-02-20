@@ -20,7 +20,6 @@
 package org.sonarlint.intellij;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ComponentManager;
@@ -31,6 +30,7 @@ import com.intellij.openapi.extensions.ExtensionsArea;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.util.Computable;
 import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.impl.MessageBusImpl;
@@ -58,14 +58,23 @@ public abstract class SonarTest {
     when(app.isUnitTestMode()).thenReturn(true);
     when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
     when(app.isHeadlessEnvironment()).thenReturn(true);
-    when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(app.getMessageBus()).thenReturn(new MessageBusImpl.RootBus(this));
+
+    Answer<?> computableArg = invocation -> ((Computable<?>) invocation.getArgument(0)).compute();
+    doAnswer(computableArg).when(app).runReadAction(any(Computable.class));
+
+    Answer<Void> runnableArg = invocation -> {
+      ((Runnable) invocation.getArgument(0)).run();
+      return null;
+    };
+    doAnswer(runnableArg).when(app).runReadAction(any(Runnable.class));
+
     Answer<Void> runArg = invocation -> {
       ((ThrowableComputable) invocation.getArgument(0)).compute();
       return null;
     };
-
     doAnswer(runArg).when(app).runReadAction(any(ThrowableComputable.class));
+
     register(app, CertificateManager.class, new CertificateManager());
     createModuleRoot();
   }

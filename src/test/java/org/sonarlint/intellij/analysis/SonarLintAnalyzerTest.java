@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -62,7 +61,6 @@ public class SonarLintAnalyzerTest extends SonarTest {
   @Before
   public void prepare() throws InvalidBindingException {
     analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, telemetry, appUtils);
-    when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
     when(facade.startAnalysis(anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
     super.register(module, VirtualFileTestPredicate.class, testPredicate);

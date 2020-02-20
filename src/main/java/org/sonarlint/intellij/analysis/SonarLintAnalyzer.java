@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -27,10 +27,10 @@ import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
@@ -109,14 +109,11 @@ public class SonarLintAnalyzer {
   }
 
   private List<ClientInputFile> getInputFiles(Module module, VirtualFileTestPredicate testPredicate, Collection<VirtualFile> filesToAnalyze) {
-    List<ClientInputFile> inputFiles = new LinkedList<>();
-
-    ReadAction.run(() -> filesToAnalyze.stream()
+    return ApplicationManager.getApplication().<List<ClientInputFile>>runReadAction(() -> filesToAnalyze.stream()
       .map(f -> createClientInputFile(module, f, testPredicate))
       .filter(Objects::nonNull)
-      .forEach(inputFiles::add));
-
-    return inputFiles;
+      .collect(Collectors.toList())
+    );
   }
 
   @CheckForNull

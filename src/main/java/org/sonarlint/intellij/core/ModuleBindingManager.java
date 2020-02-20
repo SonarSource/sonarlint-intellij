@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -67,9 +66,8 @@ public class ModuleBindingManager extends AbstractModuleComponent {
   }
 
   private List<String> collectPathsForModule() {
-    List<String> paths = new ArrayList<>();
-    AccessToken accessToken = ApplicationManager.getApplication().acquireReadActionLock();
-    try {
+    return ApplicationManager.getApplication().<List<String>>runReadAction(() -> {
+      List<String> paths = new ArrayList<>();
       ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
       moduleRootManager.getFileIndex().iterateContent(virtualFile -> {
         if (!virtualFile.isDirectory()) {
@@ -80,9 +78,7 @@ public class ModuleBindingManager extends AbstractModuleComponent {
         }
         return true;
       });
-    } finally {
-      accessToken.finish();
-    }
-    return paths;
+      return paths;
+    });
   }
 }

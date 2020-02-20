@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
@@ -81,7 +80,6 @@ public class ServerIssueUpdaterTest extends SonarTest {
     super.register(app, SonarApplication.class, mock(SonarApplication.class));
     super.register(module, ModuleBindingManager.class, moduleBindingManager);
     when(module.getProject()).thenReturn(project);
-    when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
     Path projectBaseDir = temp.newFolder().toPath();
     when(moduleBindingManager.getBinding()).thenReturn(new ProjectBinding(PROJECT_KEY, "", ""));
     when(indicator.isModal()).thenReturn(false);

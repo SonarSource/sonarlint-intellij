@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
@@ -189,17 +189,17 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private Map<VirtualFile, String> getRelativePaths(Project project, Collection<VirtualFile> files) {
-    Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
+    return ApplicationManager.getApplication().<Map<VirtualFile, String>>runReadAction(() -> {
+      Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
 
-    ReadAction.run(() -> {
       for (VirtualFile file : files) {
         String relativePath = appUtils.getPathRelativeToProjectBaseDir(project, file);
         if (relativePath != null) {
           relativePathPerFile.put(file, relativePath);
         }
       }
+      return relativePathPerFile;
     });
-    return relativePathPerFile;
   }
 
   private Future<Void> submit(Runnable task, String projectKey, @Nullable String moduleRelativePath) {

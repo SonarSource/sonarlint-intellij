@@ -23,7 +23,6 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
@@ -54,7 +53,7 @@ public class SonarClearIssuesAction extends AnAction {
       IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
       DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.get(project, DaemonCodeAnalyzer.class);
 
-      ReadAction.run(() -> {
+      ApplicationManager.getApplication().runReadAction(() -> {
         issueManager.clear();
 
         // run annotator to remove highlighting of issues

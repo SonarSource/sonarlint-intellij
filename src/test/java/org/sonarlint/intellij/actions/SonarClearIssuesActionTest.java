@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.application.AccessToken;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -48,7 +47,6 @@ public class SonarClearIssuesActionTest extends SonarTest {
   @Before
   public void prepare() {
     when(event.getProject()).thenReturn(project);
-    when(app.acquireReadActionLock()).thenReturn(mock(AccessToken.class));
   }
 
   @Test
