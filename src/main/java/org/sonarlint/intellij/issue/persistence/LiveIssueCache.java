@@ -138,11 +138,13 @@ public class LiveIssueCache implements ProjectManagerListener, Disposable {
 
   public synchronized void clear(VirtualFile virtualFile) {
     String key = createKey(virtualFile);
-    cache.remove(virtualFile);
-    try {
-      store.clear(key);
-    } catch (IOException e) {
-      throw new IllegalStateException("Failed to clear cache", e);
+    if (key != null) {
+      cache.remove(virtualFile);
+      try {
+        store.clear(key);
+      } catch (IOException e) {
+        throw new IllegalStateException("Failed to clear cache", e);
+      }
     }
   }
 
