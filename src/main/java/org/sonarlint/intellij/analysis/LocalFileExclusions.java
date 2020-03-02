@@ -115,7 +115,7 @@ public class LocalFileExclusions {
   /**
    * Checks if a file is excluded from analysis based on locally configured exclusions.
    */
-  public Result checkExclusions(VirtualFile file, @Nullable Module module) {
+  public Result checkExclusions(VirtualFile file, Module module) {
     Result result = checkFileInSourceFolders(file, module);
     if (result.isExcluded) {
       return result;

@@ -116,7 +116,12 @@ public class AutoTriggerStatusPanel {
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
       Module m = utils.findModuleForFile(selectedFile, project);
-      LocalFileExclusions.Result result = localFileExclusions.checkExclusions(selectedFile, m);
+      LocalFileExclusions.Result result = localFileExclusions.canAnalyze(selectedFile, m);
+      if (result.isExcluded()) {
+        return FILE_DISABLED;
+      }
+      // here module is not null or file would have been already excluded by canAnalyze
+      result = localFileExclusions.checkExclusions(selectedFile, m);
       if (result.isExcluded()) {
         return FILE_DISABLED;
       }

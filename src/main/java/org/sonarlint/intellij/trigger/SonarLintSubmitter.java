@@ -144,6 +144,7 @@ public class SonarLintSubmitter extends AbstractProjectComponent {
         continue;
       }
       if (checkExclusions) {
+        // here module is not null or file would have been already excluded by canAnalyze
         result = localFileExclusions.checkExclusions(file, m);
         if (result.isExcluded()) {
           if (result.excludeReason() != null) {
