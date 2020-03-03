@@ -79,11 +79,12 @@ public class DefaultClientInputFile implements ClientInputFile {
   }
 
   private URI createURI() {
-    try {
-      return new URI(vFile.getUrl());
-    } catch (Exception e) {
-      return Paths.get(getPath()).toUri();
+    // Don't use VfsUtilCore.convertToURL as it doesn't work on Windows (it produces invalid URL)
+    // Instead, since we are currently limiting ourself to analyze files in LocalFileSystem
+    if (!vFile.isInLocalFileSystem()) {
+      throw new IllegalStateException("Not a local file");
     }
+    return Paths.get(vFile.getPath()).toUri();
   }
 
   @Override public String contents() throws IOException {
