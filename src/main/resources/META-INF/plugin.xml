@@ -43,6 +43,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.5.1 - Fix two regressions causing exception during analysis.</li>
         <li>4.5 - 3 new rules and engine improvements for Python. New engine for Java, with support for Java 13 preview features.</li>
         <li>4.4 - Ensure compatibility with JetBrains 2020.x release train. 22 new rules and engine improvements for Python. Support for PHP 7.4. New engine for JavaScript, 8 new rules.</li>
         <li>4.3 - Supports SonarJS 6.x in connected mode. Updated issue type icons.</li>
