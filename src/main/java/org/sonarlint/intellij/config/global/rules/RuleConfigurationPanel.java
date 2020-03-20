@@ -63,7 +63,6 @@ import javax.swing.tree.TreePath;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
-import org.sonarsource.sonarlint.core.client.api.connected.Language;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
@@ -135,8 +134,6 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     Collection<RuleDetails> ruleDetails = engine.getAllRuleDetails();
     Map<String, String> languagesNameByKey = engine.getAllLanguagesNameByKey();
     Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = ruleDetails.stream()
-      // SLI-373 TypeScript is not officially supported (yet)
-      .filter(r -> !Language.TS.getLanguageKey().equals(r.getLanguageKey()))
       .map(r -> new RulesTreeNode.Rule(r, currentActivationByRuleKey.get(r.getKey())))
       .filter(filterModel::filter)
       .collect(Collectors.groupingBy(RulesTreeNode.Rule::languageKey));

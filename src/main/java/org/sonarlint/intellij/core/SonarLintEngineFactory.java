@@ -47,7 +47,7 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 
 public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
 
-  private static final Language[] ENABLED_LANGUAGES = {
+  private static final Language[] STANDALONE_LANGUAGES = {
     Language.HTML,
     Language.JAVA,
     Language.JS,
@@ -55,6 +55,10 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     Language.PHP,
     Language.PYTHON,
     Language.RUBY,
+    Language.TS
+  };
+
+  private static final Language[] CONNECTED_ADDITIONAL_LANGUAGES = {
     Language.SCALA,
     Language.SWIFT,
     Language.XML
@@ -69,7 +73,8 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
-      .addEnabledLanguages(ENABLED_LANGUAGES)
+      .addEnabledLanguages(STANDALONE_LANGUAGES)
+      .addEnabledLanguages(CONNECTED_ADDITIONAL_LANGUAGES)
       .setWorkDir(getWorkDir())
       .setServerId(serverId)
       .build();
@@ -94,6 +99,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
         .setSonarLintUserHome(getSonarLintHome())
         .setWorkDir(getWorkDir())
         .addPlugins(plugins)
+        .addEnabledLanguages(STANDALONE_LANGUAGES)
         .build();
 
       return new StandaloneSonarLintEngineImpl(globalConfiguration);
