@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import org.sonar.api.utils.ZipUtils;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
 class TypeScriptSupport {
@@ -33,10 +34,14 @@ class TypeScriptSupport {
 
   TypeScriptSupport(Path workDir) {
     this.workDir = workDir;
-    extractTypeScriptIfNeeded();
   }
 
   Path getTypeScriptPath() {
+    extractTypeScriptIfNeeded();
+    return getTypeScriptPathInternal();
+  }
+
+  private Path getTypeScriptPathInternal() {
     return getTypeScriptInstallPath().resolve("package").resolve("lib");
   }
 
@@ -45,15 +50,14 @@ class TypeScriptSupport {
   }
 
   private void extractTypeScriptIfNeeded() {
-    // TODO Add proper logging!
-    Path tsPath = getTypeScriptInstallPath();
-    if (!Files.isDirectory(getTypeScriptPath())) {
+    if (!Files.isDirectory(getTypeScriptPathInternal())) {
+      Path tsPath = getTypeScriptInstallPath();
       try {
         FileUtils.mkdirs(tsPath);
         InputStream typescriptZip = TypeScriptSupport.class.getResourceAsStream("/typescript/typescript.zip");
         ZipUtils.unzip(typescriptZip, tsPath.toFile());
       } catch(Throwable t) {
-        // TODO Log!
+        GlobalLogOutput.get().logError(String.format("Unable to extract embedded TypeScript compiler to '%s'", tsPath), t);
       }
     }
 
