@@ -111,6 +111,10 @@ task copyTS(type: Zip, dependsOn: cleanTS) {
   outputs.upToDateWhen { false }
   destinationDirectory = file('src/main/resources/typescript')
   archiveFileName = 'typescript.zip'
+  excludes = [
+          '**/loc/**',
+          '**/lib/*/diagnosticMessages.generated.json'
+  ]
 
   def tsBundlePath = project.configurations.typescript.find {it.name.startsWith("typescript") }
   from tarTree(tsBundlePath)
