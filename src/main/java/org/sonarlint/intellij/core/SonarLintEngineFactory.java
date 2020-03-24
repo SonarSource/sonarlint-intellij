@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,10 +39,10 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.Language;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -64,9 +65,11 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     Language.XML
   };
   private final GlobalLogOutput globalLogOutput;
+  private final TypeScriptSupport typeScriptSupport;
 
   public SonarLintEngineFactory(GlobalLogOutput globalLogOutput) {
     this.globalLogOutput = globalLogOutput;
+    this.typeScriptSupport = new TypeScriptSupport(getWorkDir());
   }
 
   ConnectedSonarLintEngine createEngine(String serverId) {
@@ -75,6 +78,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
       .setSonarLintUserHome(getSonarLintHome())
       .addEnabledLanguages(STANDALONE_LANGUAGES)
       .addEnabledLanguages(CONNECTED_ADDITIONAL_LANGUAGES)
+      .setExtraProperties(prepareExtraProps())
       .setWorkDir(getWorkDir())
       .setServerId(serverId)
       .build();
@@ -100,6 +104,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
         .setWorkDir(getWorkDir())
         .addPlugins(plugins)
         .addEnabledLanguages(STANDALONE_LANGUAGES)
+        .setExtraProperties(prepareExtraProps())
         .build();
 
       return new StandaloneSonarLintEngineImpl(globalConfiguration);
@@ -161,5 +166,9 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
 
   @NotNull @Override public String getComponentName() {
     return "SonarLintEngineFactory";
+  }
+
+  private Map<String, String> prepareExtraProps() {
+    return Collections.singletonMap(TypeScriptSupport.TYPESCRIPT_PATH_PROP, typeScriptSupport.getTypeScriptPath().toString());
   }
 }

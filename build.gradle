@@ -2,7 +2,7 @@
 // The above triggers groovy syntax highlighting in vim
 
 plugins {
-  id "org.jetbrains.intellij" version "0.4.14"
+  id "org.jetbrains.intellij" version "0.4.17"
   id "org.sonarqube" version "2.7.1"
   id "java"
   id "com.github.hierynomus.license" version "0.14.0"
@@ -54,6 +54,15 @@ repositories {
   mavenLocal()
   maven {
     url "https://repox.jfrog.io/repox/sonarsource"
+    content { excludeGroup("typescript") }
+  }
+  ivy {
+    url "https://repox.jfrog.io/repox/api/npm/npm"
+    patternLayout {
+      artifact "[organization]/-/[module]-[revision].[ext]"
+      metadataSources { artifact() }
+    }
+    content { includeGroup("typescript") }
   }
 }
 
@@ -80,6 +89,7 @@ dependencies {
     'org.sonarsource.slang:sonar-ruby-plugin:1.5.0.315@jar',
     'org.sonarsource.html:sonar-html-plugin:3.2.0.2082@jar'
   )
+  compile "typescript:typescript:${typescriptVersion}@tgz"
 }
 
 task cleanSQPlugins(type: Delete) {
@@ -92,7 +102,21 @@ task downloadSQPlugins(type: Copy, dependsOn: cleanSQPlugins) {
   into 'src/main/resources/plugins'
 }
 
-classes.dependsOn downloadSQPlugins
+task cleanTS(type: Delete) {
+  delete fileTree('src/main/resources/typescript').include('typescript.zip')
+}
+
+task copyTS(type: Zip, dependsOn: cleanTS) {
+  outputs.upToDateWhen { false }
+  destinationDirectory = file('src/main/resources/typescript')
+  archiveFileName = 'typescript.zip'
+
+  def tsBundlePath = project.configurations.compile.find {it.name.startsWith("typescript") }
+  from tarTree(tsBundlePath)
+  into '/'
+}
+
+classes.dependsOn downloadSQPlugins, copyTS
 
 sonarqube {
   properties {
