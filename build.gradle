@@ -67,7 +67,8 @@ repositories {
 }
 
 configurations {
-  sqplugins { transitive = false } 
+  sqplugins { transitive = false }
+  typescript { canBeConsumed = false }
 }
 
 dependencies {
@@ -89,7 +90,7 @@ dependencies {
     'org.sonarsource.slang:sonar-ruby-plugin:1.5.0.315@jar',
     'org.sonarsource.html:sonar-html-plugin:3.2.0.2082@jar'
   )
-  compile "typescript:typescript:${typescriptVersion}@tgz"
+  typescript "typescript:typescript:${typescriptVersion}@tgz"
 }
 
 task cleanSQPlugins(type: Delete) {
@@ -111,7 +112,7 @@ task copyTS(type: Zip, dependsOn: cleanTS) {
   destinationDirectory = file('src/main/resources/typescript')
   archiveFileName = 'typescript.zip'
 
-  def tsBundlePath = project.configurations.compile.find {it.name.startsWith("typescript") }
+  def tsBundlePath = project.configurations.typescript.find {it.name.startsWith("typescript") }
   from tarTree(tsBundlePath)
   into '/'
 }
