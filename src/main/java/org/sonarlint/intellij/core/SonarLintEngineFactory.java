@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
@@ -64,12 +65,12 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     Language.SWIFT,
     Language.XML
   };
+  private final SonarApplication application;
   private final GlobalLogOutput globalLogOutput;
-  private final TypeScriptSupport typeScriptSupport;
 
-  public SonarLintEngineFactory(GlobalLogOutput globalLogOutput) {
+  public SonarLintEngineFactory(SonarApplication application, GlobalLogOutput globalLogOutput) {
+    this.application = application;
     this.globalLogOutput = globalLogOutput;
-    this.typeScriptSupport = new TypeScriptSupport(getWorkDir());
   }
 
   ConnectedSonarLintEngine createEngine(String serverId) {
@@ -169,6 +170,6 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
   }
 
   private Map<String, String> prepareExtraProps() {
-    return Collections.singletonMap(TypeScriptSupport.TYPESCRIPT_PATH_PROP, typeScriptSupport.getTypeScriptPath().toString());
+    return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", application.getPluginPath().resolve("typescript").resolve("lib").toString());
   }
 }

@@ -142,4 +142,8 @@ public class SonarApplication extends ApplicationComponent.Adapter {
       // ignore
     }
   }
+
+  public Path getPluginPath() {
+    return plugin.getPath().toPath();
+  }
 }

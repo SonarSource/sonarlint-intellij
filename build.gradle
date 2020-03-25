@@ -103,25 +103,22 @@ task downloadSQPlugins(type: Copy, dependsOn: cleanSQPlugins) {
   into 'src/main/resources/plugins'
 }
 
-task cleanTS(type: Delete) {
-  delete fileTree('src/main/resources/typescript').include('typescript.zip')
+prepareSandbox {
+  doLast {
+    def tsBundlePath = project.configurations.typescript[0]
+    copy {
+      from tarTree(tsBundlePath)
+      excludes = [
+              '**/loc/**',
+              '**/lib/*/diagnosticMessages.generated.json'
+      ]
+      into file("$destinationDir/$pluginName")
+    }
+    file("$destinationDir/$pluginName/package").renameTo("$destinationDir/$pluginName/typescript")
+  }
 }
 
-task copyTS(type: Zip, dependsOn: cleanTS) {
-  outputs.upToDateWhen { false }
-  destinationDirectory = file('src/main/resources/typescript')
-  archiveFileName = 'typescript.zip'
-  excludes = [
-          '**/loc/**',
-          '**/lib/*/diagnosticMessages.generated.json'
-  ]
-
-  def tsBundlePath = project.configurations.typescript.find {it.name.startsWith("typescript") }
-  from tarTree(tsBundlePath)
-  into '/'
-}
-
-classes.dependsOn downloadSQPlugins, copyTS
+classes.dependsOn downloadSQPlugins
 
 sonarqube {
   properties {
