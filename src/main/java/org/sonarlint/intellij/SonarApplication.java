@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.core.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.core.SonarQubeEventNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
@@ -113,6 +114,7 @@ public class SonarApplication extends ApplicationComponent.Adapter {
   }
 
   private static void registerNotifications() {
+    NotificationGroup.balloonGroup(AnalysisRequirementNotifications.GROUP_ANALYSIS_PROBLEM);
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_BINDING_PROBLEM);
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_UPDATE_NOTIFICATION);
     NotificationGroup.balloonGroup(SonarQubeEventNotifications.GROUP_SONARQUBE_EVENT);

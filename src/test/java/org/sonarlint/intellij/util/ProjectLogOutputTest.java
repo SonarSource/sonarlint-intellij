@@ -22,6 +22,7 @@ package org.sonarlint.intellij.util;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
@@ -31,13 +32,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-public class ProjectLogOutputTest {
+public class ProjectLogOutputTest extends SonarTest {
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private SonarLintConsole mockConsole = mock(SonarLintConsole.class);
-  private ProjectLogOutput logOutput = new ProjectLogOutput(mockConsole, settings);
+  private ProjectLogOutput logOutput = new ProjectLogOutput(project, mockConsole, settings);
 
   @Before
-  public void setUp() {
+  public void enableAnalysisLogs() {
     settings.setAnalysisLogsEnabled(true);
   }
 
@@ -83,4 +84,9 @@ public class ProjectLogOutputTest {
     verify(mockConsole).debug("test");
   }
 
+  @Test
+  public void testNodeCommandException() {
+    logOutput.log("org.sonarsource.nodejs.NodeCommandException: Node not found :(", LogOutput.Level.DEBUG);
+    verify(mockConsole).info("org.sonarsource.nodejs.NodeCommandException: Node not found :(");
+  }
 }
