@@ -1,5 +1,4 @@
 src/main/resources/plugins/*.jar
-src/main/resources/typescript/*.zip
 out
 
 # ---- Sonar

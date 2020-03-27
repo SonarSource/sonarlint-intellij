@@ -38,11 +38,11 @@ public class AnalysisRequirementNotifications {
     // NOP
   }
 
-  public static final String GROUP_ANALYSIS_PROBLEM = "SonarLint: Unmet Analysis Requirement";
+  public static final String GROUP_ANALYSIS_PROBLEM = "SonarLint: Analysis Requirement";
 
   public static void notifyNodeCommandException(Project project) {
     Notification notification = new Notification(GROUP_ANALYSIS_PROBLEM,
-      "<b>SonarLint - Unmet Analysis Requirement</b>",
+      "<b>SonarLint - Node.js Required</b>",
       "Node.js >= 8.x is required to perform JavaScript or TypeScript analysis. Check the <a href='#'>SonarLint Log</a> for details.",
       NotificationType.WARNING, new ShowSonarLintLogListener(project));
     notification.setImportant(true);
