@@ -43,7 +43,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>4.6 - Enable analysis of TypeScript.</li>
+        <li>4.6 - Enable analysis of TypeScript. 27 new rules for Python. Support for Python 3.8.</li>
         <li>4.5.1 - Fix two regressions causing exception during analysis.</li>
         <li>4.5 - 3 new rules and engine improvements for Python. New engine for Java, with support for Java 13 preview features.</li>
         <li>4.4 - Ensure compatibility with JetBrains 2020.x release train. 22 new rules and engine improvements for Python. Support for PHP 7.4. New engine for JavaScript, 8 new rules.</li>
