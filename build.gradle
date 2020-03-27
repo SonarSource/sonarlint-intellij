@@ -2,7 +2,7 @@
 // The above triggers groovy syntax highlighting in vim
 
 plugins {
-  id "org.jetbrains.intellij" version "0.4.14"
+  id "org.jetbrains.intellij" version "0.4.17"
   id "org.sonarqube" version "2.7.1"
   id "java"
   id "com.github.hierynomus.license" version "0.14.0"
@@ -54,11 +54,21 @@ repositories {
   mavenLocal()
   maven {
     url "https://repox.jfrog.io/repox/sonarsource"
+    content { excludeGroup("typescript") }
+  }
+  ivy {
+    url "https://repox.jfrog.io/repox/api/npm/npm"
+    patternLayout {
+      artifact "[organization]/-/[module]-[revision].[ext]"
+      metadataSources { artifact() }
+    }
+    content { includeGroup("typescript") }
   }
 }
 
 configurations {
-  sqplugins { transitive = false } 
+  sqplugins { transitive = false }
+  typescript { canBeConsumed = false }
 }
 
 dependencies {
@@ -73,13 +83,14 @@ dependencies {
   testImplementation 'org.mockito:mockito-core:2.19.0'
   sqplugins (
     'org.sonarsource.java:sonar-java-plugin:6.1.0.20866@jar',
-    'org.sonarsource.javascript:sonar-javascript-plugin:6.2.0.12043',
+    'org.sonarsource.javascript:sonar-javascript-plugin:6.3.0.12133@jar',
     'org.sonarsource.php:sonar-php-plugin:3.3.0.5166@jar',
     'org.sonarsource.python:sonar-python-plugin:2.5.0.5733@jar',
     'org.sonarsource.slang:sonar-kotlin-plugin:1.5.0.315@jar',
     'org.sonarsource.slang:sonar-ruby-plugin:1.5.0.315@jar',
     'org.sonarsource.html:sonar-html-plugin:3.2.0.2082@jar'
   )
+  typescript "typescript:typescript:${typescriptVersion}@tgz"
 }
 
 task cleanSQPlugins(type: Delete) {
@@ -90,6 +101,21 @@ task downloadSQPlugins(type: Copy, dependsOn: cleanSQPlugins) {
   outputs.upToDateWhen { false }
   from configurations.sqplugins
   into 'src/main/resources/plugins'
+}
+
+prepareSandbox {
+  doLast {
+    def tsBundlePath = project.configurations.typescript[0]
+    copy {
+      from tarTree(tsBundlePath)
+      excludes = [
+              '**/loc/**',
+              '**/lib/*/diagnosticMessages.generated.json'
+      ]
+      into file("$destinationDir/$pluginName")
+    }
+    file("$destinationDir/$pluginName/package").renameTo("$destinationDir/$pluginName/typescript")
+  }
 }
 
 classes.dependsOn downloadSQPlugins

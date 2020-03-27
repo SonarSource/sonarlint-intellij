@@ -74,7 +74,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       .addIncludedRules(included)
       .build();
     console.debug("Starting analysis with configuration:\n" + config.toString());
-    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
+    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project, console, projectSettings), progressMonitor);
   }
 
   @Override

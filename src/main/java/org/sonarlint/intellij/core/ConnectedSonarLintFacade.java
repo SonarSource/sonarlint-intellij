@@ -71,7 +71,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
       .build();
     console.debug("Starting analysis with configuration:\n" + config.toString());
 
-    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(console, projectSettings), progressMonitor);
+    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project, console, projectSettings), progressMonitor);
   }
 
   @Override
