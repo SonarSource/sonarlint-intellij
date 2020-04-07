@@ -85,7 +85,7 @@ public class IssuePersistence extends AbstractProjectComponent {
   }
 
   private Path getBasePath() {
-    Path ideaDir = new File(myProject.getBaseDir().getPath(), Project.DIRECTORY_STORE_FOLDER).toPath();
+    Path ideaDir = new File(myProject.getBasePath(), Project.DIRECTORY_STORE_FOLDER).toPath();
     return ideaDir.resolve("sonarlint").resolve("issuestore");
   }
 
