@@ -15,6 +15,7 @@ Useful links
 - List of static code analysis rules per language:
     - [Java](https://rules.sonarsource.com/java)
     - [JavaScript](https://rules.sonarsource.com/javascript)
+    - [TypeScript](https://rules.sonarsource.com/typescript)
     - [Python](https://rules.sonarsource.com/python)
     - [Kotlin](https://rules.sonarsource.com/kotlin)
     - [Ruby](https://rules.sonarsource.com/ruby)
@@ -25,7 +26,9 @@ Useful links
 How to install
 --------------
 
-You can install SonarLint from the [IntelliJ IDEA Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly available in IntelliJ preferences.
+You can install SonarLint from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly available in the IDE preferences.
+
+Node.js >= 8.x is required to perform JavaScript or TypeScript analysis.
 
 Have Question or Feedback?
 --------------------------
@@ -81,9 +84,7 @@ As the `clean` task may be inconvenient, an easier workaround is to delete the j
 How to release
 --------------
 
-    ./gradlew release
-
-Deploy on Jetbrains plugin repository (todo try to use publish task).
+See [release pipeline at Azure DevOps](https://dev.azure.com/sonarsource/DotNetTeam%20Project/_release?definitionId=10).
 
 License
 -------

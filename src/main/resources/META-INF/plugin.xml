@@ -28,15 +28,22 @@
     <description><![CDATA[
         <html>
             <p>
-                SonarLint is an IDE extension that helps you detect and fix quality issues as you write code. 
-                Like a spell checker, SonarLint squiggles flaws so they can be fixed before committing code. 
-                You can get it directly from the IntelliJ IDEA Plugin Repository, and it will then detect new 
-                bugs and quality issues as you code (Java, Kotlin, Ruby, JavaScript, PHP and Python).
+                SonarLint is a free IDE extension that lets you fix bugs and vulnerabilities as you write code!
+                Like a spell checker, SonarLint highlights coding issues on the fly, with clear remediation
+                guidance so you can fix them before the code is even committed. Across popular IDEs (Eclipse,
+                IntelliJ, Visual Studio, VS Code) and popular programming languages, SonarLint helps all developers
+                write better and safer code!
             </p>
+            <br/>
+            <p>
+                SonarLint supports all JetBrains IDE, including IntelliJ, WebStorm, PhpStorm, PyCharm and RubyMine.
+                It can analyze code written in Java, JavaScript, TypeScript, Python, Kotlin, Ruby, HTML & PHP.
+            </p>
+            <br/>
             <p>
                 If your project is analyzed on SonarQube or on SonarCloud, SonarLint can connect to 
                 the server to retrieve the appropriate quality profiles and settings for that project. Java 8 
-                is required to run SonarLint.
+                is required to run SonarLint; analysis of JavaScript and TypeScript requires Node.js >= 8.
             </p>
         </html>
       ]]></description>
