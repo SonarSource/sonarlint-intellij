@@ -34,14 +34,16 @@
                 IntelliJ, Visual Studio, VS Code) and popular programming languages, SonarLint helps all developers
                 write better and safer code!
             </p>
+            <br/>
             <p>
                 SonarLint supports all JetBrains IDE, including IntelliJ, WebStorm, PhpStorm, PyCharm and RubyMine.
                 It can analyze code written in Java, JavaScript, TypeScript, Python, Kotlin, Ruby, HTML & PHP.
             </p>
+            <br/>
             <p>
                 If your project is analyzed on SonarQube or on SonarCloud, SonarLint can connect to 
                 the server to retrieve the appropriate quality profiles and settings for that project. Java 8 
-                is required to run SonarLint.
+                is required to run SonarLint; analysis of JavaScript and TypeScript requires Node.js >= 8.
             </p>
         </html>
       ]]></description>
