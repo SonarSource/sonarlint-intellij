@@ -21,8 +21,11 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.EffectiveLanguageLevelUtil;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.projectRoots.JdkUtil;
+import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.CompilerModuleExtension;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
@@ -30,17 +33,19 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.jrt.JrtFileSystem;
 import com.intellij.pom.java.LanguageLevel;
-import java.util.ArrayList;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
@@ -50,6 +55,8 @@ import org.jetbrains.jps.model.java.JpsJavaSdkType;
 import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
 public class JavaAnalysisConfigurator implements AnalysisConfigurator {
+  private static final Logger LOGGER = Logger.getInstance(JavaAnalysisConfigurator.class);
+
   private static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
   private static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
   private static final String JAVA_SOURCE_PROPERTY = "sonar.java.source";
@@ -58,9 +65,6 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
 
   private static final char SEPARATOR = ',';
-
-  private static final String JAR_REGEXP = "(.*)!/";
-  private static final Pattern JAR_PATTERN = Pattern.compile(JAR_REGEXP);
 
   @Override
   public Map<String, String> configure(@NotNull Module ijModule) {
@@ -115,10 +119,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static void configureLibraries(Module ijModule, Map<String, String> properties) {
-    List<String> libs = new ArrayList<>();
-    for (VirtualFile f : getProjectClasspath(ijModule)) {
-      libs.add(toFile(f.getPath()));
-    }
+    Collection<String> libs = getProjectClasspath(ijModule);
     if (!libs.isEmpty()) {
       String joinedLibs = StringUtils.join(libs, SEPARATOR);
       properties.put(JAVA_LIBRARIES_PROPERTY, joinedLibs);
@@ -127,24 +128,54 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     }
   }
 
-  private static List<VirtualFile> getProjectClasspath(@Nullable final Module module) {
+  private static Collection<String> getProjectClasspath(@Nullable final Module module) {
     if (module == null) {
       return Collections.emptyList();
     }
-    final List<VirtualFile> found = new ArrayList<>();
+    final Set<String> classpath = new LinkedHashSet<>();
     final ModuleRootManager mrm = ModuleRootManager.getInstance(module);
+    collectJdkClasspath(classpath, mrm);
     final OrderEntry[] orderEntries = mrm.getOrderEntries();
     for (final OrderEntry entry : orderEntries) {
       if (entry instanceof ModuleOrderEntry) {
         // Add dependent module output dir as library
         Module dependentModule = ((ModuleOrderEntry) entry).getModule();
-        found.addAll(getModuleEntries(dependentModule));
+        getModuleEntries(dependentModule)
+          .stream()
+          .map(VfsUtilCore::virtualToIoFile)
+          .map(File::getAbsolutePath)
+          .forEach(classpath::add);
       } else if (entry instanceof LibraryOrderEntry) {
         Library lib = ((LibraryOrderEntry) entry).getLibrary();
-        found.addAll(getLibraryEntries(lib));
+        getLibraryEntries(lib)
+          .stream()
+          .map(VfsUtilCore::virtualToIoFile)
+          .map(File::getAbsolutePath)
+          .forEach(classpath::add);
       }
     }
-    return found;
+    return classpath;
+  }
+
+  private static void collectJdkClasspath(Collection<String> classpath, ModuleRootManager mrm) {
+    final Sdk jdk = mrm.getSdk();
+    if (jdk != null) {
+      String jdkHomePath = jdk.getHomePath();
+      if (jdkHomePath != null && JdkUtil.isModularRuntime(jdkHomePath)) {
+        final File jrtFs = new File(jdkHomePath, "lib/jrt-fs.jar");
+        if (jrtFs.isFile()) {
+          classpath.add(jrtFs.getAbsolutePath());
+        } else {
+          LOGGER.warn("Unable to locate jrt-fs.jar");
+        }
+      }
+      Stream.of(jdk.getRootProvider().getFiles(OrderRootType.CLASSES))
+        .filter(f -> !JrtFileSystem.isModuleRoot(f))
+        .map(VfsUtilCore::virtualToIoFile)
+        .map(File::getAbsolutePath)
+        .forEach(classpath::add);
+
+    }
   }
 
   private static Collection<VirtualFile> getLibraryEntries(@Nullable Library lib) {
@@ -203,11 +234,4 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     return file.exists();
   }
 
-  private static String toFile(String path) {
-    Matcher m = JAR_PATTERN.matcher(path);
-    if (m.matches()) {
-      return m.group(1);
-    }
-    return path;
-  }
 }
