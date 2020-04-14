@@ -170,6 +170,6 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
   }
 
   private Map<String, String> prepareExtraProps() {
-    return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", application.getPluginPath().resolve("typescript").resolve("lib").toString());
+    return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", application.getPluginPath().toString());
   }
 }
