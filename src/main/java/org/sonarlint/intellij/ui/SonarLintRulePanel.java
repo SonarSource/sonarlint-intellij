@@ -45,7 +45,6 @@ import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
@@ -166,7 +165,7 @@ public class SonarLintRulePanel {
   private JEditorPane createEditor() {
     JEditorPane newEditor = new JEditorPane();
     newEditor.setEditorKit(kit);
-    newEditor.setBorder(new EmptyBorder(10, 10, 10, 10));
+    newEditor.setBorder(JBUI.Borders.empty(10));
     newEditor.setEditable(false);
     newEditor.setContentType("text/html");
     newEditor.addHyperlinkListener(e -> {
@@ -236,25 +235,21 @@ public class SonarLintRulePanel {
   }
 
   public static class CustomHTMLEditorKit extends HTMLEditorKit {
-    private static HTMLFactory factory;
-
-    static {
-      factory = new HTMLFactory() {
-        @Override
-        public View create(Element elem) {
-          AttributeSet attrs = elem.getAttributes();
-          Object elementName = attrs.getAttribute(AbstractDocument.ElementNameAttribute);
-          Object o = (elementName != null) ? null : attrs.getAttribute(StyleConstants.NameAttribute);
-          if (o instanceof HTML.Tag) {
-            HTML.Tag kind = (HTML.Tag) o;
-            if (HTML.Tag.IMG.equals(kind)) {
-              return new CustomImageView(elem);
-            }
+    private static final HTMLFactory factory = new HTMLFactory() {
+      @Override
+      public View create(Element elem) {
+        AttributeSet attrs = elem.getAttributes();
+        Object elementName = attrs.getAttribute(AbstractDocument.ElementNameAttribute);
+        Object o = (elementName != null) ? null : attrs.getAttribute(StyleConstants.NameAttribute);
+        if (o instanceof HTML.Tag) {
+          HTML.Tag kind = (HTML.Tag) o;
+          if (HTML.Tag.IMG.equals(kind)) {
+            return new CustomImageView(elem);
           }
-          return super.create(elem);
         }
-      };
-    }
+        return super.create(elem);
+      }
+    };
 
     @Override
     public ViewFactory getViewFactory() {
