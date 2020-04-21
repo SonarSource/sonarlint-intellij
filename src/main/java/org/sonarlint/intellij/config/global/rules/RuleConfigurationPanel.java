@@ -177,6 +177,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       html = "<b>" + rule.getKey() + "</b> | " + attributes + "<br/>" + rule.getHtmlDescription();
     }
     SwingHelper.setHtml(descriptionBrowser, html, UIUtil.getLabelForeground());
+    descriptionBrowser.setCaretPosition(0);
   }
 
   private ActionToolbar createTreeToolbarPanel() {
