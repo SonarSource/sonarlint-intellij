@@ -27,6 +27,7 @@ import com.intellij.ui.SideBorder;
 import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
+import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
@@ -157,7 +158,7 @@ public class SonarLintRulePanel {
       panel.add(editor, BorderLayout.CENTER);
     }
 
-    SwingHelper.setHtml(editor, text, null);
+    SwingHelper.setHtml(editor, text, UIUtil.getLabelForeground());
     editor.setCaretPosition(0);
     panel.revalidate();
   }

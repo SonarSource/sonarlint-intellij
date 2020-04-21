@@ -37,14 +37,13 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -177,11 +176,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       attributes = attributes.toLowerCase(Locale.US).replace('_', ' ');
       html = "<b>" + rule.getKey() + "</b> | " + attributes + "<br/>" + rule.getHtmlDescription();
     }
-    try {
-      descriptionBrowser.read(new StringReader(html), null);
-    } catch (IOException e) {
-      // ignore
-    }
+    SwingHelper.setHtml(descriptionBrowser, html, UIUtil.getLabelForeground());
   }
 
   private ActionToolbar createTreeToolbarPanel() {
