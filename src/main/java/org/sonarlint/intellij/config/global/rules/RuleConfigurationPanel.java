@@ -19,32 +19,54 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.ide.CommonActionsManager;
 import com.intellij.ide.DefaultTreeExpander;
 import com.intellij.ide.TreeExpander;
+import com.intellij.ide.ui.search.SearchUtil;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.BrowserHyperlinkListener;
+import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.FilterComponent;
+import com.intellij.ui.HintHint;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.JBSplitter;
+import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SideBorder;
+import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.TreeSpeedSearch;
+import com.intellij.ui.UserActivityWatcher;
+import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.util.ui.JBInsets;
+import com.intellij.ui.components.JBTextArea;
+import com.intellij.ui.components.fields.ExpandableTextField;
+import com.intellij.ui.components.labels.LinkLabel;
+import com.intellij.util.containers.Queue;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.io.IOException;
+import java.io.StringReader;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -52,28 +74,46 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
+import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingConstants;
+import javax.swing.event.DocumentEvent;
+import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.NumberFormatter;
 import javax.swing.tree.TreePath;
+import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final String SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
+  private static final Logger LOG = Logger.getInstance(RuleConfigurationPanel.class);
+
+  private static final String MAIN_SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
+  private static final String RIGHT_SPLITTER_KEY = "sonarlint_rule_configuration_splitter_right";
+  private static final float DIVIDER_PROPORTION_DEFAULT = 0.5f;
+  @NonNls
+  private static final String EMPTY_HTML = "<html><body>Select a rule to see the description</body></html>";
 
   private final StandaloneSonarLintEngine engine;
   private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private RulesTreeTable table;
   private JEditorPane descriptionBrowser;
   private JPanel panel;
+  private JPanel myOptionsPanel;
   private RulesTreeTableModel model;
-  private FilterComponent filterComponent;
+  private FilterComponent myRuleFilter;
   private TreeExpander myTreeExpander;
 
   private Map<String, Boolean> currentActivationByRuleKey;
@@ -83,11 +123,13 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     createUIComponents();
   }
 
-  @Override public JComponent getComponent() {
+  @Override
+  public JComponent getComponent() {
     return panel;
   }
 
-  @Override public boolean isModified(SonarLintGlobalSettings settings) {
+  @Override
+  public boolean isModified(SonarLintGlobalSettings settings) {
     saveCurrentActivation();
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
@@ -95,7 +137,8 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return !included.equals(settings.getIncludedRules()) || !excluded.equals(settings.getExcludedRules());
   }
 
-  @Override public void save(SonarLintGlobalSettings settings) {
+  @Override
+  public void save(SonarLintGlobalSettings settings) {
     saveCurrentActivation();
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
@@ -119,9 +162,10 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     model.saveCurrentRuleActivation(currentActivationByRuleKey);
   }
 
-  @Override public void load(SonarLintGlobalSettings settings) {
+  @Override
+  public void load(SonarLintGlobalSettings settings) {
     filterModel.reset(false);
-    filterComponent.reset();
+    myRuleFilter.reset();
 
     currentActivationByRuleKey = engine.getAllRuleDetails().stream()
       .collect(Collectors.toMap(RuleDetails::getKey, r -> loadRuleActivation(settings, r)));
@@ -166,20 +210,6 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     }
   }
 
-  private void setDescription(@Nullable RulesTreeNode.Rule rule) {
-    String html;
-
-    if (rule == null) {
-      html = "Select a rule to see the description";
-    } else {
-      String attributes = rule.severity() + " " + rule.type();
-      attributes = attributes.toLowerCase(Locale.US).replace('_', ' ');
-      html = "<b>" + rule.getKey() + "</b> | " + attributes + "<br/>" + rule.getHtmlDescription();
-    }
-    SwingHelper.setHtml(descriptionBrowser, html, UIUtil.getLabelForeground());
-    descriptionBrowser.setCaretPosition(0);
-  }
-
   private ActionToolbar createTreeToolbarPanel() {
     DefaultActionGroup actions = new DefaultActionGroup();
 
@@ -194,15 +224,81 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return actionToolbar;
   }
 
-  private void createUIComponents() {
-    panel = new JPanel(new GridBagLayout());
+  private JPanel createUIComponents() {
 
+    descriptionBrowser = new JEditorPane(UIUtil.HTML_MIME, EMPTY_HTML);
+    descriptionBrowser.setEditable(false);
+    descriptionBrowser.setBorder(JBUI.Borders.empty(5));
+    descriptionBrowser.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
+
+    JPanel descriptionPanel = new JPanel(new BorderLayout());
+    descriptionPanel.setBorder(IdeBorderFactory.createTitledBorder("Rule description", false,
+      JBUI.insetsLeft(12)).setShowLine(false));
+    descriptionPanel.add(ScrollPaneFactory.createScrollPane(descriptionBrowser), BorderLayout.CENTER);
+
+    JBSplitter rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_DEFAULT);
+    rightSplitter.setFirstComponent(descriptionPanel);
+
+    myOptionsPanel = new JPanel(new GridBagLayout());
+    myOptionsPanel.setBorder(JBUI.Borders.emptyLeft(12));
+    initOptionsAndDescriptionPanel();
+    rightSplitter.setSecondComponent(myOptionsPanel);
+    rightSplitter.setHonorComponentsMinimumSize(true);
+
+    final JScrollPane tree = initTreeScrollPane();
+
+    final JPanel northPanel = new JPanel(new GridBagLayout());
+    northPanel.setBorder(JBUI.Borders.empty(2, 0));
+    myRuleFilter.setPreferredSize(new Dimension(20, myRuleFilter.getPreferredSize().height));
+    northPanel.add(myRuleFilter, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL,
+      JBUI.emptyInsets(), 0, 0));
+    northPanel.add(createTreeToolbarPanel().getComponent(), new GridBagConstraints(1, 0, 1, 1, 1, 1, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
+      JBUI.emptyInsets(), 0, 0));
+    JButton restoreDefaults = new JButton("Restore defaults");
+    restoreDefaults.addActionListener(l -> model.restoreDefaults());
+    northPanel.add(restoreDefaults, new GridBagConstraints(2, 0, 1, 1, 0, 1, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.NONE,
+      JBUI.emptyInsets(), 0, 0));
+
+    JBSplitter mainSplitter = new OnePixelSplitter(false, DIVIDER_PROPORTION_DEFAULT, 0.01f, 0.99f);
+    mainSplitter.setSplitterProportionKey(MAIN_SPLITTER_KEY);
+    mainSplitter.setFirstComponent(tree);
+    mainSplitter.setSecondComponent(rightSplitter);
+    mainSplitter.setHonorComponentsMinimumSize(false);
+
+    final JPanel inspectionTreePanel = new JPanel(new BorderLayout());
+    inspectionTreePanel.add(northPanel, BorderLayout.NORTH);
+    inspectionTreePanel.add(mainSplitter, BorderLayout.CENTER);
+
+    panel = new JPanel(new BorderLayout());
+    panel.add(inspectionTreePanel, BorderLayout.CENTER);
+
+    JBLabel label = new JBLabel("<html><b>Note: </b>When a project is connected to a SonarQube server or SonarCloud, only rules configuration from the server applies.</html>");
+    panel.add(label, BorderLayout.NORTH);
+    return panel;
+  }
+
+  private void initOptionsAndDescriptionPanel() {
+    myOptionsPanel.removeAll();
+    readHTML(descriptionBrowser, EMPTY_HTML);
+    myOptionsPanel.validate();
+    myOptionsPanel.repaint();
+  }
+
+  public static void readHTML(JEditorPane browser, String text) {
+    try {
+      browser.read(new StringReader(text), null);
+      browser.setCaretPosition(0);
+    } catch (IOException e) {
+      throw new IllegalStateException("Unable to set rule description", e);
+    }
+  }
+
+  private JScrollPane initTreeScrollPane() {
     // create tree table
     model = new RulesTreeTableModel(new RulesTreeNode.Root());
     table = new RulesTreeTable(model);
     table.setTreeCellRenderer(new RulesTreeTableRenderer(filterModel::getText));
     table.setRootVisible(false);
-    UIUtil.setLineStyleAngled(table.getTree());
     TreeUtil.installActions(table.getTree());
     new TreeSpeedSearch(table.getTree(), treePath -> {
       Object node = treePath.getLastPathComponent();
@@ -211,25 +307,17 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
     table.getTree().addTreeSelectionListener(e -> {
       TreePath path = e.getNewLeadSelectionPath();
-      if (path != null) {
-        Object node = path.getLastPathComponent();
-        if (node instanceof RulesTreeNode.Rule) {
-          RulesTreeNode.Rule r = (RulesTreeNode.Rule) node;
-          setDescription(r);
-          return;
-        }
+      if (path != null && path.getLastPathComponent() instanceof RulesTreeNode.Rule) {
+        updateOptionsAndDescriptionPanel();
+      } else {
+        initOptionsAndDescriptionPanel();
       }
-      setDescription(null);
     });
     JBScrollPane scrollPane = new JBScrollPane(table);
     table.getTree().setShowsRootHandles(true);
     scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.LEFT + SideBorder.TOP));
-
-    GridBagConstraints gbc = new GridBagConstraints(0, 0, 1, 1, 1, 0,
-      GridBagConstraints.FIRST_LINE_START, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 5, 5, 5), 0, 0);
-    JBLabel label = new JBLabel("<html><b>Note: </b>When a project is connected to a SonarQube server or SonarCloud, configuration from the server applies.</html>");
-    panel.add(label, gbc);
+    TreeUtil.collapseAll(table.getTree(), 1);
 
     // filters
     myTreeExpander = new DefaultTreeExpander(table.getTree()) {
@@ -244,42 +332,382 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       }
     };
 
-    filterComponent = new FilterComponent("sonarlint_rule_filter", 10) {
-      @Override public void filter() {
+    myRuleFilter = new FilterComponent("sonarlint_rule_filter", 10) {
+      @Override
+      public void filter() {
         filterModel.setText(getFilter());
       }
     };
 
-    JButton restoreDefaults = new JButton("Restore defaults");
-    restoreDefaults.addActionListener(l -> model.restoreDefaults());
+    return scrollPane;
+  }
 
-    JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
-    optionsPanel.add(filterComponent);
-    optionsPanel.add(createTreeToolbarPanel().getComponent());
-    optionsPanel.add(restoreDefaults, gbc);
+  private void updateOptionsAndDescriptionPanel() {
+    Collection<RulesTreeNode.Rule> nodes = getSelectedRuleNodes();
+    if (!nodes.isEmpty()) {
+      final RulesTreeNode.Rule singleNode = getStrictlySelectedToolNode();
+      if (singleNode != null) {
+        String attributes = singleNode.severity() + " " + singleNode.type();
+        attributes = attributes.toLowerCase(Locale.US).replace('_', ' ');
+        final String description = "<b>" + singleNode.getKey() + "</b> | " + attributes + "<br/>" + singleNode.getHtmlDescription();
+        try {
+          readHTML(descriptionBrowser, SearchUtil.markup(toHTML(descriptionBrowser, description, false), myRuleFilter.getFilter()));
+        } catch (Throwable t) {
+          LOG.error("Failed to load description for: " +
+            singleNode.getKey() +
+            "; description: " +
+            description, t);
+        }
+      } else {
+        readHTML(descriptionBrowser, toHTML(descriptionBrowser, "Multiple rules are selected.", false));
+      }
 
-    gbc = new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
-      GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL, JBUI.insets(5, 0, 2, 10), 0, 0);
-    panel.add(optionsPanel, gbc);
+      myOptionsPanel.removeAll();
+      final JPanel configPanelAnchor = new JPanel(new GridLayout());
+      if (singleNode != null) {
+        setConfigPanel(configPanelAnchor, singleNode);
+      }
+      if (configPanelAnchor.getComponentCount() != 0) {
+        myOptionsPanel.add(new ToolOptionsSeparator(configPanelAnchor),
+          new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+            JBUI.emptyInsets(), 0, 0));
+        myOptionsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+          JBUI.insets(0, 2, 0, 0), 0, 0));
+      } else {
+        myOptionsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+          JBUI.insets(0, 2, 0, 0), 0, 0));
+      }
+      myOptionsPanel.revalidate();
+    } else {
+      initOptionsAndDescriptionPanel();
+    }
+    myOptionsPanel.repaint();
+  }
 
-    // description pane
-    descriptionBrowser = new JEditorPane(UIUtil.HTML_MIME, "<html><body></body></html>");
-    descriptionBrowser.setEditable(false);
-    descriptionBrowser.setBorder(JBUI.Borders.empty(5));
-    descriptionBrowser.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
-    setDescription(null);
+  private static void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule) {
+    configPanelAnchor.removeAll();
+    final JComponent additionalConfigPanel = ConfigPanelState.of(getAdditionalConfigPanel(rule), rule).getPanel(rule.activated);
+    if (additionalConfigPanel != null) {
+      // assume that the panel does not need scrolling if it already contains a scrollable content
+      if (UIUtil.hasScrollPane(additionalConfigPanel)) {
+        configPanelAnchor.add(additionalConfigPanel);
+      } else {
+        configPanelAnchor.add(ScrollPaneFactory.createScrollPane(additionalConfigPanel, SideBorder.NONE));
+      }
+    }
+  }
 
-    JPanel descriptionPanel = new JPanel(new BorderLayout());
-    descriptionPanel.setBorder(IdeBorderFactory.createTitledBorder("Rule description", false,
-      new JBInsets(2, 2, 0, 0)));
-    descriptionPanel.add(ScrollPaneFactory.createScrollPane(descriptionBrowser), BorderLayout.CENTER);
+  private static class ConfigPanelState {
+    private static final ConfigPanelState EMPTY = new ConfigPanelState(null, null);
 
-    JBSplitter mainSplitter = new JBSplitter(false, SPLITTER_KEY, 0.67f);
-    mainSplitter.setFirstComponent(scrollPane);
-    mainSplitter.setSecondComponent(descriptionPanel);
+    private final JComponent myOptionsPanel;
+    private final Set<Component> myEnableRequiredComponent = new HashSet<>();
 
-    gbc = new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
-      GridBagConstraints.CENTER, GridBagConstraints.BOTH, JBUI.insets(5, 0, 2, 10), 0, 0);
-    panel.add(mainSplitter, gbc);
+    private boolean myLastState = true;
+    private boolean myDeafListeners;
+
+    private ConfigPanelState(@Nullable JComponent optionsPanel, @Nullable RulesTreeNode.Rule rule) {
+      myOptionsPanel = optionsPanel;
+      if (myOptionsPanel != null) {
+        Queue<Component> q = new Queue<>(1);
+        q.addLast(optionsPanel);
+        while (!q.isEmpty()) {
+          final Component current = q.pullFirst();
+          current.addPropertyChangeListener("enabled", evt -> {
+            if (!myDeafListeners) {
+              final boolean newValue = (boolean) evt.getNewValue();
+              if (newValue) {
+                myEnableRequiredComponent.add(current);
+              } else {
+                LOG.assertTrue(myEnableRequiredComponent.remove(current), rule != null ? (" rule = #" + rule.getKey()) : null);
+              }
+            }
+          });
+          if (current.isEnabled()) {
+            myEnableRequiredComponent.add(current);
+          }
+          if (current instanceof Container) {
+            for (Component child : ((Container) current).getComponents()) {
+              q.addLast(child);
+            }
+          }
+        }
+      }
+    }
+
+    @CheckForNull
+    private JComponent getPanel(boolean currentState) {
+      if (myOptionsPanel != null && myLastState != currentState) {
+        myDeafListeners = true;
+        try {
+          for (Component c : myEnableRequiredComponent) {
+            c.setEnabled(currentState);
+          }
+          myLastState = currentState;
+        } finally {
+          myDeafListeners = false;
+        }
+      }
+      return myOptionsPanel;
+    }
+
+    private static ConfigPanelState of(@Nullable JComponent panel, RulesTreeNode.Rule rule) {
+      return panel == null ? EMPTY : new ConfigPanelState(panel, rule);
+    }
+  }
+
+  @CheckForNull
+  private static JComponent getAdditionalConfigPanel(RulesTreeNode.Rule rule) {
+    if (!rule.hasParameters()) {
+      return null;
+    }
+    final JPanel panel = new JPanel(new GridBagLayout());
+
+    final GridBagConstraints constraints = new GridBagConstraints();
+    constraints.gridy = 0;
+    for (RulesTreeNode.RuleParam param : rule.getParamDetails()) {
+      constraints.gridx = 0;
+      constraints.fill = GridBagConstraints.HORIZONTAL;
+      constraints.anchor = GridBagConstraints.BASELINE_LEADING;
+      constraints.gridwidth = 1;
+      switch (param.type) {
+        case TEXT:
+          createTextParam(rule, panel, constraints, param);
+          break;
+        case STRING:
+          createStringParam(rule, panel, constraints, param);
+          break;
+        case INT:
+          createIntParam(rule, panel, constraints, param);
+          break;
+        case FLOAT:
+          createFloatParam(rule, panel, constraints, param);
+          break;
+        case BOOLEAN:
+          createBooleanParam(rule, panel, constraints, param);
+          break;
+        default:
+          LOG.error("Unknown rule parameter type: " + param.type + " for rule " + rule.getKey());
+      }
+      constraints.gridy++;
+    }
+    // Add an empty panel to fill the space
+    constraints.weighty = 1.0;
+    panel.add(new JPanel(), constraints);
+    return panel;
+  }
+
+  private static void createTextParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+    addParamLabel(panel, constraints, param);
+    addTextField(rule, panel, constraints, param, new JBTextArea());
+  }
+
+  private static void createStringParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+    addParamLabel(panel, constraints, param);
+    addTextField(rule, panel, constraints, param, new ExpandableTextField(s -> StringUtil.split(s, ","), l -> StringUtil.join(l, ",")));
+  }
+
+  private static void createIntParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+    addParamLabel(panel, constraints, param);
+    NumberFormat intFormatter = NumberFormat.getIntegerInstance();
+    intFormatter.setParseIntegerOnly(true);
+    addNumberFormattedTextField(rule, panel, constraints, param, intFormatter, asInt(param.defaultValue),
+      asInt(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
+  }
+
+  private static void createFloatParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+    addParamLabel(panel, constraints, param);
+    NumberFormat floatFormatter = NumberFormat.getNumberInstance();
+    floatFormatter.setParseIntegerOnly(false);
+    addNumberFormattedTextField(rule, panel, constraints, param, floatFormatter, asDouble(param.defaultValue),
+      asDouble(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
+  }
+
+  private static void createBooleanParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+    final JBCheckBox checkBox = new JBCheckBox(param.name, asBoolean(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
+    checkBox.setToolTipText(param.description);
+    checkBox.addActionListener(e -> {
+      final Boolean b = checkBox.isSelected();
+      if (!b.equals(asBoolean(param.defaultValue))) {
+        rule.getCustomParams().put(param.key, b.toString());
+      } else {
+        rule.getCustomParams().remove(param.key);
+      }
+    });
+    constraints.gridwidth = 2;
+    constraints.weightx = 1.0;
+    panel.add(checkBox, constraints);
+  }
+
+  private static void addTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, JTextComponent textComponent) {
+    textComponent.setToolTipText(param.description);
+    textComponent.setText(rule.getCustomParams().getOrDefault(param.key, param.defaultValue));
+    textComponent.getDocument().addDocumentListener(new DocumentAdapter() {
+      @Override
+      public void textChanged(DocumentEvent e) {
+        String value = textComponent.getText();
+        if (!value.equals(param.defaultValue)) {
+          rule.getCustomParams().put(param.key, value);
+        } else {
+          rule.getCustomParams().remove(param.key);
+        }
+      }
+    });
+    constraints.gridx = 1;
+    constraints.weightx = 1.0;
+    constraints.insets.right = 0;
+    panel.add(textComponent, constraints);
+  }
+
+  private static void addNumberFormattedTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, NumberFormat numberFormat,
+    Number defaultValue, Number initialValue) {
+    final JFormattedTextField valueField = new JFormattedTextField();
+    valueField.setToolTipText(param.description);
+    valueField.setColumns(4);
+    valueField.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter(numberFormat)));
+    valueField.setValue(initialValue);
+    valueField.getDocument().addDocumentListener(new DocumentAdapter() {
+      @Override
+      public void textChanged(DocumentEvent e) {
+        try {
+          valueField.commitEdit();
+          Number value = (Number) valueField.getValue();
+          if (!value.equals(defaultValue)) {
+            rule.getCustomParams().put(param.key, String.valueOf(value));
+          } else {
+            rule.getCustomParams().remove(param.key);
+          }
+        } catch (ParseException e1) {
+          // No luck this time
+        }
+      }
+    });
+    constraints.gridx = 1;
+    constraints.weightx = 1.0;
+    constraints.insets.right = 0;
+    panel.add(valueField, constraints);
+  }
+
+  private static void addParamLabel(JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+    constraints.insets.right = UIUtil.DEFAULT_HGAP;
+    constraints.weightx = 0.0;
+    panel.add(new JBLabel(param.name), constraints);
+  }
+
+  private static boolean asBoolean(String value) {
+    return "true".equals(value);
+  }
+
+  private static int asInt(String value) {
+    if (StringUtil.isEmpty(value)) {
+      return 0;
+    }
+    try {
+      return Integer.parseInt(value);
+    } catch (NumberFormatException e) {
+      return 0;
+    }
+  }
+
+  private static double asDouble(String value) {
+    if (StringUtil.isEmpty(value)) {
+      return 0;
+    }
+    try {
+      return Double.parseDouble(value);
+    } catch (NumberFormatException e) {
+      return 0;
+    }
+  }
+
+  public static String toHTML(JEditorPane browser, @Nls String text, boolean miniFontSize) {
+    final HintHint hintHint = new HintHint(browser, new Point(0, 0));
+    hintHint.setFont(miniFontSize ? UIUtil.getLabelFont(UIUtil.FontSize.SMALL) : UIUtil.getLabelFont());
+    return HintUtil.prepareHintText(text, hintHint);
+  }
+
+  public RulesTreeNode.Rule getStrictlySelectedToolNode() {
+    TreePath[] paths = table.getTree().getSelectionPaths();
+    return paths != null && paths.length == 1 && paths[0].getLastPathComponent() instanceof RulesTreeNode.Rule
+      ? (RulesTreeNode.Rule) paths[0].getLastPathComponent()
+      : null;
+  }
+
+  public Collection<RulesTreeNode.Rule> getSelectedRuleNodes() {
+    return getRulesNodes(table.getTree().getSelectionPaths());
+  }
+
+  public static List<RulesTreeNode.Rule> getRulesNodes(@Nullable final TreePath[] paths) {
+    if (paths == null) {
+      return Collections.emptyList();
+    }
+    final Queue<RulesTreeNode> q = new Queue<>(paths.length);
+    for (final TreePath path : paths) {
+      if (path != null) {
+        q.addLast((RulesTreeNode) path.getLastPathComponent());
+      }
+    }
+    return getRulesNodes(q);
+  }
+
+  private static List<RulesTreeNode.Rule> getRulesNodes(final Queue<RulesTreeNode> queue) {
+    final List<RulesTreeNode.Rule> nodes = new ArrayList<>();
+    while (!queue.isEmpty()) {
+      final RulesTreeNode node = queue.pullFirst();
+      if (node instanceof RulesTreeNode.Language) {
+        for (int i = 0; i < node.getChildCount(); i++) {
+          final RulesTreeNode childNode = (RulesTreeNode) node.getChildAt(i);
+          queue.addLast(childNode);
+        }
+      } else {
+        nodes.add((RulesTreeNode.Rule) node);
+      }
+    }
+    return new ArrayList<>(nodes);
+  }
+
+  private class ToolOptionsSeparator extends JPanel {
+    private final LinkLabel<?> myResetLink;
+
+    ToolOptionsSeparator(JComponent options) {
+      setLayout(new GridBagLayout());
+      GridBagConstraints optionsLabelConstraints = new GridBagConstraints(0, 0, 1, 1, 0, 1, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(0, 2, 0, 0), 0, 0);
+      add(new JBLabel("Options"), optionsLabelConstraints);
+      GridBagConstraints separatorConstraints = new GridBagConstraints(1, 0, 1, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, JBUI.insets(2,
+        TitledSeparator.SEPARATOR_LEFT_INSET,
+        0,
+        TitledSeparator.SEPARATOR_RIGHT_INSET),
+        0, 0);
+      add(new JSeparator(SwingConstants.HORIZONTAL), separatorConstraints);
+      GridBagConstraints resetLabelConstraints = new GridBagConstraints(2, 0, 0, 1, 0, 1, GridBagConstraints.EAST, GridBagConstraints.NONE, JBUI.emptyInsets(), 0, 0);
+
+      UserActivityWatcher userActivityWatcher = new UserActivityWatcher();
+      userActivityWatcher.addUserActivityListener(this::setupResetLinkVisibility);
+      userActivityWatcher.register(options);
+      myResetLink = LinkLabel.create("Reset", () -> {
+        RulesTreeNode.Rule node = getStrictlySelectedToolNode();
+        if (node != null) {
+          // FIXME
+          updateOptionsAndDescriptionPanel();
+        }
+      });
+      add(myResetLink, resetLabelConstraints);
+      setupResetLinkVisibility();
+    }
+
+    private void setupResetLinkVisibility() {
+      if (table == null) {
+        return;
+      }
+      RulesTreeNode.Rule node = getStrictlySelectedToolNode();
+      if (node != null) {
+        boolean canReset = true; // FIXME
+
+        myResetLink.setVisible(canReset);
+        revalidate();
+        repaint();
+      }
+    }
+
   }
 }
