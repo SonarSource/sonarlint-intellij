@@ -144,7 +144,7 @@ stages:
       strategy:
         matrix:
           Idea2018:
-            IDEA_VERSION: '2018.2'
+            IDEA_VERSION: '2018.3'
             JDKVersion: '1.11'
           Idea2019:
             IDEA_VERSION: '2019.2'
