@@ -58,8 +58,7 @@ public class DisableRuleQuickFix implements IntentionAction, LowPriorityAction, 
   }
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
-    settings.getIncludedRules().remove(ruleKey);
-    settings.getExcludedRules().add(ruleKey);
+    settings.disableRule(ruleKey);
     SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
     submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
