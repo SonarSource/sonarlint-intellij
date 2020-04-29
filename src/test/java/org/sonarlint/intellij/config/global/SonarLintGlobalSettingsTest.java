@@ -27,6 +27,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SonarLintGlobalSettingsTest extends SonarTest {
 
+  private static final String RULE = "rule";
+  private static final String PARAM = "param";
+  private static final String VALUE = "value";
+
   @Test
   public void testRoundTrip() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
@@ -47,10 +51,37 @@ public class SonarLintGlobalSettingsTest extends SonarTest {
 
   @Test
   public void testGetInstance() {
-    SonarLintGlobalSettings instance = new SonarLintGlobalSettings();
-    super.register(app, SonarLintGlobalSettings.class, instance);
-    assertThat(SonarLintGlobalSettings.getInstance()).isEqualTo(instance);
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    super.register(app, SonarLintGlobalSettings.class, settings);
+    assertThat(SonarLintGlobalSettings.getInstance()).isEqualTo(settings);
 
+  }
+
+  @Test
+  public void testRuleParamAccessors() {
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    settings.setRuleParam(RULE, PARAM, VALUE);
+    assertThat(settings.getRuleParam(RULE, PARAM)).isEqualTo(VALUE);
+  }
+
+  @Test
+  public void testRuleIsNotLoaded() {
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    assertThat(settings.getRuleParam(RULE, PARAM)).isEqualTo(null);
+  }
+
+  @Test
+  public void testDisableRule() {
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    settings.disableRule(RULE);
+    assertThat(settings.isRuleActive(RULE)).isEqualTo(false);
+  }
+
+  @Test
+  public void testEnableRule() {
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    settings.enableRule(RULE);
+    assertThat(settings.isRuleActive(RULE)).isEqualTo(true);
   }
 
 }
