@@ -68,14 +68,14 @@ public class DisableRuleAction extends AnAction {
     boolean visible = !projectSettings.isBindingEnabled() && issue != null;
     e.getPresentation().setVisible(visible);
 
-    boolean enabled = visible && !settings.getExcludedRules().contains(issue.getRuleKey());
+    boolean explicitlyDisabled = issue != null && settings.isRuleExplicitlyDisabled(issue.getRuleKey());
+    boolean enabled = visible && !explicitlyDisabled;
     e.getPresentation().setEnabled(enabled);
   }
 
   private static void disableRule(String ruleKey) {
     SonarLintGlobalSettings settings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-    settings.getIncludedRules().remove(ruleKey);
-    settings.getExcludedRules().add(ruleKey);
+    settings.disableRule(ruleKey);
   }
 
 }

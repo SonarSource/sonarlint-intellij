@@ -30,9 +30,12 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
@@ -46,11 +49,51 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private boolean autoTrigger = true;
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
+  @Deprecated
   private Set<String> includedRules = new HashSet<>();
+  @Deprecated
   private Set<String> excludedRules = new HashSet<>();
+  private Map<String, Rule> rules = new HashMap<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
+  }
+
+  public void setRuleParam(String ruleKey, String paramName, String paramValue) {
+    rules.computeIfAbsent(ruleKey, s -> new Rule(true));
+    rules.get(ruleKey).params.put(paramName, paramValue);
+  }
+
+  public Optional<String> getRuleParamValue(String ruleKey, String paramName) {
+    if (!rules.containsKey(ruleKey) || !rules.get(ruleKey).params.containsKey(paramName)) {
+      return Optional.empty();
+    }
+    return Optional.of(rules.get(ruleKey).params.get(paramName));
+  }
+
+  public void enableRule(String ruleKey) {
+    setRuleActive(ruleKey, true);
+  }
+
+  public void disableRule(String ruleKey) {
+    setRuleActive(ruleKey, false);
+  }
+
+  private void setRuleActive(String ruleKey, boolean active) {
+    rules.computeIfAbsent(ruleKey, s -> new Rule(active)).isActive = active;
+  }
+
+  public boolean isRuleExplicitlyDisabled(String ruleKey) {
+    if (!rules.containsKey(ruleKey)) {
+      return false;
+    }
+    return !rules.get(ruleKey).isActive;
+  }
+
+  public void resetRuleParam(String ruleKey, String paramName) {
+    if (rules.containsKey(ruleKey)) {
+      rules.get(ruleKey).params.remove(paramName);
+    }
   }
 
   @Override
@@ -61,6 +104,18 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   @Override
   public void loadState(SonarLintGlobalSettings state) {
     XmlSerializerUtil.copyBean(state, this);
+    if(includedRules != null) {
+      includedRules.forEach(it -> {
+        rules.put(it, new Rule(true));
+      });
+    }
+    if(excludedRules != null) {
+      excludedRules.forEach(it -> {
+        rules.put(it, new Rule(false));
+      });
+    }
+    includedRules = null;
+    excludedRules = null;
   }
 
   @Override
@@ -83,15 +138,38 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public Set<String> getIncludedRules() {
-    return includedRules;
+    if (includedRules != null) {
+      return includedRules;
+    } else {
+      return rules.entrySet().stream()
+        .filter(it -> it.getValue().isActive)
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet());
+    }
+
   }
 
-  public Set<String> getExcludedRules() {
-    return excludedRules;
+  public Map<String, Rule> getRules() {
+    return rules;
+  }
+
+  public void setRules(Map<String, Rule> rules) {
+    this.rules = rules;
   }
 
   public void setIncludedRules(Set<String> includedRules) {
     this.includedRules = new HashSet<>(includedRules);
+  }
+
+  public Set<String> getExcludedRules() {
+    if (rules.isEmpty() && excludedRules != null && !excludedRules.isEmpty()) {
+      return excludedRules;
+    } else {
+      return rules.entrySet().stream()
+        .filter(it -> !it.getValue().isActive)
+        .map(Map.Entry::getKey)
+        .collect(Collectors.toSet());
+    }
   }
 
   public void setExcludedRules(Set<String> excludedRules) {
@@ -106,14 +184,14 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     this.autoTrigger = autoTrigger;
   }
 
+  public List<SonarQubeServer> getSonarQubeServers() {
+    return this.servers;
+  }
+
   public void setSonarQubeServers(List<SonarQubeServer> servers) {
     this.servers = Collections.unmodifiableList(servers.stream()
       .filter(s -> !SonarLintUtils.isBlank(s.getName()))
       .collect(Collectors.toList()));
-  }
-
-  public List<SonarQubeServer> getSonarQubeServers() {
-    return this.servers;
   }
 
   public List<String> getFileExclusions() {
@@ -123,4 +201,15 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   public void setFileExclusions(List<String> fileExclusions) {
     this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
   }
+
+  static class Rule {
+    boolean isActive;
+    Map<String, String> params = new HashMap<>();
+
+    public Rule(boolean isActive) {
+      this.isActive = isActive;
+    }
+
+  }
+
 }
