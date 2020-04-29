@@ -21,7 +21,6 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
@@ -87,7 +86,7 @@ public class DisableRuleActionTest extends SonarTest {
   public void should_be_disabled_if_rule_is_excluded() {
     when(event.getData(DisableRuleAction.ISSUE_DATA_KEY)).thenReturn(issue);
     when(issue.getRuleKey()).thenReturn("key");
-    settings.setExcludedRules(Collections.singleton("key"));
+    settings.disableRule("key");
     action.update(event);
 
     assertThat(presentation.isEnabled()).isFalse();

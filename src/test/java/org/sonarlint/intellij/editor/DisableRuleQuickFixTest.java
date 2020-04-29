@@ -22,7 +22,6 @@ package org.sonarlint.intellij.editor;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.PsiFile;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
@@ -32,6 +31,7 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -68,7 +68,7 @@ public class DisableRuleQuickFixTest extends SonarTest {
 
   @Test
   public void should_not_be_available_if_already_excluded() {
-    settings.setExcludedRules(Collections.singleton("rule"));
+    settings.disableRule("rule");
     assertThat(quickFix.isAvailable(project, mock(Editor.class), mock(PsiFile.class))).isFalse();
   }
 
@@ -81,7 +81,7 @@ public class DisableRuleQuickFixTest extends SonarTest {
   @Test
   public void should_exclude() {
     quickFix.invoke(project, mock(Editor.class), mock(PsiFile.class));
-    assertThat(settings.getExcludedRules()).containsExactly("rule");
+    assertFalse(settings.isRuleActive("rule"));
     verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 }

@@ -100,8 +100,8 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
     getIncludedAndExcluded(included, excluded);
-    settings.setExcludedRules(excluded);
-    settings.setIncludedRules(included);
+    included.forEach(settings::enableRule);
+    excluded.forEach(settings::disableRule);
   }
 
   private void getIncludedAndExcluded(Set<String> included, Set<String> excluded) {
