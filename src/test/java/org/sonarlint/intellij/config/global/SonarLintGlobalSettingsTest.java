@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.global;
 
 import java.util.Collections;
-import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 
