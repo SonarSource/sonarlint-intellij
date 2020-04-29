@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.global;
 
 import java.util.Collections;
-import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 
@@ -84,8 +83,5 @@ public class SonarLintGlobalSettingsTest extends SonarTest {
     settings.enableRule(RULE);
     assertThat(settings.isRuleActive(RULE)).isEqualTo(true);
   }
-
-
-
 
 }
