@@ -22,7 +22,7 @@ package org.sonarlint.intellij.editor;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.PsiFile;
-import java.util.Collections;
+import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -39,6 +39,8 @@ public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() {
+    // Reset rule activations
+    getGlobalSettings().setRules(new HashMap<>());
     replaceProjectComponent(SonarLintSubmitter.class, submitter);
     quickFix = new DisableRuleQuickFix("rule");
   }
@@ -62,7 +64,7 @@ public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_not_be_available_if_already_excluded() {
-    getGlobalSettings().setExcludedRules(Collections.singleton("rule"));
+    getGlobalSettings().disableRule("rule");
     assertThat(quickFix.isAvailable(getProject(), mock(Editor.class), mock(PsiFile.class))).isFalse();
   }
 
@@ -75,7 +77,7 @@ public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
   @Test
   public void should_exclude() {
     quickFix.invoke(getProject(), mock(Editor.class), mock(PsiFile.class));
-    assertThat(getGlobalSettings().getExcludedRules()).containsExactly("rule");
+    assertThat(getGlobalSettings().isRuleExplicitlyDisabled("rule")).isTrue();
     verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 }
