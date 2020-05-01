@@ -31,7 +31,6 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -81,7 +80,7 @@ public class DisableRuleQuickFixTest extends SonarTest {
   @Test
   public void should_exclude() {
     quickFix.invoke(project, mock(Editor.class), mock(PsiFile.class));
-    assertFalse(settings.isRuleActive("rule"));
+    assertThat(settings.isRuleExplicitlyDisabled("rule")).isTrue();
     verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 }

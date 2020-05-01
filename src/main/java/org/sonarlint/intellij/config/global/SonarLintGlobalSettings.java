@@ -35,6 +35,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
@@ -49,9 +50,9 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
-  private final Set<String> includedRules = new HashSet<>();
+  private Set<String> includedRules = new HashSet<>();
   @Deprecated
-  private final Set<String> excludedRules = new HashSet<>();
+  private Set<String> excludedRules = new HashSet<>();
   private final Map<String, Rule> rules = new HashMap<>();
 
   public static SonarLintGlobalSettings getInstance() {
@@ -59,17 +60,15 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
-    if (!rules.containsKey(ruleKey)) {
-      rules.put(ruleKey, new Rule(true));
-    }
+    rules.computeIfAbsent(ruleKey, s -> new Rule(true));
     rules.get(ruleKey).params.put(paramName, paramValue);
   }
 
-  public String getRuleParam(String ruleKey, String paramName) {
+  public Optional<String> getRuleParamValue(String ruleKey, String paramName) {
     if (!rules.containsKey(ruleKey)) {
-      return null;
+      return Optional.empty();
     }
-    return rules.get(ruleKey).params.get(paramName);
+    return Optional.of(rules.get(ruleKey).params.get(paramName));
   }
 
   public void enableRule(String ruleKey) {
@@ -81,17 +80,15 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   private void setRuleActive(String ruleKey, boolean active) {
-    if (!rules.containsKey(ruleKey)) {
-      rules.put(ruleKey, new Rule(false));
-    }
+    rules.computeIfAbsent(ruleKey, s -> new Rule(true));
     rules.get(ruleKey).isActive = active;
   }
 
-  public boolean isRuleActive(String ruleKey) {
+  public boolean isRuleExplicitlyDisabled(String ruleKey) {
     if (!rules.containsKey(ruleKey)) {
-      return true;
+      return false;
     }
-    return rules.get(ruleKey).isActive;
+    return !rules.get(ruleKey).isActive;
   }
 
   @Override
@@ -102,12 +99,18 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   @Override
   public void loadState(SonarLintGlobalSettings state) {
     XmlSerializerUtil.copyBean(state, this);
-    includedRules.forEach(it -> {
-      rules.put(it, new Rule(true));
-    });
-    excludedRules.forEach(it -> {
-      rules.put(it, new Rule(false));
-    });
+    if(includedRules != null) {
+      includedRules.forEach(it -> {
+        rules.put(it, new Rule(true));
+      });
+    }
+    if(excludedRules != null) {
+      excludedRules.forEach(it -> {
+        rules.put(it, new Rule(false));
+      });
+    }
+    includedRules = null;
+    excludedRules = null;
   }
 
   @Override

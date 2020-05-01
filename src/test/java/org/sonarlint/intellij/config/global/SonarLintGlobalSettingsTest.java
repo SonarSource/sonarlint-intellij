@@ -25,6 +25,7 @@ import org.sonarlint.intellij.SonarTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 public class SonarLintGlobalSettingsTest extends SonarTest {
 
   private static final String RULE = "rule";
@@ -61,27 +62,27 @@ public class SonarLintGlobalSettingsTest extends SonarTest {
   public void testRuleParamAccessors() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.setRuleParam(RULE, PARAM, VALUE);
-    assertThat(settings.getRuleParam(RULE, PARAM)).isEqualTo(VALUE);
+    assertThat(settings.getRuleParamValue(RULE, PARAM)).isPresent().hasValue(VALUE);
   }
 
   @Test
   public void testRuleIsNotLoaded() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    assertThat(settings.getRuleParam(RULE, PARAM)).isEqualTo(null);
+    assertThat(settings.getRuleParamValue(RULE, PARAM).isPresent()).isFalse();
   }
 
   @Test
   public void testDisableRule() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.disableRule(RULE);
-    assertThat(settings.isRuleActive(RULE)).isEqualTo(false);
+    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isTrue();
   }
 
   @Test
   public void testEnableRule() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.enableRule(RULE);
-    assertThat(settings.isRuleActive(RULE)).isEqualTo(true);
+    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isFalse();
   }
 
 }
