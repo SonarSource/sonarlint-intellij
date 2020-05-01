@@ -68,7 +68,8 @@ public class DisableRuleAction extends AnAction {
     boolean visible = !projectSettings.isBindingEnabled() && issue != null;
     e.getPresentation().setVisible(visible);
 
-    boolean enabled = visible && settings.isRuleActive(issue.getRuleKey());
+    boolean explicitlyDisabled = issue != null && settings.isRuleExplicitlyDisabled(issue.getRuleKey());
+    boolean enabled = visible && !explicitlyDisabled;
     e.getPresentation().setEnabled(enabled);
   }
 
