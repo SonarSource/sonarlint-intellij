@@ -116,7 +116,7 @@ public class DisableRuleActionTest extends SonarTest {
 
     action.actionPerformed(event);
 
-    assertThat(settings.getExcludedRules()).containsExactly("key");
+    assertThat(settings.isRuleExplicitlyDisabled("key")).isTrue();
     verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 

@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.configurationStore.DefaultStateSerializerKt;
-import com.intellij.idea.MainImpl;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.HashSet;
@@ -29,8 +27,6 @@ import org.junit.Test;
 import org.sonarlint.intellij.SonarTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
-
 
 public class SonarLintGlobalSettingsTest extends SonarTest {
 
