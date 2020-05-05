@@ -19,14 +19,13 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
-import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
 
 import static com.intellij.openapi.actionSystem.Toggleable.SELECTED_PROPERTY;
 import static org.mockito.Mockito.mock;
@@ -34,8 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class RulesFilterActionTest extends SonarTest {
-  private ActionManager actionManager = register(app, ActionManager.class);
+public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestCase {
   private RulesFilterModel model = mock(RulesFilterModel.class);
   private AnActionEvent event = mock(AnActionEvent.class);
   private Presentation presentation = new Presentation();

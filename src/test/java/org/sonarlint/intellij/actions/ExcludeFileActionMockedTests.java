@@ -23,26 +23,21 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static com.intellij.openapi.actionSystem.ActionPlaces.EDITOR_POPUP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class ExcludeFileActionTest extends SonarTest {
+public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
   private VirtualFile file1 = mock(VirtualFile.class);
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private ExcludeFileAction action = new ExcludeFileAction();
   private AnActionEvent e = mock(AnActionEvent.class);
@@ -51,10 +46,7 @@ public class ExcludeFileActionTest extends SonarTest {
   @Before
   public void setup() {
     super.register(project, SonarLintProjectSettings.class, settings);
-    super.register(app, SonarLintAppUtils.class, appUtils);
     super.register(project, SonarLintSubmitter.class, submitter);
-    when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("file1");
-    when(project.isInitialized()).thenReturn(true);
     when(e.getProject()).thenReturn(project);
     when(e.getPresentation()).thenReturn(presentation);
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file1});
@@ -62,45 +54,18 @@ public class ExcludeFileActionTest extends SonarTest {
   }
 
   @Test
-  public void add_exclusion() {
-    action.actionPerformed(e);
-
-    assertThat(settings.getFileExclusions()).containsOnly("FILE:file1");
-    verify(submitter).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-  }
-
-  @Test
-  public void dont_add_exclusion_if_already_exists() {
-    settings.setFileExclusions(Collections.singletonList("FILE:file1"));
-
-    action.actionPerformed(e);
-
-    assertThat(settings.getFileExclusions()).containsOnly("FILE:file1");
-    verifyZeroInteractions(submitter);
-  }
-
-  @Test
   public void do_nothing_if_disposed() {
-    when(project.isDisposed()).thenReturn(true);
+    project.setDisposed(true);
 
     action.actionPerformed(e);
 
-    assertThat(settings.getFileExclusions()).isEmpty();
-    verifyZeroInteractions(submitter);
-  }
-
-  @Test
-  public void reject_project() {
-    when(appUtils.getRelativePathForAnalysis(project, file1)).thenReturn("");
-
-    action.actionPerformed(e);
     assertThat(settings.getFileExclusions()).isEmpty();
     verifyZeroInteractions(submitter);
   }
 
   @Test
   public void do_nothing_if_there_are_no_files() {
-    when(project.isDisposed()).thenReturn(true);
+    project.setDisposed(true);
 
     action.actionPerformed(e);
 
@@ -110,7 +75,7 @@ public class ExcludeFileActionTest extends SonarTest {
 
   @Test
   public void disable_if_project_is_not_init() {
-    when(project.isInitialized()).thenReturn(false);
+    project.setInitialized(false);
     action.update(e);
     assertThat(presentation.isVisible()).isTrue();
     assertThat(presentation.isEnabled()).isFalse();
@@ -118,7 +83,7 @@ public class ExcludeFileActionTest extends SonarTest {
 
   @Test
   public void disable_if_project_is_disposed() {
-    when(project.isDisposed()).thenReturn(true);
+    project.setDisposed(true);
     action.update(e);
     assertThat(presentation.isVisible()).isTrue();
     assertThat(presentation.isEnabled()).isFalse();
@@ -140,10 +105,4 @@ public class ExcludeFileActionTest extends SonarTest {
     assertThat(presentation.isEnabled()).isFalse();
   }
 
-  @Test
-  public void enable_action() {
-    action.update(e);
-    assertThat(presentation.isVisible()).isTrue();
-    assertThat(presentation.isEnabled()).isTrue();
-  }
 }

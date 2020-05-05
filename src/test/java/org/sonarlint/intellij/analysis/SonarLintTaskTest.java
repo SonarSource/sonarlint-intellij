@@ -29,7 +29,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueProcessor;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLintTaskTest extends SonarTest {
+public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
   private SonarLintTask task;
   @Mock
   private IssueProcessor processor;

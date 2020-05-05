@@ -21,15 +21,14 @@ package org.sonarlint.intellij.util;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class GlobalLogOutputTest extends SonarTest {
+public class GlobalLogOutputTest extends AbstractSonarLintMockedTests {
   private GlobalLogOutput output;
 
   @Before
@@ -65,8 +64,4 @@ public class GlobalLogOutputTest extends SonarTest {
     output.log("msg", LogOutput.Level.WARN);
   }
 
-  @Test
-  public void should_get_from_container() {
-    assertThat(GlobalLogOutput.get()).isEqualTo(output);
-  }
 }

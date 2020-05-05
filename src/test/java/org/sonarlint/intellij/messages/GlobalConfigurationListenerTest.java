@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class GlobalConfigurationListenerTest extends SonarTest {
+public class GlobalConfigurationListenerTest extends AbstractSonarLintMockedTests {
   private List<SonarQubeServer> testList = new LinkedList<>();
 
   @Before

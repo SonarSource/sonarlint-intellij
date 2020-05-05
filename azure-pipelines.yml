@@ -162,23 +162,6 @@ stages:
         displayName: Gradle build cache
       - task: Gradle@2
         inputs:
-          options: --build-cache --stacktrace -i -PijVersion=$(IDEA_VERSION)
-          tasks: buildPlugin check
-          publishJUnitResults: false
-          javaHomeOption: 'JDKVersion'
-          jdkVersionOption: $(JDKVersion)
-        displayName: Build and run UTs with a different version of IntelliJ
-      - task: Gradle@2
-        inputs:
-          options: --build-cache --stacktrace -i -p its
-          tasks: check
-          publishJUnitResults: true
-          testRunTitle: 'Sanity checks'
-          javaHomeOption: 'JDKVersion'
-          jdkVersionOption: $(JDKVersion)
-        displayName: Run sanity checks
-      - task: Gradle@2
-        inputs:
           options: --stop
           tasks: c
           publishJUnitResults: false

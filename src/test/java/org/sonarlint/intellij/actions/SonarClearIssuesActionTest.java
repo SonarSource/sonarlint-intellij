@@ -21,59 +21,57 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
+import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.IssueManager;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarClearIssuesActionTest extends SonarTest {
-  private FileEditorManager editorManager = register(FileEditorManager.class);
-  private DaemonCodeAnalyzer codeAnalyzer = register(DaemonCodeAnalyzer.class);
-  private IssueManager issueManager = register(IssueManager.class);
-  private PsiManager psiManager = register(PsiManager.class);
+public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
+  private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);
+  private IssueManager issueManager = mock(IssueManager.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
   private SonarClearIssuesAction clearIssues = new SonarClearIssuesAction(null, null, null);
+  private VirtualFile file;
 
   @Before
   public void prepare() {
-    when(event.getProject()).thenReturn(project);
+    replaceProjectComponent(DaemonCodeAnalyzer.class, codeAnalyzer);
+    replaceProjectComponent(IssueManager.class, issueManager);
+    when(event.getProject()).thenReturn(getProject());
+    file = myFixture.copyFileToProject("foo.php", "foo.php");
   }
 
   @Test
   public void testClear() {
-    VirtualFile openFile = mock(VirtualFile.class);
-    PsiFile psiFile = mock(PsiFile.class);
-
-    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] {openFile});
-    when(openFile.isValid()).thenReturn(true);
-    when(psiManager.findFile(openFile)).thenReturn(psiFile);
+    FileEditorManager.getInstance(getProject()).openFile(file, true);
 
     clearIssues.actionPerformed(event);
 
-    verify(codeAnalyzer).restart(psiFile);
+    verify(codeAnalyzer).restart(any());
     verify(issueManager).clear();
   }
 
   @Test
-  public void testClearWithInvalidFiles() {
-    VirtualFile openFile = mock(VirtualFile.class);
+  public void testClearWithInvalidFiles() throws IOException {
+    FileEditorManager.getInstance(getProject()).openFile(file, true);
 
-    when(editorManager.getOpenFiles()).thenReturn(new VirtualFile[] {openFile});
-    when(openFile.isValid()).thenReturn(false);
+    WriteAction.run(() -> {
+      file.delete(getProject());
+    });
 
     clearIssues.actionPerformed(event);
 
-    verifyZeroInteractions(psiManager);
     verifyZeroInteractions(codeAnalyzer);
     verify(issueManager).clear();
   }

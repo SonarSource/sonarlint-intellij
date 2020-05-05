@@ -21,14 +21,14 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarClearAnalysisResultsActionTest extends SonarTest {
+public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintMockedTests {
   private SonarClearAnalysisResultsAction action = new SonarClearAnalysisResultsAction(null, null, null);
 
   @Test

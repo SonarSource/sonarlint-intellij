@@ -24,7 +24,7 @@ import com.intellij.openapi.project.Project;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class MakeTriggerTest extends SonarTest {
+public class MakeTriggerTest extends AbstractSonarLintMockedTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private Project project = mock(Project.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);

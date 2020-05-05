@@ -19,14 +19,14 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -45,37 +45,28 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarLintAnalyzerTest extends SonarTest {
+public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
   private EncodingProjectManager encodingProjectManager = mock(EncodingProjectManager.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
-  private AnalysisConfigurator configurator = mock(AnalysisConfigurator.class);
   private SonarLintFacade facade = mock(SonarLintFacade.class);
   private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
-  private VirtualFileTestPredicate testPredicate = mock(VirtualFileTestPredicate.class);
   private SonarLintTelemetryImpl telemetry = mock(SonarLintTelemetryImpl.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   private SonarLintAnalyzer analyzer;
 
   @Before
   public void prepare() throws InvalidBindingException {
-    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, telemetry, appUtils);
+    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, telemetry, ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class));
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
     when(facade.startAnalysis(anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
-    super.register(module, VirtualFileTestPredicate.class, testPredicate);
-    super.register(module, AnalysisConfigurator.class, configurator);
-    super.registerEP(AnalysisConfigurator.EP_NAME, AnalysisConfigurator.class);
-    when(project.getBasePath()).thenReturn("project");
   }
 
   @Test
   public void testAnalysis() {
-    VirtualFile file = mock(VirtualFile.class);
-    when(file.getPath()).thenReturn("project/testFile");
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
     IssueListener listener = mock(IssueListener.class);
-    when(app.getDefaultModalityState()).thenReturn(ModalityState.NON_MODAL);
-    analyzer.analyzeModule(module, Collections.singleton(file), listener, mock(ProgressMonitor.class));
-    verify(facade).startAnalysis(anyList(), eq(listener), eq(Collections.emptyMap()), any(ProgressMonitor.class));
+    analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ProgressMonitor.class));
+    verify(facade).startAnalysis(anyList(), eq(listener), anyMap(), any(ProgressMonitor.class));
   }
 }

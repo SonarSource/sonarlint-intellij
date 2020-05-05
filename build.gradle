@@ -23,18 +23,11 @@ description = 'SonarLint for IntelliJ IDEA'
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
-if (!project.hasProperty("ijVersion")) {
-  ext.ijVersion = '2019.2'
-}
-
 intellij {
-  version ijVersion
+  version 'IC-2020.1'
   pluginName 'sonarlint-intellij'
   updateSinceUntilBuild false
-  type 'IC'
-  if (!ijVersion.startsWith("2017") && !ijVersion.startsWith("2018")) {
-    plugins = ['java']
-  }
+  plugins = ['java']
 }
 
 protobuf {
@@ -43,6 +36,10 @@ protobuf {
     // Download from repositories. Must be the same as the one used in sonarlint-core
     artifact = 'com.google.protobuf:protoc:3.9.1'
   }
+}
+
+test {
+  systemProperty 'sonarlint.telemetry.disabled', 'true'
 }
 
 runIde {

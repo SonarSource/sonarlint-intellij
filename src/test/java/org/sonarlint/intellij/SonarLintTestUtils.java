@@ -20,14 +20,9 @@
 package org.sonarlint.intellij;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ComponentManager;
-import com.intellij.openapi.components.impl.ComponentManagerImpl;
 import com.intellij.openapi.project.Project;
-import com.intellij.util.messages.MessageBus;
-import com.intellij.util.messages.MessageBusConnection;
 import java.awt.GraphicsEnvironment;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.mockito.Mockito.mock;
@@ -40,26 +35,6 @@ public class SonarLintTestUtils {
 
   private SonarLintTestUtils() {
     // only static
-  }
-
-  public static SonarLintFacade mockRunner(Project project) {
-    return mockInContainer(SonarLintFacade.class, project);
-  }
-
-  public static <T> T mockInContainer(Class<T> clazz, Project project) {
-    T mocked = mock(clazz);
-    ComponentManagerImpl compManager = (ComponentManagerImpl) project;
-    compManager.registerComponentInstance(clazz, mocked);
-    return mocked;
-  }
-
-  public static MessageBusConnection mockMessageBus(ComponentManager mockedComponentManager) {
-    MessageBusConnection connection = mock(MessageBusConnection.class);
-    MessageBus bus = mock(MessageBus.class);
-    when(bus.connect(mockedComponentManager)).thenReturn(connection);
-    when(bus.connect()).thenReturn(connection);
-    when(mockedComponentManager.getMessageBus()).thenReturn(bus);
-    return connection;
   }
 
   public static AnActionEvent createAnActionEvent(@Nullable Project project) {

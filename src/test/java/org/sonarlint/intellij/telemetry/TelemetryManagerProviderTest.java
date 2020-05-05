@@ -20,28 +20,21 @@
 package org.sonarlint.intellij.telemetry;
 
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.SonarTest;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class TelemetryManagerProviderTest extends SonarTest {
+public class TelemetryManagerProviderTest extends AbstractSonarLintLightTests {
 
   @Rule
   public TemporaryFolder temporaryFolder = new TemporaryFolder();
-
-  @Before
-  public void start() {
-    super.register(CertificateManager.class, mock(CertificateManager.class));
-  }
 
   @Test
   public void testCreation() throws Exception {

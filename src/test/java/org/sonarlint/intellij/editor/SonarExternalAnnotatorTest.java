@@ -34,7 +34,7 @@ import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -47,7 +47,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarExternalAnnotatorTest extends SonarTest {
+public class SonarExternalAnnotatorTest extends AbstractSonarLintMockedTests {
   private PsiFile psiFile = mock(PsiFile.class);
   private VirtualFile virtualFile = mock(VirtualFile.class);
   private IssueManager store = mock(IssueManager.class);

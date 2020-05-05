@@ -20,12 +20,10 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.DumbProgressIndicator;
-import com.intellij.openapi.project.Project;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -42,11 +40,10 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class UpdateCheckerTest extends SonarTest {
+public class UpdateCheckerTest extends AbstractSonarLintLightTests {
   private UpdateChecker updateChecker;
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private SonarQubeServer server;
-  private Project project = mock(Project.class);
   private SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
   private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
@@ -56,12 +53,10 @@ public class UpdateCheckerTest extends SonarTest {
     settings.setProjectKey("key");
     settings.setServerId("serverId");
     server = createServer();
-    super.register(app, SonarApplication.class, mock(SonarApplication.class));
-    super.register(app, GlobalLogOutput.class, new GlobalLogOutput());
     when(bindingManager.getSonarQubeServer()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 
-    updateChecker = new UpdateChecker(project, bindingManager, settings, notifications);
+    updateChecker = new UpdateChecker(getProject(), bindingManager, settings, notifications, new GlobalLogOutput());
   }
 
   @Test

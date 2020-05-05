@@ -25,12 +25,11 @@ import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarLintTestUtils;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
@@ -42,8 +41,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class EditorChangeTriggerTest {
-  private Project project = mock(Project.class);
+public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private EditorFactory editorFactory = mock(EditorFactory.class);
   private SonarLintAppUtils utils = mock(SonarLintAppUtils.class);
@@ -53,13 +51,11 @@ public class EditorChangeTriggerTest {
   private EditorChangeTrigger underTest;
 
   @Before
-  public void setUp() {
-    SonarLintTestUtils.mockMessageBus(project);
-
+  public void prepare() {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    underTest = new EditorChangeTrigger(project, globalSettings, submitter, editorFactory, utils, docManager, 500);
+    underTest = new EditorChangeTrigger(getProject(), globalSettings, submitter, editorFactory, utils, docManager, 500);
     underTest.projectOpened();
   }
 
@@ -73,9 +69,9 @@ public class EditorChangeTriggerTest {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(project);
-    when(utils.findModuleForFile(file, project)).thenReturn(m1);
-    when(utils.isOpenFile(project, file)).thenReturn(true);
+    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
+    when(utils.isOpenFile(getProject(), file)).thenReturn(true);
 
     underTest.documentChanged(event);
     assertThat(underTest.getEvents()).hasSize(1);
@@ -94,8 +90,8 @@ public class EditorChangeTriggerTest {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(project);
-    when(utils.findModuleForFile(file, project)).thenReturn(m1);
+    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
 
     underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
@@ -111,8 +107,8 @@ public class EditorChangeTriggerTest {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(project);
-    when(utils.findModuleForFile(file, project)).thenReturn(m1);
+    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
 
     underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
@@ -162,8 +158,8 @@ public class EditorChangeTriggerTest {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(project);
-    when(utils.findModuleForFile(file, project)).thenReturn(m1);
+    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
 
     underTest.documentChanged(event);
     underTest.projectClosed();

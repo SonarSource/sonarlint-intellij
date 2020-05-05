@@ -47,12 +47,13 @@ public class UpdateChecker extends AbstractProjectComponent {
   private ScheduledFuture<?> scheduledTask;
   private final GlobalLogOutput log;
 
-  public UpdateChecker(Project project, ProjectBindingManager projectBindingManager, SonarLintProjectSettings projectSettings, SonarLintProjectNotifications notifications) {
+  public UpdateChecker(Project project, ProjectBindingManager projectBindingManager, SonarLintProjectSettings projectSettings, SonarLintProjectNotifications notifications,
+    GlobalLogOutput globalLogOutput) {
     super(project);
     this.projectBindingManager = projectBindingManager;
     this.projectSettings = projectSettings;
     this.notifications = notifications;
-    this.log = GlobalLogOutput.get();
+    this.log = globalLogOutput;
   }
 
   @Override

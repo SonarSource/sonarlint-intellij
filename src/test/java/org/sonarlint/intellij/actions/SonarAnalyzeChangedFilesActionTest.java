@@ -19,18 +19,15 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.lifecycle.PeriodicalTasksCloser;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
@@ -41,41 +38,34 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
+public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
-  private SonarLintStatus status = mock(SonarLintStatus.class);
-  private AnalysisResultIssues issues = mock(AnalysisResultIssues.class);
-  private IssueManager issueManager = mock(IssueManager.class);
-  private PeriodicalTasksCloser tasksCloser = mock(PeriodicalTasksCloser.class);
   private ChangeListManager changeListManager = mock(ChangeListManager.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
   private SonarAnalyzeChangedFilesAction action;
+  private SonarLintStatus status;
 
   @Before
   public void before() {
     action = new SonarAnalyzeChangedFilesAction();
-    when(tasksCloser.safeGetComponent(project, ChangeListManager.class)).thenReturn(changeListManager);
-
-    super.register(ChangeListManager.class, changeListManager);
-    super.register(app, PeriodicalTasksCloser.class, tasksCloser);
-    super.register(SonarLintSubmitter.class, submitter);
-    super.register(AnalysisResultIssues.class, issues);
-    super.register(IssueManager.class, issueManager);
+    status = SonarLintStatus.get(getProject());
+    replaceProjectComponent(SonarLintSubmitter.class, submitter);
+    replaceProjectService(ChangeListManager.class, changeListManager);
   }
 
   @Test
   public void testEnabled() {
-    when(status.isRunning()).thenReturn(true);
-    assertThat(action.isEnabled(event, project, status)).isFalse();
+    status.tryRun();
+    assertThat(action.isEnabled(event, getProject(), status)).isFalse();
 
-    when(status.isRunning()).thenReturn(false);
+    status.stopRun();
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.emptyList());
-    assertThat(action.isEnabled(event, project, status)).isFalse();
+    assertThat(action.isEnabled(event, getProject(), status)).isFalse();
 
-    when(status.isRunning()).thenReturn(false);
+    status.stopRun();
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(mock(VirtualFile.class)));
-    assertThat(action.isEnabled(event, project, status)).isTrue();
+    assertThat(action.isEnabled(event, getProject(), status)).isTrue();
   }
 
   @Test
@@ -89,9 +79,9 @@ public class SonarAnalyzeChangedFilesActionTest extends SonarTest {
   public void testRun() {
     AnActionEvent event = mock(AnActionEvent.class);
 
-    VirtualFile file = mock(VirtualFile.class);
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
 
-    when(event.getProject()).thenReturn(project);
+    when(event.getProject()).thenReturn(getProject());
     when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(file));
 
     action.actionPerformed(event);

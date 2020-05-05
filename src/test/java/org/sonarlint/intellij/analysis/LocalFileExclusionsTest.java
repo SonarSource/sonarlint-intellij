@@ -20,24 +20,22 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.function.BooleanSupplier;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-
-import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class LocalFileExclusionsTest extends SonarTest {
+public class LocalFileExclusionsTest extends AbstractSonarLintMockedTests {
   private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
   private SonarLintProjectSettings projectSettings = new SonarLintProjectSettings();
   private ModuleRootManager moduleRootManager = mock(ModuleRootManager.class);
@@ -46,10 +44,11 @@ public class LocalFileExclusionsTest extends SonarTest {
   private BooleanSupplier powerModeCheck = mock(BooleanSupplier.class);
   private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
-  private LocalFileExclusions exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, projectRootManager, powerModeCheck);
+  private LocalFileExclusions exclusions;
 
   @Before
   public void prepare() {
+    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, projectRootManager, powerModeCheck);
     when(powerModeCheck.getAsBoolean()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));
@@ -83,11 +82,7 @@ public class LocalFileExclusionsTest extends SonarTest {
 
   @Test
   public void should_not_analyze_if_project_is_disposed() {
-    when(project.isDisposed()).thenReturn(true);
-    Module module = mock(Module.class);
-
-    when(project.isDisposed()).thenReturn(true);
-    when(module.getProject()).thenReturn(project);
+    project.setDisposed(true);
 
     assertThat(exclusions.canAnalyze(testFile, module).isExcluded()).isTrue();
   }
