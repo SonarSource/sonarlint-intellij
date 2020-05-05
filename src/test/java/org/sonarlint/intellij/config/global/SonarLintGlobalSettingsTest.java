@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import org.junit.Test;
@@ -62,7 +63,7 @@ public class SonarLintGlobalSettingsTest extends SonarTest {
   }
 
   @Test
-  public void testLoadState() throws Exception {
+  public void testLoadStateOldFormat() throws Exception {
     SonarLintGlobalSettings state = new SonarLintGlobalSettings();
     HashSet<String> includedRules = new HashSet<>();
     includedRules.add(RULE);
@@ -71,12 +72,12 @@ public class SonarLintGlobalSettingsTest extends SonarTest {
     Field includedRulesField = state.getClass().getDeclaredField("includedRules");
     includedRulesField.setAccessible(true);
     includedRulesField.set(state, includedRules);
-    Field rulesField = state.getClass().getDeclaredField("rules");
-    rulesField.setAccessible(true);
     Field excludedRulesField = SonarLintGlobalSettings.class.getDeclaredField("excludedRules");
     excludedRulesField.setAccessible(true);
     excludedRulesField.set(state, excludedRules);
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    Field rulesField = state.getClass().getDeclaredField("rules");
+    rulesField.setAccessible(true);
 
     settings.loadState(state);
 
@@ -89,6 +90,22 @@ public class SonarLintGlobalSettingsTest extends SonarTest {
   }
 
   @Test
+  public void testLoadStateNewFormat() throws Exception {
+    SonarLintGlobalSettings state = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    HashMap<String, SonarLintGlobalSettings.Rule> rules = new HashMap<>();
+    rules.put(RULE, new SonarLintGlobalSettings.Rule(false));
+    Field rulesField = state.getClass().getDeclaredField("rules");
+    rulesField.setAccessible(true);
+    rulesField.set(state, rules);
+
+    settings.loadState(state);
+
+    assertThat(settings.getExcludedRules()).contains(RULE);
+    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isTrue();
+  }
+
+    @Test
   public void testRuleParamAccessors() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.setRuleParam(RULE, PARAM, VALUE);

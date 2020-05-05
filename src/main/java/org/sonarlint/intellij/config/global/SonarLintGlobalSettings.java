@@ -53,7 +53,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private Set<String> includedRules = new HashSet<>();
   @Deprecated
   private Set<String> excludedRules = new HashSet<>();
-  private final Map<String, Rule> rules = new HashMap<>();
+  private Map<String, Rule> rules = new HashMap<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
@@ -148,6 +148,14 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
         .collect(Collectors.toSet());
     }
 
+  }
+
+  public Map<String, Rule> getRules() {
+    return rules;
+  }
+
+  public void setRules(Map<String, Rule> rules) {
+    this.rules = rules;
   }
 
   public void setIncludedRules(Set<String> includedRules) {
