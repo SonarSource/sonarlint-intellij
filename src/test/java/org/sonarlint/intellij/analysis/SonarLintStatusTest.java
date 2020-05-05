@@ -21,11 +21,11 @@ package org.sonarlint.intellij.analysis;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SonarLintStatusTest extends SonarTest {
+public class SonarLintStatusTest extends AbstractSonarLintMockedTests {
   private SonarLintStatus status;
 
   @Before

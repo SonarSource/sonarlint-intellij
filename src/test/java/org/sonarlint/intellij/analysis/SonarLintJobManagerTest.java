@@ -22,47 +22,46 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockitoAnnotations;
-import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
+import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarLintJobManagerTest extends SonarTest {
+public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4TestCase {
   private SonarLintTaskFactory factory = mock(SonarLintTaskFactory.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private SonarLintStatus status = mock(SonarLintStatus.class);
   private SonarLintUserTask task = mock(SonarLintUserTask.class);
   private ProgressManager progressManager = mock(ProgressManager.class);
 
-  private SonarLintJobManager manager = new SonarLintJobManager(project, factory, progressManager, status, console);
+  private SonarLintJobManager manager;
 
   @Before
   public void prepare() {
-    MockitoAnnotations.initMocks(this);
-    when(app.isDispatchThread()).thenReturn(true);
+    manager = new SonarLintJobManager(getProject(), factory, progressManager, status, console);
     when(task.isHeadless()).thenReturn(true);
     when(task.isConditionalModal()).thenReturn(true);
     when(status.tryRun()).thenReturn(true);
     when(factory.createTask(any(SonarLintJob.class), eq(true))).thenReturn(task);
     when(factory.createUserTask(any(SonarLintJob.class), eq(true))).thenReturn(task);
+    when(task.getJob()).thenReturn(mock(SonarLintJob.class));
   }
 
   @Test
   public void testUserTask() {
     manager.submitManual(mockFiles(), Collections.emptyList(), TriggerType.ACTION, true, null);
     verify(factory).createUserTask(any(SonarLintJob.class), eq(true));
-    verify(app).isDispatchThread();
     verify(progressManager).run(task);
   }
 
@@ -70,11 +69,10 @@ public class SonarLintJobManagerTest extends SonarTest {
   public void testRunBackground() {
     manager.submitBackground(mockFiles(), Collections.emptyList(), TriggerType.ACTION, null);
     verify(factory).createTask(any(SonarLintJob.class), eq(true));
-    verify(app).isDispatchThread();
     verify(progressManager).run(task);
   }
 
   private Map<Module, Collection<VirtualFile>> mockFiles() {
-    return Collections.singletonMap(mock(Module.class), Collections.singleton(mock(VirtualFile.class)));
+    return Collections.singletonMap(getModule(), asList(myFixture.getFile()));
   }
 }

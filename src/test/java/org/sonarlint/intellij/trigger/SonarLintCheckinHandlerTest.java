@@ -26,7 +26,7 @@ import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
@@ -41,7 +41,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarLintCheckinHandlerTest extends SonarTest {
+public class SonarLintCheckinHandlerTest extends AbstractSonarLintMockedTests {
   private SonarLintCheckinHandler handler;
   private CompletableFuture<Void> future = new CompletableFuture<>();
   private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();

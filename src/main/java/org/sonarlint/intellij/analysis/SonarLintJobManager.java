@@ -81,7 +81,8 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    *
    * @see #submitBackground(Map, Collection, TriggerType, AnalysisCallback)
    */
-  public void submitManual(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean modal, @Nullable AnalysisCallback callback) {
+  public void submitManual(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean modal,
+    @Nullable AnalysisCallback callback) {
     if (myProject.isDisposed() || !status.tryRun()) {
       console.info("Canceling analysis triggered by the user because another one is already running or because the project is disposed");
       return;

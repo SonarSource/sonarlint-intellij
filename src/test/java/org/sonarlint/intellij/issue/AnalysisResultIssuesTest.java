@@ -28,14 +28,14 @@ import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class AnalysisResultIssuesTest extends SonarTest {
+public class AnalysisResultIssuesTest extends AbstractSonarLintMockedTests {
   private AnalysisResultIssues analysisResultIssues;
   private AnalysisResultsListener listener = mock(AnalysisResultsListener.class);
 

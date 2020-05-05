@@ -26,7 +26,6 @@ import com.intellij.openapi.components.ExportableApplicationComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import java.io.File;
 import java.util.ArrayList;
@@ -92,11 +91,11 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public void setIncludedRules(Set<String> includedRules) {
-    this.includedRules = includedRules;
+    this.includedRules = new HashSet<>(includedRules);
   }
 
   public void setExcludedRules(Set<String> excludedRules) {
-    this.excludedRules = excludedRules;
+    this.excludedRules = new HashSet<>(excludedRules);
   }
 
   public boolean isAutoTrigger() {

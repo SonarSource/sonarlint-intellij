@@ -19,23 +19,17 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.io.FileUtil;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -49,90 +43,78 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class ServerIssueUpdaterTest extends SonarTest {
+public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
+  private static final String SERVER_ID = "myServer";
   public static final String PROJECT_KEY = "foo";
   public static final ProjectBinding PROJECT_BINDING = new ProjectBinding(PROJECT_KEY, "", "");
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private static final String FOO_PHP = "foo.php";
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
-
-  private Project project = mock(Project.class);
   private IssueManager issueManager = mock(IssueManager.class);
-  private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
-  private SonarLintConsole console = mock(SonarLintConsole.class);
-  private ProgressIndicator indicator = mock(ProgressIndicator.class);
-  private ModuleBindingManager moduleBindingManager = mock(ModuleBindingManager.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
+  private SonarLintConsole mockedConsole = mock(SonarLintConsole.class);
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
 
-  private ServerIssueUpdater updater = new ServerIssueUpdater(project, issueManager, settings, bindingManager, console, appUtils);
+  private ServerIssueUpdater underTest;
 
   @Before
-  public void prepare() throws IOException, InvalidBindingException {
-    super.register(app, SonarApplication.class, mock(SonarApplication.class));
-    super.register(module, ModuleBindingManager.class, moduleBindingManager);
-    when(module.getProject()).thenReturn(project);
-    Path projectBaseDir = temp.newFolder().toPath();
-    when(moduleBindingManager.getBinding()).thenReturn(new ProjectBinding(PROJECT_KEY, "", ""));
-    when(indicator.isModal()).thenReturn(false);
-    when(project.getBasePath()).thenReturn(FileUtil.toSystemIndependentName(projectBaseDir.toString()));
-    settings.setProjectKey(PROJECT_KEY);
+  public void prepare() throws InvalidBindingException {
+    ProjectBindingManager bindingManager = spy(getProject().getComponent(ProjectBindingManager.class));
+    doReturn(engine).when(bindingManager).getConnectedEngine();
+    underTest = new ServerIssueUpdater(getProject(), issueManager, getProjectSettings(), bindingManager, mockedConsole, ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class));
+    getGlobalSettings().setSonarQubeServers(Collections.singletonList(SonarQubeServer.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
+    getProjectSettings().setServerId(SERVER_ID);
+    getProjectSettings().setProjectKey(PROJECT_KEY);
 
-    // mock creation of engine / server
-    when(bindingManager.getConnectedEngine()).thenReturn(engine);
-    SonarQubeServer server = mock(SonarQubeServer.class);
-    when(server.getHostUrl()).thenReturn("http://dummyserver:9000");
-    when(bindingManager.getSonarQubeServer()).thenReturn(server);
+    underTest.initComponent();
+  }
+
+  @After
+  public void dispose() {
+    underTest.disposeComponent();
   }
 
   @Test
   public void should_do_nothing_if_not_connected() {
-    VirtualFile file = mock(VirtualFile.class);
-    settings.setBindingEnabled(false);
+    VirtualFile file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
+    getProjectSettings().setBindingEnabled(false);
 
-    updater.fetchAndMatchServerIssues(Collections.singletonMap(module, Collections.singletonList(file)), indicator, false);
-    verifyZeroInteractions(bindingManager);
+    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), Collections.singletonList(file)), new EmptyProgressIndicator(), false);
     verifyZeroInteractions(issueManager);
   }
 
   @Test
   public void testServerIssueTracking() throws InvalidBindingException {
-    VirtualFile file = mock(VirtualFile.class);
+    VirtualFile file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
     ServerIssue serverIssue = mock(ServerIssue.class);
-    String filename = "MyFile.txt";
-    when(appUtils.getPathRelativeToProjectBaseDir(project, file)).thenReturn(filename);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(filename)))
+    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(FOO_PHP)))
       .thenReturn(Collections.singletonList(serverIssue));
 
     // run
-    settings.setBindingEnabled(true);
+    getProjectSettings().setBindingEnabled(true);
 
-    updater.initComponent();
-    updater.fetchAndMatchServerIssues(Collections.singletonMap(module, Collections.singletonList(file)), indicator, false);
+    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), Collections.singletonList(file)), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
-    verify(bindingManager).getConnectedEngine();
-    verify(console, never()).error(anyString());
-    verify(console, never()).error(anyString(), any(Throwable.class));
+    verify(mockedConsole, never()).error(anyString());
+    verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }
 
   @Test
   public void testDownloadAllServerIssues() throws InvalidBindingException {
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
-      VirtualFile file = mock(VirtualFile.class);
-      when(appUtils.getPathRelativeToProjectBaseDir(project, file)).thenReturn("MyFile" + i + ".txt");
+      VirtualFile file = myFixture.copyFileToProject(FOO_PHP, "foo" + i + ".php");
       files.add(file);
     }
     ServerIssue serverIssue = mock(ServerIssue.class);
@@ -141,15 +123,13 @@ public class ServerIssueUpdaterTest extends SonarTest {
     when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(Collections.singletonList(serverIssue));
 
     // run
-    settings.setBindingEnabled(true);
+    getProjectSettings().setBindingEnabled(true);
 
-    updater.initComponent();
-    updater.fetchAndMatchServerIssues(Collections.singletonMap(module, files), indicator, false);
+    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
     verify(engine).downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY));
-    verify(bindingManager).getConnectedEngine();
-    verify(console, never()).error(anyString());
-    verify(console, never()).error(anyString(), any(Throwable.class));
+    verify(mockedConsole, never()).error(anyString());
+    verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }
 }

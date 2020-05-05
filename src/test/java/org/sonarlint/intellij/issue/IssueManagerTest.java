@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
@@ -31,8 +32,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.issue.persistence.IssuePersistence;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -45,13 +46,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class IssueManagerTest extends SonarTest {
+public class IssueManagerTest extends AbstractSonarLintLightTests {
   private IssueManager manager = mock(IssueManager.class);
   private LiveIssueCache cache = mock(LiveIssueCache.class);
   private VirtualFile file1 = mock(VirtualFile.class);
   private Document document = mock(Document.class);
   private IssuePersistence store = mock(IssuePersistence.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private LiveIssue issue1;
 
   @Captor
@@ -63,8 +63,7 @@ public class IssueManagerTest extends SonarTest {
     when(file1.isValid()).thenReturn(true);
     when(file1.getPath()).thenReturn("file1");
 
-    when(project.getBasePath()).thenReturn("");
-    manager = new IssueManager(appUtils, project, cache, store);
+    manager = new IssueManager(ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class), getProject(), cache, store);
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
 

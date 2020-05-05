@@ -19,12 +19,11 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import com.intellij.util.net.ssl.CertificateManager;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,26 +32,26 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLintTelemetryImplTest extends SonarTest {
+public class SonarLintTelemetryImplTest extends AbstractSonarLintLightTests {
   private SonarLintTelemetryImpl telemetry;
-  private TelemetryManager engine = mock(TelemetryManager.class);
+  private TelemetryManager telemetryManager = mock(TelemetryManager.class);
 
   @Before
   public void start() throws Exception {
-    super.register(CertificateManager.class, mock(CertificateManager.class));
+    System.clearProperty(SonarLintTelemetryImpl.DISABLE_PROPERTY_KEY);
     this.telemetry = createTelemetry();
   }
 
-  @After
-  public void after() {
-    System.clearProperty(SonarLintTelemetryImpl.DISABLE_PROPERTY_KEY);
+  @AfterClass
+  public static void restoreSystemProp() {
+    System.setProperty(SonarLintTelemetryImpl.DISABLE_PROPERTY_KEY, "true");
   }
 
   private SonarLintTelemetryImpl createTelemetry() {
-    when(engine.isEnabled()).thenReturn(true);
+    when(telemetryManager.isEnabled()).thenReturn(true);
 
     TelemetryManagerProvider engineProvider = mock(TelemetryManagerProvider.class);
-    when(engineProvider.get()).thenReturn(engine);
+    when(engineProvider.get()).thenReturn(telemetryManager);
 
     SonarLintTelemetryImpl telemetry = new SonarLintTelemetryImpl(engineProvider);
     telemetry.initComponent();
@@ -69,10 +68,10 @@ public class SonarLintTelemetryImplTest extends SonarTest {
 
   @Test
   public void stop_should_trigger_stop_telemetry() {
-    when(engine.isEnabled()).thenReturn(true);
+    when(telemetryManager.isEnabled()).thenReturn(true);
     telemetry.stop();
-    verify(engine).isEnabled();
-    verify(engine).stop();
+    verify(telemetryManager).isEnabled();
+    verify(telemetryManager).stop();
   }
 
   @Test
@@ -85,56 +84,56 @@ public class SonarLintTelemetryImplTest extends SonarTest {
 
   @Test
   public void optOut_should_trigger_disable_telemetry() {
-    when(engine.isEnabled()).thenReturn(true);
+    when(telemetryManager.isEnabled()).thenReturn(true);
     telemetry.optOut(true);
-    verify(engine).disable();
+    verify(telemetryManager).disable();
     telemetry.stop();
   }
 
   @Test
   public void should_not_opt_out_twice() {
-    when(engine.isEnabled()).thenReturn(false);
+    when(telemetryManager.isEnabled()).thenReturn(false);
     telemetry.optOut(true);
-    verify(engine).isEnabled();
-    verifyNoMoreInteractions(engine);
+    verify(telemetryManager).isEnabled();
+    verifyNoMoreInteractions(telemetryManager);
   }
 
   @Test
   public void optIn_should_trigger_enable_telemetry() {
-    when(engine.isEnabled()).thenReturn(false);
+    when(telemetryManager.isEnabled()).thenReturn(false);
     telemetry.optOut(false);
-    verify(engine).enable();
+    verify(telemetryManager).enable();
   }
 
   @Test
   public void upload_should_trigger_upload_when_enabled() {
-    when(engine.isEnabled()).thenReturn(true);
+    when(telemetryManager.isEnabled()).thenReturn(true);
     telemetry.upload();
-    verify(engine).isEnabled();
-    verify(engine).uploadLazily();
+    verify(telemetryManager).isEnabled();
+    verify(telemetryManager).uploadLazily();
   }
 
   @Test
   public void upload_should_not_trigger_upload_when_disabled() {
-    when(engine.isEnabled()).thenReturn(false);
+    when(telemetryManager.isEnabled()).thenReturn(false);
     telemetry.upload();
-    verify(engine).isEnabled();
-    verifyNoMoreInteractions(engine);
+    verify(telemetryManager).isEnabled();
+    verifyNoMoreInteractions(telemetryManager);
   }
 
   @Test
   public void usedAnalysis_should_trigger_usedAnalysis_when_enabled() {
-    when(engine.isEnabled()).thenReturn(true);
+    when(telemetryManager.isEnabled()).thenReturn(true);
     telemetry.analysisDoneOnMultipleFiles();
-    verify(engine).isEnabled();
-    verify(engine).analysisDoneOnMultipleFiles();
+    verify(telemetryManager).isEnabled();
+    verify(telemetryManager).analysisDoneOnMultipleFiles();
   }
 
   @Test
   public void usedAnalysis_should_not_trigger_usedAnalysis_when_disabled() {
-    when(engine.isEnabled()).thenReturn(false);
+    when(telemetryManager.isEnabled()).thenReturn(false);
     telemetry.analysisDoneOnMultipleFiles();
-    verify(engine).isEnabled();
-    verifyNoMoreInteractions(engine);
+    verify(telemetryManager).isEnabled();
+    verifyNoMoreInteractions(telemetryManager);
   }
 }

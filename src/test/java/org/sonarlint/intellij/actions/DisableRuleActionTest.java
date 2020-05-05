@@ -24,9 +24,7 @@ import com.intellij.openapi.actionSystem.Presentation;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -37,10 +35,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class DisableRuleActionTest extends SonarTest {
+public class DisableRuleActionTest extends AbstractSonarLintLightTests {
   private DisableRuleAction action = new DisableRuleAction();
-  private SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-  private SonarLintProjectSettings projectSettings = new SonarLintProjectSettings();
   private AnActionEvent event = mock(AnActionEvent.class);
   private LiveIssue issue = mock(LiveIssue.class);
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
@@ -48,10 +44,8 @@ public class DisableRuleActionTest extends SonarTest {
 
   @Before
   public void start() {
-    super.register(SonarLintProjectSettings.class, projectSettings);
-    super.register(app, SonarLintGlobalSettings.class, settings);
-    super.register(SonarLintSubmitter.class, submitter);
-    when(event.getProject()).thenReturn(project);
+    replaceProjectComponent(SonarLintSubmitter.class, submitter);
+    when(event.getProject()).thenReturn(getProject());
     when(event.getPresentation()).thenReturn(presentation);
   }
 
@@ -76,7 +70,7 @@ public class DisableRuleActionTest extends SonarTest {
   @Test
   public void should_be_not_visible_when_bound() {
     when(event.getData(DisableRuleAction.ISSUE_DATA_KEY)).thenReturn(issue);
-    projectSettings.setBindingEnabled(true);
+    getProjectSettings().setBindingEnabled(true);
     action.update(event);
 
     assertThat(presentation.isEnabled()).isFalse();
@@ -87,7 +81,7 @@ public class DisableRuleActionTest extends SonarTest {
   public void should_be_disabled_if_rule_is_excluded() {
     when(event.getData(DisableRuleAction.ISSUE_DATA_KEY)).thenReturn(issue);
     when(issue.getRuleKey()).thenReturn("key");
-    settings.setExcludedRules(Collections.singleton("key"));
+    getGlobalSettings().setExcludedRules(Collections.singleton("key"));
     action.update(event);
 
     assertThat(presentation.isEnabled()).isFalse();
@@ -117,7 +111,7 @@ public class DisableRuleActionTest extends SonarTest {
 
     action.actionPerformed(event);
 
-    assertThat(settings.getExcludedRules()).containsExactly("key");
+    assertThat(getGlobalSettings().getExcludedRules()).containsExactly("key");
     verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 

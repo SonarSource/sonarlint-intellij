@@ -17,15 +17,11 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core;
+package org.sonarlint.intellij.tasks;
 
 import com.intellij.openapi.progress.ProgressIndicator;
-import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.SonarTest;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -34,19 +30,13 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class ConnectionTestTaskTest extends SonarTest {
+public class ConnectionTestTaskTest {
   private GlobalLogOutput globalLogOutput = mock(GlobalLogOutput.class);
-
-  @Before
-  public void prepare() {
-    super.register(app, SonarApplication.class, new SonarApplication());
-    super.register(app, GlobalLogOutput.class, globalLogOutput);
-  }
 
   @Test
   public void fail_if_no_connection() {
     SonarQubeServer server = SonarQubeServer.newBuilder().setHostUrl("invalid_url").build();
-    ConnectionTestTask task = new ConnectionTestTask(server);
+    ConnectionTestTask task = new ConnectionTestTask(server, globalLogOutput);
     ProgressIndicator progress = mock(ProgressIndicator.class);
     task.run(progress);
     verify(progress).setIndeterminate(true);

@@ -22,7 +22,7 @@ package org.sonarlint.intellij.editor;
 import com.intellij.openapi.editor.Editor;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -33,7 +33,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLinkHandlerTest extends SonarTest {
+public class SonarLinkHandlerTest extends AbstractSonarLintMockedTests {
   private static final String RULE_KEY = "setRuleKey";
   private SonarLinkHandler handler = new SonarLinkHandler();
   private Editor editor = mock(Editor.class);

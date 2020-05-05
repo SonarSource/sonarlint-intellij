@@ -22,7 +22,7 @@ package org.sonarlint.intellij.util;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-public class ProjectLogOutputTest extends SonarTest {
+public class ProjectLogOutputTest extends AbstractSonarLintMockedTests {
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private SonarLintConsole mockConsole = mock(SonarLintConsole.class);
   private ProjectLogOutput logOutput = new ProjectLogOutput(project, mockConsole, settings);

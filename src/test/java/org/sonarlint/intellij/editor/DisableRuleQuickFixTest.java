@@ -25,9 +25,7 @@ import com.intellij.psi.PsiFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
@@ -35,17 +33,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class DisableRuleQuickFixTest extends SonarTest {
-  private SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-  private SonarLintProjectSettings projectSettings = new SonarLintProjectSettings();
+public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private DisableRuleQuickFix quickFix;
 
   @Before
   public void prepare() {
-    super.register(app, SonarLintGlobalSettings.class, settings);
-    super.register(SonarLintProjectSettings.class, projectSettings);
-    super.register(SonarLintSubmitter.class, submitter);
+    replaceProjectComponent(SonarLintSubmitter.class, submitter);
     quickFix = new DisableRuleQuickFix("rule");
   }
 
@@ -63,25 +57,25 @@ public class DisableRuleQuickFixTest extends SonarTest {
 
   @Test
   public void should_be_available() {
-    assertThat(quickFix.isAvailable(project, mock(Editor.class), mock(PsiFile.class))).isTrue();
+    assertThat(quickFix.isAvailable(getProject(), mock(Editor.class), mock(PsiFile.class))).isTrue();
   }
 
   @Test
   public void should_not_be_available_if_already_excluded() {
-    settings.setExcludedRules(Collections.singleton("rule"));
-    assertThat(quickFix.isAvailable(project, mock(Editor.class), mock(PsiFile.class))).isFalse();
+    getGlobalSettings().setExcludedRules(Collections.singleton("rule"));
+    assertThat(quickFix.isAvailable(getProject(), mock(Editor.class), mock(PsiFile.class))).isFalse();
   }
 
   @Test
   public void should_not_be_available_if_project_bound() {
-    projectSettings.setBindingEnabled(true);
-    assertThat(quickFix.isAvailable(project, mock(Editor.class), mock(PsiFile.class))).isFalse();
+    getProjectSettings().setBindingEnabled(true);
+    assertThat(quickFix.isAvailable(getProject(), mock(Editor.class), mock(PsiFile.class))).isFalse();
   }
 
   @Test
   public void should_exclude() {
-    quickFix.invoke(project, mock(Editor.class), mock(PsiFile.class));
-    assertThat(settings.getExcludedRules()).containsExactly("rule");
+    quickFix.invoke(getProject(), mock(Editor.class), mock(PsiFile.class));
+    assertThat(getGlobalSettings().getExcludedRules()).containsExactly("rule");
     verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 }

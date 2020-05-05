@@ -30,7 +30,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class CodeAnalyzerRestarterTest extends SonarTest {
+public class CodeAnalyzerRestarterTest extends AbstractSonarLintMockedTests {
   private Project project = mock(Project.class);
   private PsiManager psiManager = mock(PsiManager.class);
   private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);

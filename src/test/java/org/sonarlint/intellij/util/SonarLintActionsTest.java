@@ -24,14 +24,14 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarLintActionsTest extends SonarTest {
+public class SonarLintActionsTest extends AbstractSonarLintMockedTests {
   private ActionManager actionManager = mock(ActionManager.class, RETURNS_DEEP_STUBS);
   private DefaultActionGroup analyzeMenuGroup = new DefaultActionGroup();
   private AnAction sonarlintAnalyzeMenuGroup = mock(AnAction.class);

@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Random;
@@ -27,8 +26,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
@@ -36,7 +34,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarLintUtilsTest extends SonarTest {
+public class SonarLintUtilsTest extends AbstractSonarLintLightTests {
   private VirtualFile testFile = mock(VirtualFile.class);
   private FileType binary = mock(FileType.class);
   private FileType notBinary = mock(FileType.class);
@@ -58,7 +56,7 @@ public class SonarLintUtilsTest extends SonarTest {
   @Test(expected = Throwable.class)
   public void testFailGetComponent() {
     // in intellij 14, container.getComponent will throw an exception itself, so we can't assert the exact exception type and message
-    SonarLintUtils.get(project, SonarLintUtilsTest.class);
+    SonarLintUtils.get(getProject(), SonarLintUtilsTest.class);
   }
 
   @Test
@@ -79,10 +77,6 @@ public class SonarLintUtilsTest extends SonarTest {
 
   @Test
   public void testServerConfigurationToken() {
-    SonarApplication app = mock(SonarApplication.class);
-    when(app.getVersion()).thenReturn("1.0");
-    super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
-
     SonarQubeServer server = SonarQubeServer.newBuilder()
       .setHostUrl("http://myhost")
       .setEnableProxy(false)
@@ -100,10 +94,6 @@ public class SonarLintUtilsTest extends SonarTest {
 
   @Test
   public void testServerConfigurationPassword() {
-    SonarApplication app = mock(SonarApplication.class);
-    when(app.getVersion()).thenReturn("1.0");
-    super.register(ApplicationManager.getApplication(), SonarApplication.class, app);
-
     SonarQubeServer server = SonarQubeServer.newBuilder()
       .setHostUrl("http://myhost")
       .setLogin("token")

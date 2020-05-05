@@ -25,15 +25,11 @@ import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,32 +40,23 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarAnalyzeFilesActionTest extends SonarTest {
-  private SonarLintAppUtils utils = register(app, SonarLintAppUtils.class);
-  private SonarLintConsole console = register(SonarLintConsole.class);
-  private SonarLintSubmitter submitter = register(SonarLintSubmitter.class);
+public class SonarAnalyzeFilesActionTest extends AbstractSonarLintLightTests {
+  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private AnActionEvent event = mock(AnActionEvent.class);
-  private AnalysisResultIssues analysisResults = register(AnalysisResultIssues.class);
-  private IssueManager issueManager = register(IssueManager.class);
 
-  private SonarLintStatus status;
   private Presentation presentation = new Presentation();
   private SonarAnalyzeFilesAction editorFileAction = new SonarAnalyzeFilesAction();
 
   @Before
   public void prepare() {
-    status = new SonarLintStatus(project);
-    super.register(project, SonarLintStatus.class, status);
-
-    when(event.getProject()).thenReturn(project);
-    when(project.isInitialized()).thenReturn(true);
+    replaceProjectComponent(SonarLintSubmitter.class, submitter);
+    when(event.getProject()).thenReturn(getProject());
     when(event.getPresentation()).thenReturn(presentation);
   }
 
   @Test
   public void should_submit() {
-    VirtualFile f1 = mock(VirtualFile.class);
-    when(f1.getPath()).thenReturn("file");
+    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     mockSelectedFiles(f1);
     editorFileAction.actionPerformed(event);
     verify(submitter).submitFiles(anyCollection(), eq(TriggerType.ACTION), any(AnalysisCallback.class), eq(false));
@@ -94,15 +81,15 @@ public class SonarAnalyzeFilesActionTest extends SonarTest {
 
   @Test
   public void should_be_enabled_if_file_and_not_running() {
-    VirtualFile f1 = mock(VirtualFile.class);
+    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     mockSelectedFiles(f1);
 
-    status.tryRun();
+    SonarLintStatus.get(getProject()).tryRun();
 
     editorFileAction.update(event);
     assertThat(presentation.isEnabled()).isFalse();
 
-    status.stopRun();
+    SonarLintStatus.get(getProject()).stopRun();
     editorFileAction.update(event);
     assertThat(presentation.isEnabled()).isTrue();
   }

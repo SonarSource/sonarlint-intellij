@@ -21,29 +21,26 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.SonarTest;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-public class EditorOpenTriggerTest extends SonarTest {
-  private Project project = mock(Project.class);
+public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
 
   private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
-  private EditorOpenTrigger editorTrigger = new EditorOpenTrigger(project, submitter, globalSettings);
+  private EditorOpenTrigger editorTrigger;
 
   @Before
   public void start() {
-    SonarLintTestUtils.mockMessageBus(project);
+    editorTrigger = new EditorOpenTrigger(getProject(), submitter, globalSettings);
     globalSettings.setAutoTrigger(true);
   }
 

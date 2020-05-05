@@ -24,6 +24,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectLocator;
+import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtil;
@@ -95,10 +96,11 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
 
   @CheckForNull
   public String getPathRelativeToProjectBaseDir(Project project, VirtualFile file) {
-    if (project.getBasePath() == null) {
+    final VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
+    if (projectDir == null) {
       return null;
     }
-    String relativePathToProject = VfsUtil.getRelativePath(file, project.getBaseDir());
+    String relativePathToProject = VfsUtil.getRelativePath(file, projectDir);
     if (relativePathToProject != null) {
       return relativePathToProject;
     }
