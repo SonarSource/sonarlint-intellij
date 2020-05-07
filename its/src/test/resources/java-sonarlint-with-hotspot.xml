@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<profile>
+  <name>SonarLint IT Java Hotspot</name>
+  <language>java</language>
+  <rules>
+    <!-- Using hardcoded IP addresses is security-sensitive. Hotspot that should not be visible in SonarLint -->
+    <rule>
+      <repositoryKey>java</repositoryKey>
+      <key>S1313</key>
+      <priority>MAJOR</priority>
+    </rule>
+    
+    <!-- DEPRECATED keys for 6.7 axis -->
+    <rule>
+      <repositoryKey>squid</repositoryKey>
+      <key>S1313</key>
+      <priority>MAJOR</priority>
+    </rule>
+  </rules>
+</profile>

@@ -1,20 +1,29 @@
 #!groovy
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
+
 // The above triggers groovy syntax highlighting in vim
 
 plugins {
-  id "java"
-  id "com.github.hierynomus.license" version "0.11.0"
+  id "org.jetbrains.intellij"
+  id "org.jetbrains.kotlin.jvm"
+  id "com.github.hierynomus.license"
 }
 
-apply plugin: 'maven'
-apply plugin: 'java'
-apply plugin: 'license'
+apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.intellij'
 
 group = 'org.sonarsource.sonarlint.intellij.its'
 description = 'ITs for SonarLint IntelliJ'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+compileKotlin {
+  kotlinOptions.jvmTarget = "1.8"
+}
+compileTestKotlin {
+  kotlinOptions.jvmTarget = "1.8"
+}
 
 repositories {
   jcenter()
@@ -23,29 +32,140 @@ repositories {
   maven {
     url "https://repox.jfrog.io/repox/sonarsource"
   }
+  maven {
+    url "https://jetbrains.bintray.com/intellij-third-party-dependencies"
+  }
 }
 
-def props = new Properties()
-props.load(new FileInputStream("$project.rootDir/../gradle.properties"))
-props.each { prop ->
-  println prop.key
-  project.ext.set(prop.key, prop.value)
-}
-
+def remoteRobotVersion = "0.10.0"
+def fixturesVersion = "1.1.18"
 
 dependencies {
-  testCompile "org.sonarsource.sonarlint.core:sonarlint-client-api:$sonarlintCoreVersion"
-  testCompile "org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion"
-  testCompile 'org.assertj:assertj-core:2.3.0'
-  testCompile 'junit:junit:4.11'
-  testCompile 'org.mockito:mockito-core:1.10.19'
+  testImplementation("org.sonarsource.orchestrator:sonar-orchestrator:3.31.0.2646") {
+    exclude group: 'org.slf4j', module: "log4j-over-slf4j"
+  }
+  testImplementation "org.sonarsource.sonarqube:sonar-ws:8.5.1.38104"
+  testImplementation("com.intellij.remoterobot:remote-robot:$remoteRobotVersion")
+  testImplementation("com.intellij.remoterobot:remote-fixtures:$fixturesVersion")
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+  testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+}
+
+test {
+  useJUnitPlatform()
 }
 
 license {
   mapping {
-    java = 'SLASHSTAR_STYLE'
+    kt = 'SLASHSTAR_STYLE'
   }
+  // exclude file from resources (workaround for https://github.com/hierynomus/license-gradle-plugin/issues/145)
+  exclude "**.xml"
   strictCheck true
 }
 
+downloadRobotServerPlugin.version = remoteRobotVersion
 
+intellij {
+  version project.hasProperty("ijVersion") ? ijVersion : rootProject.intellij.version
+  pluginName 'sonarlint-intellij'
+  updateSinceUntilBuild false
+  if (!project.hasProperty("slPluginDirectory")) {
+    plugins += rootProject
+  }
+}
+
+runIdeForUiTests {
+  systemProperty "robot-server.port", "8082"
+  systemProperty 'sonarlint.telemetry.disabled', 'true'
+  jvmArgs '-Xmx1G'
+}
+
+class JavaExecAsyncTask extends DefaultTask {
+
+  JavaExec execTask
+  Future execTaskFuture
+
+  void setExecTask(JavaExec execTask) {
+    this.execTask = execTask
+    this.dependsOn(execTask.getDependsOn())
+  }
+
+  @TaskAction
+  def startAsync() {
+    ExecutorService es = Executors.newSingleThreadExecutor()
+    execTaskFuture = es.submit({
+      execTask.exec()
+    } as Callable)
+  }
+
+  def stop() {
+    if (execTaskFuture) {
+      println "Closing IDE"
+      execTaskFuture.cancel(true)
+    }
+  }
+}
+
+task runIdeForUiTestsAsync(type: JavaExecAsyncTask) {
+  execTask runIdeForUiTests
+}
+
+runIdeForUiTestsAsync.doFirst {
+  if (project.hasProperty("slPluginDirectory")) {
+    copy {
+      from slPluginDirectory
+      into runIdeForUiTests.pluginsDirectory
+    }
+  }
+}
+
+class WaitRobotServerTask extends DefaultTask {
+  String port = 8082
+  int totalTimeSeconds = 240
+  int retryPeriodSeconds = 5
+
+  @TaskAction
+  def waitService() {
+    int remainingTime = totalTimeSeconds
+    println("Waiting for robot server on port $port")
+    while (remainingTime > 0) {
+      try {
+        new URL("http://localhost:$port").openStream()
+        println("Robot server is running!")
+        return
+      }
+      catch(Exception ignored) {
+        Thread.sleep(retryPeriodSeconds * 1000)
+        remainingTime -= retryPeriodSeconds
+      }
+    }
+    throw new RuntimeException("Robot server is unreachable")
+  }
+}
+
+task waitRobotServer(type: WaitRobotServerTask)
+waitRobotServer.mustRunAfter runIdeForUiTestsAsync
+test.mustRunAfter waitRobotServer
+
+task runIts
+runIts.dependsOn runIdeForUiTestsAsync, waitRobotServer, test
+check.dependsOn runIts
+
+task closeIde
+closeIde.doLast {
+  runIdeForUiTestsAsync.stop()
+}
+
+runIts.finalizedBy closeIde
+
+// XXX workaround to prevent https://discuss.sonarsource.com/t/error-when-analyzing-a-kotlin-gradle-project-that-has-a-sub-module/6487
+gradle.taskGraph.whenReady { taskGraph ->
+  if (!gradle.taskGraph.hasTask("test")) {
+    sonarqube {
+      properties {
+        property "sonar.junit.reportPaths", ""
+      }
+    }
+  }
+}

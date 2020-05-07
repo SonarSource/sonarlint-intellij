@@ -38,7 +38,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: buildPlugin artifactoryPublish
+          tasks: :buildPlugin :artifactoryPublish
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         env:
@@ -79,7 +79,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: check
+          tasks: :check
           publishJUnitResults: true
           testRunTitle: 'UTs on Windows'
           jdkVersionOption: '1.11'
@@ -106,7 +106,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: check jacocoTestReport
+          tasks: :check :jacocoTestReport
           publishJUnitResults: false
           jdkVersionOption: '1.11'
           sonarQubeRunAnalysis: true
@@ -130,31 +130,81 @@ stages:
       displayName: Run ITs
       strategy:
         matrix:
-          Idea2018:
-            IDEA_VERSION: '2018.3'
-            JDKVersion: '1.11'
+          # remote-robot crashes on 2018.3
           Idea2019:
-            IDEA_VERSION: '2019.2'
-            JDKVersion: '1.11'
+            IDEA_VERSION: 'IC-2019.3'
+          Idea2020:
+            IDEA_VERSION: 'IC-2020.1.3'
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
       - checkout: self
         fetchDepth: 1
+      - task: JavaToolInstaller@0
+        inputs:
+          versionSpec: '11'
+          jdkArchitectureOption: 'x64'
+          jdkSourceOption: 'PreInstalled'
       - task: Cache@2
         inputs:
           key: 'gradle | "$(Agent.OS)"'
           restoreKeys: gradle
           path: $(GRADLE_USER_HOME)
         displayName: Gradle build cache
-      - task: Gradle@2
+      - template: update-gradle-version-steps.yml
+      - task: DownloadSecureFile@1
+        displayName: 'Download Maven settings'
+        name: mavenSettings
         inputs:
-          options: --stop
-          tasks: c
-          publishJUnitResults: false
-          javaHomeOption: 'JDKVersion'
-          jdkVersionOption: $(JDKVersion)
-        displayName: 'Stop Gradle daemon'
+          secureFile: 'maven-settings.xml'
+      - bash: |
+          mvn org.apache.maven.plugins:maven-dependency-plugin:3.1.1:unpack -B --settings "$(mavenSettings.secureFilePath)" -Denable-repo=qa -Dartifact=org.sonarsource.sonarlint.intellij:sonarlint-intellij:$(PROJECT_VERSION):zip "-DoutputDirectory=$(Agent.BuildDirectory)/staged-plugin"
+        displayName: 'Download staged plugin'
+        env:
+          ARTIFACTORY_QA_READER_USERNAME: $(ARTIFACTORY_QA_READER_USERNAME)
+          ARTIFACTORY_QA_READER_PASSWORD: $(ARTIFACTORY_QA_READER_PASSWORD)
+      - bash: |
+          set -e -o pipefail -u
+          sudo apt-get update && sudo apt-get install -y metacity xvfb xauth ffmpeg
+
+          # init xvfb and metacity
+          sudo cp .azure-pipelines/xvfb.init /etc/init.d/xvfb
+          sudo chmod +x /etc/init.d/xvfb
+          sudo update-rc.d xvfb defaults
+          sudo service xvfb start
+          sleep 10 # give xvfb some time to start
+          export DISPLAY=:10
+          metacity --sm-disable --replace &
+          sleep 10 # give metacity some time to start
+
+          # copy privacy agreement
+          dir=~/.java/.userPrefs/jetbrains/_\!\(\!\!cg\"p\!\(\}\!\}@\"j\!\(k\!\|w\"w\!\'8\!b\!\"p\!\':\!e@==
+          mkdir -p "$dir"
+          cp .azure-pipelines/prefs.xml $dir
+
+          # copy data sharing prefs
+          mkdir -p ~/.local/share/JetBrains/consentOptions
+          cp .azure-pipelines/accepted ~/.local/share/JetBrains/consentOptions
+
+          echo 'Recording tests on video'
+          ffmpeg -loglevel warning -f x11grab -video_size 1024x768 -framerate 10 -i :10 -q:v 0 /tmp/recording_$(IDEA_VERSION).mp4 &
+          echo "##vso[task.setvariable variable=recordingPid;isOutput=true]$!"
+
+          echo 'Launching tests'
+          ./gradlew --stacktrace --info -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin :its:check
+        name: 'runIts'
+        displayName: 'Run UI tests on $(IDEA_VERSION)'
+      - bash: |
+          kill -2 $(runIts.recordingPid)
+        displayName: 'Stop video recording'
+        condition: always()
+      - publish: /tmp/recording_$(IDEA_VERSION).mp4
+        artifact: ITCaptureScreen_$(IDEA_VERSION)
+        condition: always()
+      - bash: |
+          cat its/build/idea-sandbox/system/log/idea.log
+        displayName: 'Log'
+        condition: always()
 - template: promote-stage.yml@commonTemplates
   parameters:
     stageDependencies:
