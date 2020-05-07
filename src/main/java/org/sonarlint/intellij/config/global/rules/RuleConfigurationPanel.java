@@ -477,7 +477,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         case STRING:
           createStringParam(rule, panel, constraints, param);
           break;
-        case INT:
+        case INTEGER:
           createIntParam(rule, panel, constraints, param);
           break;
         case FLOAT:
@@ -598,7 +598,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return "true".equals(value);
   }
 
-  private static int asInt(String value) {
+  private static int asInt(@Nullable String value) {
     if (StringUtil.isEmpty(value)) {
       return 0;
     }
@@ -609,7 +609,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     }
   }
 
-  private static double asDouble(String value) {
+  private static double asDouble(@Nullable String value) {
     if (StringUtil.isEmpty(value)) {
       return 0;
     }
