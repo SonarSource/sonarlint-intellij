@@ -19,15 +19,19 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRule;
+import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRuleParam;
+import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRuleParamType;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
@@ -143,24 +147,11 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public List<RuleParam> getParamDetails() {
-      // FIXME
-      if (languageKey().equals("java")) {
-        return Arrays.asList(new RuleParam("myBool", "A Boolean", "Very long description of a boolean\nwith\nnew\nlines", RuleParamType.BOOLEAN, false, "false"));
-      } else if (languageKey().equals("php")) {
-        return Arrays.asList(new RuleParam("myInt", "A Int", "Very long description of a int\nwith\nnew\nlines", RuleParamType.INT, false, "12"));
-      } else if (languageKey().equals("html")) {
-        return Arrays.asList(new RuleParam("myText", "A text", "Very long description of a text\nwith\nnew\nlines", RuleParamType.TEXT, false, "Bla bla\nbla bla\nfoo foo"));
-      } else if (languageKey().equals("kotlin")) {
-        return Arrays.asList(new RuleParam("myString", "A string", "Very long description of a string\nwith\nnew\nlines", RuleParamType.STRING, false, "Bla bla foo bar"));
-      } else if (languageKey().equals("py")) {
-        return Arrays.asList();
-      } else {
-        return Arrays.asList(new RuleParam("myBool", "A Boolean", "Very long description of a boolean\nwith\nnew\nlines", RuleParamType.BOOLEAN, false, "false"),
-          new RuleParam("myInt", "A Int", "Very long description of a int\nwith\nnew\nlines", RuleParamType.INT, false, "12"),
-          new RuleParam("myFloat", "A float param", "Very long description of a float\nwith\nnew\nlines", RuleParamType.FLOAT, false, "1.25"),
-          new RuleParam("myText", "A text", "Very long description of a text\nwith\nnew\nlines", RuleParamType.TEXT, false, "Bla bla\nbla bla\nfoo foo"),
-          new RuleParam("myString", "A string", "Very long description of a string\nwith\nnew\nlines", RuleParamType.STRING, false, "Bla bla foo bar"));
-      }
+      return ((StandaloneRule) details).params()
+              .stream()
+              .map(p -> (StandaloneRuleParam) p)
+              .map(RuleParam::new)
+              .collect(Collectors.toList());
     }
 
     public Map<String, String> getCustomParams() {
@@ -172,12 +163,17 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     final String key;
     final String name;
     final String description;
-    final RuleParamType type;
+    final StandaloneRuleParamType type;
     final boolean isMultiple;
+    @CheckForNull
     final String defaultValue;
     final String[] options;
 
-    public RuleParam(String key, String name, String description, RuleParamType type, boolean isMultiple, String defaultValue, String... options) {
+    public RuleParam(StandaloneRuleParam p) {
+      this(p.key(), p.name(), p.description(), p.type(), p.multiple(), p.defaultValue(), p.possibleValues().toArray(new String[0]));
+    }
+
+    public RuleParam(String key, String name, String description, StandaloneRuleParamType type, boolean isMultiple, @Nullable String defaultValue, String... options) {
       this.key = key;
       this.name = name;
       this.description = description;
@@ -187,14 +183,4 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       this.options = options;
     }
   }
-
-  public enum RuleParamType {
-    STRING,
-    TEXT,
-    BOOLEAN,
-    INT,
-    FLOAT
-  }
-
-
 }
