@@ -2,7 +2,7 @@
 // The above triggers groovy syntax highlighting in vim
 
 plugins {
-  id "org.jetbrains.intellij" version "0.4.17"
+  id "org.jetbrains.intellij" version "0.4.20"
   id "org.sonarqube" version "2.7.1"
   id "java"
   id "com.github.hierynomus.license" version "0.14.0"
@@ -72,7 +72,7 @@ dependencies {
   compile "org.sonarsource.sonarlint.core:sonarlint-client-api:$sonarlintCoreVersion"
   compile "org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion"
   compile 'commons-lang:commons-lang:2.6'
-  compile 'com.google.code.findbugs:jsr305:2.0.2'
+  compileOnly 'com.google.code.findbugs:jsr305:2.0.2'
   // provided by the core:
   //compile 'com.google.protobuf:protobuf-java:3.1.0'
   testImplementation 'junit:junit:4.12'
