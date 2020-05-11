@@ -92,10 +92,13 @@ import javax.swing.text.NumberFormatter;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
+import org.sonar.api.batch.rule.RuleParam;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRule;
+import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRuleParam;
 
 public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final Logger LOG = Logger.getInstance(RuleConfigurationPanel.class);
@@ -103,6 +106,8 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private static final String MAIN_SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
   private static final String RIGHT_SPLITTER_KEY = "sonarlint_rule_configuration_splitter_right";
   private static final float DIVIDER_PROPORTION_DEFAULT = 0.5f;
+  // Default proportion is: 85% on top for rule description + 15% on the bottom for parameters
+  private static final float DIVIDER_PROPORTION_RULE_DEFAULT = 0.85f;
   @NonNls
   private static final String EMPTY_HTML = "<html><body>Select a rule to see the description</body></html>";
 
@@ -117,6 +122,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private TreeExpander myTreeExpander;
 
   private Map<String, Boolean> currentActivationByRuleKey;
+  private Map<String, Map<String, String>> currentParamsByRuleKey;
 
   public RuleConfigurationPanel(StandaloneSonarLintEngine engine) {
     this.engine = engine;
@@ -134,7 +140,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     Set<String> included = new HashSet<>();
     Set<String> excluded = new HashSet<>();
     getIncludedAndExcluded(included, excluded);
-    return !included.equals(settings.getIncludedRules()) || !excluded.equals(settings.getExcludedRules());
+    return !included.equals(settings.includedRules()) || !excluded.equals(settings.excludedRules());
   }
 
   @Override
@@ -167,8 +173,11 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     filterModel.reset(false);
     myRuleFilter.reset();
 
-    currentActivationByRuleKey = engine.getAllRuleDetails().stream()
+    Collection<RuleDetails> allRules = engine.getAllRuleDetails();
+    currentActivationByRuleKey = allRules.stream()
       .collect(Collectors.toMap(RuleDetails::getKey, r -> loadRuleActivation(settings, r)));
+    currentParamsByRuleKey = allRules.stream()
+      .collect(Collectors.toMap(RuleDetails::getKey, r -> loadRuleParams(settings, r)));
     updateModel();
   }
 
@@ -177,7 +186,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     Collection<RuleDetails> ruleDetails = engine.getAllRuleDetails();
     Map<String, String> languagesNameByKey = engine.getAllLanguagesNameByKey();
     Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = ruleDetails.stream()
-      .map(r -> new RulesTreeNode.Rule(r, currentActivationByRuleKey.get(r.getKey())))
+      .map(r -> new RulesTreeNode.Rule(r, currentActivationByRuleKey.get(r.getKey()), currentParamsByRuleKey.get(r.getKey())))
       .filter(filterModel::filter)
       .collect(Collectors.groupingBy(RulesTreeNode.Rule::languageKey));
 
@@ -201,12 +210,22 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private static boolean loadRuleActivation(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
-    if (settings.getIncludedRules().contains(ruleDetails.getKey())) {
+    if (settings.includedRules().contains(ruleDetails.getKey())) {
       return true;
-    } else if (settings.getExcludedRules().contains(ruleDetails.getKey())) {
+    } else if (settings.excludedRules().contains(ruleDetails.getKey())) {
       return false;
     } else {
       return ruleDetails.isActiveByDefault();
+    }
+  }
+
+  private static Map<String, String> loadRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
+    SonarLintGlobalSettings.Rule settingsRule = settings.getRules().get(ruleDetails.getKey());
+    if (settingsRule == null) {
+      return ((StandaloneRule) ruleDetails).params().stream()
+        .collect(Collectors.toMap(RuleParam::key, p -> StringUtil.defaultIfEmpty(((StandaloneRuleParam) p).defaultValue(), "")));
+    } else {
+      return settingsRule.getParams();
     }
   }
 
@@ -236,7 +255,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       JBUI.insetsLeft(12)).setShowLine(false));
     descriptionPanel.add(ScrollPaneFactory.createScrollPane(descriptionBrowser), BorderLayout.CENTER);
 
-    JBSplitter rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_DEFAULT);
+    JBSplitter rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
     rightSplitter.setFirstComponent(descriptionPanel);
 
     myOptionsPanel = new JPanel(new GridBagLayout());

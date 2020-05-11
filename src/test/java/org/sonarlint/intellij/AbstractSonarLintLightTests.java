@@ -55,8 +55,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   @After
   public final void restore() {
-    globalSettings.setExcludedRules(Collections.emptySet());
-    globalSettings.setIncludedRules(Collections.emptySet());
+    globalSettings.setRules(Collections.emptyMap());
     projectSettings.setProjectKey(null);
     projectSettings.setBindingEnabled(false);
     projectSettings.setFileExclusions(Collections.emptyList());

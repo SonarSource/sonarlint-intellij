@@ -42,7 +42,7 @@ public class RulesTreeTableModelTest {
   private RulesTreeNode.Root root = new RulesTreeNode.Root();
   private RulesTreeNode.Language lang = new RulesTreeNode.Language("lang");
   private RuleDetails ruleDetails = mock(RuleDetails.class);
-  private RulesTreeNode.Rule rule = new RulesTreeNode.Rule(ruleDetails, true);
+  private RulesTreeNode.Rule rule = new RulesTreeNode.Rule(ruleDetails, true, new HashMap<>());
   private AbstractTableModel tableModel = mock(AbstractTableModel.class);
   private RulesTreeTableModel model = new RulesTreeTableModel(root);
 
