@@ -27,7 +27,9 @@ import com.intellij.util.xmlb.annotations.Tag;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
+import org.sonarlint.intellij.util.PasswordSafeUtil;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -44,14 +46,10 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class SonarQubeServer {
   @OptionTag
   private String hostUrl;
-  @Tag
-  private String token;
   @OptionTag
   private String name;
   @OptionTag
   private String login;
-  @Tag
-  private String password;
   @OptionTag
   private boolean enableProxy;
   @Tag
@@ -59,16 +57,18 @@ public class SonarQubeServer {
   @Tag
   private boolean enableNotifications;
 
+  public static final String PASSWORD_KEY = "PASSWORD_KEY";
+
+  public static final String TOKEN_KEY = "TOKEN_KEY";
+
   private SonarQubeServer() {
     // necessary for XML deserialization
   }
 
   private SonarQubeServer(Builder builder) {
     this.hostUrl = builder.hostUrl;
-    this.token = builder.token;
     this.name = builder.name;
     this.login = builder.login;
-    this.password = builder.password;
     this.enableProxy = builder.enableProxy;
     this.organizationKey = builder.organizationKey;
     this.enableNotifications = builder.enableNotifications;
@@ -82,8 +82,6 @@ public class SonarQubeServer {
     SonarQubeServer other = (SonarQubeServer) o;
 
     return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
-      Comparing.equal(getPassword(), other.getPassword()) &&
-      Comparing.equal(getToken(), other.getToken()) &&
       Comparing.equal(getLogin(), other.getLogin()) &&
       Comparing.equal(getName(), other.getName()) &&
       Comparing.equal(getOrganizationKey(), other.getOrganizationKey()) &&
@@ -93,7 +91,7 @@ public class SonarQubeServer {
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, enableNotifications);
+    return Objects.hashCode(getHostUrl(), getLogin(), getOrganizationKey(), getName(), enableProxy, enableNotifications);
   }
 
   public boolean enableNotifications() {
@@ -116,14 +114,7 @@ public class SonarQubeServer {
 
   @CheckForNull
   public String getToken() {
-    if (token == null) {
-      return null;
-    }
-    try {
-      return PasswordUtil.decodePassword(token);
-    } catch (NumberFormatException e) {
-      return null;
-    }
+    return PasswordSafeUtil.getServerAttributeFromPasswordSafe(name, TOKEN_KEY);
   }
 
   public boolean isSonarCloud() {
@@ -136,14 +127,7 @@ public class SonarQubeServer {
 
   @CheckForNull
   public String getPassword() {
-    if (password == null) {
-      return null;
-    }
-    try {
-      return PasswordUtil.decodePassword(password);
-    } catch (NumberFormatException e) {
-      return null;
-    }
+    return PasswordSafeUtil.getServerAttributeFromPasswordSafe(name, PASSWORD_KEY);
   }
 
   public String getName() {
@@ -174,6 +158,8 @@ public class SonarQubeServer {
     }
 
     public SonarQubeServer build() {
+      PasswordSafeUtil.storeServerAttributeToPasswordSafe(name, PASSWORD_KEY, password);
+      PasswordSafeUtil.storeServerAttributeToPasswordSafe(name, TOKEN_KEY, token);
       return new SonarQubeServer(this);
     }
 
@@ -203,20 +189,12 @@ public class SonarQubeServer {
     }
 
     public Builder setToken(@Nullable String token) {
-      if (token == null) {
-        this.token = null;
-      } else {
-        this.token = PasswordUtil.encodePassword(token);
-      }
+      this.token = token;
       return this;
     }
 
     public Builder setPassword(@Nullable String password) {
-      if (password == null) {
-        this.password = null;
-      } else {
-        this.password = PasswordUtil.encodePassword(password);
-      }
+      this.password = password;
       return this;
     }
 

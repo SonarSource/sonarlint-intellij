@@ -19,11 +19,13 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SonarQubeServerTest {
+public class SonarQubeServerTest extends BasePlatformTestCase {
+
   @Test
   public void testRoundTrip() {
     SonarQubeServer server = SonarQubeServer.newBuilder()
@@ -78,7 +80,7 @@ public class SonarQubeServerTest {
       .setHostUrl("host")
       .setPassword("pass1")
       .setToken("token")
-      .setName("name")
+      .setName("name1")
       .setLogin("login")
       .build();
 
