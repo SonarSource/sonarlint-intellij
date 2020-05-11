@@ -50,9 +50,9 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
-  private Set<String> includedRules = new HashSet<>();
+  private Set<String> includedRules;
   @Deprecated
-  private Set<String> excludedRules = new HashSet<>();
+  private Set<String> excludedRules;
   private Map<String, Rule> rules = new HashMap<>();
 
   public static SonarLintGlobalSettings getInstance() {
@@ -202,14 +202,33 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
   }
 
-  static class Rule {
+  public static class Rule {
     boolean isActive;
     Map<String, String> params = new HashMap<>();
+
+    Rule() {
+      this(false);
+    }
 
     public Rule(boolean isActive) {
       this.isActive = isActive;
     }
 
+    public boolean isActive() {
+      return isActive;
+    }
+
+    public void setActive(boolean active) {
+      isActive = active;
+    }
+
+    public Map<String, String> getParams() {
+      return params;
+    }
+
+    public void setParams(Map<String, String> params) {
+      this.params = params;
+    }
   }
 
 }
