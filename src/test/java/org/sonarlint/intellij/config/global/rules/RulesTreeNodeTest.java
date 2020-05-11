@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import java.util.HashMap;
 import org.junit.Test;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 
@@ -38,7 +39,7 @@ public class RulesTreeNodeTest {
     when(details.getType()).thenReturn("type");
     when(details.getLanguageKey()).thenReturn("lang");
 
-    RulesTreeNode.Rule node = new RulesTreeNode.Rule(details, false);
+    RulesTreeNode.Rule node = new RulesTreeNode.Rule(details, false, new HashMap<>());
     assertThat(node.getKey()).isEqualTo("key");
     assertThat(node.getName()).isEqualTo("name");
     assertThat(node.toString()).isEqualTo("name");
@@ -71,9 +72,9 @@ public class RulesTreeNodeTest {
   @Test
   public void create_iterable_children() {
     RulesTreeNode.Language parent = new RulesTreeNode.Language("lang");
-    RulesTreeNode.Rule n1 = new RulesTreeNode.Rule(mock(RuleDetails.class), true);
-    RulesTreeNode.Rule n2 = new RulesTreeNode.Rule(mock(RuleDetails.class), true);
-    RulesTreeNode.Rule n3 = new RulesTreeNode.Rule(mock(RuleDetails.class), true);
+    RulesTreeNode.Rule n1 = new RulesTreeNode.Rule(mock(RuleDetails.class), true, new HashMap<>());
+    RulesTreeNode.Rule n2 = new RulesTreeNode.Rule(mock(RuleDetails.class), true, new HashMap<>());
+    RulesTreeNode.Rule n3 = new RulesTreeNode.Rule(mock(RuleDetails.class), true, new HashMap<>());
 
     parent.add(n1);
     parent.add(n2);

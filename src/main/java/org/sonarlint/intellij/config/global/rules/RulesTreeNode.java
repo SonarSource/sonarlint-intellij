@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -46,6 +47,9 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
       @Override
       public T next() {
+        if (!children.hasMoreElements()) {
+          throw new NoSuchElementException();
+        }
         return (T) children.nextElement();
       }
     };
@@ -98,10 +102,12 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
   public static class Rule extends RulesTreeNode {
     private final RuleDetails details;
+    private final Map<String, String> params;
 
-    public Rule(RuleDetails details, boolean activated) {
+    public Rule(RuleDetails details, boolean activated, Map<String, String> params) {
       this.details = details;
       this.activated = activated;
+      this.params = new HashMap<>(params);
     }
 
     public String getKey() {
@@ -155,8 +161,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public Map<String, String> getCustomParams() {
-      // FIXME
-      return new HashMap<>();
+      return params;
     }
   }
   public static class RuleParam {

@@ -73,7 +73,7 @@ public class DisableRuleQuickFix implements IntentionAction, LowPriorityAction, 
   }
 
   private boolean isAlreadyDisabled() {
-    return settings.getExcludedRules().contains(ruleKey);
+    return settings.excludedRules().contains(ruleKey);
   }
 
   @Override public Icon getIcon(int flags) {
