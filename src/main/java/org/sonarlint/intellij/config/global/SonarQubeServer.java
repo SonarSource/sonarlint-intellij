@@ -118,10 +118,10 @@ public class SonarQubeServer {
 
   @CheckForNull
   public String getToken() {
-    String deserializedPassword = getDeserializedValue(token);
+    String deserializedToken = getDeserializedValue(token);
     token = null;
-    if (deserializedPassword != null) {
-      PasswordSafeUtil.storeServerAttributeToPasswordSafe(name, TOKEN_KEY, deserializedPassword);
+    if (deserializedToken != null) {
+      PasswordSafeUtil.storeServerAttributeToPasswordSafe(name, TOKEN_KEY, deserializedToken);
     }
     return PasswordSafeUtil.getServerAttributeFromPasswordSafe(name, TOKEN_KEY);
   }
@@ -133,8 +133,6 @@ public class SonarQubeServer {
   public boolean enableProxy() {
     return enableProxy;
   }
-
-
 
   @CheckForNull
   public String getPassword() {
