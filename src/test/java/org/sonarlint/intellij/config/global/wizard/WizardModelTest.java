@@ -19,12 +19,14 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
+import com.intellij.testFramework.fixtures.BasePlatformTestCase;
 import org.junit.Test;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class WizardModelTest {
+public class WizardModelTest extends BasePlatformTestCase {
+
   @Test
   public void testCreateFromConfig() {
     SonarQubeServer server = SonarQubeServer.newBuilder()
