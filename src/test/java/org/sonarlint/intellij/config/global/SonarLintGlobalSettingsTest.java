@@ -93,7 +93,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
     settings.loadState(state);
 
-    assertThat(settings.getExcludedRules()).contains(RULE);
+    assertThat(settings.excludedRules()).contains(RULE);
     assertThat(settings.isRuleExplicitlyDisabled(RULE)).isTrue();
   }
 

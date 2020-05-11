@@ -63,8 +63,8 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   @Override
   protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
-    List<RuleKey> excluded = globalSettings.getExcludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
-    List<RuleKey> included = globalSettings.getIncludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
+    List<RuleKey> excluded = globalSettings.excludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
+    List<RuleKey> included = globalSettings.includedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
 
     StandaloneAnalysisConfiguration config = StandaloneAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
