@@ -24,7 +24,6 @@ import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
-import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
@@ -111,15 +110,6 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     }
   }
 
-  public void saveCurrentRuleActivation(Map<String, Boolean> map) {
-    RulesTreeNode.Root rootNode = (RulesTreeNode.Root) root;
-    for (RulesTreeNode.Language lang : rootNode.childrenIterable()) {
-      for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
-        map.put(rule.getKey(), rule.isActivated());
-      }
-    }
-  }
-
   private void activateRule(RulesTreeNode.Rule rule, boolean activate) {
     rule.setIsActivated(activate);
     RulesTreeNode.Language lang = (RulesTreeNode.Language) rule.getParent();
@@ -160,17 +150,6 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
       rule.setIsActivated(activate);
     }
     refreshLanguageActivation(lang);
-  }
-
-  public void restoreDefaults() {
-    RulesTreeNode.Root rootNode = (RulesTreeNode.Root) getRoot();
-    for (RulesTreeNode.Language lang : rootNode.childrenIterable()) {
-      for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
-        rule.setIsActivated(rule.getDefaultActivation());
-      }
-      refreshLanguageActivation(lang);
-    }
-    ((AbstractTableModel) treeTable.getModel()).fireTableDataChanged();
   }
 
   public void swapAndRefresh(Object node) {

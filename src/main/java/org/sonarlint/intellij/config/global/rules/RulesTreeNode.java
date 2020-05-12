@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -102,12 +103,12 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
   public static class Rule extends RulesTreeNode {
     private final RuleDetails details;
-    private final Map<String, String> params;
+    private final Map<String, String> nonDefaultParams;
 
-    public Rule(RuleDetails details, boolean activated, Map<String, String> params) {
+    public Rule(RuleDetails details, boolean activated, Map<String, String> nonDefaultParams) {
       this.details = details;
       this.activated = activated;
-      this.params = new HashMap<>(params);
+      this.nonDefaultParams = new HashMap<>(nonDefaultParams);
     }
 
     public String getKey() {
@@ -140,7 +141,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
     @Override
     public boolean isChanged() {
-      return details.isActiveByDefault() != activated;
+      return details.isActiveByDefault() != activated || (activated && !nonDefaultParams.isEmpty());
     }
 
     @Override
@@ -154,14 +155,31 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
     public List<RuleParam> getParamDetails() {
       return ((StandaloneRule) details).params()
-              .stream()
-              .map(p -> (StandaloneRuleParam) p)
-              .map(RuleParam::new)
-              .collect(Collectors.toList());
+        .stream()
+        .map(p -> (StandaloneRuleParam) p)
+        .map(RuleParam::new)
+        .collect(Collectors.toList());
     }
 
     public Map<String, String> getCustomParams() {
-      return params;
+      return nonDefaultParams;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) {
+        return true;
+      }
+      if (!(o instanceof Rule)) {
+        return false;
+      }
+      Rule rule = (Rule) o;
+      return details.getKey().equals(rule.details.getKey()) && activated == rule.activated && nonDefaultParams.equals(rule.nonDefaultParams);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(details.getKey(), activated, nonDefaultParams);
     }
   }
   public static class RuleParam {
