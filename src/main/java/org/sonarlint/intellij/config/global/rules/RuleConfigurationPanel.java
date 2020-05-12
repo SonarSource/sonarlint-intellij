@@ -41,7 +41,6 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SideBorder;
 import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.TreeSpeedSearch;
-import com.intellij.ui.UserActivityWatcher;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBScrollPane;
@@ -92,13 +91,11 @@ import javax.swing.text.NumberFormatter;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NonNls;
-import org.sonar.api.batch.rule.RuleParam;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
-import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRule;
-import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRuleParam;
 
 public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final Logger LOG = Logger.getInstance(RuleConfigurationPanel.class);
@@ -116,13 +113,12 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private RulesTreeTable table;
   private JEditorPane descriptionBrowser;
   private JPanel panel;
-  private JPanel myOptionsPanel;
+  private JPanel myParamsPanel;
   private RulesTreeTableModel model;
   private FilterComponent myRuleFilter;
   private TreeExpander myTreeExpander;
-
-  private Map<String, Boolean> currentActivationByRuleKey;
-  private Map<String, Map<String, String>> currentParamsByRuleKey;
+  private RulesParamsSeparator rulesParamsSeparator;
+  private Map<String, RulesTreeNode.Rule> allRulesStateByKey;
 
   public RuleConfigurationPanel(StandaloneSonarLintEngine engine) {
     this.engine = engine;
@@ -136,56 +132,56 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
-    saveCurrentActivation();
-    Set<String> included = new HashSet<>();
-    Set<String> excluded = new HashSet<>();
-    getIncludedAndExcluded(included, excluded);
-    return !included.equals(settings.getIncludedRules()) || !excluded.equals(settings.getExcludedRules());
+    Map<String, RulesTreeNode.Rule> persistedRules = loadRuleNodes(settings);
+    for (RulesTreeNode.Rule persisted : persistedRules.values()) {
+      final RulesTreeNode.Rule possiblyModified = allRulesStateByKey.get(persisted.getKey());
+      if (!persisted.equals(possiblyModified)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
   public void save(SonarLintGlobalSettings settings) {
-    saveCurrentActivation();
-    Set<String> included = new HashSet<>();
-    Set<String> excluded = new HashSet<>();
-    getIncludedAndExcluded(included, excluded);
-    included.forEach(settings::enableRule);
-    excluded.forEach(settings::disableRule);
-  }
-
-  private void getIncludedAndExcluded(Set<String> included, Set<String> excluded) {
-    for (RuleDetails r : engine.getAllRuleDetails()) {
-      boolean valueSet = currentActivationByRuleKey.get(r.getKey());
-      if (r.isActiveByDefault() && !valueSet) {
-        excluded.add(r.getKey());
-      } else if (!r.isActiveByDefault() && valueSet) {
-        included.add(r.getKey());
+    allRulesStateByKey.values().forEach(r -> {
+      if (r.isChanged()) {
+        settings.getRules().computeIfAbsent(r.getKey(), k -> new SonarLintGlobalSettings.Rule(r.isActivated())).setParams(r.getCustomParams());
+      } else {
+        settings.getRules().remove(r.getKey());
       }
-    }
-  }
-
-  private void saveCurrentActivation() {
-    model.saveCurrentRuleActivation(currentActivationByRuleKey);
+    });
   }
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
+    allRulesStateByKey = loadRuleNodes(settings);
+
     filterModel.reset(false);
     myRuleFilter.reset();
 
-    currentActivationByRuleKey = engine.getAllRuleDetails().stream()
-      .collect(Collectors.toMap(RuleDetails::getKey, r -> loadRuleActivation(settings, r)));
-    currentParamsByRuleKey = engine.getAllRuleDetails().stream()
-      .collect(Collectors.toMap(RuleDetails::getKey, r -> loadRuleParams(settings, r)));
+    updateModel();
+  }
+
+  @NotNull
+  private Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
+    return engine.getAllRuleDetails().stream()
+      .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
+      .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
+  }
+
+
+  private void restoreDefaults() {
+    allRulesStateByKey.values().forEach(r -> {
+      r.setIsActivated(r.getDefaultActivation());
+      r.getCustomParams().clear();
+    });
     updateModel();
   }
 
   private void updateModel() {
-    saveCurrentActivation();
-    Collection<RuleDetails> ruleDetails = engine.getAllRuleDetails();
     Map<String, String> languagesNameByKey = engine.getAllLanguagesNameByKey();
-    Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = ruleDetails.stream()
-      .map(r -> new RulesTreeNode.Rule(r, currentActivationByRuleKey.get(r.getKey()), currentParamsByRuleKey.get(r.getKey())))
+    Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = allRulesStateByKey.values().stream()
       .filter(filterModel::filter)
       .collect(Collectors.groupingBy(RulesTreeNode.Rule::languageKey));
 
@@ -209,23 +205,19 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private static boolean loadRuleActivation(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
-    if (settings.getIncludedRules().contains(ruleDetails.getKey())) {
-      return true;
-    } else if (settings.getExcludedRules().contains(ruleDetails.getKey())) {
-      return false;
-    } else {
-      return ruleDetails.isActiveByDefault();
+    final SonarLintGlobalSettings.Rule ruleInSettings = settings.getRules().get(ruleDetails.getKey());
+    if (ruleInSettings != null) {
+      return ruleInSettings.isActive();
     }
+    return ruleDetails.isActiveByDefault();
   }
 
-  private static Map<String, String> loadRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
-    SonarLintGlobalSettings.Rule settingsRule = settings.getRules().get(ruleDetails.getKey());
-    if (settingsRule == null) {
-      return ((StandaloneRule) ruleDetails).params().stream()
-        .collect(Collectors.toMap(RuleParam::key, p -> StringUtil.defaultIfEmpty(((StandaloneRuleParam) p).defaultValue(), "")));
-    } else {
-      return settingsRule.getParams();
+  private static Map<String, String> loadNonDefaultRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
+    SonarLintGlobalSettings.Rule ruleInSettings = settings.getRules().get(ruleDetails.getKey());
+    if (ruleInSettings != null) {
+      return ruleInSettings.getParams();
     }
+    return Collections.emptyMap();
   }
 
   private ActionToolbar createTreeToolbarPanel() {
@@ -257,10 +249,10 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     JBSplitter rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
     rightSplitter.setFirstComponent(descriptionPanel);
 
-    myOptionsPanel = new JPanel(new GridBagLayout());
-    myOptionsPanel.setBorder(JBUI.Borders.emptyLeft(12));
+    myParamsPanel = new JPanel(new GridBagLayout());
+    myParamsPanel.setBorder(JBUI.Borders.emptyLeft(12));
     initOptionsAndDescriptionPanel();
-    rightSplitter.setSecondComponent(myOptionsPanel);
+    rightSplitter.setSecondComponent(myParamsPanel);
     rightSplitter.setHonorComponentsMinimumSize(true);
 
     final JScrollPane tree = initTreeScrollPane();
@@ -272,8 +264,9 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       JBUI.emptyInsets(), 0, 0));
     northPanel.add(createTreeToolbarPanel().getComponent(), new GridBagConstraints(1, 0, 1, 1, 1, 1, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
       JBUI.emptyInsets(), 0, 0));
-    JButton restoreDefaults = new JButton("Restore defaults");
-    restoreDefaults.addActionListener(l -> model.restoreDefaults());
+    JButton restoreDefaults = new JButton("Restore Defaults");
+    restoreDefaults.setToolTipText("Restore all rules to defaults activation and parameters values");
+    restoreDefaults.addActionListener(l -> restoreDefaults());
     northPanel.add(restoreDefaults, new GridBagConstraints(2, 0, 1, 1, 0, 1, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.NONE,
       JBUI.emptyInsets(), 0, 0));
 
@@ -296,10 +289,10 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private void initOptionsAndDescriptionPanel() {
-    myOptionsPanel.removeAll();
+    myParamsPanel.removeAll();
     readHTML(descriptionBrowser, EMPTY_HTML);
-    myOptionsPanel.validate();
-    myOptionsPanel.repaint();
+    myParamsPanel.validate();
+    myParamsPanel.repaint();
   }
 
   public static void readHTML(JEditorPane browser, String text) {
@@ -326,7 +319,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     table.getTree().addTreeSelectionListener(e -> {
       TreePath path = e.getNewLeadSelectionPath();
       if (path != null && path.getLastPathComponent() instanceof RulesTreeNode.Rule) {
-        updateOptionsAndDescriptionPanel();
+        updateParamsAndDescriptionPanel();
       } else {
         initOptionsAndDescriptionPanel();
       }
@@ -360,49 +353,57 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return scrollPane;
   }
 
-  private void updateOptionsAndDescriptionPanel() {
+  private void updateParamsAndDescriptionPanel() {
     Collection<RulesTreeNode.Rule> nodes = getSelectedRuleNodes();
     if (!nodes.isEmpty()) {
       final RulesTreeNode.Rule singleNode = getStrictlySelectedToolNode();
       if (singleNode != null) {
-        String attributes = singleNode.severity() + " " + singleNode.type();
-        attributes = attributes.toLowerCase(Locale.US).replace('_', ' ');
-        final String description = "<b>" + singleNode.getKey() + "</b> | " + attributes + "<br/>" + singleNode.getHtmlDescription();
-        try {
-          readHTML(descriptionBrowser, SearchUtil.markup(toHTML(descriptionBrowser, description, false), myRuleFilter.getFilter()));
-        } catch (Throwable t) {
-          LOG.error("Failed to load description for: " +
-            singleNode.getKey() +
-            "; description: " +
-            description, t);
-        }
+        updateParamsAndDescriptionPanel(singleNode);
       } else {
         readHTML(descriptionBrowser, toHTML(descriptionBrowser, "Multiple rules are selected.", false));
-      }
+        myParamsPanel.removeAll();
 
-      myOptionsPanel.removeAll();
-      final JPanel configPanelAnchor = new JPanel(new GridLayout());
-      if (singleNode != null) {
-        setConfigPanel(configPanelAnchor, singleNode);
       }
-      if (configPanelAnchor.getComponentCount() != 0) {
-        myOptionsPanel.add(new ToolOptionsSeparator(configPanelAnchor),
-          new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
-            JBUI.emptyInsets(), 0, 0));
-        myOptionsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-          JBUI.insets(0, 2, 0, 0), 0, 0));
-      } else {
-        myOptionsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
-          JBUI.insets(0, 2, 0, 0), 0, 0));
-      }
-      myOptionsPanel.revalidate();
     } else {
       initOptionsAndDescriptionPanel();
+      myParamsPanel.repaint();
+      myParamsPanel.revalidate();
+      myParamsPanel.repaint();
     }
-    myOptionsPanel.repaint();
   }
 
-  private static void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule) {
+  private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
+    String attributes = singleNode.severity() + " " + singleNode.type();
+    attributes = attributes.toLowerCase(Locale.US).replace('_', ' ');
+    final String description = "<b>" + singleNode.getKey() + "</b> | " + attributes + "<br/>" + singleNode.getHtmlDescription();
+    try {
+      readHTML(descriptionBrowser, SearchUtil.markup(toHTML(descriptionBrowser, description, false), myRuleFilter.getFilter()));
+    } catch (Throwable t) {
+      LOG.error("Failed to load description for: " +
+        singleNode.getKey() +
+        "; description: " +
+        description, t);
+    }
+
+    myParamsPanel.removeAll();
+    final JPanel configPanelAnchor = new JPanel(new GridLayout());
+    setConfigPanel(configPanelAnchor, singleNode);
+    if (configPanelAnchor.getComponentCount() != 0) {
+      rulesParamsSeparator = new RulesParamsSeparator();
+      myParamsPanel.add(rulesParamsSeparator,
+        new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0, GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,
+          JBUI.emptyInsets(), 0, 0));
+      myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+        JBUI.insets(0, 2, 0, 0), 0, 0));
+    } else {
+      myParamsPanel.add(configPanelAnchor, new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0, GridBagConstraints.WEST, GridBagConstraints.BOTH,
+        JBUI.insets(0, 2, 0, 0), 0, 0));
+    }
+    myParamsPanel.revalidate();
+    myParamsPanel.repaint();
+  }
+
+  private void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule) {
     configPanelAnchor.removeAll();
     final JComponent additionalConfigPanel = ConfigPanelState.of(getAdditionalConfigPanel(rule), rule).getPanel(rule.activated);
     if (additionalConfigPanel != null) {
@@ -475,7 +476,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   @CheckForNull
-  private static JComponent getAdditionalConfigPanel(RulesTreeNode.Rule rule) {
+  private JComponent getAdditionalConfigPanel(RulesTreeNode.Rule rule) {
     if (!rule.hasParameters()) {
       return null;
     }
@@ -515,33 +516,32 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return panel;
   }
 
-  private static void createTextParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createTextParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
     addParamLabel(panel, constraints, param);
     addTextField(rule, panel, constraints, param, new JBTextArea());
   }
 
-  private static void createStringParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createStringParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
     addParamLabel(panel, constraints, param);
     addTextField(rule, panel, constraints, param, new ExpandableTextField(s -> StringUtil.split(s, ","), l -> StringUtil.join(l, ",")));
   }
 
-  private static void createIntParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createIntParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
     addParamLabel(panel, constraints, param);
-    NumberFormat intFormatter = NumberFormat.getIntegerInstance();
-    intFormatter.setParseIntegerOnly(true);
-    addNumberFormattedTextField(rule, panel, constraints, param, intFormatter, asInt(param.defaultValue),
-      asInt(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
+    // See NumberFormat.parse(), it will return a Long...
+    NumberFormat longFormat = NumberFormat.getIntegerInstance();
+    addNumberFormattedTextField(rule, panel, constraints, param, longFormat, asLong(param.defaultValue),
+      asLong(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
   }
 
-  private static void createFloatParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createFloatParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
     addParamLabel(panel, constraints, param);
-    NumberFormat floatFormatter = NumberFormat.getNumberInstance();
-    floatFormatter.setParseIntegerOnly(false);
-    addNumberFormattedTextField(rule, panel, constraints, param, floatFormatter, asDouble(param.defaultValue),
+    NumberFormat floatFormat = NumberFormat.getNumberInstance();
+    addNumberFormattedTextField(rule, panel, constraints, param, floatFormat, asDouble(param.defaultValue),
       asDouble(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
   }
 
-  private static void createBooleanParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+  private void createBooleanParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
     final JBCheckBox checkBox = new JBCheckBox(param.name, asBoolean(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
     checkBox.setToolTipText(param.description);
     checkBox.addActionListener(e -> {
@@ -551,13 +551,14 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       } else {
         rule.getCustomParams().remove(param.key);
       }
+      rulesParamsSeparator.updateDefaultLinkVisibility();
     });
     constraints.gridwidth = 2;
     constraints.weightx = 1.0;
     panel.add(checkBox, constraints);
   }
 
-  private static void addTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, JTextComponent textComponent) {
+  private void addTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, JTextComponent textComponent) {
     textComponent.setToolTipText(param.description);
     textComponent.setText(rule.getCustomParams().getOrDefault(param.key, param.defaultValue));
     textComponent.getDocument().addDocumentListener(new DocumentAdapter() {
@@ -569,6 +570,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         } else {
           rule.getCustomParams().remove(param.key);
         }
+        rulesParamsSeparator.updateDefaultLinkVisibility();
       }
     });
     constraints.gridx = 1;
@@ -577,7 +579,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     panel.add(textComponent, constraints);
   }
 
-  private static void addNumberFormattedTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, NumberFormat numberFormat,
+  private void addNumberFormattedTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, NumberFormat numberFormat,
     Number defaultValue, Number initialValue) {
     final JFormattedTextField valueField = new JFormattedTextField();
     valueField.setToolTipText(param.description);
@@ -590,11 +592,12 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         try {
           valueField.commitEdit();
           Number value = (Number) valueField.getValue();
-          if (!value.equals(defaultValue)) {
+          if (value.doubleValue() != defaultValue.doubleValue()) {
             rule.getCustomParams().put(param.key, String.valueOf(value));
           } else {
             rule.getCustomParams().remove(param.key);
           }
+          rulesParamsSeparator.updateDefaultLinkVisibility();
         } catch (ParseException e1) {
           // No luck this time
         }
@@ -616,12 +619,12 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return "true".equals(value);
   }
 
-  private static int asInt(@Nullable String value) {
+  private static long asLong(@Nullable String value) {
     if (StringUtil.isEmpty(value)) {
       return 0;
     }
     try {
-      return Integer.parseInt(value);
+      return Long.parseLong(value);
     } catch (NumberFormatException e) {
       return 0;
     }
@@ -684,10 +687,10 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return new ArrayList<>(nodes);
   }
 
-  private class ToolOptionsSeparator extends JPanel {
-    private final LinkLabel<?> myResetLink;
+  private class RulesParamsSeparator extends JPanel {
+    private final LinkLabel<?> myDefaultsLink;
 
-    ToolOptionsSeparator(JComponent options) {
+    RulesParamsSeparator() {
       setLayout(new GridBagLayout());
       GridBagConstraints optionsLabelConstraints = new GridBagConstraints(0, 0, 1, 1, 0, 1, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(0, 2, 0, 0), 0, 0);
       add(new JBLabel("Options"), optionsLabelConstraints);
@@ -697,31 +700,28 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         TitledSeparator.SEPARATOR_RIGHT_INSET),
         0, 0);
       add(new JSeparator(SwingConstants.HORIZONTAL), separatorConstraints);
-      GridBagConstraints resetLabelConstraints = new GridBagConstraints(2, 0, 0, 1, 0, 1, GridBagConstraints.EAST, GridBagConstraints.NONE, JBUI.emptyInsets(), 0, 0);
+      GridBagConstraints defaultLabelConstraints = new GridBagConstraints(2, 0, 0, 1, 0, 1, GridBagConstraints.EAST, GridBagConstraints.NONE, JBUI.emptyInsets(), 0, 0);
 
-      UserActivityWatcher userActivityWatcher = new UserActivityWatcher();
-      userActivityWatcher.addUserActivityListener(this::setupResetLinkVisibility);
-      userActivityWatcher.register(options);
-      myResetLink = LinkLabel.create("Reset", () -> {
+      myDefaultsLink = LinkLabel.create("Defaults", () -> {
         RulesTreeNode.Rule node = getStrictlySelectedToolNode();
         if (node != null) {
-          // FIXME
-          updateOptionsAndDescriptionPanel();
+          node.getCustomParams().clear();
+          updateParamsAndDescriptionPanel(node);
         }
       });
-      add(myResetLink, resetLabelConstraints);
-      setupResetLinkVisibility();
+      myDefaultsLink.setToolTipText("Restore current rule parameters to default values");
+      add(myDefaultsLink, defaultLabelConstraints);
+      updateDefaultLinkVisibility();
     }
 
-    private void setupResetLinkVisibility() {
+    public void updateDefaultLinkVisibility() {
       if (table == null) {
         return;
       }
       RulesTreeNode.Rule node = getStrictlySelectedToolNode();
       if (node != null) {
-        boolean canReset = true; // FIXME
-
-        myResetLink.setVisible(canReset);
+        boolean canReset = !node.getCustomParams().isEmpty();
+        myDefaultsLink.setVisible(canReset);
         revalidate();
         repaint();
       }
