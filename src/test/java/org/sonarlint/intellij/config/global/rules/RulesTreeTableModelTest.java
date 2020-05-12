@@ -23,7 +23,6 @@ import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import java.util.HashMap;
-import java.util.Map;
 import javax.swing.Icon;
 import javax.swing.table.AbstractTableModel;
 import org.junit.Before;
@@ -33,7 +32,6 @@ import org.junit.rules.ExpectedException;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -113,13 +111,6 @@ public class RulesTreeTableModelTest {
   }
 
   @Test
-  public void get_current_rule_activation() {
-    Map<String, Boolean> ruleActivation = new HashMap<>();
-    model.saveCurrentRuleActivation(ruleActivation);
-    assertThat(ruleActivation).containsExactly(entry("key", true));
-  }
-
-  @Test
   public void should_set_value_in_rule() {
     model.setValueAt(false, rule, 2);
     assertThat(rule.isActivated()).isFalse();
@@ -152,12 +143,6 @@ public class RulesTreeTableModelTest {
   @Test
   public void swap_value_rule() {
     model.swapAndRefresh(rule);
-    assertActivationIsFalse();
-  }
-
-  @Test
-  public void should_restore_defaults() {
-    model.restoreDefaults();
     assertActivationIsFalse();
   }
 
