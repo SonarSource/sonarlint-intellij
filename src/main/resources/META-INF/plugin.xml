@@ -50,6 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.8 - Support of rules parameters configuration for IntelliJ. Fewer false positives and performance improvement for PHP. 4 new vulnerability detection rules for Python.</li>
         <li>4.7 - 2 new rules and performance improvements for Java. 2 new rules for Python.</li>
         <li>4.6 - Enable analysis of TypeScript. 27 new rules for Python. Support for Python 3.8.</li>
         <li>4.5.1 - Fix two regressions causing exception during analysis.</li>
