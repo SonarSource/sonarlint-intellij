@@ -24,12 +24,13 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -63,8 +64,18 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   @Override
   protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
-    List<RuleKey> excluded = globalSettings.excludedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
-    List<RuleKey> included = globalSettings.includedRules().stream().map(RuleKey::parse).collect(Collectors.toList());
+    List<RuleKey> excluded = new ArrayList<>();
+    List<RuleKey> included = new ArrayList<>();
+    Map<RuleKey, Map<String, String>> params = new HashMap<>();
+    globalSettings.getRules().forEach((k, v) -> {
+      RuleKey key = RuleKey.parse(k);
+      if (v.isActive()) {
+        included.add(key);
+        params.put(key, v.getParams());
+      } else {
+        excluded.add(key);
+      }
+    });
 
     StandaloneAnalysisConfiguration config = StandaloneAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
@@ -72,6 +83,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       .putAllExtraProperties(props)
       .addExcludedRules(excluded)
       .addIncludedRules(included)
+      .addRuleParameters(params)
       .build();
     console.debug("Starting analysis with configuration:\n" + config.toString());
     return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project, console, projectSettings), progressMonitor);
