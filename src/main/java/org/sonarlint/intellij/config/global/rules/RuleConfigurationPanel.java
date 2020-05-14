@@ -153,9 +153,9 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   public void save(SonarLintGlobalSettings settings) {
     allRulesStateByKey.values().forEach(r -> {
       if (r.isNonDefault()) {
-        settings.getRules().computeIfAbsent(r.getKey(), k -> new SonarLintGlobalSettings.Rule(r.isActivated())).setParams(r.getCustomParams());
+        settings.getRulesByKey().computeIfAbsent(r.getKey(), k -> new SonarLintGlobalSettings.Rule(r.getKey(), r.isActivated())).setParams(r.getCustomParams());
       } else {
-        settings.getRules().remove(r.getKey());
+        settings.getRulesByKey().remove(r.getKey());
       }
     });
   }
@@ -214,7 +214,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private static boolean loadRuleActivation(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
-    final SonarLintGlobalSettings.Rule ruleInSettings = settings.getRules().get(ruleDetails.getKey());
+    final SonarLintGlobalSettings.Rule ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
     if (ruleInSettings != null) {
       return ruleInSettings.isActive();
     }
@@ -222,7 +222,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private static Map<String, String> loadNonDefaultRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
-    SonarLintGlobalSettings.Rule ruleInSettings = settings.getRules().get(ruleDetails.getKey());
+    SonarLintGlobalSettings.Rule ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
     if (ruleInSettings != null) {
       return ruleInSettings.getParams();
     }

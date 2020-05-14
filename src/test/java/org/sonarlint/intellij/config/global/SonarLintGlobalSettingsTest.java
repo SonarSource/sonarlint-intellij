@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import java.lang.reflect.Field;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import org.junit.Test;
@@ -61,19 +59,13 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     includedRules.add(RULE);
     HashSet<String> excludedRules = new HashSet<>();
     excludedRules.add(RULE1);
-    Field includedRulesField = state.getClass().getDeclaredField("includedRules");
-    includedRulesField.setAccessible(true);
-    includedRulesField.set(state, includedRules);
-    Field excludedRulesField = SonarLintGlobalSettings.class.getDeclaredField("excludedRules");
-    excludedRulesField.setAccessible(true);
-    excludedRulesField.set(state, excludedRules);
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    Field rulesField = state.getClass().getDeclaredField("rules");
-    rulesField.setAccessible(true);
+    state.setIncludedRules(includedRules);
+    state.setExcludedRules(excludedRules);
 
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.loadState(state);
 
-    Map<String, SonarLintGlobalSettings.Rule> rules = (Map<String, SonarLintGlobalSettings.Rule>) rulesField.get(settings);
+    Map<String, SonarLintGlobalSettings.Rule> rules = settings.getRulesByKey();
     assertThat(rules).containsKey(RULE);
     assertThat(rules).containsKey(RULE1);
     assertThat(rules.get(RULE).isActive).isTrue();
@@ -85,11 +77,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
   public void testLoadStateNewFormat() throws Exception {
     SonarLintGlobalSettings state = new SonarLintGlobalSettings();
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    HashMap<String, SonarLintGlobalSettings.Rule> rules = new HashMap<>();
-    rules.put(RULE, new SonarLintGlobalSettings.Rule(false));
-    Field rulesField = state.getClass().getDeclaredField("rules");
-    rulesField.setAccessible(true);
-    rulesField.set(state, rules);
+    state.setRules(Collections.singleton(new SonarLintGlobalSettings.Rule(RULE, false)));
 
     settings.loadState(state);
 

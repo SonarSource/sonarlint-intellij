@@ -29,9 +29,11 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.Transient;
+import com.intellij.util.xmlb.annotations.XCollection;
 import com.intellij.util.xmlb.annotations.XMap;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -60,23 +63,22 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private Set<String> includedRules;
   @Deprecated
   private Set<String> excludedRules;
-  @XMap(entryTagName = "rule")
-  private Map<String, Rule> rules = new HashMap<>();
+  @Transient
+  private Map<String, Rule> rulesByKey = new HashMap<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
   }
 
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
-    rules.computeIfAbsent(ruleKey, s -> new Rule(true));
-    rules.get(ruleKey).params.put(paramName, paramValue);
+    rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, true)).params.put(paramName, paramValue);
   }
 
   public Optional<String> getRuleParamValue(String ruleKey, String paramName) {
-    if (!rules.containsKey(ruleKey) || !rules.get(ruleKey).params.containsKey(paramName)) {
+    if (!rulesByKey.containsKey(ruleKey) || !rulesByKey.get(ruleKey).params.containsKey(paramName)) {
       return Optional.empty();
     }
-    return Optional.of(rules.get(ruleKey).params.get(paramName));
+    return Optional.of(rulesByKey.get(ruleKey).params.get(paramName));
   }
 
   public void enableRule(String ruleKey) {
@@ -88,19 +90,19 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   private void setRuleActive(String ruleKey, boolean active) {
-    rules.computeIfAbsent(ruleKey, s -> new Rule(active)).isActive = active;
+    rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, active)).isActive = active;
   }
 
   public boolean isRuleExplicitlyDisabled(String ruleKey) {
-    if (!rules.containsKey(ruleKey)) {
+    if (!rulesByKey.containsKey(ruleKey)) {
       return false;
     }
-    return !rules.get(ruleKey).isActive;
+    return !rulesByKey.get(ruleKey).isActive;
   }
 
   public void resetRuleParam(String ruleKey, String paramName) {
-    if (rules.containsKey(ruleKey)) {
-      rules.get(ruleKey).params.remove(paramName);
+    if (rulesByKey.containsKey(ruleKey)) {
+      rulesByKey.get(ruleKey).params.remove(paramName);
     }
   }
 
@@ -130,12 +132,12 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   private void migrateOldStyleRuleActivations() {
     if(includedRules != null && !includedRules.isEmpty()) {
-      includedRules.forEach(it -> rules.put(it, new Rule(true)));
+      includedRules.forEach(it -> rulesByKey.put(it, new Rule(it, true)));
       includedRules = null;
       migratedFromOldActivations = true;
     }
     if(excludedRules != null && !excludedRules.isEmpty()) {
-      excludedRules.forEach(it -> rules.put(it, new Rule(false)));
+      excludedRules.forEach(it -> rulesByKey.put(it, new Rule(it, false)));
       excludedRules = null;
       migratedFromOldActivations = true;
     }
@@ -192,23 +194,28 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     this.excludedRules = excludedRules == null ? null : new HashSet<>(excludedRules);
   }
 
-  public Map<String, Rule> getRules() {
-    return rules;
+  public Map<String, Rule> getRulesByKey() {
+    return rulesByKey;
   }
 
-  public void setRules(Map<String, Rule> rules) {
-    this.rules = new HashMap<>(rules);
+  @XCollection(propertyElementName = "rules", elementName = "rule")
+  public Collection<Rule> getRules() {
+    return rulesByKey.values();
+  }
+
+  public void setRules(Collection<Rule> rules) {
+    this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
   }
 
   public Set<String> includedRules() {
-    return rules.entrySet().stream()
+    return rulesByKey.entrySet().stream()
       .filter(it -> it.getValue().isActive)
       .map(Map.Entry::getKey)
       .collect(Collectors.toSet());
   }
 
   public Set<String> excludedRules() {
-    return rules.entrySet().stream()
+    return rulesByKey.entrySet().stream()
       .filter(it -> !it.getValue().isActive)
       .map(Map.Entry::getKey)
       .collect(Collectors.toSet());
@@ -241,15 +248,17 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public static class Rule {
+    String key;
     boolean isActive;
 
     Map<String, String> params = new HashMap<>();
 
-    Rule() {
-      this(false);
+    public Rule() {
+      this("", false);
     }
 
-    public Rule(boolean isActive) {
+    public Rule(String key, boolean isActive) {
+      this.key = key;
       this.isActive = isActive;
     }
 
@@ -260,6 +269,15 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
     public void setActive(boolean active) {
       isActive = active;
+    }
+
+    @Attribute
+    public String getKey() {
+      return key;
+    }
+
+    public void setKey(String key) {
+      this.key = key;
     }
 
     @XMap(entryTagName = "param")

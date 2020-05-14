@@ -22,6 +22,7 @@ package org.sonarlint.intellij.editor;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.psi.PsiFile;
+import java.util.Collections;
 import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,7 +41,7 @@ public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
   @Before
   public void prepare() {
     // Reset rule activations
-    getGlobalSettings().setRules(new HashMap<>());
+    getGlobalSettings().setRules(Collections.emptySet());
     replaceProjectComponent(SonarLintSubmitter.class, submitter);
     quickFix = new DisableRuleQuickFix("rule");
   }
