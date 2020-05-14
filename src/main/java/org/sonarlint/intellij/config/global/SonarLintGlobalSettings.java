@@ -27,6 +27,8 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import com.intellij.util.xmlb.annotations.Attribute;
+import com.intellij.util.xmlb.annotations.Transient;
 import com.intellij.util.xmlb.annotations.XMap;
 import java.io.File;
 import java.util.ArrayList;
@@ -49,13 +51,16 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private boolean autoTrigger = true;
+  private boolean migratedFromOldActivations = false;
+  @Transient
+  private int callsToGetState = 0;
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
   private Set<String> includedRules;
   @Deprecated
   private Set<String> excludedRules;
-  @XMap
+  @XMap(entryTagName = "rule")
   private Map<String, Rule> rules = new HashMap<>();
 
   public static SonarLintGlobalSettings getInstance() {
@@ -99,21 +104,40 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     }
   }
 
+  public boolean isMigratedFromOldActivations() {
+    return migratedFromOldActivations;
+  }
+
+  public void setMigratedFromOldActivations(boolean migratedFromOldActivations) {
+    this.migratedFromOldActivations = migratedFromOldActivations;
+  }
+
   @Override
   public SonarLintGlobalSettings getState() {
+    callsToGetState += 1;
+    if (callsToGetState > 1 && migratedFromOldActivations) {
+      callsToGetState = 0;
+      migratedFromOldActivations = false;
+    }
     return this;
   }
 
   @Override
   public void loadState(SonarLintGlobalSettings state) {
     XmlSerializerUtil.copyBean(state, this);
+    migrateOldStyleRuleActivations();
+  }
+
+  private void migrateOldStyleRuleActivations() {
     if(includedRules != null && !includedRules.isEmpty()) {
       includedRules.forEach(it -> rules.put(it, new Rule(true)));
       includedRules = null;
+      migratedFromOldActivations = true;
     }
     if(excludedRules != null && !excludedRules.isEmpty()) {
       excludedRules.forEach(it -> rules.put(it, new Rule(false)));
-      includedRules = null;
+      excludedRules = null;
+      migratedFromOldActivations = true;
     }
   }
 
@@ -219,7 +243,6 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   public static class Rule {
     boolean isActive;
 
-    @XMap
     Map<String, String> params = new HashMap<>();
 
     Rule() {
@@ -230,6 +253,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
       this.isActive = isActive;
     }
 
+    @Attribute
     public boolean isActive() {
       return isActive;
     }
@@ -238,6 +262,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
       isActive = active;
     }
 
+    @XMap(entryTagName = "param")
     public Map<String, String> getParams() {
       return params;
     }
