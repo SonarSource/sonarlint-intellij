@@ -71,14 +71,14 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
-    rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, true)).params.put(paramName, paramValue);
+    rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, true)).getParams().put(paramName, paramValue);
   }
 
   public Optional<String> getRuleParamValue(String ruleKey, String paramName) {
-    if (!rulesByKey.containsKey(ruleKey) || !rulesByKey.get(ruleKey).params.containsKey(paramName)) {
+    if (!rulesByKey.containsKey(ruleKey) || !rulesByKey.get(ruleKey).getParams().containsKey(paramName)) {
       return Optional.empty();
     }
-    return Optional.of(rulesByKey.get(ruleKey).params.get(paramName));
+    return Optional.of(rulesByKey.get(ruleKey).getParams().get(paramName));
   }
 
   public void enableRule(String ruleKey) {
@@ -94,10 +94,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   public boolean isRuleExplicitlyDisabled(String ruleKey) {
-    if (!rulesByKey.containsKey(ruleKey)) {
-      return false;
-    }
-    return !rulesByKey.get(ruleKey).isActive;
+    return rulesByKey.containsKey(ruleKey) && !rulesByKey.get(ruleKey).isActive;
   }
 
   public void resetRuleParam(String ruleKey, String paramName) {
@@ -207,13 +204,6 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
   }
 
-  public Set<String> includedRules() {
-    return rulesByKey.entrySet().stream()
-      .filter(it -> it.getValue().isActive)
-      .map(Map.Entry::getKey)
-      .collect(Collectors.toSet());
-  }
-
   public Set<String> excludedRules() {
     return rulesByKey.entrySet().stream()
       .filter(it -> !it.getValue().isActive)
@@ -253,13 +243,14 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
     Map<String, String> params = new HashMap<>();
 
+    // Default constructor for XML (de)serialization
     public Rule() {
       this("", false);
     }
 
     public Rule(String key, boolean isActive) {
-      this.key = key;
-      this.isActive = isActive;
+      setKey(key);
+      setActive(isActive);
     }
 
     @Attribute

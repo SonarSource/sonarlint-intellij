@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
@@ -26,6 +27,7 @@ import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
@@ -77,12 +79,24 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
   public void testLoadStateNewFormat() throws Exception {
     SonarLintGlobalSettings state = new SonarLintGlobalSettings();
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    state.setRules(Collections.singleton(new SonarLintGlobalSettings.Rule(RULE, false)));
+    SonarLintGlobalSettings.Rule activeRuleWithParam = new SonarLintGlobalSettings.Rule(RULE, true);
+    activeRuleWithParam.setParams(Collections.singletonMap("paramKey", "paramValue"));
+    SonarLintGlobalSettings.Rule inactiveRule = new SonarLintGlobalSettings.Rule(RULE1, false);
+    state.setRules(Arrays.asList(activeRuleWithParam, inactiveRule));
 
     settings.loadState(state);
 
-    assertThat(settings.excludedRules()).contains(RULE);
-    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isTrue();
+    assertThat(settings.excludedRules()).containsExactly(RULE1);
+    assertThat(settings.isRuleExplicitlyDisabled(RULE1)).isTrue();
+    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isFalse();
+    assertThat(settings.isRuleExplicitlyDisabled("unknown")).isFalse();
+
+    assertThat(settings.getRulesByKey()).containsOnly(
+            entry(RULE, activeRuleWithParam),
+            entry(RULE1, inactiveRule)
+    );
+    assertThat(settings.getRulesByKey().get(RULE).getParams()).containsExactly(entry("paramKey", "paramValue"));
+    assertThat(settings.getRulesByKey().get(RULE).isActive()).isTrue();
   }
 
     @Test
