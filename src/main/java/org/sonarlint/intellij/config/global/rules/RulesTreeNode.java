@@ -56,7 +56,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     };
   }
 
-  public abstract boolean isChanged();
+  public abstract boolean isNonDefault();
 
   public void setIsActivated(@Nullable Boolean activated) {
     this.activated = activated;
@@ -68,19 +68,19 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
 
   public static class Language extends RulesTreeNode<RulesTreeNode.Rule> {
     private final String label;
-    private boolean changed;
+    private boolean nonDefault;
 
     public Language(String label) {
       this.label = label;
     }
 
     @Override
-    public boolean isChanged() {
-      return changed;
+    public boolean isNonDefault() {
+      return nonDefault;
     }
 
-    public void setIsChanged(boolean changed) {
-      this.changed = changed;
+    public void setIsNonDefault(boolean nonDefault) {
+      this.nonDefault = nonDefault;
     }
 
     @Override
@@ -96,7 +96,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     @Override
-    public boolean isChanged() {
+    public boolean isNonDefault() {
       return false;
     }
   }
@@ -140,7 +140,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     @Override
-    public boolean isChanged() {
+    public boolean isNonDefault() {
       return details.isActiveByDefault() != activated || (activated && !nonDefaultParams.isEmpty());
     }
 
