@@ -67,7 +67,7 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
   }
 
   private static Color getUnselectedForegroundColor(RulesTreeNode node) {
-    return node.isChanged() ? PlatformColors.BLUE : UIUtil.getTreeTextForeground();
+    return node.isNonDefault() ? PlatformColors.BLUE : UIUtil.getTreeTextForeground();
   }
 
   private static Color getSelectedBackgroundColor(JTree tree) {

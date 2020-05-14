@@ -109,7 +109,7 @@ public class RulesFilterModel {
     if (showOnlyDisabled && rule.isActivated()) {
       return false;
     }
-    if (showOnlyChanged && !rule.isChanged()) {
+    if (showOnlyChanged && !rule.isNonDefault()) {
       return false;
     }
 

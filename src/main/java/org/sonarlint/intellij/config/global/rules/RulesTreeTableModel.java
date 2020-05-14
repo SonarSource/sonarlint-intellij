@@ -122,7 +122,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     boolean isChanged = false;
 
     for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
-      if (rule.isChanged()) {
+      if (rule.isNonDefault()) {
         isChanged = true;
       }
       if (rule.isActivated()) {
@@ -141,7 +141,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     } else if (seenInactive) {
       lang.setIsActivated(false);
     }
-    lang.setIsChanged(isChanged);
+    lang.setIsNonDefault(isChanged);
   }
 
   private void activateLanguage(RulesTreeNode.Language lang, boolean activate) {
