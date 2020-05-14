@@ -79,7 +79,7 @@ public class RulesTreeTableModelTest {
 
     assertThat(model.getValueAt(lang, 0)).isNull();
     assertThat(model.getValueAt(lang, 1)).isNull();
-    assertThat(lang.isChanged()).isFalse();
+    assertThat(lang.isNonDefault()).isFalse();
 
     // not set yet
     assertThat(model.getValueAt(lang, 2)).isNull();
@@ -128,7 +128,7 @@ public class RulesTreeTableModelTest {
   public void should_calculate_language_activation_and_changed() {
     model.refreshLanguageActivation(lang);
     assertThat(lang.isActivated()).isTrue();
-    assertThat(lang.isChanged()).isTrue();
+    assertThat(lang.isNonDefault()).isTrue();
     assertThat(model.getValueAt(lang, 2)).isEqualTo(true);
   }
 
@@ -148,10 +148,10 @@ public class RulesTreeTableModelTest {
 
   private void assertActivationIsFalse() {
     assertThat(rule.isActivated()).isFalse();
-    assertThat(rule.isChanged()).isFalse();
+    assertThat(rule.isNonDefault()).isFalse();
 
     assertThat(lang.isActivated()).isFalse();
-    assertThat(lang.isChanged()).isFalse();
+    assertThat(lang.isNonDefault()).isFalse();
 
     verify(tableModel).fireTableDataChanged();
   }

@@ -119,6 +119,8 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private TreeExpander myTreeExpander;
   private RulesParamsSeparator rulesParamsSeparator;
   private Map<String, RulesTreeNode.Rule> allRulesStateByKey;
+  private boolean isDirty = false;
+  private SonarLintGlobalSettings settings;
 
   public RuleConfigurationPanel(StandaloneSonarLintEngine engine) {
     this.engine = engine;
@@ -132,20 +134,25 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
+    return isDirty;
+  }
+
+  private void recomputeDirtyState() {
     Map<String, RulesTreeNode.Rule> persistedRules = loadRuleNodes(settings);
     for (RulesTreeNode.Rule persisted : persistedRules.values()) {
       final RulesTreeNode.Rule possiblyModified = allRulesStateByKey.get(persisted.getKey());
       if (!persisted.equals(possiblyModified)) {
-        return true;
+        this.isDirty = true;
+        return;
       }
     }
-    return false;
+    this.isDirty = false;
   }
 
   @Override
   public void save(SonarLintGlobalSettings settings) {
     allRulesStateByKey.values().forEach(r -> {
-      if (r.isChanged()) {
+      if (r.isNonDefault()) {
         settings.getRules().computeIfAbsent(r.getKey(), k -> new SonarLintGlobalSettings.Rule(r.isActivated())).setParams(r.getCustomParams());
       } else {
         settings.getRules().remove(r.getKey());
@@ -155,6 +162,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
+    this.settings = settings;
     allRulesStateByKey = loadRuleNodes(settings);
 
     filterModel.reset(false);
@@ -177,6 +185,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       r.getCustomParams().clear();
     });
     updateModel();
+    recomputeDirtyState();
   }
 
   private void updateModel() {
@@ -308,6 +317,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     // create tree table
     model = new RulesTreeTableModel(new RulesTreeNode.Root());
     table = new RulesTreeTable(model);
+    table.getModel().addTableModelListener(e -> recomputeDirtyState());
     table.setTreeCellRenderer(new RulesTreeTableRenderer(filterModel::getText));
     table.setRootVisible(false);
     TreeUtil.installActions(table.getTree());
@@ -551,6 +561,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       } else {
         rule.getCustomParams().remove(param.key);
       }
+      recomputeDirtyState();
       rulesParamsSeparator.updateDefaultLinkVisibility();
     });
     constraints.gridwidth = 2;
@@ -570,6 +581,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         } else {
           rule.getCustomParams().remove(param.key);
         }
+        recomputeDirtyState();
         rulesParamsSeparator.updateDefaultLinkVisibility();
       }
     });
@@ -597,6 +609,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
           } else {
             rule.getCustomParams().remove(param.key);
           }
+          recomputeDirtyState();
           rulesParamsSeparator.updateDefaultLinkVisibility();
         } catch (ParseException e1) {
           // No luck this time
@@ -711,6 +724,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
       });
       myDefaultsLink.setToolTipText("Restore current rule parameters to default values");
       add(myDefaultsLink, defaultLabelConstraints);
+      recomputeDirtyState();
       updateDefaultLinkVisibility();
     }
 

@@ -46,7 +46,7 @@ public class RulesTreeNodeTest {
     assertThat(node.toString()).isEqualTo("name");
     assertThat(node.getHtmlDescription()).isEqualTo("html");
     assertThat(node.getDefaultActivation()).isTrue();
-    assertThat(node.isChanged()).isTrue();
+    assertThat(node.isNonDefault()).isTrue();
     assertThat(node.severity()).isEqualTo("severity");
     assertThat(node.type()).isEqualTo("type");
     assertThat(node.languageKey()).isEqualTo("lang");
@@ -56,17 +56,17 @@ public class RulesTreeNodeTest {
   public void getters_root() {
     RulesTreeNode.Root root = new RulesTreeNode.Root();
     assertThat(root.toString()).isEqualTo("root");
-    assertThat(root.isChanged()).isFalse();
+    assertThat(root.isNonDefault()).isFalse();
   }
 
   @Test
   public void getters_language() {
     RulesTreeNode.Language node = new RulesTreeNode.Language("lang");
-    node.setIsChanged(true);
+    node.setIsNonDefault(true);
     node.setIsActivated(true);
 
     assertThat(node.toString()).isEqualTo("lang");
-    assertThat(node.isChanged()).isTrue();
+    assertThat(node.isNonDefault()).isTrue();
     assertThat(node.isActivated()).isTrue();
   }
 
