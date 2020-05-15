@@ -106,6 +106,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   @Override
   public void loadState(SonarLintGlobalSettings state) {
+    // There was an issue here but it's dead
     XmlSerializerUtil.copyBean(state, this);
     if(includedRules != null && !includedRules.isEmpty()) {
       includedRules.forEach(it -> rules.put(it, new Rule(true)));
