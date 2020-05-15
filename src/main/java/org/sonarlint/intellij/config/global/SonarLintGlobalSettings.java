@@ -63,6 +63,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private Set<String> includedRules;
   @Deprecated
   private Set<String> excludedRules;
+  private Collection<Rule> rules = new HashSet<>();
   @Transient
   private Map<String, Rule> rulesByKey = new HashMap<>();
 
@@ -118,12 +119,14 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
       callsToGetState = 0;
       migratedFromOldActivations = false;
     }
+    this.rules = rulesByKey.values();
     return this;
   }
 
   @Override
   public void loadState(SonarLintGlobalSettings state) {
     XmlSerializerUtil.copyBean(state, this);
+    this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
     migrateOldStyleRuleActivations();
   }
 
@@ -197,11 +200,11 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   @XCollection(propertyElementName = "rules", elementName = "rule")
   public Collection<Rule> getRules() {
-    return rulesByKey.values();
+    return rules;
   }
 
   public void setRules(Collection<Rule> rules) {
-    this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
+    this.rules = new HashSet<>(rules);
   }
 
   public Set<String> excludedRules() {
