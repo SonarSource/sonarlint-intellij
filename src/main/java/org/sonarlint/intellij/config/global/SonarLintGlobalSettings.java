@@ -126,8 +126,12 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   @Override
   public void loadState(SonarLintGlobalSettings state) {
     XmlSerializerUtil.copyBean(state, this);
-    this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
+    initializeRulesByKey();
     migrateOldStyleRuleActivations();
+  }
+
+  private void initializeRulesByKey() {
+    this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
   }
 
   private void migrateOldStyleRuleActivations() {
@@ -205,6 +209,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   public void setRules(Collection<Rule> rules) {
     this.rules = new HashSet<>(rules);
+    initializeRulesByKey();
   }
 
   public Set<String> excludedRules() {
@@ -248,7 +253,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
     // Default constructor for XML (de)serialization
     public Rule() {
-      this("", false);
+      this("", true);
     }
 
     public Rule(String key, boolean isActive) {
