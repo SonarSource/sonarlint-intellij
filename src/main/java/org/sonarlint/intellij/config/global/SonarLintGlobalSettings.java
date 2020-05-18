@@ -46,7 +46,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.util.SonarLintBundle;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -54,15 +53,13 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private boolean autoTrigger = true;
-  private boolean migratedFromOldActivations = false;
-  @Transient
-  private int callsToGetState = 0;
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
   private Set<String> includedRules;
   @Deprecated
   private Set<String> excludedRules;
+  @XCollection(propertyElementName = "rules", elementName = "rule")
   private Collection<Rule> rules = new HashSet<>();
   @Transient
   private Map<String, Rule> rulesByKey = new HashMap<>();
@@ -104,21 +101,8 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     }
   }
 
-  public boolean isMigratedFromOldActivations() {
-    return migratedFromOldActivations;
-  }
-
-  public void setMigratedFromOldActivations(boolean migratedFromOldActivations) {
-    this.migratedFromOldActivations = migratedFromOldActivations;
-  }
-
   @Override
   public SonarLintGlobalSettings getState() {
-    callsToGetState += 1;
-    if (callsToGetState > 1 && migratedFromOldActivations) {
-      callsToGetState = 0;
-      migratedFromOldActivations = false;
-    }
     this.rules = rulesByKey.values();
     return this;
   }
@@ -127,24 +111,10 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   public void loadState(SonarLintGlobalSettings state) {
     XmlSerializerUtil.copyBean(state, this);
     initializeRulesByKey();
-    migrateOldStyleRuleActivations();
   }
 
   private void initializeRulesByKey() {
     this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
-  }
-
-  private void migrateOldStyleRuleActivations() {
-    if(includedRules != null && !includedRules.isEmpty()) {
-      includedRules.forEach(it -> rulesByKey.put(it, new Rule(it, true)));
-      includedRules = null;
-      migratedFromOldActivations = true;
-    }
-    if(excludedRules != null && !excludedRules.isEmpty()) {
-      excludedRules.forEach(it -> rulesByKey.put(it, new Rule(it, false)));
-      excludedRules = null;
-      migratedFromOldActivations = true;
-    }
   }
 
   @Override
@@ -166,43 +136,22 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     return "SonarLintGlobalSettings";
   }
 
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public Set<String> getIncludedRules() {
-    return includedRules;
-  }
-
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public void setIncludedRules(@Nullable Set<String> includedRules) {
-    this.includedRules = includedRules == null ? null : new HashSet<>(includedRules);
-  }
-
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public Set<String> getExcludedRules() {
-    return excludedRules;
-  }
-
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public void setExcludedRules(@Nullable Set<String> excludedRules) {
-    this.excludedRules = excludedRules == null ? null : new HashSet<>(excludedRules);
-  }
-
   public Map<String, Rule> getRulesByKey() {
+    migrateOldStyleRuleActivations();
     return rulesByKey;
   }
 
-  @XCollection(propertyElementName = "rules", elementName = "rule")
+  private void migrateOldStyleRuleActivations() {
+    if (includedRules != null && !includedRules.isEmpty()) {
+      includedRules.forEach(it -> rulesByKey.put(it, new Rule(it, true)));
+    }
+    includedRules = null;
+    if (excludedRules != null && !excludedRules.isEmpty()) {
+      excludedRules.forEach(it -> rulesByKey.put(it, new Rule(it, false)));
+    }
+    excludedRules = null;
+  }
+
   public Collection<Rule> getRules() {
     return rules;
   }
@@ -243,6 +192,26 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   public void setFileExclusions(List<String> fileExclusions) {
     this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
+  }
+
+  @Deprecated
+  public Set<String> getIncludedRules() {
+    return includedRules;
+  }
+
+  @Deprecated
+  public void setIncludedRules(Set<String> includedRules) {
+    this.includedRules = includedRules;
+  }
+
+  @Deprecated
+  public Set<String> getExcludedRules() {
+    return excludedRules;
+  }
+
+  @Deprecated
+  public void setExcludedRules(Set<String> excludedRules) {
+    this.excludedRules = excludedRules;
   }
 
   public static class Rule {
