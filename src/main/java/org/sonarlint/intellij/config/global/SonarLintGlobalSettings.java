@@ -194,21 +194,33 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
   }
 
+  /**
+   * @deprecated only used for serialization
+   */
   @Deprecated
   public Set<String> getIncludedRules() {
     return includedRules;
   }
 
+  /**
+   * @deprecated only used for serialization
+   */
   @Deprecated
   public void setIncludedRules(Set<String> includedRules) {
     this.includedRules = includedRules;
   }
 
+  /**
+   * @deprecated only used for serialization
+   */
   @Deprecated
   public Set<String> getExcludedRules() {
     return excludedRules;
   }
 
+  /**
+   * @deprecated only used for serialization
+   */
   @Deprecated
   public void setExcludedRules(Set<String> excludedRules) {
     this.excludedRules = excludedRules;
