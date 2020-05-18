@@ -19,15 +19,15 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import java.lang.reflect.Field;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
@@ -61,19 +61,13 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     includedRules.add(RULE);
     HashSet<String> excludedRules = new HashSet<>();
     excludedRules.add(RULE1);
-    Field includedRulesField = state.getClass().getDeclaredField("includedRules");
-    includedRulesField.setAccessible(true);
-    includedRulesField.set(state, includedRules);
-    Field excludedRulesField = SonarLintGlobalSettings.class.getDeclaredField("excludedRules");
-    excludedRulesField.setAccessible(true);
-    excludedRulesField.set(state, excludedRules);
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    Field rulesField = state.getClass().getDeclaredField("rules");
-    rulesField.setAccessible(true);
+    state.setIncludedRules(includedRules);
+    state.setExcludedRules(excludedRules);
 
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.loadState(state);
 
-    Map<String, SonarLintGlobalSettings.Rule> rules = (Map<String, SonarLintGlobalSettings.Rule>) rulesField.get(settings);
+    Map<String, SonarLintGlobalSettings.Rule> rules = settings.getRulesByKey();
     assertThat(rules).containsKey(RULE);
     assertThat(rules).containsKey(RULE1);
     assertThat(rules.get(RULE).isActive).isTrue();
@@ -85,16 +79,24 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
   public void testLoadStateNewFormat() throws Exception {
     SonarLintGlobalSettings state = new SonarLintGlobalSettings();
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    HashMap<String, SonarLintGlobalSettings.Rule> rules = new HashMap<>();
-    rules.put(RULE, new SonarLintGlobalSettings.Rule(false));
-    Field rulesField = state.getClass().getDeclaredField("rules");
-    rulesField.setAccessible(true);
-    rulesField.set(state, rules);
+    SonarLintGlobalSettings.Rule activeRuleWithParam = new SonarLintGlobalSettings.Rule(RULE, true);
+    activeRuleWithParam.setParams(Collections.singletonMap("paramKey", "paramValue"));
+    SonarLintGlobalSettings.Rule inactiveRule = new SonarLintGlobalSettings.Rule(RULE1, false);
+    state.setRules(Arrays.asList(activeRuleWithParam, inactiveRule));
 
     settings.loadState(state);
 
-    assertThat(settings.excludedRules()).contains(RULE);
-    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isTrue();
+    assertThat(settings.excludedRules()).containsExactly(RULE1);
+    assertThat(settings.isRuleExplicitlyDisabled(RULE1)).isTrue();
+    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isFalse();
+    assertThat(settings.isRuleExplicitlyDisabled("unknown")).isFalse();
+
+    assertThat(settings.getRulesByKey()).containsOnly(
+            entry(RULE, activeRuleWithParam),
+            entry(RULE1, inactiveRule)
+    );
+    assertThat(settings.getRulesByKey().get(RULE).getParams()).containsExactly(entry("paramKey", "paramValue"));
+    assertThat(settings.getRulesByKey().get(RULE).isActive()).isTrue();
   }
 
     @Test

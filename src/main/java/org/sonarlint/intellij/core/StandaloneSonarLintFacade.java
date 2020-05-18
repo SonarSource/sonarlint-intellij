@@ -67,7 +67,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     List<RuleKey> excluded = new ArrayList<>();
     List<RuleKey> included = new ArrayList<>();
     Map<RuleKey, Map<String, String>> params = new HashMap<>();
-    globalSettings.getRules().forEach((k, v) -> {
+    globalSettings.getRulesByKey().forEach((k, v) -> {
       RuleKey key = RuleKey.parse(k);
       if (v.isActive()) {
         included.add(key);

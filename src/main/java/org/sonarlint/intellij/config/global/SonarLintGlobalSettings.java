@@ -27,9 +27,13 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
+import com.intellij.util.xmlb.annotations.Attribute;
+import com.intellij.util.xmlb.annotations.Transient;
+import com.intellij.util.xmlb.annotations.XCollection;
 import com.intellij.util.xmlb.annotations.XMap;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,10 +42,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.util.SonarLintBundle;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -55,23 +59,24 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private Set<String> includedRules;
   @Deprecated
   private Set<String> excludedRules;
-  @XMap
-  private Map<String, Rule> rules = new HashMap<>();
+  @XCollection(propertyElementName = "rules", elementName = "rule")
+  private Collection<Rule> rules = new HashSet<>();
+  @Transient
+  private Map<String, Rule> rulesByKey = new HashMap<>();
 
   public static SonarLintGlobalSettings getInstance() {
     return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
   }
 
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
-    rules.computeIfAbsent(ruleKey, s -> new Rule(true));
-    rules.get(ruleKey).params.put(paramName, paramValue);
+    rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, true)).getParams().put(paramName, paramValue);
   }
 
   public Optional<String> getRuleParamValue(String ruleKey, String paramName) {
-    if (!rules.containsKey(ruleKey) || !rules.get(ruleKey).params.containsKey(paramName)) {
+    if (!rulesByKey.containsKey(ruleKey) || !rulesByKey.get(ruleKey).getParams().containsKey(paramName)) {
       return Optional.empty();
     }
-    return Optional.of(rules.get(ruleKey).params.get(paramName));
+    return Optional.of(rulesByKey.get(ruleKey).getParams().get(paramName));
   }
 
   public void enableRule(String ruleKey) {
@@ -83,38 +88,33 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   }
 
   private void setRuleActive(String ruleKey, boolean active) {
-    rules.computeIfAbsent(ruleKey, s -> new Rule(active)).isActive = active;
+    rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, active)).isActive = active;
   }
 
   public boolean isRuleExplicitlyDisabled(String ruleKey) {
-    if (!rules.containsKey(ruleKey)) {
-      return false;
-    }
-    return !rules.get(ruleKey).isActive;
+    return rulesByKey.containsKey(ruleKey) && !rulesByKey.get(ruleKey).isActive;
   }
 
   public void resetRuleParam(String ruleKey, String paramName) {
-    if (rules.containsKey(ruleKey)) {
-      rules.get(ruleKey).params.remove(paramName);
+    if (rulesByKey.containsKey(ruleKey)) {
+      rulesByKey.get(ruleKey).params.remove(paramName);
     }
   }
 
   @Override
   public SonarLintGlobalSettings getState() {
+    this.rules = rulesByKey.values();
     return this;
   }
 
   @Override
   public void loadState(SonarLintGlobalSettings state) {
     XmlSerializerUtil.copyBean(state, this);
-    if(includedRules != null && !includedRules.isEmpty()) {
-      includedRules.forEach(it -> rules.put(it, new Rule(true)));
-      includedRules = null;
-    }
-    if(excludedRules != null && !excludedRules.isEmpty()) {
-      excludedRules.forEach(it -> rules.put(it, new Rule(false)));
-      includedRules = null;
-    }
+    initializeRulesByKey();
+  }
+
+  private void initializeRulesByKey() {
+    this.rulesByKey = new HashMap<>(rules.stream().collect(Collectors.toMap(Rule::getKey, Function.identity())));
   }
 
   @Override
@@ -136,55 +136,33 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     return "SonarLintGlobalSettings";
   }
 
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public Set<String> getIncludedRules() {
-    return includedRules;
+  public Map<String, Rule> getRulesByKey() {
+    migrateOldStyleRuleActivations();
+    return rulesByKey;
   }
 
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public void setIncludedRules(@Nullable Set<String> includedRules) {
-    this.includedRules = includedRules == null ? null : new HashSet<>(includedRules);
+  private void migrateOldStyleRuleActivations() {
+    if (includedRules != null && !includedRules.isEmpty()) {
+      includedRules.forEach(it -> rulesByKey.put(it, new Rule(it, true)));
+    }
+    includedRules = null;
+    if (excludedRules != null && !excludedRules.isEmpty()) {
+      excludedRules.forEach(it -> rulesByKey.put(it, new Rule(it, false)));
+    }
+    excludedRules = null;
   }
 
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public Set<String> getExcludedRules() {
-    return excludedRules;
-  }
-
-  /**
-   * @deprecated Must only be called to convert pre-4.8 settings to 4.8+ format
-   */
-  @Deprecated
-  public void setExcludedRules(@Nullable Set<String> excludedRules) {
-    this.excludedRules = excludedRules == null ? null : new HashSet<>(excludedRules);
-  }
-
-  public Map<String, Rule> getRules() {
+  public Collection<Rule> getRules() {
     return rules;
   }
 
-  public void setRules(Map<String, Rule> rules) {
-    this.rules = new HashMap<>(rules);
-  }
-
-  public Set<String> includedRules() {
-    return rules.entrySet().stream()
-      .filter(it -> it.getValue().isActive)
-      .map(Map.Entry::getKey)
-      .collect(Collectors.toSet());
+  public void setRules(Collection<Rule> rules) {
+    this.rules = new HashSet<>(rules);
+    initializeRulesByKey();
   }
 
   public Set<String> excludedRules() {
-    return rules.entrySet().stream()
+    return rulesByKey.entrySet().stream()
       .filter(it -> !it.getValue().isActive)
       .map(Map.Entry::getKey)
       .collect(Collectors.toSet());
@@ -216,20 +194,55 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
     this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
   }
 
+  /**
+   * @deprecated only used for serialization
+   */
+  @Deprecated
+  public Set<String> getIncludedRules() {
+    return includedRules;
+  }
+
+  /**
+   * @deprecated only used for serialization
+   */
+  @Deprecated
+  public void setIncludedRules(Set<String> includedRules) {
+    this.includedRules = includedRules;
+  }
+
+  /**
+   * @deprecated only used for serialization
+   */
+  @Deprecated
+  public Set<String> getExcludedRules() {
+    return excludedRules;
+  }
+
+  /**
+   * @deprecated only used for serialization
+   */
+  @Deprecated
+  public void setExcludedRules(Set<String> excludedRules) {
+    this.excludedRules = excludedRules;
+  }
+
   public static class Rule {
+    String key;
     boolean isActive;
 
-    @XMap
     Map<String, String> params = new HashMap<>();
 
-    Rule() {
-      this(false);
+    // Default constructor for XML (de)serialization
+    public Rule() {
+      this("", true);
     }
 
-    public Rule(boolean isActive) {
-      this.isActive = isActive;
+    public Rule(String key, boolean isActive) {
+      setKey(key);
+      setActive(isActive);
     }
 
+    @Attribute
     public boolean isActive() {
       return isActive;
     }
@@ -238,6 +251,16 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
       isActive = active;
     }
 
+    @Attribute
+    public String getKey() {
+      return key;
+    }
+
+    public void setKey(String key) {
+      this.key = key;
+    }
+
+    @XMap(entryTagName = "param")
     public Map<String, String> getParams() {
       return params;
     }
