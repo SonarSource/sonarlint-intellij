@@ -35,7 +35,7 @@ public class ConnectionTestTaskTest {
 
   @Test
   public void fail_if_no_connection() {
-    SonarQubeServer server = SonarQubeServer.newBuilder().setHostUrl("invalid_url").build();
+    SonarQubeServer server = SonarQubeServer.newMemoryBuilder().setHostUrl("invalid_url").build();
     ConnectionTestTask task = new ConnectionTestTask(server, globalLogOutput);
     ProgressIndicator progress = mock(ProgressIndicator.class);
     task.run(progress);

@@ -35,7 +35,7 @@ public class GlobalConfigurationListenerTest extends AbstractSonarLintMockedTest
 
   @Before
   public void prepare() {
-    testList.add(SonarQubeServer.newBuilder().setName("name").build());
+    testList.add(SonarQubeServer.newMemoryBuilder().setName("name").build());
   }
 
   @Test

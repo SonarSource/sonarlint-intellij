@@ -104,7 +104,7 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
   }
 
   private SonarQubeServer createServer() {
-    return SonarQubeServer.newBuilder()
+    return SonarQubeServer.newMemoryBuilder()
       .setHostUrl("http://localhost:9000")
       .setName("server1")
       .build();

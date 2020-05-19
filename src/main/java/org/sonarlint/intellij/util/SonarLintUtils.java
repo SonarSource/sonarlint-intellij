@@ -221,10 +221,10 @@ public class SonarLintUtils {
     if (!isBlank(server.getOrganizationKey())) {
       serverConfigBuilder.organizationKey(server.getOrganizationKey());
     }
-    if (!isBlank(server.getToken())) {
-      serverConfigBuilder.token(server.getToken());
+    if (!isBlank(server.getSecureToken())) {
+      serverConfigBuilder.token(server.getSecureToken());
     } else {
-      serverConfigBuilder.credentials(server.getLogin(), server.getPassword());
+      serverConfigBuilder.credentials(server.getLogin(), server.getSecurePassword());
     }
 
     if (server.enableProxy()) {

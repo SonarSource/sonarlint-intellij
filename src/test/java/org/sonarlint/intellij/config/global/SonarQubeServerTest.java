@@ -20,13 +20,15 @@
 package org.sonarlint.intellij.config.global;
 
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SonarQubeServerTest {
+public class SonarQubeServerTest extends AbstractSonarLintLightTests {
+
   @Test
   public void testRoundTrip() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    SonarQubeServer server = SonarQubeServer.newPersistentBuilder()
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
@@ -35,9 +37,9 @@ public class SonarQubeServerTest {
       .build();
 
     assertThat(server.getName()).isEqualTo("name");
-    assertThat(server.getToken()).isEqualTo("token");
+    assertThat(server.getSecureToken()).isEqualTo("token");
     assertThat(server.getLogin()).isEqualTo("login");
-    assertThat(server.getPassword()).isEqualTo("pass");
+    assertThat(server.getSecurePassword()).isEqualTo("pass");
     assertThat(server.getHostUrl()).isEqualTo("host");
 
     assertThat(server.toString()).isEqualTo(server.getName());
@@ -46,7 +48,7 @@ public class SonarQubeServerTest {
 
   @Test
   public void testSonarCloud() {
-    SonarQubeServer server1 = SonarQubeServer.newBuilder()
+    SonarQubeServer server1 = SonarQubeServer.newMemoryBuilder()
       .setHostUrl("https://sonarqube.com")
       .setPassword("pass")
       .setToken("token")
@@ -58,27 +60,21 @@ public class SonarQubeServerTest {
 
   @Test
   public void testEqualsAndHash() {
-    SonarQubeServer server1 = SonarQubeServer.newBuilder()
+    SonarQubeServer server1 = SonarQubeServer.newMemoryBuilder()
       .setHostUrl("host")
-      .setPassword("pass")
-      .setToken("token")
       .setName("name")
       .setLogin("login")
       .build();
 
-    SonarQubeServer server2 = SonarQubeServer.newBuilder()
+    SonarQubeServer server2 = SonarQubeServer.newMemoryBuilder()
       .setHostUrl("host")
-      .setPassword("pass")
-      .setToken("token")
       .setName("name")
       .setLogin("login")
       .build();
 
-    SonarQubeServer server3 = SonarQubeServer.newBuilder()
+    SonarQubeServer server3 = SonarQubeServer.newMemoryBuilder()
       .setHostUrl("host")
-      .setPassword("pass1")
-      .setToken("token")
-      .setName("name")
+      .setName("name1")
       .setLogin("login")
       .build();
 
@@ -90,26 +86,12 @@ public class SonarQubeServerTest {
   }
 
   @Test
-  public void testSetNullEncodedFields() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
-      .setHostUrl("host")
-      .setPassword(null)
-      .setToken(null)
-      .setName("name")
-      .setLogin("login")
-      .build();
-
-    assertThat(server.getToken()).isNull();
-    assertThat(server.getPassword()).isNull();
-  }
-
-  @Test
   public void testEncoded() {
-    SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
+    SonarQubeServer.Builder builder = SonarQubeServer.newMemoryBuilder()
       .setPassword("pass")
       .setToken("token");
 
-    assertThat(builder.build().getPassword()).isEqualTo("pass");
-    assertThat(builder.build().getToken()).isEqualTo("token");
+    assertThat(builder.build().getSecurePassword()).isEqualTo("pass");
+    assertThat(builder.build().getSecureToken()).isEqualTo("token");
   }
 }

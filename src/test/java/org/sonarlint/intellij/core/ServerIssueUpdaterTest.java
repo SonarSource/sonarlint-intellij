@@ -69,7 +69,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     ProjectBindingManager bindingManager = spy(getProject().getComponent(ProjectBindingManager.class));
     doReturn(engine).when(bindingManager).getConnectedEngine();
     underTest = new ServerIssueUpdater(getProject(), issueManager, getProjectSettings(), bindingManager, mockedConsole, ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class));
-    getGlobalSettings().setSonarQubeServers(Collections.singletonList(SonarQubeServer.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
+    getGlobalSettings().setSonarQubeServers(Collections.singletonList(SonarQubeServer.newMemoryBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
     getProjectSettings().setServerId(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);
 

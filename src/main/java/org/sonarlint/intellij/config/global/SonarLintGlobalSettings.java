@@ -138,6 +138,7 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   public Map<String, Rule> getRulesByKey() {
     migrateOldStyleRuleActivations();
+    migrateOldStyleServers();
     return rulesByKey;
   }
 
@@ -174,6 +175,10 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
 
   public void setAutoTrigger(boolean autoTrigger) {
     this.autoTrigger = autoTrigger;
+  }
+
+  private void migrateOldStyleServers() {
+    this.servers.forEach(SonarQubeServer::migrateOldStyleCredentials);
   }
 
   public List<SonarQubeServer> getSonarQubeServers() {

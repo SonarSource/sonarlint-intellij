@@ -58,9 +58,9 @@ public class WizardModel {
       serverUrl = serverToEdit.getHostUrl();
     }
     this.proxyEnabled = serverToEdit.enableProxy();
-    this.token = serverToEdit.getToken();
+    this.token = serverToEdit.getSecureToken();
     this.login = serverToEdit.getLogin();
-    String pass = serverToEdit.getPassword();
+    String pass = serverToEdit.getSecurePassword();
     if (pass != null) {
       this.password = pass.toCharArray();
     }
@@ -185,7 +185,7 @@ public class WizardModel {
   }
 
   private SonarQubeServer createServer(@Nullable String organizationKey) {
-    SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
+    SonarQubeServer.Builder builder = (organizationKey == null ? SonarQubeServer.newMemoryBuilder() : SonarQubeServer.newPersistentBuilder())
       .setOrganizationKey(organizationKey)
       .setEnableProxy(proxyEnabled)
       .setName(name);

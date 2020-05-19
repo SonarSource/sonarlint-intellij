@@ -39,7 +39,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
   @Test
   public void testRoundTrip() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    SonarQubeServer server = SonarQubeServer.newBuilder().setName("name").build();
+    SonarQubeServer server = SonarQubeServer.newMemoryBuilder().setName("name").build();
 
     settings.setSonarQubeServers(Collections.singletonList(server));
     assertThat(settings.getSonarQubeServers()).containsOnly(server);

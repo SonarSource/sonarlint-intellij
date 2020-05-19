@@ -115,7 +115,7 @@ public class SonarLintEngineManagerTest {
   }
 
   private static SonarQubeServer createServer(String name) {
-    return SonarQubeServer.newBuilder().setName(name).build();
+    return SonarQubeServer.newMemoryBuilder().setName(name).build();
   }
 
   private static ProjectStorageStatus projectOk = new ProjectStorageStatus() {

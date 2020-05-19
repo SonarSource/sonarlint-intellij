@@ -77,13 +77,13 @@ public class SonarLintUtilsTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testServerConfigurationToken() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    SonarQubeServer server = SonarQubeServer.newMemoryBuilder()
       .setHostUrl("http://myhost")
       .setEnableProxy(false)
       .setToken("token")
       .build();
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
-    assertThat(config.getLogin()).isEqualTo(server.getToken());
+    assertThat(config.getLogin()).isEqualTo(server.getSecureToken());
     assertThat(config.getPassword()).isNull();
     assertThat(config.getConnectTimeoutMs()).isEqualTo(SonarLintUtils.CONNECTION_TIMEOUT_MS);
     assertThat(config.getReadTimeoutMs()).isEqualTo(SonarLintUtils.READ_TIMEOUT_MS);
@@ -94,14 +94,14 @@ public class SonarLintUtilsTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testServerConfigurationPassword() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    SonarQubeServer server = SonarQubeServer.newMemoryBuilder()
       .setHostUrl("http://myhost")
       .setLogin("token")
       .setPassword("pass")
       .build();
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
-    assertThat(config.getPassword()).isEqualTo(server.getPassword());
+    assertThat(config.getPassword()).isEqualTo(server.getSecurePassword());
   }
 
   @Test

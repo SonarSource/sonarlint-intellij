@@ -102,7 +102,7 @@ public class ProjectBindingManagerTest {
     settings.setProjectKey("project1");
     settings.setServerId("server1");
 
-    SonarQubeServer server = SonarQubeServer.newBuilder().setName("server1").build();
+    SonarQubeServer server = SonarQubeServer.newMemoryBuilder().setName("server1").build();
     globalSettings.setSonarQubeServers(Collections.singletonList(server));
     assertThat(projectBindingManager.getSonarQubeServer()).isEqualTo(server);
   }
@@ -113,7 +113,7 @@ public class ProjectBindingManagerTest {
     settings.setProjectKey("project1");
     settings.setServerId("server1");
 
-    SonarQubeServer server = SonarQubeServer.newBuilder().setName("server2").build();
+    SonarQubeServer server = SonarQubeServer.newMemoryBuilder().setName("server2").build();
     globalSettings.setSonarQubeServers(Collections.singletonList(server));
     exception.expect(InvalidBindingException.class);
     projectBindingManager.getSonarQubeServer();

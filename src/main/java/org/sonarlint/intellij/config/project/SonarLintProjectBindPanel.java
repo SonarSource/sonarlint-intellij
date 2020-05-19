@@ -186,7 +186,7 @@ public class SonarLintProjectBindPanel {
 
     if (servers.isEmpty()) {
       serverComboBox.setEnabled(false);
-      SonarQubeServer s = SonarQubeServer.newBuilder()
+      SonarQubeServer s = SonarQubeServer.newMemoryBuilder()
         .setName(SERVER_EMPTY_TEXT)
         .build();
       serverComboBox.setPrototypeDisplayValue(s);
