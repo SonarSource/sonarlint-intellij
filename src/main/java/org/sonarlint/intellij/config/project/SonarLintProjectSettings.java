@@ -37,7 +37,7 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
 
   private boolean verboseEnabled = false;
   private boolean analysisLogsEnabled = false;
-  private final Map<String, String> additionalProperties = new LinkedHashMap<>();
+  private Map<String, String> additionalProperties = new LinkedHashMap<>();
   private boolean bindingEnabled = false;
   private String serverId = null;
   private String projectKey = null;
@@ -95,12 +95,11 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   }
 
   public Map<String, String> getAdditionalProperties() {
-    return new LinkedHashMap<>(additionalProperties);
+    return additionalProperties;
   }
 
   public void setAdditionalProperties(Map<String, String> additionalProperties) {
-    this.additionalProperties.clear();
-    this.additionalProperties.putAll(additionalProperties);
+    this.additionalProperties = new LinkedHashMap<>(additionalProperties);
   }
 
   @CheckForNull
