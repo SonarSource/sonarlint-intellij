@@ -19,19 +19,16 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.lang.Language;
 import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
-import com.intellij.openapi.editor.event.EditorEventMulticaster;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -42,97 +39,71 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
-  private EditorFactory editorFactory = mock(EditorFactory.class);
-  private SonarLintAppUtils utils = mock(SonarLintAppUtils.class);
-  private FileDocumentManager docManager = mock(FileDocumentManager.class);
-
-  private SonarLintGlobalSettings globalSettings;
+  private final SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private final FileDocumentManager docManager = mock(FileDocumentManager.class);
   private EditorChangeTrigger underTest;
 
   @Before
   public void prepare() {
-    when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
-    globalSettings = new SonarLintGlobalSettings();
-    globalSettings.setAutoTrigger(true);
-    underTest = new EditorChangeTrigger(getProject(), globalSettings, submitter, editorFactory, utils, docManager, 500);
-    underTest.projectOpened();
+    replaceProjectService(SonarLintSubmitter.class, submitter);
+    getGlobalSettings().setAutoTrigger(true);
+    underTest = new EditorChangeTrigger(getProject());
+    underTest.onProjectOpened();
+  }
+
+  @After
+  public void cleanup() {
+    underTest.onProjectClosed();
   }
 
   @Test
   public void should_trigger() {
-    Module m1 = mock(Module.class);
-    VirtualFile file = mock(VirtualFile.class);
-    Document doc = mock(Document.class);
-    DocumentEvent event = mock(DocumentEvent.class);
+    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
-    when(file.isValid()).thenReturn(true);
-    when(event.getDocument()).thenReturn(doc);
-    when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
-    when(utils.isOpenFile(getProject(), file)).thenReturn(true);
+    underTest.documentChanged(createEvent(file));
 
-    underTest.documentChanged(event);
     assertThat(underTest.getEvents()).hasSize(1);
-    verify(submitter, timeout(1000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
+    verify(submitter, timeout(3000)).submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
     verifyNoMoreInteractions(submitter);
   }
 
   @Test
   public void dont_trigger_if_auto_disabled() {
-    globalSettings.setAutoTrigger(false);
-    Module m1 = mock(Module.class);
-    VirtualFile file = mock(VirtualFile.class);
-    Document doc = mock(Document.class);
-    DocumentEvent event = mock(DocumentEvent.class);
+    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    getGlobalSettings().setAutoTrigger(false);
 
-    when(file.isValid()).thenReturn(true);
-    when(event.getDocument()).thenReturn(doc);
-    when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
-
-    underTest.documentChanged(event);
+    underTest.documentChanged(createEvent(file));
     verifyZeroInteractions(submitter);
   }
 
   @Test
   public void dont_trigger_if_check_fails() {
-    Module m1 = mock(Module.class);
-    VirtualFile file = mock(VirtualFile.class);
     Document doc = mock(Document.class);
-    DocumentEvent event = mock(DocumentEvent.class);
+    VirtualFile file = createTestFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
 
-    when(file.isValid()).thenReturn(true);
+    DocumentEvent event = createEvent(file);
+
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
-
     underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
   }
 
   @Test
-  public void dont_trigger_if_no_project() {
-    VirtualFile file = mock(VirtualFile.class);
-    Document doc = mock(Document.class);
-    DocumentEvent event = mock(DocumentEvent.class);
+  public void dont_trigger_if_project_is_closed() {
+    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
-    when(file.isValid()).thenReturn(true);
-    when(event.getDocument()).thenReturn(doc);
-    when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(null);
+    underTest.documentChanged(createEvent(file));
 
-    underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
   }
 
   @Test
   public void dont_trigger_if_no_vfile() {
+    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+
     Document doc = mock(Document.class);
-    DocumentEvent event = mock(DocumentEvent.class);
+    DocumentEvent event = createEvent(file);
 
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(null);
@@ -145,24 +116,21 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
   public void nothing_to_do_before_doc_change() {
     underTest.beforeDocumentChange(null);
     verifyZeroInteractions(submitter);
-    verifyZeroInteractions(utils);
   }
 
   @Test
   public void clear_and_dispose() {
-    Module m1 = mock(Module.class);
-    VirtualFile file = mock(VirtualFile.class);
-    Document doc = mock(Document.class);
-    DocumentEvent event = mock(DocumentEvent.class);
+    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
-    when(file.isValid()).thenReturn(true);
-    when(event.getDocument()).thenReturn(doc);
-    when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
+    underTest.documentChanged(createEvent(file));
+    underTest.onProjectClosed();
 
-    underTest.documentChanged(event);
-    underTest.projectClosed();
     assertThat(underTest.getEvents()).isEmpty();
+  }
+
+  private DocumentEvent createEvent(VirtualFile file) {
+    DocumentEvent mock = mock(DocumentEvent.class);
+    when(mock.getDocument()).thenReturn(FileDocumentManager.getInstance().getDocument(file));
+    return mock;
   }
 }

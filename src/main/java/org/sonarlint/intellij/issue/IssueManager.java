@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
@@ -46,36 +45,33 @@ import org.sonarlint.intellij.issue.tracking.Tracker;
 import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 /**
  * Stores issues associated to a {@link PsiElement}, {@link RangeMarker} or  {@link PsiFile}.
  * Issues can then be displayed as annotations at any time.
  */
 @ThreadSafe
-public class IssueManager extends AbstractProjectComponent {
+public class IssueManager {
   private static final Logger LOGGER = Logger.getInstance(IssueManager.class);
   private final MessageBus messageBus;
-  private final IssuePersistence store;
-  private final SonarLintAppUtils appUtils;
-  private final LiveIssueCache cache;
+  private final Project myProject;
 
   private final Lock matchingInProgress = new ReentrantLock();
 
-  public IssueManager(SonarLintAppUtils appUtils, Project project, LiveIssueCache cache, IssuePersistence store) {
-    super(project);
-    this.appUtils = appUtils;
-    this.cache = cache;
+  public IssueManager(Project project) {
     this.messageBus = project.getMessageBus();
-    this.store = store;
+    myProject = project;
   }
 
   public void clear() {
-    cache.clear();
+    getCache().clear();
     messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
   }
 
   public void clear(Collection<VirtualFile> files) {
     Map<VirtualFile, Collection<LiveIssue>> mapToNotify = new HashMap<>();
+    LiveIssueCache cache = getCache();
     for (VirtualFile f : files) {
       cache.clear(f);
       mapToNotify.put(f, Collections.emptyList());
@@ -89,25 +85,26 @@ public class IssueManager extends AbstractProjectComponent {
    */
   @CheckForNull
   public Collection<LiveIssue> getForFileOrNull(VirtualFile file) {
-    return cache.getLive(file);
+    return getCache().getLive(file);
   }
 
   public Collection<LiveIssue> getForFile(VirtualFile file) {
-    Collection<LiveIssue> issues = cache.getLive(file);
+    Collection<LiveIssue> issues = getCache().getLive(file);
     return issues != null ? issues : Collections.emptyList();
   }
 
   private Collection<Trackable> getPreviousIssues(VirtualFile file) {
-    Collection<LiveIssue> liveIssues = cache.getLive(file);
+    Collection<LiveIssue> liveIssues = getCache().getLive(file);
     if (liveIssues != null) {
       return liveIssues.stream().filter(LiveIssue::isValid).collect(Collectors.toList());
     }
 
-    String storeKey = appUtils.getRelativePathForAnalysis(myProject, file);
+    String storeKey = SonarLintAppUtils.getRelativePathForAnalysis(myProject, file);
     if (storeKey == null) {
       return Collections.emptyList();
     }
     try {
+      IssuePersistence store = SonarLintUtils.getService(myProject, IssuePersistence.class);
       Collection<LocalIssueTrackable> storeIssues = store.read(storeKey);
       return storeIssues != null ? Collections.unmodifiableCollection(storeIssues) : Collections.emptyList();
     } catch (IOException e) {
@@ -117,13 +114,14 @@ public class IssueManager extends AbstractProjectComponent {
   }
 
   private boolean wasAnalyzed(VirtualFile file) {
-    if (cache.contains(file)) {
+    if (getCache().contains(file)) {
       return true;
     }
-    String storeKey = appUtils.getRelativePathForAnalysis(myProject, file);
+    String storeKey = SonarLintAppUtils.getRelativePathForAnalysis(myProject, file);
     if (storeKey == null) {
       return false;
     }
+    IssuePersistence store = SonarLintUtils.getService(myProject, IssuePersistence.class);
     return store.contains(storeKey);
   }
 
@@ -140,7 +138,7 @@ public class IssueManager extends AbstractProjectComponent {
     // this will also delete all existing issues in the file
     if (firstAnalysis) {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
-      cache.save(file, rawIssues);
+      getCache().save(file, rawIssues);
     } else {
       matchWithPreviousIssues(file, rawIssues);
     }
@@ -162,7 +160,7 @@ public class IssueManager extends AbstractProjectComponent {
 
     updateTrackedIssues(file, baseInput, rawInput, true);
     matchingInProgress.unlock();
-    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).fileChanged(file, cache.getLive(file));
+    messageBus.syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).fileChanged(file, getCache().getLive(file));
   }
 
   private <T extends Trackable> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LiveIssue> rawInput, boolean isServerIssueMatching) {
@@ -184,7 +182,7 @@ public class IssueManager extends AbstractProjectComponent {
       }
       trackedIssues.add(newIssue);
     }
-    cache.save(file, trackedIssues);
+    getCache().save(file, trackedIssues);
   }
 
   /**
@@ -210,5 +208,9 @@ public class IssueManager extends AbstractProjectComponent {
     issue.setServerIssueKey(null);
     issue.setResolved(false);
     issue.setAssignee("");
+  }
+
+  private LiveIssueCache getCache() {
+    return SonarLintUtils.getService(myProject, LiveIssueCache.class);
   }
 }

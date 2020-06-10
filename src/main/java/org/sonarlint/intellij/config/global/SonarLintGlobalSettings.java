@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.components.ExportableApplicationComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
@@ -50,7 +48,7 @@ import org.sonarlint.intellij.util.SonarLintBundle;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 @State(name = "SonarLintGlobalSettings", storages = {@Storage("sonarlint.xml")})
-public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
+public final class SonarLintGlobalSettings implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
 
   private boolean autoTrigger = true;
   private List<SonarQubeServer> servers = new LinkedList<>();
@@ -63,10 +61,6 @@ public final class SonarLintGlobalSettings extends ApplicationComponent.Adapter 
   private Collection<Rule> rules = new HashSet<>();
   @Transient
   private Map<String, Rule> rulesByKey = new HashMap<>();
-
-  public static SonarLintGlobalSettings getInstance() {
-    return ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
-  }
 
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
     rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, true)).getParams().put(paramName, paramValue);

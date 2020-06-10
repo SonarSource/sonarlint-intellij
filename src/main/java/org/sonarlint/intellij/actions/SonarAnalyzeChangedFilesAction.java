@@ -62,7 +62,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
       return;
     }
 
-    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     ChangeListManager changeListManager = ChangeListManager.getInstance(project);
 
     List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();

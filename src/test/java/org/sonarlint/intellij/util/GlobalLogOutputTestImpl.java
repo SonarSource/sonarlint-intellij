@@ -17,18 +17,41 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.issue;
+package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.util.messages.Topic;
-import org.sonarlint.intellij.messages.AnalysisResultsListener;
+import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-public class AnalysisResultIssues extends IssueStore {
-  public AnalysisResultIssues(Project project) {
-    super(project);
+public class GlobalLogOutputTestImpl implements GlobalLogOutput {
+
+  private String lastMsg = "";
+
+  @Override
+  public void removeConsole(SonarLintConsole console) {
+
   }
 
-  @Override protected Topic<AnalysisResultsListener> getTopic() {
-    return AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC;
+  @Override
+  public void log(String msg, LogOutput.Level level) {
+
+  }
+
+  @Override
+  public void logError(String msg, Throwable t) {
+
+  }
+
+  @Override
+  public void addConsole(SonarLintConsole console) {
+
+  }
+
+  @Override
+  public void dispose() {
+
+  }
+
+  public String getLastMsg() {
+    return lastMsg;
   }
 }

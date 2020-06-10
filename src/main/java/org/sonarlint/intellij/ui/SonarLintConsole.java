@@ -19,79 +19,29 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintConsole extends AbstractProjectComponent {
-
-  private final ConsoleView consoleView;
-  private final SonarLintProjectSettings settings;
-
-  public SonarLintConsole(Project project) {
-    super(project);
-    consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-    settings = myProject.getComponent(SonarLintProjectSettings.class);
+public interface SonarLintConsole {
+  static SonarLintConsole get(@NotNull Project p) {
+    return SonarLintUtils.getService(p, SonarLintConsole.class);
   }
 
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
-  SonarLintConsole(Project project, ConsoleView consoleView, SonarLintProjectSettings settings) {
-    super(project);
-    this.consoleView = consoleView;
-    this.settings = settings;
-  }
+  void debug(String msg);
 
-  @Override
-  public void projectClosed() {
-    // if we do it when Project is disposed, it's too late
-    Disposer.dispose(consoleView);
-  }
+  boolean debugEnabled();
 
-  public static synchronized SonarLintConsole get(@NotNull Project p) {
-    return p.getComponent(SonarLintConsole.class);
-  }
+  void info(String msg);
 
-  public void debug(String msg) {
-    if (settings.isVerboseEnabled()) {
-      getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
-    }
-  }
+  void error(String msg);
 
-  public boolean debugEnabled() {
-    return settings.isVerboseEnabled();
-  }
+  void error(String msg, Throwable t);
 
-  public void info(String msg) {
-    getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
-  }
+  void clear();
 
-  public void error(String msg) {
-    getConsoleView().print(msg + "\n", ConsoleViewContentType.ERROR_OUTPUT);
-  }
+  ConsoleView getConsoleView();
 
-  public void error(String msg, Throwable t) {
-    error(msg);
-    StringWriter errors = new StringWriter();
-    t.printStackTrace(new PrintWriter(errors));
-    error(errors.toString());
-  }
-
-  public void clear() {
-    getConsoleView().clear();
-  }
-
-  public ConsoleView getConsoleView() {
-    return this.consoleView;
-  }
+  void dispose();
 }

@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
@@ -37,12 +36,14 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
-public class IssuePersistence extends AbstractProjectComponent {
+public class IssuePersistence {
   private final Path storeBasePath;
   private final IndexedObjectStore<String, Sonarlint.Issues> store;
+  private final Project myProject;
 
   protected IssuePersistence(Project project) {
-    super(project);
+    myProject = project;
+
     storeBasePath = getBasePath();
     FileUtils.mkdirs(storeBasePath);
     StoreIndex<String> index = new StringStoreIndex(storeBasePath);

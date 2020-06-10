@@ -52,7 +52,5 @@ public class SonarLintProjectSettingsTest {
 
     settings.setAdditionalProperties(Collections.singletonMap("key", "value"));
     assertThat(settings.getAdditionalProperties()).containsExactly(MapEntry.entry("key", "value"));
-
-    assertThat(settings.getComponentName()).isEqualTo("SonarLintProjectSettings");
   }
 }

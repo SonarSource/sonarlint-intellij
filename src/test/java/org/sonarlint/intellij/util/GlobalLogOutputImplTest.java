@@ -28,12 +28,12 @@ import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class GlobalLogOutputTest extends AbstractSonarLintMockedTests {
-  private GlobalLogOutput output;
+public class GlobalLogOutputImplTest extends AbstractSonarLintMockedTests {
+  private GlobalLogOutputImpl output;
 
   @Before
   public void prepare() {
-    output = new GlobalLogOutput();
+    output = new GlobalLogOutputImpl();
     super.register(app, GlobalLogOutput.class, output);
   }
 

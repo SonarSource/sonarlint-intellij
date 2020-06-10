@@ -43,16 +43,10 @@ public class TelemetryManagerProvider {
 
   private static final String OLD_STORAGE_FILENAME = "sonarlint_usage";
 
-  private final SonarApplication application;
-  private final ProjectManager projectManager;
-
-  public TelemetryManagerProvider(SonarApplication application, ProjectManager projectManager) {
-    this.application = application;
-    this.projectManager = projectManager;
-  }
 
   public TelemetryManager get() {
     TelemetryClientConfig clientConfig = getTelemetryClientConfig();
+    SonarApplication application = SonarLintUtils.getService(SonarApplication.class);
     TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, application.getVersion(), SonarLintUtils.getIdeVersionForTelemetry());
     return new TelemetryManager(getStorageFilePath(), client, this::isAnyProjectConnected, this::isAnyProjectConnectedToSonarCloud);
   }
@@ -80,15 +74,17 @@ public class TelemetryManagerProvider {
   }
 
   private boolean isAnyProjectConnected() {
+    ProjectManager projectManager = ProjectManager.getInstance();
     Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.get(p, SonarLintProjectSettings.class).isBindingEnabled());
+    return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.getService(p, SonarLintProjectSettings.class).isBindingEnabled());
   }
 
   private boolean isAnyProjectConnectedToSonarCloud() {
+    ProjectManager projectManager = ProjectManager.getInstance();
     Project[] openProjects = projectManager.getOpenProjects();
     return Arrays.stream(openProjects).anyMatch(p -> {
       try {
-        ProjectBindingManager bindingManager = SonarLintUtils.get(p, ProjectBindingManager.class);
+        ProjectBindingManager bindingManager = SonarLintUtils.getService(p, ProjectBindingManager.class);
         return bindingManager.getSonarQubeServer().isSonarCloud();
       } catch (InvalidBindingException e) {
         return false;

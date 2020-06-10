@@ -17,27 +17,57 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis;
+package org.sonarlint.intellij.ui;
 
-import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.project.Project;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import com.intellij.execution.ui.ConsoleView;
 
-/**
- * A modal task (blocking) initiated explicitly by the user.
- */
-class SonarLintUserTask extends SonarLintTask {
+public class SonarLintConsoleTestImpl implements SonarLintConsole {
 
-  SonarLintUserTask(Project project, SonarLintJob job, boolean modal) {
-    super(project, job, modal, false);
+  private String lastMessage = "";
+
+  public String getLastMessage() {
+    return lastMessage;
   }
 
-  @Override public void run(@NotNull ProgressIndicator indicator) {
-    try {
-      super.run(indicator);
-    } finally {
-      SonarLintUtils.getService(myProject, SonarLintStatus.class).stopRun();
-    }
+  @Override
+  public void debug(String msg) {
+    lastMessage = msg;
   }
+
+  @Override
+  public boolean debugEnabled() {
+    return true;
+  }
+
+  @Override
+  public void info(String msg) {
+    lastMessage = msg;
+  }
+
+  @Override
+  public void error(String msg) {
+    lastMessage = msg;
+  }
+
+  @Override
+  public void error(String msg, Throwable t) {
+    lastMessage = msg;
+  }
+
+  @Override
+  public void clear() {
+    lastMessage = "";
+  }
+
+  @Override
+  public ConsoleView getConsoleView() {
+    return null;
+  }
+
+  @Override
+  public void dispose() {
+
+  }
+
+
 }

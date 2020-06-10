@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -58,7 +57,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 import org.sonarsource.sonarlint.core.client.api.exceptions.DownloadException;
 
-public class ServerIssueUpdater extends AbstractProjectComponent {
+public class ServerIssueUpdater {
 
   private static final Logger LOGGER = Logger.getInstance(ServerIssueUpdater.class);
 
@@ -67,32 +66,24 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   private static final int FETCH_ALL_ISSUES_THRESHOLD = 10;
   private static final int CONNECTION_TIMEOUT = 5_000;
   private static final int READ_TIMEOUT = 2 * 60_000;
+  private final Project myProject;
 
   private ExecutorService executorService;
 
-  private final IssueManager issueManager;
-  private final SonarLintProjectSettings projectSettings;
-  private final ProjectBindingManager projectBindingManager;
-  private final SonarLintConsole console;
-  private final SonarLintAppUtils appUtils;
 
-  ServerIssueUpdater(Project project, IssueManager issueManager, SonarLintProjectSettings projectSettings,
-    ProjectBindingManager projectBindingManager, SonarLintConsole console, SonarLintAppUtils appUtils) {
-    super(project);
-    this.issueManager = issueManager;
-    this.projectSettings = projectSettings;
-    this.projectBindingManager = projectBindingManager;
-    this.console = console;
-    this.appUtils = appUtils;
+  public ServerIssueUpdater(Project project) {
+    myProject = project;
   }
 
   public void fetchAndMatchServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule, ProgressIndicator indicator, boolean waitForCompletion) {
+    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
     if (!projectSettings.isBindingEnabled()) {
       // not in connected mode
       return;
     }
 
     try {
+      ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
       SonarQubeServer server = projectBindingManager.getSonarQubeServer();
       ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
       String projectKey = projectSettings.getProjectKey();
@@ -109,6 +100,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       if (waitForCompletion) {
         msg += " (waiting for results)";
       }
+      SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
       console.debug(msg);
       indicator.setText(msg);
 
@@ -171,7 +163,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
   }
 
   private ProjectBinding getProjectBinding(Module module) {
-    ModuleBindingManager moduleBindingManager = SonarLintUtils.get(module, ModuleBindingManager.class);
+    ModuleBindingManager moduleBindingManager = SonarLintUtils.getService(module, ModuleBindingManager.class);
     return moduleBindingManager.getBinding();
   }
 
@@ -193,7 +185,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
       Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
 
       for (VirtualFile file : files) {
-        String relativePath = appUtils.getPathRelativeToProjectBaseDir(project, file);
+        String relativePath = SonarLintAppUtils.getPathRelativeToProjectBaseDir(project, file);
         if (relativePath != null) {
           relativePathPerFile.put(file, relativePath);
         }
@@ -211,8 +203,8 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     }
   }
 
-  @Override
-  public void initComponent() {
+
+  public void init() {
     // Equivalent to Executors.newFixedThreadPool(THREADS_NUM), but instead of the default unlimited LinkedBlockingQueue,
     // we use ArrayBlockingQueue with a cap. This means that if QUEUE_LIMIT tasks are already queued (and THREADS_NUM being executed),
     // new tasks will be rejected with RejectedExecutionException.
@@ -221,8 +213,8 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
     this.executorService = new ThreadPoolExecutor(THREADS_NUM, THREADS_NUM, 0L, TimeUnit.MILLISECONDS, queue);
   }
 
-  @Override
-  public void disposeComponent() {
+
+  public void dispose() {
     List<Runnable> rejected = executorService.shutdownNow();
     if (!rejected.isEmpty()) {
       LOGGER.debug("rejected " + rejected.size() + " pending tasks");
@@ -254,6 +246,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
         LOGGER.debug("fetchServerIssues projectKey=" + projectKey);
         engine.downloadServerIssues(serverConfiguration, projectKey);
       } catch (DownloadException e) {
+        SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
       }
     }
@@ -265,10 +258,12 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
           .collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
+          IssueManager issueManager = SonarLintUtils.getService(myProject, IssueManager.class);
           issueManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);
         }
       } catch (Throwable t) {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible
+        SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.error("error while fetching and matching server issues", t);
       }
     }
@@ -279,6 +274,7 @@ public class ServerIssueUpdater extends AbstractProjectComponent {
         LOGGER.debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
         return engine.downloadServerIssues(serverConfiguration, projectBinding, relativePath);
       } catch (DownloadException e) {
+        SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
         return engine.getServerIssues(projectBinding, relativePath);
       }

@@ -27,28 +27,21 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static com.intellij.openapi.actionSystem.ActionPlaces.EDITOR_POPUP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
-  private VirtualFile file1 = mock(VirtualFile.class);
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
-  private ExcludeFileAction action = new ExcludeFileAction();
-  private AnActionEvent e = mock(AnActionEvent.class);
-  private Presentation presentation = new Presentation();
+  private final ExcludeFileAction action = new ExcludeFileAction();
+  private final AnActionEvent e = mock(AnActionEvent.class);
+  private final Presentation presentation = new Presentation();
 
 
 
   @Before
   public void setup() {
-    replaceProjectComponent(SonarLintSubmitter.class, submitter);
     when(e.getProject()).thenReturn(getProject());
     when(e.getPresentation()).thenReturn(presentation);
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {myFixture.copyFileToProject("foo.php", "foo.php")});
@@ -60,7 +53,6 @@ public class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
     action.actionPerformed(e);
 
     assertThat(getProjectSettings().getFileExclusions()).containsOnly("FILE:foo.php");
-    verify(submitter).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
   }
 
   @Test
@@ -70,7 +62,6 @@ public class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
     action.actionPerformed(e);
 
     assertThat(getProjectSettings().getFileExclusions()).containsOnly("FILE:foo.php");
-    verifyZeroInteractions(submitter);
   }
 
   @Test
@@ -79,7 +70,6 @@ public class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
 
     action.actionPerformed(e);
     assertThat(getProjectSettings().getFileExclusions()).isEmpty();
-    verifyZeroInteractions(submitter);
   }
 
   @Test

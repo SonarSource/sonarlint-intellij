@@ -20,8 +20,7 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.application.ApplicationInfo;
-import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ComponentManager;
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
@@ -29,6 +28,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -59,6 +59,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
@@ -80,10 +81,31 @@ public class SonarLintUtils {
     // Utility class
   }
 
-  public static <T> T get(ComponentManager container, Class<T> clazz) {
-    T t = container.getComponent(clazz);
+
+  public static <T> T getService(Class<T> clazz) {
+    T t = ServiceManager.getService(clazz);
     if (t == null) {
-      LOG.error("Could not find class in container: " + clazz.getName());
+      LOG.error("Could not find service: " + clazz.getName());
+      throw new IllegalArgumentException("Class not found: " + clazz.getName());
+    }
+
+    return t;
+  }
+
+  public static <T> T getService(@NotNull Project project, Class<T> clazz) {
+    T t = ServiceManager.getService(project, clazz);
+    if (t == null) {
+      LOG.error("Could not find service: " + clazz.getName());
+      throw new IllegalArgumentException("Class not found: " + clazz.getName());
+    }
+
+    return t;
+  }
+
+  public static <T> T getService(@NotNull Module module, Class<T> clazz) {
+    T t = ModuleServiceManager.getService(module, clazz);
+    if (t == null) {
+      LOG.error("Could not find service: " + clazz.getName());
       throw new IllegalArgumentException("Class not found: " + clazz.getName());
     }
 
@@ -100,10 +122,6 @@ public class SonarLintUtils {
 
   public static boolean isBlank(@Nullable String str) {
     return str == null || str.trim().isEmpty();
-  }
-
-  public static <T> T get(Class<T> clazz) {
-    return get(ApplicationManager.getApplication(), clazz);
   }
 
   public static Image iconToImage(Icon icon) {
@@ -210,7 +228,7 @@ public class SonarLintUtils {
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server, int connectTimeout, int readTimeout) {
     CertificateManager certificateManager = CertificateManager.getInstance();
-    SonarApplication sonarlint = get(SonarApplication.class);
+    SonarApplication sonarlint = getService(SonarApplication.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
       .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
       .connectTimeoutMilliseconds(connectTimeout)

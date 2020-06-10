@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
@@ -32,15 +31,13 @@ import java.util.Map;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 
-public abstract class IssueStore extends AbstractProjectComponent {
+public class IssueStore {
   private final MessageBus messageBus;
-  private Map<VirtualFile, Collection<LiveIssue>> issues;
+  private Map<VirtualFile, Collection<LiveIssue>> issues = new HashMap<>();
   private String whatAnalyzed;
   private Instant lastAnalysis;
 
   protected IssueStore(Project project) {
-    super(project);
-    issues = new HashMap<>();
     messageBus = project.getMessageBus();
   }
 
@@ -75,5 +72,7 @@ public abstract class IssueStore extends AbstractProjectComponent {
     return issues;
   }
 
-  protected abstract Topic<AnalysisResultsListener> getTopic();
+  protected Topic<AnalysisResultsListener> getTopic() {
+    return AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC;
+  }
 }

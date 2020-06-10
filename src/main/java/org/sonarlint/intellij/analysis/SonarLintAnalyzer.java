@@ -22,6 +22,7 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
 import java.nio.charset.Charset;
@@ -46,21 +47,10 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
 public class SonarLintAnalyzer {
 
-  private final ProjectBindingManager projectBindingManager;
-  private final EncodingProjectManager encodingProjectManager;
-  private final SonarLintConsole console;
-  private final FileDocumentManager fileDocumentManager;
-  private final SonarLintTelemetry telemetry;
-  private final SonarLintAppUtils appUtils;
+  private final Project myProject;
 
-  public SonarLintAnalyzer(ProjectBindingManager projectBindingManager, EncodingProjectManager encodingProjectManager,
-                           SonarLintConsole console, FileDocumentManager fileDocumentManager, SonarLintTelemetry telemetry, SonarLintAppUtils appUtils) {
-    this.projectBindingManager = projectBindingManager;
-    this.encodingProjectManager = encodingProjectManager;
-    this.console = console;
-    this.fileDocumentManager = fileDocumentManager;
-    this.telemetry = telemetry;
-    this.appUtils = appUtils;
+  public SonarLintAnalyzer(Project project) {
+    myProject = project;
   }
 
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ProgressMonitor progressMonitor) {
@@ -68,6 +58,7 @@ public class SonarLintAnalyzer {
     long start = System.currentTimeMillis();
     Map<String, String> pluginProps = new HashMap<>();
     List<AnalysisConfigurator> analysisConfigurators = AnalysisConfigurator.EP_NAME.getExtensionList();
+    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (analysisConfigurators.isEmpty()) {
       console.info("No analysis configurators found");
     }
@@ -77,12 +68,13 @@ public class SonarLintAnalyzer {
     }
 
     // configure files
-    VirtualFileTestPredicate testPredicate = SonarLintUtils.get(module, VirtualFileTestPredicate.class);
+    VirtualFileTestPredicate testPredicate = SonarLintUtils.getService(module, VirtualFileTestPredicate.class);
     List<ClientInputFile> inputFiles = getInputFiles(module, testPredicate, filesToAnalyze);
 
     // Analyze
 
     try {
+      ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
       SonarLintFacade facade = projectBindingManager.getFacade(true);
 
       String what;
@@ -95,6 +87,7 @@ public class SonarLintAnalyzer {
       console.info("Analysing " + what + "...");
       AnalysisResults result = facade.startAnalysis(inputFiles, listener, pluginProps, progressMonitor);
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
+      SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
         telemetry.analysisDoneOnSingleFile(result.languagePerFile().values().iterator().next(), (int) (System.currentTimeMillis() - start));
       } else {
@@ -119,8 +112,9 @@ public class SonarLintAnalyzer {
   private ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, VirtualFileTestPredicate testPredicate) {
     boolean test = testPredicate.test(virtualFile);
     Charset charset = getEncoding(virtualFile);
-    String relativePath = appUtils.getRelativePathForAnalysis(module, virtualFile);
+    String relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
     if (relativePath != null) {
+      FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
       if (fileDocumentManager.isFileModified(virtualFile)) {
         return new DefaultClientInputFile(virtualFile, relativePath, test, charset, fileDocumentManager.getDocument(virtualFile));
       } else {
@@ -131,6 +125,7 @@ public class SonarLintAnalyzer {
   }
 
   private Charset getEncoding(VirtualFile f) {
+    EncodingProjectManager encodingProjectManager = EncodingProjectManager.getInstance(myProject);
     Charset encoding = encodingProjectManager.getEncoding(f, true);
     if (encoding != null) {
       return encoding;

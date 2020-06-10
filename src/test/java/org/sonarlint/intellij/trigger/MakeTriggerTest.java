@@ -24,18 +24,17 @@ import com.intellij.openapi.project.Project;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class MakeTriggerTest extends AbstractSonarLintMockedTests {
+public class MakeTriggerTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
-  private Project project = mock(Project.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private CompileContext context = mock(CompileContext.class);
 
@@ -43,8 +42,11 @@ public class MakeTriggerTest extends AbstractSonarLintMockedTests {
 
   @Before
   public void prepare() {
-    when(context.getProject()).thenReturn(project);
-    trigger = new MakeTrigger(project, submitter, console);
+    replaceProjectService(SonarLintSubmitter.class, submitter);
+    replaceProjectService(SonarLintConsole.class, console);
+    when(context.getProject()).thenReturn(getProject());
+    trigger = new MakeTrigger();
+    trigger.runActivity(getProject());
   }
 
   @Test
@@ -55,8 +57,7 @@ public class MakeTriggerTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void should_trigger_automake() {
-    when(context.getProject()).thenReturn(mock(Project.class));
-    trigger.buildFinished(project, UUID.randomUUID(), true);
+    trigger.buildFinished(getProject(), UUID.randomUUID(), true);
     verify(submitter).submitOpenFilesAuto(TriggerType.COMPILATION);
   }
 
@@ -64,20 +65,6 @@ public class MakeTriggerTest extends AbstractSonarLintMockedTests {
   public void should_do_nothing_on_generate() {
     trigger.fileGenerated("output", "relative");
     verifyZeroInteractions(submitter);
-  }
-
-  @Test
-  public void handle_null_project() {
-    // this doesn't comply with the interface but it's null in DummyCompileContext
-    when(context.getProject()).thenReturn(null);
-    trigger.compilationFinished(false, 0, 0, context);
-    trigger.buildFinished(null, UUID.randomUUID(), true);
-    verifyZeroInteractions(submitter);
-  }
-
-  @Test
-  public void component_name() {
-    assertThat(trigger.getComponentName()).isEqualTo("MakeTrigger");
   }
 
   @Test
@@ -92,13 +79,13 @@ public class MakeTriggerTest extends AbstractSonarLintMockedTests {
   @Test
   public void should_not_trigger_if_not_automake() {
     when(context.getProject()).thenReturn(mock(Project.class));
-    trigger.buildFinished(project, UUID.randomUUID(), false);
+    trigger.buildFinished(getProject(), UUID.randomUUID(), false);
     verifyZeroInteractions(submitter);
   }
 
   @Test
   public void other_events_should_be_noop() {
-    trigger.buildStarted(project, UUID.randomUUID(), true);
+    trigger.buildStarted(getProject(), UUID.randomUUID(), true);
     verifyZeroInteractions(submitter);
   }
 }

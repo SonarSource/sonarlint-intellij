@@ -47,7 +47,7 @@ public class DisableRuleAction extends AnAction {
     LiveIssue issue = e.getData(ISSUE_DATA_KEY);
     if (issue != null) {
       disableRule(issue.getRuleKey());
-      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+      SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
     }
   }
@@ -61,8 +61,8 @@ public class DisableRuleAction extends AnAction {
       return;
     }
 
-    SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
-    SonarLintGlobalSettings settings = SonarLintUtils.get(SonarLintGlobalSettings.class);
+    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
+    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
 
     LiveIssue issue = e.getData(ISSUE_DATA_KEY);
     boolean visible = !projectSettings.isBindingEnabled() && issue != null;
@@ -74,7 +74,7 @@ public class DisableRuleAction extends AnAction {
   }
 
   private static void disableRule(String ruleKey) {
-    SonarLintGlobalSettings settings = SonarLintUtils.get(SonarLintGlobalSettings.class);
+    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     settings.disableRule(ruleKey);
   }
 

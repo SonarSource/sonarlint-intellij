@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -26,44 +27,48 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.*;
 
 public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
 
-  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
   private EditorOpenTrigger editorTrigger;
+  private VirtualFile file;
+  private FileEditorManager editorManager;
 
   @Before
   public void start() {
-    editorTrigger = new EditorOpenTrigger(getProject(), submitter, globalSettings);
-    globalSettings.setAutoTrigger(true);
+    editorTrigger = new EditorOpenTrigger();
+    getGlobalSettings().setAutoTrigger(true);
+    replaceProjectService(SonarLintSubmitter.class, submitter);
+
+    file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "public class MyClass{}");
+    editorManager = mock(FileEditorManager.class);
+    when(editorManager.getProject()).thenReturn(getProject());
   }
 
   @Test
   public void should_trigger() {
-    VirtualFile f1 = mock(VirtualFile.class);
-    editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
-    verify(submitter).submitFiles(Collections.singleton(f1), TriggerType.EDITOR_OPEN, true);
+    editorTrigger.fileOpened(editorManager, file);
+
+    verify(submitter).submitFiles(Collections.singleton(file), TriggerType.EDITOR_OPEN, true);
   }
 
   @Test
   public void should_not_trigger_if_auto_disabled() {
-    globalSettings.setAutoTrigger(false);
-    VirtualFile f1 = mock(VirtualFile.class);
-    editorTrigger.fileOpened(mock(FileEditorManager.class), f1);
+    getGlobalSettings().setAutoTrigger(false);
+
+    editorTrigger.fileOpened(editorManager, file);
+
     verifyZeroInteractions(submitter);
   }
 
   @Test
   public void should_do_nothing_closed() {
-    VirtualFile f1 = mock(VirtualFile.class);
-    FileEditorManager mock = mock(FileEditorManager.class);
-    editorTrigger.fileClosed(mock, f1);
-    editorTrigger.selectionChanged(new FileEditorManagerEvent(mock, null, null, null, null));
+    editorTrigger.fileClosed(editorManager, file);
+    editorTrigger.selectionChanged(new FileEditorManagerEvent(editorManager, null, null, null, null));
+
+    verifyZeroInteractions(submitter);
   }
 }

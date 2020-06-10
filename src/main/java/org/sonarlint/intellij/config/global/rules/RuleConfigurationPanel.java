@@ -94,6 +94,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -120,7 +121,6 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private RulesParamsSeparator rulesParamsSeparator;
   private Map<String, RulesTreeNode.Rule> allRulesStateByKey;
   private boolean isDirty = false;
-  private SonarLintGlobalSettings settings;
 
   public RuleConfigurationPanel(StandaloneSonarLintEngine engine) {
     this.engine = engine;
@@ -138,6 +138,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private void recomputeDirtyState() {
+    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     Map<String, RulesTreeNode.Rule> persistedRules = loadRuleNodes(settings);
     for (RulesTreeNode.Rule persisted : persistedRules.values()) {
       final RulesTreeNode.Rule possiblyModified = allRulesStateByKey.get(persisted.getKey());
@@ -162,7 +163,6 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
-    this.settings = settings;
     allRulesStateByKey = loadRuleNodes(settings);
 
     filterModel.reset(false);

@@ -22,6 +22,7 @@ package org.sonarlint.intellij.editor;
 import com.intellij.openapi.editor.Editor;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
@@ -33,7 +34,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLinkHandlerTest extends AbstractSonarLintMockedTests {
+public class SonarLinkHandlerTest extends AbstractSonarLintLightTests {
   private static final String RULE_KEY = "setRuleKey";
   private SonarLinkHandler handler = new SonarLinkHandler();
   private Editor editor = mock(Editor.class);
@@ -41,10 +42,11 @@ public class SonarLinkHandlerTest extends AbstractSonarLintMockedTests {
 
   @Before
   public void prepare() throws InvalidBindingException {
-    ProjectBindingManager projectBindingManager = register(ProjectBindingManager.class);
+    ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
+    replaceProjectService(ProjectBindingManager.class, projectBindingManager);
 
     when(projectBindingManager.getFacade()).thenReturn(sonarlint);
-    when(editor.getProject()).thenReturn(project);
+    when(editor.getProject()).thenReturn(getProject());
   }
 
   @Test

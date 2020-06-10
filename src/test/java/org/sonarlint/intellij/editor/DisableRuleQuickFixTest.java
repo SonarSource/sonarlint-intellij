@@ -20,28 +20,31 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.lang.Language;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.psi.PsiFile;
-import java.util.Collections;
+import com.intellij.psi.PsiFileFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
+import org.sonarlint.intellij.util.SonarLintUtils;
+
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private DisableRuleQuickFix quickFix;
 
   @Before
   public void prepare() {
     // Reset rule activations
     getGlobalSettings().setRules(Collections.emptyList());
-    replaceProjectComponent(SonarLintSubmitter.class, submitter);
     quickFix = new DisableRuleQuickFix("rule");
   }
 
@@ -76,8 +79,16 @@ public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_exclude() {
-    quickFix.invoke(getProject(), mock(Editor.class), mock(PsiFile.class));
+    SonarLintConsole console = SonarLintUtils.getService(getProject(), SonarLintConsole.class);
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    globalSettings.setAutoTrigger(true);
+
+    PsiFile file = PsiFileFactory.getInstance(getProject())
+      .createFileFromText("MyClass.java", Language.findLanguageByID("JAVA"), "public class MyClass {}", true, false);
+    FileEditorManager.getInstance(getProject()).openFile(file.getVirtualFile(),false);
+    quickFix.invoke(getProject(), mock(Editor.class), file);
+
     assertThat(getGlobalSettings().isRuleExplicitlyDisabled("rule")).isTrue();
-    verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
+    assertThat(((SonarLintConsoleTestImpl) console).getLastMessage()).isEqualTo("[Binding update] 0 file(s) submitted");
   }
 }

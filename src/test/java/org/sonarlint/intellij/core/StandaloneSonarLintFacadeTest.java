@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
@@ -45,13 +44,12 @@ public class StandaloneSonarLintFacadeTest {
   private Project project = mock(Project.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
-  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
   private StandaloneSonarLintFacade facade;
 
   @Before
   public void setUp() {
     when(project.getBasePath()).thenReturn("");
-    facade = new StandaloneSonarLintFacade(globalSettings, settings, console, project, engine);
+    facade = new StandaloneSonarLintFacade(settings, console, project, engine);
   }
 
   @Test

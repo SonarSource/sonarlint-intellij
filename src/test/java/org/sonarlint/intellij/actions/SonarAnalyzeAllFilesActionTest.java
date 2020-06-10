@@ -48,7 +48,7 @@ public class SonarAnalyzeAllFilesActionTest extends AbstractSonarLintLightTests 
 
   @Before
   public void before() {
-    replaceProjectComponent(SonarLintSubmitter.class, submitter);
+    replaceProjectService(SonarLintSubmitter.class, submitter);
     status = SonarLintStatus.get(getProject());
     file = myFixture.copyFileToProject("foo/foo.php", "foo/foo.php");
   }

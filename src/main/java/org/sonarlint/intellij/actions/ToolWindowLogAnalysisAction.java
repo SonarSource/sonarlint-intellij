@@ -34,14 +34,14 @@ public class ToolWindowLogAnalysisAction extends ToggleAction implements DumbAwa
   @Override
   public boolean isSelected(AnActionEvent event) {
     Project p = event.getProject();
-    return p != null && SonarLintUtils.get(p, SonarLintProjectSettings.class).isAnalysisLogsEnabled();
+    return p != null && SonarLintUtils.getService(p, SonarLintProjectSettings.class).isAnalysisLogsEnabled();
   }
 
   @Override
   public void setSelected(AnActionEvent event, boolean flag) {
     Project p = event.getProject();
     if (p != null) {
-      SonarLintUtils.get(p, SonarLintProjectSettings.class).setAnalysisLogsEnabled(flag);
+      SonarLintUtils.getService(p, SonarLintProjectSettings.class).setAnalysisLogsEnabled(flag);
     }
   }
 }
