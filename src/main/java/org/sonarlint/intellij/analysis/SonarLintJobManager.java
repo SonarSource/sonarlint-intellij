@@ -21,7 +21,6 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -37,26 +36,16 @@ import javax.annotation.Nullable;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintJobManager extends AbstractProjectComponent {
+public class SonarLintJobManager {
   private final ExecutorService executor = Executors.newSingleThreadExecutor(new AnalysisThreadFactory());
   private final MessageBus messageBus;
-  private final ProgressManager progressManager;
-  private final SonarLintStatus status;
-  private final SonarLintConsole console;
-  private final SonarLintTaskFactory taskFactory;
+  private final Project myProject;
 
-  public SonarLintJobManager(Project project, SonarLintTaskFactory taskFactory, SonarLintStatus status, SonarLintConsole console) {
-    this(project, taskFactory, ProgressManager.getInstance(), status, console);
-  }
-
-  public SonarLintJobManager(Project project, SonarLintTaskFactory taskFactory, ProgressManager progressManager, SonarLintStatus status, SonarLintConsole console) {
-    super(project);
-    this.taskFactory = taskFactory;
+  public SonarLintJobManager(Project project) {
     this.messageBus = project.getMessageBus();
-    this.progressManager = progressManager;
-    this.status = status;
-    this.console = console;
+    myProject = project;
   }
 
   /**
@@ -69,7 +58,9 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    */
   public void submitBackground(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, @Nullable AnalysisCallback callback) {
     SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, false, callback);
+    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
+    SonarLintTaskFactory taskFactory = SonarLintUtils.getService(myProject, SonarLintTaskFactory.class);
     SonarLintTask task = taskFactory.createTask(newJob, true);
     runInEDT(task);
   }
@@ -83,6 +74,8 @@ public class SonarLintJobManager extends AbstractProjectComponent {
    */
   public void submitManual(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean modal,
     @Nullable AnalysisCallback callback) {
+    SonarLintStatus status = SonarLintUtils.getService(myProject, SonarLintStatus.class);
+    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (myProject.isDisposed() || !status.tryRun()) {
       console.info("Canceling analysis triggered by the user because another one is already running or because the project is disposed");
       return;
@@ -90,6 +83,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
 
     SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, true, callback);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
+    SonarLintTaskFactory taskFactory = SonarLintUtils.getService(myProject, SonarLintTaskFactory.class);
     SonarLintUserTask task = taskFactory.createUserTask(newJob, modal);
     runInEDT(task);
   }
@@ -114,6 +108,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
       return;
     }
     notifyStart(task.getJob());
+    ProgressManager progressManager = ProgressManager.getInstance();
     if (task.isConditionalModal() || task.isModal()) {
       progressManager.run(task);
     } else {
@@ -126,8 +121,7 @@ public class SonarLintJobManager extends AbstractProjectComponent {
     messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).started(job);
   }
 
-  @Override
-  public void projectClosed() {
+  public void dispose() {
     executor.shutdown();
   }
 }

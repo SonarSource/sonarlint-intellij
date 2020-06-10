@@ -64,8 +64,6 @@ public class AutoTriggerStatusPanel {
 
   private final Project project;
   private final ProjectBindingManager projectBindingManager;
-  private final SonarLintAppUtils utils;
-  private final SonarLintGlobalSettings globalSettings;
   private final LocalFileExclusions localFileExclusions;
 
   private JPanel panel;
@@ -74,9 +72,7 @@ public class AutoTriggerStatusPanel {
   public AutoTriggerStatusPanel(Project project, ProjectBindingManager projectBindingManager) {
     this.project = project;
     this.projectBindingManager = projectBindingManager;
-    this.utils = SonarLintUtils.get(SonarLintAppUtils.class);
-    this.globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-    this.localFileExclusions = SonarLintUtils.get(project, LocalFileExclusions.class);
+    this.localFileExclusions = new LocalFileExclusions(project);
     createPanel();
     switchCards();
     subscribeToEvents();
@@ -109,13 +105,14 @@ public class AutoTriggerStatusPanel {
   }
 
   private String getCard() {
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     if (!globalSettings.isAutoTrigger()) {
       return AUTO_TRIGGER_DISABLED;
     }
 
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
-      Module m = utils.findModuleForFile(selectedFile, project);
+      Module m = SonarLintAppUtils.findModuleForFile(selectedFile, project);
       LocalFileExclusions.Result result = localFileExclusions.canAnalyze(selectedFile, m);
       if (result.isExcluded()) {
         return FILE_DISABLED;
@@ -136,7 +133,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private boolean isExcludedInServer(Module m, VirtualFile f) {
-    VirtualFileTestPredicate testPredicate = SonarLintUtils.get(m, VirtualFileTestPredicate.class);
+    VirtualFileTestPredicate testPredicate = SonarLintUtils.getService(m, VirtualFileTestPredicate.class);
     try {
       Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().getExcluded(m, Collections.singleton(f), testPredicate);
       return !afterExclusion.isEmpty();

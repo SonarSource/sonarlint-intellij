@@ -27,7 +27,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -43,11 +42,10 @@ public class SonarLintCheckinHandlerFactoryTest {
 
   @Before
   public void setUp() {
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     when(panel.getVirtualFiles()).thenReturn(Collections.singletonList(file));
     when(panel.getProject()).thenReturn(project);
 
-    sonarLintCheckinHandlerFactory = new SonarLintCheckinHandlerFactory(settings);
+    sonarLintCheckinHandlerFactory = new SonarLintCheckinHandlerFactory();
   }
 
   @Test

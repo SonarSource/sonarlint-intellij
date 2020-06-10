@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.concurrency.JobScheduler;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -39,30 +38,22 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
-public class UpdateChecker extends AbstractProjectComponent {
+public class UpdateChecker {
 
-  private final ProjectBindingManager projectBindingManager;
-  private final SonarLintProjectSettings projectSettings;
-  private final SonarLintProjectNotifications notifications;
+  private final Project myProject;
   private ScheduledFuture<?> scheduledTask;
-  private final GlobalLogOutput log;
 
-  public UpdateChecker(Project project, ProjectBindingManager projectBindingManager, SonarLintProjectSettings projectSettings, SonarLintProjectNotifications notifications,
-    GlobalLogOutput globalLogOutput) {
-    super(project);
-    this.projectBindingManager = projectBindingManager;
-    this.projectSettings = projectSettings;
-    this.notifications = notifications;
-    this.log = globalLogOutput;
+  public UpdateChecker(Project project) {
+    myProject = project;
+
   }
 
-  @Override
-  public void initComponent() {
+  public void init() {
     scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::checkForUpdate, 10, 24L * 60L * 60L, TimeUnit.SECONDS);
   }
 
-  @Override
-  public void projectClosed() {
+
+  public void onProjectClosed() {
     scheduledTask.cancel(true);
   }
 
@@ -77,6 +68,8 @@ public class UpdateChecker extends AbstractProjectComponent {
   }
 
   void checkForUpdate(@NotNull ProgressIndicator progressIndicator) {
+    ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
+    GlobalLogOutput log = SonarLintUtils.getService(GlobalLogOutput.class);
     ConnectedSonarLintEngine engine;
     try {
       engine = projectBindingManager.getConnectedEngine();
@@ -91,11 +84,13 @@ public class UpdateChecker extends AbstractProjectComponent {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(projectBindingManager.getSonarQubeServer());
       log.log("Check for updates from server '" + projectBindingManager.getSonarQubeServer().getName() + "'...", LogOutput.Level.INFO);
       boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration, progressIndicator);
+      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
       log.log("Check for updates from server '" + projectBindingManager.getSonarQubeServer().getName() +
         "' for project '" + projectSettings.getProjectKey() + "'...", LogOutput.Level.INFO);
       checkForProjectUpdates(changelog, engine, serverConfiguration, progressIndicator);
       if (!changelog.isEmpty()) {
         changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
+        SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
         notifications.notifyServerHasUpdates(projectSettings.getServerId(), engine, projectBindingManager.getSonarQubeServer(), !hasGlobalUpdates);
       }
     } catch (Exception e) {
@@ -104,6 +99,7 @@ public class UpdateChecker extends AbstractProjectComponent {
   }
 
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, ProgressIndicator indicator) {
+    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
     StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConfiguration, projectSettings.getProjectKey(),
       new TaskProgressMonitor(indicator));
     if (projectUpdateCheckResult.needUpdate()) {

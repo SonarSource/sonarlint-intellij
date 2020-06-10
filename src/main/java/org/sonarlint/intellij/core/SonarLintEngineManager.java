@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.ApplicationComponent;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,21 +32,16 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
-public class SonarLintEngineManager implements ApplicationComponent {
-  private final SonarLintGlobalSettings settings;
-  private final SonarLintEngineFactory engineFactory;
-  private Map<String, ConnectedSonarLintEngine> engines;
+public class SonarLintEngineManager implements Disposable {
+  private Map<String, ConnectedSonarLintEngine> engines = new HashMap<>();
   private StandaloneSonarLintEngine standalone;
-  private Set<String> configuredStorageIds;
 
-  public SonarLintEngineManager(SonarLintGlobalSettings settings, SonarLintEngineFactory engineFactory) {
-    this.settings = settings;
-    this.engineFactory = engineFactory;
-  }
+
 
   private static void stopInThread(final ConnectedSonarLintEngine engine) {
     new Thread("stop-sonarlint-engine") {
@@ -82,20 +78,14 @@ public class SonarLintEngineManager implements ApplicationComponent {
     }
   }
 
-  @Override
-  public void initComponent() {
-    configuredStorageIds = new HashSet<>();
-    reloadServerNames();
-    engines = new HashMap<>();
-  }
+
 
   /**
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
   public synchronized void reloadServers() {
-    reloadServerNames();
     Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = engines.entrySet().iterator();
-
+    Set<String> configuredStorageIds = getServerNames();
     while (it.hasNext()) {
       Map.Entry<String, ConnectedSonarLintEngine> e = it.next();
       if (!configuredStorageIds.contains(e.getKey())) {
@@ -107,6 +97,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
 
   public synchronized ConnectedSonarLintEngine getConnectedEngine(String serverId) {
     if (!engines.containsKey(serverId)) {
+      SonarLintEngineFactory engineFactory = SonarLintUtils.getService(SonarLintEngineFactory.class);
       ConnectedSonarLintEngine engine = engineFactory.createEngine(serverId);
       engines.put(serverId, engine);
     }
@@ -116,6 +107,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
 
   public synchronized StandaloneSonarLintEngine getStandaloneEngine() {
     if (standalone == null) {
+      SonarLintEngineFactory engineFactory = SonarLintUtils.getService(SonarLintEngineFactory.class);
       standalone = engineFactory.createEngine();
     }
     return standalone;
@@ -126,6 +118,7 @@ public class SonarLintEngineManager implements ApplicationComponent {
     Preconditions.checkNotNull(serverId, "serverId");
     Preconditions.checkNotNull(projectKey, "projectKey");
 
+    Set<String> configuredStorageIds = getServerNames();
     if (!configuredStorageIds.contains(serverId)) {
       notifications.notifyServerIdInvalid();
       throw new InvalidBindingException("Invalid server name: " + serverId);
@@ -136,14 +129,15 @@ public class SonarLintEngineManager implements ApplicationComponent {
     return engine;
   }
 
-  private void reloadServerNames() {
-    configuredStorageIds = settings.getSonarQubeServers().stream()
+  private Set<String> getServerNames() {
+    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    return settings.getSonarQubeServers().stream()
       .map(SonarQubeServer::getName)
       .collect(Collectors.toSet());
   }
 
   @Override
-  public void disposeComponent() {
+  public void dispose() {
     for (ConnectedSonarLintEngine e : engines.values()) {
       e.stop(false);
     }
@@ -152,11 +146,5 @@ public class SonarLintEngineManager implements ApplicationComponent {
       standalone.stop();
       standalone = null;
     }
-  }
-
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return "SonarLintEngineManager";
   }
 }

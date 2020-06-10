@@ -57,7 +57,7 @@ public class SonarLintProjectAnalyzersPanel {
   }
 
   public void reload() {
-    ProjectBindingManager bindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
     try {
       Collection<LoadedAnalyzer> loadedAnalyzers = bindingManager.getFacade().getLoadedAnalyzers();
       tableModel.set(loadedAnalyzers);

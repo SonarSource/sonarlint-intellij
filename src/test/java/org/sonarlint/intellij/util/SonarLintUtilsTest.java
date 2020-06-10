@@ -56,7 +56,7 @@ public class SonarLintUtilsTest extends AbstractSonarLintLightTests {
   @Test(expected = Throwable.class)
   public void testFailGetComponent() {
     // in intellij 14, container.getComponent will throw an exception itself, so we can't assert the exact exception type and message
-    SonarLintUtils.get(getProject(), SonarLintUtilsTest.class);
+    SonarLintUtils.getService(getProject(), SonarLintUtilsTest.class);
   }
 
   @Test
@@ -102,13 +102,6 @@ public class SonarLintUtilsTest extends AbstractSonarLintLightTests {
     ServerConfiguration config = SonarLintUtils.getServerConfiguration(server);
     assertThat(config.getLogin()).isEqualTo(server.getLogin());
     assertThat(config.getPassword()).isEqualTo(server.getPassword());
-  }
-
-  @Test
-  public void throw_exception_if_component_not_available() {
-    exception.expect(AssertionError.class);
-    exception.expectMessage("Could not find class in container: ");
-    SonarLintUtils.get(Random.class);
   }
 
 }

@@ -53,14 +53,12 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 public class SonarLintProjectConfigurable implements Configurable, Configurable.NoMargin, Configurable.NoScroll {
 
   private final Project project;
-  private final SonarLintProjectSettings projectSettings;
   private final MessageBusConnection busConnection;
 
   private SonarLintProjectSettingsPanel panel;
 
   public SonarLintProjectConfigurable(Project project) {
     this.project = project;
-    this.projectSettings = project.getComponent(SonarLintProjectSettings.class);
     this.busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
     this.busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
@@ -89,12 +87,13 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   @Override
   public boolean isModified() {
-    return panel != null && panel.isModified(projectSettings);
+    return panel != null && panel.isModified(getProjectSettings());
   }
 
   @Override
   public void apply() {
     if (panel != null) {
+      SonarLintProjectSettings projectSettings = getProjectSettings();
       boolean exclusionsModified = panel.isExclusionsModified(projectSettings);
       panel.save(projectSettings);
       onSave(exclusionsModified);
@@ -110,9 +109,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   private void onSave(boolean exclusionsModified) {
     SonarLintProjectNotifications.get(project).reset();
     ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
-
+    SonarLintProjectSettings projectSettings = getProjectSettings();
     if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getServerId() != null) {
-      ProjectBindingManager bindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+      ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
 
       try {
         SonarQubeServer server = bindingManager.getSonarQubeServer();
@@ -128,7 +127,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     projectListener.changed(projectSettings);
 
     if (exclusionsModified) {
-      SonarLintUtils.get(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+      SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     }
   }
 
@@ -154,9 +153,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
     // get saved settings if needed
     if (currentServers == null) {
-      currentServers = SonarLintUtils.get(SonarLintGlobalSettings.class).getSonarQubeServers();
+      currentServers = SonarLintUtils.getService(SonarLintGlobalSettings.class).getSonarQubeServers();
     }
-    panel.load(currentServers, projectSettings);
+    panel.load(currentServers, getProjectSettings());
   }
 
   @Override
@@ -168,4 +167,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       panel = null;
     }
   }
+
+  private SonarLintProjectSettings getProjectSettings() {
+    return SonarLintUtils.getService(project, SonarLintProjectSettings.class);
+  }
+
 }

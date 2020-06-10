@@ -39,7 +39,7 @@ public class SonarLinkHandler extends TooltipLinkHandler {
       return null;
     }
 
-    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
     try {
       SonarLintFacade sonarlint = projectBindingManager.getFacade();
       String description = sonarlint.getDescription(refSuffix);

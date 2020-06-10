@@ -19,37 +19,37 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
-import static org.mockito.ArgumentMatchers.any;
+import java.io.IOException;
+import java.util.Collections;
+
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
-  private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);
-  private IssueManager issueManager = mock(IssueManager.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
   private SonarClearIssuesAction clearIssues = new SonarClearIssuesAction(null, null, null);
   private VirtualFile file;
+  private IssueManager issueManager;
 
   @Before
   public void prepare() {
-    replaceProjectComponent(DaemonCodeAnalyzer.class, codeAnalyzer);
-    replaceProjectComponent(IssueManager.class, issueManager);
     when(event.getProject()).thenReturn(getProject());
     file = myFixture.copyFileToProject("foo.php", "foo.php");
+    issueManager = SonarLintUtils.getService(getProject(), IssueManager.class);
+    issueManager.store(Collections.singletonMap(file, Collections.singletonList(mock(LiveIssue.class))));
   }
 
   @Test
@@ -58,8 +58,8 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
     clearIssues.actionPerformed(event);
 
-    verify(codeAnalyzer).restart(any());
-    verify(issueManager).clear();
+    // TODO test highlights are removed
+    assertThat(issueManager.getForFile(file)).isEmpty();
   }
 
   @Test
@@ -72,8 +72,7 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
     clearIssues.actionPerformed(event);
 
-    verifyZeroInteractions(codeAnalyzer);
-    verify(issueManager).clear();
+    assertThat(issueManager.getForFile(file)).isEmpty();
   }
 
   @Test
@@ -82,7 +81,6 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
     clearIssues.actionPerformed(event);
 
-    verifyZeroInteractions(codeAnalyzer);
-    verifyZeroInteractions(issueManager);
+    assertThat(issueManager.getForFile(file)).isNotEmpty();
   }
 }

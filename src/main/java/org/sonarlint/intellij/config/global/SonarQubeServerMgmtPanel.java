@@ -96,7 +96,6 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
 
   // Model
   private GlobalConfigurationListener serverChangeListener;
-  private SonarLintEngineManager serverManager;
   private final List<SonarQubeServer> servers = new ArrayList<>();
   private final Set<String> deletedServerIds = new HashSet<>();
   private ConnectedSonarLintEngine engine = null;
@@ -104,7 +103,6 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
 
   private void create() {
     Application app = ApplicationManager.getApplication();
-    serverManager = app.getComponent(SonarLintEngineManager.class);
     serverChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     serverList = new JBList<>();
     serverList.getEmptyText().setText(LABEL_NO_SERVERS);
@@ -216,7 +214,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
     for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
+      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
       if (projectSettings.getServerId() != null && deletedServerIds.contains(projectSettings.getServerId())) {
         projectSettings.setBindingEnabled(false);
         projectSettings.setServerId(null);
@@ -279,6 +277,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     }
 
     if (server != null) {
+      SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
       engine = serverManager.getConnectedEngine(server.getName());
       engineListener = newState -> ApplicationManager.getApplication().invokeLater(() -> {
         // re-fetch state, as some time might have passed until it was assigned to the EDT and things might have changed
@@ -341,7 +340,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     Map<String, List<Project>> projectsPerModule = new HashMap<>();
 
     for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
+      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
       String projectKey = projectSettings.getProjectKey();
       if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && projectKey != null) {
         List<Project> projects = projectsPerModule.computeIfAbsent(projectKey, k -> new ArrayList<>());
@@ -387,6 +386,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
         ((CollectionListModel<SonarQubeServer>) serverList.getModel()).add(created);
         serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
         serverChangeListener.changed(servers);
+        SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
         ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
         ProgressManager.getInstance().run(task.asBackground());
       }
@@ -432,7 +432,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
       List<String> openProjectNames = new LinkedList<>();
 
       for (Project p : openProjects) {
-        SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
+        SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
         if (server.getName().equals(projectSettings.getServerId())) {
           openProjectNames.add(p.getName());
         }

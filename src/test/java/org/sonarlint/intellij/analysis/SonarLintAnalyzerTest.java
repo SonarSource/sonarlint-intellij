@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
@@ -32,7 +31,6 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.container.model.DefaultAnalysisResult;
@@ -47,17 +45,14 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
-  private EncodingProjectManager encodingProjectManager = mock(EncodingProjectManager.class);
-  private SonarLintConsole console = mock(SonarLintConsole.class);
   private SonarLintFacade facade = mock(SonarLintFacade.class);
-  private FileDocumentManager fileDocumentManager = mock(FileDocumentManager.class);
-  private SonarLintTelemetryImpl telemetry = mock(SonarLintTelemetryImpl.class);
 
   private SonarLintAnalyzer analyzer;
 
   @Before
   public void prepare() throws InvalidBindingException {
-    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, telemetry, ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class));
+    replaceProjectService(ProjectBindingManager.class, projectBindingManager);
+    analyzer = new SonarLintAnalyzer(getProject());
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
     when(facade.startAnalysis(anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
   }
@@ -66,7 +61,9 @@ public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
   public void testAnalysis() {
     VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
     IssueListener listener = mock(IssueListener.class);
+
     analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ProgressMonitor.class));
+
     verify(facade).startAnalysis(anyList(), eq(listener), anyMap(), any(ProgressMonitor.class));
   }
 }

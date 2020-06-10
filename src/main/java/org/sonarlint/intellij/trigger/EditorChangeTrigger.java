@@ -36,45 +36,27 @@ import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 @ThreadSafe
-public class EditorChangeTrigger extends AbstractProjectComponent implements DocumentListener {
+public class EditorChangeTrigger implements DocumentListener {
   private static final int DEFAULT_TIMER_MS = 2000;
 
-  private final SonarLintGlobalSettings globalSettings;
-  private final SonarLintSubmitter submitter;
-  private final EditorFactory editorFactory;
-  private final SonarLintAppUtils utils;
-  private final FileDocumentManager docManager;
-
   // entries in this map mean that the file is "dirty"
-  private final Map<VirtualFile, Long> eventMap;
+  private final Map<VirtualFile, Long> eventMap = new ConcurrentHashMap<>();
   private final EventWatcher watcher;
-  private final int timerMs;
-
-  public EditorChangeTrigger(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
-    EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager) {
-    this(project, globalSettings, submitter, editorFactory, utils, docManager, DEFAULT_TIMER_MS);
-  }
+  private final int timerMs = DEFAULT_TIMER_MS;
+  private final Project myProject;
 
   /**
    * For unit testing (pico container won't be able to inject timerMs)
    */
-  public EditorChangeTrigger(Project project, SonarLintGlobalSettings globalSettings, SonarLintSubmitter submitter,
-    EditorFactory editorFactory, SonarLintAppUtils utils, FileDocumentManager docManager, int timerMs) {
-    super(project);
-    this.submitter = submitter;
-    this.editorFactory = editorFactory;
-    this.utils = utils;
-    this.docManager = docManager;
-    this.eventMap = new ConcurrentHashMap<>();
-    this.globalSettings = globalSettings;
-    this.watcher = new EventWatcher();
-    this.timerMs = timerMs;
+  public EditorChangeTrigger(Project project) {
+    myProject = project;
+    watcher = new EventWatcher();
   }
 
-  @Override
-  public void projectOpened() {
+  public void onProjectOpened() {
     myProject.getMessageBus()
       .connect(myProject)
       .subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
@@ -84,7 +66,7 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
         }
       });
     watcher.start();
-    editorFactory.getEventMulticaster().addDocumentListener(this);
+    EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this);
   }
 
   @Override
@@ -94,15 +76,15 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
 
   @Override
   public void documentChanged(DocumentEvent event) {
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     if (!globalSettings.isAutoTrigger()) {
       return;
     }
-
-    VirtualFile file = docManager.getFile(event.getDocument());
+    VirtualFile file = FileDocumentManager.getInstance().getFile(event.getDocument());
     if (file == null) {
       return;
     }
-    Project project = utils.guessProjectForFile(file);
+    Project project = SonarLintAppUtils.guessProjectForFile(file);
 
     if (project == null || !project.equals(myProject)) {
       return;
@@ -148,7 +130,9 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
     }
 
     private void triggerFile(VirtualFile file) {
-      if (utils.isOpenFile(myProject, file) && globalSettings.isAutoTrigger()) {
+      SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+      if (SonarLintAppUtils.isOpenFile(myProject, file) && globalSettings.isAutoTrigger()) {
+        SonarLintSubmitter submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
         submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
       }
     }
@@ -174,9 +158,8 @@ public class EditorChangeTrigger extends AbstractProjectComponent implements Doc
     }
   }
 
-  @Override
-  public void projectClosed() {
-    editorFactory.getEventMulticaster().removeDocumentListener(this);
+  public void onProjectClosed() {
+    EditorFactory.getInstance().getEventMulticaster().removeDocumentListener(this);
     eventMap.clear();
     watcher.stopWatcher();
   }

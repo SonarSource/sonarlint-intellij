@@ -20,69 +20,26 @@
 package org.sonarlint.intellij;
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManager;
-import com.intellij.notification.NotificationGroup;
-import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.stream.Stream;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.core.AnalysisRequirementNotifications;
-import org.sonarlint.intellij.core.SonarLintProjectNotifications;
-import org.sonarlint.intellij.core.SonarQubeEventNotifications;
-import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
-public class SonarApplication extends ApplicationComponent.Adapter {
+import java.nio.file.Path;
+
+public class SonarApplication {
   private IdeaPluginDescriptor plugin;
 
-  @Override
-  public void initComponent() {
-    plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
-    registerNotifications();
-    cleanOldWorkDir();
-  }
-
   public String getVersion() {
-    return plugin.getVersion();
-  }
-
-  private static void registerNotifications() {
-    NotificationGroup.balloonGroup(AnalysisRequirementNotifications.GROUP_ANALYSIS_PROBLEM);
-    NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_BINDING_PROBLEM);
-    NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_UPDATE_NOTIFICATION);
-    NotificationGroup.balloonGroup(SonarQubeEventNotifications.GROUP_SONARQUBE_EVENT);
-  }
-
-  @Override
-  public void disposeComponent() {
-    // nothing to do
-  }
-
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return getClass().getSimpleName();
-  }
-
-  private static void cleanOldWorkDir() {
-    Path oldWorkDir = Paths.get(PathManager.getConfigPath()).resolve("sonarlint").resolve("work");
-    if (!Files.isDirectory(oldWorkDir)) {
-      return;
-    }
-
-    try (Stream<Path> stream = Files.list(oldWorkDir)) {
-      stream.filter(f -> f.getFileName().toString().startsWith(".sonartmp_"))
-        .forEach(FileUtils::deleteRecursively);
-    } catch (IOException e) {
-      // ignore
-    }
+    return getPlugin().getVersion();
   }
 
   public Path getPluginPath() {
-    return plugin.getPath().toPath();
+    return getPlugin().getPath().toPath();
+  }
+
+  private IdeaPluginDescriptor getPlugin() {
+    if (plugin == null) {
+      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea"));
+    }
+    return plugin;
   }
 }

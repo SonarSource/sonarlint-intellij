@@ -21,6 +21,7 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
@@ -34,14 +35,14 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 public class AnalysisRequirementNotifications {
 
+  private static final NotificationGroup ANALYSIS_PROBLEM_GROUP = NotificationGroup.balloonGroup("SonarLint: Analysis Requirement");
+
   private AnalysisRequirementNotifications() {
     // NOP
   }
 
-  public static final String GROUP_ANALYSIS_PROBLEM = "SonarLint: Analysis Requirement";
-
   public static void notifyNodeCommandException(Project project) {
-    Notification notification = new Notification(GROUP_ANALYSIS_PROBLEM,
+    Notification notification = ANALYSIS_PROBLEM_GROUP.createNotification(
       "<b>SonarLint - Node.js Required</b>",
       "Node.js >= 8.x is required to perform JavaScript or TypeScript analysis. Check the <a href='#'>SonarLint Log</a> for details.",
       NotificationType.WARNING, new ShowSonarLintLogListener(project));

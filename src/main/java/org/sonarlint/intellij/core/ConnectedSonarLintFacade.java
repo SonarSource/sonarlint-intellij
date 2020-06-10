@@ -47,12 +47,10 @@ import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
   private final SonarLintConsole console;
-  private final SonarLintAppUtils appUtils;
 
-  ConnectedSonarLintFacade(SonarLintAppUtils appUtils, ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings,
+  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings,
     SonarLintConsole console, Project project) {
     super(project, projectSettings);
-    this.appUtils = appUtils;
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
@@ -76,14 +74,14 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
-    ModuleBindingManager bindingManager = SonarLintUtils.get(module, ModuleBindingManager.class);
+    ModuleBindingManager bindingManager = SonarLintUtils.getService(module, ModuleBindingManager.class);
     ProjectBinding binding = bindingManager.getBinding();
     if (binding == null) {
       // should never happen since the project should be bound!
       return Collections.emptyList();
     }
 
-    Function<VirtualFile, String> ideFilePathExtractor = s -> appUtils.getPathRelativeToProjectBaseDir(module.getProject(), s);
+    Function<VirtualFile, String> ideFilePathExtractor = s -> SonarLintAppUtils.getPathRelativeToProjectBaseDir(module.getProject(), s);
     return sonarlint.getExcludedFiles(binding, files, ideFilePathExtractor, testPredicate);
   }
 

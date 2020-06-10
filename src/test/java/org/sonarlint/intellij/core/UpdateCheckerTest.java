@@ -25,9 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
@@ -42,7 +40,6 @@ import static org.mockito.Mockito.when;
 
 public class UpdateCheckerTest extends AbstractSonarLintLightTests {
   private UpdateChecker updateChecker;
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private SonarQubeServer server;
   private SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
   private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
@@ -50,13 +47,16 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
 
   @Before
   public void before() throws InvalidBindingException {
-    settings.setProjectKey("key");
-    settings.setServerId("serverId");
+    replaceProjectService(ProjectBindingManager.class, bindingManager);
+    replaceProjectService(SonarLintProjectNotifications.class, notifications);
+
+    getProjectSettings().setProjectKey("key");
+    getProjectSettings().setServerId("serverId");
     server = createServer();
     when(bindingManager.getSonarQubeServer()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 
-    updateChecker = new UpdateChecker(getProject(), bindingManager, settings, notifications, new GlobalLogOutput());
+    updateChecker = new UpdateChecker(getProject());
   }
 
   @Test

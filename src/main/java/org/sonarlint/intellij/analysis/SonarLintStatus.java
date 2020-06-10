@@ -19,25 +19,24 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 @ThreadSafe
-public class SonarLintStatus extends AbstractProjectComponent {
+public class SonarLintStatus {
   private final StatusListener statusListener;
   private Status status = Status.STOPPED;
 
   public SonarLintStatus(Project project) {
-    super(project);
     this.statusListener = project.getMessageBus().syncPublisher(StatusListener.SONARLINT_STATUS_TOPIC);
   }
 
   public enum Status {RUNNING, STOPPED, CANCELLING}
 
   public static SonarLintStatus get(Project p) {
-    return p.getComponent(SonarLintStatus.class);
+    return SonarLintUtils.getService(p, SonarLintStatus.class);
   }
 
   /**

@@ -22,6 +22,7 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -29,15 +30,15 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-public class ToolWindowVerboseModeActionTest extends AbstractSonarLintMockedTests {
+public class ToolWindowVerboseModeActionTest extends AbstractSonarLintLightTests {
   private ToolWindowVerboseModeAction action = new ToolWindowVerboseModeAction();
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private AnActionEvent event;
 
   @Before
   public void prepare() {
-    super.register(SonarLintProjectSettings.class, settings);
-    event = SonarLintTestUtils.createAnActionEvent(project);
+    replaceProjectService(SonarLintProjectSettings.class, settings);
+    event = SonarLintTestUtils.createAnActionEvent(getProject());
   }
 
   @Test

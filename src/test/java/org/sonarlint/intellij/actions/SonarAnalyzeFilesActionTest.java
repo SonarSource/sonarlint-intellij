@@ -49,7 +49,7 @@ public class SonarAnalyzeFilesActionTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() {
-    replaceProjectComponent(SonarLintSubmitter.class, submitter);
+    replaceProjectService(SonarLintSubmitter.class, submitter);
     when(event.getProject()).thenReturn(getProject());
     when(event.getPresentation()).thenReturn(presentation);
   }

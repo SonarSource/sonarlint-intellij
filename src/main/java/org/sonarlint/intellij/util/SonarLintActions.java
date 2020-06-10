@@ -37,22 +37,27 @@ import org.sonarlint.intellij.actions.SonarClearIssuesAction;
  * Some actions are created programmatically instead of being declared in plugin.xml so that they are not registered in
  * ActionManager, becoming accessible from the action search.
  */
-public class SonarLintActions implements ApplicationComponent {
-  private final ActionManager actionManager;
-  private AnAction clearResultsAction;
-  private AnAction clearIssuesAction;
-  private AnAction cleanConsoleAction;
-  private AnAction cancelAction;
-  private AnAction configureAction;
-  private AnAction analyzeChangedFilesAction;
-  private AnAction analyzeAllFilesAction;
-  private AnAction showAnalyzersAction;
+public class SonarLintActions {
 
-  public SonarLintActions(ActionManager actionManager) {
-    this.actionManager = actionManager;
+  private final AnAction clearResultsAction;
+  private final AnAction clearIssuesAction;
+  private final AnAction cleanConsoleAction;
+  private final AnAction cancelAction;
+  private final AnAction configureAction;
+  private final AnAction analyzeChangedFilesAction;
+  private final AnAction analyzeAllFilesAction;
+  private final AnAction showAnalyzersAction;
+
+  public SonarLintActions() {
+    this(ActionManager.getInstance());
   }
 
-  private void init() {
+  /**
+   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
+   * @deprecated in 4.2 to silence a check in 2019.3
+   */
+  @Deprecated
+  SonarLintActions(ActionManager actionManager) {
     AnAction analyzeMenu = actionManager.getAction("AnalyzeMenu");
     // some flavors of IDEA don't have the analyze menu
     if (analyzeMenu instanceof DefaultActionGroup) {
@@ -83,7 +88,7 @@ public class SonarLintActions implements ApplicationComponent {
   }
 
   public static SonarLintActions getInstance() {
-    return ApplicationManager.getApplication().getComponent(SonarLintActions.class);
+    return SonarLintUtils.getService(SonarLintActions.class);
   }
 
   public AnAction cancelAnalysis() {
@@ -112,18 +117,6 @@ public class SonarLintActions implements ApplicationComponent {
 
   public AnAction analyzeAllFiles() {
     return analyzeAllFilesAction;
-  }
-
-  @Override public void initComponent() {
-    init();
-  }
-
-  @Override public void disposeComponent() {
-    // nothing to do
-  }
-
-  @NotNull @Override public String getComponentName() {
-    return this.getClass().getSimpleName();
   }
 
   public AnAction showAnalyzers() {

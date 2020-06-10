@@ -35,6 +35,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.RuleKey;
@@ -48,16 +49,14 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 final class StandaloneSonarLintFacade extends SonarLintFacade {
   private final StandaloneSonarLintEngine sonarlint;
   private final SonarLintConsole console;
-  private final SonarLintGlobalSettings globalSettings;
 
-  StandaloneSonarLintFacade(SonarLintGlobalSettings globalSettings, SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project,
+  StandaloneSonarLintFacade(SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project,
     StandaloneSonarLintEngine engine) {
     super(project, projectSettings);
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
     this.console = console;
-    this.globalSettings = globalSettings;
     this.sonarlint = engine;
   }
 
@@ -67,6 +66,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     List<RuleKey> excluded = new ArrayList<>();
     List<RuleKey> included = new ArrayList<>();
     Map<RuleKey, Map<String, String>> params = new HashMap<>();
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     globalSettings.getRulesByKey().forEach((k, v) -> {
       RuleKey key = RuleKey.parse(k);
       if (v.isActive()) {

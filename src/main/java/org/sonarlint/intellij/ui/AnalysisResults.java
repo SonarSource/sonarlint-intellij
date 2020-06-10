@@ -25,22 +25,20 @@ import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AnalysisResults {
   private static final String LABEL = "Trigger an analysis to find issues in the project sources";
   private final Project project;
-  private final AnalysisResultIssues issues;
 
   public AnalysisResults(Project project) {
     this.project = project;
-    this.issues = SonarLintUtils.get(project, AnalysisResultIssues.class);
   }
 
   public String getEmptyText() {
-    if (issues.wasAnalyzed()) {
+    if (getIssues().wasAnalyzed()) {
       return "No issues found";
     } else {
       return "No analysis done";
@@ -49,20 +47,24 @@ public class AnalysisResults {
 
   @CheckForNull
   public Instant getLastAnalysisDate() {
-    return issues.lastAnalysisDate();
+    return getIssues().lastAnalysisDate();
   }
 
   @CheckForNull
   public String whatAnalyzed() {
-    return issues.whatAnalyzed();
+    return getIssues().whatAnalyzed();
   }
 
   public Map<VirtualFile, Collection<LiveIssue>> issues() {
-    return issues.issues();
+    return getIssues().issues();
   }
 
   public String getLabelText() {
     return LABEL;
+  }
+
+  private IssueStore getIssues() {
+    return SonarLintUtils.getService(project, IssueStore.class);
   }
 
 }

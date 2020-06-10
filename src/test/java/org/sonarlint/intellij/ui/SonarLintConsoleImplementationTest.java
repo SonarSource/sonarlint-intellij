@@ -22,41 +22,52 @@ package org.sonarlint.intellij.ui;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.project.Project;
+import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.*;
 
-public class SonarLintConsoleTest {
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
-  private Project project = mock(Project.class);
+public class SonarLintConsoleImplementationTest extends AbstractSonarLintLightTests {
   private ConsoleView consoleView = mock(ConsoleView.class);
-  private SonarLintConsole console = new SonarLintConsole(project, consoleView, settings);
+  private SonarLintConsole console;
+
+  @Before
+  public void prepare() {
+    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
+    console = new SonarLintConsoleImpl(getProject(), consoleView);
+  }
 
   @Test
-  public void testClear() {
+  public void should_clear_the_console_view() {
     console.clear();
+
     verify(consoleView).clear();
   }
 
   @Test
-  public void testVerboseLogging() {
-    assertThat(console.debugEnabled()).isFalse();
-    console.debug("debug msg");
-    verifyZeroInteractions(consoleView);
+  public void debug_logging_should_be_enabled_if_verbose_enabled_in_project_settings() {
+    getProjectSettings().setVerboseEnabled(true);
 
-    settings.setVerboseEnabled(true);
     assertThat(console.debugEnabled()).isTrue();
     console.debug("debug msg");
     verify(consoleView).print("debug msg\n", ConsoleViewContentType.NORMAL_OUTPUT);
   }
 
   @Test
-  public void testLogging() {
-    settings.setVerboseEnabled(true);
+  public void debug_logging_should_be_disabled_if_verbose_disabled_in_project_settings() {
+    getProjectSettings().setVerboseEnabled(false);
+
+    assertThat(console.debugEnabled()).isFalse();
+    console.debug("debug msg");
+    verifyZeroInteractions(consoleView);
+  }
+
+  @Test
+  public void logging_should_print_to_console() {
+    getProjectSettings().setVerboseEnabled(true);
     console.info("info msg");
     verify(consoleView).print("info msg\n", ConsoleViewContentType.NORMAL_OUTPUT);
 

@@ -37,7 +37,7 @@ public class SonarLintTelemetryImplTest extends AbstractSonarLintLightTests {
   private TelemetryManager telemetryManager = mock(TelemetryManager.class);
 
   @Before
-  public void start() throws Exception {
+  public void start() {
     System.clearProperty(SonarLintTelemetryImpl.DISABLE_PROPERTY_KEY);
     this.telemetry = createTelemetry();
   }
@@ -54,7 +54,7 @@ public class SonarLintTelemetryImplTest extends AbstractSonarLintLightTests {
     when(engineProvider.get()).thenReturn(telemetryManager);
 
     SonarLintTelemetryImpl telemetry = new SonarLintTelemetryImpl(engineProvider);
-    telemetry.initComponent();
+    telemetry.init();
     return telemetry;
   }
 

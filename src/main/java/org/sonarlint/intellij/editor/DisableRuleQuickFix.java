@@ -37,11 +37,9 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class DisableRuleQuickFix implements IntentionAction, LowPriorityAction, Iconable {
   private final String ruleKey;
-  private final SonarLintGlobalSettings settings;
 
   DisableRuleQuickFix(String ruleKey) {
     this.ruleKey = ruleKey;
-    this.settings = SonarLintUtils.get(SonarLintGlobalSettings.class);
 
   }
 
@@ -58,8 +56,9 @@ public class DisableRuleQuickFix implements IntentionAction, LowPriorityAction, 
   }
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
+    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     settings.disableRule(ruleKey);
-    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 
@@ -68,11 +67,12 @@ public class DisableRuleQuickFix implements IntentionAction, LowPriorityAction, 
   }
 
   private static boolean isProjectConnected(Project project) {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
+    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
     return projectSettings.isBindingEnabled();
   }
 
   private boolean isAlreadyDisabled() {
+    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     return settings.excludedRules().contains(ruleKey);
   }
 

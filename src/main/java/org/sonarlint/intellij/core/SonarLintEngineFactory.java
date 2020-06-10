@@ -19,8 +19,9 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ApplicationComponent;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -37,7 +38,10 @@ import java.util.List;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.analysis.LocalFileExclusions;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
@@ -47,7 +51,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
-public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
+public class SonarLintEngineFactory  {
 
   private static final Language[] STANDALONE_LANGUAGES = {
     Language.HTML,
@@ -65,15 +69,10 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     Language.SWIFT,
     Language.XML
   };
-  private final SonarApplication application;
-  private final GlobalLogOutput globalLogOutput;
 
-  public SonarLintEngineFactory(SonarApplication application, GlobalLogOutput globalLogOutput) {
-    this.application = application;
-    this.globalLogOutput = globalLogOutput;
-  }
 
   ConnectedSonarLintEngine createEngine(String serverId) {
+    GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
@@ -99,6 +98,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     try {
       URL[] plugins = loadPlugins();
 
+      GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
       StandaloneGlobalConfiguration globalConfiguration = StandaloneGlobalConfiguration.builder()
         .setLogOutput(globalLogOutput)
         .setSonarLintUserHome(getSonarLintHome())
@@ -141,6 +141,7 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     List<URL> pluginsUrls = new ArrayList<>();
 
     try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()), "*.jar")) {
+      GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
       for (Path path : directoryStream) {
         globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
 
@@ -165,11 +166,8 @@ public class SonarLintEngineFactory extends ApplicationComponent.Adapter {
     return Paths.get(PathManager.getTempPath()).resolve("sonarlint");
   }
 
-  @NotNull @Override public String getComponentName() {
-    return "SonarLintEngineFactory";
-  }
-
   private Map<String, String> prepareExtraProps() {
+    SonarApplication application = SonarLintUtils.getService(SonarApplication.class);
     return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", application.getPluginPath().toString());
   }
 }

@@ -27,40 +27,36 @@ import java.util.List;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.util.AbstractModuleComponent;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
-public class ModuleBindingManager extends AbstractModuleComponent {
-  private final SonarLintAppUtils appUtils;
+public class ModuleBindingManager {
   private final Module module;
-  private final SonarLintProjectSettings projectSettings;
-  private final SonarLintModuleSettings settings;
 
-  public ModuleBindingManager(SonarLintAppUtils appUtils, Module module, SonarLintProjectSettings projectSettings, SonarLintModuleSettings settings) {
-    this.appUtils = appUtils;
+  public ModuleBindingManager(Module module) {
     this.module = module;
-    this.projectSettings = projectSettings;
-    this.settings = settings;
   }
 
   @CheckForNull
   public ProjectBinding getBinding() {
-    String projectKey = projectSettings.getProjectKey();
+    String projectKey = SonarLintUtils.getService(module.getProject(), SonarLintProjectSettings.class).getProjectKey();
     if (projectKey == null) {
       return null;
     }
+    SonarLintModuleSettings settings = SonarLintUtils.getService(module, SonarLintModuleSettings.class);
     return new ProjectBinding(projectKey, settings.getSqPathPrefix(), settings.getIdePathPrefix());
   }
 
   public void updateBinding(ConnectedSonarLintEngine engine) {
-    String projectKey = projectSettings.getProjectKey();
+    String projectKey = SonarLintUtils.getService(module.getProject(), SonarLintProjectSettings.class).getProjectKey();
     if (projectKey == null) {
       throw new IllegalStateException("Project is not bound");
     }
     List<String> moduleFiles = collectPathsForModule();
     ProjectBinding projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
+    SonarLintModuleSettings settings = SonarLintUtils.getService(module, SonarLintModuleSettings.class);
     settings.setIdePathPrefix(projectBinding.idePathPrefix());
     settings.setSqPathPrefix(projectBinding.sqPathPrefix());
   }
@@ -71,7 +67,7 @@ public class ModuleBindingManager extends AbstractModuleComponent {
       ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
       moduleRootManager.getFileIndex().iterateContent(virtualFile -> {
         if (!virtualFile.isDirectory()) {
-          String path = appUtils.getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
+          String path = SonarLintAppUtils.getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
           if (path != null) {
             paths.add(path);
           }

@@ -19,28 +19,20 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.issue.IssueProcessor;
 
-public class SonarLintTaskFactory extends AbstractProjectComponent {
-  private final SonarLintStatus status;
-  private final IssueProcessor processor;
-  private final SonarApplication sonarApplication;
+public class SonarLintTaskFactory {
+  private final Project myProject;
 
-  public SonarLintTaskFactory(Project project, SonarLintStatus status, IssueProcessor processor, SonarApplication sonarApplication) {
-    super(project);
-    this.status = status;
-    this.processor = processor;
-    this.sonarApplication = sonarApplication;
+  public SonarLintTaskFactory(Project project) {
+    myProject = project;
   }
 
   public SonarLintTask createTask(SonarLintJob job, boolean startInBackground) {
-    return new SonarLintTask(processor, job, startInBackground, sonarApplication);
+    return new SonarLintTask(myProject, job, startInBackground);
   }
 
   public SonarLintUserTask createUserTask(SonarLintJob job, boolean modal) {
-    return new SonarLintUserTask(processor, job, status, modal, sonarApplication);
+    return new SonarLintUserTask(myProject, job, modal);
   }
 }

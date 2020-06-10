@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.project;
 
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
@@ -30,10 +29,9 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 
 @State(name = "SonarLintProjectSettings", storages = {@Storage("sonarlint.xml")})
-public final class SonarLintProjectSettings extends AbstractProjectComponent implements PersistentStateComponent<SonarLintProjectSettings> {
+public final class SonarLintProjectSettings implements PersistentStateComponent<SonarLintProjectSettings> {
 
   private boolean verboseEnabled = false;
   private boolean analysisLogsEnabled = false;
@@ -48,7 +46,7 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
    * Even though this class has the scope of a project, we can't have it injected here.
    */
   public SonarLintProjectSettings() {
-    super(null);
+
   }
 
   /**
@@ -57,7 +55,6 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
    */
   @Deprecated
   public SonarLintProjectSettings(SonarLintProjectSettings toCopy) {
-    super(null);
     XmlSerializerUtil.copyBean(toCopy, this);
   }
 
@@ -69,12 +66,6 @@ public final class SonarLintProjectSettings extends AbstractProjectComponent imp
   @Override
   public synchronized void loadState(SonarLintProjectSettings state) {
     XmlSerializerUtil.copyBean(state, this);
-  }
-
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return "SonarLintProjectSettings";
   }
 
   public boolean isVerboseEnabled() {

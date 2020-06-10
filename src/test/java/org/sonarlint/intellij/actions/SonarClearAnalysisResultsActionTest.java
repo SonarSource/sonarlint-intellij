@@ -21,26 +21,29 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
+import org.sonarlint.intellij.issue.IssueStore;
+import org.sonarlint.intellij.proto.Sonarlint;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintMockedTests {
+public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintLightTests {
   private SonarClearAnalysisResultsAction action = new SonarClearAnalysisResultsAction(null, null, null);
+
 
   @Test
   public void clear() {
-    AnalysisResultIssues analysisResultIssues = mock(AnalysisResultIssues.class);
-    super.register(AnalysisResultIssues.class, analysisResultIssues);
+    IssueStore issueStore = mock(IssueStore.class);
+    replaceProjectService(IssueStore.class, issueStore);
 
     AnActionEvent event = mock(AnActionEvent.class);
-    when(event.getProject()).thenReturn(project);
+    when(event.getProject()).thenReturn(getProject());
     action.actionPerformed(event);
 
-    verify(analysisResultIssues).clear();
+    verify(issueStore).clear();
   }
 
   @Test

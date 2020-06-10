@@ -19,9 +19,13 @@
  */
 package org.sonarlint.intellij;
 
+import com.intellij.lang.Language;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
 import java.nio.file.Paths;
@@ -32,6 +36,8 @@ import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
 public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
 
@@ -47,9 +53,9 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   @Before
   public final void init() {
-    globalSettings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
-    projectSettings = getProject().getComponent(SonarLintProjectSettings.class);
-    moduleSettings = getModule().getComponent(SonarLintModuleSettings.class);
+    globalSettings = getService(SonarLintGlobalSettings.class);
+    projectSettings = getService(getProject(), SonarLintProjectSettings.class);
+    moduleSettings = getService(getModule(), SonarLintModuleSettings.class);
     disposable = Disposer.newDisposable();
   }
 
@@ -67,16 +73,32 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     Disposer.dispose(disposable);
   }
 
-  protected <T> void replaceProjectComponent(Class<T> clazz, T newInstance) {
-    ((ComponentManagerImpl) getProject()).replaceComponentInstance(clazz, newInstance, disposable);
-  }
-
   protected <T> void replaceProjectService(Class<T> clazz, T newInstance) {
     ((ComponentManagerImpl) getProject()).replaceServiceInstance(clazz, newInstance, disposable);
   }
 
   public SonarLintGlobalSettings getGlobalSettings() {
     return globalSettings;
+  }
+
+  public VirtualFile createTestFile(String fileName, Language language, String text) {
+    return createTestPsiFile(fileName, language, text).getVirtualFile();
+  }
+
+  public VirtualFile createAndOpenTestVirtualFile(String fileName, Language language, String text) {
+    VirtualFile file = createTestFile(fileName, language, text);
+    FileEditorManager.getInstance(getProject()).openFile(file, false);
+    return file;
+  }
+
+  public PsiFile createAndOpenTestPsiFile(String fileName, Language language, String text) {
+    PsiFile file = createTestPsiFile(fileName, language, text);
+    FileEditorManager.getInstance(getProject()).openFile(file.getVirtualFile(), false);
+    return file;
+  }
+
+  public PsiFile createTestPsiFile(String fileName, Language language, String text) {
+    return PsiFileFactory.getInstance(getProject()).createFileFromText(fileName, language, text, true, true);
   }
 
   public SonarLintProjectSettings getProjectSettings() {

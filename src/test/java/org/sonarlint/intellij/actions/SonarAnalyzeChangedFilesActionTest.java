@@ -50,7 +50,7 @@ public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTe
   public void before() {
     action = new SonarAnalyzeChangedFilesAction();
     status = SonarLintStatus.get(getProject());
-    replaceProjectComponent(SonarLintSubmitter.class, submitter);
+    replaceProjectService(SonarLintSubmitter.class, submitter);
     replaceProjectService(ChangeListManager.class, changeListManager);
   }
 

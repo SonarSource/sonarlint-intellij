@@ -25,25 +25,19 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class DisableRuleActionTest extends AbstractSonarLintLightTests {
+  private static final String RULE_KEY = "key";
   private DisableRuleAction action = new DisableRuleAction();
   private AnActionEvent event = mock(AnActionEvent.class);
   private LiveIssue issue = mock(LiveIssue.class);
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private Presentation presentation = new Presentation();
 
   @Before
   public void start() {
-    replaceProjectComponent(SonarLintSubmitter.class, submitter);
     when(event.getProject()).thenReturn(getProject());
     when(event.getPresentation()).thenReturn(presentation);
   }
@@ -79,8 +73,8 @@ public class DisableRuleActionTest extends AbstractSonarLintLightTests {
   @Test
   public void should_be_disabled_if_rule_is_excluded() {
     when(event.getData(DisableRuleAction.ISSUE_DATA_KEY)).thenReturn(issue);
-    when(issue.getRuleKey()).thenReturn("key");
-    getGlobalSettings().disableRule("key");
+    when(issue.getRuleKey()).thenReturn(RULE_KEY);
+    getGlobalSettings().disableRule(RULE_KEY);
     action.update(event);
 
     assertThat(presentation.isEnabled()).isFalse();
@@ -96,22 +90,22 @@ public class DisableRuleActionTest extends AbstractSonarLintLightTests {
     assertThat(presentation.isVisible()).isFalse();
   }
 
-  @Test
-  public void no_op_if_project_is_null() {
-    when(event.getProject()).thenReturn(null);
-    action.update(event);
-    verifyZeroInteractions(submitter);
-  }
+// XXX how should we check that ? Should we also check that an analysis is triggered ?
+//  @Test
+//  public void no_op_if_project_is_null() {
+//    when(event.getProject()).thenReturn(null);
+//    action.update(event);
+//    verifyZeroInteractions(submitter);
+//  }
 
   @Test
   public void should_disable_rule() {
     when(event.getData(DisableRuleAction.ISSUE_DATA_KEY)).thenReturn(issue);
-    when(issue.getRuleKey()).thenReturn("key");
+    when(issue.getRuleKey()).thenReturn(RULE_KEY);
 
     action.actionPerformed(event);
 
-    assertThat(getGlobalSettings().excludedRules()).containsExactly("key");
-    verify(submitter).submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
+    assertThat(getGlobalSettings().excludedRules()).containsExactly(RULE_KEY);
   }
 
 }

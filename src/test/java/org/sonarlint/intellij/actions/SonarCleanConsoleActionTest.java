@@ -21,6 +21,7 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
@@ -28,15 +29,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarCleanConsoleActionTest extends AbstractSonarLintMockedTests {
+public class SonarCleanConsoleActionTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testAction() {
     AnActionEvent event = mock(AnActionEvent.class);
     SonarLintConsole console = mock(SonarLintConsole.class);
 
-    when(event.getProject()).thenReturn(project);
-    super.register(project, SonarLintConsole.class, console);
+
+    when(event.getProject()).thenReturn(getProject());
+    replaceProjectService(SonarLintConsole.class, console);
 
     SonarCleanConsoleAction clean = new SonarCleanConsoleAction(null, null, null);
 

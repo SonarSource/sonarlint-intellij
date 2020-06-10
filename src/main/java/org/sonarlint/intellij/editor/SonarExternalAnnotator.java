@@ -78,7 +78,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   @Override
   public AnnotationContext collectInformation(@NotNull PsiFile file) {
     Project project = file.getProject();
-    IssueManager store = SonarLintUtils.get(project, IssueManager.class);
+    IssueManager store = SonarLintUtils.getService(project, IssueManager.class);
     return new AnnotationContext(store);
   }
 

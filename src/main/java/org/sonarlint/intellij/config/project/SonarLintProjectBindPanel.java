@@ -154,7 +154,7 @@ public class SonarLintProjectBindPanel {
       return null;
     }
 
-    SonarLintEngineManager core = SonarLintUtils.get(SonarLintEngineManager.class);
+    SonarLintEngineManager core = SonarLintUtils.getService(SonarLintEngineManager.class);
     ConnectedSonarLintEngine engine = core.getConnectedEngine(storageId);
     ServerDownloadProjectTask downloadTask = new ServerDownloadProjectTask(project, engine, selectedServer);
 

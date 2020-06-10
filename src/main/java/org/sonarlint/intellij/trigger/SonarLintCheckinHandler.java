@@ -48,7 +48,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.IssuesViewTabOpener;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -57,13 +57,11 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   private static final Logger LOGGER = Logger.getInstance(SonarLintCheckinHandler.class);
   private static final String ACTIVATED_OPTION_NAME = "SONARLINT_PRECOMMIT_ANALYSIS";
 
-  private final SonarLintGlobalSettings globalSettings;
   private final Project project;
   private final CheckinProjectPanel checkinPanel;
   private JCheckBox checkBox;
 
-  public SonarLintCheckinHandler(SonarLintGlobalSettings globalSettings, Project project, CheckinProjectPanel checkinPanel) {
-    this.globalSettings = globalSettings;
+  public SonarLintCheckinHandler(Project project, CheckinProjectPanel checkinPanel) {
     this.project = project;
     this.checkinPanel = checkinPanel;
   }
@@ -82,7 +80,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
 
     Collection<VirtualFile> affectedFiles = checkinPanel.getVirtualFiles();
-    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     // this will block EDT (modal)
     try {
       AtomicBoolean error = new AtomicBoolean(false);
@@ -116,8 +114,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private ReturnResult processResult(Collection<VirtualFile> affectedFiles) {
-    AnalysisResultIssues analysisResultIssues = SonarLintUtils.get(project, AnalysisResultIssues.class);
-    IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
+    IssueStore issueStore = SonarLintUtils.getService(project, IssueStore.class);
+    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
 
     Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
@@ -126,7 +124,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       .flatMap(e -> e.getValue().stream())
       .filter(i -> !i.isResolved())
       .count();
-    analysisResultIssues.set(map, "SCM changed files");
+    issueStore.set(map, "SCM changed files");
 
     long numBlockerIssues = map.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
@@ -215,6 +213,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     @Override
     public void restoreState() {
       PropertiesComponent props = PropertiesComponent.getInstance(project);
+      SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
       checkBox.setSelected(props.getBoolean(ACTIVATED_OPTION_NAME, globalSettings.isAutoTrigger()));
     }
   }

@@ -19,43 +19,36 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.ide.impl.ProjectUtil;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.function.BooleanSupplier;
+import com.intellij.testFramework.HeavyPlatformTestCase;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
+
+import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class LocalFileExclusionsTest extends AbstractSonarLintMockedTests {
-  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
-  private SonarLintProjectSettings projectSettings = new SonarLintProjectSettings();
-  private ModuleRootManager moduleRootManager = mock(ModuleRootManager.class);
+public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
   private FileType type = mock(FileType.class);
   private VirtualFile testFile = mock(VirtualFile.class);
   private BooleanSupplier powerModeCheck = mock(BooleanSupplier.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
-  private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
   private LocalFileExclusions exclusions;
 
   @Before
   public void prepare() {
-    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, projectRootManager, powerModeCheck);
+    exclusions = new LocalFileExclusions(getProject());
     when(powerModeCheck.getAsBoolean()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));
     when(testFile.getFileType()).thenReturn(type);
     when(testFile.isInLocalFileSystem()).thenReturn(true);
     when(testFile.isValid()).thenReturn(true);
-    super.register(module, ModuleRootManager.class, moduleRootManager);
   }
 
   @Test
@@ -66,13 +59,13 @@ public class LocalFileExclusionsTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void should_analyze_file() {
-    assertThat(exclusions.canAnalyze(testFile, module).isExcluded()).isFalse();
+    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isFalse();
   }
 
   @Test
   public void should_not_analyze_if_file_is_binary() {
     when(type.isBinary()).thenReturn(true);
-    assertThat(exclusions.canAnalyze(testFile, module).isExcluded()).isTrue();
+    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isTrue();
   }
 
   @Test
@@ -80,18 +73,20 @@ public class LocalFileExclusionsTest extends AbstractSonarLintMockedTests {
     assertThat(exclusions.canAnalyze(testFile, null).isExcluded()).isTrue();
   }
 
-  @Test
-  public void should_not_analyze_if_project_is_disposed() {
-    project.setDisposed(true);
-
-    assertThat(exclusions.canAnalyze(testFile, module).isExcluded()).isTrue();
-  }
+//// TODO maybe use heavy test
+//  @Test
+//  public void should_not_analyze_if_project_is_disposed() {
+//    getProject().dispose();
+//    ApplicationManager.getApplication().runWriteAction(() -> getProject().dispose());
+//    ProjectUtil.closeAndDispose(getProject());
+//    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isTrue();
+//  }
 
   @Test
   public void should_not_analyze_if_file_is_invalid() {
     VirtualFile f = mock(VirtualFile.class);
     when(f.isValid()).thenReturn(false);
 
-    assertThat(exclusions.canAnalyze(f, module).isExcluded()).isTrue();
+    assertThat(exclusions.canAnalyze(f, getModule()).isExcluded()).isTrue();
   }
 }

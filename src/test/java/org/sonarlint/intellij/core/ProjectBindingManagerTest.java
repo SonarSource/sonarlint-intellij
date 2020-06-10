@@ -25,12 +25,13 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -42,29 +43,27 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ProjectBindingManagerTest {
+public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager;
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
-  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
 
   private StandaloneSonarLintEngine standaloneEngine = mock(StandaloneSonarLintEngine.class);
   private ConnectedSonarLintEngine connectedEngine = mock(ConnectedSonarLintEngine.class);
   private SonarLintEngineManager engineManager = mock(SonarLintEngineManager.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
 
   @Before
-  public void setUp() throws InvalidBindingException {
+  public void before() throws InvalidBindingException {
     SonarLintConsole console = mock(SonarLintConsole.class);
-    Project project = mock(Project.class);
     SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
+    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
+    replaceProjectService(SonarLintConsole.class, console);
+    replaceProjectService(SonarLintProjectNotifications.class, notifications);
 
     when(engineManager.getStandaloneEngine()).thenReturn(standaloneEngine);
     when(engineManager.getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), anyString())).thenReturn(connectedEngine);
-    when(project.getBasePath()).thenReturn("");
-    projectBindingManager = new ProjectBindingManager(appUtils, project, engineManager, settings, globalSettings, notifications, console);
+    projectBindingManager = new ProjectBindingManager(getProject(), () -> engineManager);
   }
 
   @Test
@@ -74,9 +73,9 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void should_get_connected_engine() throws InvalidBindingException {
-    settings.setBindingEnabled(true);
-    settings.setProjectKey("project1");
-    settings.setServerId("server1");
+    getProjectSettings().setBindingEnabled(true);
+    getProjectSettings().setProjectKey("project1");
+    getProjectSettings().setServerId("server1");
 
     assertThat(projectBindingManager.getConnectedEngine()).isNotNull();
     verify(engineManager).getConnectedEngine(any(SonarLintProjectNotifications.class), eq("server1"), eq("project1"));
@@ -90,17 +89,19 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void should_create_facade_connected() throws InvalidBindingException {
-    settings.setBindingEnabled(true);
-    settings.setProjectKey("project1");
-    settings.setServerId("server1");
+    getProjectSettings().setBindingEnabled(true);
+    getProjectSettings().setProjectKey("project1");
+    getProjectSettings().setServerId("server1");
+
     assertThat(projectBindingManager.getFacade()).isInstanceOf(ConnectedSonarLintFacade.class);
   }
 
   @Test
   public void should_find_sq_server() throws InvalidBindingException {
-    settings.setBindingEnabled(true);
-    settings.setProjectKey("project1");
-    settings.setServerId("server1");
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    getProjectSettings().setBindingEnabled(true);
+    getProjectSettings().setProjectKey("project1");
+    getProjectSettings().setServerId("server1");
 
     SonarQubeServer server = SonarQubeServer.newBuilder().setName("server1").build();
     globalSettings.setSonarQubeServers(Collections.singletonList(server));
@@ -109,9 +110,10 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void fail_if_cant_find_server() throws InvalidBindingException {
-    settings.setBindingEnabled(true);
-    settings.setProjectKey("project1");
-    settings.setServerId("server1");
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    getProjectSettings().setBindingEnabled(true);
+    getProjectSettings().setProjectKey("project1");
+    getProjectSettings().setServerId("server1");
 
     SonarQubeServer server = SonarQubeServer.newBuilder().setName("server2").build();
     globalSettings.setSonarQubeServers(Collections.singletonList(server));
@@ -121,7 +123,7 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void fail_invalid_server_binding() throws InvalidBindingException {
-    settings.setBindingEnabled(true);
+    getProjectSettings().setBindingEnabled(true);
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
     assertThat(projectBindingManager.getFacade()).isNotNull();
@@ -129,9 +131,9 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void fail_invalid_module_binding() throws InvalidBindingException {
-    settings.setBindingEnabled(true);
-    settings.setServerId("server1");
-    settings.setProjectKey(null);
+    getProjectSettings().setBindingEnabled(true);
+    getProjectSettings().setServerId("server1");
+    getProjectSettings().setProjectKey(null);
 
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");

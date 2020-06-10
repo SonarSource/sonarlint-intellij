@@ -26,7 +26,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -35,7 +34,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -46,7 +44,6 @@ public class ConnectedSonarLintFacadeTest {
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
   private Project project = mock(Project.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   private SonarLintProjectSettings settings;
   private ConnectedSonarLintFacade facade;
@@ -55,7 +52,7 @@ public class ConnectedSonarLintFacadeTest {
   public void setUp() {
     when(project.getBasePath()).thenReturn("");
     settings = new SonarLintProjectSettings();
-    facade = new ConnectedSonarLintFacade(appUtils, engine, settings, console, project);
+    facade = new ConnectedSonarLintFacade(engine, settings, console, project);
   }
 
   @Test

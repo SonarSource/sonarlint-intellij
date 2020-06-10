@@ -19,17 +19,16 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.lang.LanguageExtensionPoint;
+import com.intellij.openapi.extensions.ExtensionPoint;
+import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueProcessor;
@@ -40,17 +39,18 @@ import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
-public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
+public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   private SonarLintTask task;
   @Mock
   private IssueProcessor processor;
@@ -62,8 +62,6 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
   private SonarLintAnalyzer sonarLintAnalyzer;
   @Mock
   private AnalysisResults analysisResults;
-  @Mock
-  private SonarApplication sonarApplication;
 
   @Before
   public void prepare() {
@@ -74,15 +72,16 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
     job = createJob();
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
-    when(sonarLintAnalyzer.analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class))).thenReturn(analysisResults);
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(files), any(IssueListener.class), any(ProgressMonitor.class))).thenReturn(analysisResults);
 
-    super.register(SonarLintStatus.class, new SonarLintStatus(getProject()));
-    super.register(SonarLintAnalyzer.class, sonarLintAnalyzer);
-    super.register(SonarLintConsole.class, mock(SonarLintConsole.class));
-    super.register(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
-    super.register(IssueManager.class, mock(IssueManager.class));
+    replaceProjectService(SonarLintStatus.class, new SonarLintStatus(getProject()));
+    replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
+    replaceProjectService(SonarLintConsole.class, mock(SonarLintConsole.class));
+    replaceProjectService(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
+    replaceProjectService(IssueManager.class, mock(IssueManager.class));
+    replaceProjectService(IssueProcessor.class, processor);
 
-    task = new SonarLintTask(processor, job, false, true, sonarApplication);
+    task = new SonarLintTask(getProject(), job, false, true);
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();
@@ -98,11 +97,14 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
     assertThat(task.getJob()).isEqualTo(job);
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
+
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
     verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
-    verifyNoMoreInteractions(sonarApplication);
+    assertThat(getExternalAnnotators())
+            .extracting("implementationClass")
+            .contains("org.sonarlint.intellij.editor.SonarExternalAnnotator");
     verifyNoMoreInteractions(sonarLintAnalyzer);
     verifyNoMoreInteractions(processor);
   }
@@ -112,7 +114,7 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
     TaskListener listener = mock(TaskListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
 
-    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
+    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
     task.run(progress);
 
     // never called because of error
@@ -124,6 +126,11 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
   }
 
   private SonarLintJob createJob() {
-    return new SonarLintJob(module, files, Collections.emptyList(), TriggerType.ACTION);
+    return new SonarLintJob(getModule(), files, Collections.emptyList(), TriggerType.ACTION);
+  }
+
+  private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
+    ExtensionPoint<LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
+    return extensionPoint.extensions().collect(Collectors.toList());
   }
 }

@@ -21,7 +21,6 @@ package org.sonarlint.intellij.issue;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
@@ -35,17 +34,15 @@ import com.intellij.psi.PsiWhiteSpace;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
-public class IssueMatcher extends AbstractProjectComponent {
-  private final PsiManager psiManager;
-  private final PsiDocumentManager docManager;
+public class IssueMatcher {
+  private final Project project;
 
-  public IssueMatcher(Project project, PsiManager psiManager, PsiDocumentManager docManager) {
-    super(project);
-    this.psiManager = psiManager;
-    this.docManager = docManager;
+  public IssueMatcher(Project project) {
+    this.project = project;
   }
 
   public PsiFile findFile(VirtualFile file) throws NoMatchException {
+    PsiManager psiManager = PsiManager.getInstance(project);
     PsiFile psiFile = psiManager.findFile(file);
     if (psiFile != null) {
       return psiFile;
@@ -61,6 +58,7 @@ public class IssueMatcher extends AbstractProjectComponent {
     ApplicationManager.getApplication().assertReadAccessAllowed();
     Preconditions.checkArgument(issueLocation.getStartLine() != null);
 
+    PsiDocumentManager docManager = PsiDocumentManager.getInstance(project);
     Document doc = docManager.getDocument(file);
     if (doc == null) {
       throw new NoMatchException("No document found for file: " + file.getName());

@@ -35,14 +35,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class AnalysisResultIssuesTest extends AbstractSonarLintMockedTests {
-  private AnalysisResultIssues analysisResultIssues;
+public class IssueStoreTest extends AbstractSonarLintMockedTests {
+  private IssueStore issueStore;
   private AnalysisResultsListener listener = mock(AnalysisResultsListener.class);
 
   @Before
   public void prepare() {
     project.getMessageBus().connect().subscribe(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC, listener);
-    analysisResultIssues = new AnalysisResultIssues(project);
+    issueStore = new IssueStore(project);
   }
 
   @Test
@@ -51,22 +51,22 @@ public class AnalysisResultIssuesTest extends AbstractSonarLintMockedTests {
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
-    analysisResultIssues.set(issues, "3 files");
-    assertThat(analysisResultIssues.lastAnalysisDate())
+    issueStore.set(issues, "3 files");
+    assertThat(issueStore.lastAnalysisDate())
       .isLessThanOrEqualTo(Instant.now())
       .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
-    assertThat(analysisResultIssues.issues()).isEqualTo(issues);
+    assertThat(issueStore.issues()).isEqualTo(issues);
 
     verify(listener).update(issues);
 
     // everything should be done even if it's an empty map
-    analysisResultIssues.set(Collections.emptyMap(), "3 files");
-    assertThat(analysisResultIssues.lastAnalysisDate())
+    issueStore.set(Collections.emptyMap(), "3 files");
+    assertThat(issueStore.lastAnalysisDate())
       .isLessThanOrEqualTo(Instant.now())
       .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
-    assertThat(analysisResultIssues.wasAnalyzed()).isTrue();
-    assertThat(analysisResultIssues.issues()).isEmpty();
-    assertThat(analysisResultIssues.getTopic()).isEqualTo(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC);
+    assertThat(issueStore.wasAnalyzed()).isTrue();
+    assertThat(issueStore.issues()).isEmpty();
+    assertThat(issueStore.getTopic()).isEqualTo(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC);
 
     verify(listener).update(Collections.emptyMap());
   }
@@ -77,13 +77,13 @@ public class AnalysisResultIssuesTest extends AbstractSonarLintMockedTests {
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
     issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
-    analysisResultIssues.set(issues, "3 files");
-    analysisResultIssues.clear();
+    issueStore.set(issues, "3 files");
+    issueStore.clear();
 
     verify(listener).update(Collections.emptyMap());
-    assertThat(analysisResultIssues.lastAnalysisDate()).isNull();
-    assertThat(analysisResultIssues.issues()).isEmpty();
-    assertThat(analysisResultIssues.wasAnalyzed()).isFalse();
+    assertThat(issueStore.lastAnalysisDate()).isNull();
+    assertThat(issueStore.issues()).isEmpty();
+    assertThat(issueStore.wasAnalyzed()).isFalse();
 
   }
 }
