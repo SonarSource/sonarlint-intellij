@@ -50,15 +50,13 @@ import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTask.class);
-  private final IssueProcessor processor;
   protected final SonarLintJob job;
   protected final boolean modal;
   private final boolean startInBackground;
-  private final SonarLintConsole console;
-  private final SonarApplication sonarApplication;
+  protected final Project myProject;
 
-  public SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean background, SonarApplication sonarApplication) {
-    this(processor, job, false, background, sonarApplication);
+  public SonarLintTask(Project project, SonarLintJob job, boolean background) {
+    this(project, job, false, background);
   }
 
   /**
@@ -67,14 +65,12 @@ public class SonarLintTask extends Task.Backgroundable {
    * @param modal      If true and background is false, it will be a blocking task, without the possibility to send it to background.
    * @param background Whether it should start in the foreground or background.
    */
-  protected SonarLintTask(IssueProcessor processor, SonarLintJob job, boolean modal, boolean background, SonarApplication sonarApplication) {
+  public SonarLintTask(Project project, SonarLintJob job,boolean modal, boolean background) {
     super(job.project(), "SonarLint Analysis", true);
-    this.processor = processor;
+    myProject = project;
     this.job = job;
     this.modal = modal;
     this.startInBackground = background;
-    this.console = SonarLintConsole.get(job.project());
-    this.sonarApplication = sonarApplication;
   }
 
   @Override
@@ -98,6 +94,7 @@ public class SonarLintTask extends Task.Backgroundable {
   @Override
   public void run(ProgressIndicator indicator) {
     AccumulatorIssueListener listener = new AccumulatorIssueListener();
+    SonarApplication sonarApplication = SonarLintUtils.getService(SonarApplication.class);
     sonarApplication.registerExternalAnnotator();
 
     try {
@@ -125,8 +122,10 @@ public class SonarLintTask extends Task.Backgroundable {
       List<Issue> issues = listener.getIssues();
       indicator.setText("Updating SonarLint issues: " + issues.size());
 
+      IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
       processor.process(job, indicator, issues, allFailedAnalysisFiles);
     } catch (CanceledException e1) {
+      SonarLintConsole console = SonarLintConsole.get(job.project());
       console.info("Analysis canceled");
     } catch (Throwable e) {
       handleError(e, indicator);
@@ -139,6 +138,7 @@ public class SonarLintTask extends Task.Backgroundable {
     // if cancelled, ignore any errors since they were most likely caused by the interrupt
     if (!indicator.isCanceled()) {
       String msg = "Error running SonarLint analysis";
+      SonarLintConsole console = SonarLintConsole.get(job.project());
       console.error(msg, e);
       LOGGER.warn(msg, e);
 
@@ -162,7 +162,7 @@ public class SonarLintTask extends Task.Backgroundable {
   }
 
   private List<AnalysisResults> analyze(Project project, ProgressIndicator indicator, AccumulatorIssueListener listener) {
-    SonarLintAnalyzer analyzer = SonarLintUtils.get(project, SonarLintAnalyzer.class);
+    SonarLintAnalyzer analyzer = SonarLintUtils.getService(project, SonarLintAnalyzer.class);
 
     indicator.setIndeterminate(true);
     int numModules = job.filesPerModule().keySet().size();

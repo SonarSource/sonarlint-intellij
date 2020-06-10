@@ -19,20 +19,24 @@
  */
 package org.sonarlint.intellij;
 
+import com.intellij.ide.AppLifecycleListener;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageExtensionPoint;
 import com.intellij.notification.NotificationGroup;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupManager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -45,18 +49,20 @@ import org.sonarlint.intellij.core.SonarQubeEventNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
-public class SonarApplication extends ApplicationComponent.Adapter {
+public class SonarApplication {
   private IdeaPluginDescriptor plugin;
-  private ConcurrentMap<String, LanguageExtensionPoint> annotatorsByLanguage;
+  private ConcurrentMap<String, LanguageExtensionPoint> annotatorsByLanguage = new ConcurrentHashMap<>();
 
-  @Override
-  public void initComponent() {
+
+  public void init() {
     plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     annotatorsByLanguage = new ConcurrentHashMap<>();
     registerExternalAnnotator();
     registerNotifications();
     cleanOldWorkDir();
   }
+
+
 
   public void registerExternalAnnotator() {
     Language.getRegisteredLanguages().stream()
@@ -118,17 +124,6 @@ public class SonarApplication extends ApplicationComponent.Adapter {
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_BINDING_PROBLEM);
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_UPDATE_NOTIFICATION);
     NotificationGroup.balloonGroup(SonarQubeEventNotifications.GROUP_SONARQUBE_EVENT);
-  }
-
-  @Override
-  public void disposeComponent() {
-    // nothing to do
-  }
-
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return getClass().getSimpleName();
   }
 
   private static void cleanOldWorkDir() {

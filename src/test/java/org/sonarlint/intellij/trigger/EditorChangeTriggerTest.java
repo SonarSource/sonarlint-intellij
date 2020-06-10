@@ -31,7 +31,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -44,7 +43,6 @@ import static org.mockito.Mockito.when;
 public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private EditorFactory editorFactory = mock(EditorFactory.class);
-  private SonarLintAppUtils utils = mock(SonarLintAppUtils.class);
   private FileDocumentManager docManager = mock(FileDocumentManager.class);
 
   private SonarLintGlobalSettings globalSettings;
@@ -55,7 +53,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    underTest = new EditorChangeTrigger(getProject(), globalSettings, submitter, editorFactory, utils, docManager, 500);
+    underTest = new EditorChangeTrigger(getProject(), submitter, editorFactory, docManager, 500);
     underTest.projectOpened();
   }
 
@@ -69,9 +67,9 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
-    when(utils.isOpenFile(getProject(), file)).thenReturn(true);
+//    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+//    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
+//    when(utils.isOpenFile(getProject(), file)).thenReturn(true);
 
     underTest.documentChanged(event);
     assertThat(underTest.getEvents()).hasSize(1);
@@ -90,8 +88,8 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
+//    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+//    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
 
     underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
@@ -107,8 +105,8 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
+//    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+//    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
 
     underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
@@ -123,7 +121,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(null);
+//    when(utils.guessProjectForFile(file)).thenReturn(null);
 
     underTest.documentChanged(event);
     verifyZeroInteractions(submitter);
@@ -145,7 +143,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
   public void nothing_to_do_before_doc_change() {
     underTest.beforeDocumentChange(null);
     verifyZeroInteractions(submitter);
-    verifyZeroInteractions(utils);
+//    verifyZeroInteractions(utils);
   }
 
   @Test
@@ -158,8 +156,8 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(file.isValid()).thenReturn(true);
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
-    when(utils.guessProjectForFile(file)).thenReturn(getProject());
-    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
+//    when(utils.guessProjectForFile(file)).thenReturn(getProject());
+//    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
 
     underTest.documentChanged(event);
     underTest.projectClosed();

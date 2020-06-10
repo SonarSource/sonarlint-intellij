@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
@@ -32,7 +31,6 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.container.model.DefaultAnalysisResult;
@@ -57,7 +55,7 @@ public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() throws InvalidBindingException {
-    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, telemetry, ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class));
+    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, telemetry);
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
     when(facade.startAnalysis(anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
   }

@@ -37,8 +37,8 @@ import org.sonarlint.intellij.actions.SonarClearIssuesAction;
  * Some actions are created programmatically instead of being declared in plugin.xml so that they are not registered in
  * ActionManager, becoming accessible from the action search.
  */
-public class SonarLintActions implements ApplicationComponent {
-  private final ActionManager actionManager;
+public class SonarLintActions {
+
   private AnAction clearResultsAction;
   private AnAction clearIssuesAction;
   private AnAction cleanConsoleAction;
@@ -48,11 +48,9 @@ public class SonarLintActions implements ApplicationComponent {
   private AnAction analyzeAllFilesAction;
   private AnAction showAnalyzersAction;
 
-  public SonarLintActions(ActionManager actionManager) {
-    this.actionManager = actionManager;
-  }
 
-  private void init() {
+  public void init() {
+    ActionManager actionManager = ActionManager.getInstance();
     AnAction analyzeMenu = actionManager.getAction("AnalyzeMenu");
     // some flavors of IDEA don't have the analyze menu
     if (analyzeMenu instanceof DefaultActionGroup) {
@@ -83,7 +81,7 @@ public class SonarLintActions implements ApplicationComponent {
   }
 
   public static SonarLintActions getInstance() {
-    return ApplicationManager.getApplication().getComponent(SonarLintActions.class);
+    return SonarLintUtils.getService(SonarLintActions.class);
   }
 
   public AnAction cancelAnalysis() {
@@ -112,18 +110,6 @@ public class SonarLintActions implements ApplicationComponent {
 
   public AnAction analyzeAllFiles() {
     return analyzeAllFilesAction;
-  }
-
-  @Override public void initComponent() {
-    init();
-  }
-
-  @Override public void disposeComponent() {
-    // nothing to do
-  }
-
-  @NotNull @Override public String getComponentName() {
-    return this.getClass().getSimpleName();
   }
 
   public AnAction showAnalyzers() {

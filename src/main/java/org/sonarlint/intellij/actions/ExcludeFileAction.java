@@ -70,7 +70,7 @@ public class ExcludeFileAction extends DumbAwareAction {
 
     e.getPresentation().setVisible(true);
 
-    SonarLintProjectSettings settings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
+    SonarLintProjectSettings settings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
     List<String> exclusions = new ArrayList<>(settings.getFileExclusions());
 
     boolean anyFileToAdd = toStringStream(project, files)
@@ -89,7 +89,7 @@ public class ExcludeFileAction extends DumbAwareAction {
       return;
     }
 
-    SonarLintProjectSettings settings = SonarLintUtils.get(project, SonarLintProjectSettings.class);
+    SonarLintProjectSettings settings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
     List<String> exclusions = new ArrayList<>(settings.getFileExclusions());
 
     List<String> newExclusions = toStringStream(project, files)
@@ -101,22 +101,21 @@ public class ExcludeFileAction extends DumbAwareAction {
       settings.setFileExclusions(exclusions);
       ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
       projectListener.changed(settings);
-      SonarLintUtils.get(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+      SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     }
   }
 
   private static Stream<String> toStringStream(Project project, VirtualFile[] files) {
-    SonarLintAppUtils appUtils = SonarLintUtils.get(SonarLintAppUtils.class);
     return Arrays.stream(files)
-      .map(vf -> toExclusion(appUtils, project, vf))
+      .map(vf -> toExclusion(project, vf))
       .filter(Objects::nonNull)
       .filter(exclusion -> !exclusion.item().isEmpty())
       .map(ExclusionItem::toStringWithType);
   }
 
   @CheckForNull
-  private static ExclusionItem toExclusion(SonarLintAppUtils appUtils, Project project, VirtualFile virtualFile) {
-    String relativeFilePath = appUtils.getRelativePathForAnalysis(project, virtualFile);
+  private static ExclusionItem toExclusion(Project project, VirtualFile virtualFile) {
+    String relativeFilePath = SonarLintAppUtils.getRelativePathForAnalysis(project, virtualFile);
     if (relativeFilePath == null) {
       return null;
     }

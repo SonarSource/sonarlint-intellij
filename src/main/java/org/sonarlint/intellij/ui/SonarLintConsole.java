@@ -29,16 +29,17 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintConsole extends AbstractProjectComponent {
+public class SonarLintConsole {
 
   private final ConsoleView consoleView;
-  private final SonarLintProjectSettings settings;
+  private final Project myProject;
+
 
   public SonarLintConsole(Project project) {
-    super(project);
     consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(project).getConsole();
-    settings = myProject.getComponent(SonarLintProjectSettings.class);
+    this.myProject = project;
   }
 
   /**
@@ -46,29 +47,24 @@ public class SonarLintConsole extends AbstractProjectComponent {
    * @deprecated in 4.2 to silence a check in 2019.3
    */
   @Deprecated
-  SonarLintConsole(Project project, ConsoleView consoleView, SonarLintProjectSettings settings) {
-    super(project);
+  SonarLintConsole(Project project, ConsoleView consoleView) {
     this.consoleView = consoleView;
-    this.settings = settings;
-  }
-
-  @Override
-  public void projectClosed() {
-    // if we do it when Project is disposed, it's too late
-    Disposer.dispose(consoleView);
+    this.myProject = project;
   }
 
   public static synchronized SonarLintConsole get(@NotNull Project p) {
-    return p.getComponent(SonarLintConsole.class);
+    return SonarLintUtils.getService(p, SonarLintConsole.class);
   }
 
   public void debug(String msg) {
+    SonarLintProjectSettings settings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
     if (settings.isVerboseEnabled()) {
       getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
     }
   }
 
   public boolean debugEnabled() {
+    SonarLintProjectSettings settings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
     return settings.isVerboseEnabled();
   }
 
@@ -93,5 +89,9 @@ public class SonarLintConsole extends AbstractProjectComponent {
 
   public ConsoleView getConsoleView() {
     return this.consoleView;
+  }
+
+  public void dispose() {
+    Disposer.dispose(consoleView);
   }
 }

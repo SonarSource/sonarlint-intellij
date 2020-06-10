@@ -21,16 +21,14 @@ package org.sonarlint.intellij.telemetry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.concurrency.JobScheduler;
-import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
-public class SonarLintTelemetryImpl implements ApplicationComponent, SonarLintTelemetry {
+public class SonarLintTelemetryImpl implements SonarLintTelemetry {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTelemetryImpl.class);
   static final String DISABLE_PROPERTY_KEY = "sonarlint.telemetry.disabled";
 
@@ -39,13 +37,13 @@ public class SonarLintTelemetryImpl implements ApplicationComponent, SonarLintTe
   @VisibleForTesting
   ScheduledFuture<?> scheduledFuture;
 
-  public SonarLintTelemetryImpl(TelemetryManagerProvider telemetryManagerProvider) {
+  public SonarLintTelemetryImpl() {
     if ("true".equals(System.getProperty(DISABLE_PROPERTY_KEY))) {
       // can't log with GlobalLogOutput to the tool window since at this point no project is open yet
       LOGGER.info("Telemetry disabled by system property");
       telemetry = null;
     } else {
-      telemetry = telemetryManagerProvider.get();
+      telemetry = new TelemetryManagerProvider().get(); // is it OK?
     }
   }
 
@@ -73,8 +71,8 @@ public class SonarLintTelemetryImpl implements ApplicationComponent, SonarLintTe
     return telemetry != null;
   }
 
-  @Override
-  public void initComponent() {
+
+  public void init() {
     try {
       this.scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(this::upload,
         1, TimeUnit.HOURS.toMinutes(6), TimeUnit.MINUTES);
@@ -120,15 +118,9 @@ public class SonarLintTelemetryImpl implements ApplicationComponent, SonarLintTe
     }
   }
 
-  @Override
-  public void disposeComponent() {
-    stop();
-  }
 
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return "SonarLintTelemetry";
+  public void dispose() {
+    stop();
   }
 
 }

@@ -28,14 +28,11 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
-  private final SonarLintGlobalSettings globalSettings;
 
-  public SonarLintCheckinHandlerFactory(SonarLintGlobalSettings globalSettings) {
-    this.globalSettings = globalSettings;
-  }
+
 
   @NotNull @Override public CheckinHandler createHandler(@NotNull CheckinProjectPanel panel, @NotNull CommitContext commitContext) {
     Project project = panel.getProject();
-    return new SonarLintCheckinHandler(globalSettings, project, panel);
+    return new SonarLintCheckinHandler(project, panel);
   }
 }

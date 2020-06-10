@@ -29,7 +29,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -45,12 +44,11 @@ import static org.mockito.Mockito.when;
 public class LiveIssueCacheTest {
 
   private IssuePersistence store = mock(IssuePersistence.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private Project project = mock(Project.class);
   @Rule
   public ExpectedException exception = ExpectedException.none();
 
-  private LiveIssueCache cache = new LiveIssueCache(project, mock(ProjectManager.class), store, appUtils, 10);
+  private LiveIssueCache cache = new LiveIssueCache(project, mock(ProjectManager.class), store, 10);
 
   @Before
   public void setUp() {
@@ -212,7 +210,7 @@ public class LiveIssueCacheTest {
   private VirtualFile createTestFile(String path) {
     VirtualFile file = mock(VirtualFile.class);
     when(file.isValid()).thenReturn(true);
-    when(appUtils.getRelativePathForAnalysis(project, file)).thenReturn(path);
+    // when(SonarLintAppUtils.getRelativePathForAnalysis(project, file)).thenReturn(path);
     return file;
   }
 }

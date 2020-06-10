@@ -44,7 +44,7 @@ public class CodeAnalyzerRestarterTest extends AbstractSonarLintMockedTests {
   private DaemonCodeAnalyzer codeAnalyzer = mock(DaemonCodeAnalyzer.class);
   private FileEditorManager fileEditorManager = mock(FileEditorManager.class);
   private MessageBus bus = mock(MessageBus.class);
-  private CodeAnalyzerRestarter analyzerRestarter = new CodeAnalyzerRestarter(project, fileEditorManager, codeAnalyzer, psiManager, bus);
+  private CodeAnalyzerRestarter analyzerRestarter = new CodeAnalyzerRestarter(project);
 
   @Before
   public void prepare() {

@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
@@ -33,7 +32,6 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -68,7 +66,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
   public void prepare() throws InvalidBindingException {
     ProjectBindingManager bindingManager = spy(getProject().getComponent(ProjectBindingManager.class));
     doReturn(engine).when(bindingManager).getConnectedEngine();
-    underTest = new ServerIssueUpdater(getProject(), issueManager, getProjectSettings(), bindingManager, mockedConsole, ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class));
+    underTest = new ServerIssueUpdater(getProject(), issueManager, getProjectSettings(), bindingManager, mockedConsole);
     getGlobalSettings().setSonarQubeServers(Collections.singletonList(SonarQubeServer.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
     getProjectSettings().setServerId(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);

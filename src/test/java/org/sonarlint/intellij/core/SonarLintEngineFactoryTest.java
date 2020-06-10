@@ -49,7 +49,7 @@ public class SonarLintEngineFactoryTest {
     SonarApplication application = mock(SonarApplication.class);
     when(application.getPluginPath()).thenReturn(temp.getRoot().getAbsoluteFile().toPath().resolve("plugins"));
     log = mock(GlobalLogOutput.class);
-    factory = new SonarLintEngineFactory(application, log);
+    factory = new SonarLintEngineFactory();
   }
 
   @Test
@@ -58,11 +58,6 @@ public class SonarLintEngineFactoryTest {
     assertThat(engine).isNotNull();
     engine.stop();
     verify(log, atLeastOnce()).log(anyString(), any(LogOutput.Level.class));
-  }
-
-  @Test
-  public void componentName() {
-    assertThat(factory.getComponentName()).isEqualTo("SonarLintEngineFactory");
   }
 
   @Test

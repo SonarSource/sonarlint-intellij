@@ -23,17 +23,22 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
+import com.intellij.openapi.module.Module;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.util.AbstractModuleComponent;
 
 @State(name = "SonarLintModuleSettings", storages = @Storage(StoragePathMacros.MODULE_FILE))
-public final class SonarLintModuleSettings extends AbstractModuleComponent implements PersistentStateComponent<SonarLintModuleSettings> {
+public final class SonarLintModuleSettings implements PersistentStateComponent<SonarLintModuleSettings> {
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
 
-  public SonarLintModuleSettings() {
+  /**
+   * Constructor added in order to comply to module service requirements
+   * @param module
+   */
+  public SonarLintModuleSettings(Module module) {
+
   }
 
   /**

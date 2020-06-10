@@ -75,7 +75,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       return;
     }
 
-    SonarLintStatus status = SonarLintUtils.get(project, SonarLintStatus.class);
+    SonarLintStatus status = SonarLintUtils.getService(project, SonarLintStatus.class);
     if (status.isRunning()) {
       e.getPresentation().setEnabled(false);
       return;
@@ -113,7 +113,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       .distinct()
       .collect(Collectors.toList());
 
-    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     AnalysisCallback callback;
 
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(e.getPlace())) {

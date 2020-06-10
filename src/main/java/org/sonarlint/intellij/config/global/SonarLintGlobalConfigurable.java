@@ -40,12 +40,9 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
-  private final SonarLintEngineManager serverManager;
-  private final SonarLintGlobalSettings globalSettings;
-  private final SonarLintTelemetry telemetry;
-  private final SonarApplication sonarApplication;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
   private SonarLintGlobalOptionsPanel globalPanel;
@@ -53,12 +50,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private GlobalExclusionsPanel exclusions;
   private RuleConfigurationPanel rules;
 
-  public SonarLintGlobalConfigurable() {
-    this.globalSettings = SonarLintUtils.get(SonarLintGlobalSettings.class);
-    this.serverManager = SonarLintUtils.get(SonarLintEngineManager.class);
-    this.telemetry = SonarLintUtils.get(SonarLintTelemetry.class);
-    this.sonarApplication = SonarLintUtils.get(SonarApplication.class);
-  }
+
 
   @Nls
   @Override
@@ -74,12 +66,16 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public boolean isModified() {
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
       || about.isModified(telemetry) || exclusions.isModified(globalSettings) || rules.isModified(globalSettings);
   }
 
   @Override
   public void apply() {
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     final boolean exclusionsModified = exclusions.isModified(globalSettings);
     final boolean rulesModified = rules.isModified(globalSettings);
 
@@ -92,7 +88,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     GlobalConfigurationListener globalConfigurationListener = ApplicationManager.getApplication()
       .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings);
-    serverManager.reloadServers();
+    SonarLintUtils.getService(SonarLintEngineManager.class).reloadServers();
 
     if (exclusionsModified) {
       analyzeOpenFiles(false);
@@ -105,9 +101,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
     for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = SonarLintUtils.get(p, SonarLintProjectSettings.class);
+      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
       if (!unboundOnly || !projectSettings.isBindingEnabled()) {
-        SonarLintUtils.get(p, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+        SonarLintUtils.getService(p, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }
     }
   }
@@ -125,6 +121,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public void reset() {
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+
     serversPanel.load(globalSettings);
     globalPanel.load(globalSettings);
     about.load(telemetry);
@@ -144,13 +143,15 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     }
     about = null;
     rules = null;
-    serverManager.reloadServers();
+    SonarLintUtils.getService(SonarLintEngineManager.class).reloadServers();
   }
 
   private JPanel getPanel() {
     if (rootPanel == null) {
+      SonarApplication sonarApplication = SonarLintUtils.getService(SonarApplication.class);
       about = new SonarLintAboutPanel(sonarApplication);
-      rules = new RuleConfigurationPanel(serverManager.getStandaloneEngine());
+      StandaloneSonarLintEngine standaloneEngine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
+      rules = new RuleConfigurationPanel(standaloneEngine);
       exclusions = new GlobalExclusionsPanel();
       globalPanel = new SonarLintGlobalOptionsPanel();
       serversPanel = new SonarQubeServerMgmtPanel();

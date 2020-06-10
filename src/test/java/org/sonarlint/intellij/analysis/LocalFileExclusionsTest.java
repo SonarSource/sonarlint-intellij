@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -42,13 +41,12 @@ public class LocalFileExclusionsTest extends AbstractSonarLintMockedTests {
   private FileType type = mock(FileType.class);
   private VirtualFile testFile = mock(VirtualFile.class);
   private BooleanSupplier powerModeCheck = mock(BooleanSupplier.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
   private ProjectRootManager projectRootManager = mock(ProjectRootManager.class);
   private LocalFileExclusions exclusions;
 
   @Before
   public void prepare() {
-    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, appUtils, projectRootManager, powerModeCheck);
+    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, projectRootManager, powerModeCheck);
     when(powerModeCheck.getAsBoolean()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));

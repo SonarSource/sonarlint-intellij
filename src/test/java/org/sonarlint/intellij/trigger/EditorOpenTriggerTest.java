@@ -40,7 +40,7 @@ public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
 
   @Before
   public void start() {
-    editorTrigger = new EditorOpenTrigger(getProject(), submitter, globalSettings);
+    editorTrigger = new EditorOpenTrigger();
     globalSettings.setAutoTrigger(true);
   }
 

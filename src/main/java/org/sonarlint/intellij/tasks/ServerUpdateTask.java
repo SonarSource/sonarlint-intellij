@@ -187,7 +187,7 @@ public class ServerUpdateTask {
       Module[] modules = ModuleManager.getInstance(project).getModules();
 
       for (Module m : modules) {
-        SonarLintUtils.get(m, ModuleBindingManager.class).updateBinding(engine);
+        SonarLintUtils.getService(m, ModuleBindingManager.class).updateBinding(engine);
       }
     }
   }
@@ -197,10 +197,10 @@ public class ServerUpdateTask {
       SonarLintConsole console = SonarLintConsole.get(project);
       console.info("Clearing all issues because binding was updated");
 
-      IssueManager store = SonarLintUtils.get(project, IssueManager.class);
+      IssueManager store = SonarLintUtils.getService(project, IssueManager.class);
       store.clear();
 
-      SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+      SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
     }
   }

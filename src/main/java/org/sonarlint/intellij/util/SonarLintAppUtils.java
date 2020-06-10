@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.components.ApplicationComponent;
+
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -27,7 +27,7 @@ import com.intellij.openapi.project.ProjectLocator;
 import com.intellij.openapi.project.ProjectUtil;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.ProjectFileIndex;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PathUtil;
 import java.nio.file.Path;
@@ -37,9 +37,14 @@ import javax.annotation.CheckForNull;
 
 import static com.intellij.openapi.application.ApplicationManager.getApplication;
 
-public class SonarLintAppUtils extends ApplicationComponent.Adapter {
+public class SonarLintAppUtils {
+
+  private SonarLintAppUtils() {
+    // util class
+  }
+
   @CheckForNull
-  public Module findModuleForFile(VirtualFile file, Project project) {
+  public static Module findModuleForFile(VirtualFile file, Project project) {
     return getApplication().<Module>runReadAction(() -> {
       if (!project.isOpen()) {
         return null;
@@ -49,11 +54,11 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   }
 
   @CheckForNull
-  public Project guessProjectForFile(VirtualFile file) {
+  public static Project guessProjectForFile(VirtualFile file) {
     return ProjectLocator.getInstance().guessProjectForFile(file);
   }
 
-  public boolean isOpenFile(Project project, VirtualFile file) {
+  public static boolean isOpenFile(Project project, VirtualFile file) {
     return getApplication().<Boolean>runReadAction(() -> {
       if (!project.isOpen()) {
         return false;
@@ -68,7 +73,7 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
    * Path will always contain forward slashes.
    */
   @CheckForNull
-  public String getRelativePathForAnalysis(Project project, VirtualFile virtualFile) {
+  public static String getRelativePathForAnalysis(Project project, VirtualFile virtualFile) {
     Module module = findModuleForFile(virtualFile, project);
     if (module == null) {
       return null;
@@ -80,7 +85,7 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
    * Path will always contain forward slashes.
    */
   @CheckForNull
-  public String getRelativePathForAnalysis(Module module, VirtualFile virtualFile) {
+  public static String getRelativePathForAnalysis(Module module, VirtualFile virtualFile) {
     String relativePathToProject = getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
     if (relativePathToProject != null) {
       return relativePathToProject;
@@ -95,23 +100,19 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   }
 
   @CheckForNull
-  public String getPathRelativeToProjectBaseDir(Project project, VirtualFile file) {
+  public static String getPathRelativeToProjectBaseDir(Project project, VirtualFile file) {
     final VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
     if (projectDir == null) {
       return null;
     }
-    String relativePathToProject = VfsUtil.getRelativePath(file, projectDir);
-    if (relativePathToProject != null) {
-      return relativePathToProject;
-    }
-    return null;
+    return VfsUtilCore.getRelativePath(file, projectDir);
   }
 
   /**
    * Path will always contain forward slashes.
    */
   @CheckForNull
-  public String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
+  public static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
     Path baseDir = Paths.get(module.getModuleFilePath()).getParent();
     Path filePath = Paths.get(file.getPath());
     if (!filePath.startsWith(baseDir)) {
@@ -124,8 +125,8 @@ public class SonarLintAppUtils extends ApplicationComponent.Adapter {
   private static String getPathRelativeToContentRoot(Module module, VirtualFile file) {
     ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
     for (VirtualFile root : moduleRootManager.getContentRoots()) {
-      if (VfsUtil.isAncestor(root, file, true)) {
-        return VfsUtil.getRelativePath(file, root);
+      if (VfsUtilCore.isAncestor(root, file, true)) {
+        return VfsUtilCore.getRelativePath(file, root);
       }
     }
     return null;

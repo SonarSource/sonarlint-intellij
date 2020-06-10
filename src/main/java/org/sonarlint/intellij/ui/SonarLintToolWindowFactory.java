@@ -47,8 +47,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addIssuesTab(Project project, ToolWindow toolWindow) {
-    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
-    IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
+    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
     CurrentFileController scope = new CurrentFileController(project, issueManager);
     SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project, projectBindingManager, scope);
     Content issuesContent = toolWindow.getContentManager().getFactory()
@@ -61,7 +61,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addAnalysisResultsTab(Project project, ToolWindow toolWindow) {
-    ProjectBindingManager projectBindingManager = SonarLintUtils.get(project, ProjectBindingManager.class);
+    ProjectBindingManager projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
     SonarLintAnalysisResultsPanel resultsPanel = new SonarLintAnalysisResultsPanel(project, projectBindingManager);
     Content analysisResultsContent = toolWindow.getContentManager().getFactory()
       .createContent(

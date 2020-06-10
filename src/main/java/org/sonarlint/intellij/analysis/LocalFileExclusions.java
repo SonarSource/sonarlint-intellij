@@ -47,35 +47,19 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
 
 public class LocalFileExclusions {
-  private final SonarLintAppUtils appUtils;
   private final ProjectRootManager projectRootManager;
   private final BooleanSupplier powerSaveModeCheck;
 
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
 
-  /**
-   * Used by pico container
-   */
-  public LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    ProjectRootManager projectRootManager) {
-    this(project, settings, projectSettings, appUtils, projectRootManager, PowerSaveMode::isEnabled);
-  }
-
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
-  LocalFileExclusions(Project project, SonarLintGlobalSettings settings, SonarLintProjectSettings projectSettings, SonarLintAppUtils appUtils,
-    ProjectRootManager projectRootManager, BooleanSupplier powerSaveModeCheck) {
-    this.appUtils = appUtils;
-    this.projectRootManager = projectRootManager;
-    this.powerSaveModeCheck = powerSaveModeCheck;
+  public LocalFileExclusions(Project project) {
+    this.projectRootManager = ProjectRootManager.getInstance(project);
+    this.powerSaveModeCheck = PowerSaveMode::isEnabled;
 
     subscribeToSettingsChanges(project);
-    loadGlobalExclusions(settings);
-    loadProjectExclusions(projectSettings);
+    loadGlobalExclusions(SonarLintUtils.getService(SonarLintGlobalSettings.class));
+    loadProjectExclusions(SonarLintUtils.getService(project, SonarLintProjectSettings.class));
   }
 
   private static Set<String> getExclusionsOfType(Collection<ExclusionItem> exclusions, ExclusionItem.Type type) {
@@ -121,7 +105,7 @@ public class LocalFileExclusions {
       return result;
     }
 
-    String relativePath = appUtils.getRelativePathForAnalysis(module, file);
+    String relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file);
     if (relativePath == null) {
       return Result.excluded("Could not create a relative path");
     }

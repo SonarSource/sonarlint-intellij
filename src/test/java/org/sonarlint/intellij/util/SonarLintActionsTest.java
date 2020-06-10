@@ -40,13 +40,13 @@ public class SonarLintActionsTest extends AbstractSonarLintMockedTests {
   @Before
   public void prepare() {
     super.register(app, ActionManager.class, actionManager);
-    instance = new SonarLintActions(actionManager);
+    instance = new SonarLintActions();
     when(actionManager.getAction("SonarLint.AnalyzeMenu")).thenReturn(sonarlintAnalyzeMenuGroup);
   }
 
   @Test
   public void should_create_actions() {
-    instance.initComponent();
+    instance.init();
 
     assertActionFields(instance.analyzeAllFiles());
     assertActionFields(instance.clearResults());
@@ -57,19 +57,18 @@ public class SonarLintActionsTest extends AbstractSonarLintMockedTests {
     assertActionFields(instance.clearIssues());
     assertActionFields(instance.cleanConsole());
 
-    assertThat(instance.getComponentName()).isEqualTo("SonarLintActions");
   }
 
   @Test
   public void should_register_analyze_group_when_analyze_menu_exists() {
     when(actionManager.getAction("AnalyzeMenu")).thenReturn(analyzeMenuGroup);
-    instance.initComponent();
+    instance.init();
     assertThat(analyzeMenuGroup.getChildActionsOrStubs()).contains(sonarlintAnalyzeMenuGroup);
   }
 
   @Test
   public void should_not_register_analyze_group_when_analyze_menu_does_not_exist() {
-    instance.initComponent();
+    instance.init();
     assertThat(analyzeMenuGroup.getChildActionsOrStubs()).isEmpty();
   }
 

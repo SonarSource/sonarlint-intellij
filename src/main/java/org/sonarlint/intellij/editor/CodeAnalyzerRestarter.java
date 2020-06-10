@@ -21,7 +21,6 @@ package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -37,28 +36,24 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 
-public class CodeAnalyzerRestarter extends AbstractProjectComponent implements IssueStoreListener {
-  private final FileEditorManager fileEditorManager;
-  private final DaemonCodeAnalyzer codeAnalyzer;
-  private final PsiManager psiManager;
+public class CodeAnalyzerRestarter implements IssueStoreListener {
   private final MessageBus messageBus;
+  private final Project myProject;
 
-  protected CodeAnalyzerRestarter(Project project, FileEditorManager fileEditorManager,
-    DaemonCodeAnalyzer codeAnalyzer, PsiManager psiManager, MessageBus messageBus) {
-    super(project);
-    this.fileEditorManager = fileEditorManager;
-    this.codeAnalyzer = codeAnalyzer;
-    this.psiManager = psiManager;
-    this.messageBus = messageBus;
+  protected CodeAnalyzerRestarter(Project project) {
+    myProject = project;
+    this.messageBus = project.getMessageBus();
   }
 
-  @Override
-  public void initComponent() {
+
+  public void init() {
     MessageBusConnection busConnection = messageBus.connect(myProject);
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this);
   }
 
   void refreshAllFiles() {
+    FileEditorManager fileEditorManager = FileEditorManager.getInstance(myProject);
+    DaemonCodeAnalyzer codeAnalyzer = DaemonCodeAnalyzer.getInstance(myProject);
     VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
     Arrays.stream(openFiles)
       .map(this::getPsi)
@@ -67,6 +62,8 @@ public class CodeAnalyzerRestarter extends AbstractProjectComponent implements I
   }
 
   void refreshFiles(Collection<VirtualFile> changedFiles) {
+    FileEditorManager fileEditorManager = FileEditorManager.getInstance(myProject);
+    DaemonCodeAnalyzer codeAnalyzer = DaemonCodeAnalyzer.getInstance(myProject);
     VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
     Arrays.stream(openFiles)
       .filter(changedFiles::contains)
@@ -80,7 +77,7 @@ public class CodeAnalyzerRestarter extends AbstractProjectComponent implements I
     if (!virtualFile.isValid()) {
       return null;
     }
-    return psiManager.findFile(virtualFile);
+    return PsiManager.getInstance(myProject).findFile(virtualFile);
   }
 
   @Override public void filesChanged(final Map<VirtualFile, Collection<LiveIssue>> map) {

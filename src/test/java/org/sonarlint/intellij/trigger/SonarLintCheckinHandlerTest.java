@@ -28,7 +28,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.AnalysisResultIssues;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -44,7 +43,6 @@ import static org.mockito.Mockito.when;
 public class SonarLintCheckinHandlerTest extends AbstractSonarLintMockedTests {
   private SonarLintCheckinHandler handler;
   private CompletableFuture<Void> future = new CompletableFuture<>();
-  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
 
   private VirtualFile file = mock(VirtualFile.class);
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
@@ -69,7 +67,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintMockedTests {
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
-    handler = new SonarLintCheckinHandler(globalSettings, project, checkinProjectPanel);
+    handler = new SonarLintCheckinHandler(project, checkinProjectPanel);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
@@ -84,7 +82,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintMockedTests {
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
-    handler = new SonarLintCheckinHandler(globalSettings, project, checkinProjectPanel);
+    handler = new SonarLintCheckinHandler(project, checkinProjectPanel);
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);

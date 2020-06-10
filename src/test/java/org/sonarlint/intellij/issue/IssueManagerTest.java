@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
@@ -36,7 +35,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.persistence.IssuePersistence;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,7 +61,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     when(file1.isValid()).thenReturn(true);
     when(file1.getPath()).thenReturn("file1");
 
-    manager = new IssueManager(ApplicationManager.getApplication().getComponent(SonarLintAppUtils.class), getProject(), cache, store);
+    manager = new IssueManager(getProject(), cache, store);
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
 

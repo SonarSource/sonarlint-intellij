@@ -20,26 +20,24 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.issue.IssueProcessor;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 /**
  * A modal task (blocking) initiated explicitly by the user.
  */
 class SonarLintUserTask extends SonarLintTask {
-  private final SonarLintStatus status;
 
-  SonarLintUserTask(IssueProcessor processor, SonarLintJob job, SonarLintStatus status, boolean modal, SonarApplication sonarApplication) {
-    super(processor, job, modal, false, sonarApplication);
-    this.status = status;
+  SonarLintUserTask(Project project, SonarLintJob job, boolean modal) {
+    super(project, job, modal, false);
   }
 
   @Override public void run(@NotNull ProgressIndicator indicator) {
     try {
       super.run(indicator);
     } finally {
-      status.stopRun();
+      SonarLintUtils.getService(myProject, SonarLintStatus.class).stopRun();
     }
   }
 }

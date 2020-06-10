@@ -21,7 +21,6 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
@@ -32,21 +31,17 @@ import java.util.List;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-public class GlobalLogOutput extends ApplicationComponent.Adapter implements LogOutput, Disposable {
-  private final List<SonarLintConsole> consoles;
+public class GlobalLogOutput implements LogOutput, Disposable {
 
-  public GlobalLogOutput() {
-    this.consoles = new LinkedList<>();
-  }
+  private final List<SonarLintConsole> consoles = new LinkedList<>();
 
-  @Override
-  public void initComponent() {
+  public void init() {
     MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect(this);
     busConnection.subscribe(ProjectManager.TOPIC, new ProjectListener());
   }
 
   public static GlobalLogOutput get() {
-    return ApplicationManager.getApplication().getComponent(GlobalLogOutput.class);
+    return SonarLintUtils.getService(GlobalLogOutput.class);
   }
 
   @Override
@@ -93,7 +88,7 @@ public class GlobalLogOutput extends ApplicationComponent.Adapter implements Log
   private class ProjectListener implements ProjectManagerListener {
 
     @Override public void projectOpened(Project project) {
-      addConsole(project.getComponent(SonarLintConsole.class));
+      addConsole(SonarLintUtils.getService(project, SonarLintConsole.class));
     }
 
     @Override public boolean canCloseProject(Project project) {
@@ -105,7 +100,7 @@ public class GlobalLogOutput extends ApplicationComponent.Adapter implements Log
     }
 
     @Override public void projectClosing(Project project) {
-      removeConsole(project.getComponent(SonarLintConsole.class));
+      removeConsole(SonarLintUtils.getService(project, SonarLintConsole.class));
     }
   }
 }

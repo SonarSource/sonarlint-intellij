@@ -30,7 +30,7 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -45,12 +45,10 @@ import static org.mockito.Mockito.when;
 public class ProjectBindingManagerTest {
   private ProjectBindingManager projectBindingManager;
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
-  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
 
   private StandaloneSonarLintEngine standaloneEngine = mock(StandaloneSonarLintEngine.class);
   private ConnectedSonarLintEngine connectedEngine = mock(ConnectedSonarLintEngine.class);
   private SonarLintEngineManager engineManager = mock(SonarLintEngineManager.class);
-  private SonarLintAppUtils appUtils = mock(SonarLintAppUtils.class);
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
@@ -64,7 +62,7 @@ public class ProjectBindingManagerTest {
     when(engineManager.getStandaloneEngine()).thenReturn(standaloneEngine);
     when(engineManager.getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), anyString())).thenReturn(connectedEngine);
     when(project.getBasePath()).thenReturn("");
-    projectBindingManager = new ProjectBindingManager(appUtils, project, engineManager, settings, globalSettings, notifications, console);
+    projectBindingManager = new ProjectBindingManager(project, engineManager, settings, notifications, console);
   }
 
   @Test
@@ -98,6 +96,7 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void should_find_sq_server() throws InvalidBindingException {
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     settings.setBindingEnabled(true);
     settings.setProjectKey("project1");
     settings.setServerId("server1");
@@ -109,6 +108,7 @@ public class ProjectBindingManagerTest {
 
   @Test
   public void fail_if_cant_find_server() throws InvalidBindingException {
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     settings.setBindingEnabled(true);
     settings.setProjectKey("project1");
     settings.setServerId("server1");

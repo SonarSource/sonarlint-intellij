@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.module.Module;
@@ -50,23 +49,21 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 import static java.util.stream.Collectors.toList;
 
-public class IssueProcessor extends AbstractProjectComponent {
+public class IssueProcessor {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
-  private final IssueManager manager;
   private final SonarLintConsole console;
-  private final ServerIssueUpdater serverIssueUpdater;
+  private final Project myProject;
 
-  public IssueProcessor(Project project, IssueMatcher matcher, IssueManager manager, ServerIssueUpdater serverIssueUpdater) {
-    super(project);
-    this.matcher = matcher;
-    this.manager = manager;
+  public IssueProcessor(Project project) {
+    this.matcher = new IssueMatcher(project);
     this.console = SonarLintConsole.get(project);
-    this.serverIssueUpdater = serverIssueUpdater;
+    this.myProject = project;
   }
 
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
     long start = System.currentTimeMillis();
+    IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
     Map<VirtualFile, Collection<LiveIssue>> transformedIssues = ReadAction.compute(() -> {
       manager.clear(job.filesToClearIssues());
       Map<VirtualFile, Collection<LiveIssue>> issues = transformIssues(rawIssues, job.allFiles().collect(toList()), failedAnalysisFiles);
@@ -93,6 +90,7 @@ public class IssueProcessor extends AbstractProjectComponent {
       }
 
       if (!filesWithIssuesPerModule.isEmpty()) {
+        ServerIssueUpdater serverIssueUpdater = SonarLintUtils.getService(myProject, ServerIssueUpdater.class);
         serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, job.waitForServerIssues());
       }
     }

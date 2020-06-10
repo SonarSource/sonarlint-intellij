@@ -22,7 +22,6 @@ package org.sonarlint.intellij.core;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import java.time.ZonedDateTime;
@@ -41,32 +40,27 @@ import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotifica
 import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotificationListener;
 import org.sonarsource.sonarlint.core.notifications.SonarQubeNotifications;
 
-public class SonarQubeEventNotifications extends AbstractProjectComponent {
+public class SonarQubeEventNotifications {
   public static final String GROUP_SONARQUBE_EVENT = "SonarLint: SonarQube Events";
 
-  private final ProjectBindingManager bindingManager;
-  private final SonarLintProjectState projectState;
-  private final SonarLintProjectSettings projectSettings;
   private final EventListener eventListener;
   private final ProjectNotificationTime notificationTime;
   private final MessageBusConnection busConnection;
+  private final Project myProject;
 
-  public SonarQubeEventNotifications(Project project, ProjectBindingManager bindingManager, SonarLintProjectState projectState,
-    SonarLintProjectSettings projectSettings) {
-    super(project);
-    this.bindingManager = bindingManager;
-    this.projectState = projectState;
-    this.projectSettings = projectSettings;
+  public SonarQubeEventNotifications(Project project) {
+    myProject = project;
     this.eventListener = new EventListener();
     this.notificationTime = new ProjectNotificationTime();
     this.busConnection = project.getMessageBus().connect(myProject);
   }
 
-  @Override
-  public void projectOpened() {
+  public void init() {
+    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
     register(projectSettings);
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, settings -> {
       // always reset notification date, whether bound or not
+      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);;
       projectState.setLastEventPolling(ZonedDateTime.now());
       register(settings);
     });
@@ -77,16 +71,13 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
     });
   }
 
-  @Override
-  public void projectClosed() {
-    unregister();
-  }
 
   private void register(SonarLintProjectSettings settings) {
     unregister();
     if (settings.isBindingEnabled()) {
       SonarQubeServer server;
       try {
+        ProjectBindingManager bindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
         server = bindingManager.getSonarQubeServer();
       } catch (InvalidBindingException e) {
         // do nothing
@@ -99,7 +90,7 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
     }
   }
 
-  private void unregister() {
+  public void unregister() {
     SonarQubeNotifications.get().remove(eventListener);
   }
 
@@ -116,6 +107,7 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
   private class ProjectNotificationTime implements LastNotificationTime {
 
     @Override public ZonedDateTime get() {
+      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);;
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling == null) {
         lastEventPolling = ZonedDateTime.now();
@@ -125,6 +117,7 @@ public class SonarQubeEventNotifications extends AbstractProjectComponent {
     }
 
     @Override public void set(ZonedDateTime dateTime) {
+      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);;
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling != null && dateTime.isBefore(lastEventPolling)) {
         // this can happen if the settings changed between the read and write

@@ -50,8 +50,8 @@ public class SonarClearIssuesAction extends AnAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      IssueManager issueManager = SonarLintUtils.get(project, IssueManager.class);
-      DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.get(project, DaemonCodeAnalyzer.class);
+      IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
+      DaemonCodeAnalyzer codeAnalyzer = SonarLintUtils.getService(project, DaemonCodeAnalyzer.class);
 
       ApplicationManager.getApplication().runReadAction(() -> {
         issueManager.clear();

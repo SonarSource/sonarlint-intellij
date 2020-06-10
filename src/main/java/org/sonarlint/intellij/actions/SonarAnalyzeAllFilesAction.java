@@ -69,7 +69,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
       return;
     }
 
-    SonarLintSubmitter submitter = SonarLintUtils.get(project, SonarLintSubmitter.class);
+    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     Collection<VirtualFile> allFiles = getAllFiles(project);
     AnalysisCallback callback = new ShowAnalysisResultsCallable(project, allFiles, "all project files");
     submitter.submitFiles(allFiles, TriggerType.ALL, callback, false);
@@ -77,7 +77,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
   private static Collection<VirtualFile> getAllFiles(Project project) {
     List<VirtualFile> fileList = new ArrayList<>();
-    ProjectFileIndex fileIndex = SonarLintUtils.get(project, ProjectRootManager.class).getFileIndex();
+    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
     fileIndex.iterateContent(vFile -> {
       if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile, vFile.getFileType())) {
         fileList.add(vFile);

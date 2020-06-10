@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarClearAnalysisResultsAction extends AnAction {
@@ -38,7 +38,7 @@ public class SonarClearAnalysisResultsAction extends AnAction {
       return;
     }
 
-    AnalysisResultIssues store = SonarLintUtils.get(project, AnalysisResultIssues.class);
+    IssueStore store = SonarLintUtils.getService(project, IssueStore.class);
     store.clear();
   }
 }
