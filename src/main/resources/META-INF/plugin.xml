@@ -242,7 +242,7 @@
     </extensions>
 
     <extensionPoints>
-        <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator"/>
+        <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator" dynamic="true"/>
     </extensionPoints>
 
     <actions>
