@@ -67,14 +67,13 @@ public class SonarLintAnalyzer {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     long start = System.currentTimeMillis();
     Map<String, String> pluginProps = new HashMap<>();
-    AnalysisConfigurator[] analysisConfigurators = AnalysisConfigurator.EP_NAME.getExtensions();
-    if (analysisConfigurators.length > 0) {
-      for (AnalysisConfigurator config : analysisConfigurators) {
-        console.debug("Configuring analysis with " + config.getClass().getName());
-        pluginProps.putAll(config.configure(module));
-      }
-    } else {
-      console.info("No analysis configurator found");
+    List<AnalysisConfigurator> analysisConfigurators = AnalysisConfigurator.EP_NAME.getExtensionList();
+    if (analysisConfigurators.isEmpty()) {
+      console.info("No analysis configurators found");
+    }
+    for (AnalysisConfigurator config : analysisConfigurators) {
+      console.debug("Configuring analysis with " + config.getClass().getName());
+      pluginProps.putAll(config.configure(module));
     }
 
     // configure files
