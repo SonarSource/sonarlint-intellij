@@ -20,12 +20,10 @@
 package org.sonarlint.intellij;
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManager;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageExtensionPoint;
 import com.intellij.notification.NotificationGroup;
-import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
@@ -34,31 +32,21 @@ import org.sonarlint.intellij.core.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.core.SonarQubeEventNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
-import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class SonarApplication {
   private IdeaPluginDescriptor plugin;
   private ConcurrentMap<String, LanguageExtensionPoint> annotatorsByLanguage = new ConcurrentHashMap<>();
 
-
   public void init() {
-    annotatorsByLanguage = new ConcurrentHashMap<>();
     registerExternalAnnotator();
     registerNotifications();
-    cleanOldWorkDir();
   }
-
-
 
   public void registerExternalAnnotator() {
     Language.getRegisteredLanguages().stream()
@@ -120,20 +108,6 @@ public class SonarApplication {
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_BINDING_PROBLEM);
     NotificationGroup.balloonGroup(SonarLintProjectNotifications.GROUP_UPDATE_NOTIFICATION);
     NotificationGroup.balloonGroup(SonarQubeEventNotifications.GROUP_SONARQUBE_EVENT);
-  }
-
-  private static void cleanOldWorkDir() {
-    Path oldWorkDir = Paths.get(PathManager.getConfigPath()).resolve("sonarlint").resolve("work");
-    if (!Files.isDirectory(oldWorkDir)) {
-      return;
-    }
-
-    try (Stream<Path> stream = Files.list(oldWorkDir)) {
-      stream.filter(f -> f.getFileName().toString().startsWith(".sonartmp_"))
-        .forEach(FileUtils::deleteRecursively);
-    } catch (IOException e) {
-      // ignore
-    }
   }
 
   public Path getPluginPath() {
