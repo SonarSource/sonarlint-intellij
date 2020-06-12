@@ -24,22 +24,22 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.compiler.CompilationStatusListener;
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerTopics;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.util.messages.MessageBusConnection;
-import java.util.UUID;
-import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class MakeTrigger extends AbstractProjectComponent implements BuildManagerListener, CompilationStatusListener {
-  private final SonarLintConsole console;
-  private final SonarLintSubmitter submitter;
+import javax.annotation.Nullable;
+import java.util.UUID;
 
-  public MakeTrigger(Project project, SonarLintSubmitter submitter, SonarLintConsole console) {
-    super(project);
-    this.submitter = submitter;
-    this.console = console;
+public class MakeTrigger implements BuildManagerListener, CompilationStatusListener, StartupActivity {
+  private Project project;
+
+  @Override
+  public void runActivity(@NotNull Project project) {
+    this.project = project;
     MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
     busConnection.subscribe(BuildManagerListener.TOPIC, this);
     busConnection.subscribe(CompilerTopics.COMPILATION_STATUS, this);
@@ -56,13 +56,13 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
 
   @Override public void buildFinished(@Nullable Project project, UUID sessionId, boolean isAutomake) {
     // project is null in DummyCompileContext
-    if (project == null || !project.equals(myProject) || !isAutomake) {
+    if (project == null || !project.equals(this.project) || !isAutomake) {
       // covered by compilationFinished
       return;
     }
 
-    console.debug("build finished");
-    submitter.submitOpenFilesAuto(TriggerType.COMPILATION);
+    SonarLintUtils.getService(project, SonarLintConsole.class).debug("build finished");
+    SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.COMPILATION);
   }
 
   /**
@@ -70,20 +70,13 @@ public class MakeTrigger extends AbstractProjectComponent implements BuildManage
    * {@link CompileContext} can have a null Project. See {@link com.intellij.openapi.compiler.DummyCompileContext}.
    */
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
-    Project project = compileContext.getProject();
-    if (project != null && project.equals(myProject)) {
-      console.debug("compilation finished");
-      submitter.submitOpenFilesAuto(TriggerType.COMPILATION);
+    if (compileContext.getProject().equals(this.project)) {
+      SonarLintUtils.getService(project, SonarLintConsole.class).debug("compilation finished");
+      SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.COMPILATION);
     }
   }
 
   @Override public void fileGenerated(String outputRoot, String relativePath) {
     // nothing to do
-  }
-
-  @NotNull
-  @Override
-  public String getComponentName() {
-    return "MakeTrigger";
   }
 }

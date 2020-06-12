@@ -19,29 +19,16 @@
  */
 package org.sonarlint.intellij;
 
-import com.intellij.ide.AppLifecycleListener;
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
+import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.lang.Language;
 import com.intellij.lang.LanguageExtensionPoint;
 import com.intellij.notification.NotificationGroup;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.extensions.PluginId;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupManager;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
@@ -49,13 +36,22 @@ import org.sonarlint.intellij.core.SonarQubeEventNotifications;
 import org.sonarlint.intellij.editor.SonarExternalAnnotator;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 public class SonarApplication {
   private IdeaPluginDescriptor plugin;
   private ConcurrentMap<String, LanguageExtensionPoint> annotatorsByLanguage = new ConcurrentHashMap<>();
 
 
   public void init() {
-    plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     annotatorsByLanguage = new ConcurrentHashMap<>();
     registerExternalAnnotator();
     registerNotifications();
@@ -107,14 +103,14 @@ public class SonarApplication {
   }
 
   public String getVersion() {
-    return plugin.getVersion();
+    return getPlugin().getVersion();
   }
 
   private void registerExternalAnnotatorFor(Language language) {
     LanguageExtensionPoint<SonarExternalAnnotator> ep = new LanguageExtensionPoint<>();
     ep.language = language.getID();
     ep.implementationClass = SonarExternalAnnotator.class.getName();
-    ep.setPluginDescriptor(plugin);
+    ep.setPluginDescriptor(getPlugin());
     getExternalAnnotatorExtensionPoint().registerExtension(ep);
     annotatorsByLanguage.put(language.getID(), ep);
   }
@@ -141,6 +137,13 @@ public class SonarApplication {
   }
 
   public Path getPluginPath() {
-    return plugin.getPath().toPath();
+    return getPlugin().getPath().toPath();
+  }
+
+  private IdeaPluginDescriptor getPlugin() {
+    if (plugin == null) {
+      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea"));
+    }
+    return plugin;
   }
 }

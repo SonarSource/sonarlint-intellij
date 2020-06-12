@@ -44,7 +44,7 @@ public class MakeTriggerTest extends AbstractSonarLintMockedTests {
   @Before
   public void prepare() {
     when(context.getProject()).thenReturn(project);
-    trigger = new MakeTrigger(project, submitter, console);
+    trigger = new MakeTrigger();
   }
 
   @Test
@@ -73,11 +73,6 @@ public class MakeTriggerTest extends AbstractSonarLintMockedTests {
     trigger.compilationFinished(false, 0, 0, context);
     trigger.buildFinished(null, UUID.randomUUID(), true);
     verifyZeroInteractions(submitter);
-  }
-
-  @Test
-  public void component_name() {
-    assertThat(trigger.getComponentName()).isEqualTo("MakeTrigger");
   }
 
   @Test
