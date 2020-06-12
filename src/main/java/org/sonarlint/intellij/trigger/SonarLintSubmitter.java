@@ -55,7 +55,7 @@ public class SonarLintSubmitter {
     if (!globalSettings.isAutoTrigger()) {
       return;
     }
-    FileEditorManager editorManager = SonarLintUtils.getService(FileEditorManager.class);
+    FileEditorManager editorManager = FileEditorManager.getInstance(myProject);
     VirtualFile[] openFiles = editorManager.getOpenFiles();
     submitFiles(Arrays.asList(openFiles), trigger, true);
   }
