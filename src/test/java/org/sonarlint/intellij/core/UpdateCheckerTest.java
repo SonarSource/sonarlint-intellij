@@ -56,7 +56,7 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     when(bindingManager.getSonarQubeServer()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 
-    updateChecker = new UpdateChecker(getProject(), bindingManager, settings, notifications, new GlobalLogOutput());
+    updateChecker = new UpdateChecker(getProject());
   }
 
   @Test

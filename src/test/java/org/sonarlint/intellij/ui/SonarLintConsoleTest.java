@@ -34,7 +34,7 @@ public class SonarLintConsoleTest {
   private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private Project project = mock(Project.class);
   private ConsoleView consoleView = mock(ConsoleView.class);
-  private SonarLintConsole console = new SonarLintConsole(project, consoleView, settings);
+  private SonarLintConsole console = new SonarLintConsole(project);
 
   @Test
   public void testClear() {

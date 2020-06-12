@@ -62,7 +62,7 @@ public class ProjectBindingManagerTest {
     when(engineManager.getStandaloneEngine()).thenReturn(standaloneEngine);
     when(engineManager.getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), anyString())).thenReturn(connectedEngine);
     when(project.getBasePath()).thenReturn("");
-    projectBindingManager = new ProjectBindingManager(project, engineManager, settings, notifications, console);
+    projectBindingManager = new ProjectBindingManager(project);
   }
 
   @Test

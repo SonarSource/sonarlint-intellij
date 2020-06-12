@@ -66,7 +66,7 @@ public class CodeAnalyzerRestarterTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void should_subscribe_on_init() {
-    analyzerRestarter.initComponent();
+    analyzerRestarter.init();
     verify(bus).connect(project);
   }
 

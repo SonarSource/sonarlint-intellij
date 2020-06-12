@@ -82,7 +82,7 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
     super.register(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     super.register(IssueManager.class, mock(IssueManager.class));
 
-    task = new SonarLintTask(processor, job, false, true, sonarApplication);
+    task = new SonarLintTask(getProject(), job, false, true);
 
     //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();

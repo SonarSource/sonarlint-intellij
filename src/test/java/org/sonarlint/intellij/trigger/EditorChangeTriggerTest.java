@@ -53,8 +53,8 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(editorFactory.getEventMulticaster()).thenReturn(mock(EditorEventMulticaster.class));
     globalSettings = new SonarLintGlobalSettings();
     globalSettings.setAutoTrigger(true);
-    underTest = new EditorChangeTrigger(getProject(), submitter, editorFactory, docManager, 500);
-    underTest.projectOpened();
+    underTest = new EditorChangeTrigger(getProject());
+    underTest.onProjectOpened();
   }
 
   @Test
@@ -160,7 +160,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 //    when(utils.findModuleForFile(file, getProject())).thenReturn(m1);
 
     underTest.documentChanged(event);
-    underTest.projectClosed();
+    underTest.onProjectClosed();
     assertThat(underTest.getEvents()).isEmpty();
   }
 }

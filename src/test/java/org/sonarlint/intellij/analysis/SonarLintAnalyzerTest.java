@@ -55,7 +55,7 @@ public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() throws InvalidBindingException {
-    analyzer = new SonarLintAnalyzer(projectBindingManager, encodingProjectManager, console, fileDocumentManager, telemetry);
+    analyzer = new SonarLintAnalyzer(getProject());
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
     when(facade.startAnalysis(anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
   }

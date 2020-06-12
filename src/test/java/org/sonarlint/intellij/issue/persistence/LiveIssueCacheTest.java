@@ -48,7 +48,7 @@ public class LiveIssueCacheTest {
   @Rule
   public ExpectedException exception = ExpectedException.none();
 
-  private LiveIssueCache cache = new LiveIssueCache(project, mock(ProjectManager.class), store, 10);
+  private LiveIssueCache cache = new LiveIssueCache(project);
 
   @Before
   public void setUp() {
@@ -189,7 +189,7 @@ public class LiveIssueCacheTest {
     VirtualFile file1 = createTestFile("file1");
     cache.save(file1, Collections.singleton(issue1));
 
-    cache.projectClosing(project);
+    cache.flushAll();
 
     verify(store).save(eq("file0"), anyCollection());
     verify(store).save(eq("file1"), anyCollection());

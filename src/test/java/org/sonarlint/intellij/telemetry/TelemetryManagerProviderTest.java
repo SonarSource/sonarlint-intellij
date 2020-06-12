@@ -40,7 +40,7 @@ public class TelemetryManagerProviderTest extends AbstractSonarLintLightTests {
   public void testCreation() throws Exception {
     Path path = temporaryFolder.newFolder().toPath().resolve("usage");
 
-    TelemetryManagerProvider engineProvider = new TelemetryManagerProvider(mock(SonarApplication.class), mock(ProjectManager.class)) {
+    TelemetryManagerProvider engineProvider = new TelemetryManagerProvider() {
       @Override
       Path getStorageFilePath() {
         return path;

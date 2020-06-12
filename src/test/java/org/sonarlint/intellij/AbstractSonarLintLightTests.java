@@ -33,6 +33,8 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+
 public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
 
   private SonarLintGlobalSettings globalSettings;
@@ -47,9 +49,9 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   @Before
   public final void init() {
-    globalSettings = ApplicationManager.getApplication().getComponent(SonarLintGlobalSettings.class);
-    projectSettings = getProject().getComponent(SonarLintProjectSettings.class);
-    moduleSettings = getModule().getComponent(SonarLintModuleSettings.class);
+    globalSettings = getService(SonarLintGlobalSettings.class);
+    projectSettings = getService(getProject(), SonarLintProjectSettings.class);
+    moduleSettings = getService(getModule(), SonarLintModuleSettings.class);
     disposable = Disposer.newDisposable();
   }
 

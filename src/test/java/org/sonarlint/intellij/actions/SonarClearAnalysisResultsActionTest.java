@@ -22,7 +22,7 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
+import org.sonarlint.intellij.issue.IssueStore;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -33,8 +33,8 @@ public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintMocked
 
   @Test
   public void clear() {
-    AnalysisResultIssues analysisResultIssues = mock(AnalysisResultIssues.class);
-    super.register(AnalysisResultIssues.class, analysisResultIssues);
+    IssueStore analysisResultIssues = mock(IssueStore.class);
+    super.register(IssueStore.class, analysisResultIssues);
 
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(project);

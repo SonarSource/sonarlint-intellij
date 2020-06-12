@@ -49,7 +49,7 @@ public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4Tes
 
   @Before
   public void prepare() {
-    manager = new SonarLintJobManager(getProject(), factory, progressManager, status, console);
+    manager = new SonarLintJobManager(getProject());
     when(task.isHeadless()).thenReturn(true);
     when(task.isConditionalModal()).thenReturn(true);
     when(status.tryRun()).thenReturn(true);

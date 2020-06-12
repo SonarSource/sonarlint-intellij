@@ -46,7 +46,7 @@ public class LocalFileExclusionsTest extends AbstractSonarLintMockedTests {
 
   @Before
   public void prepare() {
-    exclusions = new LocalFileExclusions(project, globalSettings, projectSettings, projectRootManager, powerModeCheck);
+    exclusions = new LocalFileExclusions(project);
     when(powerModeCheck.getAsBoolean()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
     when(testFile.getParent()).thenReturn(mock(VirtualFile.class));

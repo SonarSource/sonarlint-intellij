@@ -25,7 +25,7 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.issue.AnalysisResultIssues;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintActions;
 
@@ -35,13 +35,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AnalysisResultsTest extends AbstractSonarLintMockedTests {
-  private AnalysisResultIssues issues;
+  private IssueStore issues;
   private AnalysisResults analysisResults;
 
   @Before
   public void prepare() {
     register(app, SonarLintActions.class, mock(SonarLintActions.class, RETURNS_DEEP_STUBS));
-    issues = register(AnalysisResultIssues.class);
+    issues = register(IssueStore.class);
     analysisResults = new AnalysisResults(project);
   }
 

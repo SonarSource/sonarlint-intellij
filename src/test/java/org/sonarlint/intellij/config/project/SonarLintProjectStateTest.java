@@ -21,19 +21,20 @@ package org.sonarlint.intellij.config.project;
 
 import java.time.ZonedDateTime;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SonarLintProjectStateTest {
+public class SonarLintProjectStateTest extends AbstractSonarLintLightTests {
   @Test
   public void testEmpty() {
-    SonarLintProjectState state = new SonarLintProjectState();
+    SonarLintProjectState state = new SonarLintProjectState(getProject());
     assertThat(state.getLastEventPolling()).isNull();
   }
 
   @Test
   public void testSet() {
-    SonarLintProjectState state = new SonarLintProjectState();
+    SonarLintProjectState state = new SonarLintProjectState(getProject());
     state.setLastEventPolling(ZonedDateTime.now());
     assertThat(state.getLastEventPolling()).isBeforeOrEqualTo(ZonedDateTime.now());
     assertThat(state.getLastEventPolling()).isAfter(ZonedDateTime.now().minusSeconds(3));
@@ -41,13 +42,13 @@ public class SonarLintProjectStateTest {
 
   @Test
   public void testSerialization() {
-    SonarLintProjectState state = new SonarLintProjectState();
+    SonarLintProjectState state = new SonarLintProjectState(getProject());
     state.setLastEventPolling(ZonedDateTime.now().minusHours(2));
 
     SonarLintProjectState copy = state.getState();
     assertThat(copy.getLastEventPolling()).isEqualTo(state.getLastEventPolling());
 
-    SonarLintProjectState loaded = new SonarLintProjectState();
+    SonarLintProjectState loaded = new SonarLintProjectState(getProject());
     loaded.loadState(state);
     assertThat(loaded.getLastEventPolling()).isEqualTo(state.getLastEventPolling());
   }

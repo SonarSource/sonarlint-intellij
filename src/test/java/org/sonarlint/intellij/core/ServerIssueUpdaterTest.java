@@ -66,17 +66,17 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
   public void prepare() throws InvalidBindingException {
     ProjectBindingManager bindingManager = spy(getProject().getComponent(ProjectBindingManager.class));
     doReturn(engine).when(bindingManager).getConnectedEngine();
-    underTest = new ServerIssueUpdater(getProject(), issueManager, getProjectSettings(), bindingManager, mockedConsole);
+    underTest = new ServerIssueUpdater(getProject());
     getGlobalSettings().setSonarQubeServers(Collections.singletonList(SonarQubeServer.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
     getProjectSettings().setServerId(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);
 
-    underTest.initComponent();
+    underTest.init();
   }
 
   @After
   public void dispose() {
-    underTest.disposeComponent();
+    underTest.dispose();
   }
 
   @Test

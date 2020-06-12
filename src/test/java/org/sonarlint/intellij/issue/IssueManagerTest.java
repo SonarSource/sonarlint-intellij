@@ -61,7 +61,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     when(file1.isValid()).thenReturn(true);
     when(file1.getPath()).thenReturn("file1");
 
-    manager = new IssueManager(getProject(), cache, store);
+    manager = new IssueManager(getProject());
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
 
