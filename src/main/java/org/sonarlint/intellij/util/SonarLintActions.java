@@ -39,17 +39,16 @@ import org.sonarlint.intellij.actions.SonarClearIssuesAction;
  */
 public class SonarLintActions {
 
-  private AnAction clearResultsAction;
-  private AnAction clearIssuesAction;
-  private AnAction cleanConsoleAction;
-  private AnAction cancelAction;
-  private AnAction configureAction;
-  private AnAction analyzeChangedFilesAction;
-  private AnAction analyzeAllFilesAction;
-  private AnAction showAnalyzersAction;
+  private final AnAction clearResultsAction;
+  private final AnAction clearIssuesAction;
+  private final AnAction cleanConsoleAction;
+  private final AnAction cancelAction;
+  private final AnAction configureAction;
+  private final AnAction analyzeChangedFilesAction;
+  private final AnAction analyzeAllFilesAction;
+  private final AnAction showAnalyzersAction;
 
-
-  public void init() {
+  public SonarLintActions() {
     ActionManager actionManager = ActionManager.getInstance();
     AnAction analyzeMenu = actionManager.getAction("AnalyzeMenu");
     // some flavors of IDEA don't have the analyze menu

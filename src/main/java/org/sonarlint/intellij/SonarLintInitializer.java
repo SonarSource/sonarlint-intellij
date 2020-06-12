@@ -14,16 +14,13 @@ public class SonarLintInitializer implements AppLifecycleListener {
   @Override
   public void appFrameCreated(@NotNull List<String> commandLineArgs) {
     SonarLintUtils.getService(SonarApplication.class).init();
-    SonarLintUtils.getService(SonarLintActions.class).init();
     GlobalLogOutput.get().init();
     SonarLintUtils.getService(SonarLintTelemetry.class).init();
-
   }
 
   @Override
   public void appClosing() {
     SonarLintUtils.getService(SonarLintTelemetry.class).dispose();
   }
-
-
+  
 }

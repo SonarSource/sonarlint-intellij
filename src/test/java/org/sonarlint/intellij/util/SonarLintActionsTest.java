@@ -46,8 +46,6 @@ public class SonarLintActionsTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void should_create_actions() {
-    instance.init();
-
     assertActionFields(instance.analyzeAllFiles());
     assertActionFields(instance.clearResults());
     assertAction(instance.configure());
@@ -62,13 +60,11 @@ public class SonarLintActionsTest extends AbstractSonarLintMockedTests {
   @Test
   public void should_register_analyze_group_when_analyze_menu_exists() {
     when(actionManager.getAction("AnalyzeMenu")).thenReturn(analyzeMenuGroup);
-    instance.init();
     assertThat(analyzeMenuGroup.getChildActionsOrStubs()).contains(sonarlintAnalyzeMenuGroup);
   }
 
   @Test
   public void should_not_register_analyze_group_when_analyze_menu_does_not_exist() {
-    instance.init();
     assertThat(analyzeMenuGroup.getChildActionsOrStubs()).isEmpty();
   }
 
