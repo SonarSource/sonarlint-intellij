@@ -161,7 +161,7 @@
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettings"/>
 
-        <backgroundPostStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
+        <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.SonarLintSubmitter"/>
     </extensions>
 
