@@ -27,12 +27,10 @@ import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.util.messages.MessageBusConnection;
+import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
-
-import javax.annotation.Nullable;
-import java.util.UUID;
 
 public class MakeTrigger implements BuildManagerListener, CompilationStatusListener, StartupActivity {
   private Project project;
@@ -54,9 +52,8 @@ public class MakeTrigger implements BuildManagerListener, CompilationStatusListe
     // nothing to do
   }
 
-  @Override public void buildFinished(@Nullable Project project, UUID sessionId, boolean isAutomake) {
-    // project is null in DummyCompileContext
-    if (project == null || !project.equals(this.project) || !isAutomake) {
+  @Override public void buildFinished(Project project, UUID sessionId, boolean isAutomake) {
+    if (!project.equals(this.project) || !isAutomake) {
       // covered by compilationFinished
       return;
     }
