@@ -98,7 +98,6 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
     assertThat(task.getJob()).isEqualTo(job);
     task.run(progress);
 
-    verify(sonarApplication).registerExternalAnnotator();
     verify(sonarLintAnalyzer).analyzeModule(eq(module), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
     verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
@@ -120,7 +119,6 @@ public class SonarLintTaskTest extends AbstractSonarLintMockedTests {
     verifyZeroInteractions(processor);
 
     // still called
-    verify(sonarApplication).registerExternalAnnotator();
     verify(listener).ended(job);
     verifyNoMoreInteractions(listener);
   }

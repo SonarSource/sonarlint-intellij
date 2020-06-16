@@ -26,7 +26,6 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.actionSystem.IdeActions;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
@@ -51,15 +50,6 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFileInPhpStorm;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
-  private final boolean unitTest;
-
-  public SonarExternalAnnotator() {
-    this(false);
-  }
-
-  public SonarExternalAnnotator(boolean unitTest) {
-    this.unitTest = unitTest;
-  }
 
   @Override
   public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
@@ -173,17 +163,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       flows = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
     }
 
-    @NonNls final String link = " <a "
+    @NonNls
+    final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
-      + (isDark() ? " color=\"7AB4C9\" " : "")
+      + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;
     return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + flows + link);
-  }
-
-  private boolean isDark() {
-    // in unit tests on a system without gui (like travis) UIUtil will fail, and Application is not available in simple tests
-    return unitTest || ApplicationManager.getApplication().isUnitTestMode() ||
-      UIUtil.isUnderDarcula();
   }
 
   /**
