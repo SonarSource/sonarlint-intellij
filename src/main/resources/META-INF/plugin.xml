@@ -239,6 +239,19 @@
         <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
         <projectService serviceImplementation="org.sonarlint.intellij.actions.IssuesViewTabOpener"/>
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
+
+        <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->
+        <externalAnnotator language="JAVA" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="kotlin" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="Python" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="PHP" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <!-- JavaScript is the base language for TypeScript, EcmaScript, jsx, ...-->
+        <externalAnnotator language="JavaScript" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="ruby" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <!-- XML is the base language for HTML, XHTML, ...-->
+        <externalAnnotator language="XML" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="Scala" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="Swift" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
     </extensions>
 
     <extensionPoints>

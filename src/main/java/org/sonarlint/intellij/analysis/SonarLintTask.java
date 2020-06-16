@@ -98,7 +98,6 @@ public class SonarLintTask extends Task.Backgroundable {
   @Override
   public void run(ProgressIndicator indicator) {
     AccumulatorIssueListener listener = new AccumulatorIssueListener();
-    sonarApplication.registerExternalAnnotator();
 
     try {
       checkCanceled(indicator, myProject);

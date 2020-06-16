@@ -33,11 +33,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -47,22 +45,18 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarExternalAnnotatorTest extends AbstractSonarLintMockedTests {
+public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   private PsiFile psiFile = mock(PsiFile.class);
   private VirtualFile virtualFile = mock(VirtualFile.class);
   private IssueManager store = mock(IssueManager.class);
   private AnnotationHolderImpl holder = new AnnotationHolderImpl(mock(AnnotationSession.class));
   private SonarExternalAnnotator.AnnotationContext ctx = new SonarExternalAnnotator.AnnotationContext(store);
   private TextRange psiFileRange = new TextRange(0, 100);
-  private SonarExternalAnnotator annotator = new SonarExternalAnnotator(true);
+  private SonarExternalAnnotator annotator = new SonarExternalAnnotator();
   private Document document = mock(Document.class);
-  private SonarLintGlobalSettings globalSettings = new SonarLintGlobalSettings();
-  private SonarLintProjectSettings projectSettings = new SonarLintProjectSettings();
 
   @Before
   public void set() {
-    super.register(app, SonarLintGlobalSettings.class, globalSettings);
-    super.register(SonarLintProjectSettings.class, projectSettings);
     when(psiFile.getTextRange()).thenReturn(psiFileRange);
     when(psiFile.getVirtualFile()).thenReturn(virtualFile);
     when(psiFile.getFileType()).thenReturn(JavaFileType.INSTANCE);
