@@ -23,6 +23,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import java.time.ZonedDateTime;
@@ -41,7 +42,7 @@ import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotifica
 import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotificationListener;
 import org.sonarsource.sonarlint.core.notifications.SonarQubeNotifications;
 
-public class SonarQubeEventNotifications {
+public class SonarQubeEventNotifications implements Disposable {
   private static final NotificationGroup SONARQUBE_GROUP = NotificationGroup.balloonGroup("SonarLint: SonarQube Events");
   private final EventListener eventListener;
   private final ProjectNotificationTime notificationTime;
@@ -88,6 +89,11 @@ public class SonarQubeEventNotifications {
         SonarQubeNotifications.get().register(config);
       }
     }
+  }
+
+  @Override
+  public void dispose() {
+    unregister();
   }
 
   public void unregister() {

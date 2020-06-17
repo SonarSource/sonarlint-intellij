@@ -24,15 +24,11 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
-import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.core.SonarQubeEventNotifications;
 import org.sonarlint.intellij.core.UpdateChecker;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
-import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class BootstrapStartupActivity implements StartupActivity {
@@ -43,28 +39,15 @@ public class BootstrapStartupActivity implements StartupActivity {
     SonarLintUtils.getService(project, SonarQubeEventNotifications.class).init();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
-    SonarLintUtils.getService(project, ServerIssueUpdater.class).init();
+
+    // perform on bindings load
     SonarLintUtils.getService(project, UpdateChecker.class).init();
-    SonarLintUtils.getService(GlobalLogOutput.class).addConsole(SonarLintUtils.getService(project, SonarLintConsole.class));
 
     project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
-
       @Override
       public void projectClosing(@NotNull Project project) {
-        SonarLintUtils.getService(project, SonarLintConsole.class).dispose();
-        SonarLintUtils.getService(project, SonarLintJobManager.class).dispose();
-        SonarLintUtils.getService(project, SonarQubeEventNotifications.class).unregister();
-        SonarLintUtils.getService(GlobalLogOutput.class).removeConsole(SonarLintUtils.getService(project, SonarLintConsole.class));
-
         // Flush issues before project is closed, because we need to resolve module paths to compute the key
         SonarLintUtils.getService(project, LiveIssueCache.class).flushAll();
-      }
-
-      @Override
-      public void projectClosed(@NotNull Project project) {
-        SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectClosed();
-        SonarLintUtils.getService(project, ServerIssueUpdater.class).dispose();
-        SonarLintUtils.getService(project, UpdateChecker.class).onProjectClosed();
       }
 
     });

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
@@ -57,7 +58,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 import org.sonarsource.sonarlint.core.client.api.exceptions.DownloadException;
 
-public class ServerIssueUpdater {
+public class ServerIssueUpdater implements Disposable {
 
   private static final Logger LOGGER = Logger.getInstance(ServerIssueUpdater.class);
 
@@ -68,11 +69,18 @@ public class ServerIssueUpdater {
   private static final int READ_TIMEOUT = 2 * 60_000;
   private final Project myProject;
 
-  private ExecutorService executorService;
+  private final ExecutorService executorService;
 
 
   public ServerIssueUpdater(Project project) {
     myProject = project;
+
+    // Equivalent to Executors.newFixedThreadPool(THREADS_NUM), but instead of the default unlimited LinkedBlockingQueue,
+    // we use ArrayBlockingQueue with a cap. This means that if QUEUE_LIMIT tasks are already queued (and THREADS_NUM being executed),
+    // new tasks will be rejected with RejectedExecutionException.
+    // http://www.nurkiewicz.com/2014/11/executorservice-10-tips-and-tricks.html
+    final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_LIMIT);
+    this.executorService = new ThreadPoolExecutor(THREADS_NUM, THREADS_NUM, 0L, TimeUnit.MILLISECONDS, queue);
   }
 
   public void fetchAndMatchServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule, ProgressIndicator indicator, boolean waitForCompletion) {
@@ -203,17 +211,7 @@ public class ServerIssueUpdater {
     }
   }
 
-
-  public void init() {
-    // Equivalent to Executors.newFixedThreadPool(THREADS_NUM), but instead of the default unlimited LinkedBlockingQueue,
-    // we use ArrayBlockingQueue with a cap. This means that if QUEUE_LIMIT tasks are already queued (and THREADS_NUM being executed),
-    // new tasks will be rejected with RejectedExecutionException.
-    // http://www.nurkiewicz.com/2014/11/executorservice-10-tips-and-tricks.html
-    final BlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(QUEUE_LIMIT);
-    this.executorService = new ThreadPoolExecutor(THREADS_NUM, THREADS_NUM, 0L, TimeUnit.MILLISECONDS, queue);
-  }
-
-
+  @Override
   public void dispose() {
     List<Runnable> rejected = executorService.shutdownNow();
     if (!rejected.isEmpty()) {

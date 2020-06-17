@@ -19,57 +19,41 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.util.Disposer;
-import java.util.LinkedList;
-import java.util.List;
+import com.intellij.openapi.project.ProjectManager;
+import java.util.Arrays;
+import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 
 public class GlobalLogOutputImpl implements GlobalLogOutput {
-
-  private final List<SonarLintConsole> consoles = new LinkedList<>();
-
 
   @Override
   public void log(String msg, Level level) {
     switch (level) {
       case TRACE:
       case DEBUG:
-        for (SonarLintConsole c : consoles) {
-          c.debug(msg);
-        }
+          getConsolesOfOpenedProjects().forEach(console -> console.debug(msg));
         break;
       case ERROR:
-        for (SonarLintConsole c : consoles) {
-          c.error(msg);
-        }
+        getConsolesOfOpenedProjects().forEach(console -> console.error(msg));
         break;
       case INFO:
       case WARN:
       default:
-        for (SonarLintConsole c : consoles) {
-          c.info(msg);
-        }
+        getConsolesOfOpenedProjects().forEach(console -> console.info(msg));
     }
   }
 
   @Override
   public void logError(String msg, Throwable t) {
-    for (SonarLintConsole c : consoles) {
-      c.error(msg, t);
-    }
+    getConsolesOfOpenedProjects()
+      .forEach(sonarLintConsole -> sonarLintConsole.error(msg, t));
   }
 
-  @Override
-  public void addConsole(SonarLintConsole console) {
-    this.consoles.add(console);
-  }
-
-  public void removeConsole(SonarLintConsole console) {
-    this.consoles.remove(console);
-  }
-
-  @Override public void dispose() {
-    Disposer.dispose(this);
+  @NotNull
+  private Stream<SonarLintConsole> getConsolesOfOpenedProjects() {
+    return Arrays.stream(ProjectManager.getInstance().getOpenProjects())
+      .map(project -> SonarLintUtils.getService(project, SonarLintConsole.class));
   }
 
 }

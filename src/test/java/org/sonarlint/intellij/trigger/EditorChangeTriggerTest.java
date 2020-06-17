@@ -53,7 +53,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @After
   public void cleanup() {
-    underTest.onProjectClosed();
+    underTest.dispose();
   }
 
   @Test
@@ -123,7 +123,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
     underTest.documentChanged(createEvent(file));
-    underTest.onProjectClosed();
+    underTest.dispose();
 
     assertThat(underTest.getEvents()).isEmpty();
   }

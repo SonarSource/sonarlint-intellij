@@ -19,22 +19,15 @@
  */
 package org.sonarlint.intellij.util;
 
-import com.intellij.openapi.Disposable;
-import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-public interface GlobalLogOutput extends LogOutput, Disposable {
+public interface GlobalLogOutput extends LogOutput {
   static GlobalLogOutput get() {
     return SonarLintUtils.getService(GlobalLogOutput.class);
   }
 
-  void removeConsole(SonarLintConsole console);
-
   void log(String msg, LogOutput.Level level);
-
-  void addConsole(SonarLintConsole console);
 
   void logError(String msg, Throwable t);
 
-  void dispose();
 }
