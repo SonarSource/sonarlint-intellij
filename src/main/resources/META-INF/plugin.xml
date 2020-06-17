@@ -177,14 +177,12 @@
         <moduleService serviceImplementation="org.sonarlint.intellij.analysis.VirtualFileTestPredicate"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettings"/>
-
+        
+        <postStartupActivity implementation="org.sonarlint.intellij.BootstrapStartupActivity"/>
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.SonarLintSubmitter"/>
     </extensions>
 
-    <projectListeners>
-        <listener class="org.sonarlint.intellij.SonarLintProjectListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
-    </projectListeners>
     <extensionPoints>
         <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator" dynamic="true"/>
     </extensionPoints>
