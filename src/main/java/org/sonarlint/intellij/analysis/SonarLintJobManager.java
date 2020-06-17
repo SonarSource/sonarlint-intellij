@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
@@ -38,7 +39,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintJobManager {
+public class SonarLintJobManager implements Disposable {
   private final ExecutorService executor = Executors.newSingleThreadExecutor(new AnalysisThreadFactory());
   private final MessageBus messageBus;
   private final Project myProject;
@@ -121,6 +122,7 @@ public class SonarLintJobManager {
     messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).started(job);
   }
 
+  @Override
   public void dispose() {
     executor.shutdown();
   }

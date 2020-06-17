@@ -43,5 +43,4 @@ public interface SonarLintConsole {
 
   ConsoleView getConsoleView();
 
-  void dispose();
 }

@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import java.io.PrintWriter;
@@ -29,7 +30,7 @@ import java.io.StringWriter;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintConsoleImpl implements SonarLintConsole {
+public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   private ConsoleView consoleView;
   private final Project myProject;

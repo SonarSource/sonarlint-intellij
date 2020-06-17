@@ -26,10 +26,6 @@ public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 
   private String lastMsg = "";
 
-  @Override
-  public void removeConsole(SonarLintConsole console) {
-
-  }
 
   @Override
   public void log(String msg, LogOutput.Level level) {
@@ -38,16 +34,6 @@ public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 
   @Override
   public void logError(String msg, Throwable t) {
-
-  }
-
-  @Override
-  public void addConsole(SonarLintConsole console) {
-
-  }
-
-  @Override
-  public void dispose() {
 
   }
 

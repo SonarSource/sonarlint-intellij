@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.concurrency.JobScheduler;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
@@ -38,23 +39,17 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
-public class UpdateChecker {
+public class UpdateChecker implements Disposable {
 
   private final Project myProject;
   private ScheduledFuture<?> scheduledTask;
 
   public UpdateChecker(Project project) {
     myProject = project;
-
   }
 
   public void init() {
     scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::checkForUpdate, 10, 24L * 60L * 60L, TimeUnit.SECONDS);
-  }
-
-
-  public void onProjectClosed() {
-    scheduledTask.cancel(true);
   }
 
   private void checkForUpdate() {
@@ -116,4 +111,8 @@ public class UpdateChecker {
     return false;
   }
 
+  @Override
+  public void dispose() {
+    scheduledTask.cancel(true);
+  }
 }

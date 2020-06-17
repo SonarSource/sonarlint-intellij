@@ -64,10 +64,4 @@ public class SonarLintConsoleTestImpl implements SonarLintConsole {
     return null;
   }
 
-  @Override
-  public void dispose() {
-
-  }
-
-
 }

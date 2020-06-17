@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
@@ -39,7 +40,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 @ThreadSafe
-public class EditorChangeTrigger implements DocumentListener {
+public class EditorChangeTrigger implements DocumentListener, Disposable {
   private static final int DEFAULT_TIMER_MS = 2000;
 
   // entries in this map mean that the file is "dirty"
@@ -48,9 +49,6 @@ public class EditorChangeTrigger implements DocumentListener {
   private final int timerMs = DEFAULT_TIMER_MS;
   private final Project myProject;
 
-  /**
-   * For unit testing (pico container won't be able to inject timerMs)
-   */
   public EditorChangeTrigger(Project project) {
     myProject = project;
     watcher = new EventWatcher();
@@ -105,8 +103,8 @@ public class EditorChangeTrigger implements DocumentListener {
   }
 
   private class EventWatcher extends Thread {
-    private boolean stop = false;
 
+    private boolean stop = false;
     EventWatcher() {
       this.setDaemon(true);
       this.setName("sonarlint-auto-trigger-" + myProject.getName());
@@ -156,11 +154,14 @@ public class EditorChangeTrigger implements DocumentListener {
         }
       }
     }
+
   }
 
-  public void onProjectClosed() {
+  @Override
+  public void dispose() {
     EditorFactory.getInstance().getEventMulticaster().removeDocumentListener(this);
     eventMap.clear();
     watcher.stopWatcher();
   }
+
 }

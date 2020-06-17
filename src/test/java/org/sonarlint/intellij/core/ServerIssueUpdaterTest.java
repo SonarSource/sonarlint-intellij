@@ -75,7 +75,6 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     getProjectSettings().setServerId(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);
 
-    underTest.init();
   }
 
   @After
