@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintTelemetryImplTest extends AbstractSonarLintLightTests {
   private SonarLintTelemetryImpl telemetry;
-  private TelemetryManager telemetryManager = mock(TelemetryManager.class);
+  private final TelemetryManager telemetryManager = mock(TelemetryManager.class);
 
   @Before
   public void start() {
@@ -76,10 +76,10 @@ public class SonarLintTelemetryImplTest extends AbstractSonarLintLightTests {
 
   @Test
   public void test_scheduler() {
-    assertThat(telemetry.scheduledFuture).isNotNull();
+    assertThat((Object)telemetry.scheduledFuture).isNotNull();
     assertThat(telemetry.scheduledFuture.getDelay(TimeUnit.MINUTES)).isBetween(0L, 1L);
     telemetry.stop();
-    assertThat(telemetry.scheduledFuture).isNull();
+    assertThat((Object)telemetry.scheduledFuture).isNull();
   }
 
   @Test

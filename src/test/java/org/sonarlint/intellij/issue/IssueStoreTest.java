@@ -37,7 +37,7 @@ import static org.mockito.Mockito.verify;
 
 public class IssueStoreTest extends AbstractSonarLintMockedTests {
   private IssueStore issueStore;
-  private AnalysisResultsListener listener = mock(AnalysisResultsListener.class);
+  private final AnalysisResultsListener listener = mock(AnalysisResultsListener.class);
 
   @Before
   public void prepare() {
@@ -53,8 +53,10 @@ public class IssueStoreTest extends AbstractSonarLintMockedTests {
 
     issueStore.set(issues, "3 files");
     assertThat(issueStore.lastAnalysisDate())
-      .isLessThanOrEqualTo(Instant.now())
-      .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
+      .isBetween(
+        Instant.now().minus(Duration.ofSeconds(3)),
+        Instant.now()
+      );
     assertThat(issueStore.issues()).isEqualTo(issues);
 
     verify(listener).update(issues);
@@ -62,8 +64,10 @@ public class IssueStoreTest extends AbstractSonarLintMockedTests {
     // everything should be done even if it's an empty map
     issueStore.set(Collections.emptyMap(), "3 files");
     assertThat(issueStore.lastAnalysisDate())
-      .isLessThanOrEqualTo(Instant.now())
-      .isGreaterThan(Instant.now().minus(Duration.ofSeconds(3)));
+      .isBetween(
+        Instant.now().minus(Duration.ofSeconds(3)),
+        Instant.now()
+      );
     assertThat(issueStore.wasAnalyzed()).isTrue();
     assertThat(issueStore.issues()).isEmpty();
     assertThat(issueStore.getTopic()).isEqualTo(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC);

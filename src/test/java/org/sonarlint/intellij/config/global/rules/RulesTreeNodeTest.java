@@ -81,7 +81,7 @@ public class RulesTreeNodeTest {
     parent.add(n2);
     parent.add(n3);
 
-    assertThat(parent.childrenIterable().iterator()).containsExactly(n1, n2, n3);
+    assertThat(parent.childrenIterable()).containsExactly(n1, n2, n3);
 
   }
 
