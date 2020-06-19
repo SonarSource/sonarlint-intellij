@@ -24,6 +24,7 @@ stages:
       displayName: Build and stage to repox
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
+        fixedBranch: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
       steps:
       - checkout: self
         fetchDepth: 1
@@ -34,20 +35,6 @@ stages:
           path: $(GRADLE_USER_HOME)
         displayName: Gradle build cache
       - template: update-gradle-version-steps.yml
-      - task: PythonScript@0
-        name: fixBranchName
-        displayName: 'Compute short branch name for buildInfo'
-        inputs:
-          scriptSource: 'inline'
-          script: |
-            branch = "$(Build.SourceBranch)"
-            refPrefix = "refs/heads/"
-            if branch.startswith(refPrefix):
-              fixedBranch = branch[len(refPrefix):]
-            else:
-              fixedBranch = branch
-            # Workaround for https://github.com/Microsoft/azure-pipelines-agent/issues/838
-            print("##vso[task.setvariable variable=fixedBranch;isOutput=true]" + fixedBranch)
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
@@ -58,7 +45,7 @@ stages:
           ARTIFACTORY_DEPLOY_USERNAME: $(ARTIFACTORY_DEPLOY_USERNAME)
           ARTIFACTORY_DEPLOY_PASSWORD: $(ARTIFACTORY_DEPLOY_PASSWORD)
           GIT_SHA1: $(Build.SourceVersion)
-          GITHUB_BRANCH: $(fixBranchName.fixedBranch)
+          GITHUB_BRANCH: $(fixedBranch)
         displayName: 'Run Gradle build and deploy'
       - task: Gradle@2
         inputs:
