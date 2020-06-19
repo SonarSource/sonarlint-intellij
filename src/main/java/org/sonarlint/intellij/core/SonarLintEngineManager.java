@@ -21,14 +21,11 @@ package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.components.ApplicationComponent;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -38,10 +35,8 @@ import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintEngineManager implements Disposable {
-  private Map<String, ConnectedSonarLintEngine> engines = new HashMap<>();
+  private final Map<String, ConnectedSonarLintEngine> engines = new HashMap<>();
   private StandaloneSonarLintEngine standalone;
-
-
 
   private static void stopInThread(final ConnectedSonarLintEngine engine) {
     new Thread("stop-sonarlint-engine") {
