@@ -32,7 +32,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -65,6 +64,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
     manager = new SonarLintEngineManager();
+    SonarLintUtils.getService(SonarLintGlobalSettings.class).setSonarQubeServers(Collections.emptyList());
   }
 
   @Test
