@@ -20,21 +20,33 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.compiler.CompilerConfiguration;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.projectRoots.SdkModificator;
+import com.intellij.openapi.roots.ContentEntry;
+import com.intellij.openapi.roots.LibraryOrderEntry;
+import com.intellij.openapi.roots.ModifiableRootModel;
+import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.libraries.Library;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.pom.java.LanguageLevel;
 import com.intellij.testFramework.IdeaTestUtil;
 import com.intellij.testFramework.LightProjectDescriptor;
+import com.intellij.testFramework.PsiTestUtil;
 import com.intellij.testFramework.VfsTestUtil;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
+import com.intellij.testFramework.rules.TempDirectory;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Rule;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
@@ -44,8 +56,15 @@ import static org.assertj.core.api.Assertions.entry;
 public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
 
   private static final Path FAKE_JDK_ROOT_PATH = Paths.get("src/test/resources/fake_jdk/").toAbsolutePath();
+  private static final String MY_EXPORTED_LIB_JAR = "myExportedLib.jar";
+  private static final String MY_NON_EXPORTED_LIB_JAR = "myNonExportedLib.jar";
+
+  @Rule
+  public TempDirectory tempDir = new TempDirectory();
 
   private JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
+  private File exportedLibFile;
+  private File nonExportedLibFile;
 
   @Override
   protected LightProjectDescriptor getProjectDescriptor() {
@@ -53,6 +72,25 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
       @Override
       public Sdk getSdk() {
         return addRtJarTo(IdeaTestUtil.getMockJdk18());
+      }
+
+      @Override
+      public void configureModule(@NotNull Module module, @NotNull ModifiableRootModel model, @NotNull ContentEntry contentEntry) {
+        super.configureModule(module, model, contentEntry);
+        Module dependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "dependent.iml"));
+        model.addModuleOrderEntry(dependentModule);
+        try {
+          exportedLibFile = tempDir.newFile(MY_EXPORTED_LIB_JAR);
+          nonExportedLibFile = tempDir.newFile(MY_NON_EXPORTED_LIB_JAR);
+        } catch (IOException e) {
+          throw new IllegalStateException(e);
+        }
+        ModuleRootModificationUtil.updateModel(dependentModule, dependentModel -> {
+          PsiTestUtil.addLibrary(dependentModel, "myNonExportedLib", nonExportedLibFile.getParent(), nonExportedLibFile.getName());
+          Library myExportedLib = PsiTestUtil.addLibrary(dependentModel, "myExportedLib", exportedLibFile.getParent(), exportedLibFile.getName());
+          final LibraryOrderEntry libraryOrderEntry = dependentModel.findLibraryOrderEntry(myExportedLib);
+          libraryOrderEntry.setExported(true);
+        });
       }
     };
   }
@@ -80,13 +118,29 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     final Map<String, String> props = underTest.configure(getModule());
     assertThat(props).containsKeys("sonar.java.libraries", "sonar.java.test.libraries");
     assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))
-      .containsExactly(
+      .contains(
         FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar"),
         FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar"));
     assertThat(Stream.of(props.get("sonar.java.test.libraries").split(",")).map(Paths::get))
-      .containsExactly(
+      .contains(
         FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar"),
         FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar"));
+  }
+
+  @Test
+  public void testAddExportedDependentModuleLibs() {
+    final Map<String, String> props = underTest.configure(getModule());
+    assertThat(props).containsKeys("sonar.java.libraries", "sonar.java.test.libraries");
+    assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))
+      .containsExactly(
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar"),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar"),
+        exportedLibFile.toPath());
+    assertThat(Stream.of(props.get("sonar.java.test.libraries").split(",")).map(Paths::get))
+      .containsExactly(
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar"),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar"),
+        exportedLibFile.toPath());
   }
 
   private static Sdk addRtJarTo(@NotNull Sdk jdk) {
