@@ -27,6 +27,8 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.JdkUtil;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.CompilerModuleExtension;
+import com.intellij.openapi.roots.ExportableOrderEntry;
+import com.intellij.openapi.roots.JdkOrderEntry;
 import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
@@ -119,7 +121,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   }
 
   private static void configureLibraries(Module ijModule, Map<String, String> properties) {
-    Collection<String> libs = getProjectClasspath(ijModule);
+    Collection<String> libs = getModuleClasspath(ijModule, true);
     if (!libs.isEmpty()) {
       String joinedLibs = StringUtils.join(libs, SEPARATOR);
       properties.put(JAVA_LIBRARIES_PROPERTY, joinedLibs);
@@ -128,23 +130,21 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     }
   }
 
-  private static Collection<String> getProjectClasspath(@Nullable final Module module) {
+  private static Collection<String> getModuleClasspath(@Nullable final Module module, boolean topLevel) {
     if (module == null) {
       return Collections.emptyList();
     }
     final Set<String> classpath = new LinkedHashSet<>();
     final ModuleRootManager mrm = ModuleRootManager.getInstance(module);
-    collectJdkClasspath(classpath, mrm);
     final OrderEntry[] orderEntries = mrm.getOrderEntries();
     for (final OrderEntry entry : orderEntries) {
+      if (!topLevel && !isExported(entry)) {
+        continue;
+      }
       if (entry instanceof ModuleOrderEntry) {
-        // Add dependent module output dir as library
-        Module dependentModule = ((ModuleOrderEntry) entry).getModule();
-        getModuleEntries(dependentModule)
-          .stream()
-          .map(VfsUtilCore::virtualToIoFile)
-          .map(File::getAbsolutePath)
-          .forEach(classpath::add);
+        final ModuleOrderEntry moduleOrderEntry = (ModuleOrderEntry) entry;
+        Module dependentModule = moduleOrderEntry.getModule();
+        classpath.addAll(getModuleEntries(dependentModule));
       } else if (entry instanceof LibraryOrderEntry) {
         Library lib = ((LibraryOrderEntry) entry).getLibrary();
         getLibraryEntries(lib)
@@ -152,30 +152,32 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
           .map(VfsUtilCore::virtualToIoFile)
           .map(File::getAbsolutePath)
           .forEach(classpath::add);
+      } else if (entry instanceof JdkOrderEntry) {
+        collectJdkClasspath(classpath, ((JdkOrderEntry) entry).getJdk());
       }
     }
     return classpath;
   }
 
-  private static void collectJdkClasspath(Collection<String> classpath, ModuleRootManager mrm) {
-    final Sdk jdk = mrm.getSdk();
-    if (jdk != null) {
-      String jdkHomePath = jdk.getHomePath();
-      if (jdkHomePath != null && JdkUtil.isModularRuntime(jdkHomePath)) {
-        final File jrtFs = new File(jdkHomePath, "lib/jrt-fs.jar");
-        if (jrtFs.isFile()) {
-          classpath.add(jrtFs.getAbsolutePath());
-        } else {
-          LOGGER.warn("Unable to locate jrt-fs.jar");
-        }
-      }
-      Stream.of(jdk.getRootProvider().getFiles(OrderRootType.CLASSES))
-        .filter(f -> !JrtFileSystem.isModuleRoot(f))
-        .map(VfsUtilCore::virtualToIoFile)
-        .map(File::getAbsolutePath)
-        .forEach(classpath::add);
+  private static boolean isExported(OrderEntry entry) {
+    return (entry instanceof ExportableOrderEntry) && ((ExportableOrderEntry) entry).isExported();
+  }
 
+  private static void collectJdkClasspath(Collection<String> classpath, Sdk jdk) {
+    String jdkHomePath = jdk.getHomePath();
+    if (jdkHomePath != null && JdkUtil.isModularRuntime(jdkHomePath)) {
+      final File jrtFs = new File(jdkHomePath, "lib/jrt-fs.jar");
+      if (jrtFs.isFile()) {
+        classpath.add(jrtFs.getAbsolutePath());
+      } else {
+        LOGGER.warn("Unable to locate jrt-fs.jar");
+      }
     }
+    Stream.of(jdk.getRootProvider().getFiles(OrderRootType.CLASSES))
+      .filter(f -> !JrtFileSystem.isModuleRoot(f))
+      .map(VfsUtilCore::virtualToIoFile)
+      .map(File::getAbsolutePath)
+      .forEach(classpath::add);
   }
 
   private static Collection<VirtualFile> getLibraryEntries(@Nullable Library lib) {
@@ -185,15 +187,16 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     return Arrays.asList(lib.getFiles(OrderRootType.CLASSES));
   }
 
-  private static Collection<VirtualFile> getModuleEntries(@Nullable Module dependentModule) {
+  private static Collection<String> getModuleEntries(@Nullable Module dependentModule) {
     if (dependentModule == null) {
       return Collections.emptyList();
     }
+    final Set<String> classpath = new LinkedHashSet<>(getModuleClasspath(dependentModule, false));
     VirtualFile output = getCompilerOutputPath(dependentModule);
-    if (output == null) {
-      return Collections.emptyList();
+    if (output != null) {
+      classpath.add(VfsUtilCore.virtualToIoFile(output).getAbsolutePath());
     }
-    return Collections.singleton(output);
+    return classpath;
   }
 
   @CheckForNull
