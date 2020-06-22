@@ -27,7 +27,6 @@ import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
@@ -38,8 +37,8 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel {
   private final LastAnalysisPanel lastAnalysisPanel;
   private final AnalysisResults results;
 
-  public SonarLintAnalysisResultsPanel(Project project, ProjectBindingManager projectBindingManager) {
-    super(project, projectBindingManager);
+  public SonarLintAnalysisResultsPanel(Project project) {
+    super(project);
     this.lastAnalysisPanel = new LastAnalysisPanel(project);
     this.results = new AnalysisResults(project);
 

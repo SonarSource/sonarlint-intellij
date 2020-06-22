@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SonarLintProjectStateTest extends AbstractSonarLintLightTests {
   @Test
   public void testEmpty() {
-    SonarLintProjectState state = new SonarLintProjectState(getProject());
+    SonarLintProjectState state = new SonarLintProjectState();
     assertThat(state.getLastEventPolling()).isNull();
   }
 
   @Test
   public void testSet() {
-    SonarLintProjectState state = new SonarLintProjectState(getProject());
+    SonarLintProjectState state = new SonarLintProjectState();
     state.setLastEventPolling(ZonedDateTime.now());
     assertThat(state.getLastEventPolling()).isBeforeOrEqualTo(ZonedDateTime.now());
     assertThat(state.getLastEventPolling()).isAfter(ZonedDateTime.now().minusSeconds(3));
@@ -42,13 +42,13 @@ public class SonarLintProjectStateTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testSerialization() {
-    SonarLintProjectState state = new SonarLintProjectState(getProject());
+    SonarLintProjectState state = new SonarLintProjectState();
     state.setLastEventPolling(ZonedDateTime.now().minusHours(2));
 
     SonarLintProjectState copy = state.getState();
     assertThat(copy.getLastEventPolling()).isEqualTo(state.getLastEventPolling());
 
-    SonarLintProjectState loaded = new SonarLintProjectState(getProject());
+    SonarLintProjectState loaded = new SonarLintProjectState();
     loaded.loadState(state);
     assertThat(loaded.getLastEventPolling()).isEqualTo(state.getLastEventPolling());
   }

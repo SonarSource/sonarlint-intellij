@@ -21,28 +21,24 @@ package org.sonarlint.intellij.tasks;
 
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.util.GlobalLogOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class ConnectionTestTaskTest {
-  private GlobalLogOutput globalLogOutput = mock(GlobalLogOutput.class);
+public class ConnectionTestTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void fail_if_no_connection() {
     SonarQubeServer server = SonarQubeServer.newBuilder().setHostUrl("invalid_url").build();
-    ConnectionTestTask task = new ConnectionTestTask(server, globalLogOutput);
+    ConnectionTestTask task = new ConnectionTestTask(server);
     ProgressIndicator progress = mock(ProgressIndicator.class);
     task.run(progress);
     verify(progress).setIndeterminate(true);
 
     assertThat(task.getException()).isNotNull();
     assertThat(task.result()).isNull();
-    verify(globalLogOutput).logError(eq("Connection test failed"), any(Throwable.class));
   }
 }

@@ -73,10 +73,10 @@ public class ProjectBindingManager {
         console.info(String.format("Using configuration of '%s' in server '%s'", projectKey, serverId));
       }
       ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, serverId, projectKey);
-      return new ConnectedSonarLintFacade(engine, projectSettings, console, myProject);
+      return new ConnectedSonarLintFacade(engine, myProject);
     }
 
-    return new StandaloneSonarLintFacade(projectSettings, console, myProject, engineManager.getStandaloneEngine());
+    return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());
   }
 
   public synchronized ConnectedSonarLintEngine getConnectedEngineSkipChecks() {

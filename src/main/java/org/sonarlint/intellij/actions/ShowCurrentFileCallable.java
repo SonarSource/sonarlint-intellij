@@ -19,12 +19,12 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
 import java.util.Set;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ShowCurrentFileCallable implements AnalysisCallback {
   private final Project project;
@@ -43,6 +43,6 @@ public class ShowCurrentFileCallable implements AnalysisCallback {
   }
 
   private void showCurrentFileTab() {
-    UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class).openCurrentFile());
+    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, IssuesViewTabOpener.class).openCurrentFile());
   }
 }

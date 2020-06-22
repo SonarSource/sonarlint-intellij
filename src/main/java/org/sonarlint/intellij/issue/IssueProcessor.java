@@ -52,12 +52,10 @@ import static java.util.stream.Collectors.toList;
 public class IssueProcessor {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
   private final IssueMatcher matcher;
-  private final SonarLintConsole console;
   private final Project myProject;
 
   public IssueProcessor(Project project) {
     this.matcher = new IssueMatcher(project);
-    this.console = SonarLintConsole.get(project);
     this.myProject = project;
   }
 
@@ -107,6 +105,7 @@ public class IssueProcessor {
 
   private void logFoundIssuesIfAny(Collection<Issue> rawIssues, long start, Map<VirtualFile, Collection<LiveIssue>> transformedIssues) {
     String issueStr = SonarLintUtils.pluralize("issue", rawIssues.size());
+    SonarLintConsole console = SonarLintConsole.get(myProject);
     console.debug(String.format("Processed %d %s in %d ms", rawIssues.size(), issueStr, System.currentTimeMillis() - start));
 
     long issuesToShow = transformedIssues.values().stream()
@@ -136,7 +135,7 @@ public class IssueProcessor {
 
     for (VirtualFile f : analyzed) {
       if (failedVirtualFiles.contains(f)) {
-        console.info("File won't be refreshed because there were errors during analysis: " + f.getPath());
+        SonarLintConsole.get(myProject).info("File won't be refreshed because there were errors during analysis: " + f.getPath());
       } else {
         // it's important to add all files, even without issues, to correctly track the leak period (SLI-86)
         map.put(f, new ArrayList<>());
@@ -169,7 +168,7 @@ public class IssueProcessor {
         map.get(vFile).add(toStore);
       } catch (IssueMatcher.NoMatchException e) {
         // File content is likely to have changed during the analysis, should be fixed in next analysis
-        console.debug("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
+        SonarLintConsole.get(myProject).debug("Failed to find location of issue for file: '" + vFile.getName() + "'. The file won't be refreshed - " + e.getMessage());
         map.remove(vFile);
       } catch (Exception e) {
         LOGGER.error("Error finding location for issue", e);
@@ -201,7 +200,7 @@ public class IssueProcessor {
           newLocations.add(new LiveIssue.IssueLocation(range, loc.getMessage()));
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
-          console.debug("Failed to find secondary location of issue for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
+          SonarLintConsole.get(myProject).debug("Failed to find secondary location of issue for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
         } catch (Exception e) {
           LOGGER.error("Error finding secondary location for issue", e, rule,
             String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));

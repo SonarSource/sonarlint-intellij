@@ -19,13 +19,12 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.project.Project;
 import java.util.Collections;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -39,17 +38,14 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class StandaloneSonarLintFacadeTest {
-  private StandaloneSonarLintEngine engine = mock(StandaloneSonarLintEngine.class);
-  private Project project = mock(Project.class);
-  private SonarLintConsole console = mock(SonarLintConsole.class);
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
+  private final StandaloneSonarLintEngine engine = mock(StandaloneSonarLintEngine.class);
   private StandaloneSonarLintFacade facade;
 
   @Before
-  public void setUp() {
-    when(project.getBasePath()).thenReturn("");
-    facade = new StandaloneSonarLintFacade(settings, console, project, engine);
+  public void before() {
+    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
+    facade = new StandaloneSonarLintFacade(getProject(), engine);
   }
 
   @Test

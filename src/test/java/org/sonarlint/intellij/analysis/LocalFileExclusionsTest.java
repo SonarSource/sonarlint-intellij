@@ -19,29 +19,33 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.ide.impl.ProjectUtil;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileTypes.FileType;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.HeavyPlatformTestCase;
-import org.junit.Before;
+import com.intellij.testFramework.PlatformTestUtil;
+import org.jdom.JDOMException;
 import org.junit.Test;
-import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
+import java.io.IOException;
 import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
+// Heavy because of the need to close the project
+public class LocalFileExclusionsTest extends HeavyPlatformTestCase {
   private FileType type = mock(FileType.class);
   private VirtualFile testFile = mock(VirtualFile.class);
   private BooleanSupplier powerModeCheck = mock(BooleanSupplier.class);
   private LocalFileExclusions exclusions;
+  private String projectFilePath;
 
-  @Before
-  public void prepare() {
+  @Override
+  protected void setUp() throws Exception {
+    super.setUp();
+    projectFilePath = myProject.getProjectFilePath();
     exclusions = new LocalFileExclusions(getProject());
     when(powerModeCheck.getAsBoolean()).thenReturn(false);
     when(type.isBinary()).thenReturn(false);
@@ -51,39 +55,45 @@ public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
     when(testFile.isValid()).thenReturn(true);
   }
 
+  @Override
+  protected void tearDown() throws Exception {
+    if (!myProject.isOpen()) {
+      myProject = ProjectManager.getInstance().loadAndOpenProject(projectFilePath);
+    }
+    super.tearDown();
+  }
+
   @Test
-  public void should_not_analyze_automatically_if_module_is_null() {
+  public void test_should_not_analyze_automatically_if_module_is_null() {
     LocalFileExclusions.Result result = exclusions.canAnalyze(testFile, null);
     assertThat(result.isExcluded()).isTrue();
   }
 
   @Test
-  public void should_analyze_file() {
+  public void test_should_analyze_file() {
     assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isFalse();
   }
 
   @Test
-  public void should_not_analyze_if_file_is_binary() {
+  public void test_should_not_analyze_if_file_is_binary() {
     when(type.isBinary()).thenReturn(true);
     assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isTrue();
   }
 
   @Test
-  public void should_not_analyze_if_module_is_null() {
+  public void test_should_not_analyze_if_module_is_null() {
     assertThat(exclusions.canAnalyze(testFile, null).isExcluded()).isTrue();
   }
 
-//// TODO maybe use heavy test
-//  @Test
-//  public void should_not_analyze_if_project_is_disposed() {
-//    getProject().dispose();
-//    ApplicationManager.getApplication().runWriteAction(() -> getProject().dispose());
-//    ProjectUtil.closeAndDispose(getProject());
-//    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isTrue();
-//  }
+  @Test
+  public void test_should_not_analyze_if_project_is_disposed() throws IOException, JDOMException {
+    PlatformTestUtil.forceCloseProjectWithoutSaving(myProject);
+
+    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isTrue();
+  }
 
   @Test
-  public void should_not_analyze_if_file_is_invalid() {
+  public void test_should_not_analyze_if_file_is_invalid() {
     VirtualFile f = mock(VirtualFile.class);
     when(f.isValid()).thenReturn(false);
 

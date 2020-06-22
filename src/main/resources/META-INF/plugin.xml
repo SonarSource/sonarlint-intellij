@@ -143,14 +143,13 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettings"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineFactory"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.SonarApplication"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
         <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
                             serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"
                             testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.util.SonarLintActions"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl"
-                            serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.telemetry.TelemetryManagerProvider"/>
+        <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
+                            serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettings"/>

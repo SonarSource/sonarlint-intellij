@@ -46,20 +46,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
-  private PsiFile psiFile = mock(PsiFile.class);
-  private VirtualFile virtualFile = mock(VirtualFile.class);
-  private IssueManager store = mock(IssueManager.class);
-  private AnnotationHolderImpl holder = new AnnotationHolderImpl(mock(AnnotationSession.class));
-  private SonarExternalAnnotator.AnnotationContext ctx = new SonarExternalAnnotator.AnnotationContext(store);
-  private TextRange psiFileRange = new TextRange(0, 100);
-  private SonarExternalAnnotator annotator = new SonarExternalAnnotator();
-  private Document document = mock(Document.class);
+  private final PsiFile psiFile = mock(PsiFile.class);
+  private final VirtualFile virtualFile = mock(VirtualFile.class);
+  private final IssueManager store = mock(IssueManager.class);
+  private final AnnotationHolderImpl holder = new AnnotationHolderImpl(mock(AnnotationSession.class));
+  private final SonarExternalAnnotator.AnnotationContext ctx = new SonarExternalAnnotator.AnnotationContext();
+  private final TextRange psiFileRange = new TextRange(0, 100);
+  private final SonarExternalAnnotator annotator = new SonarExternalAnnotator();
+  private final Document document = mock(Document.class);
 
   @Before
   public void set() {
+    replaceProjectService(IssueManager.class, store);
     when(psiFile.getTextRange()).thenReturn(psiFileRange);
     when(psiFile.getVirtualFile()).thenReturn(virtualFile);
     when(psiFile.getFileType()).thenReturn(JavaFileType.INSTANCE);
+    when(psiFile.getProject()).thenReturn(getProject());
   }
 
   @Test

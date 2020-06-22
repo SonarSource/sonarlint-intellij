@@ -22,8 +22,6 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.project.Project;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.issue.IssueProcessor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

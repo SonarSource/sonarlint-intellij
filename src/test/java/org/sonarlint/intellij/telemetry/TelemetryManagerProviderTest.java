@@ -19,13 +19,11 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import com.intellij.openapi.project.ProjectManager;
 import java.nio.file.Path;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.SonarApplication;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;

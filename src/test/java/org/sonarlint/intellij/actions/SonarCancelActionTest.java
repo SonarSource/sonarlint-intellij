@@ -65,29 +65,29 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
     assertThat(status.isCanceled()).isTrue();
   }
 
-//  @Test
-//  public void testUpdate() throws IOException, JDOMException {
-//    sonarCancelAction.update(event);
-//    assertThat(presentation.isVisible()).isTrue();
-//    assertThat(presentation.isEnabled()).isFalse();
-//
-//    SonarLintStatus status = SonarLintStatus.get(getProject());
-//    status.tryRun();
-//    sonarCancelAction.update(event);
-//    assertThat(presentation.isEnabled()).isTrue();
-//
-//    File projectDir = FileUtil.createTempDirectory("project", null);
-//    Project project = ProjectManager.getInstance().createProject("project", projectDir.getAbsolutePath());
-//    disposeOnTearDown(project);
-//    ProjectManager projectManager = ProjectManager.getInstance();
-//    Project reloaded = projectManager.loadAndOpenProject(projectDir);
-//    disposeOnTearDown(reloaded);
-//    event = SonarLintTestUtils.createAnActionEvent(reloaded);
-//    when(event.getPresentation()).thenReturn(presentation);
-//    ((ProjectManagerImpl) ProjectManager.getInstance()).forceCloseProject(reloaded);
-//    sonarCancelAction.update(event);
-//    assertThat(presentation.isEnabled()).isFalse();
-//  }
+  @Test
+  public void testUpdate() throws IOException, JDOMException {
+    sonarCancelAction.update(event);
+    assertThat(presentation.isVisible()).isTrue();
+    assertThat(presentation.isEnabled()).isFalse();
+
+    SonarLintStatus status = SonarLintStatus.get(getProject());
+    status.tryRun();
+    sonarCancelAction.update(event);
+    assertThat(presentation.isEnabled()).isTrue();
+
+    File projectDir = FileUtil.createTempDirectory("project", null);
+    Project project = ProjectManager.getInstance().createProject("project", projectDir.getAbsolutePath());
+    disposeOnTearDown(project);
+    ProjectManager projectManager = ProjectManager.getInstance();
+    Project reloaded = projectManager.loadAndOpenProject(projectDir);
+    disposeOnTearDown(reloaded);
+    event = SonarLintTestUtils.createAnActionEvent(reloaded);
+    when(event.getPresentation()).thenReturn(presentation);
+    ((ProjectManagerImpl) ProjectManager.getInstance()).forceCloseProject(reloaded);
+    sonarCancelAction.update(event);
+    assertThat(presentation.isEnabled()).isFalse();
+  }
 
   @Test
   public void testCancelWithoutProject() {
@@ -105,13 +105,13 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
   }
 
-//  @Test
-//  public void testDisableIfCanceled() {
-//    SonarLintStatus status = mock(SonarLintStatus.class);
-//    when(status.isRunning()).thenReturn(true);
-//    when(status.isCanceled()).thenReturn(true);
-//    assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
-//  }
+  @Test
+  public void testDisableIfCanceled() {
+    SonarLintStatus status = mock(SonarLintStatus.class);
+    when(status.isRunning()).thenReturn(true);
+    when(status.isCanceled()).thenReturn(true);
+    assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
+  }
 
   @Test
   public void testEnableIfRunning() {

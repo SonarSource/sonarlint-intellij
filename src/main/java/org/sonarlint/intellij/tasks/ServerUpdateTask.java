@@ -60,14 +60,12 @@ public class ServerUpdateTask {
   private final SonarQubeServer server;
   private final Map<String, List<Project>> projectsPerProjectKey;
   private final boolean onlyModules;
-  private final GlobalLogOutput log;
 
   public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Map<String, List<Project>> projectsPerProjectKey, boolean onlyModules) {
     this.engine = engine;
     this.server = server;
     this.projectsPerProjectKey = projectsPerProjectKey;
     this.onlyModules = onlyModules;
-    this.log = GlobalLogOutput.get();
   }
 
   public Task.Modal asModal() {
@@ -103,14 +101,14 @@ public class ServerUpdateTask {
           ApplicationManager.getApplication().invokeAndWait(() ->
             Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
         }
-        log.log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+        GlobalLogOutput.get().log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
       }
 
       updateProjects(serverConfiguration, monitor);
 
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + server.getName() + "' was cancelled");
-      log.log("Update of server '" + server.getName() + "' was cancelled", LogOutput.Level.INFO);
+      GlobalLogOutput.get().log("Update of server '" + server.getName() + "' was cancelled", LogOutput.Level.INFO);
     } catch (Exception e) {
       LOGGER.info("Error updating from server '" + server.getName() + "'", e);
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
@@ -165,7 +163,7 @@ public class ServerUpdateTask {
       String errorMsg = "Failed to update the following projects. "
         + "Please check if the server bindings are updated and the module key is correct: "
         + failedProjects.toString();
-      log.log(errorMsg, LogOutput.Level.WARN);
+      GlobalLogOutput.get().log(errorMsg, LogOutput.Level.WARN);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override public void doRun() {
@@ -177,7 +175,7 @@ public class ServerUpdateTask {
 
   private void updateProject(ServerConfiguration serverConfiguration, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
     engine.updateProject(serverConfiguration, projectKey, monitor);
-    log.log("Project '" + projectKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
     projects.forEach(this::updateModules);
     projects.forEach(ServerUpdateTask::analyzeOpenFiles);
   }

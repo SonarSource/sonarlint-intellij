@@ -21,7 +21,6 @@ package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.LowPriorityAction;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
@@ -30,6 +29,7 @@ import java.util.List;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ShowLocationsIntention implements IntentionAction, LowPriorityAction {
   private final RangeMarker primaryLocation;
@@ -55,7 +55,7 @@ public class ShowLocationsIntention implements IntentionAction, LowPriorityActio
   }
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
-    SonarLintHighlighting h = ServiceManager.getService(project, SonarLintHighlighting.class);
+    SonarLintHighlighting h = SonarLintUtils.getService(project, SonarLintHighlighting.class);
     h.highlightFlowsWithHighlightersUtil(primaryLocation, message, flows);
   }
 

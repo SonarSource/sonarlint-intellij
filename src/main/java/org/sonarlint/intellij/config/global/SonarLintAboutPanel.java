@@ -39,17 +39,16 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
-import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
-  private final SonarApplication application;
-  private JPanel panel;
+  private final JPanel panel;
   private JCheckBox enableTelemetryCheckBox;
 
-  public SonarLintAboutPanel(SonarApplication application) {
-    this.application = application;
+  public SonarLintAboutPanel() {
     panel = new JPanel(new BorderLayout(0, 20));
     panel.add(createSonarLintPanel(), BorderLayout.NORTH);
     panel.add(createTelemetryPanel(), BorderLayout.CENTER);
@@ -57,7 +56,8 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
 
   private JComponent createSonarLintPanel() {
     JBLabel sonarlintIcon = new JBLabel(SonarLintIcons.SONARLINT_32);
-    JBLabel title = new JBLabel("<html><b>SonarLint IntelliJ " + application.getVersion() + "</b></html>");
+    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    JBLabel title = new JBLabel("<html><b>SonarLint IntelliJ " + plugin.getVersion() + "</b></html>");
     HyperlinkLabel linkLabel = new HyperlinkLabel("intellij.sonarlint.org");
     linkLabel.addHyperlinkListener(e -> BrowserUtil.browse("http://intellij.sonarlint.org"));
     JBLabel copyrightLabel = new JBLabel("<html>&copy; " + LocalDate.now().getYear() + " SonarSource</html>");

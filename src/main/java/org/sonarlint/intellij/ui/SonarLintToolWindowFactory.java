@@ -24,7 +24,6 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -47,10 +46,9 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addIssuesTab(Project project, ToolWindow toolWindow) {
-    ProjectBindingManager projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
     IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
     CurrentFileController scope = new CurrentFileController(project, issueManager);
-    SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project, projectBindingManager, scope);
+    SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project, scope);
     Content issuesContent = toolWindow.getContentManager().getFactory()
       .createContent(
         issuesPanel,
@@ -61,8 +59,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addAnalysisResultsTab(Project project, ToolWindow toolWindow) {
-    ProjectBindingManager projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
-    SonarLintAnalysisResultsPanel resultsPanel = new SonarLintAnalysisResultsPanel(project, projectBindingManager);
+    SonarLintAnalysisResultsPanel resultsPanel = new SonarLintAnalysisResultsPanel(project);
     Content analysisResultsContent = toolWindow.getContentManager().getFactory()
       .createContent(
         resultsPanel,

@@ -58,6 +58,7 @@ import javax.swing.text.html.ImageView;
 import javax.swing.text.html.StyleSheet;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -66,14 +67,12 @@ import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 public class SonarLintRulePanel {
   private static final Pattern SPACES_BEGINNING_LINE = Pattern.compile("\n(\\p{Blank}*)");
   private final Project project;
-  private final ProjectBindingManager projectBindingManager;
   private final JPanel panel;
   private final HTMLEditorKit kit;
   private JEditorPane editor;
 
-  public SonarLintRulePanel(Project project, ProjectBindingManager projectBindingManager) {
+  public SonarLintRulePanel(Project project) {
     this.project = project;
-    this.projectBindingManager = projectBindingManager;
     this.kit = new CustomHTMLEditorKit();
     StyleSheet styleSheet = kit.getStyleSheet();
     styleSheet.addRule("td {align:center;}");
@@ -90,8 +89,9 @@ public class SonarLintRulePanel {
       nothingToDisplay(false);
     } else {
       try {
-        RuleDetails rule = projectBindingManager.getFacade().ruleDetails(issue.getRuleKey());
-        String description = projectBindingManager.getFacade().getDescription(issue.getRuleKey());
+        SonarLintFacade facade = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade();
+        RuleDetails rule = facade.ruleDetails(issue.getRuleKey());
+        String description = facade.getDescription(issue.getRuleKey());
         if (rule == null || description == null) {
           nothingToDisplay(true);
           return;
