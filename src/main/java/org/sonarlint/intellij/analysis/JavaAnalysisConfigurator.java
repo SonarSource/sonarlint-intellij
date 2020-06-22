@@ -27,6 +27,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.JdkUtil;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.CompilerModuleExtension;
+import com.intellij.openapi.roots.DependencyScope;
 import com.intellij.openapi.roots.ExportableOrderEntry;
 import com.intellij.openapi.roots.JdkOrderEntry;
 import com.intellij.openapi.roots.LibraryOrderEntry;
@@ -44,7 +45,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -70,71 +70,47 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
 
   @Override
   public Map<String, String> configure(@NotNull Module ijModule) {
+    JavaModuleClasspath moduleClasspath = new JavaModuleClasspath();
+    moduleClasspath.dependentModules().add(ijModule);
+    collectModuleClasspath(moduleClasspath, ijModule, true, false);
     Map<String, String> properties = new HashMap<>();
-    configureLibraries(ijModule, properties);
-    configureBinaries(ijModule, properties);
+    setMultiValuePropertyIfNonEmpty(properties, JAVA_LIBRARIES_PROPERTY, moduleClasspath.libraries());
+    setMultiValuePropertyIfNonEmpty(properties, JAVA_TEST_LIBRARIES_PROPERTY, moduleClasspath.testLibraries());
+    setMultiValuePropertyIfNonEmpty(properties, JAVA_BINARIES_PROPERTY, moduleClasspath.binaries());
+    setMultiValuePropertyIfNonEmpty(properties, JAVA_TEST_BINARIES_PROPERTY, moduleClasspath.testBinaries());
     configureJavaSourceTarget(ijModule, properties);
     return properties;
   }
 
-  private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
-    try {
-      LanguageLevel languageLevel = ApplicationManager.getApplication()
-        .<LanguageLevel>runReadAction(() -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
-      final String languageLevelStr = getLanguageLevelOption(languageLevel);
-      String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
-      if (isEmpty(bytecodeTarget)) {
-        // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
-        bytecodeTarget = languageLevelStr;
-      }
-      properties.put(JAVA_SOURCE_PROPERTY, languageLevelStr);
-      properties.put(JAVA_TARGET_PROPERTY, bytecodeTarget);
-    } catch (BootstrapMethodError | NoClassDefFoundError e) {
-      // (DM): some components are not available in some flavours, for example ConpilerConfiguration and Language Level in PHP storm or CLion.
-      // Even though this class should now only be loaded when the Java extensions are available, I leave this to be safe
+  private static void setMultiValuePropertyIfNonEmpty(Map<String, String> properties, String propKey, Set<String> values) {
+    if (!values.isEmpty()) {
+      String joinedLibs = StringUtils.join(values, SEPARATOR);
+      properties.put(propKey, joinedLibs);
     }
+  }
+
+  private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
+    LanguageLevel languageLevel = ApplicationManager.getApplication()
+      .<LanguageLevel>runReadAction(() -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
+    final String languageLevelStr = getLanguageLevelOption(languageLevel);
+    String bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
+    if (isEmpty(bytecodeTarget)) {
+      // according to IDEA rule: if not specified explicitly, set target to be the same as source language level
+      bytecodeTarget = languageLevelStr;
+    }
+    properties.put(JAVA_SOURCE_PROPERTY, languageLevelStr);
+    properties.put(JAVA_TARGET_PROPERTY, bytecodeTarget);
   }
 
   private static String getLanguageLevelOption(LanguageLevel level) {
     return JpsJavaSdkType.complianceOption(level.toJavaVersion());
   }
 
-  private static void configureBinaries(Module ijModule, Map<String, String> properties) {
-    String testPath = null;
-    VirtualFile testCompilerOutput = getCompilerTestOutputPath(ijModule);
-    if (testCompilerOutput != null) {
-      testPath = testCompilerOutput.getCanonicalPath();
-    }
-
-    VirtualFile compilerOutput = getCompilerOutputPath(ijModule);
-    if (compilerOutput != null) {
-      String path = compilerOutput.getCanonicalPath();
-      if (path != null) {
-        properties.put(JAVA_BINARIES_PROPERTY, path);
-        testPath = (testPath != null) ? (testPath + SEPARATOR + path) : path;
-      }
-    }
-
-    if (testPath != null) {
-      properties.put(JAVA_TEST_BINARIES_PROPERTY, testPath);
-    }
-  }
-
-  private static void configureLibraries(Module ijModule, Map<String, String> properties) {
-    Collection<String> libs = getModuleClasspath(ijModule, true);
-    if (!libs.isEmpty()) {
-      String joinedLibs = StringUtils.join(libs, SEPARATOR);
-      properties.put(JAVA_LIBRARIES_PROPERTY, joinedLibs);
-      // Can't differentiate main and test classpath
-      properties.put(JAVA_TEST_LIBRARIES_PROPERTY, joinedLibs);
-    }
-  }
-
-  private static Collection<String> getModuleClasspath(@Nullable final Module module, boolean topLevel) {
+  private static void collectModuleClasspath(JavaModuleClasspath moduleClasspath, @Nullable final Module module, boolean topLevel, boolean testClasspathOnly) {
     if (module == null) {
-      return Collections.emptyList();
+      return;
     }
-    final Set<String> classpath = new LinkedHashSet<>();
+    processCompilerOutput(moduleClasspath, module, topLevel, testClasspathOnly);
     final ModuleRootManager mrm = ModuleRootManager.getInstance(module);
     final OrderEntry[] orderEntries = mrm.getOrderEntries();
     for (final OrderEntry entry : orderEntries) {
@@ -142,33 +118,91 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
         continue;
       }
       if (entry instanceof ModuleOrderEntry) {
-        final ModuleOrderEntry moduleOrderEntry = (ModuleOrderEntry) entry;
-        Module dependentModule = moduleOrderEntry.getModule();
-        classpath.addAll(getModuleEntries(dependentModule));
+        processModuleOrderEntry(moduleClasspath, testClasspathOnly, (ModuleOrderEntry) entry);
       } else if (entry instanceof LibraryOrderEntry) {
-        Library lib = ((LibraryOrderEntry) entry).getLibrary();
-        getLibraryEntries(lib)
-          .stream()
-          .map(VfsUtilCore::virtualToIoFile)
-          .map(File::getAbsolutePath)
-          .forEach(classpath::add);
+        processLibraryOrderEntry(moduleClasspath, (LibraryOrderEntry) entry, testClasspathOnly);
       } else if (entry instanceof JdkOrderEntry) {
-        collectJdkClasspath(classpath, ((JdkOrderEntry) entry).getJdk());
+        processJdkOrderEntry(moduleClasspath, ((JdkOrderEntry) entry).getJdk());
       }
     }
-    return classpath;
+  }
+
+  private static void processModuleOrderEntry(JavaModuleClasspath moduleClasspath, boolean testClasspathOnly, ModuleOrderEntry moduleOrderEntry) {
+    Module dependentModule = moduleOrderEntry.getModule();
+    Set<Module> alreadyVisitedModules = (testClasspathOnly || isOnlyForTestClasspath(moduleOrderEntry.getScope())) ? moduleClasspath.testDependentModules()
+      : moduleClasspath.dependentModules();
+    if (!alreadyVisitedModules.contains(dependentModule)) {
+      // Protect against circular dependencies
+      alreadyVisitedModules.add(dependentModule);
+      collectModuleClasspath(moduleClasspath, dependentModule, false, testClasspathOnly || isOnlyForTestClasspath(moduleOrderEntry.getScope()));
+    }
+  }
+
+  private static void processLibraryOrderEntry(JavaModuleClasspath moduleClasspath, LibraryOrderEntry libraryOrderEntry, boolean testClasspathOnly) {
+    Library lib = libraryOrderEntry.getLibrary();
+    final boolean libOnlyForTestClasspath = testClasspathOnly || isOnlyForTestClasspath(libraryOrderEntry.getScope());
+    getLibraryEntries(lib)
+      .stream()
+      .map(VfsUtilCore::virtualToIoFile)
+      .map(File::getAbsolutePath)
+      .forEach(libPath -> {
+        if (libOnlyForTestClasspath) {
+          moduleClasspath.testLibraries().add(libPath);
+        } else {
+          addProductionClasspathEntry(moduleClasspath, libPath);
+        }
+      });
+  }
+
+  private static boolean isOnlyForTestClasspath(DependencyScope scope) {
+    return !scope.isForProductionRuntime() && !scope.isForProductionCompile();
+  }
+
+  private static void processCompilerOutput(JavaModuleClasspath moduleClasspath, @NotNull Module module, boolean topLevel, boolean testModule) {
+    VirtualFile output = getCompilerOutputPath(module);
+    if (output != null) {
+      final String outputPath = VfsUtilCore.virtualToIoFile(output).getAbsolutePath();
+      if (topLevel) {
+        moduleClasspath.binaries().add(outputPath);
+        // Production .class should be on tests classpath
+        moduleClasspath.testLibraries().add(outputPath);
+      } else {
+        // Output dir of dependents modules should be considered as libraries
+        if (testModule) {
+          moduleClasspath.testLibraries().add(outputPath);
+        } else {
+          addProductionClasspathEntry(moduleClasspath, outputPath);
+        }
+      }
+    }
+    VirtualFile testOutput = getCompilerTestOutputPath(module);
+    if (testOutput != null) {
+      final String testOutputPath = VfsUtilCore.virtualToIoFile(testOutput).getAbsolutePath();
+      if (topLevel) {
+        moduleClasspath.testBinaries().add(testOutputPath);
+      }
+      // Test output dir of dependents modules are not visible
+    }
+  }
+
+  private static void addProductionClasspathEntry(JavaModuleClasspath moduleClasspath, final String libPath) {
+    moduleClasspath.libraries().add(libPath);
+    // Production classpath entries should be also added to the tests classpath
+    moduleClasspath.testLibraries().add(libPath);
   }
 
   private static boolean isExported(OrderEntry entry) {
     return (entry instanceof ExportableOrderEntry) && ((ExportableOrderEntry) entry).isExported();
   }
 
-  private static void collectJdkClasspath(Collection<String> classpath, Sdk jdk) {
+  private static void processJdkOrderEntry(JavaModuleClasspath moduleClasspath, Sdk jdk) {
     String jdkHomePath = jdk.getHomePath();
     if (jdkHomePath != null && JdkUtil.isModularRuntime(jdkHomePath)) {
       final File jrtFs = new File(jdkHomePath, "lib/jrt-fs.jar");
       if (jrtFs.isFile()) {
-        classpath.add(jrtFs.getAbsolutePath());
+        final String jrtFsPath = jrtFs.getAbsolutePath();
+        moduleClasspath.libraries().add(jrtFsPath);
+        moduleClasspath.testLibraries().add(jrtFsPath);
       } else {
         LOGGER.warn("Unable to locate jrt-fs.jar");
       }
@@ -177,7 +211,10 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
       .filter(f -> !JrtFileSystem.isModuleRoot(f))
       .map(VfsUtilCore::virtualToIoFile)
       .map(File::getAbsolutePath)
-      .forEach(classpath::add);
+      .forEach(jdkLib -> {
+        moduleClasspath.libraries().add(jdkLib);
+        moduleClasspath.testLibraries().add(jdkLib);
+      });
   }
 
   private static Collection<VirtualFile> getLibraryEntries(@Nullable Library lib) {
@@ -185,18 +222,6 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
       return Collections.emptyList();
     }
     return Arrays.asList(lib.getFiles(OrderRootType.CLASSES));
-  }
-
-  private static Collection<String> getModuleEntries(@Nullable Module dependentModule) {
-    if (dependentModule == null) {
-      return Collections.emptyList();
-    }
-    final Set<String> classpath = new LinkedHashSet<>(getModuleClasspath(dependentModule, false));
-    VirtualFile output = getCompilerOutputPath(dependentModule);
-    if (output != null) {
-      classpath.add(VfsUtilCore.virtualToIoFile(output).getAbsolutePath());
-    }
-    return classpath;
   }
 
   @CheckForNull
