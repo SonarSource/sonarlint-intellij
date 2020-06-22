@@ -63,7 +63,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
-import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -228,9 +228,9 @@ public class SonarLintUtils {
 
   public static ServerConfiguration getServerConfiguration(SonarQubeServer server, int connectTimeout, int readTimeout) {
     CertificateManager certificateManager = CertificateManager.getInstance();
-    SonarApplication sonarlint = getService(SonarApplication.class);
+    SonarLintPlugin plugin = getService(SonarLintPlugin.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
-      .userAgent("SonarLint IntelliJ " + sonarlint.getVersion())
+      .userAgent("SonarLint IntelliJ " + plugin.getVersion())
       .connectTimeoutMilliseconds(connectTimeout)
       .readTimeoutMilliseconds(readTimeout)
       .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())

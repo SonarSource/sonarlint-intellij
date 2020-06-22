@@ -33,6 +33,4 @@ public interface SonarLintTelemetry {
   void analysisDoneOnSingleFile(@Nullable String language, int time);
 
   void init();
-
-  void dispose();
 }

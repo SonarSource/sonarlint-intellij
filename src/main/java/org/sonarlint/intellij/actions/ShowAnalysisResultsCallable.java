@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
@@ -38,12 +37,9 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   private final Project project;
   private final Collection<VirtualFile> affectedFiles;
   private final String whatAnalyzed;
-  private final IssueManager issueManager;
 
   public ShowAnalysisResultsCallable(Project project, Collection<VirtualFile> affectedFiles, String whatAnalyzed) {
     this.project = project;
-
-    this.issueManager = SonarLintUtils.getService(project, IssueManager.class);
     this.affectedFiles = affectedFiles;
     this.whatAnalyzed = whatAnalyzed;
   }
@@ -54,6 +50,7 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
 
   @Override
   public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
     Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
       .filter(f -> !failedVirtualFiles.contains(f))
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
@@ -63,7 +60,7 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   }
 
   private void showAnalysisResultsTab() {
-    UIUtil.invokeLaterIfNeeded(() -> ServiceManager.getService(project, IssuesViewTabOpener.class)
+    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, IssuesViewTabOpener.class)
       .openAnalysisResults());
   }
 }

@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;

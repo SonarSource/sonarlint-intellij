@@ -21,7 +21,8 @@ package org.sonarlint.intellij.telemetry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.concurrency.JobScheduler;
-import com.intellij.openapi.Disposable;
+import com.intellij.ide.AppLifecycleListener;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -29,7 +30,7 @@ import javax.annotation.Nullable;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
-public class SonarLintTelemetryImpl implements SonarLintTelemetry, Disposable {
+public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleListener {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTelemetryImpl.class);
   static final String DISABLE_PROPERTY_KEY = "sonarlint.telemetry.disabled";
 
@@ -54,6 +55,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, Disposable {
       telemetry = null;
     } else {
       telemetry = telemetryManagerProvider.get();
+      ApplicationManager.getApplication().getMessageBus().connect().subscribe(AppLifecycleListener.TOPIC, this);
     }
   }
 
@@ -129,8 +131,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, Disposable {
   }
 
   @Override
-  public void dispose() {
+  public void appWillBeClosed(boolean isRestart) {
     stop();
   }
-
 }

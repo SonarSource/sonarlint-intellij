@@ -21,22 +21,16 @@ package org.sonarlint.intellij.config.module;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.options.ConfigurationException;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 
 public class SonarLintModuleConfigurable implements Configurable, Configurable.NoMargin, Configurable.NoScroll {
   private final Module module;
-  private final SonarLintModuleSettings moduleSettings;
-  private final SonarLintProjectSettings projectSettings;
   private SonarLintModulePanel panel;
 
-  public SonarLintModuleConfigurable(Module module, SonarLintModuleSettings moduleSettings, SonarLintProjectSettings projectSettings) {
+  public SonarLintModuleConfigurable(Module module) {
     this.module = module;
-    this.moduleSettings = moduleSettings;
-    this.projectSettings = projectSettings;
   }
 
   @Nls(capitalization = Nls.Capitalization.Title)
@@ -61,7 +55,7 @@ public class SonarLintModuleConfigurable implements Configurable, Configurable.N
   @Override
   public void reset() {
     if (panel != null) {
-      panel.load(moduleSettings, projectSettings);
+      panel.load();
     }
   }
 
@@ -72,8 +66,8 @@ public class SonarLintModuleConfigurable implements Configurable, Configurable.N
   }
 
   @Override
-  public void apply() throws ConfigurationException {
-
+  public void apply() {
+    // this configurable is read-only, nothing to save
   }
 
   @Override

@@ -31,7 +31,7 @@ import java.net.URLEncoder;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 // Inspired from https://github.com/openclover/clover/blob/master/clover-idea/src/com/atlassian/clover/idea/util/BlameClover.java
@@ -63,7 +63,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
     description.append("* OS name=").append(System.getProperty("os.name")).append("\n");
     description.append("* OS architecture=").append(System.getProperty("os.arch")).append("\n");
     description.append("* IDE=").append(getFullApplicationName()).append("\n");
-    description.append("* SonarLint version=").append(SonarLintUtils.getService(SonarApplication.class).getVersion()).append("\n");
+    description.append("* SonarLint version=").append(SonarLintUtils.getService(SonarLintPlugin.class).getVersion()).append("\n");
     description.append("\n");
     if (additionalInfo != null) {
       description.append(additionalInfo);

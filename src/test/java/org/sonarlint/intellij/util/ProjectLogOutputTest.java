@@ -22,7 +22,7 @@ package org.sonarlint.intellij.util;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
@@ -32,14 +32,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 
-public class ProjectLogOutputTest extends AbstractSonarLintMockedTests {
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
-  private SonarLintConsole mockConsole = mock(SonarLintConsole.class);
-  private ProjectLogOutput logOutput = new ProjectLogOutput(project, mockConsole, settings);
+public class ProjectLogOutputTest extends AbstractSonarLintLightTests {
+  private final SonarLintConsole mockConsole = mock(SonarLintConsole.class);
+  private ProjectLogOutput logOutput;
 
   @Before
-  public void enableAnalysisLogs() {
-    settings.setAnalysisLogsEnabled(true);
+  public void prepare() {
+    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
+    replaceProjectService(SonarLintConsole.class, mockConsole);
+    getProjectSettings().setAnalysisLogsEnabled(true);
+    logOutput = new ProjectLogOutput(getProject());
   }
 
   @After
@@ -55,7 +57,7 @@ public class ProjectLogOutputTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void testNoLogAnalysis() {
-    settings.setAnalysisLogsEnabled(false);
+    getProjectSettings().setAnalysisLogsEnabled(false);
     logOutput.log("test", LogOutput.Level.INFO);
     verifyZeroInteractions(mockConsole);
   }

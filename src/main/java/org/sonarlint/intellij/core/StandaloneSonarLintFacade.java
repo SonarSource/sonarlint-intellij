@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -48,15 +47,12 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 
 final class StandaloneSonarLintFacade extends SonarLintFacade {
   private final StandaloneSonarLintEngine sonarlint;
-  private final SonarLintConsole console;
 
-  StandaloneSonarLintFacade(SonarLintProjectSettings projectSettings, SonarLintConsole console, Project project,
-    StandaloneSonarLintEngine engine) {
-    super(project, projectSettings);
+  StandaloneSonarLintFacade(Project project, StandaloneSonarLintEngine engine) {
+    super(project);
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
-    this.console = console;
     this.sonarlint = engine;
   }
 
@@ -85,8 +81,10 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       .addIncludedRules(included)
       .addRuleParameters(params)
       .build();
+
+    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
-    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project, console, projectSettings), progressMonitor);
+    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
   }
 
   @Override

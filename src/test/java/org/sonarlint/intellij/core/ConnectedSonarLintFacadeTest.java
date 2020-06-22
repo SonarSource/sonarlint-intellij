@@ -19,13 +19,11 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.project.Project;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -34,25 +32,22 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
+import java.util.Collections;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ConnectedSonarLintFacadeTest {
+public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
-  private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
-  private Project project = mock(Project.class);
-  private SonarLintConsole console = mock(SonarLintConsole.class);
-
-  private SonarLintProjectSettings settings;
+  private final ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
   private ConnectedSonarLintFacade facade;
 
   @Before
-  public void setUp() {
-    when(project.getBasePath()).thenReturn("");
-    settings = new SonarLintProjectSettings();
-    facade = new ConnectedSonarLintFacade(engine, settings, console, project);
+  public void before() {
+    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
+    facade = new ConnectedSonarLintFacade(engine, getProject());
   }
 
   @Test
@@ -84,7 +79,7 @@ public class ConnectedSonarLintFacadeTest {
   @Test
   public void should_start_analysis() {
     String projectKey = "project-key";
-    settings.setProjectKey(projectKey);
+    getProjectSettings().setProjectKey(projectKey);
     AnalysisResults results = mock(AnalysisResults.class);
     ArgumentCaptor<ConnectedAnalysisConfiguration> configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
     when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);

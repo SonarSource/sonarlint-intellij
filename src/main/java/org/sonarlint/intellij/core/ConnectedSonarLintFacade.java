@@ -46,15 +46,12 @@ import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine sonarlint;
-  private final SonarLintConsole console;
 
-  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, SonarLintProjectSettings projectSettings,
-    SonarLintConsole console, Project project) {
-    super(project, projectSettings);
+  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, Project project) {
+    super(project);
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
-    this.console = console;
     this.sonarlint = engine;
   }
 
@@ -64,12 +61,13 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     ConnectedAnalysisConfiguration config = ConnectedAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
-      .setProjectKey(projectSettings.getProjectKey())
+      .setProjectKey(SonarLintUtils.getService(project, SonarLintProjectSettings.class).getProjectKey())
       .putAllExtraProperties(props)
       .build();
+    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
 
-    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project, console, projectSettings), progressMonitor);
+    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
   }
 
   @Override

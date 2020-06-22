@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.application.Application;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.PathManager;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -36,10 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.SonarApplication;
-import org.sonarlint.intellij.analysis.LocalFileExclusions;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
@@ -167,7 +162,7 @@ public class SonarLintEngineFactory  {
   }
 
   private Map<String, String> prepareExtraProps() {
-    SonarApplication application = SonarLintUtils.getService(SonarApplication.class);
-    return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", application.getPluginPath().toString());
+    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", plugin.getPath().toString());
   }
 }

@@ -31,7 +31,6 @@ import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
-import org.sonarlint.intellij.SonarApplication;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
@@ -49,8 +48,6 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private SonarLintAboutPanel about;
   private GlobalExclusionsPanel exclusions;
   private RuleConfigurationPanel rules;
-
-
 
   @Nls
   @Override
@@ -148,8 +145,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   private JPanel getPanel() {
     if (rootPanel == null) {
-      SonarApplication sonarApplication = SonarLintUtils.getService(SonarApplication.class);
-      about = new SonarLintAboutPanel(sonarApplication);
+      about = new SonarLintAboutPanel();
       StandaloneSonarLintEngine standaloneEngine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
       rules = new RuleConfigurationPanel(standaloneEngine);
       exclusions = new GlobalExclusionsPanel();

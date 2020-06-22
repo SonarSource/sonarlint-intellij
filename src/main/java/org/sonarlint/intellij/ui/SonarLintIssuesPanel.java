@@ -35,7 +35,6 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NonNls;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -44,15 +43,15 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final CurrentFileController scope;
 
-  public SonarLintIssuesPanel(Project project, ProjectBindingManager projectBindingManager, CurrentFileController scope) {
-    super(project, projectBindingManager);
+  public SonarLintIssuesPanel(Project project, CurrentFileController scope) {
+    super(project);
     this.scope = scope;
 
     // Issues panel
     setToolbar(actions());
     JPanel issuesPanel = new JPanel(new BorderLayout());
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
-    issuesPanel.add(new AutoTriggerStatusPanel(project, projectBindingManager).getPanel(), BorderLayout.SOUTH);
+    issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
     super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
 

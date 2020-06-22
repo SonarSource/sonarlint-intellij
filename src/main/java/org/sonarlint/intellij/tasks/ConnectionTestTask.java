@@ -34,18 +34,12 @@ import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 public class ConnectionTestTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final SonarQubeServer server;
-  private final GlobalLogOutput globalLogOutput;
   private Exception exception;
   private ValidationResult result;
 
   public ConnectionTestTask(SonarQubeServer server) {
-    this(server, GlobalLogOutput.get());
-  }
-
-  ConnectionTestTask(SonarQubeServer server, GlobalLogOutput globalLogOutput) {
     super(null, "Test Connection to SonarQube Server", true);
     this.server = server;
-    this.globalLogOutput = globalLogOutput;
   }
 
   @Override
@@ -60,7 +54,7 @@ public class ConnectionTestTask extends Task.Modal {
     } catch (Exception e) {
       String msg = "Connection test failed";
       LOGGER.info(msg, e);
-      globalLogOutput.logError(msg, e);
+      GlobalLogOutput.get().logError(msg, e);
       exception = e;
     }
   }

@@ -20,25 +20,25 @@
 package org.sonarlint.intellij;
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManagerCore;
+import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.extensions.PluginId;
 
 import java.nio.file.Path;
 
-public class SonarApplication {
+public class SonarLintPlugin {
   private IdeaPluginDescriptor plugin;
 
   public String getVersion() {
     return getPlugin().getVersion();
   }
 
-  public Path getPluginPath() {
+  public Path getPath() {
     return getPlugin().getPath().toPath();
   }
 
   private IdeaPluginDescriptor getPlugin() {
     if (plugin == null) {
-      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea"));
+      plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
     }
     return plugin;
   }

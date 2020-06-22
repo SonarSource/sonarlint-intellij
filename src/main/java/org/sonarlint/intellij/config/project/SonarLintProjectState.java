@@ -37,14 +37,6 @@ public class SonarLintProjectState implements PersistentStateComponent<SonarLint
   @Tag
   private Long lastEventPolling = null;
 
-  /**
-   * Constructor called by the XML serialization and deserialization (no args).
-   * Even though this class has the scope of a project, we can't have it injected here.
-   */
-  protected SonarLintProjectState(Project project) {
-
-  }
-
   @CheckForNull
   public ZonedDateTime getLastEventPolling() {
     if (lastEventPolling != null) {

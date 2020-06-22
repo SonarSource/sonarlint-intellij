@@ -32,7 +32,6 @@ import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.keymap.KeymapUtil;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
@@ -58,7 +57,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       return;
     }
 
-    Collection<LiveIssue> issues = annotationResult.store.getForFile(file.getVirtualFile());
+    IssueManager issueManager = SonarLintUtils.getService(file.getProject(), IssueManager.class);
+    Collection<LiveIssue> issues = issueManager.getForFile(file.getVirtualFile());
     issues.stream()
       .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
@@ -77,9 +77,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   @Override
   public AnnotationContext collectInformation(@NotNull PsiFile file) {
-    Project project = file.getProject();
-    IssueManager store = SonarLintUtils.getService(project, IssueManager.class);
-    return new AnnotationContext(store);
+    return new AnnotationContext();
   }
 
   @Override
@@ -202,10 +200,5 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   public static class AnnotationContext {
-    final IssueManager store;
-
-    AnnotationContext(IssueManager store) {
-      this.store = store;
-    }
   }
 }

@@ -25,7 +25,6 @@ import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.checkin.CheckinHandlerFactory;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
 

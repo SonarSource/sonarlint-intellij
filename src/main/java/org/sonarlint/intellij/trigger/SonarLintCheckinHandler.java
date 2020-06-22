@@ -21,7 +21,6 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -180,7 +179,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    ServiceManager.getService(project, IssuesViewTabOpener.class).openAnalysisResults();
+    SonarLintUtils.getService(project, IssuesViewTabOpener.class).openAnalysisResults();
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent {

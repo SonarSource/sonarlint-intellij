@@ -23,6 +23,7 @@ import com.intellij.openapi.module.Module;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintModulePanel {
   private final Module module;
@@ -40,8 +41,10 @@ public class SonarLintModulePanel {
     return rootPanel;
   }
 
-  public void load(SonarLintModuleSettings settings, SonarLintProjectSettings projectSettings) {
+  public void load() {
+    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(module.getProject(), SonarLintProjectSettings.class);
     if (projectSettings.getProjectKey() != null) {
+      SonarLintModuleSettings settings = SonarLintUtils.getService(module, SonarLintModuleSettings.class);
       idePathText.setText(settings.getIdePathPrefix());
       sqPathText.setText(settings.getSqPathPrefix());
       projectKeyText.setText(projectSettings.getProjectKey());

@@ -27,24 +27,21 @@ import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 public class ProjectLogOutput implements LogOutput {
   private final Project project;
-  private final SonarLintConsole console;
-  private final SonarLintProjectSettings settings;
 
-  public ProjectLogOutput(Project project, SonarLintConsole console, SonarLintProjectSettings settings) {
+  public ProjectLogOutput(Project project) {
     this.project = project;
-    this.console = console;
-    this.settings = settings;
   }
 
   @Override
   public void log(String msg, Level level) {
+    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     if (isNodeCommandException(msg)) {
       console.info(msg);
       AnalysisRequirementNotifications.notifyNodeCommandException(project);
       // Avoid duplicate log (info + debug)
       return;
     }
-    if (!settings.isAnalysisLogsEnabled()) {
+    if (!SonarLintUtils.getService(project, SonarLintProjectSettings.class).isAnalysisLogsEnabled()) {
       return;
     }
     switch (level) {

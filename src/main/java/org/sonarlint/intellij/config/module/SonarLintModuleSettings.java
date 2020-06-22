@@ -33,11 +33,7 @@ public final class SonarLintModuleSettings implements PersistentStateComponent<S
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
 
-  /**
-   * Constructor added in order to comply to module service requirements
-   * @param module
-   */
-  public SonarLintModuleSettings(Module module) {
+  public SonarLintModuleSettings() {
 
   }
 

@@ -20,12 +20,12 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class EscapeHandler extends EditorActionHandler {
 
@@ -40,7 +40,7 @@ public class EscapeHandler extends EditorActionHandler {
   protected void doExecute(Editor editor, @Nullable Caret caret, DataContext dataContext) {
     Project project = editor.getProject();
     if (project != null) {
-      SonarLintHighlighting highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
+      SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
       if (highlighting.isActiveInEditor(editor)) {
         highlighting.removeHighlightingFlows();
         return;
@@ -57,7 +57,7 @@ public class EscapeHandler extends EditorActionHandler {
   private static boolean isActive(Editor editor) {
     Project project = editor.getProject();
     if (project != null) {
-      SonarLintHighlighting highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
+      SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
       if (highlighting.isActiveInEditor(editor)) {
         return true;
       }

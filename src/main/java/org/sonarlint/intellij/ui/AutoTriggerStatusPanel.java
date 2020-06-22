@@ -63,15 +63,13 @@ public class AutoTriggerStatusPanel {
   private static final String TOOLTIP = "Some files are not automatically analyzed. Check the SonarLint debug logs for details.";
 
   private final Project project;
-  private final ProjectBindingManager projectBindingManager;
   private final LocalFileExclusions localFileExclusions;
 
   private JPanel panel;
   private CardLayout layout;
 
-  public AutoTriggerStatusPanel(Project project, ProjectBindingManager projectBindingManager) {
+  public AutoTriggerStatusPanel(Project project) {
     this.project = project;
-    this.projectBindingManager = projectBindingManager;
     this.localFileExclusions = new LocalFileExclusions(project);
     createPanel();
     switchCards();
@@ -135,7 +133,7 @@ public class AutoTriggerStatusPanel {
   private boolean isExcludedInServer(Module m, VirtualFile f) {
     VirtualFileTestPredicate testPredicate = SonarLintUtils.getService(m, VirtualFileTestPredicate.class);
     try {
-      Collection<VirtualFile> afterExclusion = projectBindingManager.getFacade().getExcluded(m, Collections.singleton(f), testPredicate);
+      Collection<VirtualFile> afterExclusion = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade().getExcluded(m, Collections.singleton(f), testPredicate);
       return !afterExclusion.isEmpty();
     } catch (InvalidBindingException e) {
       // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager

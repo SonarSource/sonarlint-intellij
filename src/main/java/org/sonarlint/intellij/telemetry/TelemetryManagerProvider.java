@@ -27,7 +27,7 @@ import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import org.sonarlint.intellij.SonarApplication;
+import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -46,8 +46,8 @@ public class TelemetryManagerProvider {
 
   public TelemetryManager get() {
     TelemetryClientConfig clientConfig = getTelemetryClientConfig();
-    SonarApplication application = SonarLintUtils.getService(SonarApplication.class);
-    TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, application.getVersion(), SonarLintUtils.getIdeVersionForTelemetry());
+    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry());
     return new TelemetryManager(getStorageFilePath(), client, this::isAnyProjectConnected, this::isAnyProjectConnectedToSonarCloud);
   }
 

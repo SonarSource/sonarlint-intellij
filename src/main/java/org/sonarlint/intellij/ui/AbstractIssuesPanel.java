@@ -25,7 +25,6 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
@@ -51,7 +50,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
@@ -61,11 +59,11 @@ import org.sonarlint.intellij.ui.tree.FlowsTree;
 import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   private static final String ID = "SonarLint";
   protected final Project project;
-  protected final SonarLintHighlighting highlighting;
   protected SonarLintRulePanel rulePanel;
   protected JBTabbedPane detailsTab;
   protected Tree tree;
@@ -74,27 +72,26 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   protected FlowsTreeModelBuilder flowsTreeBuilder;
   private ActionToolbar mainToolbar;
 
-  AbstractIssuesPanel(Project project, ProjectBindingManager projectBindingManager) {
+  AbstractIssuesPanel(Project project) {
     super(false, true);
     this.project = project;
-    this.highlighting = ServiceManager.getService(project, SonarLintHighlighting.class);
 
     createFlowsTree();
     createIssuesTree();
-    createTabs(projectBindingManager);
+    createTabs();
   }
 
   public void refreshToolbar() {
     mainToolbar.updateActionsImmediately();
   }
 
-  private void createTabs(ProjectBindingManager projectBindingManager) {
+  private void createTabs() {
     // Flows panel with tree
     JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree);
     flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
 
     // Rule panel
-    rulePanel = new SonarLintRulePanel(project, projectBindingManager);
+    rulePanel = new SonarLintRulePanel(project);
     JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
       rulePanel.getPanel(),
       ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -124,6 +121,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     LocationNode[] selectedNodes = flowsTree.getSelectedNodes(LocationNode.class, null);
     if (selectedNodes.length > 0) {
       LocationNode node = selectedNodes[0];
+      SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
       highlighting.highlightFlowsWithHighlightersUtil(node.rangeMarker(), node.message(), Collections.emptyList());
     }
   }
@@ -134,6 +132,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       LiveIssue issue = selectedNodes[0].issue();
       rulePanel.setRuleKey(issue);
       if (issue.getRange() != null) {
+        SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
         highlighting.highlightFlowsWithHighlightersUtil(issue.getRange(), issue.getMessage(), issue.flows());
       }
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
@@ -143,13 +142,9 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       flowsTreeBuilder.clearFlows();
       flowsTree.getEmptyText().setText("No issue selected");
       rulePanel.setRuleKey(null);
+      SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
       highlighting.removeHighlightingFlows();
     }
-  }
-
-  protected void setToolbar(String id) {
-    ActionGroup group = (ActionGroup) ActionManager.getInstance().getAction(id);
-    setToolbar(group);
   }
 
   protected void setToolbar(Collection<AnAction> actions) {
@@ -194,6 +189,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       @Override
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
+          SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
           highlighting.removeHighlightingFlows();
         }
       }
