@@ -39,7 +39,6 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private JPanel rootPanel;
@@ -146,8 +145,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private JPanel getPanel() {
     if (rootPanel == null) {
       about = new SonarLintAboutPanel();
-      StandaloneSonarLintEngine standaloneEngine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
-      rules = new RuleConfigurationPanel(standaloneEngine);
+      rules = new RuleConfigurationPanel();
       exclusions = new GlobalExclusionsPanel();
       globalPanel = new SonarLintGlobalOptionsPanel();
       serversPanel = new SonarQubeServerMgmtPanel();

@@ -94,6 +94,7 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -109,7 +110,6 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   @NonNls
   private static final String EMPTY_HTML = "<html><body>Select a rule to see the description</body></html>";
 
-  private final StandaloneSonarLintEngine engine;
   private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private RulesTreeTable table;
   private JEditorPane descriptionBrowser;
@@ -122,8 +122,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private Map<String, RulesTreeNode.Rule> allRulesStateByKey;
   private boolean isDirty = false;
 
-  public RuleConfigurationPanel(StandaloneSonarLintEngine engine) {
-    this.engine = engine;
+  public RuleConfigurationPanel() {
     createUIComponents();
   }
 
@@ -173,6 +172,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   @NotNull
   private Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
+    StandaloneSonarLintEngine engine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
     return engine.getAllRuleDetails().stream()
       .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
       .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
@@ -189,6 +189,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private void updateModel() {
+    StandaloneSonarLintEngine engine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
     Map<String, String> languagesNameByKey = engine.getAllLanguagesNameByKey();
     Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = allRulesStateByKey.values().stream()
       .filter(filterModel::filter)
