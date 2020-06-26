@@ -40,16 +40,15 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime;
 import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotification;
 import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotificationListener;
-import org.sonarsource.sonarlint.core.notifications.SonarQubeNotifications;
 
-public class SonarQubeEventNotifications implements Disposable {
+public class ProjectServerNotifications implements Disposable {
   private static final NotificationGroup SONARQUBE_GROUP = NotificationGroup.balloonGroup("SonarLint: SonarQube Events");
   private final EventListener eventListener;
   private final ProjectNotificationTime notificationTime;
   private final MessageBusConnection busConnection;
   private final Project myProject;
 
-  public SonarQubeEventNotifications(Project project) {
+  public ProjectServerNotifications(Project project) {
     myProject = project;
     this.eventListener = new EventListener();
     this.notificationTime = new ProjectNotificationTime();
@@ -61,7 +60,7 @@ public class SonarQubeEventNotifications implements Disposable {
     register(projectSettings);
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, settings -> {
       // always reset notification date, whether bound or not
-      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);;
+      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
       projectState.setLastEventPolling(ZonedDateTime.now());
       register(settings);
     });
@@ -86,7 +85,7 @@ public class SonarQubeEventNotifications implements Disposable {
       }
       if (server.enableNotifications()) {
         NotificationConfiguration config = createConfiguration(settings, server);
-        SonarQubeNotifications.get().register(config);
+        ServerNotifications.get().register(config);
       }
     }
   }
@@ -97,7 +96,7 @@ public class SonarQubeEventNotifications implements Disposable {
   }
 
   public void unregister() {
-    SonarQubeNotifications.get().remove(eventListener);
+    ServerNotifications.get().unregister(eventListener);
   }
 
   private NotificationConfiguration createConfiguration(SonarLintProjectSettings settings, SonarQubeServer server) {
@@ -113,7 +112,7 @@ public class SonarQubeEventNotifications implements Disposable {
   private class ProjectNotificationTime implements LastNotificationTime {
 
     @Override public ZonedDateTime get() {
-      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);;
+      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling == null) {
         lastEventPolling = ZonedDateTime.now();
@@ -123,7 +122,7 @@ public class SonarQubeEventNotifications implements Disposable {
     }
 
     @Override public void set(ZonedDateTime dateTime) {
-      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);;
+      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling != null && dateTime.isBefore(lastEventPolling)) {
         // this can happen if the settings changed between the read and write

@@ -24,7 +24,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.core.SonarQubeEventNotifications;
+import org.sonarlint.intellij.core.ProjectServerNotifications;
 import org.sonarlint.intellij.core.UpdateChecker;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
@@ -36,7 +36,7 @@ public class BootstrapStartupActivity implements StartupActivity {
   @Override
   public void runActivity(@NotNull Project project) {
 
-    SonarLintUtils.getService(project, SonarQubeEventNotifications.class).init();
+    SonarLintUtils.getService(project, ProjectServerNotifications.class).init();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
 
