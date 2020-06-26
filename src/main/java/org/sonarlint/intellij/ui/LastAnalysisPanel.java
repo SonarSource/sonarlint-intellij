@@ -19,9 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.openapi.Disposable;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Disposer;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 import java.awt.CardLayout;
@@ -35,7 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
-public class LastAnalysisPanel implements Disposable {
+public class LastAnalysisPanel {
   private static final String NO_ANALYSIS = "NO_ANALYSIS";
   private static final String WITH_ANALYSIS = "WITH_ANALYSIS";
   @Nullable
@@ -48,10 +45,9 @@ public class LastAnalysisPanel implements Disposable {
   private JPanel panel;
   private CardLayout layout;
 
-  public LastAnalysisPanel(Project project) {
+  public LastAnalysisPanel() {
     createComponents();
     setTimer();
-    Disposer.register(project, this);
   }
 
   public JPanel getPanel() {
@@ -102,7 +98,6 @@ public class LastAnalysisPanel implements Disposable {
     panel.add(withAnalysisCard, WITH_ANALYSIS);
   }
 
-  @Override
   public void dispose() {
     if (lastAnalysisTimeUpdater != null) {
       lastAnalysisTimeUpdater.stop();

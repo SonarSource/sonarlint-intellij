@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.tools.SimpleActionGroup;
@@ -27,11 +28,12 @@ import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
+
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 
-public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel {
+public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
@@ -39,7 +41,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel {
 
   public SonarLintAnalysisResultsPanel(Project project) {
     super(project);
-    this.lastAnalysisPanel = new LastAnalysisPanel(project);
+    this.lastAnalysisPanel = new LastAnalysisPanel();
     this.results = new AnalysisResults(project);
 
     // Issues panel with tree
@@ -85,5 +87,11 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel {
     } else {
       tree.expandRow(0);
     }
+  }
+
+  @Override
+  // called automatically because the panel is one of the content of the tool window
+  public void dispose() {
+    lastAnalysisPanel.dispose();
   }
 }
