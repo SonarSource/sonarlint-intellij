@@ -50,7 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>4.9 - Dynamic plugin installation on 2020.2. Many new rules about JUnit and AssertJ for Java test files. 10 new rules for PHP. 22 new rules for Python and support of Typeshed packages</li>
+        <li>4.9 - Dynamic plugin installation on 2020.2. Many new rules about JUnit and AssertJ for Java test files. 10 new rules for PHP. 22 new rules for Python and support of Typeshed packages.</li>
         <li>4.8 - Configure rule parameters in IDE settings. Performance improvement and fewer false positives for PHP. 4 new vulnerability detection rules for Python.</li>
         <li>4.7 - 2 new rules and performance improvements for Java. 2 new rules for Python.</li>
         <li>4.6 - Enable analysis of TypeScript. 27 new rules for Python. Support for Python 3.8.</li>
