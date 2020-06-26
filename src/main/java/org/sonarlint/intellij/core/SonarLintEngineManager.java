@@ -26,6 +26,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -141,5 +143,6 @@ public class SonarLintEngineManager implements Disposable {
       standalone.stop();
       standalone = null;
     }
+    Loggers.setTarget(null);
   }
 }
