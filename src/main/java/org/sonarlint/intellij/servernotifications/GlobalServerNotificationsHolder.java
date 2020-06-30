@@ -17,26 +17,25 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core;
+package org.sonarlint.intellij.servernotifications;
 
 import com.intellij.openapi.Disposable;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotificationListener;
 import org.sonarsource.sonarlint.core.notifications.SonarQubeNotifications;
 
-public class ServerNotifications implements Disposable {
+/**
+ * Keep track of the {@link SonarQubeNotifications} singleton. Lazy init at first use, and release it when application is disposed.
+ */
+public class GlobalServerNotificationsHolder implements Disposable {
+
   private SonarQubeNotifications coreServerNotifications;
 
-  public static ServerNotifications get() {
-    return SonarLintUtils.getService(ServerNotifications.class);
-  }
-
-  public void register(NotificationConfiguration configuration) {
+  void register(NotificationConfiguration configuration) {
     getServerNotifications().register(configuration);
   }
 
-  public void unregister(SonarQubeNotificationListener notificationListener) {
+  void unregister(SonarQubeNotificationListener notificationListener) {
     if (coreServerNotifications != null) {
       getServerNotifications().remove(notificationListener);
     }

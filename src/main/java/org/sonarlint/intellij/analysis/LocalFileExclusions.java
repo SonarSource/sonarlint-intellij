@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -33,7 +34,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -46,17 +46,12 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
 
-public class LocalFileExclusions {
-  private final ProjectRootManager projectRootManager;
-  private final BooleanSupplier powerSaveModeCheck;
+public class LocalFileExclusions implements Disposable {
 
   private FileExclusions projectExclusions;
   private FileExclusions globalExclusions;
 
   public LocalFileExclusions(Project project) {
-    this.projectRootManager = ProjectRootManager.getInstance(project);
-    this.powerSaveModeCheck = PowerSaveMode::isEnabled;
-
     subscribeToSettingsChanges(project);
     loadGlobalExclusions(SonarLintUtils.getService(SonarLintGlobalSettings.class));
     loadProjectExclusions(SonarLintUtils.getService(project, SonarLintProjectSettings.class));
@@ -87,7 +82,7 @@ public class LocalFileExclusions {
   }
 
   private void subscribeToSettingsChanges(Project project) {
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    MessageBusConnection busConnection = project.getMessageBus().connect(this);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override public void applied(SonarLintGlobalSettings newSettings) {
         loadGlobalExclusions(newSettings);
@@ -120,7 +115,7 @@ public class LocalFileExclusions {
   }
 
   private Result checkFileInSourceFolders(VirtualFile file, Module module) {
-    ProjectFileIndex fileIndex = projectRootManager.getFileIndex();
+    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(module.getProject()).getFileIndex();
 
     if (fileIndex.isExcluded(file)) {
       return Result.excluded("file is excluded or ignored in IntelliJ's project structure");
@@ -142,7 +137,7 @@ public class LocalFileExclusions {
   }
 
   public Result canAnalyze(VirtualFile file, @Nullable Module module) {
-    if (powerSaveModeCheck.getAsBoolean()) {
+    if (PowerSaveMode.isEnabled()) {
       return Result.excluded("power save mode is enabled");
     }
 
@@ -189,5 +184,10 @@ public class LocalFileExclusions {
     public static Result notExcluded() {
       return new Result(false, null);
     }
+
+  }
+
+  @Override
+  public void dispose() {
   }
 }

@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui;
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.ide.PowerSaveMode;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
@@ -55,7 +56,7 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class AutoTriggerStatusPanel {
+public class AutoTriggerStatusPanel implements Disposable {
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
   private static final String FILE_DISABLED = "FILE_DISABLED";
   private static final String AUTO_TRIGGER_DISABLED = "AUTO_TRIGGER_DISABLED";
@@ -81,7 +82,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private void subscribeToEvents() {
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    MessageBusConnection busConnection = project.getMessageBus().connect(this);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override public void applied(SonarLintGlobalSettings settings) {
         switchCards();
@@ -188,5 +189,9 @@ public class AutoTriggerStatusPanel {
     panel.add(enabledCard, AUTO_TRIGGER_ENABLED);
     panel.add(disabledCard, AUTO_TRIGGER_DISABLED);
     panel.add(notThisFileCard, FILE_DISABLED);
+  }
+
+  @Override
+  public void dispose() {
   }
 }

@@ -38,7 +38,7 @@ public class MakeTrigger implements BuildManagerListener, CompilationStatusListe
   @Override
   public void runActivity(@NotNull Project project) {
     this.project = project;
-    MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
+    MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect();
     busConnection.subscribe(BuildManagerListener.TOPIC, this);
     busConnection.subscribe(CompilerTopics.COMPILATION_STATUS, this);
   }

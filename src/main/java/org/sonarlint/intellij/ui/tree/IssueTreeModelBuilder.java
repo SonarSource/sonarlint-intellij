@@ -83,7 +83,7 @@ public class IssueTreeModelBuilder {
     toRemove.forEach(this::removeFile);
 
     for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue());
+      //setFileIssues(e.getKey(), e.getValue());
     }
 
     model.nodeChanged(summary);

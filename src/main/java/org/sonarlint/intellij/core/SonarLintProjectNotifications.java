@@ -64,7 +64,7 @@ public class SonarLintProjectNotifications {
       "Project bound to an invalid connection" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
-    notification.notify(myProject);
+    openNotification(notification);
     shown = true;
   }
 
@@ -77,7 +77,7 @@ public class SonarLintProjectNotifications {
       "Project bound to an invalid remote project" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
-    notification.notify(myProject);
+    openNotification(notification);
     shown = true;
   }
 
@@ -90,7 +90,7 @@ public class SonarLintProjectNotifications {
       "Local storage is outdated" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, new OpenProjectSettingsNotificationListener(myProject));
     notification.setImportant(true);
-    notification.notify(myProject);
+    openNotification(notification);
     shown = true;
   }
 
@@ -103,7 +103,7 @@ public class SonarLintProjectNotifications {
       "Missing local storage for connection '" + serverId + "'" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
-    notification.notify(myProject);
+    openNotification(notification);
     shown = true;
   }
 
@@ -116,7 +116,7 @@ public class SonarLintProjectNotifications {
       "Local storage for connection '" + serverId + "' must be updated" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, new OpenGeneralSettingsNotificationListener(myProject));
     notification.setImportant(true);
-    notification.notify(myProject);
+    openNotification(notification);
     shown = true;
   }
 
@@ -131,6 +131,10 @@ public class SonarLintProjectNotifications {
         SonarQubeServerMgmtPanel.updateServerBinding(server, engine, onlyProjects);
       }
     });
+    openNotification(notification);
+  }
+
+  private void openNotification(Notification notification) {
     notification.notify(myProject);
   }
 
@@ -168,5 +172,6 @@ public class SonarLintProjectNotifications {
         notification.expire();
       }
     }
+
   }
 }

@@ -28,6 +28,7 @@ intellij {
   pluginName 'sonarlint-intellij'
   updateSinceUntilBuild false
   plugins = ['java']
+  alternativeIdePath '/home/julien/tmp/idea-IU-202.5958.24/'
 }
 
 protobuf {

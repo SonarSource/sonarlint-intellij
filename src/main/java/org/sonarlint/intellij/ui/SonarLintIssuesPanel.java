@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
@@ -39,7 +40,7 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataProvider {
+public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataProvider, Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final CurrentFileController scope;
 
@@ -94,5 +95,9 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
     }
 
     return null;
+  }
+
+  @Override
+  public void dispose() {
   }
 }

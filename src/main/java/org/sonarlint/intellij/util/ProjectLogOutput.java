@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.AnalysisRequirementNotifications;
@@ -34,7 +35,11 @@ public class ProjectLogOutput implements LogOutput {
 
   @Override
   public void log(String msg, Level level) {
-    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
+    SonarLintConsole console = ServiceManager.getService(project, SonarLintConsole.class);
+    if (console == null) {
+      // Plugin unloading
+      return;
+    }
     if (isNodeCommandException(msg)) {
       console.info(msg);
       AnalysisRequirementNotifications.notifyNodeCommandException(project);

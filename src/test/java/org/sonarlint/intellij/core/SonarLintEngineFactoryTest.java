@@ -20,12 +20,10 @@
 package org.sonarlint.intellij.core;
 
 import java.nio.file.Paths;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintPlugin;
-import org.sonarlint.intellij.util.GlobalLogOutputTestImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -35,14 +33,12 @@ import static org.mockito.Mockito.when;
 
 public class SonarLintEngineFactoryTest extends AbstractSonarLintLightTests {
   private SonarLintEngineFactory factory;
-  private GlobalLogOutputTestImpl log;
 
   @Before
   public void before() {
     System.setProperty("idea.home.path", getHomePath());
     SonarLintPlugin plugin = mock(SonarLintPlugin.class);
     when(plugin.getPath()).thenReturn(Paths.get(getHomePath()).resolve("plugins"));
-    log = new GlobalLogOutputTestImpl();
     factory = new SonarLintEngineFactory();
   }
 
@@ -52,8 +48,6 @@ public class SonarLintEngineFactoryTest extends AbstractSonarLintLightTests {
     assertThat(engine).isNotNull();
 
     engine.stop();
-
-    assertTrue(StringUtils.isEmpty(log.getLastMsg()));
   }
 
   @Test

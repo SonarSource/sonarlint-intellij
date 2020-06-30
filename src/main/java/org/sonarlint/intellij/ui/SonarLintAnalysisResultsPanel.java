@@ -69,7 +69,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
   }
 
   private void subscribeToEvents() {
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    MessageBusConnection busConnection = project.getMessageBus().connect(this);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
     busConnection.subscribe(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(this::updateIssues));
 

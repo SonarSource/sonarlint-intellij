@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
@@ -49,7 +50,7 @@ public class CurrentFileController {
 
   public void setPanel(SonarLintIssuesPanel panel) {
     this.panel = panel;
-    initEventHandling();
+    initEventHandling(panel);
     update();
   }
 
@@ -63,13 +64,10 @@ public class CurrentFileController {
     }
   }
 
-  private void initEventHandling() {
+  private void initEventHandling(Disposable parentDisposable) {
     EditorChangeListener editorChangeListener = new EditorChangeListener();
-    project.getMessageBus()
-      .connect(project)
-      .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, editorChangeListener);
-
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    MessageBusConnection busConnection = project.getMessageBus().connect(parentDisposable);
+    busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, editorChangeListener);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> ApplicationManager.getApplication().invokeLater(panel::refreshToolbar));
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {

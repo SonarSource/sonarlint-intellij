@@ -40,7 +40,6 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
@@ -67,9 +66,7 @@ public class SonarLintEngineFactory  {
 
 
   ConnectedSonarLintEngine createEngine(String serverId) {
-    GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
-      .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
       .addEnabledLanguages(STANDALONE_LANGUAGES)
       .addEnabledLanguages(CONNECTED_ADDITIONAL_LANGUAGES)
@@ -93,9 +90,7 @@ public class SonarLintEngineFactory  {
     try {
       URL[] plugins = loadPlugins();
 
-      GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
       StandaloneGlobalConfiguration globalConfiguration = StandaloneGlobalConfiguration.builder()
-        .setLogOutput(globalLogOutput)
         .setSonarLintUserHome(getSonarLintHome())
         .setWorkDir(getWorkDir())
         .addPlugins(plugins)
@@ -136,9 +131,8 @@ public class SonarLintEngineFactory  {
     List<URL> pluginsUrls = new ArrayList<>();
 
     try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()), "*.jar")) {
-      GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
       for (Path path : directoryStream) {
-        globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
+        GlobalLogOutput.debug("Found plugin: " + path.getFileName().toString());
 
         URL newUrl;
         if ("file".equalsIgnoreCase(pluginsDir.toURI().getScheme())) {

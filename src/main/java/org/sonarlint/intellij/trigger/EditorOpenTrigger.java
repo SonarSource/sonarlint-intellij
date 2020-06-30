@@ -58,7 +58,7 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
   @Override
   public void runActivity(@NotNull Project myProject) {
     if (!ApplicationManager.getApplication().isUnitTestMode()) {
-      myProject.getMessageBus().connect(myProject).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
+      myProject.getMessageBus().connect().subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
       SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
       if (globalSettings.isAutoTrigger()) {
         VirtualFile[] openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();

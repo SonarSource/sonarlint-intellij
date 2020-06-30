@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.execution.ui.ConsoleView;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -38,7 +39,7 @@ import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintLogPanel extends SimpleToolWindowPanel {
+public class SonarLintLogPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String ID = "SonarLint";
 
   private final ToolWindow toolWindow;
@@ -55,7 +56,7 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
     addToolbar();
     addConsole();
 
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    MessageBusConnection busConnection = project.getMessageBus().connect(this);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus ->
       ApplicationManager.getApplication().invokeLater(mainToolbar::updateActionsImmediately));
   }
@@ -90,5 +91,9 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private void addConsole() {
     ConsoleView consoleView = SonarLintUtils.getService(project, SonarLintConsole.class).getConsoleView();
     super.setContent(consoleView.getComponent());
+  }
+
+  @Override
+  public void dispose() {
   }
 }

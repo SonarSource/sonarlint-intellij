@@ -22,6 +22,7 @@ package org.sonarlint.intellij.telemetry;
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.ide.AppLifecycleListener;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import java.util.concurrent.ScheduledFuture;
@@ -30,7 +31,7 @@ import javax.annotation.Nullable;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
-public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleListener {
+public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleListener, Disposable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTelemetryImpl.class);
   static final String DISABLE_PROPERTY_KEY = "sonarlint.telemetry.disabled";
 
@@ -55,7 +56,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
       telemetry = null;
     } else {
       telemetry = telemetryManagerProvider.get();
-      ApplicationManager.getApplication().getMessageBus().connect().subscribe(AppLifecycleListener.TOPIC, this);
+      ApplicationManager.getApplication().getMessageBus().connect(this).subscribe(AppLifecycleListener.TOPIC, this);
     }
   }
 
@@ -92,7 +93,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
       if (org.sonarsource.sonarlint.core.client.api.util.SonarLintUtils.isInternalDebugEnabled()) {
         String msg = "Failed to schedule telemetry job";
         LOGGER.error(msg, e);
-        GlobalLogOutput.get().logError(msg, e);
+        GlobalLogOutput.error(msg, e);
       }
     }
   }
@@ -133,5 +134,9 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
   @Override
   public void appWillBeClosed(boolean isRestart) {
     stop();
+  }
+
+  @Override
+  public void dispose() {
   }
 }

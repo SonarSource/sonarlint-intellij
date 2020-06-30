@@ -46,7 +46,6 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
@@ -101,14 +100,14 @@ public class ServerUpdateTask {
           ApplicationManager.getApplication().invokeAndWait(() ->
             Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
         }
-        GlobalLogOutput.get().log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+        GlobalLogOutput.info("Server binding '" + server.getName() + "' updated");
       }
 
       updateProjects(serverConfiguration, monitor);
 
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + server.getName() + "' was cancelled");
-      GlobalLogOutput.get().log("Update of server '" + server.getName() + "' was cancelled", LogOutput.Level.INFO);
+      GlobalLogOutput.info("Update of server '" + server.getName() + "' was cancelled");
     } catch (Exception e) {
       LOGGER.info("Error updating from server '" + server.getName() + "'", e);
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
@@ -163,7 +162,7 @@ public class ServerUpdateTask {
       String errorMsg = "Failed to update the following projects. "
         + "Please check if the server bindings are updated and the module key is correct: "
         + failedProjects.toString();
-      GlobalLogOutput.get().log(errorMsg, LogOutput.Level.WARN);
+      GlobalLogOutput.info(errorMsg);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override public void doRun() {
@@ -175,7 +174,7 @@ public class ServerUpdateTask {
 
   private void updateProject(ServerConfiguration serverConfiguration, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
     engine.updateProject(serverConfiguration, projectKey, monitor);
-    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+    GlobalLogOutput.info("Project '" + projectKey + "' in server binding '" + server.getName() + "' updated");
     projects.forEach(this::updateModules);
     projects.forEach(ServerUpdateTask::analyzeOpenFiles);
   }

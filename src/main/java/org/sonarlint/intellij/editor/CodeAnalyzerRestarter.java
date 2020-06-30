@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
@@ -36,7 +37,7 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 
-public class CodeAnalyzerRestarter implements IssueStoreListener {
+public class CodeAnalyzerRestarter implements IssueStoreListener, Disposable {
   private final MessageBus messageBus;
   private final Project myProject;
   private final DaemonCodeAnalyzer codeAnalyzer;
@@ -58,7 +59,7 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
   }
 
   public void init() {
-    MessageBusConnection busConnection = messageBus.connect(myProject);
+    MessageBusConnection busConnection = messageBus.connect(this);
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this);
   }
 
@@ -96,5 +97,9 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
 
   @Override public void allChanged() {
     ApplicationManager.getApplication().invokeLater(this::refreshAllFiles);
+  }
+
+  @Override
+  public void dispose() {
   }
 }

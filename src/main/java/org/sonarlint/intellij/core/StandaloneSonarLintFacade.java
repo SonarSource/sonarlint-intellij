@@ -31,17 +31,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.RuleKey;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -84,7 +84,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
 
     SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
-    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    return sonarlint.analyze(config, issueListener, null, progressMonitor);
   }
 
   @Override
@@ -93,8 +93,8 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
-    return sonarlint.getLoadedAnalyzers();
+  public List<PluginDetails> getLoadedAnalyzers() {
+    return sonarlint.getPluginDetails().stream().filter(p -> !p.skipReason().isPresent()).collect(Collectors.toList());
   }
 
   @Override

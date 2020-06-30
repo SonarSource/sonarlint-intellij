@@ -54,7 +54,7 @@ public class ConnectionTestTask extends Task.Modal {
     } catch (Exception e) {
       String msg = "Connection test failed";
       LOGGER.info(msg, e);
-      GlobalLogOutput.get().logError(msg, e);
+      GlobalLogOutput.error(msg, e);
       exception = e;
     }
   }

@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
@@ -32,6 +33,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -50,17 +52,16 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
  * Coordinates creation of models and visual components from persisted settings.
  * Transforms objects as needed and keeps track of changes.
  */
-public class SonarLintProjectConfigurable implements Configurable, Configurable.NoMargin, Configurable.NoScroll {
+public class SonarLintProjectConfigurable implements Configurable, Configurable.NoMargin, Configurable.NoScroll, Disposable {
 
   private final Project project;
-  private final MessageBusConnection busConnection;
 
   private SonarLintProjectSettingsPanel panel;
 
   public SonarLintProjectConfigurable(Project project) {
     this.project = project;
-    this.busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
-    this.busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
+    @NotNull MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect(this);
+    busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
       public void changed(List<SonarQubeServer> newServerList) {
         if (panel != null) {
@@ -161,7 +162,6 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public void disposeUIResources() {
     SonarLintProjectNotifications.get(project).reset();
-    busConnection.disconnect();
     if (panel != null) {
       panel.dispose();
       panel = null;
@@ -172,4 +172,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     return SonarLintUtils.getService(project, SonarLintProjectSettings.class);
   }
 
+  @Override
+  public void dispose() {
+  }
 }

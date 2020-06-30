@@ -19,15 +19,55 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.project.ProjectManager;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Stream;
+import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
-public interface GlobalLogOutput extends LogOutput {
-  static GlobalLogOutput get() {
-    return SonarLintUtils.getService(GlobalLogOutput.class);
+public class GlobalLogOutput implements LogOutput {
+
+  @Override
+  public void log(String msg, Level level) {
+    switch (level) {
+      case TRACE:
+      case DEBUG:
+        debug(msg);
+        break;
+      case ERROR:
+        getConsolesOfOpenedProjects().forEach(console -> console.error(msg));
+        break;
+      case INFO:
+      case WARN:
+      default:
+        info(msg);
+    }
   }
 
-  void log(String msg, LogOutput.Level level);
+  public static void error(String msg, Throwable t) {
+    getConsolesOfOpenedProjects()
+      .forEach(sonarLintConsole -> sonarLintConsole.error(msg, t));
+  }
 
-  void logError(String msg, Throwable t);
+  public static void debug(String msg) {
+    getConsolesOfOpenedProjects()
+      .forEach(sonarLintConsole -> sonarLintConsole.debug(msg));
+  }
+
+  public static void info(String msg) {
+    getConsolesOfOpenedProjects()
+      .forEach(sonarLintConsole -> sonarLintConsole.info(msg));
+  }
+
+  @NotNull
+  private static Stream<SonarLintConsole> getConsolesOfOpenedProjects() {
+    return Arrays.stream(ProjectManager.getInstance().getOpenProjects())
+      .map(project -> ServiceManager.getService(project, SonarLintConsole.class))
+      // Some console might already been disposed when plugin is unloading
+      .filter(Objects::nonNull);
+  }
 
 }

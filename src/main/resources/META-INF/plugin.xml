@@ -145,13 +145,11 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineFactory"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
-        <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
-                            serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"
-                            testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.util.AllProjectsConsoleLogger"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.util.SonarLintActions"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.servernotifications.GlobalServerNotificationsHolder"/>
         <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
                             serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotifications"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettings"/>
@@ -160,7 +158,6 @@
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintJobManager"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectServerNotifications"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.persistence.LiveIssueCache"/>
@@ -180,6 +177,7 @@
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettings"/>
         
         <postStartupActivity implementation="org.sonarlint.intellij.BootstrapStartupActivity"/>
+        <postStartupActivity implementation="org.sonarlint.intellij.servernotifications.ProjectServerNotifications"/>
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.SonarLintSubmitter"/>
     </extensions>

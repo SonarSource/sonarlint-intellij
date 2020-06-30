@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
@@ -28,14 +27,12 @@ import com.intellij.openapi.project.Project;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
@@ -44,35 +41,35 @@ public class UpdateChecker implements Disposable {
 
   private final Project myProject;
   private ScheduledFuture<?> scheduledTask;
+  private Task.Backgroundable task;
 
   public UpdateChecker(Project project) {
     myProject = project;
   }
 
   public void init() {
-    scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::checkForUpdate, 10, 24L * 60L * 60L, TimeUnit.SECONDS);
+    //scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::checkForUpdate, 10, 24L * 60L * 60L, TimeUnit.SECONDS);
   }
 
   private void checkForUpdate() {
-    ProgressManager.getInstance()
-      .run(new Task.Backgroundable(myProject, "Checking SonarLint Binding Updates") {
-        public void run(@NotNull ProgressIndicator progressIndicator) {
-          UpdateChecker.this.checkForUpdate(progressIndicator);
-        }
-      });
-
+    task = new Task.Backgroundable(myProject, "Checking SonarLint Binding Updates") {
+      public void run(@NotNull ProgressIndicator progressIndicator) {
+        UpdateChecker.this.checkForUpdate(progressIndicator);
+      }
+    };
+    ProgressManager.getInstance().run(task);
   }
 
   void checkForUpdate(@NotNull ProgressIndicator progressIndicator) {
+    progressIndicator.checkCanceled();
     ProjectBindingManager projectBindingManager;
-    GlobalLogOutput log = SonarLintUtils.getService(GlobalLogOutput.class);
     ConnectedSonarLintEngine engine;
     try {
       projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
       engine = projectBindingManager.getConnectedEngine();
     } catch (Exception e) {
       // happens if project is not bound, binding is invalid, storages are not updated, ...
-      log.log("Couldn't get a connected engine to check for update: " + e.getMessage(), LogOutput.Level.DEBUG);
+      GlobalLogOutput.debug("Couldn't get a connected engine to check for update: " + e.getMessage());
       return;
     }
 
@@ -80,19 +77,19 @@ public class UpdateChecker implements Disposable {
       List<String> changelog = new ArrayList<>();
       SonarQubeServer server = projectBindingManager.getSonarQubeServer();
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      log.log("Check for updates from server '" + server.getName() + "'...", LogOutput.Level.INFO);
+      GlobalLogOutput.info("Check for updates from server '" + server.getName() + "'...");
       boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration, progressIndicator);
       SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
-      log.log("Check for updates from server '" + server.getName() +
-        "' for project '" + projectSettings.getProjectKey() + "'...", LogOutput.Level.INFO);
+      GlobalLogOutput.info("Check for updates from server '" + server.getName() +
+        "' for project '" + projectSettings.getProjectKey() + "'...");
       checkForProjectUpdates(changelog, engine, serverConfiguration, progressIndicator);
       if (!changelog.isEmpty()) {
-        changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
+        changelog.forEach(line -> GlobalLogOutput.info("  - " + line));
         SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
         notifications.notifyServerHasUpdates(projectSettings.getServerId(), engine, server, !hasGlobalUpdates);
       }
     } catch (Exception e) {
-      log.log("There was an error while checking for updates: " + e.getMessage(), LogOutput.Level.WARN);
+      GlobalLogOutput.info("There was an error while checking for updates: " + e.getMessage());
     }
   }
 
@@ -116,6 +113,6 @@ public class UpdateChecker implements Disposable {
 
   @Override
   public void dispose() {
-    scheduledTask.cancel(true);
+    //scheduledTask.cancel(true);
   }
 }

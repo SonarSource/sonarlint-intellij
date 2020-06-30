@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
@@ -56,7 +55,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
 
   public void onProjectOpened() {
     myProject.getMessageBus()
-      .connect(myProject)
+      .connect(this)
       .subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
         @Override
         public void started(SonarLintJob job) {
