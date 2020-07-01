@@ -122,8 +122,8 @@ public class ServerStep extends AbstractWizardStepEx {
   }
 
   private void load(boolean editing) {
-    Icon sqIcon = SonarLintIcons.icon("SonarQube");
-    Icon clIcon = SonarLintIcons.icon("SonarCloud");
+    Icon sqIcon = SonarLintIcons.ICON_SONARQUBE;
+    Icon clIcon = SonarLintIcons.ICON_SONARCLOUD;
 
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD || model.getServerType() == null) {
       radioSonarCloud.setSelected(true);
@@ -233,8 +233,8 @@ public class ServerStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    sonarcloudIcon = new JLabel(SonarLintIcons.icon("SonarCloud"));
-    sonarqubeIcon = new JLabel(SonarLintIcons.icon("SonarQube"));
+    sonarcloudIcon = new JLabel(SonarLintIcons.ICON_SONARCLOUD);
+    sonarqubeIcon = new JLabel(SonarLintIcons.ICON_SONARQUBE);
     sonarcloudText = SwingHelper.createHtmlViewer(false, null, null, null);
     sonarqubeText = SwingHelper.createHtmlViewer(false, null, null, null);
 

@@ -20,10 +20,16 @@
 package icons;
 
 import com.intellij.openapi.util.IconLoader;
+
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import javax.swing.Icon;
 
 public class SonarLintIcons {
+  public static final Icon ICON_SONARQUBE = IconLoader.getIcon("/images/SonarQube.png");
+  public static final Icon ICON_SONARCLOUD = IconLoader.getIcon("/images/SonarCloud.png");
+
   public static final Icon ICON_SONARQUBE_16 = IconLoader.getIcon("/images/onde-sonar-16.png");
   public static final Icon ICON_SONARCLOUD_16 = IconLoader.getIcon("/images/sonarcloud-16.png");
   public static final Icon ICON_SONARLINT_13 = IconLoader.getIcon("/images/ico-sonarlint-13.png");
@@ -39,34 +45,55 @@ public class SonarLintIcons {
   public static final Icon SCM = IconLoader.getIcon("/images/toolWindowChanges.png");
   public static final Icon PROJECT = IconLoader.getIcon("/images/ideaProject.png");
 
+  private static final Map<String, Icon> SEVERITY_ICONS = new HashMap<>();
+  private static final Map<String, Icon> SEVERITY_ICONS_12 = new HashMap<>();
+  private static final Map<String, Icon> TYPE_ICONS = new HashMap<>();
+  private static final Map<String, Icon> TYPE_ICONS_12 = new HashMap<>();
+
+  static {
+    SEVERITY_ICONS.put("blocker", IconLoader.getIcon("/images/severity/blocker.png"));
+    SEVERITY_ICONS.put("critical", IconLoader.getIcon("/images/severity/critical.png"));
+    SEVERITY_ICONS.put("info", IconLoader.getIcon("/images/severity/info.png"));
+    SEVERITY_ICONS.put("major", IconLoader.getIcon("/images/severity/major.png"));
+    SEVERITY_ICONS.put("minor", IconLoader.getIcon("/images/severity/minor.png"));
+
+    SEVERITY_ICONS_12.put("blocker", IconLoader.getIcon("/images/severity/blocker12.png"));
+    SEVERITY_ICONS_12.put("critical", IconLoader.getIcon("/images/severity/critical12.png"));
+    SEVERITY_ICONS_12.put("info", IconLoader.getIcon("/images/severity/info12.png"));
+    SEVERITY_ICONS_12.put("major", IconLoader.getIcon("/images/severity/major12.png"));
+    SEVERITY_ICONS_12.put("minor", IconLoader.getIcon("/images/severity/minor12.png"));
+
+    TYPE_ICONS.put("bug", IconLoader.getIcon("/images/type/bug.png"));
+    TYPE_ICONS.put("code_smell", IconLoader.getIcon("/images/type/code_smell.png"));
+    TYPE_ICONS.put("vulnerability", IconLoader.getIcon("/images/type/vulnerability.png"));
+
+    TYPE_ICONS_12.put("bug", IconLoader.getIcon("/images/type/bug12.png"));
+    TYPE_ICONS_12.put("code_smell", IconLoader.getIcon("/images/type/code_smell12.png"));
+    TYPE_ICONS_12.put("vulnerability", IconLoader.getIcon("/images/type/vulnerability12.png"));
+  }
+
   private SonarLintIcons() {
     // only static
   }
 
   public static Icon severity12(String severity) {
-    return severity(severity + "12");
+    return SEVERITY_ICONS_12.get(severity.toLowerCase(Locale.ENGLISH));
   }
 
   public static Icon type12(String type) {
-    return type(type + "12");
+    return TYPE_ICONS_12.get(type.toLowerCase(Locale.ENGLISH));
   }
 
   public static Icon severity(String severity) {
-    String name = severity.toLowerCase(Locale.ENGLISH) + ".png";
-    return IconLoader.getIcon("/images/severity/" + name);
-  }
-
-  public static Icon icon(String name) {
-    String nameWithExtension = name + ".png";
-    return IconLoader.getIcon("/images/" + nameWithExtension);
+    return SEVERITY_ICONS.get(severity.toLowerCase(Locale.ENGLISH));
   }
 
   public static Icon toDisabled(Icon icon) {
+    // XXX still a problem !
     return IconLoader.getDisabledIcon(icon);
   }
 
   public static Icon type(String type) {
-    String name = type.toLowerCase(Locale.ENGLISH) + ".png";
-    return IconLoader.getIcon("/images/type/" + name);
+    return TYPE_ICONS.get(type.toLowerCase(Locale.ENGLISH));
   }
 }
