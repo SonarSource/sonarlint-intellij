@@ -97,10 +97,6 @@ public class IssueNode extends AbstractNode {
     return 1;
   }
 
-  @Override public int getFileCount() {
-    return 0;
-  }
-
   public LiveIssue issue() {
     return issue;
   }

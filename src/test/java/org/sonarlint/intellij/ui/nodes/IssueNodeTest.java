@@ -35,7 +35,6 @@ public class IssueNodeTest {
   public void testCount() {
     LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
     node = new IssueNode(i);
-    assertThat(node.getFileCount()).isZero();
     assertThat(node.getIssueCount()).isEqualTo(1);
     assertThat(node.issue()).isEqualTo(i);
   }

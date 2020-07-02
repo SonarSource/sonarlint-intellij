@@ -65,26 +65,20 @@ public class AbstractNodeTest {
     AbstractNode child2 = mock(AbstractNode.class);
     AbstractNode child3 = mock(AbstractNode.class);
 
-    when(child1.getFileCount()).thenReturn(1);
     when(child1.getIssueCount()).thenReturn(1);
 
-    when(child2.getFileCount()).thenReturn(2);
     when(child2.getIssueCount()).thenReturn(2);
 
-    when(child3.getFileCount()).thenReturn(3);
     when(child3.getIssueCount()).thenReturn(3);
 
     testNode.add(child1);
     testNode.add(child2);
     testNode.add(child3);
 
-    assertThat(testNode.getFileCount()).isEqualTo(6);
     assertThat(testNode.getIssueCount()).isEqualTo(6);
-    assertThat(testNode.getFileCount()).isEqualTo(6);
     assertThat(testNode.getIssueCount()).isEqualTo(6);
 
     //second call should be from cache
-    verify(child1, times(1)).getFileCount();
     verify(child1, times(1)).getIssueCount();
   }
 
