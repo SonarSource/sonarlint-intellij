@@ -25,19 +25,14 @@ import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
-import com.intellij.testFramework.rules.TempDirectory;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Rule;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTests {
-
-  @Rule
-  public TempDirectory tempDir = new TempDirectory();
 
   private JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
 
