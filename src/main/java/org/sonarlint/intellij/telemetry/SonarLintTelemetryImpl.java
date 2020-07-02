@@ -56,6 +56,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
     } else {
       telemetry = telemetryManagerProvider.get();
       ApplicationManager.getApplication().getMessageBus().connect().subscribe(AppLifecycleListener.TOPIC, this);
+      init();
     }
   }
 
