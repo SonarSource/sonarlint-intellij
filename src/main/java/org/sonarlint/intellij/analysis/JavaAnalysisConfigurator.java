@@ -114,7 +114,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     final ModuleRootManager mrm = ModuleRootManager.getInstance(module);
     final OrderEntry[] orderEntries = mrm.getOrderEntries();
     for (final OrderEntry entry : orderEntries) {
-      if (!topLevel && !isExported(entry)) {
+      if ((!topLevel && !isExported(entry)) || !entry.isValid()) {
         continue;
       }
       if (entry instanceof ModuleOrderEntry) {
