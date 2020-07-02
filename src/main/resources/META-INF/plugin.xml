@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
 
 -->
-<idea-plugin url="https://www.sonarlint.org">
+<idea-plugin url="https://www.sonarlint.org" require-restart="true">
     <id>org.sonarlint.idea</id>
     <name>SonarLint</name>
     <version>${project.version}</version>
