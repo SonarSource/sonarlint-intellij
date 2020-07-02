@@ -43,16 +43,10 @@ public class FileNodeTest {
   }
 
   @Test
-  public void testCountFile() {
-    assertThat(node.getFileCount()).isEqualTo(1);
-  }
-
-  @Test
   public void testCountIssues() {
     node.add(createTestIssueNode());
     node.add(createTestIssueNode());
     assertThat(node.getIssueCount()).isEqualTo(2);
-    assertThat(node.getFileCount()).isEqualTo(1);
   }
 
   @Test

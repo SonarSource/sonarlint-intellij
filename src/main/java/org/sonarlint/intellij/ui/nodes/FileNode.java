@@ -43,10 +43,6 @@ public class FileNode extends AbstractNode {
     return super.getChildCount();
   }
 
-  @Override public int getFileCount() {
-    return 1;
-  }
-
   public Icon getIcon() {
     return file.getFileType().getIcon();
   }

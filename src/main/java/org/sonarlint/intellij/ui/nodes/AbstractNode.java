@@ -92,24 +92,6 @@ public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutabl
     return insertIdx;
   }
 
-  public int getFileCount() {
-    if (fileCount < 0) {
-      fileCount = 0;
-      Enumeration children = super.children();
-
-      while (children.hasMoreElements()) {
-        AbstractNode node = (AbstractNode) children.nextElement();
-        if (node == null) {
-          continue;
-        }
-
-        fileCount += node.getFileCount();
-      }
-    }
-
-    return fileCount;
-  }
-
   public void setDirty() {
     fileCount = -1;
     issueCount = -1;
