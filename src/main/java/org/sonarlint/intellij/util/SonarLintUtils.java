@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.lang.Language;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
@@ -26,7 +27,6 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleServiceManager;
 import com.intellij.openapi.project.Project;
@@ -36,6 +36,7 @@ import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.net.ssl.CertificateManager;
 import java.awt.Graphics2D;
@@ -45,13 +46,11 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
@@ -73,7 +72,6 @@ public class SonarLintUtils {
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
   static final int CONNECTION_TIMEOUT_MS = 30_000;
   static final int READ_TIMEOUT_MS = 10 * 60_000;
-  static final String PATH_SEPARATOR_PATTERN = Pattern.quote(File.separator);
   private static final String[] SONARCLOUD_ALIAS = {"https://sonarqube.com", "https://www.sonarqube.com",
     "https://www.sonarcloud.io", "https://sonarcloud.io"};
 
@@ -285,31 +283,12 @@ public class SonarLintUtils {
     return str + "s";
   }
 
-  /**
-   * Convert a relative path on a platform not using forward slashes as a path separator to a path
-   * with forward slashes.
-   */
-  public static String toForwardSlashes(String relativePath) {
-    if (File.separatorChar != '/') {
-      return relativePath.replaceAll(PATH_SEPARATOR_PATTERN, "/");
-    }
-    return relativePath;
+  public static boolean isPhpLanguageRegistered() {
+    return Language.findLanguageByID("PHP") != null;
   }
 
-  public static boolean isPhpFileInPhpStorm(FileType fileType) {
-    return isPhpStorm() && "php".equalsIgnoreCase(fileType.getName());
-  }
-
-  private static boolean isPhpStorm() {
-    return getApplicationVersionName().toLowerCase(Locale.US).contains("phpstorm");
-  }
-
-  private static String getApplicationVersionName() {
-    try {
-      return getAppInfo().getVersionName();
-    } catch (NullPointerException noAppInfo) {
-      return "<!unknown!>";
-    }
+  public static boolean isPhpFile(@NotNull PsiFile file) {
+    return "php".equalsIgnoreCase(file.getFileType().getName());
   }
 
   @CheckForNull

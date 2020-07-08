@@ -36,6 +36,7 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
+
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NonNls;
@@ -46,14 +47,14 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFileInPhpStorm;
+import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFile;
+import static org.sonarlint.intellij.util.SonarLintUtils.isPhpLanguageRegistered;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
 
   @Override
   public void apply(@NotNull PsiFile file, AnnotationContext annotationResult, @NotNull AnnotationHolder holder) {
-    // In PHPStorm the same PHP file is analyzed twice (once as PHP file and once as HTML file)
-    if (isPhpFileInPhpStorm(file.getFileType())) {
+    if (shouldSkip(file)) {
       return;
     }
 
@@ -68,6 +69,11 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
           addAnnotation(issue, holder);
         }
       });
+  }
+
+  private static boolean shouldSkip(@NotNull PsiFile file) {
+    // A php file is annotated twice, once by HTML and once by PHP plugin. We want to avoid duplicate annotation
+    return isPhpLanguageRegistered() && isPhpFile(file);
   }
 
   @Override
