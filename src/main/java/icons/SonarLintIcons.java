@@ -89,7 +89,6 @@ public class SonarLintIcons {
   }
 
   public static Icon toDisabled(Icon icon) {
-    // XXX still a problem !
     return IconLoader.getDisabledIcon(icon);
   }
 
