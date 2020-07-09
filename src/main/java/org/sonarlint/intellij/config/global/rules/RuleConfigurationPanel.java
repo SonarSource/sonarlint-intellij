@@ -97,6 +97,7 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
@@ -214,7 +215,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     }
   }
 
-  private static boolean loadRuleActivation(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
+  private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
     final SonarLintGlobalSettings.Rule ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
     if (ruleInSettings != null) {
       return ruleInSettings.isActive();

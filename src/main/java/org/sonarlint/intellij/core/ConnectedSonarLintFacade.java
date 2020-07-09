@@ -36,11 +36,11 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
@@ -89,8 +89,21 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public RuleDetails ruleDetails(String ruleKey) {
+  public ConnectedRuleDetails ruleDetails(String ruleKey) {
     return sonarlint.getRuleDetails(ruleKey);
+  }
+
+  @Override
+  public String getDescription(String ruleKey) {
+    ConnectedRuleDetails details = ruleDetails(ruleKey);
+    if (details == null) {
+      return null;
+    }
+    String extendedDescription = details.getExtendedDescription();
+    if (extendedDescription.isEmpty()) {
+      return details.getHtmlDescription();
+    }
+    return details.getHtmlDescription() + "<br/><br/>" + extendedDescription;
   }
 
 }
