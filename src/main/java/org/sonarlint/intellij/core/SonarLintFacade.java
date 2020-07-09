@@ -32,12 +32,12 @@ import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
 
 public abstract class SonarLintFacade {
   protected final Project project;
@@ -76,7 +76,7 @@ public abstract class SonarLintFacade {
     return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
   }
 
-  public abstract Collection<LoadedAnalyzer> getLoadedAnalyzers();
+  public abstract Collection<PluginDetails> getLoadedAnalyzers();
 
   @CheckForNull
   public String getRuleName(String ruleKey) {

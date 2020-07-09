@@ -34,6 +34,7 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -41,7 +42,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
@@ -84,8 +84,8 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public Collection<LoadedAnalyzer> getLoadedAnalyzers() {
-    return sonarlint.getLoadedAnalyzers();
+  public Collection<PluginDetails> getLoadedAnalyzers() {
+    return sonarlint.getPluginDetails();
   }
 
   @Override

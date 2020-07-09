@@ -37,7 +37,7 @@ import javax.swing.table.TableCellRenderer;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.connected.LoadedAnalyzer;
+import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 
 public class SonarLintProjectAnalyzersPanel {
   private static final Logger LOGGER = Logger.getInstance(SonarLintProjectAnalyzersPanel.class);
@@ -59,7 +59,7 @@ public class SonarLintProjectAnalyzersPanel {
   public void reload() {
     ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
     try {
-      Collection<LoadedAnalyzer> loadedAnalyzers = bindingManager.getFacade().getLoadedAnalyzers();
+      Collection<PluginDetails> loadedAnalyzers = bindingManager.getFacade().getLoadedAnalyzers();
       tableModel.set(loadedAnalyzers);
     } catch (Exception e) {
       LOGGER.error(e);
@@ -97,7 +97,7 @@ public class SonarLintProjectAnalyzersPanel {
   }
 
   private static class Model extends AbstractTableModel {
-    private List<LoadedAnalyzer> rows = new ArrayList<>();
+    private List<PluginDetails> rows = new ArrayList<>();
 
     @Override public int getRowCount() {
       return rows.size();
@@ -122,17 +122,17 @@ public class SonarLintProjectAnalyzersPanel {
       return (column == 0) ? "Code Analyzer" : "Version";
     }
 
-    public void set(Collection<LoadedAnalyzer> rows) {
+    public void set(Collection<PluginDetails> rows) {
       this.rows = new ArrayList<>(rows);
       fireTableDataChanged();
     }
 
-    public List<LoadedAnalyzer> items() {
+    public List<PluginDetails> items() {
       return rows;
     }
 
     @Override public Object getValueAt(int rowIndex, int columnIndex) {
-      LoadedAnalyzer item = rows.get(rowIndex);
+      PluginDetails item = rows.get(rowIndex);
       if (columnIndex == 0) {
         return StringUtils.capitalize(item.name());
       }
