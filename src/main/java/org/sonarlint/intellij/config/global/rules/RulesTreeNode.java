@@ -30,10 +30,10 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
-import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamType;
 import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRule;
-import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRuleParam;
-import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRuleParamType;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
@@ -102,10 +102,10 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   }
 
   public static class Rule extends RulesTreeNode {
-    private final RuleDetails details;
+    private final StandaloneRuleDetails details;
     private final Map<String, String> nonDefaultParams;
 
-    public Rule(RuleDetails details, boolean activated, Map<String, String> nonDefaultParams) {
+    public Rule(StandaloneRuleDetails details, boolean activated, Map<String, String> nonDefaultParams) {
       this.details = details;
       this.activated = activated;
       this.nonDefaultParams = new HashMap<>(nonDefaultParams);

@@ -29,7 +29,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -39,7 +39,7 @@ import static org.mockito.Mockito.when;
 public class RulesTreeTableModelTest {
   private RulesTreeNode.Root root = new RulesTreeNode.Root();
   private RulesTreeNode.Language lang = new RulesTreeNode.Language("lang");
-  private RuleDetails ruleDetails = mock(RuleDetails.class);
+  private StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
   private RulesTreeNode.Rule rule = new RulesTreeNode.Rule(ruleDetails, true, new HashMap<>());
   private AbstractTableModel tableModel = mock(AbstractTableModel.class);
   private RulesTreeTableModel model = new RulesTreeTableModel(root);

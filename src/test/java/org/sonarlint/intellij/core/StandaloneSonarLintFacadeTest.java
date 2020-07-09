@@ -27,10 +27,10 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +50,7 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_name() {
-    RuleDetails ruleDetails = mock(RuleDetails.class);
+    StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
     when(ruleDetails.getName()).thenReturn("name");
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
@@ -59,18 +59,17 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_details() {
-    RuleDetails ruleDetails = mock(RuleDetails.class);
+    StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test
   public void should_get_description() {
-    RuleDetails ruleDetails = mock(RuleDetails.class);
-    when(ruleDetails.getExtendedDescription()).thenReturn("desc");
+    StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
     when(ruleDetails.getHtmlDescription()).thenReturn("html");
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
-    assertThat(facade.getDescription("rule1")).isEqualTo("html<br/><br/>desc");
+    assertThat(facade.getDescription("rule1")).isEqualTo("html");
     assertThat(facade.getDescription("invalid")).isNull();
   }
 

@@ -65,16 +65,7 @@ public abstract class SonarLintFacade {
   public abstract Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
 
   @CheckForNull
-  public String getDescription(String ruleKey) {
-    RuleDetails details = ruleDetails(ruleKey);
-    if (details == null) {
-      return null;
-    }
-    if (details.getExtendedDescription().isEmpty()) {
-      return details.getHtmlDescription();
-    }
-    return details.getHtmlDescription() + "<br/><br/>" + details.getExtendedDescription();
-  }
+  public abstract String getDescription(String ruleKey);
 
   public abstract Collection<PluginDetails> getLoadedAnalyzers();
 

@@ -26,10 +26,10 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 import java.util.Collections;
@@ -52,7 +52,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_name() {
-    RuleDetails ruleDetails = mock(RuleDetails.class);
+    ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
     when(ruleDetails.getName()).thenReturn("name");
     when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
@@ -61,14 +61,14 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_details() {
-    RuleDetails ruleDetails = mock(RuleDetails.class);
+    ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
     when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
     assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test
   public void should_get_description() {
-    RuleDetails ruleDetails = mock(RuleDetails.class);
+    ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
     when(ruleDetails.getExtendedDescription()).thenReturn("desc");
     when(ruleDetails.getHtmlDescription()).thenReturn("html");
     when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);

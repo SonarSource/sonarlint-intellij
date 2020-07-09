@@ -22,7 +22,7 @@ package org.sonarlint.intellij.config.global.rules;
 import java.util.HashMap;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 public class RulesTreeNodeTest {
   @Test
   public void getters_rule() {
-    RuleDetails details = mock(RuleDetails.class);
+    StandaloneRuleDetails details = mock(StandaloneRuleDetails.class);
     when(details.getName()).thenReturn("name");
     when(details.getKey()).thenReturn("key");
     when(details.getHtmlDescription()).thenReturn("html");
@@ -43,7 +43,7 @@ public class RulesTreeNodeTest {
     RulesTreeNode.Rule node = new RulesTreeNode.Rule(details, false, new HashMap<>());
     assertThat(node.getKey()).isEqualTo("key");
     assertThat(node.getName()).isEqualTo("name");
-    assertThat(node.toString()).isEqualTo("name");
+    assertThat(node).hasToString("name");
     assertThat(node.getHtmlDescription()).isEqualTo("html");
     assertThat(node.getDefaultActivation()).isTrue();
     assertThat(node.isNonDefault()).isTrue();
@@ -55,7 +55,7 @@ public class RulesTreeNodeTest {
   @Test
   public void getters_root() {
     RulesTreeNode.Root root = new RulesTreeNode.Root();
-    assertThat(root.toString()).isEqualTo("root");
+    assertThat(root).hasToString("root");
     assertThat(root.isNonDefault()).isFalse();
   }
 
@@ -65,7 +65,7 @@ public class RulesTreeNodeTest {
     node.setIsNonDefault(true);
     node.setIsActivated(true);
 
-    assertThat(node.toString()).isEqualTo("lang");
+    assertThat(node).hasToString("lang");
     assertThat(node.isNonDefault()).isTrue();
     assertThat(node.isActivated()).isTrue();
   }
@@ -86,8 +86,8 @@ public class RulesTreeNodeTest {
   }
 
   @NotNull
-  private RuleDetails mockRuleDetails(String key) {
-    final RuleDetails r1 = mock(RuleDetails.class);
+  private StandaloneRuleDetails mockRuleDetails(String key) {
+    final StandaloneRuleDetails r1 = mock(StandaloneRuleDetails.class);
     when(r1.getKey()).thenReturn(key);
     return r1;
   }
