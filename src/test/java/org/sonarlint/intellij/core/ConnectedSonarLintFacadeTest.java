@@ -47,6 +47,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   @Before
   public void before() {
     replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
+    getProjectSettings().setProjectKey("projectKey");
     facade = new ConnectedSonarLintFacade(engine, getProject());
   }
 
@@ -54,7 +55,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   public void should_get_rule_name() {
     ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
     when(ruleDetails.getName()).thenReturn("name");
-    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
     assertThat(facade.getRuleName("invalid")).isNull();
   }
@@ -62,7 +63,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   @Test
   public void should_get_rule_details() {
     ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
-    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
     assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
@@ -71,7 +72,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
     ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
     when(ruleDetails.getExtendedDescription()).thenReturn("desc");
     when(ruleDetails.getHtmlDescription()).thenReturn("html");
-    when(engine.getRuleDetails("rule1")).thenReturn(ruleDetails);
+    when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
     assertThat(facade.getDescription("rule1")).isEqualTo("html<br/><br/>desc");
     assertThat(facade.getDescription("invalid")).isNull();
   }
