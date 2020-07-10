@@ -90,7 +90,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public ConnectedRuleDetails ruleDetails(String ruleKey) {
-    return sonarlint.getRuleDetails(ruleKey);
+    return sonarlint.getActiveRuleDetails(ruleKey, SonarLintUtils.getService(project, SonarLintProjectSettings.class).getProjectKey());
   }
 
   @Override
