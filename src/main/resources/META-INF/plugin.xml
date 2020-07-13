@@ -50,6 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.10 - Fix duplicated annotations for PHP files. Display rule severity defined in the quality profile in connected mode. Fix analysis failure with JSP files. Bug fixes and improvements for JS files. 4 new rules (3 security related), bug fixes and improvements for PHP files.</li>
         <li>4.9 - Many new rules about JUnit and AssertJ for Java test files. 10 new rules for PHP. 22 new rules for Python and support of Typeshed packages. Preparatory changes for dynamic plugin installation.</li>
         <li>4.8 - Configure rule parameters in IDE settings. Performance improvement and fewer false positives for PHP. 4 new vulnerability detection rules for Python.</li>
         <li>4.7 - 2 new rules and performance improvements for Java. 2 new rules for Python.</li>
