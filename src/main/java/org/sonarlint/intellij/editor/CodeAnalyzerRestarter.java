@@ -63,6 +63,9 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
   }
 
   void refreshAllFiles() {
+    if (myProject.isDisposed()) {
+      return;
+    }
     FileEditorManager fileEditorManager = FileEditorManager.getInstance(myProject);
 
     VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
@@ -73,6 +76,9 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
   }
 
   void refreshFiles(Collection<VirtualFile> changedFiles) {
+    if (myProject.isDisposed()) {
+      return;
+    }
     FileEditorManager fileEditorManager = FileEditorManager.getInstance(myProject);
     VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
     Arrays.stream(openFiles)
