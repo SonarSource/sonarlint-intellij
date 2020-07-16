@@ -34,6 +34,9 @@ public class ProjectLogOutput implements LogOutput {
 
   @Override
   public void log(String msg, Level level) {
+    if (project.isDisposed()) {
+      return;
+    }
     SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     if (isNodeCommandException(msg)) {
       console.info(msg);
