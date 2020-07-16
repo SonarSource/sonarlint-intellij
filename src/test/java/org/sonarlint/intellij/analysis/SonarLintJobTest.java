@@ -20,21 +20,25 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collections;
 import org.junit.Test;
 import org.sonarlint.intellij.trigger.TriggerType;
 
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class SonarLintJobTest {
   @Test
   public void testRoundTrip() {
+    Project p = mock(Project.class);
     Module m = mock(Module.class);
     VirtualFile f = mock(VirtualFile.class);
     VirtualFile toClear = mock(VirtualFile.class);
-    SonarLintJob job = new SonarLintJob(m, Collections.singleton(f), Collections.singleton(toClear), TriggerType.COMPILATION);
+    SonarLintJob job = new SonarLintJob(p, singletonMap(m, singletonList(f)), singleton(toClear), TriggerType.COMPILATION, false, mock(AnalysisCallback.class));
 
     assertThat(job.allFiles()).containsOnly(f);
     assertThat(job.filesToClearIssues()).containsOnly(toClear);

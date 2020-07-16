@@ -30,10 +30,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
-import javax.annotation.Nullable;
-
-import com.intellij.serviceContainer.NonInjectable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
@@ -47,6 +45,17 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintSubmitter {
+  static final AnalysisCallback NO_OP_CALLBACK = new AnalysisCallback() {
+    @Override
+    public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+      // Ignore
+    }
+
+    @Override
+    public void onError(Throwable e) {
+      // Ignore
+    }
+  };
   private final Project myProject;
   private final Supplier<LocalFileExclusions> exclusionsProvider;
 
@@ -82,11 +91,7 @@ public class SonarLintSubmitter {
    * @param files   Files to be analyzed
    * @param trigger What triggered the analysis
    */
-  public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger) {
-    submitFilesModal(files, trigger, null);
-  }
-
-  public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback) {
+  public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
     try {
       List<VirtualFile> filesToClearIssues = new ArrayList<>();
       Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, false, filesToClearIssues);
@@ -110,10 +115,10 @@ public class SonarLintSubmitter {
    *                          if it starts in background or foreground.
    */
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {
-    submitFiles(files, trigger, null, startInBackground);
+    submitFiles(files, trigger, NO_OP_CALLBACK, startInBackground);
   }
 
-  public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, @Nullable AnalysisCallback callback, boolean startInBackground) {
+  public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback, boolean startInBackground) {
     boolean checkExclusions = trigger != TriggerType.ACTION;
     try {
       List<VirtualFile> filesToClearIssues = new ArrayList<>();

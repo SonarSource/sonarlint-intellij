@@ -48,12 +48,14 @@ public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4Tes
 
   @Test
   public void testUserTask() {
-    manager.submitManual(mockFiles(), Collections.emptyList(), TriggerType.ACTION, true, null);
+    final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
+    manager.submitManual(mockFiles(), Collections.emptyList(), TriggerType.ACTION, true, analysisCallback);
     ArgumentCaptor<SonarLintJob> jobCaptor = ArgumentCaptor.forClass(SonarLintJob.class);
     // XXX could we make ended have a parameter for the analysis result
     verify(taskListener).ended(jobCaptor.capture());
     SonarLintJob job = jobCaptor.getValue();
     assertThat(job.project()).isEqualTo(getProject());
+    verify(analysisCallback).onSuccess(any());
   }
 
   @Test

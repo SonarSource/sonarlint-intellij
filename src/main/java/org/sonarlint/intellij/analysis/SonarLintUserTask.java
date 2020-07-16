@@ -37,7 +37,9 @@ class SonarLintUserTask extends SonarLintTask {
     try {
       super.run(indicator);
     } finally {
-      SonarLintUtils.getService(myProject, SonarLintStatus.class).stopRun();
+      if (!myProject.isDisposed()) {
+        SonarLintUtils.getService(myProject, SonarLintStatus.class).stopRun();
+      }
     }
   }
 }

@@ -28,8 +28,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 public class SonarLintJob {
@@ -39,13 +37,10 @@ public class SonarLintJob {
   private final boolean waitForServerIssues;
   private final Project project;
   private final Collection<VirtualFile> filesToClearIssues;
-  @Nullable private final AnalysisCallback callback;
+  private final AnalysisCallback callback;
 
-  SonarLintJob(Module module, Collection<VirtualFile> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger) {
-    this(module.getProject(), Collections.singletonMap(module, files), filesToClearIssues, trigger, false, null);
-  }
-
-  SonarLintJob(Project project, Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean waitForServerIssues, @Nullable AnalysisCallback callback) {
+  SonarLintJob(Project project, Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean waitForServerIssues,
+    AnalysisCallback callback) {
     this.project = project;
     this.filesToClearIssues = Collections.unmodifiableCollection(filesToClearIssues);
     this.callback = callback;
@@ -62,7 +57,6 @@ public class SonarLintJob {
     return project;
   }
 
-  @CheckForNull
   public AnalysisCallback callback() {
     return callback;
   }

@@ -126,7 +126,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   }
 
   private SonarLintJob createJob() {
-    return new SonarLintJob(getModule(), files, Collections.emptyList(), TriggerType.ACTION);
+    return new SonarLintJob(getProject(), Collections.singletonMap(getModule(), files), Collections.emptyList(), TriggerType.ACTION, false, mock(AnalysisCallback.class));
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {

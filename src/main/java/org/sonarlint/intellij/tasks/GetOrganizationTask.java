@@ -55,7 +55,7 @@ public class GetOrganizationTask extends Task.Modal {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       indicator.setText("Searching organization");
       WsHelper wsHelper = new WsHelperImpl();
-      organization = wsHelper.getOrganization(serverConfiguration, organizationKey, new TaskProgressMonitor(indicator));
+      organization = wsHelper.getOrganization(serverConfiguration, organizationKey, new TaskProgressMonitor(indicator, myProject));
     } catch (Exception e) {
       LOGGER.info("Failed to fetch information", e);
       exception = e;

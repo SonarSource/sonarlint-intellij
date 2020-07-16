@@ -76,6 +76,9 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
   }
 
   public void updateIssues() {
+    if (project.isDisposed()) {
+      return;
+    }
     lastAnalysisPanel.update(results.getLastAnalysisDate(), results.whatAnalyzed(), results.getLabelText());
     treeBuilder.updateModel(results.issues(), results.getEmptyText());
     expandTree();

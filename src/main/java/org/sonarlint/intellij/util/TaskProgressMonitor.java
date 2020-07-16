@@ -20,13 +20,17 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.project.Project;
+import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 
 public class TaskProgressMonitor extends ProgressMonitor {
   private final ProgressIndicator indicator;
+  private final Project project;
 
-  public TaskProgressMonitor(ProgressIndicator indicator) {
+  public TaskProgressMonitor(ProgressIndicator indicator, @Nullable Project project) {
     this.indicator = indicator;
+    this.project = project;
   }
 
   /**
@@ -34,7 +38,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
    */
   @Override
   public boolean isCanceled() {
-    return indicator.isCanceled();
+    return indicator.isCanceled() || (project != null && project.isDisposed()) || Thread.currentThread().isInterrupted();
   }
 
   /**
