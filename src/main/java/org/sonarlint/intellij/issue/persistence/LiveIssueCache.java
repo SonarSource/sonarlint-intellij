@@ -21,6 +21,8 @@ package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.Collection;
@@ -28,6 +30,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -47,6 +50,14 @@ public class LiveIssueCache {
     this.project = project;
     this.maxEntries = maxEntries;
     this.cache = new LimitedSizeLinkedHashMap();
+    project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
+      @Override
+      public void projectClosing(@NotNull Project project) {
+        // Flush issues before project is closed, because we need to resolve module paths to compute the key
+        flushAll();
+      }
+
+    });
   }
 
   /**
@@ -108,7 +119,6 @@ public class LiveIssueCache {
       }
     });
   }
-
 
   /**
    * Clear cache and underlying persistent store
