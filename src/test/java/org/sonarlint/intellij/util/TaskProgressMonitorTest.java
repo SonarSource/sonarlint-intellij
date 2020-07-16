@@ -20,21 +20,24 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.project.Project;
 import org.junit.Test;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class TaskProgressMonitorTest {
   private ProgressIndicator wrapped = mock(ProgressIndicator.class);
-  private TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped);
+  private TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, null);
 
   @Test
   public void should_wrap() {
     monitor.finishNonCancelableSection();
     verify(wrapped).finishNonCancelableSection();
 
-    monitor.isCanceled();
+    assertThat(monitor.isCanceled()).isFalse();
     verify(wrapped).isCanceled();
 
     monitor.setFraction(0.5f);
@@ -48,5 +51,17 @@ public class TaskProgressMonitorTest {
 
     monitor.startNonCancelableSection();
     verify(wrapped).startNonCancelableSection();
+  }
+
+  @Test
+  public void cancel_if_project_disposed() {
+    Project project = mock(Project.class);
+    TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, project);
+
+    when(project.isDisposed()).thenReturn(false);
+    assertThat(monitor.isCanceled()).isFalse();
+
+    when(project.isDisposed()).thenReturn(true);
+    assertThat(monitor.isCanceled()).isTrue();
   }
 }

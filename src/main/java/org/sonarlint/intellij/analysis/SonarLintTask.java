@@ -34,7 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 import org.sonarlint.intellij.editor.AccumulatorIssueListener;
 import org.sonarlint.intellij.issue.IssueProcessor;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -64,7 +63,7 @@ public class SonarLintTask extends Task.Backgroundable {
    * @param modal      If true and background is false, it will be a blocking task, without the possibility to send it to background.
    * @param background Whether it should start in the foreground or background.
    */
-  public SonarLintTask(Project project, SonarLintJob job,boolean modal, boolean background) {
+  public SonarLintTask(Project project, SonarLintJob job, boolean modal, boolean background) {
     super(job.project(), "SonarLint Analysis", true);
     myProject = project;
     this.job = job;
@@ -102,7 +101,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
         List<AnalysisResults> results = analyze(myProject, indicator, listener);
 
-        //last chance to cancel (to avoid the possibility of having interrupt flag set)
+        // last chance to cancel (to avoid the possibility of having interrupt flag set)
         checkCanceled(indicator, myProject);
 
         LOGGER.info("SonarLint analysis done");
@@ -127,7 +126,9 @@ public class SonarLintTask extends Task.Backgroundable {
     } catch (Throwable e) {
       handleError(e, indicator);
     } finally {
-      myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
+      if (!myProject.isDisposed()) {
+        myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
+      }
     }
   }
 
@@ -146,14 +147,12 @@ public class SonarLintTask extends Task.Backgroundable {
       }
 
       AnalysisCallback callback = job.callback();
-      if (callback != null) {
-        callback.onError(e);
-      }
+      callback.onError(e);
     }
   }
 
-  private static void checkCanceled(ProgressIndicator indicator, Project project) {
-    if (indicator.isCanceled() || project.isDisposed()) {
+  private void checkCanceled(ProgressIndicator indicator, Project project) {
+    if (indicator.isCanceled() || project.isDisposed() || Thread.currentThread().isInterrupted()) {
       throw new CanceledException();
     }
   }
@@ -177,7 +176,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
     LOGGER.info(indicator.getText());
 
-    ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator);
+    ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator, myProject);
     List<AnalysisResults> results = new LinkedList<>();
 
     for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {

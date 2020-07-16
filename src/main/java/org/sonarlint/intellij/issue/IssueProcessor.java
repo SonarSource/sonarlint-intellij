@@ -94,9 +94,7 @@ public class IssueProcessor {
     }
 
     AnalysisCallback callback = job.callback();
-    if (callback != null) {
-      callback.onSuccess(failedVirtualFiles);
-    }
+    callback.onSuccess(failedVirtualFiles);
   }
 
   private static Set<VirtualFile> asVirtualFiles(Collection<ClientInputFile> failedAnalysisFiles) {
@@ -200,7 +198,8 @@ public class IssueProcessor {
           newLocations.add(new LiveIssue.IssueLocation(range, loc.getMessage()));
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
-          SonarLintConsole.get(myProject).debug("Failed to find secondary location of issue for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
+          SonarLintConsole.get(myProject)
+            .debug("Failed to find secondary location of issue for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
         } catch (Exception e) {
           LOGGER.error("Error finding secondary location for issue", e, rule,
             String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));

@@ -81,10 +81,13 @@ public class UpdateChecker implements Disposable {
       SonarQubeServer server = projectBindingManager.getSonarQubeServer();
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       log.log("Check for updates from server '" + server.getName() + "'...", LogOutput.Level.INFO);
+      progressIndicator.setIndeterminate(false);
+      progressIndicator.setFraction(0.0);
       boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration, progressIndicator);
       SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
       log.log("Check for updates from server '" + server.getName() +
         "' for project '" + projectSettings.getProjectKey() + "'...", LogOutput.Level.INFO);
+      progressIndicator.setFraction(0.8);
       checkForProjectUpdates(changelog, engine, serverConfiguration, progressIndicator);
       if (!changelog.isEmpty()) {
         changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
@@ -99,14 +102,14 @@ public class UpdateChecker implements Disposable {
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, ProgressIndicator indicator) {
     SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
     StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConfiguration, projectSettings.getProjectKey(),
-      new TaskProgressMonitor(indicator));
+      new TaskProgressMonitor(indicator, myProject));
     if (projectUpdateCheckResult.needUpdate()) {
       changelog.addAll(projectUpdateCheckResult.changelog());
     }
   }
 
-  private static boolean checkForGlobalUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, ProgressIndicator indicator) {
-    StorageUpdateCheckResult checkForUpdateResult = engine.checkIfGlobalStorageNeedUpdate(serverConfiguration, new TaskProgressMonitor(indicator));
+  private boolean checkForGlobalUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, ProgressIndicator indicator) {
+    StorageUpdateCheckResult checkForUpdateResult = engine.checkIfGlobalStorageNeedUpdate(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
     if (checkForUpdateResult.needUpdate()) {
       changelog.addAll(checkForUpdateResult.changelog());
       return true;

@@ -88,7 +88,8 @@ public class ServerUpdateTask {
     indicator.setText("Fetching data...");
 
     try {
-      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator);
+      indicator.setIndeterminate(false);
+      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, null);
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
 
       if (!onlyModules) {

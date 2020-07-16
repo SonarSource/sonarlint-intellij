@@ -49,7 +49,7 @@ public class ServerDownloadProjectTask extends Task.Modal {
 
   @Override public void run(@NotNull ProgressIndicator indicator) {
     try {
-      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator);
+      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, myProject);
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       this.result = engine.downloadAllProjects(serverConfiguration, monitor);
     } catch (Exception e) {
