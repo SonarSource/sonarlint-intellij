@@ -20,14 +20,11 @@
 package org.sonarlint.intellij;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.ProjectServerNotifications;
 import org.sonarlint.intellij.core.UpdateChecker;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
-import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -42,15 +39,5 @@ public class BootstrapStartupActivity implements StartupActivity {
 
     // perform on bindings load
     SonarLintUtils.getService(project, UpdateChecker.class).init();
-
-    project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
-      @Override
-      public void projectClosing(@NotNull Project project) {
-        // Flush issues before project is closed, because we need to resolve module paths to compute the key
-        SonarLintUtils.getService(project, LiveIssueCache.class).flushAll();
-      }
-
-    });
-
   }
 }
