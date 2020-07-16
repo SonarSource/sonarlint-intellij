@@ -144,7 +144,6 @@
 
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettings"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineManager"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineFactory"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
         <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
                             serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"

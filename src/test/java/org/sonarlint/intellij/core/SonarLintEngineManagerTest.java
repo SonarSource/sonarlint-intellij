@@ -22,7 +22,6 @@ package org.sonarlint.intellij.core;
 import java.util.Collections;
 import java.util.Date;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -63,12 +62,11 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(engineFactory.createEngine(anyString())).thenReturn(connectedEngine);
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
-    manager = new SonarLintEngineManager();
+    manager = new SonarLintEngineManager(engineFactory);
     SonarLintUtils.getService(SonarLintGlobalSettings.class).setSonarQubeServers(Collections.emptyList());
   }
 
   @Test
-  @Ignore
   public void should_get_standalone() {
     assertThat(manager.getStandaloneEngine()).isEqualTo(standaloneEngine);
     assertThat(manager.getStandaloneEngine()).isEqualTo(standaloneEngine);
@@ -76,7 +74,6 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  @Ignore
   public void should_get_connected() {
     assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
     assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
@@ -103,14 +100,13 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  @Ignore
   public void should_pass_checks() throws InvalidBindingException {
     SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
     globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
-    manager = new SonarLintEngineManager();
+    manager = new SonarLintEngineManager(engineFactory);
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);
 
