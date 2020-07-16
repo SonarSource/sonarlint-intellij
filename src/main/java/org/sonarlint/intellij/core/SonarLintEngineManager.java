@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
@@ -38,7 +37,21 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 
 public class SonarLintEngineManager implements Disposable {
   private final Map<String, ConnectedSonarLintEngine> engines = new HashMap<>();
+  private final SonarLintEngineFactory factory;
   private StandaloneSonarLintEngine standalone;
+
+  public SonarLintEngineManager() {
+    this(new SonarLintEngineFactory());
+  }
+
+  /**
+   * Replace by @NonInjectable when supported
+   * @deprecated
+   */
+  @Deprecated
+  SonarLintEngineManager(SonarLintEngineFactory factory) {
+    this.factory = factory;
+  }
 
   private static void stopInThread(final ConnectedSonarLintEngine engine) {
     new Thread("stop-sonarlint-engine") {
@@ -75,8 +88,6 @@ public class SonarLintEngineManager implements Disposable {
     }
   }
 
-
-
   /**
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
@@ -94,8 +105,7 @@ public class SonarLintEngineManager implements Disposable {
 
   public synchronized ConnectedSonarLintEngine getConnectedEngine(String serverId) {
     if (!engines.containsKey(serverId)) {
-      SonarLintEngineFactory engineFactory = SonarLintUtils.getService(SonarLintEngineFactory.class);
-      ConnectedSonarLintEngine engine = engineFactory.createEngine(serverId);
+      ConnectedSonarLintEngine engine = factory.createEngine(serverId);
       engines.put(serverId, engine);
     }
 
@@ -104,8 +114,7 @@ public class SonarLintEngineManager implements Disposable {
 
   public synchronized StandaloneSonarLintEngine getStandaloneEngine() {
     if (standalone == null) {
-      SonarLintEngineFactory engineFactory = SonarLintUtils.getService(SonarLintEngineFactory.class);
-      standalone = engineFactory.createEngine();
+      standalone = factory.createEngine();
     }
     return standalone;
   }
@@ -126,7 +135,7 @@ public class SonarLintEngineManager implements Disposable {
     return engine;
   }
 
-  private Set<String> getServerNames() {
+  private static Set<String> getServerNames() {
     SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     return settings.getSonarQubeServers().stream()
       .map(SonarQubeServer::getName)
