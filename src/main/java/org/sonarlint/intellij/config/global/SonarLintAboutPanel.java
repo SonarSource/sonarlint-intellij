@@ -95,7 +95,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
-        final JLabel label = new JLabel("{\n"
+        final JLabel label = new JLabel("<html><pre>{\n"
           + "    \"days_since_installation\": 120,\n"
           + "    \"days_of_use\": 40,\n"
           + "    \"sonarlint_version\": \"2.9\",\n"
@@ -108,7 +108,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "    \"system_time\":\"2018-06-27T16:31:49.173+01:00\",\n"
           + "    \"install_time\":\"2018-02-27T16:30:49.124+01:00\",\n"
           + "    \"analyses\":[{\"language\":\"java\",\"rate_per_duration\":{\"0-300\":100,\"300-500\":0,\"500-1000\":0,\"1000-2000\":0,\"2000-4000\":0,\"4000+\":0}}]\n"
-          + "}");
+          + "}</pre></html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.getInformationColor());
         label.setOpaque(true);
