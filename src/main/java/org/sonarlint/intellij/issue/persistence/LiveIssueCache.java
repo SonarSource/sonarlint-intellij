@@ -21,8 +21,6 @@ package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.Collection;
@@ -30,7 +28,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -39,7 +36,7 @@ public class LiveIssueCache {
   private static final Logger LOGGER = Logger.getInstance(LiveIssueCache.class);
   static final int DEFAULT_MAX_ENTRIES = 10_000;
   private final Map<VirtualFile, Collection<LiveIssue>> cache;
-  private final Project project;
+  private final Project myproject;
   private final int maxEntries;
 
   public LiveIssueCache(Project project) {
@@ -47,17 +44,9 @@ public class LiveIssueCache {
   }
 
   LiveIssueCache(Project project, int maxEntries) {
-    this.project = project;
+    this.myproject = project;
     this.maxEntries = maxEntries;
     this.cache = new LimitedSizeLinkedHashMap();
-    project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
-      @Override
-      public void projectClosing(@NotNull Project project) {
-        // Flush issues before project is closed, because we need to resolve module paths to compute the key
-        flushAll();
-      }
-
-    });
   }
 
   /**
@@ -79,7 +68,7 @@ public class LiveIssueCache {
         String key = createKey(eldest.getKey());
         try {
           LOGGER.debug("Persisting issues for " + key);
-          IssuePersistence store = SonarLintUtils.getService(project, IssuePersistence.class);
+          IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
           store.save(key, eldest.getValue());
         } catch (IOException e) {
           throw new IllegalStateException(String.format("Error persisting issues for %s", key), e);
@@ -111,7 +100,7 @@ public class LiveIssueCache {
       if (virtualFile.isValid()) {
         String key = createKey(virtualFile);
         try {
-          IssuePersistence store = SonarLintUtils.getService(project, IssuePersistence.class);
+          IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
           store.save(key, trackableIssues);
         } catch (IOException e) {
           throw new IllegalStateException("Failed to flush cache", e);
@@ -124,7 +113,7 @@ public class LiveIssueCache {
    * Clear cache and underlying persistent store
    */
   public synchronized void clear() {
-    IssuePersistence store = SonarLintUtils.getService(project, IssuePersistence.class);
+    IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
     store.clear();
     cache.clear();
   }
@@ -134,7 +123,7 @@ public class LiveIssueCache {
     if (key != null) {
       cache.remove(virtualFile);
       try {
-        IssuePersistence store = SonarLintUtils.getService(project, IssuePersistence.class);
+        IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
         store.clear(key);
       } catch (IOException e) {
         throw new IllegalStateException("Failed to clear cache", e);
@@ -147,6 +136,6 @@ public class LiveIssueCache {
   }
 
   private String createKey(VirtualFile virtualFile) {
-    return SonarLintAppUtils.getRelativePathForAnalysis(this.project, virtualFile);
+    return SonarLintAppUtils.getRelativePathForAnalysis(this.myproject, virtualFile);
   }
 }
