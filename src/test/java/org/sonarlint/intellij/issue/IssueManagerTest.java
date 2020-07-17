@@ -33,7 +33,6 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.issue.persistence.IssuePersistence;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
@@ -56,12 +55,11 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() {
-    replaceProjectService(LiveIssueCache.class, cache);
     MockitoAnnotations.initMocks(this);
     when(file1.isValid()).thenReturn(true);
     when(file1.getPath()).thenReturn("file1");
 
-    manager = new IssueManager(getProject());
+    manager = new IssueManager(getProject(), cache);
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
 

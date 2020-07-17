@@ -163,7 +163,6 @@
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectServerNotifications"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.issue.persistence.LiveIssueCache"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.persistence.IssuePersistence"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueManager"/>
