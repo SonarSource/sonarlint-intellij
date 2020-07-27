@@ -32,6 +32,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.ui.nodes.LocationNode;
 
 public class FlowsTree extends Tree {
@@ -72,6 +73,7 @@ public class FlowsTree extends Tree {
       }
     };
     addTreeWillExpandListener(l);
+    getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
   }
 
   public void expandAll() {
