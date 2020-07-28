@@ -62,13 +62,15 @@ public class FlowsTree extends Tree {
     });
     TreeWillExpandListener l = new TreeWillExpandListener() {
       @Override
-      public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
-        // nothing to do
+      public void treeWillExpand(TreeExpansionEvent event) {
+        // expansion is always allowed
       }
 
       @Override
       public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
-        throw new ExpandVetoException(event);
+        if (!(event.getPath().getLastPathComponent() instanceof FlowNode)) {
+          throw new ExpandVetoException(event);
+        }
       }
     };
     addTreeWillExpandListener(l);
