@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.editor;
 
+import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
@@ -51,12 +52,13 @@ public class RangeBlinker {
     myTimeToLive = timeToLive;
   }
 
-  public void resetMarkers(final List<Segment> markers) {
+  public void blinkHighlights(final List<HighlightInfo> markers) {
     removeHighlights();
     myMarkers.clear();
     myBlinkingAlarm.cancelAllRequests();
     myMarkers.addAll(markers);
     show = true;
+    startBlinking();
   }
 
   private void removeHighlights() {
@@ -69,7 +71,7 @@ public class RangeBlinker {
     myAddedHighlighters.clear();
   }
 
-  public void startBlinking() {
+  private void startBlinking() {
     Project project = myEditor.getProject();
     if (ApplicationManager.getApplication().isDisposed() || myEditor.isDisposed() || (project != null && project.isDisposed())) {
       return;
