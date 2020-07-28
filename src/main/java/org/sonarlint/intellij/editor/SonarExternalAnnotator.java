@@ -108,7 +108,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     annotation.registerFix(new DisableRuleQuickFix(issue.getRuleKey()));
 
     if (!issue.flows().isEmpty()) {
-      annotation.registerFix(new ShowLocationsIntention(issue.getRange(), issue.getMessage(), issue.flows()));
+      annotation.registerFix(new ShowLocationsIntention(issue));
     }
 
     if (issue.getRange() == null) {

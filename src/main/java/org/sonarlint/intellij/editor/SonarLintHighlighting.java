@@ -27,22 +27,17 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.editor.markup.CustomHighlighterRenderer;
 import com.intellij.openapi.editor.markup.EffectType;
-import com.intellij.openapi.editor.markup.MarkupModel;
-import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Segment;
-import com.intellij.ui.HintHint;
 import com.intellij.ui.JBColor;
 import java.awt.Font;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -73,47 +68,46 @@ public class SonarLintHighlighting {
     }
   }
 
-  /**
-   * Create highlighting with {@link UpdateHighlightersUtil}. It will manage internally the {@link RangeHighlighter}, and get
-   * it similarly to the way {@link com.intellij.codeHighlighting.Pass} do it.
-   * Tooltip will be displayed on mouse hover by {@link com.intellij.codeInsight.daemon.impl.DaemonListeners}.
-   * Creating the {@link HighlightInfo} with high severity will ensure that it will override most other highlighters.
-   * The alternative would be to get and manage directly {@link RangeHighlighter} with a {@link MarkupModel} from the
-   * document (or editors). This would allow to use a custom renderer, but we would have to manage tooltips by ourselves, separately.
-   *
-   * @see com.intellij.codeInsight.hint.HintManager
-   * @see com.intellij.codeInsight.hint.ShowParameterInfoHandler
-   * @see HintHint
-   * @see CustomHighlighterRenderer
-   * @see com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
-   * @see com.intellij.codeInsight.highlighting.BraceHighlightingHandler
-   */
-  public void highlightFlowsWithHighlightersUtil(RangeMarker rangeMarker, @Nullable String message, List<LiveIssue.Flow> flows) {
-    stopBlinking();
-    HighlightInfo primaryInfo = createHighlight(rangeMarker, message);
-
-    List<HighlightInfo> infos = flows.stream()
-      .flatMap(f -> f.locations().stream()
+  public void highlightIssue(LiveIssue issue) {
+    RangeMarker issueRange = issue.getRange();
+    if (issueRange == null) {
+      return;
+    }
+    List<HighlightInfo> highlights = issue.flows().stream().findFirst()
+      .map(f -> f.locations().stream()
         .filter(Objects::nonNull)
-        .map(l -> createHighlight(l.location(), l.message())))
-      .collect(Collectors.toList());
+        .map(l -> createHighlight(l.location(), l.message()))
+        .collect(Collectors.toList())
+      ).orElse(new ArrayList<>());
+    highlights.add(createHighlight(issueRange, issue.getMessage()));
 
-    infos.add(primaryInfo);
+    updateHighlights(highlights, issueRange.getDocument());
+  }
 
-    UpdateHighlightersUtil.setHighlightersToEditor(project, rangeMarker.getDocument(), 0,
-      rangeMarker.getDocument().getTextLength(), infos, null, HIGHLIGHT_GROUP_ID);
-    currentHighlightedDoc = rangeMarker.getDocument();
+  public void highlightLocation(RangeMarker rangeMarker, @Nullable String message) {
+    List<HighlightInfo> highlights = Collections.singletonList(createHighlight(rangeMarker, message));
+    updateHighlights(highlights, rangeMarker.getDocument());
+  }
 
-    Editor[] editors = EditorFactory.getInstance().getEditors(rangeMarker.getDocument(), project);
-    List<Segment> segments = Stream.concat(flows.stream()
-        .flatMap(f -> f.locations().stream()
-          .map(LiveIssue.IssueLocation::location)),
-      Stream.of(rangeMarker)).collect(Collectors.toList());
+  private void updateHighlights(List<HighlightInfo> highlights, Document document) {
+    stopBlinking();
 
+    highlightInDocument(highlights, document);
+
+    blinkLocations(highlights, document);
+  }
+
+  private void highlightInDocument(List<HighlightInfo> highlights, Document document) {
+    UpdateHighlightersUtil.setHighlightersToEditor(project, document, 0,
+      document.getTextLength(), highlights, null, HIGHLIGHT_GROUP_ID);
+    currentHighlightedDoc = document;
+  }
+
+  private void blinkLocations(List<HighlightInfo> highlights, Document document) {
+    Editor[] editors = EditorFactory.getInstance().getEditors(document, project);
     Arrays.stream(editors).forEach(editor -> {
       blinker = new RangeBlinker(editor, new TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3);
-      blinker.resetMarkers(segments);
-      blinker.startBlinking();
+      blinker.blinkHighlights(highlights);
     });
   }
 
@@ -122,6 +116,7 @@ public class SonarLintHighlighting {
   }
 
   private static HighlightInfo createHighlight(RangeMarker location, @Nullable String message) {
+    // Creating the HighlightInfo with high severity will ensure that it will override most other highlighters.
     HighlightInfo.Builder builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
       .range(location.getStartOffset(), location.getEndOffset())
       .severity(HighlightSeverity.ERROR)
