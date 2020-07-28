@@ -27,7 +27,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.ui.nodes.LabelNode;
+import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.LocationNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
 
@@ -68,20 +68,20 @@ public class FlowsTreeModelBuilder {
 
   private void setMultipleFlows(List<LiveIssue.Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
-    LocationNode primaryLocation = new LocationNode(rangeMarker, message);
-    summary.add(primaryLocation);
+    LocationNode primaryLocationNode = new LocationNode(rangeMarker, message);
+    summary.add(primaryLocationNode);
 
     int i = 1;
     for (LiveIssue.Flow f : flows) {
-      LabelNode label = new LabelNode("Flow " + i);
-      primaryLocation.add(label);
+      FlowNode flowNode = new FlowNode(f, "Flow " + i);
+      primaryLocationNode.add(flowNode);
 
       List<LiveIssue.IssueLocation> reversedLocations = new ArrayList<>(f.locations());
       Collections.reverse(reversedLocations);
       int j = 1;
       for (LiveIssue.IssueLocation location : reversedLocations) {
         LocationNode locationNode = new LocationNode(j, location.location(), location.message());
-        label.add(locationNode);
+        flowNode.add(locationNode);
         j++;
       }
       i++;

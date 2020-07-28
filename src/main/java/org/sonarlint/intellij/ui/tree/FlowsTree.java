@@ -33,7 +33,11 @@ import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import org.sonarlint.intellij.editor.SonarLintHighlighting;
+import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.LocationNode;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FlowsTree extends Tree {
   private final Project project;
@@ -52,12 +56,7 @@ public class FlowsTree extends Tree {
       if (e.getSource() != null) {
         TreePath newPath = e.getNewLeadSelectionPath();
         if (newPath != null) {
-          Object o = newPath.getLastPathComponent();
-          if (!(o instanceof LocationNode)) {
-            FlowsTree.this.setSelectionPath(e.getOldLeadSelectionPath());
-          } else {
-            navigateToSelected();
-          }
+          navigateToSelected();
         }
       }
     });
@@ -84,10 +83,21 @@ public class FlowsTree extends Tree {
 
   private void navigateToSelected() {
     DefaultMutableTreeNode node = getSelectedNode();
-    if (!(node instanceof LocationNode)) {
+    if (node == null) {
       return;
     }
-    RangeMarker rangeMarker = ((LocationNode) node).rangeMarker();
+    RangeMarker rangeMarker = null;
+    SonarLintHighlighting highlighter = SonarLintUtils.getService(project, SonarLintHighlighting.class);
+    if (node instanceof FlowNode) {
+      FlowNode flowNode = (FlowNode) node;
+      rangeMarker = flowNode.getFlow().locations().stream().findFirst().map(LiveIssue.IssueLocation::location).orElse(null);
+      highlighter.highlightFlow(flowNode.getFlow());
+    } else if (node instanceof LocationNode) {
+      LocationNode locationNode = (LocationNode) node;
+      rangeMarker = locationNode.rangeMarker();
+      highlighter.highlightLocation(rangeMarker, locationNode.message());
+    }
+
     if (rangeMarker == null || !rangeMarker.isValid()) {
       return;
     }

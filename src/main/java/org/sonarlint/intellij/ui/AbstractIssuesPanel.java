@@ -54,7 +54,6 @@ import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
-import org.sonarlint.intellij.ui.nodes.LocationNode;
 import org.sonarlint.intellij.ui.tree.FlowsTree;
 import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.IssueTree;
@@ -117,15 +116,6 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     return splitter;
   }
 
-  protected void flowsTreeSelectionChanged() {
-    LocationNode[] selectedNodes = flowsTree.getSelectedNodes(LocationNode.class, null);
-    if (selectedNodes.length > 0) {
-      LocationNode node = selectedNodes[0];
-      SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
-      highlighting.highlightLocation(node.rangeMarker(), node.message());
-    }
-  }
-
   protected void issueTreeSelectionChanged() {
     IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
@@ -174,7 +164,6 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     flowsTree = new FlowsTree(project, model);
     flowsTreeBuilder.clearFlows();
     flowsTree.getEmptyText().setText("No issue selected");
-    flowsTree.addTreeSelectionListener(e -> flowsTreeSelectionChanged());
   }
 
   private void createIssuesTree() {
