@@ -19,21 +19,29 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
+import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder;
 import com.intellij.ui.SimpleTextAttributes;
-import org.junit.Test;
+import com.intellij.util.ui.JBUI;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+public class FlowNode extends AbstractNode {
+  private final String label;
+  private final LiveIssue.Flow flow;
 
-public class LabelNodeTest {
-  private LabelNode node = new LabelNode("msg");
+  public FlowNode(LiveIssue.Flow flow, String label) {
+    this.flow = flow;
+    this.label = label;
+  }
 
-  @Test
-  public void testRenderer() {
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
-    node.render(renderer);
+  public LiveIssue.Flow getFlow() {
+    return flow;
+  }
 
-    verify(renderer).append("msg", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
+  @Override
+  public void render(TreeCellRenderer renderer) {
+    renderer.setIpad(JBUI.insets(3, 3, 3, 3));
+    renderer.setBorder(new BottomLineBorder());
+    renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
   }
 }

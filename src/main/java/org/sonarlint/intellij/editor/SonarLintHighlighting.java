@@ -68,17 +68,20 @@ public class SonarLintHighlighting {
     }
   }
 
+  public void highlightFlow(LiveIssue.Flow flow) {
+    if (flow.locations().isEmpty()) {
+      return;
+    }
+
+    updateHighlights(createFlowHighlights(flow), flow.locations().get(0).location().getDocument());
+  }
+
   public void highlightIssue(LiveIssue issue) {
     RangeMarker issueRange = issue.getRange();
     if (issueRange == null) {
       return;
     }
-    List<HighlightInfo> highlights = issue.flows().stream().findFirst()
-      .map(f -> f.locations().stream()
-        .filter(Objects::nonNull)
-        .map(l -> createHighlight(l.location(), l.message()))
-        .collect(Collectors.toList())
-      ).orElse(new ArrayList<>());
+    List<HighlightInfo> highlights = issue.flows().stream().findFirst().map(SonarLintHighlighting::createFlowHighlights).orElse(new ArrayList<>());
     highlights.add(createHighlight(issueRange, issue.getMessage()));
 
     updateHighlights(highlights, issueRange.getDocument());
@@ -113,6 +116,13 @@ public class SonarLintHighlighting {
 
   public boolean isActiveInEditor(Editor editor) {
     return currentHighlightedDoc != null && currentHighlightedDoc.equals(editor.getDocument());
+  }
+
+  private static List<HighlightInfo> createFlowHighlights(LiveIssue.Flow flow) {
+    return flow.locations().stream()
+        .filter(Objects::nonNull)
+        .map(l -> createHighlight(l.location(), l.message()))
+        .collect(Collectors.toList());
   }
 
   private static HighlightInfo createHighlight(RangeMarker location, @Nullable String message) {
