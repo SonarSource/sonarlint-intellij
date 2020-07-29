@@ -92,14 +92,14 @@ public class IssueTree extends Tree implements DataProvider {
       return getSelectedFile();
     } else if (PlatformDataKeys.PSI_FILE.is(dataId)) {
       VirtualFile file = getSelectedFile();
-      if (file != null) {
+      if (file != null && file.isValid()) {
         return PsiManager.getInstance(project).findFile(file);
       }
       return null;
     } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
       VirtualFile f = getSelectedFile();
       // return empty so that it doesn't find it in parent components
-      return f != null ? (new VirtualFile[] {f}) : new VirtualFile[0];
+      return f != null && f.isValid() ? (new VirtualFile[] {f}) : new VirtualFile[0];
     } else if (DisableRuleAction.ISSUE_DATA_KEY.is(dataId)) {
       return getSelectedIssue();
     }
