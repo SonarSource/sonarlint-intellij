@@ -31,7 +31,6 @@ import javax.swing.Icon;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import java.util.Locale;
@@ -72,11 +71,7 @@ public class IssueNode extends AbstractNode {
       renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
 
-    if (!issue.flows().isEmpty()) {
-      int numLocations = issue.flows().stream().mapToInt(f -> f.locations().size()).sum();
-      String flows = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
-      renderer.append(flows, GRAYED_SMALL_ATTRIBUTES);
-    }
+    renderer.append(issue.getFlowsDescription(), GRAYED_SMALL_ATTRIBUTES);
 
     if (issue.getCreationDate() != null) {
       renderer.append(" ");
