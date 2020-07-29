@@ -38,6 +38,7 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import javax.swing.JComponent;
@@ -57,12 +58,15 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.ImageView;
 import javax.swing.text.html.StyleSheet;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 
 public class SonarLintRulePanel {
   private static final Pattern SPACES_BEGINNING_LINE = Pattern.compile("\n(\\p{Blank}*)");
@@ -104,6 +108,9 @@ public class SonarLintRulePanel {
         createTable(rule, builder);
         builder.append("<br />")
           .append(description);
+        if (rule instanceof StandaloneRuleDetails) {
+          builder.append(renderRuleParams((StandaloneRuleDetails) rule));
+        }
         String htmlBody = builder.toString();
         htmlBody = fixPreformatedText(htmlBody);
 
@@ -224,6 +231,53 @@ public class SonarLintRulePanel {
 
     builder.append(htmlBody.substring(current));
     return builder.toString();
+  }
+
+  private String renderRuleParams(StandaloneRuleDetails ruleDetails) {
+    if (!ruleDetails.paramDetails().isEmpty()) {
+      StyleSheet styleSheet = kit.getStyleSheet();
+
+      styleSheet.addRule(".rule-params { border: none; border-collapse: collapse; padding: 1em; }");
+      styleSheet.addRule(".rule-params caption { font-size: 16px; font-weight: 400; text-align: left; margin-bottom: 16px}");
+      styleSheet.addRule(".rule-params thead td { vertical-align: top; padding-left: 0; padding-bottom: 1em; font-style: italic }");
+      styleSheet.addRule(".rule-params tbody th { vertical-align: top; text-align: right; font-weight: inherit; font-family: monospace }");
+      styleSheet.addRule(".rule-params tbody td { vertical-align: top; padding-left: 1em; padding-bottom: 1em; }");
+      styleSheet.addRule(".rule-params p { margin: 0 }");
+      styleSheet.addRule(".rule-params small { display: block; margin-top: 2px }");
+
+      return "<table class=\"rule-params\">" +
+        "<caption>Parameters</caption>" +
+        "<thead>" +
+        "<tr>" +
+        "<td colspan=\"2\">" +
+        "Following parameter values can be set in the <em>SonarLint:Rules</em> user settings. " +
+        "In connected mode, server side configuration overrides local settings." +
+        "</td>" +
+        "</tr>" +
+        "</thead>" +
+        "<tbody>" +
+        ruleDetails.paramDetails().stream().map(param -> renderRuleParam(param, ruleDetails)).collect(Collectors.joining("\n")) +
+        "</tbody>" +
+        "</table>";
+    } else {
+      return "";
+    }
+  }
+
+  private static String renderRuleParam(StandaloneRuleParam param, StandaloneRuleDetails ruleDetails) {
+    String paramDescription = param.description() != null ? param.description() : "";
+    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    String paramDefaultValue = param.defaultValue();
+    String defaultValue = paramDefaultValue != null ? paramDefaultValue : "(none)";
+    String currentValue = globalSettings.getRuleParamValue(ruleDetails.getKey(), param.name()).orElse(defaultValue);
+    return "<tr>" +
+      "<th>" + param.name() + "</th>" +
+      "<td>" +
+      "<p>" + paramDescription + "</p>" +
+      "<p><small>Current value: <code>" + currentValue + "</code></small></p>" +
+      "<p><small>Default value: <code>" + defaultValue + "</code></small></p>" +
+      "</td>" +
+      "</tr>";
   }
 
   public JComponent getPanel() {
