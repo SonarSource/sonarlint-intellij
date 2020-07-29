@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -50,6 +51,7 @@ public class LiveIssue implements Trackable {
   private final String message;
   private final String ruleKey;
   private final List<Flow> flows;
+  private final String flowsDescription;
 
   // tracked fields (mutable)
   private String severity;
@@ -74,6 +76,7 @@ public class LiveIssue implements Trackable {
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
     this.flows = flows;
+    this.flowsDescription = computeFlowsDescription(flows);
 
     if (range != null) {
       Document document = range.getDocument();
@@ -206,6 +209,23 @@ public class LiveIssue implements Trackable {
 
   public List<Flow> flows() {
     return flows;
+  }
+
+  public static String computeFlowsDescription(List<Flow> flows) {
+    String description = "";
+    if (!flows.isEmpty()) {
+      if (flows.size() == 1 || flows.stream().noneMatch(flow -> flow.locations().size() != 1)) {
+        int numLocations = flows.stream().mapToInt(f -> f.locations().size()).sum();
+        description = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
+      } else {
+        description = String.format(" [+%d flows]", flows.size());
+      }
+    }
+    return description;
+  }
+
+  public String getFlowsDescription() {
+    return flowsDescription;
   }
 
   public static class Flow {

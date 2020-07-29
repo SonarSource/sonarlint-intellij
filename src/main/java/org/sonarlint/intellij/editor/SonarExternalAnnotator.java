@@ -161,18 +161,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
     }
 
-    String flows = "";
-    if (!issue.flows().isEmpty()) {
-      int numLocations = issue.flows().stream().mapToInt(f -> f.locations().size()).sum();
-      flows = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
-    }
-
     @NonNls
     final String link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
       + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;
-    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + flows + link);
+    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.getFlowsDescription() + link);
   }
 
   /**
