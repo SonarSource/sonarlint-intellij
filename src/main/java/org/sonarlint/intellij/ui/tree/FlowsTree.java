@@ -25,7 +25,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.EditSourceOnDoubleClickHandler;
+import com.intellij.util.EditSourceOnEnterKeyHandler;
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -54,9 +57,9 @@ public class FlowsTree extends Tree {
     setCellRenderer(new TreeCellRenderer());
     this.selectionModel.addTreeSelectionListener(e -> {
       if (e.getSource() != null) {
-        TreePath newPath = e.getNewLeadSelectionPath();
-        if (newPath != null) {
-          navigateToSelected();
+        DefaultMutableTreeNode selectedNode = getSelectedNode();
+        if (selectedNode != null) {
+          highlightInEditor(selectedNode);
         }
       }
     });
@@ -75,6 +78,9 @@ public class FlowsTree extends Tree {
     };
     addTreeWillExpandListener(l);
     getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+    EditSourceOnDoubleClickHandler.install(this, () -> navigateToEditor(getSelectedNode()));
+    EditSourceOnEnterKeyHandler.install(this, () -> navigateToEditor(getSelectedNode()));
   }
 
   public void expandAll() {
@@ -83,29 +89,35 @@ public class FlowsTree extends Tree {
     }
   }
 
-  private void navigateToSelected() {
-    DefaultMutableTreeNode node = getSelectedNode();
+  private void highlightInEditor(DefaultMutableTreeNode node) {
+    SonarLintHighlighting highlighter = SonarLintUtils.getService(project, SonarLintHighlighting.class);
+    if (node instanceof FlowNode) {
+      FlowNode flowNode = (FlowNode) node;
+      highlighter.highlightFlow(flowNode.getFlow());
+    } else if (node instanceof LocationNode) {
+      LocationNode locationNode = (LocationNode) node;
+      highlighter.highlightLocation(locationNode.rangeMarker(), locationNode.message());
+    }
+  }
+
+  private void navigateToEditor(@Nullable DefaultMutableTreeNode node) {
     if (node == null) {
       return;
     }
     RangeMarker rangeMarker = null;
-    SonarLintHighlighting highlighter = SonarLintUtils.getService(project, SonarLintHighlighting.class);
     if (node instanceof FlowNode) {
       FlowNode flowNode = (FlowNode) node;
       rangeMarker = flowNode.getFlow().locations().stream().findFirst().map(LiveIssue.IssueLocation::location).orElse(null);
-      highlighter.highlightFlow(flowNode.getFlow());
     } else if (node instanceof LocationNode) {
       LocationNode locationNode = (LocationNode) node;
       rangeMarker = locationNode.rangeMarker();
-      highlighter.highlightLocation(rangeMarker, locationNode.message());
     }
-
     if (rangeMarker == null || !rangeMarker.isValid()) {
       return;
     }
 
     PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(rangeMarker.getDocument());
-    if (psiFile != null) {
+    if (psiFile != null && psiFile.isValid()) {
       new OpenFileDescriptor(project, psiFile.getVirtualFile(), rangeMarker.getStartOffset()).navigate(false);
     }
   }
