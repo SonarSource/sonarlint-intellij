@@ -41,12 +41,17 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
+  private static final int SETTINGS_TAB_INDEX = 0;
+  private static final int FILE_EXCLUSIONS_TAB_INDEX = 1;
+  private static final int RULES_TAB_INDEX = 2;
+  private static final int ABOUT_TAB_INDEX = 3;
   private JPanel rootPanel;
   private SonarQubeServerMgmtPanel serversPanel;
   private SonarLintGlobalOptionsPanel globalPanel;
   private SonarLintAboutPanel about;
   private GlobalExclusionsPanel exclusions;
   private RuleConfigurationPanel rules;
+  private JBTabbedPane tabs;
 
   @Nls
   @Override
@@ -155,14 +160,19 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       settingsPanel.add(serversPanel.getComponent(), BorderLayout.CENTER);
 
       rootPanel = new JPanel(new BorderLayout());
-      JBTabbedPane tabs = new JBTabbedPane();
-      tabs.insertTab("Settings", null, settingsPanel, "Configure SonarLint for all projects", 0);
-      tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", 1);
-      tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not connected to SonarQube", 2);
-      tabs.insertTab("About", null, about.getComponent(), "About SonarLint", 3);
+      tabs = new JBTabbedPane();
+      tabs.insertTab("Settings", null, settingsPanel, "Configure SonarLint for all projects", SETTINGS_TAB_INDEX);
+      tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", FILE_EXCLUSIONS_TAB_INDEX);
+      tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not connected to SonarQube", RULES_TAB_INDEX);
+      tabs.insertTab("About", null, about.getComponent(), "About SonarLint", ABOUT_TAB_INDEX);
       rootPanel.add(tabs, BorderLayout.CENTER);
     }
 
     return rootPanel;
+  }
+
+  public void selectRule(String ruleKey) {
+    tabs.setSelectedIndex(RULES_TAB_INDEX);
+    rules.selectRule(ruleKey);
   }
 }

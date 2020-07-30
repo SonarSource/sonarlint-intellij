@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -121,6 +122,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   private TreeExpander myTreeExpander;
   private RulesParamsSeparator rulesParamsSeparator;
   private Map<String, RulesTreeNode.Rule> allRulesStateByKey;
+  private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();
   private boolean isDirty = false;
 
   public RuleConfigurationPanel() {
@@ -190,6 +192,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private void updateModel() {
+    TreePath[] selectionPaths = table.getTree().getSelectionPaths();
     StandaloneSonarLintEngine engine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
     Map<String, String> languagesNameByKey = engine.getAllLanguagesNameByKey();
     Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = allRulesStateByKey.values().stream()
@@ -200,7 +203,8 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     rootNode.removeAllChildren();
 
     for (Map.Entry<String, List<RulesTreeNode.Rule>> e : rulesByLanguage.entrySet()) {
-      RulesTreeNode.Language languageNode = new RulesTreeNode.Language(languagesNameByKey.get(e.getKey()));
+      RulesTreeNode.Language languageNode = getOrCreateLanguageNode(languagesNameByKey.get(e.getKey()));
+      languageNode.removeAllChildren();
       for (RulesTreeNode.Rule r : e.getValue()) {
         languageNode.add(r);
       }
@@ -213,6 +217,15 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     if (!filterModel.isEmpty()) {
       TreeUtil.expandAll(table.getTree());
     }
+    table.getTree().setSelectionPaths(selectionPaths);
+  }
+
+  @NotNull
+  private RulesTreeNode.Language getOrCreateLanguageNode(String languageName) {
+    if (!languageNodesByName.containsKey(languageName)) {
+      languageNodesByName.put(languageName, new RulesTreeNode.Language(languageName));
+    }
+    return languageNodesByName.get(languageName);
   }
 
   private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
@@ -426,6 +439,13 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
         configPanelAnchor.add(ScrollPaneFactory.createScrollPane(additionalConfigPanel, SideBorder.NONE));
       }
     }
+  }
+
+  public void selectRule(String ruleKey) {
+    myRuleFilter.setFilter(ruleKey);
+    RulesTreeNode.Rule node = allRulesStateByKey.get(ruleKey);
+    TreePath path = new TreePath(node.getPath());
+    table.getTree().setSelectionPath(path);
   }
 
   private static class ConfigPanelState {
@@ -662,7 +682,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
     return HintUtil.prepareHintText(text, hintHint);
   }
 
-  public RulesTreeNode.Rule getStrictlySelectedToolNode() {
+  private RulesTreeNode.Rule getStrictlySelectedToolNode() {
     TreePath[] paths = table.getTree().getSelectionPaths();
     return paths != null && paths.length == 1 && paths[0].getLastPathComponent() instanceof RulesTreeNode.Rule
       ? (RulesTreeNode.Rule) paths[0].getLastPathComponent()

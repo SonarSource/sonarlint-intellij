@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.IdeBorderFactory;
@@ -47,6 +48,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.Element;
@@ -58,6 +60,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.ImageView;
 import javax.swing.text.html.StyleSheet;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
@@ -74,6 +77,7 @@ public class SonarLintRulePanel {
   private final JPanel panel;
   private final HTMLEditorKit kit;
   private JEditorPane editor;
+  private RuleDescriptionHyperLinkListener ruleDescriptionHyperLinkListener;
 
   public SonarLintRulePanel(Project project) {
     this.project = project;
@@ -114,7 +118,7 @@ public class SonarLintRulePanel {
         String htmlBody = builder.toString();
         htmlBody = fixPreformatedText(htmlBody);
 
-        updateEditor(htmlBody);
+        updateEditor(htmlBody, rule.getKey());
       } catch (InvalidBindingException e) {
         nothingToDisplay(true);
       }
@@ -156,13 +160,14 @@ public class SonarLintRulePanel {
     panel.revalidate();
   }
 
-  private void updateEditor(String text) {
+  private void updateEditor(String text, String ruleKey) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     if (editor == null) {
       panel.removeAll();
       editor = createEditor();
       panel.add(editor, BorderLayout.CENTER);
     }
+    ruleDescriptionHyperLinkListener.setRuleKey(ruleKey);
 
     SwingHelper.setHtml(editor, text, UIUtil.getLabelForeground());
     editor.setCaretPosition(0);
@@ -175,8 +180,30 @@ public class SonarLintRulePanel {
     newEditor.setBorder(JBUI.Borders.empty(10));
     newEditor.setEditable(false);
     newEditor.setContentType("text/html");
-    newEditor.addHyperlinkListener(e -> {
+    ruleDescriptionHyperLinkListener = new RuleDescriptionHyperLinkListener(project);
+    newEditor.addHyperlinkListener(ruleDescriptionHyperLinkListener);
+    return newEditor;
+  }
+
+  private static class RuleDescriptionHyperLinkListener implements HyperlinkListener {
+    private final Project project;
+    private String ruleKey;
+
+    public RuleDescriptionHyperLinkListener(Project project) {
+      this.project = project;
+    }
+
+    public void setRuleKey(String ruleKey) {
+      this.ruleKey = ruleKey;
+    }
+
+    @Override
+    public void hyperlinkUpdate(HyperlinkEvent e) {
       if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+        if (e.getDescription().startsWith("#rule")) {
+          openRuleSettings(ruleKey);
+          return;
+        }
         Desktop desktop = Desktop.getDesktop();
         try {
           desktop.browse(e.getURL().toURI());
@@ -184,9 +211,12 @@ public class SonarLintRulePanel {
           SonarLintConsole.get(project).error("Error opening browser: " + e.getURL(), ex);
         }
       }
-    });
+    }
 
-    return newEditor;
+    private void openRuleSettings(String ruleKey) {
+      SonarLintGlobalConfigurable configurable = new SonarLintGlobalConfigurable();
+      ShowSettingsUtil.getInstance().editConfigurable(project, configurable, () -> configurable.selectRule(ruleKey));
+    }
   }
 
   /**
@@ -250,7 +280,7 @@ public class SonarLintRulePanel {
         "<thead>" +
         "<tr>" +
         "<td colspan=\"2\">" +
-        "Following parameter values can be set in the <em>SonarLint:Rules</em> user settings. " +
+        "Following parameter values can be set in <a href=\"#rule\">Rule Settings</a>. " +
         "In connected mode, server side configuration overrides local settings." +
         "</td>" +
         "</tr>" +
