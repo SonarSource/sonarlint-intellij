@@ -127,7 +127,7 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
 
   private static LiveIssue createFileStoredIssue(int id, PsiFile file) {
     Issue issue = SonarLintTestUtils.createIssue(id);
-    return new LiveIssue(issue, file, null, Collections.emptyList());
+    return new LiveIssue(issue, file, null, null);
   }
 
   private LiveIssue createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
@@ -139,6 +139,6 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(text);
-    return new LiveIssue(issue, mock(PsiFile.class), range, Collections.emptyList());
+    return new LiveIssue(issue, mock(PsiFile.class), range, null);
   }
 }

@@ -260,6 +260,6 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
     PsiFile psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
-    return new LiveIssue(issue, psiFile, range, Collections.emptyList());
+    return new LiveIssue(issue, psiFile, range, null);
   }
 }

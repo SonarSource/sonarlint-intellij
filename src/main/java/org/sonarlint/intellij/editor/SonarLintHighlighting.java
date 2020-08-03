@@ -29,6 +29,7 @@ import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.JBColor;
 import java.awt.Font;
@@ -52,7 +53,7 @@ public class SonarLintHighlighting {
     this.project = project;
   }
 
-  public void removeHighlightingFlows() {
+  public void removeHighlights() {
     if (currentHighlightedDoc != null) {
       UpdateHighlightersUtil.setHighlightersToEditor(project, currentHighlightedDoc, 0,
         currentHighlightedDoc.getTextLength(), Collections.emptyList(), null, HIGHLIGHT_GROUP_ID);
@@ -69,22 +70,20 @@ public class SonarLintHighlighting {
   }
 
   public void highlightFlow(LiveIssue.Flow flow) {
-    if (flow.locations().isEmpty()) {
-      return;
-    }
-
-    updateHighlights(createFlowHighlights(flow), flow.locations().get(0).location().getDocument());
+    updateHighlights(createHighlights(flow.locations()), flow.locations().get(0).location().getDocument());
   }
 
   public void highlightIssue(LiveIssue issue) {
-    RangeMarker issueRange = issue.getRange();
-    if (issueRange == null) {
-      return;
-    }
-    List<HighlightInfo> highlights = issue.flows().stream().findFirst().map(SonarLintHighlighting::createFlowHighlights).orElse(new ArrayList<>());
-    highlights.add(createHighlight(issueRange, issue.getMessage()));
+    List<HighlightInfo> highlights = issue.context()
+      .map(context -> createHighlights(context.hasFlows() ? context.flows().get(0).locations() : context.secondaryLocations()))
+      .orElse(new ArrayList<>());
 
-    updateHighlights(highlights, issueRange.getDocument());
+    RangeMarker issueRange = issue.getRange();
+    if (issueRange != null) {
+      highlights.add(createHighlight(issueRange, issue.getMessage()));
+    }
+
+    updateHighlights(highlights, FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile()));
   }
 
   public void highlightLocation(RangeMarker rangeMarker, @Nullable String message) {
@@ -92,12 +91,13 @@ public class SonarLintHighlighting {
     updateHighlights(highlights, rangeMarker.getDocument());
   }
 
-  private void updateHighlights(List<HighlightInfo> highlights, Document document) {
-    stopBlinking();
+  private void updateHighlights(List<HighlightInfo> highlights, @Nullable Document document) {
+    removeHighlights();
 
-    highlightInDocument(highlights, document);
-
-    blinkLocations(highlights, document);
+    if (!highlights.isEmpty() && document != null) {
+      highlightInDocument(highlights, document);
+      blinkLocations(highlights, document);
+    }
   }
 
   private void highlightInDocument(List<HighlightInfo> highlights, Document document) {
@@ -107,6 +107,9 @@ public class SonarLintHighlighting {
   }
 
   private void blinkLocations(List<HighlightInfo> highlights, Document document) {
+    if (highlights.isEmpty()) {
+      return;
+    }
     Editor[] editors = EditorFactory.getInstance().getEditors(document, project);
     Arrays.stream(editors).forEach(editor -> {
       blinker = new RangeBlinker(editor, new TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3);
@@ -118,8 +121,8 @@ public class SonarLintHighlighting {
     return currentHighlightedDoc != null && currentHighlightedDoc.equals(editor.getDocument());
   }
 
-  private static List<HighlightInfo> createFlowHighlights(LiveIssue.Flow flow) {
-    return flow.locations().stream()
+  private static List<HighlightInfo> createHighlights(List<LiveIssue.IssueLocation> locations) {
+    return locations.stream()
         .filter(Objects::nonNull)
         .map(l -> createHighlight(l.location(), l.message()))
         .collect(Collectors.toList());

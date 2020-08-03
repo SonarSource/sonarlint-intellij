@@ -180,14 +180,14 @@ public class IssueProcessor {
     PsiFile psiFile = matcher.findFile(inputFile.getClientObject());
     if (issue.getStartLine() != null) {
       RangeMarker rangeMarker = matcher.match(psiFile, issue);
-      List<LiveIssue.Flow> flows = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
-      return new LiveIssue(issue, psiFile, rangeMarker, flows);
+      IssueContext context = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
+      return new LiveIssue(issue, psiFile, rangeMarker, context);
     } else {
       return new LiveIssue(issue, psiFile);
     }
   }
 
-  private List<LiveIssue.Flow> transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
+  private IssueContext transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
     List<LiveIssue.Flow> transformedFlows = new LinkedList<>();
 
     for (Issue.Flow f : flows) {
@@ -203,7 +203,7 @@ public class IssueProcessor {
         } catch (Exception e) {
           LOGGER.error("Error finding secondary location for issue", e, rule,
             String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));
-          return Collections.emptyList();
+          return null;
         }
       }
       LiveIssue.Flow newFlow = new LiveIssue.Flow(newLocations);
@@ -211,6 +211,6 @@ public class IssueProcessor {
 
     }
 
-    return transformedFlows;
+    return transformedFlows.isEmpty() ? null : new IssueContext(transformedFlows);
   }
 }
