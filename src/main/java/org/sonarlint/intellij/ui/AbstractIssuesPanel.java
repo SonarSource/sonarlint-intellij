@@ -34,6 +34,7 @@ import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
@@ -263,4 +264,15 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   @Override public String getPreviousOccurenceActionName() {
     return "Previous Issue";
   }
+
+  public void setSelectedIssue(LiveIssue issue) {
+    DefaultMutableTreeNode issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()),
+      (node) -> node instanceof IssueNode && ((IssueNode) node).issue().equals(issue));
+    if(issueNode == null) {
+      return;
+    }
+    tree.setSelectionPath(null);
+    tree.addSelectionPath(new TreePath(issueNode.getPath()));
+  }
+
 }
