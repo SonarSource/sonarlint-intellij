@@ -42,7 +42,7 @@ public class EscapeHandler extends EditorActionHandler {
     if (project != null) {
       SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
       if (highlighting.isActiveInEditor(editor)) {
-        highlighting.removeHighlightingFlows();
+        highlighting.removeHighlights();
         return;
       }
     }

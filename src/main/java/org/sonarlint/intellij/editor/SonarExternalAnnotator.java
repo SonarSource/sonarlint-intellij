@@ -42,6 +42,7 @@ import javax.annotation.Nullable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
+import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintSeverity;
@@ -107,9 +108,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .createAnnotation(getSeverity(issue.getSeverity()), textRange, issue.getMessage(), htmlMsg);
     annotation.registerFix(new DisableRuleQuickFix(issue.getRuleKey()));
 
-    if (!issue.flows().isEmpty()) {
-      annotation.registerFix(new ShowLocationsIntention(issue));
-    }
+    issue.context().ifPresent(c -> annotation.registerFix(new ShowLocationsIntention(issue)));
 
     if (issue.getRange() == null) {
       annotation.setFileLevelAnnotation(true);
@@ -166,7 +165,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
       + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;
-    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.getFlowsDescription() + link);
+    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.context().map(IssueContext::getDescription).orElse("") + link);
   }
 
   /**

@@ -20,12 +20,11 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
+import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.LocationNode;
@@ -47,22 +46,21 @@ public class FlowsTreeModelBuilder {
     model.setRoot(null);
   }
 
-  private static boolean containsLocations(List<LiveIssue.Flow> flows) {
-    return flows.stream().flatMap(f -> f.locations().stream()).findAny().isPresent();
-  }
-
-  public void setFlows(List<LiveIssue.Flow> flows, @Nullable RangeMarker rangeMarker, @Nullable String message) {
-    if (rangeMarker == null || !containsLocations(flows)) {
+  public void populateForIssue(LiveIssue issue) {
+    RangeMarker rangeMarker = issue.getRange();
+    Optional<IssueContext> context = issue.context();
+    if (rangeMarker == null || !context.isPresent()) {
       clearFlows();
       return;
     }
-
-    if (flows.size() == 1) {
-      setSingleFlow(flows.iterator().next(), rangeMarker, message);
-    } else if (flows.stream().noneMatch(flow -> flow.locations().size() != 1)) {
-      setFlatList(flows, rangeMarker, message);
+    IssueContext issueContext = context.get();
+    String message = issue.getMessage();
+    if (issueContext.hasUniqueFlow()) {
+      setSingleFlow(issueContext.flows().get(0), rangeMarker, message);
+    } else if (issueContext.hasFlows()) {
+      setMultipleFlows(issueContext.flows(), rangeMarker, message);
     } else {
-      setMultipleFlows(flows, rangeMarker, message);
+      setFlatList(issueContext.secondaryLocations(), rangeMarker, message);
     }
   }
 
@@ -76,10 +74,8 @@ public class FlowsTreeModelBuilder {
       FlowNode flowNode = new FlowNode(f, "Flow " + i);
       primaryLocationNode.add(flowNode);
 
-      List<LiveIssue.IssueLocation> reversedLocations = new ArrayList<>(f.locations());
-      Collections.reverse(reversedLocations);
       int j = 1;
-      for (LiveIssue.IssueLocation location : reversedLocations) {
+      for (LiveIssue.IssueLocation location : f.locations()) {
         LocationNode locationNode = new LocationNode(j, location.location(), location.message());
         flowNode.add(locationNode);
         j++;
@@ -89,19 +85,13 @@ public class FlowsTreeModelBuilder {
     model.setRoot(summary);
   }
 
-  private void setFlatList(List<LiveIssue.Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
+  private void setFlatList(List<LiveIssue.IssueLocation> locations, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
     LocationNode primaryLocation = new LocationNode(rangeMarker, message);
     primaryLocation.setBold(true);
     summary.add(primaryLocation);
 
-    flows.stream()
-      .flatMap(flow -> flow.locations().stream())
-      .sorted(Comparator.comparing(i -> i.location().getStartOffset()))
-      .forEachOrdered(location -> {
-        LocationNode locationNode = new LocationNode(location.location(), location.message());
-        primaryLocation.add(locationNode);
-      });
+    locations.forEach(location -> primaryLocation.add(new LocationNode(location.location(), location.message())));
 
     model.setRoot(summary);
   }
@@ -112,11 +102,8 @@ public class FlowsTreeModelBuilder {
     primaryLocation.setBold(true);
     summary.add(primaryLocation);
 
-    List<LiveIssue.IssueLocation> reversedLocations = new ArrayList<>(flow.locations());
-    Collections.reverse(reversedLocations);
-
     int i = 1;
-    for (LiveIssue.IssueLocation location : reversedLocations) {
+    for (LiveIssue.IssueLocation location : flow.locations()) {
       LocationNode locationNode = new LocationNode(i++, location.location(), location.message());
       primaryLocation.add(locationNode);
     }

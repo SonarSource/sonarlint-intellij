@@ -123,14 +123,14 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       rulePanel.setRuleKey(issue);
       SonarLintUtils.getService(project, SonarLintHighlighting.class).highlightIssue(issue);
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
-      flowsTreeBuilder.setFlows(issue.flows(), issue.getRange(), issue.getMessage());
+      flowsTreeBuilder.populateForIssue(issue);
       flowsTree.expandAll();
     } else {
       flowsTreeBuilder.clearFlows();
       flowsTree.getEmptyText().setText("No issue selected");
       rulePanel.setRuleKey(null);
       SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
-      highlighting.removeHighlightingFlows();
+      highlighting.removeHighlights();
     }
   }
 
@@ -176,7 +176,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
           SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
-          highlighting.removeHighlightingFlows();
+          highlighting.removeHighlights();
         }
       }
     });
