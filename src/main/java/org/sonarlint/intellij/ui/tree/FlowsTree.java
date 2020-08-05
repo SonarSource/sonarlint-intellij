@@ -96,7 +96,7 @@ public class FlowsTree extends Tree {
       highlighter.highlightFlow(flowNode.getFlow());
     } else if (node instanceof LocationNode) {
       LocationNode locationNode = (LocationNode) node;
-      highlighter.highlightLocation(locationNode.rangeMarker(), locationNode.message());
+      highlighter.highlightLocation(locationNode.rangeMarker(), locationNode.message(), locationNode.getParentFlow());
     }
   }
 

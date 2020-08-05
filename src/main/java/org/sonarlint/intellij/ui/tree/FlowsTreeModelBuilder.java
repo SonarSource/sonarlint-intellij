@@ -76,7 +76,7 @@ public class FlowsTreeModelBuilder {
 
       int j = 1;
       for (LiveIssue.IssueLocation location : f.locations()) {
-        LocationNode locationNode = new LocationNode(j, location.location(), location.message());
+        LocationNode locationNode = new LocationNode(j, location.location(), location.message(), f);
         flowNode.add(locationNode);
         j++;
       }
@@ -104,7 +104,7 @@ public class FlowsTreeModelBuilder {
 
     int i = 1;
     for (LiveIssue.IssueLocation location : flow.locations()) {
-      LocationNode locationNode = new LocationNode(i++, location.location(), location.message());
+      LocationNode locationNode = new LocationNode(i++, location.location(), location.message(), flow);
       primaryLocation.add(locationNode);
     }
 
