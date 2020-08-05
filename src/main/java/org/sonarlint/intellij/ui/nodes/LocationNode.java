@@ -23,24 +23,32 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
+import java.util.Optional;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class LocationNode extends AbstractNode {
   private final String message;
+  private final LiveIssue.Flow parentFlow;
   private final Integer number;
   private final RangeMarker rangeMarker;
   private boolean bold = false;
 
   public LocationNode(RangeMarker rangeMarker, @Nullable String message) {
-    this(null, rangeMarker, message);
+    this(null, rangeMarker, message, null);
   }
 
-  public LocationNode(@Nullable Integer number, RangeMarker rangeMarker, @Nullable String message) {
+  public LocationNode(@Nullable Integer number, RangeMarker rangeMarker, @Nullable String message, @Nullable LiveIssue.Flow parentFlow) {
     this.number = number;
     this.rangeMarker = rangeMarker;
     this.message = message;
+    this.parentFlow = parentFlow;
+  }
+
+  public Optional<LiveIssue.Flow> getParentFlow() {
+    return Optional.ofNullable(parentFlow);
   }
 
   public void setBold(boolean bold) {

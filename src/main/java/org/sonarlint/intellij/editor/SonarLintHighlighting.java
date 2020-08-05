@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
@@ -86,8 +87,9 @@ public class SonarLintHighlighting {
     updateHighlights(highlights, FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile()));
   }
 
-  public void highlightLocation(RangeMarker rangeMarker, @Nullable String message) {
-    List<HighlightInfo> highlights = Collections.singletonList(createHighlight(rangeMarker, message));
+  public void highlightLocation(RangeMarker rangeMarker, @Nullable String message, Optional<LiveIssue.Flow> parentFlow) {
+    List<HighlightInfo> highlights = parentFlow.map(f -> createHighlights(f.locations())).orElse(new ArrayList<>());
+    highlights.add(createHighlight(rangeMarker, message));
     updateHighlights(highlights, rangeMarker.getDocument());
   }
 
