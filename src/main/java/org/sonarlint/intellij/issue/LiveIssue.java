@@ -207,22 +207,22 @@ public class LiveIssue implements Trackable {
   }
 
   public static class Flow {
-    private final List<IssueLocation> locations;
+    private final List<SecondaryLocation> locations;
 
-    public Flow(List<IssueLocation> locations) {
+    public Flow(List<SecondaryLocation> locations) {
       this.locations = locations;
     }
 
-    public List<IssueLocation> locations() {
+    public List<SecondaryLocation> locations() {
       return locations;
     }
   }
 
-  public static class IssueLocation {
+  public static class SecondaryLocation {
     private final RangeMarker location;
     private final String message;
 
-    public IssueLocation(RangeMarker location, @Nullable String message) {
+    public SecondaryLocation(RangeMarker location, @Nullable String message) {
       this.location = location;
       this.message = message;
     }

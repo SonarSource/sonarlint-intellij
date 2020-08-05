@@ -40,6 +40,7 @@ import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.LocationNode;
+import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class FlowsTree extends Tree {
@@ -94,9 +95,12 @@ public class FlowsTree extends Tree {
     if (node instanceof FlowNode) {
       FlowNode flowNode = (FlowNode) node;
       highlighter.highlightFlow(flowNode.getFlow());
+    } else if (node instanceof FlowSecondaryLocationNode) {
+      FlowSecondaryLocationNode locationNode = (FlowSecondaryLocationNode) node;
+      highlighter.highlightSecondaryLocation(locationNode.getSecondaryLocation(), locationNode.getParentFlow());
     } else if (node instanceof LocationNode) {
       LocationNode locationNode = (LocationNode) node;
-      highlighter.highlightLocation(locationNode.rangeMarker(), locationNode.message(), locationNode.getParentFlow());
+      highlighter.highlightLocation(locationNode.rangeMarker(), locationNode.message());
     }
   }
 
@@ -107,7 +111,7 @@ public class FlowsTree extends Tree {
     RangeMarker rangeMarker = null;
     if (node instanceof FlowNode) {
       FlowNode flowNode = (FlowNode) node;
-      rangeMarker = flowNode.getFlow().locations().stream().findFirst().map(LiveIssue.IssueLocation::location).orElse(null);
+      rangeMarker = flowNode.getFlow().locations().stream().findFirst().map(LiveIssue.SecondaryLocation::location).orElse(null);
     } else if (node instanceof LocationNode) {
       LocationNode locationNode = (LocationNode) node;
       rangeMarker = locationNode.rangeMarker();
