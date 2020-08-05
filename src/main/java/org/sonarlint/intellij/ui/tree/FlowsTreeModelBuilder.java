@@ -28,6 +28,7 @@ import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.LocationNode;
+import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
 
 public class FlowsTreeModelBuilder {
@@ -75,8 +76,8 @@ public class FlowsTreeModelBuilder {
       primaryLocationNode.add(flowNode);
 
       int j = 1;
-      for (LiveIssue.IssueLocation location : f.locations()) {
-        LocationNode locationNode = new LocationNode(j, location.location(), location.message(), f);
+      for (LiveIssue.SecondaryLocation location : f.locations()) {
+        LocationNode locationNode = new FlowSecondaryLocationNode(j, location, f);
         flowNode.add(locationNode);
         j++;
       }
@@ -85,7 +86,7 @@ public class FlowsTreeModelBuilder {
     model.setRoot(summary);
   }
 
-  private void setFlatList(List<LiveIssue.IssueLocation> locations, RangeMarker rangeMarker, @Nullable String message) {
+  private void setFlatList(List<LiveIssue.SecondaryLocation> locations, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
     LocationNode primaryLocation = new LocationNode(rangeMarker, message);
     primaryLocation.setBold(true);
@@ -103,8 +104,8 @@ public class FlowsTreeModelBuilder {
     summary.add(primaryLocation);
 
     int i = 1;
-    for (LiveIssue.IssueLocation location : flow.locations()) {
-      LocationNode locationNode = new LocationNode(i++, location.location(), location.message(), flow);
+    for (LiveIssue.SecondaryLocation location : flow.locations()) {
+      LocationNode locationNode = new FlowSecondaryLocationNode(i++, location, flow);
       primaryLocation.add(locationNode);
     }
 

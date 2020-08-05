@@ -191,11 +191,11 @@ public class IssueProcessor {
     List<LiveIssue.Flow> transformedFlows = new LinkedList<>();
 
     for (Issue.Flow f : flows) {
-      List<LiveIssue.IssueLocation> newLocations = new LinkedList<>();
+      List<LiveIssue.SecondaryLocation> newLocations = new LinkedList<>();
       for (IssueLocation loc : f.locations()) {
         try {
           RangeMarker range = matcher.match(psiFile, loc);
-          newLocations.add(new LiveIssue.IssueLocation(range, loc.getMessage()));
+          newLocations.add(new LiveIssue.SecondaryLocation(range, loc.getMessage()));
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
           SonarLintConsole.get(myProject)

@@ -24,7 +24,6 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.SimpleTextAttributes;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
@@ -47,7 +46,7 @@ public class LocationNodeTest {
 
   @Test
   public void testRenderer() {
-    node = new LocationNode(3, range, "msg", null);
+    node = new LocationNode(3, range, "msg");
     TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
@@ -59,7 +58,7 @@ public class LocationNodeTest {
 
   @Test
   public void testNoMessage() {
-    node = new LocationNode(3, range, "...", null);
+    node = new LocationNode(3, range, "...");
     TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 

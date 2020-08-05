@@ -30,7 +30,7 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class IssueContext {
   private final String description;
   private final List<LiveIssue.Flow> flows;
-  private final List<LiveIssue.IssueLocation> secondaryLocations;
+  private final List<LiveIssue.SecondaryLocation> secondaryLocations;
 
   public IssueContext(List<LiveIssue.Flow> flows) {
     if (flows.stream().anyMatch(f -> f.locations().size() > 1)) {
@@ -49,7 +49,7 @@ public class IssueContext {
   @NotNull
   private static List<LiveIssue.Flow> reverseAll(List<LiveIssue.Flow> flows) {
     return flows.stream().map(f -> {
-      ArrayList<LiveIssue.IssueLocation> reorderedLocations = new ArrayList<>(f.locations());
+      ArrayList<LiveIssue.SecondaryLocation> reorderedLocations = new ArrayList<>(f.locations());
       Collections.reverse(reorderedLocations);
       return new LiveIssue.Flow(reorderedLocations);
     }).collect(Collectors.toList());
@@ -74,7 +74,7 @@ public class IssueContext {
     return flows;
   }
 
-  public List<LiveIssue.IssueLocation> secondaryLocations() {
+  public List<LiveIssue.SecondaryLocation> secondaryLocations() {
     return secondaryLocations;
   }
 

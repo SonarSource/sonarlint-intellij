@@ -31,6 +31,7 @@ import com.intellij.openapi.editor.markup.EffectType;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.JBColor;
 import java.awt.Font;
 import java.util.ArrayList;
@@ -38,10 +39,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
+import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 public class SonarLintHighlighting {
@@ -56,6 +58,7 @@ public class SonarLintHighlighting {
 
   public void removeHighlights() {
     if (currentHighlightedDoc != null) {
+      clearSecondaryLocationNumbers(currentHighlightedDoc);
       UpdateHighlightersUtil.setHighlightersToEditor(project, currentHighlightedDoc, 0,
         currentHighlightedDoc.getTextLength(), Collections.emptyList(), null, HIGHLIGHT_GROUP_ID);
       currentHighlightedDoc = null;
@@ -72,6 +75,15 @@ public class SonarLintHighlighting {
 
   public void highlightFlow(LiveIssue.Flow flow) {
     updateHighlights(createHighlights(flow.locations()), flow.locations().get(0).location().getDocument());
+
+    displaySecondaryLocationNumbers(flow, null);
+  }
+
+  private void displaySecondaryLocationNumbers(LiveIssue.Flow flow, @Nullable LiveIssue.SecondaryLocation selectedLocation) {
+    int i = 1;
+    for (LiveIssue.SecondaryLocation issueLocation : flow.locations()) {
+      drawSecondaryLocationNumbers(issueLocation.location(), i++, selectedLocation != null && selectedLocation.equals(issueLocation));
+    }
   }
 
   public void highlightIssue(LiveIssue issue) {
@@ -85,12 +97,18 @@ public class SonarLintHighlighting {
     }
 
     updateHighlights(highlights, FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile()));
+    issue.context().filter(IssueContext::hasFlows).ifPresent(c -> displaySecondaryLocationNumbers(c.flows().get(0), null));
   }
 
-  public void highlightLocation(RangeMarker rangeMarker, @Nullable String message, Optional<LiveIssue.Flow> parentFlow) {
-    List<HighlightInfo> highlights = parentFlow.map(f -> createHighlights(f.locations())).orElse(new ArrayList<>());
-    highlights.add(createHighlight(rangeMarker, message));
-    updateHighlights(highlights, rangeMarker.getDocument());
+  public void highlightLocation(RangeMarker rangeMarker, @Nullable String message) {
+    updateHighlights(Collections.singletonList(createHighlight(rangeMarker, message)), rangeMarker.getDocument());
+  }
+
+  public void highlightSecondaryLocation(LiveIssue.SecondaryLocation secondaryLocation, LiveIssue.Flow parentFlow) {
+    List<HighlightInfo> highlights = createHighlights(parentFlow.locations());
+    highlights.add(createHighlight(secondaryLocation.location(), secondaryLocation.message()));
+    updateHighlights(highlights, secondaryLocation.location().getDocument());
+    displaySecondaryLocationNumbers(parentFlow, secondaryLocation);
   }
 
   private void updateHighlights(List<HighlightInfo> highlights, @Nullable Document document) {
@@ -108,12 +126,25 @@ public class SonarLintHighlighting {
     currentHighlightedDoc = document;
   }
 
+  private void clearSecondaryLocationNumbers(Document document) {
+    getEditors(document)
+      .forEach(editor -> editor.getInlayModel().getInlineElementsInRange(0, document.getTextLength(), SecondaryLocationIndexRenderer.class).forEach(Disposer::dispose));
+  }
+
+  private void drawSecondaryLocationNumbers(RangeMarker rangeMarker, int index, boolean selected) {
+    getEditors(rangeMarker.getDocument())
+      .forEach(editor -> editor.getInlayModel().addInlineElement(rangeMarker.getStartOffset(), new SecondaryLocationIndexRenderer(index, selected)));
+  }
+
+  private List<Editor> getEditors(@NotNull Document document) {
+    return Arrays.asList(EditorFactory.getInstance().getEditors(document, project));
+  }
+
   private void blinkLocations(List<HighlightInfo> highlights, Document document) {
     if (highlights.isEmpty()) {
       return;
     }
-    Editor[] editors = EditorFactory.getInstance().getEditors(document, project);
-    Arrays.stream(editors).forEach(editor -> {
+    getEditors(document).forEach(editor -> {
       blinker = new RangeBlinker(editor, new TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3);
       blinker.blinkHighlights(highlights);
     });
@@ -123,7 +154,7 @@ public class SonarLintHighlighting {
     return currentHighlightedDoc != null && currentHighlightedDoc.equals(editor.getDocument());
   }
 
-  private static List<HighlightInfo> createHighlights(List<LiveIssue.IssueLocation> locations) {
+  private static List<HighlightInfo> createHighlights(List<LiveIssue.SecondaryLocation> locations) {
     return locations.stream()
         .filter(Objects::nonNull)
         .map(l -> createHighlight(l.location(), l.message()))
