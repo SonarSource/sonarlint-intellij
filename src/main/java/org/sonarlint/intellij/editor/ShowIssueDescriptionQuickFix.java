@@ -19,22 +19,22 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class JumpToRuleDescriptionQuickFix implements IntentionAction, PriorityAction, Iconable {
+public class ShowIssueDescriptionQuickFix implements IntentionAction, PriorityAction, Iconable {
 
   private final String ruleKey;
 
-  public JumpToRuleDescriptionQuickFix(String ruleKey) {
+  public ShowIssueDescriptionQuickFix(String ruleKey) {
     this.ruleKey = ruleKey;
   }
 
   @Override
   public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getText() {
-    return "Jump to SonarLint rulee '" + ruleKey + "'";
+    return "Show issue description '" + ruleKey + "'";
   }
 
   @Override
   public @NotNull @Nls(capitalization = Nls.Capitalization.Sentence) String getFamilyName() {
-    return "SonarLint jump to rule";
+    return "SonarLint show issue description";
   }
 
   @Override
