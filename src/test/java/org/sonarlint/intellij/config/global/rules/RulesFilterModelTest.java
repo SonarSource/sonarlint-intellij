@@ -94,16 +94,25 @@ public class RulesFilterModelTest {
   public void should_apply_filter() {
     RulesTreeNode.Rule rule = mock(RulesTreeNode.Rule.class);
     when(rule.getName()).thenReturn("my rule");
+    when(rule.getKey()).thenReturn("my:rule");
     assertThat(model.filter(rule)).isTrue();
 
-    model.setText("my filter");
+    model.setText("my:rule");
+    assertThat(model.filter(rule)).isTrue();
 
+    when(rule.getKey()).thenReturn("other:rule");
+    assertThat(model.filter(rule)).isFalse();
+
+    model.setText("my filter");
     assertThat(model.filter(rule)).isFalse();
 
     when(rule.getName()).thenReturn("my filter");
     assertThat(model.filter(rule)).isTrue();
 
     when(rule.getName()).thenReturn("some text my filter and more text");
+    assertThat(model.filter(rule)).isTrue();
+
+    when(rule.getName()).thenReturn("some text in my title and more filtered text");
     assertThat(model.filter(rule)).isTrue();
 
     model.setShowOnlyEnabled(true);
