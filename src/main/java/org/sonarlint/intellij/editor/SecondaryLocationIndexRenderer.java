@@ -31,22 +31,29 @@ import com.intellij.ui.JBColor;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("UseJBColor")
 public class SecondaryLocationIndexRenderer implements EditorCustomElementRenderer {
-  private static final int RIGHT_MARGIN = 5;
-  private static final int HORIZONTAL_PADDING = 6;
+  private static final int HORIZONTAL_MARGIN = 3;
+  private static final int HORIZONTAL_PADDING = 5;
   private static final int VERTICAL_PADDING = 3;
+  private static final int ARC_RADIUS = 8;
 
-  private static final Color BACKGROUND_COLOR = new Color(0xd1, 0x85, 0x82);
-  private static final JBColor BACKGROUND_JB_COLOR = new JBColor(BACKGROUND_COLOR, BACKGROUND_COLOR);
+  private static final Color LIGHT_BACKGROUND = new Color(0xd1, 0x85, 0x82);
+  private static final Color LIGHT_SELECTED_BACKGROUND = new Color(0xa4, 0x03, 0x0f);
 
-  private static final Color SELECTED_BACKGROUND_COLOR = new Color(0xa4, 0x03, 0x0f);
-  private static final JBColor SELECTED_BACKGROUND_JB_COLOR = new JBColor(SELECTED_BACKGROUND_COLOR, SELECTED_BACKGROUND_COLOR);
+  private static final Color DARK_BACKGROUND = new Color(0x74, 0x23, 0x2f);
+  private static final Color DARK_SELECTED_BACKGROUND = new Color(0xb4, 0x13, 0x1f);
 
-  private static final Color INDEX_COLOR = Color.WHITE;
-  private static final JBColor INDEX_JB_COLOR = new JBColor(INDEX_COLOR, INDEX_COLOR);
+  private static final JBColor BACKGROUND_JB_COLOR = new JBColor(LIGHT_BACKGROUND, DARK_BACKGROUND);
+  private static final JBColor SELECTED_BACKGROUND_JB_COLOR = new JBColor(LIGHT_SELECTED_BACKGROUND, DARK_SELECTED_BACKGROUND);
+
+  private static final JBColor INDEX_JB_COLOR = new JBColor(Color.WHITE, Color.LIGHT_GRAY);
+  private static final JBColor SELECTED_INDEX_JB_COLOR = new JBColor(Color.WHITE, Color.WHITE);
 
   private final String index;
   private final boolean selected;
@@ -66,16 +73,35 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
   @Override
   public int calcWidthInPixels(@NotNull Inlay inlay) {
     FontInfo fontInfo = getFontInfo(inlay.getEditor());
-    return fontInfo.fontMetrics().stringWidth(index) + 2 * HORIZONTAL_PADDING + RIGHT_MARGIN;
+    return fontInfo.fontMetrics().stringWidth(index) + 2 * (HORIZONTAL_PADDING + HORIZONTAL_MARGIN);
   }
 
   @Override
   public void paint(@NotNull Inlay inlay, @NotNull Graphics g, @NotNull Rectangle targetRegion, @NotNull TextAttributes textAttributes) {
+    enableAntiAliasing(g);
     g.setColor(selected ? SELECTED_BACKGROUND_JB_COLOR : BACKGROUND_JB_COLOR);
-    g.fillRoundRect(targetRegion.x, targetRegion.y + VERTICAL_PADDING, targetRegion.width - RIGHT_MARGIN, targetRegion.height - 2 * VERTICAL_PADDING, 2, 2);
+    g.fillRoundRect(
+      targetRegion.x + HORIZONTAL_MARGIN,
+      targetRegion.y + VERTICAL_PADDING,
+      targetRegion.width - 2 * HORIZONTAL_MARGIN,
+      targetRegion.height - 2 * VERTICAL_PADDING,
+      ARC_RADIUS,
+      ARC_RADIUS
+    );
     FontInfo fontInfo = getFontInfo(inlay.getEditor());
     g.setFont(fontInfo.getFont());
-    g.setColor(INDEX_JB_COLOR);
-    g.drawString(index, targetRegion.x + HORIZONTAL_PADDING, targetRegion.y + fontInfo.fontMetrics().getAscent() + 1);
+    g.setColor(selected ? SELECTED_INDEX_JB_COLOR : INDEX_JB_COLOR);
+    g.drawString(index, targetRegion.x + HORIZONTAL_PADDING + HORIZONTAL_MARGIN, targetRegion.y + fontInfo.fontMetrics().getAscent() + 2);
+  }
+
+  /**
+   * Enable antialiasing to get proper rounded corners. Without this, the bottom corners are not rounded.
+   * @see <a href="https://stackoverflow.com/questions/4855847/problem-with-fillroundrect-seemingly-not-rendering-correctly">Answer on StackOverflow</a>
+   * @param g the graphic context we are rendering to
+   */
+  private static void enableAntiAliasing(Graphics g) {
+    if (g instanceof Graphics2D) {
+      ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    }
   }
 }
