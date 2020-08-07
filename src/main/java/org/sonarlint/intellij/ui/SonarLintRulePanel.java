@@ -267,27 +267,23 @@ public class SonarLintRulePanel {
     if (!ruleDetails.paramDetails().isEmpty()) {
       StyleSheet styleSheet = kit.getStyleSheet();
 
-      styleSheet.addRule(".rule-params { border: none; border-collapse: collapse; padding: 1em; }");
-      styleSheet.addRule(".rule-params caption { font-size: 16px; font-weight: 400; text-align: left; margin-bottom: 16px}");
-      styleSheet.addRule(".rule-params thead td { vertical-align: top; padding-left: 0; padding-bottom: 1em; font-style: italic }");
-      styleSheet.addRule(".rule-params tbody th { vertical-align: top; text-align: right; font-weight: inherit; font-family: monospace }");
-      styleSheet.addRule(".rule-params tbody td { vertical-align: top; padding-left: 1em; padding-bottom: 1em; }");
+      styleSheet.addRule(".rule-params { border: none; border-collapse: collapse; padding: 1em }");
+      styleSheet.addRule(".rule-params caption { text-align: left }");
+      styleSheet.addRule(".rule-params .thead td { padding-left: 0; padding-bottom: 1em; font-style: italic }");
+      styleSheet.addRule(".rule-params .tbody th { text-align: right; font-weight: normal; font-family: monospace }");
+      styleSheet.addRule(".rule-params .tbody td { margin-left: 1em; padding-bottom: 1em; }");
       styleSheet.addRule(".rule-params p { margin: 0 }");
       styleSheet.addRule(".rule-params small { display: block; margin-top: 2px }");
 
       return "<table class=\"rule-params\">" +
-        "<caption>Parameters</caption>" +
-        "<thead>" +
-        "<tr>" +
+        "<caption><h2>Parameters</h2></caption>" +
+        "<tr class='thead'>" +
         "<td colspan=\"2\">" +
         "Following parameter values can be set in <a href=\"#rule\">Rule Settings</a>. " +
         "In connected mode, server side configuration overrides local settings." +
         "</td>" +
         "</tr>" +
-        "</thead>" +
-        "<tbody>" +
         ruleDetails.paramDetails().stream().map(param -> renderRuleParam(param, ruleDetails)).collect(Collectors.joining("\n")) +
-        "</tbody>" +
         "</table>";
     } else {
       return "";
@@ -295,15 +291,16 @@ public class SonarLintRulePanel {
   }
 
   private static String renderRuleParam(StandaloneRuleParam param, StandaloneRuleDetails ruleDetails) {
-    String paramDescription = param.description() != null ? param.description() : "";
+    String paramDescription = param.description() != null ? "<p>" + param.description() + "</p>" : "";
     SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     String paramDefaultValue = param.defaultValue();
     String defaultValue = paramDefaultValue != null ? paramDefaultValue : "(none)";
     String currentValue = globalSettings.getRuleParamValue(ruleDetails.getKey(), param.name()).orElse(defaultValue);
-    return "<tr>" +
-      "<th>" + param.name() + "</th>" +
+    return "<tr class='tbody'>" +
+      // The <br/> elements are added to simulate a "vertical-align: top" (not supported by Java 11 CSS renderer)
+      "<th>" + param.name() + "<br/><br/></th>" +
       "<td>" +
-      "<p>" + paramDescription + "</p>" +
+      paramDescription +
       "<p><small>Current value: <code>" + currentValue + "</code></small></p>" +
       "<p><small>Default value: <code>" + defaultValue + "</code></small></p>" +
       "</td>" +
