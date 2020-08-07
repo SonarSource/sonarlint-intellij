@@ -28,12 +28,11 @@ import com.intellij.openapi.editor.impl.ComplementaryFontsRegistry;
 import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.ui.JBColor;
+import com.intellij.util.ui.GraphicsUtil;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import org.jetbrains.annotations.NotNull;
 
 @SuppressWarnings("UseJBColor")
@@ -78,7 +77,7 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
 
   @Override
   public void paint(@NotNull Inlay inlay, @NotNull Graphics g, @NotNull Rectangle targetRegion, @NotNull TextAttributes textAttributes) {
-    enableAntiAliasing(g);
+    GraphicsUtil.setupRoundedBorderAntialiasing(g);
     g.setColor(selected ? SELECTED_BACKGROUND_JB_COLOR : BACKGROUND_JB_COLOR);
     g.fillRoundRect(
       targetRegion.x + HORIZONTAL_MARGIN,
@@ -92,16 +91,5 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
     g.setFont(fontInfo.getFont());
     g.setColor(selected ? SELECTED_INDEX_JB_COLOR : INDEX_JB_COLOR);
     g.drawString(index, targetRegion.x + HORIZONTAL_PADDING + HORIZONTAL_MARGIN, targetRegion.y + fontInfo.fontMetrics().getAscent() + 2);
-  }
-
-  /**
-   * Enable antialiasing to get proper rounded corners. Without this, the bottom corners are not rounded.
-   * @see <a href="https://stackoverflow.com/questions/4855847/problem-with-fillroundrect-seemingly-not-rendering-correctly">Answer on StackOverflow</a>
-   * @param g the graphic context we are rendering to
-   */
-  private static void enableAntiAliasing(Graphics g) {
-    if (g instanceof Graphics2D) {
-      ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-    }
   }
 }
