@@ -35,10 +35,10 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class DisableRuleQuickFix implements IntentionAction, LowPriorityAction, Iconable {
+public class DisableRuleIntentionAction implements IntentionAction, LowPriorityAction, Iconable {
   private final String ruleKey;
 
-  DisableRuleQuickFix(String ruleKey) {
+  DisableRuleIntentionAction(String ruleKey) {
     this.ruleKey = ruleKey;
 
   }

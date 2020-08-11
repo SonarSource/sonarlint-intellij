@@ -63,6 +63,8 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   private static final String ID = "SonarLint";
+  private static final int RULE_TAB_INDEX = 0;
+  private static final int LOCATIONS_TAB_INDEX = 1;
   protected final Project project;
   protected SonarLintRulePanel rulePanel;
   protected JBTabbedPane detailsTab;
@@ -99,8 +101,8 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
     detailsTab = new JBTabbedPane();
-    detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", 0);
-    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", 1);
+    detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", RULE_TAB_INDEX);
+    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", LOCATIONS_TAB_INDEX);
   }
 
   protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, boolean vertical, float defaultSplit) {
@@ -273,6 +275,14 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     }
     tree.setSelectionPath(null);
     tree.addSelectionPath(new TreePath(issueNode.getPath()));
+  }
+
+  public void selectLocationsTab() {
+    detailsTab.setSelectedIndex(LOCATIONS_TAB_INDEX);
+  }
+
+  public void selectRulesTab() {
+    detailsTab.setSelectedIndex(RULE_TAB_INDEX);
   }
 
 }
