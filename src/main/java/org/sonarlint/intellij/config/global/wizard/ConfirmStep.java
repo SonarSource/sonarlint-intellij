@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
-import com.intellij.ide.wizard.CommitStepException;
 import java.util.List;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -74,8 +73,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public Object getPreviousStepId() {
-    List<RemoteOrganization> orgList = model.getOrganizationList();
-    if (orgList != null && orgList.size() > 1) {
+    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
       return OrganizationStep.class;
     } else {
       return AuthStep.class;
@@ -86,7 +84,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
     return true;
   }
 
-  @Override public void commit(CommitType commitType) throws CommitStepException {
+  @Override public void commit(CommitType commitType) {
     model.setNotificationsEnabled(notificationsCheckBox.isSelected());
   }
 
