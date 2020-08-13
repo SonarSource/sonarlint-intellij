@@ -38,14 +38,14 @@ import java.util.Collections;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class DisableRuleQuickFixTest extends AbstractSonarLintLightTests {
-  private DisableRuleQuickFix quickFix;
+public class DisableRuleIntentionActionTest extends AbstractSonarLintLightTests {
+  private DisableRuleIntentionAction quickFix;
 
   @Before
   public void prepare() {
     // Reset rule activations
     getGlobalSettings().setRules(Collections.emptyList());
-    quickFix = new DisableRuleQuickFix("rule");
+    quickFix = new DisableRuleIntentionAction("rule");
   }
 
   @Test

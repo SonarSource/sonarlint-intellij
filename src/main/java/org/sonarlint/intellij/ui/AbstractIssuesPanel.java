@@ -34,6 +34,7 @@ import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
@@ -62,6 +63,8 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   private static final String ID = "SonarLint";
+  private static final int RULE_TAB_INDEX = 0;
+  private static final int LOCATIONS_TAB_INDEX = 1;
   protected final Project project;
   protected SonarLintRulePanel rulePanel;
   protected JBTabbedPane detailsTab;
@@ -98,8 +101,8 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
     detailsTab = new JBTabbedPane();
-    detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", 0);
-    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", 1);
+    detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", RULE_TAB_INDEX);
+    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", LOCATIONS_TAB_INDEX);
   }
 
   protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, boolean vertical, float defaultSplit) {
@@ -263,4 +266,23 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   @Override public String getPreviousOccurenceActionName() {
     return "Previous Issue";
   }
+
+  public void setSelectedIssue(LiveIssue issue) {
+    DefaultMutableTreeNode issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()),
+      (node) -> node instanceof IssueNode && ((IssueNode) node).issue().equals(issue));
+    if(issueNode == null) {
+      return;
+    }
+    tree.setSelectionPath(null);
+    tree.addSelectionPath(new TreePath(issueNode.getPath()));
+  }
+
+  public void selectLocationsTab() {
+    detailsTab.setSelectedIndex(LOCATIONS_TAB_INDEX);
+  }
+
+  public void selectRulesTab() {
+    detailsTab.setSelectedIndex(RULE_TAB_INDEX);
+  }
+
 }

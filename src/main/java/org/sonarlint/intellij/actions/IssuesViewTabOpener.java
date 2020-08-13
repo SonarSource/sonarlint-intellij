@@ -25,8 +25,11 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
+import java.util.function.Consumer;
 import javax.annotation.CheckForNull;
 import javax.swing.JComponent;
+import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 public class IssuesViewTabOpener {
@@ -72,5 +75,25 @@ public class IssuesViewTabOpener {
       return content.getComponent();
     }
     return null;
+  }
+
+  private void showIssue(LiveIssue liveIssue, Consumer<SonarLintIssuesPanel> selectTab) {
+    openCurrentFile();
+    selectTab(getToolWindow(), SonarLintToolWindowFactory.TAB_CURRENT_FILE);
+    ContentManager contentManager = getToolWindow().getContentManager();
+    Content content = contentManager.findContent(SonarLintToolWindowFactory.TAB_CURRENT_FILE);
+    if(content.getComponent() instanceof SonarLintIssuesPanel) {
+      SonarLintIssuesPanel sonarLintIssuesPanel = (SonarLintIssuesPanel) content.getComponent();
+      sonarLintIssuesPanel.setSelectedIssue(liveIssue);
+      selectTab.accept(sonarLintIssuesPanel);
+    }
+  }
+
+  public void showIssueDescription(LiveIssue liveIssue) {
+    showIssue(liveIssue, SonarLintIssuesPanel::selectRulesTab);
+  }
+
+  public void showIssueLocations(LiveIssue liveIssue) {
+    showIssue(liveIssue, SonarLintIssuesPanel::selectLocationsTab);
   }
 }

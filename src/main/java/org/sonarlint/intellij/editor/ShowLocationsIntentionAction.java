@@ -19,25 +19,36 @@
  */
 package org.sonarlint.intellij.editor;
 
+import com.intellij.codeInsight.intention.HighPriorityAction;
 import com.intellij.codeInsight.intention.IntentionAction;
-import com.intellij.codeInsight.intention.LowPriorityAction;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.ui.UIUtil;
+import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.IssuesViewTabOpener;
+import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class ShowLocationsIntention implements IntentionAction, LowPriorityAction {
+public class ShowLocationsIntentionAction implements IntentionAction, HighPriorityAction, Iconable {
   private final LiveIssue issue;
+  private final IssueContext context;
 
-  public ShowLocationsIntention(LiveIssue issue) {
+  public ShowLocationsIntentionAction(LiveIssue issue, IssueContext context) {
     this.issue = issue;
+    this.context = context;
   }
 
   @Nls @NotNull @Override public String getText() {
-    return "Highlight all locations involved in this issue";
+    if(context.hasFlows()){
+      return "Show data flows";
+    }
+    return "Show issue locations";
   }
 
   @Nls @NotNull @Override public String getFamilyName() {
@@ -50,9 +61,17 @@ public class ShowLocationsIntention implements IntentionAction, LowPriorityActio
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     SonarLintUtils.getService(project, SonarLintHighlighting.class).highlightIssue(issue);
+    IssuesViewTabOpener issuesViewTabOpener = SonarLintUtils.getService(project, IssuesViewTabOpener.class);
+    UIUtil.invokeLaterIfNeeded(() -> issuesViewTabOpener.showIssueLocations(issue));
+
   }
 
   @Override public boolean startInWriteAction() {
     return false;
+  }
+
+  @Override
+  public Icon getIcon(int flags) {
+    return AllIcons.Actions.Forward;
   }
 }
