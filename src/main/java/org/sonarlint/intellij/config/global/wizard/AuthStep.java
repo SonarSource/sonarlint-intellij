@@ -28,7 +28,6 @@ import com.intellij.openapi.ui.Messages;
 import com.intellij.ui.DocumentAdapter;
 import java.awt.CardLayout;
 import java.awt.event.ItemEvent;
-import java.util.List;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -44,7 +43,6 @@ import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.InformationFetchTask;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class AuthStep extends AbstractWizardStepEx {
@@ -58,7 +56,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private JTextField loginField;
   private JPasswordField passwordField;
   private JPanel cardPanel;
-  private JButton tokenButton;
+  private JButton openTokenCreationPageButton;
   private ErrorPainter errorPainter;
 
   public AuthStep(WizardModel model) {
@@ -81,7 +79,7 @@ public class AuthStep extends AbstractWizardStepEx {
       }
     });
 
-    tokenButton.addActionListener(evt -> generateToken());
+    openTokenCreationPageButton.addActionListener(evt -> openTokenCreationPage());
 
     DocumentListener listener = new DocumentAdapter() {
       @Override protected void textChanged(DocumentEvent e) {
@@ -142,8 +140,7 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public Object getNextStepId() {
-    List<RemoteOrganization> orgList = model.getOrganizationList();
-    if (orgList != null && orgList.size() > 1) {
+    if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
       return OrganizationStep.class;
     }
     return ConfirmStep.class;
@@ -239,7 +236,7 @@ public class AuthStep extends AbstractWizardStepEx {
     authComboBox = new ComboBox();
   }
 
-  private void generateToken() {
+  private void openTokenCreationPage() {
     if (!BrowserUtil.isAbsoluteURL(model.getServerUrl())) {
       Messages.showErrorDialog(panel, "Can't launch browser for URL: " + model.getServerUrl(), "Invalid Server URL");
       return;
