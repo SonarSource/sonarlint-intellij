@@ -48,7 +48,7 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
 
   @Override
   public @Nls(capitalization = Nls.Capitalization.Sentence) @NotNull String getText() {
-    return "Show Rule description '" + ruleKey + "'";
+    return "Show rule description '" + ruleKey + "'";
   }
 
   @Override
