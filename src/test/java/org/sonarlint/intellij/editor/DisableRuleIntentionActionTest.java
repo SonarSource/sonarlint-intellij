@@ -50,7 +50,7 @@ public class DisableRuleIntentionActionTest extends AbstractSonarLintLightTests 
 
   @Test
   public void text_should_mention_rule_key() {
-    assertThat(quickFix.getText()).isEqualTo("Disable SonarLint rule 'rule'");
+    assertThat(quickFix.getText()).isEqualTo("SonarLint: Disable rule 'rule'");
   }
 
   @Test
