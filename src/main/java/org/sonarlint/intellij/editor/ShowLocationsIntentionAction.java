@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.editor;
 
-import com.intellij.codeInsight.intention.HighPriorityAction;
 import com.intellij.codeInsight.intention.IntentionAction;
+import com.intellij.codeInsight.intention.PriorityAction;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
@@ -35,7 +35,7 @@ import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class ShowLocationsIntentionAction implements IntentionAction, HighPriorityAction, Iconable {
+public class ShowLocationsIntentionAction implements IntentionAction, PriorityAction, Iconable {
   private final LiveIssue issue;
   private final IssueContext context;
 
@@ -73,5 +73,10 @@ public class ShowLocationsIntentionAction implements IntentionAction, HighPriori
   @Override
   public Icon getIcon(int flags) {
     return AllIcons.Actions.Forward;
+  }
+
+  @Override
+  public @NotNull Priority getPriority() {
+    return Priority.NORMAL;
   }
 }
