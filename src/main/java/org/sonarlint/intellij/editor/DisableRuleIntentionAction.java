@@ -44,7 +44,7 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
   }
 
   @Nls @NotNull @Override public String getText() {
-    return "Disable SonarLint rule '" + ruleKey + "'";
+    return "SonarLint: Disable rule '" + ruleKey + "'";
   }
 
   @Nls @NotNull @Override public String getFamilyName() {
