@@ -35,6 +35,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -180,22 +181,22 @@ public class IssueProcessor {
     PsiFile psiFile = matcher.findFile(inputFile.getClientObject());
     if (issue.getStartLine() != null) {
       RangeMarker rangeMarker = matcher.match(psiFile, issue);
-      IssueContext context = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
-      return new LiveIssue(issue, psiFile, rangeMarker, context);
+      Optional<IssueContext> context = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
+      return new LiveIssue(issue, psiFile, rangeMarker, context.orElse(null));
     } else {
       return new LiveIssue(issue, psiFile);
     }
   }
 
-  private IssueContext transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
-    List<LiveIssue.Flow> transformedFlows = new LinkedList<>();
+  private Optional<IssueContext> transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
+    List<LiveIssue.Flow> matchedFlows = new LinkedList<>();
 
     for (Issue.Flow f : flows) {
-      List<LiveIssue.SecondaryLocation> newLocations = new LinkedList<>();
+      List<LiveIssue.SecondaryLocation> matchedLocations = new LinkedList<>();
       for (IssueLocation loc : f.locations()) {
         try {
           RangeMarker range = matcher.match(psiFile, loc);
-          newLocations.add(new LiveIssue.SecondaryLocation(range, loc.getMessage()));
+          matchedLocations.add(new LiveIssue.SecondaryLocation(range, loc.getMessage()));
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
           SonarLintConsole.get(myProject)
@@ -203,14 +204,14 @@ public class IssueProcessor {
         } catch (Exception e) {
           LOGGER.error("Error finding secondary location for issue", e, rule,
             String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));
-          return null;
+          return Optional.empty();
         }
       }
-      LiveIssue.Flow newFlow = new LiveIssue.Flow(newLocations);
-      transformedFlows.add(newFlow);
+      LiveIssue.Flow matchedFlow = new LiveIssue.Flow(matchedLocations);
+      matchedFlows.add(matchedFlow);
 
     }
 
-    return transformedFlows.isEmpty() ? null : new IssueContext(transformedFlows);
+    return MatchedFlowsAdapter.adapt(matchedFlows);
   }
 }

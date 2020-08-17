@@ -19,67 +19,35 @@
  */
 package org.sonarlint.intellij.issue;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueContext {
-  private final String description;
+  private final String summaryDescription;
   private final List<LiveIssue.Flow> flows;
-  private final List<LiveIssue.SecondaryLocation> secondaryLocations;
 
   public IssueContext(List<LiveIssue.Flow> flows) {
-    if (flows.stream().anyMatch(f -> f.locations().size() > 1)) {
-      this.flows = reverseAll(flows);
-      this.secondaryLocations = Collections.emptyList();
+    this.flows = flows;
+    summaryDescription = computeSummaryDescription();
+  }
+
+  private String computeSummaryDescription() {
+    String description;
+    if (hasUniqueFlow()) {
+      int numLocations = flows.get(0).locations().size();
+      description = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
     } else {
-      this.flows = Collections.emptyList();
-      this.secondaryLocations = flows.stream()
-        .flatMap(f -> f.locations().stream())
-        .sorted(Comparator.comparing(i -> i.location().getStartOffset()))
-        .collect(Collectors.toList());
+      description = String.format(" [+%d flows]", flows().size());
     }
-    description = computeDescription();
-  }
-
-  @NotNull
-  private static List<LiveIssue.Flow> reverseAll(List<LiveIssue.Flow> flows) {
-    return flows.stream().map(f -> {
-      ArrayList<LiveIssue.SecondaryLocation> reorderedLocations = new ArrayList<>(f.locations());
-      Collections.reverse(reorderedLocations);
-      return new LiveIssue.Flow(reorderedLocations);
-    }).collect(Collectors.toList());
-  }
-
-  private String computeDescription() {
-    String desc;
-    if (flows().size() > 1) {
-      desc = String.format(" [+%d flows]", flows().size());
-    } else {
-      int numLocations = flows().size() == 1 ? flows.get(0).locations().size() : secondaryLocations.size();
-      desc = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
-    }
-    return desc;
-  }
-
-  public String getDescription() {
     return description;
+  }
+
+  public String getSummaryDescription() {
+    return summaryDescription;
   }
 
   public List<LiveIssue.Flow> flows() {
     return flows;
-  }
-
-  public List<LiveIssue.SecondaryLocation> secondaryLocations() {
-    return secondaryLocations;
-  }
-
-  public boolean hasFlows() {
-    return !flows.isEmpty();
   }
 
   public boolean hasUniqueFlow() {

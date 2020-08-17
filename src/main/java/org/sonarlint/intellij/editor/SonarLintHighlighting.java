@@ -43,7 +43,6 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 public class SonarLintHighlighting {
@@ -88,7 +87,7 @@ public class SonarLintHighlighting {
 
   public void highlightIssue(LiveIssue issue) {
     List<HighlightInfo> highlights = issue.context()
-      .map(context -> createHighlights(context.hasFlows() ? context.flows().get(0).locations() : context.secondaryLocations()))
+      .map(context -> createHighlights(context.flows().get(0).locations()))
       .orElse(new ArrayList<>());
 
     RangeMarker issueRange = issue.getRange();
@@ -97,11 +96,14 @@ public class SonarLintHighlighting {
     }
 
     updateHighlights(highlights, FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile()));
-    issue.context().filter(IssueContext::hasFlows).ifPresent(c -> displaySecondaryLocationNumbers(c.flows().get(0), null));
+    issue.context().ifPresent(c -> displaySecondaryLocationNumbers(c.flows().get(0), null));
   }
 
-  public void highlightLocation(RangeMarker rangeMarker, @Nullable String message) {
-    updateHighlights(Collections.singletonList(createHighlight(rangeMarker, message)), rangeMarker.getDocument());
+  public void highlightPrimaryLocation(RangeMarker rangeMarker, @Nullable String message, LiveIssue.Flow associatedFlow) {
+    List<HighlightInfo> highlights = createHighlights(associatedFlow.locations());
+    highlights.add(createHighlight(rangeMarker, message));
+    updateHighlights(highlights, rangeMarker.getDocument());
+    displaySecondaryLocationNumbers(associatedFlow, null);
   }
 
   public void highlightSecondaryLocation(LiveIssue.SecondaryLocation secondaryLocation, LiveIssue.Flow parentFlow) {
