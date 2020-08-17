@@ -216,6 +216,10 @@ public class LiveIssue implements Trackable {
     public List<SecondaryLocation> locations() {
       return locations;
     }
+
+    public boolean hasMoreThanOneLocation() {
+      return locations().size() > 1;
+    }
   }
 
   public static class SecondaryLocation {

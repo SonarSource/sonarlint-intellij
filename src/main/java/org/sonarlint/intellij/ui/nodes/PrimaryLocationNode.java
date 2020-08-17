@@ -25,22 +25,25 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
-public class LocationNode extends AbstractNode {
+public class PrimaryLocationNode extends AbstractNode {
   private final String message;
+  private final LiveIssue.Flow associatedFlow;
   private final Integer number;
   private final RangeMarker rangeMarker;
   private boolean bold = false;
 
-  public LocationNode(RangeMarker rangeMarker, @Nullable String message) {
-    this(null, rangeMarker, message);
+  public PrimaryLocationNode(RangeMarker rangeMarker, @Nullable String message, LiveIssue.Flow associatedFlow) {
+    this(null, rangeMarker, message, associatedFlow);
   }
 
-  protected LocationNode(@Nullable Integer number, RangeMarker rangeMarker, @Nullable String message) {
+  protected PrimaryLocationNode(@Nullable Integer number, RangeMarker rangeMarker, @Nullable String message, LiveIssue.Flow associatedFlow) {
     this.number = number;
     this.rangeMarker = rangeMarker;
     this.message = message;
+    this.associatedFlow = associatedFlow;
   }
 
   public void setBold(boolean bold) {
@@ -54,6 +57,10 @@ public class LocationNode extends AbstractNode {
   @CheckForNull
   public String message() {
     return message;
+  }
+
+  public LiveIssue.Flow getAssociatedFlow() {
+    return associatedFlow;
   }
 
   @Override public void render(TreeCellRenderer renderer) {

@@ -71,7 +71,7 @@ public class IssueNode extends AbstractNode {
       renderer.append(issue.getMessage(), SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
 
-    issue.context().ifPresent(context -> renderer.append(context.getDescription(), GRAYED_SMALL_ATTRIBUTES));
+    issue.context().ifPresent(context -> renderer.append(context.getSummaryDescription(), GRAYED_SMALL_ATTRIBUTES));
 
     if (issue.getCreationDate() != null) {
       renderer.append(" ");
