@@ -50,6 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.11 - Improve issues, flows and secondary locations navigation and highlighting. Show secondary location indexes in the editor. Add 'Show rule description' and 'Show data flow/issue locations' contextual actions. Relax search criteria in rule configuration filter. Show effective rule parameter in the rule description panel. Bug fixes and improvements.</li>
         <li>4.10 - Fix duplicated annotations for PHP files. Display rule severity defined in the quality profile in connected mode. Fix analysis failure with JSP files. Bug fixes and improvements for JS files. 4 new rules (3 security related), bug fixes and improvements for PHP files.</li>
         <li>4.9 - Many new rules about JUnit and AssertJ for Java test files. 10 new rules for PHP. 22 new rules for Python and support of Typeshed packages. Preparatory changes for dynamic plugin installation.</li>
         <li>4.8 - Configure rule parameters in IDE settings. Performance improvement and fewer false positives for PHP. 4 new vulnerability detection rules for Python.</li>
