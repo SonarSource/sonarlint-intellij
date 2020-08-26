@@ -51,21 +51,11 @@ repositories {
   mavenLocal()
   maven {
     url "https://repox.jfrog.io/repox/sonarsource"
-    content { excludeGroup("typescript") }
-  }
-  ivy {
-    url "https://repox.jfrog.io/repox/api/npm/npm"
-    patternLayout {
-      artifact "[organization]/-/[module]-[revision].[ext]"
-      metadataSources { artifact() }
-    }
-    content { includeGroup("typescript") }
   }
 }
 
 configurations {
   sqplugins { transitive = false }
-  typescript { canBeConsumed = false }
 }
 
 dependencies {
@@ -87,7 +77,6 @@ dependencies {
     'org.sonarsource.slang:sonar-ruby-plugin:1.5.0.315@jar',
     'org.sonarsource.html:sonar-html-plugin:3.2.0.2082@jar'
   )
-  typescript "typescript:typescript:${typescriptVersion}@tgz"
 }
 
 task cleanSQPlugins(type: Delete) {
@@ -98,21 +87,6 @@ task downloadSQPlugins(type: Copy, dependsOn: cleanSQPlugins) {
   outputs.upToDateWhen { false }
   from configurations.sqplugins
   into 'src/main/resources/plugins'
-}
-
-prepareSandbox {
-  doLast {
-    def tsBundlePath = project.configurations.typescript[0]
-    copy {
-      from tarTree(tsBundlePath)
-      excludes = [
-              '**/loc/**',
-              '**/lib/*/diagnosticMessages.generated.json'
-      ]
-      into file("$destinationDir/$pluginName")
-    }
-    file("$destinationDir/$pluginName/package").renameTo("$destinationDir/$pluginName/typescript")
-  }
 }
 
 classes.dependsOn downloadSQPlugins
