@@ -24,8 +24,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.ToggleAction;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ToolWindowVerboseModeAction extends ToggleAction implements DumbAware {
   public ToolWindowVerboseModeAction() {
@@ -36,14 +36,14 @@ public class ToolWindowVerboseModeAction extends ToggleAction implements DumbAwa
   @Override
   public boolean isSelected(AnActionEvent event) {
     Project p = event.getProject();
-    return p != null && SonarLintUtils.getService(p, SonarLintProjectSettings.class).isVerboseEnabled();
+    return p != null && getSettingsFor(p).isVerboseEnabled();
   }
 
   @Override
   public void setSelected(AnActionEvent event, boolean flag) {
     Project p = event.getProject();
     if (p != null) {
-      SonarLintUtils.getService(p, SonarLintProjectSettings.class).setVerboseEnabled(flag);
+      getSettingsFor(p).setVerboseEnabled(flag);
     }
   }
 }

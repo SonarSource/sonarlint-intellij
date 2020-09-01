@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import org.sonarlint.intellij.SonarLintPlugin;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -36,6 +35,8 @@ import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryClient;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class TelemetryManagerProvider {
   private static final String TELEMETRY_PRODUCT_KEY = "idea";
@@ -76,7 +77,7 @@ public class TelemetryManagerProvider {
   private boolean isAnyProjectConnected() {
     ProjectManager projectManager = ProjectManager.getInstance();
     Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> SonarLintUtils.getService(p, SonarLintProjectSettings.class).isBindingEnabled());
+    return Arrays.stream(openProjects).anyMatch(p -> getSettingsFor(p).isBindingEnabled());
   }
 
   private boolean isAnyProjectConnectedToSonarCloud() {

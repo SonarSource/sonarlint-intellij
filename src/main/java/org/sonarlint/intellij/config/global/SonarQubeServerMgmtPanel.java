@@ -82,6 +82,8 @@ import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+
 public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String LABEL_NO_SERVERS = "Add a connection to SonarQube or SonarCloud";
 
@@ -213,8 +215,8 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
 
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
-    for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
+    for (Project openProject : openProjects) {
+      SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
       if (projectSettings.getServerId() != null && deletedServerIds.contains(projectSettings.getServerId())) {
         projectSettings.setBindingEnabled(false);
         projectSettings.setServerId(null);
@@ -343,12 +345,12 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
     Map<String, List<Project>> projectsPerModule = new HashMap<>();
 
-    for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
+    for (Project openProject : openProjects) {
+      SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
       String projectKey = projectSettings.getProjectKey();
       if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && projectKey != null) {
         List<Project> projects = projectsPerModule.computeIfAbsent(projectKey, k -> new ArrayList<>());
-        projects.add(p);
+        projects.add(openProject);
       }
     }
 
@@ -435,10 +437,10 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     private List<String> getOpenProjectNames(Project[] openProjects, SonarQubeServer server) {
       List<String> openProjectNames = new LinkedList<>();
 
-      for (Project p : openProjects) {
-        SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
+      for (Project openProject : openProjects) {
+        SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
         if (server.getName().equals(projectSettings.getServerId())) {
-          openProjectNames.add(p.getName());
+          openProjectNames.add(openProject.getName());
         }
       }
       return openProjectNames;

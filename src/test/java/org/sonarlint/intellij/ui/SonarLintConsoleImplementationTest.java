@@ -21,11 +21,9 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
-import com.intellij.openapi.project.Project;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -36,7 +34,6 @@ public class SonarLintConsoleImplementationTest extends AbstractSonarLintLightTe
 
   @Before
   public void prepare() {
-    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
     console = new SonarLintConsoleImpl(getProject(), consoleView);
   }
 

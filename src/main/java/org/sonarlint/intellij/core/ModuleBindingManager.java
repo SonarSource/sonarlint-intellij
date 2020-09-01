@@ -25,12 +25,13 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.CheckForNull;
+
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ModuleBindingManager {
   private final Module module;
@@ -41,22 +42,22 @@ public class ModuleBindingManager {
 
   @CheckForNull
   public ProjectBinding getBinding() {
-    String projectKey = SonarLintUtils.getService(module.getProject(), SonarLintProjectSettings.class).getProjectKey();
+    String projectKey = getSettingsFor(module.getProject()).getProjectKey();
     if (projectKey == null) {
       return null;
     }
-    SonarLintModuleSettings settings = SonarLintUtils.getService(module, SonarLintModuleSettings.class);
+    SonarLintModuleSettings settings = getSettingsFor(module);
     return new ProjectBinding(projectKey, settings.getSqPathPrefix(), settings.getIdePathPrefix());
   }
 
   public void updateBinding(ConnectedSonarLintEngine engine) {
-    String projectKey = SonarLintUtils.getService(module.getProject(), SonarLintProjectSettings.class).getProjectKey();
+    String projectKey = getSettingsFor(module.getProject()).getProjectKey();
     if (projectKey == null) {
       throw new IllegalStateException("Project is not bound");
     }
     List<String> moduleFiles = collectPathsForModule();
     ProjectBinding projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
-    SonarLintModuleSettings settings = SonarLintUtils.getService(module, SonarLintModuleSettings.class);
+    SonarLintModuleSettings settings = getSettingsFor(module);
     settings.setIdePathPrefix(projectBinding.idePathPrefix());
     settings.setSqPathPrefix(projectBinding.sqPathPrefix());
   }

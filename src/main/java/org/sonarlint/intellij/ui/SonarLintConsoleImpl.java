@@ -27,8 +27,8 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
@@ -52,15 +52,14 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   @Override
   public void debug(String msg) {
-    SonarLintProjectSettings settings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
-    if (settings.isVerboseEnabled()) {
+    if (debugEnabled()) {
       getConsoleView().print(msg + "\n", ConsoleViewContentType.NORMAL_OUTPUT);
     }
   }
 
   @Override
   public boolean debugEnabled() {
-    return SonarLintUtils.getService(myProject, SonarLintProjectSettings.class).isVerboseEnabled();
+    return getSettingsFor(myProject).isVerboseEnabled();
   }
 
   @Override

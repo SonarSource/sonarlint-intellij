@@ -40,6 +40,8 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+
 public class UpdateChecker implements Disposable {
 
   private final Project myProject;
@@ -84,7 +86,7 @@ public class UpdateChecker implements Disposable {
       progressIndicator.setIndeterminate(false);
       progressIndicator.setFraction(0.0);
       boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration, progressIndicator);
-      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
+      SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
       log.log("Check for updates from server '" + server.getName() +
         "' for project '" + projectSettings.getProjectKey() + "'...", LogOutput.Level.INFO);
       progressIndicator.setFraction(0.8);
@@ -100,8 +102,7 @@ public class UpdateChecker implements Disposable {
   }
 
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, ProgressIndicator indicator) {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
-    StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConfiguration, projectSettings.getProjectKey(),
+    StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConfiguration, getSettingsFor(myProject).getProjectKey(),
       new TaskProgressMonitor(indicator, myProject));
     if (projectUpdateCheckResult.needUpdate()) {
       changelog.addAll(projectUpdateCheckResult.changelog());

@@ -28,7 +28,6 @@ import com.intellij.psi.PsiFileFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -80,8 +79,7 @@ public class DisableRuleIntentionActionTest extends AbstractSonarLintLightTests 
   @Test
   public void should_exclude() {
     SonarLintConsole console = SonarLintUtils.getService(getProject(), SonarLintConsole.class);
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    globalSettings.setAutoTrigger(true);
+    getGlobalSettings().setAutoTrigger(true);
 
     PsiFile file = PsiFileFactory.getInstance(getProject())
       .createFileFromText("MyClass.java", Language.findLanguageByID("JAVA"), "public class MyClass {}", true, false);

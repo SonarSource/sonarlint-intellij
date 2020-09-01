@@ -23,7 +23,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
@@ -38,7 +37,6 @@ public class ProjectLogOutputTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() {
-    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
     replaceProjectService(SonarLintConsole.class, mockConsole);
     getProjectSettings().setAnalysisLogsEnabled(true);
     logOutput = new ProjectLogOutput(getProject());

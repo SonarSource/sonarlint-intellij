@@ -30,11 +30,9 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -114,8 +112,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Test
   public void should_not_submit_if_auto_disable() {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    globalSettings.setAutoTrigger(false);
+    getGlobalSettings().setAutoTrigger(false);
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     verifyZeroInteractions(sonarLintJobManager);
   }

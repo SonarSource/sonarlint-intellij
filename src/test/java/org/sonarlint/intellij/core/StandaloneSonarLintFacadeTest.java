@@ -24,7 +24,6 @@ import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -44,7 +43,6 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Before
   public void before() {
-    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
     facade = new StandaloneSonarLintFacade(getProject(), engine);
   }
 

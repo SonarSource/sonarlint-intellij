@@ -30,14 +30,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public abstract class SonarLintFacade {
   protected final Project project;
@@ -58,7 +58,7 @@ public abstract class SonarLintFacade {
     Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
     Map<String, String> props = new HashMap<>();
     props.putAll(additionalProps);
-    props.putAll(SonarLintUtils.getService(project, SonarLintProjectSettings.class).getAdditionalProperties());
+    props.putAll(getSettingsFor(project).getAdditionalProperties());
     return analyze(baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
   }
 

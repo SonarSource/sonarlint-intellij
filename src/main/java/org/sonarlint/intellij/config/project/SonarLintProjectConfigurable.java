@@ -33,7 +33,6 @@ import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
@@ -45,6 +44,9 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 /**
  * Coordinates creation of models and visual components from persisted settings.
@@ -87,13 +89,13 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
   @Override
   public boolean isModified() {
-    return panel != null && panel.isModified(getProjectSettings());
+    return panel != null && panel.isModified(getSettingsFor(project));
   }
 
   @Override
   public void apply() {
     if (panel != null) {
-      SonarLintProjectSettings projectSettings = getProjectSettings();
+      SonarLintProjectSettings projectSettings = getSettingsFor(project);
       boolean exclusionsModified = panel.isExclusionsModified(projectSettings);
       panel.save(projectSettings);
       onSave(exclusionsModified);
@@ -109,7 +111,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   private void onSave(boolean exclusionsModified) {
     SonarLintProjectNotifications.get(project).reset();
     ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
-    SonarLintProjectSettings projectSettings = getProjectSettings();
+    SonarLintProjectSettings projectSettings = getSettingsFor(project);
     if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getServerId() != null) {
       ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
 
@@ -137,7 +139,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       return;
     }
 
-    panel.load(getBindableServers(), getProjectSettings());
+    panel.load(getBindableServers(), getSettingsFor(project));
   }
 
   private static List<SonarQubeServer> getBindableServers() {
@@ -157,7 +159,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
     // get saved settings if needed
     if (currentServers == null) {
-      currentServers = SonarLintUtils.getService(SonarLintGlobalSettings.class).getSonarQubeServers();
+      currentServers = getGlobalSettings().getSonarQubeServers();
     }
     return currentServers;
   }
@@ -170,10 +172,6 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       panel.dispose();
       panel = null;
     }
-  }
-
-  private SonarLintProjectSettings getProjectSettings() {
-    return SonarLintUtils.getService(project, SonarLintProjectSettings.class);
   }
 
 }

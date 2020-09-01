@@ -26,7 +26,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 
 import static com.intellij.openapi.actionSystem.ActionPlaces.EDITOR_POPUP;
@@ -37,7 +37,7 @@ import static org.mockito.Mockito.when;
 
 public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
   private VirtualFile file1 = mock(VirtualFile.class);
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
+  private SonarLintProjectSettingsStore settings = new SonarLintProjectSettingsStore();
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
   private ExcludeFileAction action = new ExcludeFileAction();
   private AnActionEvent e = mock(AnActionEvent.class);
@@ -45,7 +45,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
 
   @Before
   public void setup() {
-    super.register(project, SonarLintProjectSettings.class, settings);
+    super.register(project, SonarLintProjectSettingsStore.class, settings);
     super.register(project, SonarLintSubmitter.class, submitter);
     when(e.getProject()).thenReturn(project);
     when(e.getPresentation()).thenReturn(presentation);
@@ -59,7 +59,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
 
     action.actionPerformed(e);
 
-    assertThat(settings.getFileExclusions()).isEmpty();
+    assertThat(settings.getState().getFileExclusions()).isEmpty();
     verifyZeroInteractions(submitter);
   }
 
@@ -69,7 +69,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
 
     action.actionPerformed(e);
 
-    assertThat(settings.getFileExclusions()).isEmpty();
+    assertThat(settings.getState().getFileExclusions()).isEmpty();
     verifyZeroInteractions(submitter);
   }
 

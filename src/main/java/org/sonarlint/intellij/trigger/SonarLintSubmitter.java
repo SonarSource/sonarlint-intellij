@@ -36,13 +36,14 @@ import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintSubmitter {
   static final AnalysisCallback NO_OP_CALLBACK = new AnalysisCallback() {
@@ -74,8 +75,7 @@ public class SonarLintSubmitter {
   }
 
   public void submitOpenFilesAuto(TriggerType trigger) {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    if (!globalSettings.isAutoTrigger()) {
+    if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
     FileEditorManager editorManager = FileEditorManager.getInstance(myProject);

@@ -29,16 +29,16 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class EditorOpenTrigger implements FileEditorManagerListener, StartupActivity {
 
 
   @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    if (!globalSettings.isAutoTrigger()) {
+    if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
     SonarLintSubmitter submitter = SonarLintUtils.getService(source.getProject(), SonarLintSubmitter.class);
@@ -59,8 +59,7 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
   public void runActivity(@NotNull Project myProject) {
     if (!ApplicationManager.getApplication().isUnitTestMode()) {
       myProject.getMessageBus().connect(myProject).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
-      SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-      if (globalSettings.isAutoTrigger()) {
+      if (getGlobalSettings().isAutoTrigger()) {
         VirtualFile[] openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
         if (openFiles.length > 0) {
           SonarLintSubmitter submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);

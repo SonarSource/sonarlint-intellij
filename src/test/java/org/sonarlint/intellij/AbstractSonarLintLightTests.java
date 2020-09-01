@@ -33,11 +33,12 @@ import java.util.Collections;
 import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 
-import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
 
@@ -53,9 +54,9 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   @Before
   public final void init() {
-    globalSettings = getService(SonarLintGlobalSettings.class);
-    projectSettings = getService(getProject(), SonarLintProjectSettings.class);
-    moduleSettings = getService(getModule(), SonarLintModuleSettings.class);
+    globalSettings = Settings.getGlobalSettings();
+    projectSettings = getSettingsFor(getProject());
+    moduleSettings = getSettingsFor(getModule());
     disposable = Disposer.newDisposable();
   }
 
@@ -81,6 +82,10 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     return globalSettings;
   }
 
+  public SonarLintProjectSettings getProjectSettings() {
+    return projectSettings;
+  }
+
   public VirtualFile createTestFile(String fileName, Language language, String text) {
     return createTestPsiFile(fileName, language, text).getVirtualFile();
   }
@@ -99,13 +104,5 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   public PsiFile createTestPsiFile(String fileName, Language language, String text) {
     return PsiFileFactory.getInstance(getProject()).createFileFromText(fileName, language, text, true, true);
-  }
-
-  public SonarLintProjectSettings getProjectSettings() {
-    return projectSettings;
-  }
-
-  public SonarLintModuleSettings getModuleSettings() {
-    return moduleSettings;
   }
 }

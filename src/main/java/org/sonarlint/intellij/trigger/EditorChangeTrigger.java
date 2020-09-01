@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.components.AbstractProjectComponent;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
@@ -34,10 +33,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.analysis.SonarLintJob;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 @ThreadSafe
 public class EditorChangeTrigger implements DocumentListener, Disposable {
@@ -74,8 +74,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
 
   @Override
   public void documentChanged(DocumentEvent event) {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    if (!globalSettings.isAutoTrigger()) {
+    if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
     VirtualFile file = FileDocumentManager.getInstance().getFile(event.getDocument());
@@ -128,8 +127,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
     }
 
     private void triggerFile(VirtualFile file) {
-      SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-      if (SonarLintAppUtils.isOpenFile(myProject, file) && globalSettings.isAutoTrigger()) {
+      if (SonarLintAppUtils.isOpenFile(myProject, file) && getGlobalSettings().isAutoTrigger()) {
         SonarLintSubmitter submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
         submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_CHANGE, true);
       }

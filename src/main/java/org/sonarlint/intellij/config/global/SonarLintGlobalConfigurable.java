@@ -32,13 +32,15 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private static final int SETTINGS_TAB_INDEX = 0;
@@ -67,7 +69,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public boolean isModified() {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
     SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
       || about.isModified(telemetry) || exclusions.isModified(globalSettings) || rules.isModified(globalSettings);
@@ -75,7 +77,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public void apply() {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
     SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     final boolean exclusionsModified = exclusions.isModified(globalSettings);
     final boolean rulesModified = rules.isModified(globalSettings);
@@ -101,10 +103,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private static void analyzeOpenFiles(boolean unboundOnly) {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
-    for (Project p : openProjects) {
-      SonarLintProjectSettings projectSettings = SonarLintUtils.getService(p, SonarLintProjectSettings.class);
-      if (!unboundOnly || !projectSettings.isBindingEnabled()) {
-        SonarLintUtils.getService(p, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+    for (Project project : openProjects) {
+      if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
+        SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }
     }
   }
@@ -120,7 +121,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public void reset() {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
     SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
 
     serversPanel.load(globalSettings);

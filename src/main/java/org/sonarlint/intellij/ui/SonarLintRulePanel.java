@@ -61,7 +61,6 @@ import javax.swing.text.html.ImageView;
 import javax.swing.text.html.StyleSheet;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -70,6 +69,8 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintRulePanel {
   private static final Pattern SPACES_BEGINNING_LINE = Pattern.compile("\n(\\p{Blank}*)");
@@ -292,10 +293,9 @@ public class SonarLintRulePanel {
 
   private static String renderRuleParam(StandaloneRuleParam param, StandaloneRuleDetails ruleDetails) {
     String paramDescription = param.description() != null ? "<p>" + param.description() + "</p>" : "";
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     String paramDefaultValue = param.defaultValue();
     String defaultValue = paramDefaultValue != null ? paramDefaultValue : "(none)";
-    String currentValue = globalSettings.getRuleParamValue(ruleDetails.getKey(), param.name()).orElse(defaultValue);
+    String currentValue = getGlobalSettings().getRuleParamValue(ruleDetails.getKey(), param.name()).orElse(defaultValue);
     return "<tr class='tbody'>" +
       // The <br/> elements are added to simulate a "vertical-align: top" (not supported by Java 11 CSS renderer)
       "<th>" + param.name() + "<br/><br/></th>" +

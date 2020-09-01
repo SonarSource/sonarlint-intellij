@@ -41,6 +41,8 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+
 public class ExcludeFileAction extends DumbAwareAction {
   public ExcludeFileAction() {
 
@@ -70,8 +72,7 @@ public class ExcludeFileAction extends DumbAwareAction {
 
     e.getPresentation().setVisible(true);
 
-    SonarLintProjectSettings settings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
-    List<String> exclusions = new ArrayList<>(settings.getFileExclusions());
+    List<String> exclusions = new ArrayList<>(getSettingsFor(project).getFileExclusions());
 
     boolean anyFileToAdd = toStringStream(project, files)
       .anyMatch(path -> !exclusions.contains(path));
@@ -89,7 +90,7 @@ public class ExcludeFileAction extends DumbAwareAction {
       return;
     }
 
-    SonarLintProjectSettings settings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
+    SonarLintProjectSettings settings = getSettingsFor(project);
     List<String> exclusions = new ArrayList<>(settings.getFileExclusions());
 
     List<String> newExclusions = toStringStream(project, files)
