@@ -23,8 +23,8 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.ToggleAction;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
-import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ToolWindowLogAnalysisAction extends ToggleAction implements DumbAware {
   public ToolWindowLogAnalysisAction() {
@@ -34,14 +34,14 @@ public class ToolWindowLogAnalysisAction extends ToggleAction implements DumbAwa
   @Override
   public boolean isSelected(AnActionEvent event) {
     Project p = event.getProject();
-    return p != null && SonarLintUtils.getService(p, SonarLintProjectSettings.class).isAnalysisLogsEnabled();
+    return p != null && getSettingsFor(p).isAnalysisLogsEnabled();
   }
 
   @Override
   public void setSelected(AnActionEvent event, boolean flag) {
     Project p = event.getProject();
     if (p != null) {
-      SonarLintUtils.getService(p, SonarLintProjectSettings.class).setAnalysisLogsEnabled(flag);
+      getSettingsFor(p).setAnalysisLogsEnabled(flag);
     }
   }
 }

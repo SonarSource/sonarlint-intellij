@@ -55,6 +55,8 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+
 public class AutoTriggerStatusPanel {
   private static final String AUTO_TRIGGER_ENABLED = "AUTO_TRIGGER_ENABLED";
   private static final String FILE_DISABLED = "FILE_DISABLED";
@@ -103,8 +105,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private String getCard() {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    if (!globalSettings.isAutoTrigger()) {
+    if (!getGlobalSettings().isAutoTrigger()) {
       return AUTO_TRIGGER_DISABLED;
     }
 

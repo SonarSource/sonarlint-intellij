@@ -101,6 +101,8 @@ import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+
 public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final Logger LOG = Logger.getInstance(RuleConfigurationPanel.class);
 
@@ -140,8 +142,7 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
   }
 
   private void recomputeDirtyState() {
-    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    Map<String, RulesTreeNode.Rule> persistedRules = loadRuleNodes(settings);
+    Map<String, RulesTreeNode.Rule> persistedRules = loadRuleNodes(getGlobalSettings());
     for (RulesTreeNode.Rule persisted : persistedRules.values()) {
       final RulesTreeNode.Rule possiblyModified = allRulesStateByKey.get(persisted.getKey());
       if (!persisted.equals(possiblyModified)) {

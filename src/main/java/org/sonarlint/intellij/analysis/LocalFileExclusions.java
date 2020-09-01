@@ -37,6 +37,7 @@ import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -45,6 +46,9 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class LocalFileExclusions {
   private final ProjectRootManager projectRootManager;
@@ -58,8 +62,8 @@ public class LocalFileExclusions {
     this.powerSaveModeCheck = PowerSaveMode::isEnabled;
 
     subscribeToSettingsChanges(project);
-    loadGlobalExclusions(SonarLintUtils.getService(SonarLintGlobalSettings.class));
-    loadProjectExclusions(SonarLintUtils.getService(project, SonarLintProjectSettings.class));
+    loadGlobalExclusions(getGlobalSettings());
+    loadProjectExclusions(getSettingsFor(project));
   }
 
   private static Set<String> getExclusionsOfType(Collection<ExclusionItem> exclusions, ExclusionItem.Type type) {

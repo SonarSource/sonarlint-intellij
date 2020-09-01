@@ -24,12 +24,13 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKey;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class DisableRuleAction extends AnAction {
   public static final DataKey<LiveIssue> ISSUE_DATA_KEY = DataKey.create("sonarlint_issue");
@@ -61,21 +62,17 @@ public class DisableRuleAction extends AnAction {
       return;
     }
 
-    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
-    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-
     LiveIssue issue = e.getData(ISSUE_DATA_KEY);
-    boolean visible = !projectSettings.isBindingEnabled() && issue != null;
+    boolean visible = !getSettingsFor(project).isBindingEnabled() && issue != null;
     e.getPresentation().setVisible(visible);
 
-    boolean explicitlyDisabled = issue != null && settings.isRuleExplicitlyDisabled(issue.getRuleKey());
+    boolean explicitlyDisabled = issue != null && getGlobalSettings().isRuleExplicitlyDisabled(issue.getRuleKey());
     boolean enabled = visible && !explicitlyDisabled;
     e.getPresentation().setEnabled(enabled);
   }
 
   private static void disableRule(String ruleKey) {
-    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    settings.disableRule(ruleKey);
+    getGlobalSettings().disableRule(ruleKey);
   }
 
 }

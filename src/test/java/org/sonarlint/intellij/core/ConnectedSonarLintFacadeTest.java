@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -46,7 +46,6 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Before
   public void before() {
-    replaceProjectService(SonarLintProjectSettings.class, getProjectSettings());
     getProjectSettings().setProjectKey("projectKey");
     facade = new ConnectedSonarLintFacade(engine, getProject());
   }

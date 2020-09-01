@@ -19,19 +19,14 @@
  */
 package org.sonarlint.intellij.config.project;
 
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
-import com.intellij.util.xmlb.XmlSerializerUtil;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 
-@State(name = "SonarLintProjectSettings", storages = {@Storage("sonarlint.xml")})
-public final class SonarLintProjectSettings implements PersistentStateComponent<SonarLintProjectSettings> {
+public final class SonarLintProjectSettings {
 
   private boolean verboseEnabled = false;
   private boolean analysisLogsEnabled = false;
@@ -40,33 +35,6 @@ public final class SonarLintProjectSettings implements PersistentStateComponent<
   private String serverId = null;
   private String projectKey = null;
   private List<String> fileExclusions = new ArrayList<>();
-
-  /**
-   * Constructor called by the XML serialization and deserialization (no args).
-   * Even though this class has the scope of a project, we can't have it injected here.
-   */
-  public SonarLintProjectSettings() {
-
-  }
-
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
-  public SonarLintProjectSettings(SonarLintProjectSettings toCopy) {
-    XmlSerializerUtil.copyBean(toCopy, this);
-  }
-
-  @Override
-  public synchronized SonarLintProjectSettings getState() {
-    return this;
-  }
-
-  @Override
-  public synchronized void loadState(SonarLintProjectSettings state) {
-    XmlSerializerUtil.copyBean(state, this);
-  }
 
   public boolean isVerboseEnabled() {
     return verboseEnabled;
@@ -125,6 +93,4 @@ public final class SonarLintProjectSettings implements PersistentStateComponent<
   public void setFileExclusions(List<String> fileExclusions) {
     this.fileExclusions = new ArrayList<>(fileExclusions);
   }
-
-
 }

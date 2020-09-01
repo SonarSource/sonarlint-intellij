@@ -24,29 +24,25 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 public class ToolWindowVerboseModeActionTest extends AbstractSonarLintLightTests {
   private ToolWindowVerboseModeAction action = new ToolWindowVerboseModeAction();
-  private SonarLintProjectSettings settings = new SonarLintProjectSettings();
   private AnActionEvent event;
 
   @Before
   public void prepare() {
-    replaceProjectService(SonarLintProjectSettings.class, settings);
     event = SonarLintTestUtils.createAnActionEvent(getProject());
   }
 
   @Test
   public void testSelected() {
-    settings.setVerboseEnabled(true);
+    getProjectSettings().setVerboseEnabled(true);
     assertThat(action.isSelected(event)).isTrue();
 
-    settings.setVerboseEnabled(false);
+    getProjectSettings().setVerboseEnabled(false);
     assertThat(action.isSelected(event)).isFalse();
 
     when(event.getProject()).thenReturn(null);
@@ -55,17 +51,17 @@ public class ToolWindowVerboseModeActionTest extends AbstractSonarLintLightTests
 
   @Test
   public void testSetSelected() {
-    settings.setVerboseEnabled(true);
+    getProjectSettings().setVerboseEnabled(true);
 
     action.setSelected(event, false);
-    assertThat(settings.isVerboseEnabled()).isFalse();
+    assertThat(getProjectSettings().isVerboseEnabled()).isFalse();
 
     action.setSelected(event, true);
-    assertThat(settings.isVerboseEnabled()).isTrue();
+    assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
 
     // do nothing if there is no project
     when(event.getProject()).thenReturn(null);
     action.setSelected(event, false);
-    assertThat(settings.isVerboseEnabled()).isTrue();
+    assertThat(getProjectSettings().isVerboseEnabled()).isTrue();
   }
 }

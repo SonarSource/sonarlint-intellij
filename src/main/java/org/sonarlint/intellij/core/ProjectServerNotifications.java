@@ -26,6 +26,7 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import java.time.ZonedDateTime;
+
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -39,6 +40,8 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime;
 import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotification;
 import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotificationListener;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ProjectServerNotifications {
   private static final NotificationGroup SONARQUBE_GROUP = NotificationGroup.balloonGroup("SonarLint: SonarQube Events");
@@ -55,23 +58,23 @@ public class ProjectServerNotifications {
   }
 
   public void init() {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
-    register(projectSettings);
+    register();
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, settings -> {
       // always reset notification date, whether bound or not
       SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
       projectState.setLastEventPolling(ZonedDateTime.now());
-      register(settings);
+      register();
     });
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override public void applied(SonarLintGlobalSettings settings) {
-        register(projectSettings);
+        register();
       }
     });
   }
 
 
-  private void register(SonarLintProjectSettings settings) {
+  private void register() {
+    SonarLintProjectSettings settings = getSettingsFor(myProject);
     unregister();
     if (settings.isBindingEnabled()) {
       SonarQubeServer server;

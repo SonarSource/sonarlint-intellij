@@ -47,15 +47,10 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     settings.setAutoTrigger(true);
     assertThat(settings.isAutoTrigger()).isTrue();
 
-    assertThat(settings.getComponentName()).isEqualTo("SonarLintGlobalSettings");
-    assertThat(settings.getPresentableName()).isEqualTo("SonarLint settings");
-
-    assertThat(settings.getState()).isEqualTo(settings);
-    assertThat(settings.getExportFiles()).isNotEmpty();
   }
 
   @Test
-  public void testLoadStateOldFormat() throws Exception {
+  public void testLoadStateOldFormat() {
     SonarLintGlobalSettings state = new SonarLintGlobalSettings();
     HashSet<String> includedRules = new HashSet<>();
     includedRules.add(RULE);
@@ -64,10 +59,10 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     state.setIncludedRules(includedRules);
     state.setExcludedRules(excludedRules);
 
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    settings.loadState(state);
+    SonarLintGlobalSettingsStore settingsStore = new SonarLintGlobalSettingsStore();
+    settingsStore.loadState(state);
 
-    Map<String, SonarLintGlobalSettings.Rule> rules = settings.getRulesByKey();
+    Map<String, SonarLintGlobalSettings.Rule> rules = state.getRulesByKey();
     assertThat(rules).containsKey(RULE);
     assertThat(rules).containsKey(RULE1);
     assertThat(rules.get(RULE).isActive).isTrue();
@@ -76,27 +71,27 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
   }
 
   @Test
-  public void testLoadStateNewFormat() throws Exception {
+  public void testLoadStateNewFormat() {
     SonarLintGlobalSettings state = new SonarLintGlobalSettings();
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettingsStore settingsStore = new SonarLintGlobalSettingsStore();
     SonarLintGlobalSettings.Rule activeRuleWithParam = new SonarLintGlobalSettings.Rule(RULE, true);
     activeRuleWithParam.setParams(Collections.singletonMap("paramKey", "paramValue"));
     SonarLintGlobalSettings.Rule inactiveRule = new SonarLintGlobalSettings.Rule(RULE1, false);
     state.setRules(Arrays.asList(activeRuleWithParam, inactiveRule));
 
-    settings.loadState(state);
+    settingsStore.loadState(state);
 
-    assertThat(settings.excludedRules()).containsExactly(RULE1);
-    assertThat(settings.isRuleExplicitlyDisabled(RULE1)).isTrue();
-    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isFalse();
-    assertThat(settings.isRuleExplicitlyDisabled("unknown")).isFalse();
+    assertThat(settingsStore.getState().excludedRules()).containsExactly(RULE1);
+    assertThat(settingsStore.getState().isRuleExplicitlyDisabled(RULE1)).isTrue();
+    assertThat(settingsStore.getState().isRuleExplicitlyDisabled(RULE)).isFalse();
+    assertThat(settingsStore.getState().isRuleExplicitlyDisabled("unknown")).isFalse();
 
-    assertThat(settings.getRulesByKey()).containsOnly(
+    assertThat(settingsStore.getState().getRulesByKey()).containsOnly(
             entry(RULE, activeRuleWithParam),
             entry(RULE1, inactiveRule)
     );
-    assertThat(settings.getRulesByKey().get(RULE).getParams()).containsExactly(entry("paramKey", "paramValue"));
-    assertThat(settings.getRulesByKey().get(RULE).isActive()).isTrue();
+    assertThat(settingsStore.getState().getRulesByKey().get(RULE).getParams()).containsExactly(entry("paramKey", "paramValue"));
+    assertThat(settingsStore.getState().getRulesByKey().get(RULE).isActive()).isTrue();
   }
 
     @Test

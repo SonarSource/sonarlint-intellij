@@ -46,11 +46,12 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.IssuesViewTabOpener;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintCheckinHandler extends CheckinHandler {
   private static final Logger LOGGER = Logger.getInstance(SonarLintCheckinHandler.class);
@@ -212,8 +213,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     @Override
     public void restoreState() {
       PropertiesComponent props = PropertiesComponent.getInstance(project);
-      SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-      checkBox.setSelected(props.getBoolean(ACTIVATED_OPTION_NAME, globalSettings.isAutoTrigger()));
+      checkBox.setSelected(props.getBoolean(ACTIVATED_OPTION_NAME, getGlobalSettings().isAutoTrigger()));
     }
   }
 }

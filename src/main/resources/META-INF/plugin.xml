@@ -144,7 +144,7 @@
         <externalAnnotator language="Scala" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="Swift" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
-        <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettings"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
         <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
@@ -156,7 +156,7 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotifications"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettings"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.SonarLintProjectNotifications"/>
         <projectService serviceInterface="org.sonarlint.intellij.ui.SonarLintConsole"
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
@@ -177,7 +177,7 @@
 
         <moduleService serviceImplementation="org.sonarlint.intellij.analysis.VirtualFileTestPredicate"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
-        <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettings"/>
+        <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
         
         <postStartupActivity implementation="org.sonarlint.intellij.BootstrapStartupActivity"/>
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>

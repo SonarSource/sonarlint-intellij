@@ -27,10 +27,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -63,7 +61,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
     manager = new SonarLintEngineManager(engineFactory);
-    SonarLintUtils.getService(SonarLintGlobalSettings.class).setSonarQubeServers(Collections.emptyList());
+    getGlobalSettings().setSonarQubeServers(Collections.emptyList());
   }
 
   @Test
@@ -89,8 +87,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_fail_not_updated() throws InvalidBindingException {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
+    getGlobalSettings().setSonarQubeServers(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager();
 
 
@@ -101,11 +98,10 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_pass_checks() throws InvalidBindingException {
-    SonarLintGlobalSettings globalSettings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
     when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
-    globalSettings.setSonarQubeServers(Collections.singletonList(createServer("server1")));
+    getGlobalSettings().setSonarQubeServers(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager(engineFactory);
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);

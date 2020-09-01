@@ -19,43 +19,9 @@
  */
 package org.sonarlint.intellij.config.module;
 
-import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.components.StoragePathMacros;
-import com.intellij.openapi.module.Module;
-import com.intellij.util.xmlb.XmlSerializerUtil;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-@State(name = "SonarLintModuleSettings", storages = @Storage(StoragePathMacros.MODULE_FILE))
-public final class SonarLintModuleSettings implements PersistentStateComponent<SonarLintModuleSettings> {
+public final class SonarLintModuleSettings {
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
-
-  public SonarLintModuleSettings() {
-
-  }
-
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
-  public SonarLintModuleSettings(SonarLintModuleSettings toCopy) {
-    XmlSerializerUtil.copyBean(toCopy, this);
-  }
-
-  @Nullable
-  @Override
-  public SonarLintModuleSettings getState() {
-    return this;
-  }
-
-  @Override
-  public void loadState(@NotNull SonarLintModuleSettings state) {
-    XmlSerializerUtil.copyBean(state, this);
-  }
 
   public String getSqPathPrefix() {
     return sqPathPrefix;

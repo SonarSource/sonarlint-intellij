@@ -29,18 +29,18 @@ import com.intellij.psi.PsiFile;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class DisableRuleIntentionAction implements IntentionAction, LowPriorityAction, Iconable {
   private final String ruleKey;
 
   DisableRuleIntentionAction(String ruleKey) {
     this.ruleKey = ruleKey;
-
   }
 
   @Nls @NotNull @Override public String getText() {
@@ -56,8 +56,7 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
   }
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
-    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    settings.disableRule(ruleKey);
+    getGlobalSettings().disableRule(ruleKey);
     SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
@@ -67,13 +66,11 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
   }
 
   private static boolean isProjectConnected(Project project) {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(project, SonarLintProjectSettings.class);
-    return projectSettings.isBindingEnabled();
+    return getSettingsFor(project).isBindingEnabled();
   }
 
   private boolean isAlreadyDisabled() {
-    SonarLintGlobalSettings settings = SonarLintUtils.getService(SonarLintGlobalSettings.class);
-    return settings.excludedRules().contains(ruleKey);
+    return getGlobalSettings().excludedRules().contains(ruleKey);
   }
 
   @Override public Icon getIcon(int flags) {

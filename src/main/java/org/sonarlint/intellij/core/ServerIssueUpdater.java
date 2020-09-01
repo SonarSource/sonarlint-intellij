@@ -58,6 +58,8 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 import org.sonarsource.sonarlint.core.client.api.exceptions.DownloadException;
 
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+
 public class ServerIssueUpdater implements Disposable {
 
   private static final Logger LOGGER = Logger.getInstance(ServerIssueUpdater.class);
@@ -84,7 +86,7 @@ public class ServerIssueUpdater implements Disposable {
   }
 
   public void fetchAndMatchServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule, ProgressIndicator indicator, boolean waitForCompletion) {
-    SonarLintProjectSettings projectSettings = SonarLintUtils.getService(myProject, SonarLintProjectSettings.class);
+    SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     if (!projectSettings.isBindingEnabled()) {
       // not in connected mode
       return;
