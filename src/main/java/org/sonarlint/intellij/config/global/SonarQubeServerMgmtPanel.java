@@ -265,6 +265,10 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
     return serverList.getSelectedValue();
   }
 
+  List<SonarQubeServer> getServers() {
+    return servers;
+  }
+
   private void onServerSelect() {
     switchTo(getSelectedServer());
   }
