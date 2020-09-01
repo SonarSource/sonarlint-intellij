@@ -29,9 +29,9 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import icons.SonarLintIcons;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.Icon;
@@ -100,7 +100,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       return;
     }
 
-    List<VirtualFile> fileList = Arrays.stream(files)
+    Set<VirtualFile> fileSet = Arrays.stream(files)
       .flatMap(f -> {
         if (f.isDirectory()) {
           CollectFilesVisitor visitor = new CollectFilesVisitor();
@@ -110,8 +110,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
           return Stream.of(f);
         }
       })
-      .distinct()
-      .collect(Collectors.toList());
+      .collect(Collectors.toSet());
 
     SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     AnalysisCallback callback;
@@ -119,10 +118,10 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(e.getPlace())) {
       callback = new ShowCurrentFileCallable(project);
     } else {
-      callback = new ShowAnalysisResultsCallable(project, fileList, whatAnalyzed(fileList.size()));
+      callback = new ShowAnalysisResultsCallable(project, fileSet, whatAnalyzed(fileSet.size()));
     }
 
-    submitter.submitFiles(fileList, TriggerType.ACTION, callback, executeBackground(e));
+    submitter.submitFiles(fileSet, TriggerType.ACTION, callback, executeBackground(e));
   }
 
   private static String whatAnalyzed(int numFiles) {
@@ -134,7 +133,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
   }
 
   private static class CollectFilesVisitor extends VirtualFileVisitor {
-    private List<VirtualFile> files = new ArrayList<>();
+    private final Set<VirtualFile> files = new LinkedHashSet<>();
 
     public CollectFilesVisitor() {
       super(VirtualFileVisitor.NO_FOLLOW_SYMLINKS);

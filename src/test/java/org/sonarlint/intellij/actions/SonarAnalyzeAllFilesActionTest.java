@@ -78,7 +78,7 @@ public class SonarAnalyzeAllFilesActionTest extends AbstractSonarLintLightTests 
     Messages.setTestDialog(x -> Messages.OK);
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));
+    verify(submitter).submitFiles(eq(Collections.singleton(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));
   }
 
 }
