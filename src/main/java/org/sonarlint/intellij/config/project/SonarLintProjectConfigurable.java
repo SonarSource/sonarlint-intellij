@@ -137,6 +137,10 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       return;
     }
 
+    panel.load(getBindableServers(), getProjectSettings());
+  }
+
+  private static List<SonarQubeServer> getBindableServers() {
     List<SonarQubeServer> currentServers = null;
 
     // try get the global settings that are currently being configured in the configurable, if it is open
@@ -146,7 +150,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       if (allSettings != null) {
         final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
         if (globalConfigurable != null) {
-          currentServers = globalConfigurable.getCurrentSettings();
+          currentServers = globalConfigurable.getCurrentServers();
         }
       }
     }
@@ -155,7 +159,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     if (currentServers == null) {
       currentServers = SonarLintUtils.getService(SonarLintGlobalSettings.class).getSonarQubeServers();
     }
-    panel.load(currentServers, getProjectSettings());
+    return currentServers;
   }
 
   @Override

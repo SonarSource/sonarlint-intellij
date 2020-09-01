@@ -110,11 +110,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @CheckForNull
-  public List<SonarQubeServer> getCurrentSettings() {
+  public List<SonarQubeServer> getCurrentServers() {
     if (serversPanel != null) {
-      SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-      serversPanel.save(settings);
-      return settings.getSonarQubeServers();
+      return serversPanel.getServers();
     }
 
     return null;
