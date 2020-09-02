@@ -87,7 +87,7 @@ public final class SonarLintProjectSettings {
   }
 
   public List<String> getFileExclusions() {
-    return new ArrayList<>(fileExclusions);
+    return fileExclusions;
   }
 
   public void setFileExclusions(List<String> fileExclusions) {
