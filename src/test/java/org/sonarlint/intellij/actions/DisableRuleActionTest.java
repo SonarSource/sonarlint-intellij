@@ -105,7 +105,7 @@ public class DisableRuleActionTest extends AbstractSonarLintLightTests {
 
     action.actionPerformed(event);
 
-    assertThat(getGlobalSettings().excludedRules()).containsExactly(RULE_KEY);
+    assertThat(getGlobalSettings().isRuleExplicitlyDisabled(RULE_KEY)).isTrue();
   }
 
 }

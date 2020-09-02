@@ -63,8 +63,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     settingsStore.loadState(state);
 
     Map<String, SonarLintGlobalSettings.Rule> rules = state.getRulesByKey();
-    assertThat(rules).containsKey(RULE);
-    assertThat(rules).containsKey(RULE1);
+    assertThat(rules).containsOnlyKeys(RULE, RULE1);
     assertThat(rules.get(RULE).isActive).isTrue();
     assertThat(rules.get(RULE1).isActive).isFalse();
 
@@ -81,7 +80,6 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
     settingsStore.loadState(state);
 
-    assertThat(settingsStore.getState().excludedRules()).containsExactly(RULE1);
     assertThat(settingsStore.getState().isRuleExplicitlyDisabled(RULE1)).isTrue();
     assertThat(settingsStore.getState().isRuleExplicitlyDisabled(RULE)).isFalse();
     assertThat(settingsStore.getState().isRuleExplicitlyDisabled("unknown")).isFalse();

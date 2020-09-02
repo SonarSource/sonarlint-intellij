@@ -114,13 +114,6 @@ public final class SonarLintGlobalSettings {
     initializeRulesByKey();
   }
 
-  public Set<String> excludedRules() {
-    return rulesByKey.entrySet().stream()
-      .filter(it -> !it.getValue().isActive)
-      .map(Map.Entry::getKey)
-      .collect(Collectors.toSet());
-  }
-
   public boolean isAutoTrigger() {
     return autoTrigger;
   }
