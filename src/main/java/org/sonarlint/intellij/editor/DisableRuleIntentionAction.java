@@ -70,7 +70,7 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
   }
 
   private boolean isAlreadyDisabled() {
-    return getGlobalSettings().excludedRules().contains(ruleKey);
+    return getGlobalSettings().isRuleExplicitlyDisabled(ruleKey);
   }
 
   @Override public Icon getIcon(int flags) {
