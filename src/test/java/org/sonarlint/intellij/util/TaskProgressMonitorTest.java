@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import org.junit.Test;
 
@@ -30,13 +31,11 @@ import static org.mockito.Mockito.when;
 
 public class TaskProgressMonitorTest {
   private ProgressIndicator wrapped = mock(ProgressIndicator.class);
-  private TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, null);
+  private ProgressManager progressManager = mock(ProgressManager.class);
+  private TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, null);
 
   @Test
   public void should_wrap() {
-    monitor.finishNonCancelableSection();
-    verify(wrapped).finishNonCancelableSection();
-
     assertThat(monitor.isCanceled()).isFalse();
     verify(wrapped).isCanceled();
 
@@ -49,8 +48,9 @@ public class TaskProgressMonitorTest {
     monitor.setMessage("message");
     verify(wrapped).setText("message");
 
-    monitor.startNonCancelableSection();
-    verify(wrapped).startNonCancelableSection();
+    Runnable mockRunnable = mock(Runnable.class);
+    monitor.executeNonCancelableSection(mockRunnable);
+    verify(progressManager).executeNonCancelableSection(mockRunnable);
   }
 
   @Test

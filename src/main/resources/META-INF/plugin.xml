@@ -108,7 +108,7 @@
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
     // we need listeners registration
-    <idea-version since-build="183.2940.10"/>
+    <idea-version since-build="183.4588.3"/>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->

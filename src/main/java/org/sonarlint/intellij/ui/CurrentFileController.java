@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
@@ -93,7 +92,7 @@ public class CurrentFileController {
     });
   }
 
-  private class EditorChangeListener extends FileEditorManagerAdapter {
+  private class EditorChangeListener implements FileEditorManagerListener {
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
       update();

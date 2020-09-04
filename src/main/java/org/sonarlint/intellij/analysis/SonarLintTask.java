@@ -24,6 +24,7 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -115,11 +116,14 @@ public class SonarLintTask extends Task.Backgroundable {
       } else {
         allFailedAnalysisFiles = Collections.emptyList();
       }
-      List<Issue> issues = listener.getIssues();
-      indicator.setText("Updating SonarLint issues: " + issues.size());
 
-      IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
-      processor.process(job, indicator, issues, allFailedAnalysisFiles);
+      List<Issue> issues = listener.getIssues();
+      ProgressManager.getInstance().executeNonCancelableSection(() -> {
+        indicator.setText("Updating SonarLint issues: " + issues.size());
+
+        IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
+        processor.process(job, indicator, issues, allFailedAnalysisFiles);
+      });
     } catch (CanceledException e1) {
       SonarLintConsole console = SonarLintConsole.get(job.project());
       console.info("Analysis canceled");
@@ -183,7 +187,6 @@ public class SonarLintTask extends Task.Backgroundable {
       results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener, progressMonitor));
       checkCanceled(indicator, myProject);
     }
-    indicator.startNonCancelableSection();
     return results;
   }
 }

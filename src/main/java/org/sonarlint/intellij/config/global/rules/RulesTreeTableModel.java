@@ -77,7 +77,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     if (column == ICONS_COLUMN) {
       if (node instanceof RulesTreeNode.Rule) {
         RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
-        int gap = JBUI.isHiDPI() ? 8 : 4;
+        int gap = JBUI.isUsrHiDPI() ? 8 : 4;
         return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(rule.type()), SonarLintIcons.severity12(rule.severity()));
       }
       return null;

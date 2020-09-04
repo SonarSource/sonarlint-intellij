@@ -43,9 +43,9 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
     boolean hasFocus) {
     SimpleColoredComponent component = new SimpleColoredComponent();
     RulesTreeNode node = (RulesTreeNode) value;
-    Color background = selected ? getSelectedBackgroundColor(tree) : UIUtil.getTreeTextBackground();
+    Color background = selected ? getSelectedBackgroundColor(tree) : UIUtil.getTreeBackground();
     UIUtil.changeBackGround(component, background);
-    Color foreground = selected ? UIUtil.getTreeSelectionForeground() : getUnselectedForegroundColor(node);
+    Color foreground = selected ? UIUtil.getTreeSelectionForeground(true) : getUnselectedForegroundColor(node);
 
     String text = null;
     int style = 0;
@@ -67,11 +67,11 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
   }
 
   private static Color getUnselectedForegroundColor(RulesTreeNode node) {
-    return node.isNonDefault() ? PlatformColors.BLUE : UIUtil.getTreeTextForeground();
+    return node.isNonDefault() ? PlatformColors.BLUE : UIUtil.getTreeForeground();
   }
 
   private static Color getSelectedBackgroundColor(JTree tree) {
     boolean reallyHasFocus = ((TreeTableTree) tree).getTreeTable().hasFocus();
-    return reallyHasFocus ? UIUtil.getTreeSelectionBackground() : UIUtil.getTreeUnfocusedSelectionBackground();
+    return UIUtil.getTreeSelectionBackground(reallyHasFocus);
   }
 }

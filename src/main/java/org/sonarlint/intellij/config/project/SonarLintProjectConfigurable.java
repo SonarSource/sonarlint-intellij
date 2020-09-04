@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
-import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ex.Settings;
@@ -32,6 +31,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.concurrency.Promise;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -139,29 +139,24 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       return;
     }
 
-    panel.load(getBindableServers(), getSettingsFor(project));
+    getServersFromApplicationConfigurable()
+      .onProcessed(sonarQubeServers ->
+        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getSonarQubeServers(), getSettingsFor(project))
+      );
   }
 
-  private static List<SonarQubeServer> getBindableServers() {
-    List<SonarQubeServer> currentServers = null;
-
-    // try get the global settings that are currently being configured in the configurable, if it is open
-    DataContext ctx = DataManager.getInstance().getDataContextFromFocus().getResult();
-    if (ctx != null) {
-      Settings allSettings = Settings.KEY.getData(ctx);
-      if (allSettings != null) {
-        final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
-        if (globalConfigurable != null) {
-          currentServers = globalConfigurable.getCurrentServers();
+  private static Promise<List<SonarQubeServer>> getServersFromApplicationConfigurable() {
+    return DataManager.getInstance().getDataContextFromFocusAsync()
+      .then(dataContext -> {
+        Settings allSettings = Settings.KEY.getData(dataContext);
+        if (allSettings != null) {
+          final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+          if (globalConfigurable != null) {
+            return globalConfigurable.getCurrentServers();
+          }
         }
-      }
-    }
-
-    // get saved settings if needed
-    if (currentServers == null) {
-      currentServers = getGlobalSettings().getSonarQubeServers();
-    }
-    return currentServers;
+        return null;
+      });
   }
 
   @Override
