@@ -22,7 +22,6 @@ package org.sonarlint.intellij.ui;
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.ide.PowerSaveMode;
-import com.intellij.openapi.fileEditor.FileEditorManagerAdapter;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
@@ -91,7 +90,7 @@ public class AutoTriggerStatusPanel {
     });
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, s -> switchCards());
     busConnection.subscribe(PowerSaveMode.TOPIC, this::switchCards);
-    busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerAdapter() {
+    busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
       @Override
       public void selectionChanged(@NotNull FileEditorManagerEvent event) {
         switchCards();

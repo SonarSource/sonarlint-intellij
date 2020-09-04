@@ -365,8 +365,8 @@ public class SonarLintRulePanel {
       }
 
       // in presentation mode we don't want huge icons
-      if (JBUI.isHiDPI()) {
-        icon = IconUtil.scale(icon, 0.5);
+      if (JBUI.isUsrHiDPI()) {
+        icon = IconUtil.scale(icon, null, 0.5f);
       }
       Dictionary<URL, Image> cache = (Dictionary<URL, Image>) getDocument().getProperty("imageCache");
       if (cache == null) {

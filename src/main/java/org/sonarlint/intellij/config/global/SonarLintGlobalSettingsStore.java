@@ -19,22 +19,20 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.components.ExportableApplicationComponent;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import org.jetbrains.annotations.NonNls;
-import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.util.SonarLintBundle;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@State(name = "SonarLintGlobalSettings", storages = {@Storage("sonarlint.xml")})
-public final class SonarLintGlobalSettingsStore implements PersistentStateComponent<SonarLintGlobalSettings>, ExportableApplicationComponent {
+@State(name = "SonarLintGlobalSettings",
+  storages = {@Storage("sonarlint.xml")},
+  // used for settings export
+  presentableName = SonarLintGlobalSettingsPresentableName.class
+)
+public final class SonarLintGlobalSettingsStore implements PersistentStateComponent<SonarLintGlobalSettings> {
 
   private SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
 
@@ -52,24 +50,5 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
 
   private void initializeRulesByKey() {
     settings.rulesByKey = new HashMap<>(settings.rules.stream().collect(Collectors.toMap(SonarLintGlobalSettings.Rule::getKey, Function.identity())));
-  }
-
-  @Override
-  @NotNull
-  public File[] getExportFiles() {
-    return new File[] {PathManager.getOptionsFile("sonarlint")};
-  }
-
-  @Override
-  @NotNull
-  public String getPresentableName() {
-    return SonarLintBundle.message("sonarlint.settings");
-  }
-
-  @Override
-  @NotNull
-  @NonNls
-  public String getComponentName() {
-    return "SonarLintGlobalSettings";
   }
 }

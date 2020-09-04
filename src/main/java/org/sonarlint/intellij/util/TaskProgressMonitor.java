@@ -20,16 +20,23 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 
 public class TaskProgressMonitor extends ProgressMonitor {
   private final ProgressIndicator indicator;
+  private final ProgressManager progressManager;
   private final Project project;
 
   public TaskProgressMonitor(ProgressIndicator indicator, @Nullable Project project) {
+    this(indicator, ProgressManager.getInstance(), project);
+  }
+
+  public TaskProgressMonitor(ProgressIndicator indicator, ProgressManager progressManager, @Nullable Project project) {
     this.indicator = indicator;
+    this.progressManager = progressManager;
     this.project = project;
   }
 
@@ -69,18 +76,10 @@ public class TaskProgressMonitor extends ProgressMonitor {
   }
 
   /**
-   * Marks the section of the task as not cancelable
+   * Execute a section of code that can't be canceled
    */
   @Override
-  public void startNonCancelableSection() {
-    indicator.startNonCancelableSection();
-  }
-
-  /**
-   * It's possible to cancel the task from now on
-   */
-  @Override
-  public void finishNonCancelableSection() {
-    indicator.finishNonCancelableSection();
+  public void executeNonCancelableSection(Runnable nonCancelable) {
+    progressManager.executeNonCancelableSection(nonCancelable);
   }
 }

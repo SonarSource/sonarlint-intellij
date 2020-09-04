@@ -54,7 +54,7 @@ public class IssueNode extends AbstractNode {
     if (type != null) {
       String typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
       renderer.setIconToolTip(severity + " " + typeStr);
-      int gap = JBUI.isHiDPI() ? 8 : 4;
+      int gap = JBUI.isUsrHiDPI() ? 8 : 4;
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
     } else {
       renderer.setIconToolTip(severity);
