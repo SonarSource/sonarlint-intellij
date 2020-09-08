@@ -144,7 +144,7 @@ public class ProjectServerNotifications {
     }
 
     private String createMessage(SonarQubeNotification notification) {
-      return notification.message() + ".<br/><a href=\"" + notification.link() + "\">Check it here</a>.";
+      return notification.message() + ".&nbsp;<a href=\"" + notification.link() + "\">Check it here</a>.";
     }
   }
 }
