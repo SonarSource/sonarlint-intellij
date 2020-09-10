@@ -76,9 +76,13 @@ public class IssueManager {
     project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
       @Override
       public void projectClosing(@NotNull Project project) {
-        if (project == myProject) {
-          // Flush issues before project is closed, because we need to resolve module paths to compute the key
-          liveIssueCache.flushAll();
+        try {
+          if (project == myProject) {
+            // Flush issues before project is closed, because we need to resolve module paths to compute the key
+            liveIssueCache.flushAll();
+          }
+        } catch (Exception e) {
+          LOGGER.error("Cannot flush issues", e);
         }
       }
     });
