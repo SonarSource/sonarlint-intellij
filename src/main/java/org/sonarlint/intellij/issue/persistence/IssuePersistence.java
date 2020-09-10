@@ -72,6 +72,7 @@ public class IssuePersistence {
   }
 
   public synchronized void save(String key, Collection<? extends Trackable> issues) throws IOException {
+    FileUtils.mkdirs(storeBasePath);
     store.write(key, transform(issues));
   }
 
