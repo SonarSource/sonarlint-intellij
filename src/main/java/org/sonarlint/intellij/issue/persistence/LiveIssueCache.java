@@ -66,12 +66,14 @@ public class LiveIssueCache {
 
       if (eldest.getKey().isValid()) {
         String key = createKey(eldest.getKey());
-        try {
-          LOGGER.debug("Persisting issues for " + key);
-          IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
-          store.save(key, eldest.getValue());
-        } catch (IOException e) {
-          throw new IllegalStateException(String.format("Error persisting issues for %s", key), e);
+        if (key != null) {
+          try {
+            LOGGER.debug("Persisting issues for " + key);
+            IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
+            store.save(key, eldest.getValue());
+          } catch (IOException e) {
+            throw new IllegalStateException(String.format("Error persisting issues for %s", key), e);
+          }
         }
       }
       return true;
@@ -99,11 +101,13 @@ public class LiveIssueCache {
     cache.forEach((virtualFile, trackableIssues) -> {
       if (virtualFile.isValid()) {
         String key = createKey(virtualFile);
-        try {
-          IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
-          store.save(key, trackableIssues);
-        } catch (IOException e) {
-          throw new IllegalStateException("Failed to flush cache", e);
+        if (key != null) {
+          try {
+            IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
+            store.save(key, trackableIssues);
+          } catch (IOException e) {
+            throw new IllegalStateException("Failed to flush cache", e);
+          }
         }
       }
     });
