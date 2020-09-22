@@ -97,6 +97,7 @@ import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -194,17 +195,15 @@ public class RuleConfigurationPanel implements ConfigurationPanel<SonarLintGloba
 
   private void updateModel() {
     TreePath[] selectionPaths = table.getTree().getSelectionPaths();
-    StandaloneSonarLintEngine engine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
-    Map<String, String> languagesNameByKey = engine.getAllLanguagesNameByKey();
-    Map<String, List<RulesTreeNode.Rule>> rulesByLanguage = allRulesStateByKey.values().stream()
+    Map<Language, List<RulesTreeNode.Rule>> rulesByLanguage = allRulesStateByKey.values().stream()
       .filter(filterModel::filter)
-      .collect(Collectors.groupingBy(RulesTreeNode.Rule::languageKey));
+      .collect(Collectors.groupingBy(RulesTreeNode.Rule::language));
 
     RulesTreeNode rootNode = (RulesTreeNode) model.getRoot();
     rootNode.removeAllChildren();
 
-    for (Map.Entry<String, List<RulesTreeNode.Rule>> e : rulesByLanguage.entrySet()) {
-      RulesTreeNode.Language languageNode = getOrCreateLanguageNode(languagesNameByKey.get(e.getKey()));
+    for (Map.Entry<Language, List<RulesTreeNode.Rule>> e : rulesByLanguage.entrySet()) {
+      RulesTreeNode.Language languageNode = getOrCreateLanguageNode(e.getKey().getLabel());
       languageNode.removeAllChildren();
       for (RulesTreeNode.Rule r : e.getValue()) {
         languageNode.add(r);

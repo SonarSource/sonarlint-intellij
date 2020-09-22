@@ -323,7 +323,7 @@ public class SonarQubeServerMgmtPanel implements Disposable, ConfigurationPanel<
       case NEED_UPDATE:
         builder.append("needs update");
         break;
-      case UNKNOW:
+      case UNKNOWN:
       default:
         builder.append("unknown");
         break;

@@ -135,8 +135,8 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return details.getType();
     }
 
-    public String languageKey() {
-      return details.getLanguageKey();
+    public org.sonarsource.sonarlint.core.client.api.common.Language language() {
+      return details.getLanguage();
     }
 
     @Override

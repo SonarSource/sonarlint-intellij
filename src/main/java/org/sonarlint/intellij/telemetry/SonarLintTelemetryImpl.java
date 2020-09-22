@@ -113,7 +113,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
   }
 
   @Override
-  public void analysisDoneOnSingleFile(@Nullable String language, int time) {
+  public void analysisDoneOnSingleLanguage(@Nullable String language, int time) {
     if (enabled()) {
       telemetry.analysisDoneOnSingleLanguage(language, time);
     }
