@@ -26,6 +26,7 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
@@ -38,6 +39,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.function.Predicate;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JLabel;
@@ -45,7 +47,6 @@ import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
-import org.sonarlint.intellij.analysis.VirtualFileTestPredicate;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -131,7 +132,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private boolean isExcludedInServer(Module m, VirtualFile f) {
-    VirtualFileTestPredicate testPredicate = SonarLintUtils.getService(m, VirtualFileTestPredicate.class);
+    Predicate<VirtualFile> testPredicate = file -> TestSourcesFilter.isTestSources(file, m.getProject());
     try {
       Collection<VirtualFile> afterExclusion = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade().getExcluded(m, Collections.singleton(f), testPredicate);
       return !afterExclusion.isEmpty();
