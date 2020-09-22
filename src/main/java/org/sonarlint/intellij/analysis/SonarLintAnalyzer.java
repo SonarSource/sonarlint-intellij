@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -41,6 +42,7 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -89,7 +91,7 @@ public class SonarLintAnalyzer {
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
       SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
-        telemetry.analysisDoneOnSingleFile(result.languagePerFile().values().iterator().next(), (int) (System.currentTimeMillis() - start));
+        telemetry.analysisDoneOnSingleLanguage(Optional.ofNullable(result.languagePerFile().values().iterator().next()).map(Language::getLanguageKey).orElse(null), (int) (System.currentTimeMillis() - start));
       } else {
         telemetry.analysisDoneOnMultipleFiles();
       }
