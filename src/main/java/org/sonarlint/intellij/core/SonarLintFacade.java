@@ -50,7 +50,7 @@ public abstract class SonarLintFacade {
     IssueListener issueListener, ProgressMonitor progressMonitor);
 
   @CheckForNull
-  public abstract RuleDetails ruleDetails(String ruleKey);
+  public abstract RuleDetails getActiveRuleDetails(String ruleKey);
 
   public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener,
     Map<String, String> additionalProps, ProgressMonitor progressMonitor) {
@@ -67,11 +67,11 @@ public abstract class SonarLintFacade {
   @CheckForNull
   public abstract String getDescription(String ruleKey);
 
-  public abstract Collection<PluginDetails> getLoadedAnalyzers();
+  public abstract Collection<PluginDetails> getPluginDetails();
 
   @CheckForNull
   public String getRuleName(String ruleKey) {
-    RuleDetails details = ruleDetails(ruleKey);
+    RuleDetails details = getActiveRuleDetails(ruleKey);
     if (details == null) {
       return null;
     }

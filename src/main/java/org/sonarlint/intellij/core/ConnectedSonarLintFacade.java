@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -48,9 +47,11 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine engine;
+  private final String connectionId;
 
-  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, Project project) {
+  ConnectedSonarLintFacade(String connectionId, ConnectedSonarLintEngine engine, Project project) {
     super(project);
+    this.connectionId = connectionId;
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
@@ -69,7 +70,9 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
 
-    return engine.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    final AnalysisResults analysisResults = engine.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, engine.getPluginDetails(), project);
+    return analysisResults;
   }
 
   @Override
@@ -86,18 +89,18 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public Collection<PluginDetails> getLoadedAnalyzers() {
+  public Collection<PluginDetails> getPluginDetails() {
     return engine.getPluginDetails();
   }
 
   @Override
-  public ConnectedRuleDetails ruleDetails(String ruleKey) {
+  public ConnectedRuleDetails getActiveRuleDetails(String ruleKey) {
     return engine.getActiveRuleDetails(ruleKey, getSettingsFor(project).getProjectKey());
   }
 
   @Override
   public String getDescription(String ruleKey) {
-    ConnectedRuleDetails details = ruleDetails(ruleKey);
+    ConnectedRuleDetails details = getActiveRuleDetails(ruleKey);
     if (details == null) {
       return null;
     }

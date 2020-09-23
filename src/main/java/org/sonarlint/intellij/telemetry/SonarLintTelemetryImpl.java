@@ -28,6 +28,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleListener {
@@ -113,7 +114,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
   }
 
   @Override
-  public void analysisDoneOnSingleLanguage(@Nullable String language, int time) {
+  public void analysisDoneOnSingleLanguage(@Nullable Language language, int time) {
     if (enabled()) {
       telemetry.analysisDoneOnSingleLanguage(language, time);
     }

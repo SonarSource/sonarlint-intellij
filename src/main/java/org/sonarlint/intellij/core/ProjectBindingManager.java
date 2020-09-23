@@ -68,14 +68,14 @@ public class ProjectBindingManager {
     SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (projectSettings.isBindingEnabled()) {
-      String serverId = projectSettings.getServerId();
+      String connectionId = projectSettings.getServerId();
       String projectKey = projectSettings.getProjectKey();
-      checkBindingStatus(notifications, serverId, projectKey);
+      checkBindingStatus(notifications, connectionId, projectKey);
       if (logDetails) {
-        console.info(String.format("Using configuration of '%s' in server '%s'", projectKey, serverId));
+        console.info(String.format("Using connection '%s' for project '%s'", connectionId, projectKey));
       }
-      ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, serverId, projectKey);
-      return new ConnectedSonarLintFacade(engine, myProject);
+      ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, connectionId, projectKey);
+      return new ConnectedSonarLintFacade(connectionId, engine, myProject);
     }
 
     return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());

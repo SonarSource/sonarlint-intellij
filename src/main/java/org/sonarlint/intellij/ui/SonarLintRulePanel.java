@@ -99,7 +99,7 @@ public class SonarLintRulePanel {
     } else {
       try {
         SonarLintFacade facade = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade();
-        RuleDetails rule = facade.ruleDetails(issue.getRuleKey());
+        RuleDetails rule = facade.getActiveRuleDetails(issue.getRuleKey());
         String description = facade.getDescription(issue.getRuleKey());
         if (rule == null || description == null) {
           nothingToDisplay(true);
