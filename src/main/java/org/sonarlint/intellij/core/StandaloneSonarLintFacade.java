@@ -84,7 +84,9 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
 
     SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
-    return sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    final AnalysisResults analysisResults = sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, sonarlint.getPluginDetails(), project);
+    return analysisResults;
   }
 
   @Override
@@ -93,18 +95,18 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public Collection<PluginDetails> getLoadedAnalyzers() {
+  public Collection<PluginDetails> getPluginDetails() {
     return sonarlint.getPluginDetails();
   }
 
   @Override
-  public StandaloneRuleDetails ruleDetails(String ruleKey) {
+  public StandaloneRuleDetails getActiveRuleDetails(String ruleKey) {
     return sonarlint.getRuleDetails(ruleKey).orElse(null);
   }
 
   @Override
   public String getDescription(String ruleKey) {
-    StandaloneRuleDetails details = ruleDetails(ruleKey);
+    StandaloneRuleDetails details = getActiveRuleDetails(ruleKey);
     if (details == null) {
       return null;
     }

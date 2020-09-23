@@ -59,7 +59,7 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
   public void should_get_rule_details() {
     StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
-    assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
+    assertThat(facade.getActiveRuleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test

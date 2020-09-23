@@ -59,7 +59,7 @@ public class SonarLintProjectAnalyzersPanel {
   public void reload() {
     ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
     try {
-      Collection<PluginDetails> loadedAnalyzers = bindingManager.getFacade().getLoadedAnalyzers();
+      Collection<PluginDetails> loadedAnalyzers = bindingManager.getFacade().getPluginDetails();
       tableModel.set(loadedAnalyzers);
     } catch (Exception e) {
       LOGGER.error(e);

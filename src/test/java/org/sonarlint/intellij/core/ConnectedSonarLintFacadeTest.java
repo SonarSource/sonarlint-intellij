@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -47,7 +46,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   @Before
   public void before() {
     getProjectSettings().setProjectKey("projectKey");
-    facade = new ConnectedSonarLintFacade(engine, getProject());
+    facade = new ConnectedSonarLintFacade("mySqServer", engine, getProject());
   }
 
   @Test
@@ -63,7 +62,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   public void should_get_rule_details() {
     ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
     when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
-    assertThat(facade.ruleDetails("rule1")).isEqualTo(ruleDetails);
+    assertThat(facade.getActiveRuleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test

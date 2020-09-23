@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.telemetry;
 
 import javax.annotation.Nullable;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 public interface SonarLintTelemetry {
   void optOut(boolean optOut);
@@ -30,7 +31,7 @@ public interface SonarLintTelemetry {
 
   void analysisDoneOnMultipleFiles();
 
-  void analysisDoneOnSingleLanguage(@Nullable String language, int time);
+  void analysisDoneOnSingleLanguage(@Nullable Language language, int time);
 
   void init();
 }
