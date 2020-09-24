@@ -33,7 +33,7 @@ import javax.swing.JPanel;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or left it blank to let SonarLint look for the node executable using your PATH environment variable.";
+  private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave this field blank to let SonarLint look for it using your PATH environment variable.";
   private JPanel rootPane;
   private JCheckBox autoTrigger;
   private TextFieldWithBrowseButton nodeJsPath;
