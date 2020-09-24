@@ -54,6 +54,10 @@ public class AnalysisRequirementNotifications {
     // NOP
   }
 
+  public static void resetCachedMessages() {
+    alreadyNotified.clear();
+  }
+
   public static void notifyOnceForSkippedPlugins(AnalysisResults analysisResults, Collection<PluginDetails> allPlugins, Project project) {
     Set<Language> attemptedLanguages = new HashSet<>(analysisResults.languagePerFile().values());
     attemptedLanguages.forEach(l -> {

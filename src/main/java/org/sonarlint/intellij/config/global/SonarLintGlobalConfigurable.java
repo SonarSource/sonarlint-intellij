@@ -26,6 +26,7 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
+import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
@@ -81,6 +82,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     final boolean exclusionsModified = exclusions.isModified(globalSettings);
     final boolean rulesModified = rules.isModified(globalSettings);
+    final String previousNodeJsPath = globalSettings.getNodejsPath();
 
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
@@ -91,7 +93,12 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     GlobalConfigurationListener globalConfigurationListener = ApplicationManager.getApplication()
       .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings);
-    SonarLintUtils.getService(SonarLintEngineManager.class).reloadServers();
+    SonarLintUtils.getService(SonarLintEngineManager.class).stopAllDeletedConnectedEngines();
+
+    if (!Objects.equals(previousNodeJsPath, globalSettings.getNodejsPath())) {
+      // Node.js path is passed at engine startup, so we have to restart them all to ensure the new value is taken into account
+      SonarLintUtils.getService(SonarLintEngineManager.class).stopAllEngines();
+    }
 
     if (exclusionsModified) {
       analyzeOpenFiles(false);
@@ -143,7 +150,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     }
     about = null;
     rules = null;
-    SonarLintUtils.getService(SonarLintEngineManager.class).reloadServers();
+    SonarLintUtils.getService(SonarLintEngineManager.class).stopAllDeletedConnectedEngines();
   }
 
   private JPanel getPanel() {
