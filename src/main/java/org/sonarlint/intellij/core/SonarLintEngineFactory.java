@@ -34,10 +34,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.CheckForNull;
-import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.SonarLintPlugin;
-import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
@@ -68,16 +65,16 @@ public class SonarLintEngineFactory  {
     Language.XML
   };
 
-
   ConnectedSonarLintEngine createEngine(String serverId) {
     GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
+    final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
     ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
       .addEnabledLanguages(STANDALONE_LANGUAGES)
       .addEnabledLanguages(CONNECTED_ADDITIONAL_LANGUAGES)
       .setExtraProperties(prepareExtraProps())
-      .setNodeJsPath(getNodeJsPathFromConfig())
+      .setNodeJs(nodeJsManager.getNodeJsPath(), nodeJsManager.getNodeJsVersion())
       .setWorkDir(getWorkDir())
       .setServerId(serverId)
       .build();
@@ -98,6 +95,7 @@ public class SonarLintEngineFactory  {
       URL[] plugins = loadPlugins();
 
       GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
+      final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
       StandaloneGlobalConfiguration globalConfiguration = StandaloneGlobalConfiguration.builder()
         .setLogOutput(globalLogOutput)
         .setSonarLintUserHome(getSonarLintHome())
@@ -105,7 +103,7 @@ public class SonarLintEngineFactory  {
         .addPlugins(plugins)
         .addEnabledLanguages(STANDALONE_LANGUAGES)
         .setExtraProperties(prepareExtraProps())
-        .setNodeJsPath(getNodeJsPathFromConfig())
+        .setNodeJs(nodeJsManager.getNodeJsPath(), nodeJsManager.getNodeJsVersion())
         .build();
 
       return new StandaloneSonarLintEngineImpl(globalConfiguration);
@@ -116,18 +114,6 @@ public class SonarLintEngineFactory  {
     }
   }
 
-  @CheckForNull
-  private Path getNodeJsPathFromConfig() {
-    final String nodejsPathStr = Settings.getGlobalSettings().getNodejsPath();
-    if (StringUtils.isNotBlank(nodejsPathStr)) {
-      try {
-        return Paths.get(nodejsPathStr);
-      } catch (Exception e) {
-        throw new IllegalStateException("Invalid Node.js path", e);
-      }
-    }
-    return null;
-  }
 
   private URL[] loadPlugins() throws IOException, URISyntaxException {
     URL pluginsDir = this.getClass().getClassLoader().getResource("plugins");
