@@ -91,7 +91,7 @@ public class SonarLintEngineManager implements Disposable {
   /**
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
-  public synchronized void reloadServers() {
+  public synchronized void stopAllDeletedConnectedEngines() {
     Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = engines.entrySet().iterator();
     Set<String> configuredStorageIds = getServerNames();
     while (it.hasNext()) {
@@ -100,6 +100,18 @@ public class SonarLintEngineManager implements Disposable {
         stopInThread(e.getValue());
         it.remove();
       }
+    }
+  }
+
+  public synchronized void stopAllEngines() {
+    AnalysisRequirementNotifications.resetCachedMessages();
+    for (ConnectedSonarLintEngine e : engines.values()) {
+      e.stop(false);
+    }
+    engines.clear();
+    if (standalone != null) {
+      standalone.stop();
+      standalone = null;
     }
   }
 
@@ -143,14 +155,7 @@ public class SonarLintEngineManager implements Disposable {
 
   @Override
   public void dispose() {
-    for (ConnectedSonarLintEngine e : engines.values()) {
-      e.stop(false);
-    }
-    engines.clear();
-    if (standalone != null) {
-      standalone.stop();
-      standalone = null;
-    }
+    stopAllEngines();
     Loggers.setTarget(null);
   }
 }

@@ -39,14 +39,19 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
   @Test
   public void testRoundTrip() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    assertThat(settings.isAutoTrigger()).isTrue();
+    assertThat(settings.getNodejsPath()).isBlank();
+
     SonarQubeServer server = SonarQubeServer.newBuilder().setName("name").build();
 
     settings.setSonarQubeServers(Collections.singletonList(server));
     assertThat(settings.getSonarQubeServers()).containsOnly(server);
 
-    settings.setAutoTrigger(true);
-    assertThat(settings.isAutoTrigger()).isTrue();
+    settings.setAutoTrigger(false);
+    assertThat(settings.isAutoTrigger()).isFalse();
 
+    settings.setNodejsPath("path/to/node");
+    assertThat(settings.getNodejsPath()).isEqualTo("path/to/node");
   }
 
   @Test

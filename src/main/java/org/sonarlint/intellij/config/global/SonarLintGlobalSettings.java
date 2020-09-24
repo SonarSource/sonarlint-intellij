@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 public final class SonarLintGlobalSettings {
 
   private boolean autoTrigger = true;
+  private String nodejsPath;
   private List<SonarQubeServer> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
@@ -120,6 +121,14 @@ public final class SonarLintGlobalSettings {
 
   public void setAutoTrigger(boolean autoTrigger) {
     this.autoTrigger = autoTrigger;
+  }
+
+  public String getNodejsPath() {
+    return nodejsPath;
+  }
+
+  public void setNodejsPath(String nodejsPath) {
+    this.nodejsPath = nodejsPath;
   }
 
   public List<SonarQubeServer> getSonarQubeServers() {
