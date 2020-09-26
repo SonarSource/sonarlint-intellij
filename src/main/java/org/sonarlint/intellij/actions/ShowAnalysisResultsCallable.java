@@ -27,9 +27,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -53,7 +54,10 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
     IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
     Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
       .filter(f -> !failedVirtualFiles.contains(f))
-      .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
+      .collect(Collectors.toMap(Function.identity(), issueManager::getForFile,
+        (liveIssuesA, liveIssuesB) -> Stream.of(liveIssuesA, liveIssuesB)
+          .flatMap(Collection::stream)
+          .collect(Collectors.toList())));
     IssueStore issueStore = SonarLintUtils.getService(project, IssueStore.class);
     issueStore.set(map, whatAnalyzed);
     showAnalysisResultsTab();
