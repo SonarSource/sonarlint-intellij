@@ -79,7 +79,7 @@ dependencies {
   testImplementation 'org.assertj:assertj-core:3.16.1'
   testImplementation 'org.mockito:mockito-core:2.19.0'
   sqplugins (
-    'org.sonarsource.java:sonar-java-plugin:6.6.0.22815@jar',
+    'org.sonarsource.java:sonar-java-plugin:6.8.0.23379@jar',
     'org.sonarsource.javascript:sonar-javascript-plugin:6.5.0.13383@jar',
     'org.sonarsource.php:sonar-php-plugin:3.9.0.6331@jar',
     'org.sonarsource.python:sonar-python-plugin:2.13.0.7236@jar',
