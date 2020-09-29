@@ -31,6 +31,7 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
@@ -65,8 +66,12 @@ import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
+
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarLintUtils {
 
@@ -310,5 +315,15 @@ public class SonarLintUtils {
 
   private static ApplicationInfo getAppInfo() {
     return ApplicationInfo.getInstance();
+  }
+
+  public static void analyzeOpenFiles(boolean unboundOnly) {
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+
+    for (Project project : openProjects) {
+      if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
+        SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+      }
+    }
   }
 }
