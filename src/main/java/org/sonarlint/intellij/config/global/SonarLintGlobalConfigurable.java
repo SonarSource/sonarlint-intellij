@@ -21,8 +21,6 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
@@ -35,12 +33,10 @@ import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
-import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.SonarLintUtils.analyzeOpenFiles;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private static final int SETTINGS_TAB_INDEX = 0;
@@ -81,6 +77,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     final boolean exclusionsModified = exclusions.isModified(globalSettings);
     final boolean rulesModified = rules.isModified(globalSettings);
+    final boolean globalSettingsModified = globalPanel.isModified(globalSettings);
 
     serversPanel.save(globalSettings);
     globalPanel.save(globalSettings);
@@ -97,20 +94,10 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     // Force reload of the node version and rules in case the nodejs path has been changed
     reset();
 
-    if (exclusionsModified) {
+    if (exclusionsModified || globalSettingsModified) {
       analyzeOpenFiles(false);
     } else if (rulesModified) {
       analyzeOpenFiles(true);
-    }
-  }
-
-  private static void analyzeOpenFiles(boolean unboundOnly) {
-    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-
-    for (Project project : openProjects) {
-      if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
-        SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-      }
     }
   }
 
