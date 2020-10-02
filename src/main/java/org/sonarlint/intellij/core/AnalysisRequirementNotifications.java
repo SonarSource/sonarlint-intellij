@@ -32,6 +32,7 @@ import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -43,6 +44,8 @@ import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.SkipReason;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+
+import static java.util.stream.Collectors.toSet;
 
 public class AnalysisRequirementNotifications {
 
@@ -59,7 +62,10 @@ public class AnalysisRequirementNotifications {
   }
 
   public static void notifyOnceForSkippedPlugins(AnalysisResults analysisResults, Collection<PluginDetails> allPlugins, Project project) {
-    Set<Language> attemptedLanguages = new HashSet<>(analysisResults.languagePerFile().values());
+    Set<Language> attemptedLanguages = analysisResults.languagePerFile().values()
+      .stream()
+      .filter(Objects::nonNull)
+      .collect(toSet());
     attemptedLanguages.forEach(l -> {
       final Optional<PluginDetails> correspondingPlugin = allPlugins.stream().filter(p -> p.key().equals(l.getPluginKey())).findFirst();
       correspondingPlugin.flatMap(PluginDetails::skipReason).ifPresent(skipReason -> {
