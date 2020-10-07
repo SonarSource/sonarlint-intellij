@@ -36,10 +36,10 @@ import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.commons.codec.digest.DigestUtils.md5;
 
 public class LiveIssue implements Trackable {
   private static final AtomicLong UID_GEN = new AtomicLong();
-  private static final MessageDigest MD5_DIGEST = DigestUtils.getMd5Digest();
 
   private final long uid;
   private final RangeMarker range;
@@ -90,7 +90,7 @@ public class LiveIssue implements Trackable {
   }
 
   private static int checksum(String content) {
-    return Hex.encodeHexString(MD5_DIGEST.digest(content.replaceAll("[\\s]", "").getBytes(UTF_8))).hashCode();
+    return Hex.encodeHexString(md5(content.replaceAll("[\\s]", "").getBytes(UTF_8))).hashCode();
   }
 
   public boolean isValid() {
