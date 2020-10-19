@@ -47,7 +47,7 @@ public class SonarLintEngineManager implements Disposable {
   }
 
   private void startSonarLintWebServer() {
-    new SonarLintHttpServer().start();
+    SonarLintHttpServer.INSTANCE.start();
   }
 
   /**
