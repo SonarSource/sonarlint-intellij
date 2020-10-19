@@ -32,6 +32,10 @@ import com.intellij.psi.PsiManager
 import com.intellij.util.ui.UIUtil
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.EventLoopGroup
+import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.channel.*
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInitializer
@@ -40,6 +44,17 @@ import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.handler.codec.http.DefaultFullHttpResponse
+import io.netty.handler.codec.http.FullHttpResponse
+import io.netty.handler.codec.http.HttpMethod
+import io.netty.handler.codec.http.HttpRequest
+import io.netty.handler.codec.http.HttpRequestDecoder
+import io.netty.handler.codec.http.HttpResponseEncoder
+import io.netty.handler.codec.http.HttpResponseStatus
+import io.netty.handler.codec.http.HttpUtil
+import io.netty.handler.codec.http.HttpVersion
+import io.netty.handler.codec.http.QueryStringDecoder
+import io.netty.handler.codec.http.multipart.InterfaceHttpData
 import io.netty.handler.codec.http.*
 import io.netty.handler.codec.http.DefaultFullHttpResponse
 import io.netty.handler.codec.http.FullHttpResponse
@@ -60,6 +75,9 @@ import org.sonarlint.intellij.config.Settings
 import io.netty.util.CharsetUtil
 import org.sonarlint.intellij.exception.StartSonarLintServerException
 import org.sonarlint.intellij.util.GlobalLogOutput
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.SonarLintUtils
 import java.net.BindException
 import java.util.*
@@ -144,8 +162,25 @@ class HttpSnoopServerHandler : SimpleChannelInboundHandler<Any?>() {
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
         ctx.flush()
     }
+
     private fun String.resolvePath(): String {
         return this.substringBefore('?')
+    }
+
+    private fun processRequest(request: HttpRequest): String {
+        if (request.uri().resolvePath() == ENVIRONMENT_ENDPOINT && request.method() == HttpMethod.GET) {
+open class RequestProcessor {
+    fun processRequest(request: HttpRequest): String {
+        if (request.uri() == ENVIRONMENT_ENDPOINT && request.method() == HttpMethod.GET) {
+            return SonarLintUtils.getIdeVersionForTelemetry() ?: UNKNOWN_INTELLIJ_FLAVOR
+        }
+        if (request.uri().resolvePath() == OPEN_HOTSPOT && request.method() == HttpMethod.GET) {
+            GlobalScope.launch {
+                processOpenInIdeRequest(request)
+            }
+            return OK
+        }
+        return INVALID_REQUEST
     }
 
     private fun processRequest(request: HttpRequest): String {
