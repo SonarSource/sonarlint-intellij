@@ -52,6 +52,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.Socket;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
@@ -68,6 +69,7 @@ import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.exception.PortAvailabilityCheckException;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
@@ -304,6 +306,22 @@ public class SonarLintUtils {
       return ((ApplicationInfoImpl) getAppInfo()).getApplicationSvgIconFile();
     } catch (NullPointerException e) {
       return null;
+    }
+  }
+
+  public static boolean isPortAvailable(int portNumber) {
+    try {
+      LOG.debug("{}: Checking if port open by trying to connect as a client", portNumber);
+      Socket sock = new Socket("localhost", portNumber);
+      sock.close();
+      LOG.debug("{}: Someone responding on port - seems not open", portNumber);
+      return false;
+    } catch (Exception e) {
+      if (e.getMessage().contains("refused")) {
+        return true;
+      }
+      LOG.error("Troubles checking if port is open", e);
+      throw new PortAvailabilityCheckException("Troubles checking if port is open: " + portNumber, e);
     }
   }
 
