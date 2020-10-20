@@ -6,7 +6,7 @@ plugins {
   id "org.jetbrains.intellij" version "0.4.21"
   id "org.sonarqube" version "2.7.1"
   id "java"
-  id "com.github.hierynomus.license" version "0.14.0"
+  id "com.github.hierynomus.license" version "0.15.0"
   id "com.jfrog.artifactory" version "4.11.0"
   id 'com.google.protobuf' version "0.8.10"
 }
@@ -127,6 +127,7 @@ sonarqube {
 license {
   mapping {
     java = 'SLASHSTAR_STYLE'
+    kt = 'SLASHSTAR_STYLE'
   }
   strictCheck true
 }
