@@ -19,6 +19,7 @@
  */
 package icons;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.util.IconLoader;
 
 import java.util.HashMap;
@@ -44,6 +45,7 @@ public class SonarLintIcons {
   public static final Icon WARN = IconLoader.getIcon("/images/warn.png");
   public static final Icon SCM = IconLoader.getIcon("/images/toolWindowChanges.png");
   public static final Icon PROJECT = IconLoader.getIcon("/images/ideaProject.png");
+  public static final Icon OPEN_HOTSPOT = AllIcons.Actions.Download;
 
   private static final Map<String, Icon> SEVERITY_ICONS = new HashMap<>();
   private static final Map<String, Icon> SEVERITY_ICONS_12 = new HashMap<>();

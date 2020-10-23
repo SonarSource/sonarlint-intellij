@@ -32,7 +32,6 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 public class IssueMatcher {
   private final Project project;
@@ -54,9 +53,14 @@ public class IssueMatcher {
    * Tries to match an SQ issue to an IntelliJ file.
    * <b>Can only be called with getLive access</b>.
    */
-  public RangeMarker match(PsiFile file, IssueLocation issueLocation) throws NoMatchException {
+  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
+    PsiFile psiFile = findFile(file);
+    return match(psiFile, textRange);
+  }
+
+  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
     ApplicationManager.getApplication().assertReadAccessAllowed();
-    Preconditions.checkArgument(issueLocation.getStartLine() != null);
+    Preconditions.checkArgument(textRange.getStartLine() != null);
 
     PsiDocumentManager docManager = PsiDocumentManager.getInstance(project);
     Document doc = docManager.getDocument(file);
@@ -64,13 +68,13 @@ public class IssueMatcher {
       throw new NoMatchException("No document found for file: " + file.getName());
     }
 
-    TextRange range = getIssueTextRange(file, doc, issueLocation);
+    TextRange range = getIssueTextRange(file, doc, textRange);
     return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
-  private static TextRange getIssueTextRange(PsiFile file, Document doc, IssueLocation issueLocation) throws NoMatchException {
-    int ijStartLine = issueLocation.getStartLine() - 1;
-    int ijEndLine = issueLocation.getEndLine() - 1;
+  private static TextRange getIssueTextRange(PsiFile file, Document doc, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
+    int ijStartLine = textRange.getStartLine() - 1;
+    int ijEndLine = textRange.getEndLine() - 1;
     int lineCount = doc.getLineCount();
 
     if (ijStartLine >= doc.getLineCount()) {
@@ -80,8 +84,8 @@ public class IssueMatcher {
       throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
     }
 
-    int rangeEnd = findEndLineOffset(doc, ijEndLine, issueLocation.getEndLineOffset());
-    int rangeStart = findStartLineOffset(file, doc, ijStartLine, issueLocation.getStartLineOffset(), rangeEnd);
+    int rangeEnd = findEndLineOffset(doc, ijEndLine, textRange.getEndLineOffset());
+    int rangeStart = findStartLineOffset(file, doc, ijStartLine, textRange.getStartLineOffset(), rangeEnd);
 
     if (rangeEnd < rangeStart) {
       throw new NoMatchException("Invalid text range  (start: " + rangeStart + ", end: " + rangeEnd);

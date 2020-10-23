@@ -44,6 +44,7 @@ import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 
 public class SonarLintHighlighting {
   private static final int HIGHLIGHT_GROUP_ID = 1001;
@@ -111,6 +112,14 @@ public class SonarLintHighlighting {
     highlights.add(createHighlight(secondaryLocation.location(), secondaryLocation.message()));
     updateHighlights(highlights, secondaryLocation.location().getDocument());
     displaySecondaryLocationNumbers(parentFlow, secondaryLocation);
+  }
+
+  public void highlight(LocalHotspot hotspot) {
+    RangeMarker hotspotRange = hotspot.primaryLocation.range;
+    if (hotspotRange != null) {
+      HighlightInfo highlight = createHighlight(hotspotRange, hotspot.getMessage());
+      updateHighlights(Collections.singletonList(highlight), hotspotRange.getDocument());
+    }
   }
 
   private void updateHighlights(List<HighlightInfo> highlights, @Nullable Document document) {

@@ -44,6 +44,7 @@ import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
@@ -179,8 +180,9 @@ public class IssueProcessor {
 
   private LiveIssue transformIssue(Issue issue, ClientInputFile inputFile) throws IssueMatcher.NoMatchException {
     PsiFile psiFile = matcher.findFile(inputFile.getClientObject());
-    if (issue.getStartLine() != null) {
-      RangeMarker rangeMarker = matcher.match(psiFile, issue);
+    TextRange textRange = issue.getTextRange();
+    if (textRange != null) {
+      RangeMarker rangeMarker = matcher.match(psiFile, textRange);
       Optional<IssueContext> context = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
       return new LiveIssue(issue, psiFile, rangeMarker, context.orElse(null));
     } else {
@@ -195,8 +197,11 @@ public class IssueProcessor {
       List<LiveIssue.SecondaryLocation> matchedLocations = new LinkedList<>();
       for (IssueLocation loc : f.locations()) {
         try {
-          RangeMarker range = matcher.match(psiFile, loc);
-          matchedLocations.add(new LiveIssue.SecondaryLocation(range, loc.getMessage()));
+          TextRange textRange = loc.getTextRange();
+          if (textRange != null) {
+            RangeMarker range = matcher.match(psiFile, textRange);
+            matchedLocations.add(new LiveIssue.SecondaryLocation(range, loc.getMessage()));
+          }
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
           SonarLintConsole.get(myProject)
