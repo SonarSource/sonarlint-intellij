@@ -17,11 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.exception;
+package org.sonarlint.intellij.exception
 
-public class PortAvailabilityCheckException extends RuntimeException {
-
-  public PortAvailabilityCheckException(String msg, Throwable cause) {
-    super(msg, cause);
-  }
-}
+class StartSonarLintServerException(s: String) : RuntimeException()
