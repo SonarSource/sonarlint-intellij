@@ -24,6 +24,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
@@ -37,6 +38,7 @@ import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.ui.fixtures.SonarLintToolWindowFixture;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -46,6 +48,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   private SonarLintProjectSettings projectSettings;
   private SonarLintModuleSettings moduleSettings;
   private Disposable disposable;
+  private SonarLintToolWindowFixture toolWindowFixture;
 
   @Override
   protected final String getTestDataPath() {
@@ -68,6 +71,9 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     projectSettings.setFileExclusions(Collections.emptyList());
     moduleSettings.setIdePathPrefix("");
     moduleSettings.setSqPathPrefix("");
+    if (toolWindowFixture != null) {
+      toolWindowFixture.cleanUp();
+    }
     if (!getProject().isDisposed()) {
       SonarLintStatus.get(getProject()).stopRun();
     }
@@ -104,5 +110,10 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   public PsiFile createTestPsiFile(String fileName, Language language, String text) {
     return PsiFileFactory.getInstance(getProject()).createFileFromText(fileName, language, text, true, true);
+  }
+
+  public void loadToolWindow() {
+    toolWindowFixture = SonarLintToolWindowFixture.createFor(getProject());
+    replaceProjectService(ToolWindowManager.class, toolWindowFixture.getManager());
   }
 }

@@ -89,6 +89,8 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
 
   private void addConsole() {
     ConsoleView consoleView = SonarLintUtils.getService(project, SonarLintConsole.class).getConsoleView();
-    super.setContent(consoleView.getComponent());
+    if (consoleView != null) {
+      super.setContent(consoleView.getComponent());
+    }
   }
 }

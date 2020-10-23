@@ -24,6 +24,8 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
+import com.intellij.ui.content.ContentManager;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -34,39 +36,53 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TOOL_WINDOW_ID = "SonarLint";
   public static final String TAB_LOGS = "Log";
+  public static final String TAB_HOTSPOTS = "Security Hotspots";
   public static final String TAB_CURRENT_FILE = "Current file";
   public static final String TAB_ANALYSIS_RESULTS = "Report";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
-    addIssuesTab(project, toolWindow);
-    addAnalysisResultsTab(project, toolWindow);
+    ContentManager contentManager = toolWindow.getContentManager();
+    addIssuesTab(project, contentManager);
+    addAnalysisResultsTab(project, contentManager);
+    addHotspotsTab(project, contentManager);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
   }
 
-  private static void addIssuesTab(Project project, ToolWindow toolWindow) {
+  private static void addIssuesTab(Project project, @NotNull ContentManager contentManager) {
     IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
     CurrentFileController scope = new CurrentFileController(project, issueManager);
     SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project, scope);
-    Content issuesContent = toolWindow.getContentManager().getFactory()
+    Content issuesContent = contentManager.getFactory()
       .createContent(
         issuesPanel,
         TAB_CURRENT_FILE,
         false);
-    toolWindow.getContentManager().addDataProvider(issuesPanel);
-    toolWindow.getContentManager().addContent(issuesContent);
+    issuesContent.setCloseable(false);
+    contentManager.addDataProvider(issuesPanel);
+    contentManager.addContent(issuesContent);
   }
 
-  private static void addAnalysisResultsTab(Project project, ToolWindow toolWindow) {
+  private static void addAnalysisResultsTab(Project project, @NotNull ContentManager contentManager) {
     SonarLintAnalysisResultsPanel resultsPanel = new SonarLintAnalysisResultsPanel(project);
-    Content analysisResultsContent = toolWindow.getContentManager().getFactory()
+    Content analysisResultsContent = contentManager.getFactory()
       .createContent(
         resultsPanel,
         TAB_ANALYSIS_RESULTS,
         false);
-    toolWindow.getContentManager().addDataProvider(resultsPanel);
-    toolWindow.getContentManager().addContent(analysisResultsContent);
+    analysisResultsContent.setCloseable(false);
+    contentManager.addDataProvider(resultsPanel);
+    contentManager.addContent(analysisResultsContent);
+  }
+
+  private static void addHotspotsTab(Project project, @NotNull ContentManager contentManager) {
+    Content hotspotsContent = contentManager.getFactory()
+      .createContent(
+        new SonarLintHotspotsPanel(project),
+        TAB_HOTSPOTS,
+        false);
+    contentManager.addContent(hotspotsContent);
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
@@ -75,6 +91,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         new SonarLintLogPanel(toolWindow, project),
         TAB_LOGS,
         false);
+    logContent.setCloseable(false);
     toolWindow.getContentManager().addContent(logContent);
   }
 }

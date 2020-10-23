@@ -118,7 +118,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
-        <toolWindow id="SonarLint" anchor="bottom" icon="/images/ico-sonarlint-13.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory"/>
+        <toolWindow id="SonarLint" anchor="bottom" icon="/images/ico-sonarlint-13.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
         <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarLint" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
         <projectConfigurable parentId="sonarlint" displayName="Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
         <moduleConfigurable id="SonarLint" displayName="SonarLint" instance="org.sonarlint.intellij.config.module.SonarLintModuleConfigurable"/>
@@ -176,7 +176,6 @@
         <projectService serviceImplementation="org.sonarlint.intellij.core.ServerIssueUpdater"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.UpdateChecker"/>
 
-        <moduleService serviceImplementation="org.sonarlint.intellij.analysis.VirtualFileTestPredicate"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
         
@@ -253,6 +252,13 @@
                 text="Configure SonarLint"
                 description="Configure SonarLint"
                 icon="SonarLintIcons.TOOLS">
+        </action>
+
+        <action id="SonarLint.OpenHotspot"
+                class="org.sonarlint.intellij.actions.OpenHotspotAction"
+                text="Open hotspot"
+                description="Open a hotspot from the connected project"
+                icon="SonarLintIcons.OPEN_HOTSPOT">
         </action>
 
     </actions>
