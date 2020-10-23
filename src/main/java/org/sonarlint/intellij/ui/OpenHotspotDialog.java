@@ -19,48 +19,39 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.execution.ui.ConsoleView;
+import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.ui.components.JBTextField;
+import org.jetbrains.annotations.Nullable;
 
-public class SonarLintConsoleTestImpl implements SonarLintConsole {
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import java.awt.BorderLayout;
 
-  private String lastMessage = "";
+public class OpenHotspotDialog extends DialogWrapper {
 
-  public String getLastMessage() {
-    return lastMessage;
+  private JBTextField textField;
+
+  public OpenHotspotDialog() {
+    super(false);
+    init();
+    setTitle("Open Hotspot");
   }
 
+  @Nullable
   @Override
-  public void debug(String msg) {
-    lastMessage = msg;
+  protected JComponent createCenterPanel() {
+    JPanel dialogPanel = new JPanel(new BorderLayout());
+
+    textField = new JBTextField();
+    textField.setToolTipText("Hotspot ID");
+    textField.getEmptyText().setText("Hotspot ID");
+    dialogPanel.add(textField, BorderLayout.CENTER);
+
+    return dialogPanel;
   }
 
-  @Override
-  public boolean debugEnabled() {
-    return true;
+  public String getHotspotId() {
+    return textField.getText();
   }
 
-  @Override
-  public void info(String msg) {
-    lastMessage = msg;
-  }
-
-  @Override
-  public void error(String msg) {
-    lastMessage = msg;
-  }
-
-  @Override
-  public void error(String msg, Throwable t) {
-    lastMessage = msg;
-  }
-
-  @Override
-  public void clear() {
-    lastMessage = "";
-  }
-
-  @Override
-  public ConsoleView getConsoleView() {
-    return null;
-  }
 }

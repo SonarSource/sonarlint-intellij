@@ -1,0 +1,86 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015-2020 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
+package org.sonarlint.intellij.ui;
+
+import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.JBColor;
+import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.ui.nodes.HotspotNode;
+import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot.Rule.Probability;
+
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTree;
+import javax.swing.SwingConstants;
+import javax.swing.border.Border;
+import javax.swing.tree.TreeCellRenderer;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.util.EnumMap;
+import java.util.Map;
+
+class HotspotCellRenderer implements TreeCellRenderer {
+
+  private static final int HORIZONTAL_PADDING = 15;
+
+  private static final Map<Probability, JBColor> colorsByProbability = new EnumMap<>(Probability.class);
+
+  private static final int RED = 0xd4333f;
+  private static final int ORANGE = 0xed7d20;
+  private static final int YELLOW = 0xeabe06;
+  private static final int WHITE = 0xffffff;
+
+  static {
+    colorsByProbability.put(Probability.HIGH, new JBColor(RED, RED));
+    colorsByProbability.put(Probability.MEDIUM, new JBColor(ORANGE, ORANGE));
+    colorsByProbability.put(Probability.LOW, new JBColor(YELLOW, YELLOW));
+  }
+
+  @Override
+  public Component getTreeCellRendererComponent(JTree jTree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+    LocalHotspot hotspot = ((HotspotNode) value).getHotspot();
+    FlowLayout layout = new FlowLayout(FlowLayout.LEADING);
+    JPanel panel = new JPanel(layout);
+
+    JLabel probabilityLabel = new JLabel(hotspot.getProbability().name());
+    Border border = BorderFactory.createEmptyBorder(0, HORIZONTAL_PADDING, 0, HORIZONTAL_PADDING);
+    probabilityLabel.setBorder(border);
+    probabilityLabel.setVerticalTextPosition(SwingConstants.TOP);
+    probabilityLabel.setBackground(colorsByProbability.get(hotspot.getProbability()));
+    probabilityLabel.setForeground(new JBColor(WHITE, WHITE));
+    probabilityLabel.setOpaque(true);
+    probabilityLabel.setFont(probabilityLabel.getFont().deriveFont(probabilityLabel.getFont().getStyle() | Font.BOLD));
+    panel.add(probabilityLabel);
+
+    panel.add(new JLabel(hotspot.getMessage()));
+
+    VirtualFile file = hotspot.primaryLocation.file;
+    JLabel fileNameLabel = new JLabel();
+    panel.add(fileNameLabel);
+
+    Integer lineNumber = hotspot.getLineNumber();
+    JLabel lineLabel = new JLabel(file.getName() + (lineNumber != null ? (":" + lineNumber.toString()) : ""));
+    lineLabel.setForeground(JBColor.GRAY);
+    panel.add(lineLabel);
+    return panel;
+  }
+}

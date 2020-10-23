@@ -17,50 +17,21 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui;
+package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.execution.ui.ConsoleView;
+import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 
-public class SonarLintConsoleTestImpl implements SonarLintConsole {
+import javax.swing.tree.DefaultMutableTreeNode;
 
-  private String lastMessage = "";
+public class HotspotNode extends DefaultMutableTreeNode {
+  private final LocalHotspot localHotspot;
 
-  public String getLastMessage() {
-    return lastMessage;
+  public HotspotNode(LocalHotspot localHotspot) {
+    this.localHotspot = localHotspot;
+    setUserObject(localHotspot);
   }
 
-  @Override
-  public void debug(String msg) {
-    lastMessage = msg;
-  }
-
-  @Override
-  public boolean debugEnabled() {
-    return true;
-  }
-
-  @Override
-  public void info(String msg) {
-    lastMessage = msg;
-  }
-
-  @Override
-  public void error(String msg) {
-    lastMessage = msg;
-  }
-
-  @Override
-  public void error(String msg, Throwable t) {
-    lastMessage = msg;
-  }
-
-  @Override
-  public void clear() {
-    lastMessage = "";
-  }
-
-  @Override
-  public ConsoleView getConsoleView() {
-    return null;
+  public LocalHotspot getHotspot() {
+    return localHotspot;
   }
 }

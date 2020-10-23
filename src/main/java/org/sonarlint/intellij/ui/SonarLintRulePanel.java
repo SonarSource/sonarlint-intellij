@@ -71,9 +71,9 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetail
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.ui.HtmlUtils.fixPreformattedText;
 
 public class SonarLintRulePanel {
-  private static final Pattern SPACES_BEGINNING_LINE = Pattern.compile("\n(\\p{Blank}*)");
   private final Project project;
   private final JPanel panel;
   private final HTMLEditorKit kit;
@@ -117,7 +117,7 @@ public class SonarLintRulePanel {
           builder.append(renderRuleParams((StandaloneRuleDetails) rule));
         }
         String htmlBody = builder.toString();
-        htmlBody = fixPreformatedText(htmlBody);
+        htmlBody = fixPreformattedText(htmlBody);
 
         updateEditor(htmlBody, rule.getKey());
       } catch (InvalidBindingException e) {
@@ -218,50 +218,6 @@ public class SonarLintRulePanel {
       SonarLintGlobalConfigurable configurable = new SonarLintGlobalConfigurable();
       ShowSettingsUtil.getInstance().editConfigurable(project, configurable, () -> configurable.selectRule(ruleKey));
     }
-  }
-
-  /**
-   * Unfortunately it looks like the default html editor kit doesn't support CSS related to white-space. Therefore,
-   * all text within the pre tags doesn't wrap.
-   * So we replace all 'pre' tags by 'div' tags with font monospace.
-   * In the preformated text, we replace '\n' by the 'br' tag, and all the spaces in the beginning of each line by
-   * the non-breaking space 'nbsp'.
-   */
-  private static String fixPreformatedText(String htmlBody) {
-    StringBuilder builder = new StringBuilder();
-    int current = 0;
-
-    while (true) {
-      int start = htmlBody.indexOf("<pre>", current);
-      if (start < 0) {
-        break;
-      }
-
-      int end = htmlBody.indexOf("</pre>", start);
-
-      if (end < 0) {
-        break;
-      }
-
-      builder.append(htmlBody.substring(current, start));
-      builder.append("<div style=\"font-family: monospace\">");
-      String preformated = htmlBody.substring(start + 5, end);
-
-      Matcher m = SPACES_BEGINNING_LINE.matcher(preformated);
-      int previous = 0;
-      while (m.find()) {
-        String replacement = "<br/>" + StringUtil.repeat("&nbsp;", m.group().length());
-        builder.append(preformated.substring(previous, m.start()));
-        builder.append(replacement);
-        previous = m.end();
-      }
-      builder.append(preformated.substring(previous));
-      builder.append("</div>");
-      current = end + 6;
-    }
-
-    builder.append(htmlBody.substring(current));
-    return builder.toString();
   }
 
   private String renderRuleParams(StandaloneRuleDetails ruleDetails) {
