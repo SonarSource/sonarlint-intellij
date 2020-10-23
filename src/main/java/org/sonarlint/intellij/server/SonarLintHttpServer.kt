@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.server
 
-import com.intellij.notification.NotificationGroup.Companion.balloonGroup
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelFutureListener
@@ -47,19 +46,18 @@ import io.netty.handler.codec.http.LastHttpContent
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
 import io.netty.util.CharsetUtil
+import org.sonarlint.intellij.exception.StartSonarLintServerException
 import org.sonarlint.intellij.util.SonarLintUtils
 import java.net.BindException
 import kotlin.concurrent.thread
 
-const val STARTING_PORT = 63000
+const val STARTING_PORT = 64120
 const val INVALID_REQUEST = "Invalid request."
 const val UNKNOWN_INTELLIJ_FLAVOR = "Unknown IntelliJ flavor."
 const val PORT_RANGE = 3
 const val ENVIRONMENT_ENDPOINT = "/sonarlint/environment"
 
-
-
-object SonarLintHttpServer {
+open class SonarLintHttpServer {
 
     fun start() {
         tryToStart(0)
@@ -72,7 +70,7 @@ object SonarLintHttpServer {
             if (numberOfAttempts < PORT_RANGE) {
                 tryToStart(numberOfAttempts + 1)
             } else {
-                throw RuntimeException("Couldn't start SonarLint server in port range: $STARTING_PORT - ${STARTING_PORT + PORT_RANGE}")
+                throw StartSonarLintServerException("Couldn't start SonarLint server in port range: $STARTING_PORT - ${STARTING_PORT + PORT_RANGE}")
             }
         }
     }
@@ -89,14 +87,10 @@ object SonarLintHttpServer {
                         .handler(LoggingHandler(LogLevel.INFO))
                         .childHandler(HttpSnoopServerInitializer())
                 val ch = b.bind(port).sync().channel()
-                System.err.println("Open your web browser and navigate to http://localhost:$port/")
                 ch.closeFuture().sync()
-                System.err.println("After close future")
             } catch (e: Exception) {
-                System.err.println("Actual start error: ${e.message}")
                 throw e
             } finally {
-                System.err.println("Finally after server start.")
                 bossGroup.shutdownGracefully()
                 workerGroup.shutdownGracefully()
             }
@@ -110,27 +104,28 @@ class HttpSnoopServerInitializer : ChannelInitializer<SocketChannel?>() {
         val p = ch.pipeline()
         p.addLast(HttpRequestDecoder())
         p.addLast(HttpResponseEncoder())
-        p.addLast(HttpSnoopServerHandler())
+        p.addLast(SonarHttpRequestHandler())
     }
 }
 
-class HttpSnoopServerHandler : SimpleChannelInboundHandler<Any?>() {
-    private var request: HttpRequest? = null
-
-    private val buf = StringBuilder()
-    override fun channelReadComplete(ctx: ChannelHandlerContext) {
-        ctx.flush()
-    }
-
-
-    private fun processRequest(request: HttpRequest): String {
+open class RequestProcessor {
+    fun processRequest(request: HttpRequest): String {
         if (request.uri() == ENVIRONMENT_ENDPOINT && request.method() == HttpMethod.GET) {
             return SonarLintUtils.getIdeVersionForTelemetry() ?: UNKNOWN_INTELLIJ_FLAVOR
         }
         return INVALID_REQUEST
     }
+}
 
-    override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
+class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
+    var request: HttpRequest? = null
+
+    var buf = StringBuilder()
+    override fun channelReadComplete(ctx: ChannelHandlerContext) {
+        ctx.flush()
+    }
+
+    public override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
         if (msg is HttpRequest) {
             request = msg
             val request = request as HttpRequest
@@ -138,7 +133,7 @@ class HttpSnoopServerHandler : SimpleChannelInboundHandler<Any?>() {
                 send100Continue(ctx)
             }
 
-            val response = processRequest(request)
+            val response = RequestProcessor().processRequest(request)
             buf.setLength(0)
             buf.append(response)
         }
@@ -148,10 +143,7 @@ class HttpSnoopServerHandler : SimpleChannelInboundHandler<Any?>() {
         }
     }
 
-
-
-
-    private fun writeResponse(currentObj: HttpObject, ctx: ChannelHandlerContext): Boolean {
+    fun writeResponse(currentObj: HttpObject, ctx: ChannelHandlerContext): Boolean {
         val keepAlive = HttpUtil.isKeepAlive(request)
         val response: FullHttpResponse = DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
@@ -167,16 +159,17 @@ class HttpSnoopServerHandler : SimpleChannelInboundHandler<Any?>() {
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
+        // TODO change to LOGGER
         cause.printStackTrace()
         ctx.close()
     }
 
     companion object {
-        private fun send100Continue(ctx: ChannelHandlerContext) {
+
+        fun send100Continue(ctx: ChannelHandlerContext) {
             val response: FullHttpResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE, Unpooled.EMPTY_BUFFER)
             ctx.write(response)
         }
 
-        private val SONARQUBE_EVENT_GROUP = balloonGroup("SonarLint: SonarQube Issues")
     }
 }
