@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -43,7 +44,9 @@ public class SonarLintEngineManager implements Disposable {
 
   public SonarLintEngineManager() {
     this(new SonarLintEngineFactory());
-    startSonarLintWebServer();
+    if (!ApplicationManager.getApplication().isUnitTestMode()) {
+      startSonarLintWebServer();
+    }
   }
 
   private void startSonarLintWebServer() {
