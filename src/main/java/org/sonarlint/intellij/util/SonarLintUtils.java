@@ -22,6 +22,7 @@ package org.sonarlint.intellij.util;
 import com.intellij.lang.Language;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationNamesInfo;
+import com.intellij.openapi.application.impl.ApplicationInfoImpl;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
@@ -48,6 +49,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
@@ -295,6 +297,14 @@ public class SonarLintUtils {
 
   public static boolean isPhpFile(@NotNull PsiFile file) {
     return "php".equalsIgnoreCase(file.getFileType().getName());
+  }
+
+  public static File getIdeIconForOpenInIde() {
+    try {
+      return ((ApplicationInfoImpl) getAppInfo()).getApplicationSvgIconFile();
+    } catch (NullPointerException e) {
+      return null;
+    }
   }
 
   @CheckForNull
