@@ -56,7 +56,7 @@ public class TaskProgressMonitorTest {
   @Test
   public void cancel_if_project_disposed() {
     Project project = mock(Project.class);
-    TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, project);
+    TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, project);
 
     when(project.isDisposed()).thenReturn(false);
     assertThat(monitor.isCanceled()).isFalse();
