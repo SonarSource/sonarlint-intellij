@@ -32,6 +32,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.util.ui.UIUtil
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
+import io.netty.channel.*
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.EventLoopGroup
@@ -39,6 +40,7 @@ import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
+import io.netty.handler.codec.http.*
 import io.netty.handler.codec.http.DefaultFullHttpResponse
 import io.netty.handler.codec.http.FullHttpResponse
 import io.netty.handler.codec.http.HttpMethod
@@ -57,6 +59,7 @@ import kotlinx.coroutines.launch
 import org.sonarlint.intellij.config.Settings
 import io.netty.util.CharsetUtil
 import org.sonarlint.intellij.exception.StartSonarLintServerException
+import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintUtils
 import java.net.BindException
 import java.util.*
@@ -270,16 +273,12 @@ class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
         val buf = StringBuilder()
         if (msg is HttpRequest) {
             request = msg
-            if (HttpUtil.is100ContinueExpected(request)) {
-                send100Continue(ctx)
-            }
-
+            val request = request as HttpRequest
             val response = RequestProcessor().processRequest(request)
             buf.setLength(0)
             buf.append(response)
         }
         if (msg is HttpContent && msg is LastHttpContent && !writeResponse(msg, ctx)) {
-
             ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE)
         }
     }
@@ -300,8 +299,8 @@ class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        // TODO change to LOGGER
-        cause.printStackTrace()
+        val service = SonarLintUtils.getService(GlobalLogOutput::class.java)
+        service.logError("Error during request handling in SonarLint server", cause)
         ctx.close()
     }
 
