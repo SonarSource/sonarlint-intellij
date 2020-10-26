@@ -20,23 +20,14 @@
 package org.sonarlint.intellij.server
 
 import com.intellij.ide.util.PropertiesComponent
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.DialogWrapper.DoNotAskOption
 import com.intellij.openapi.ui.Messages
-import com.intellij.psi.PsiDocumentManager
-import com.intellij.psi.PsiManager
 import com.intellij.util.ui.UIUtil
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
-import io.netty.channel.ChannelHandlerContext
-import io.netty.channel.ChannelInitializer
-import io.netty.channel.EventLoopGroup
-import io.netty.channel.SimpleChannelInboundHandler
-import io.netty.channel.*
+import io.netty.channel.ChannelFutureListener
 import io.netty.channel.ChannelHandlerContext
 import io.netty.channel.ChannelInitializer
 import io.netty.channel.EventLoopGroup
@@ -46,38 +37,25 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.DefaultFullHttpResponse
 import io.netty.handler.codec.http.FullHttpResponse
+import io.netty.handler.codec.http.HttpContent
+import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpHeaderValues
 import io.netty.handler.codec.http.HttpMethod
+import io.netty.handler.codec.http.HttpObject
 import io.netty.handler.codec.http.HttpRequest
 import io.netty.handler.codec.http.HttpRequestDecoder
 import io.netty.handler.codec.http.HttpResponseEncoder
 import io.netty.handler.codec.http.HttpResponseStatus
 import io.netty.handler.codec.http.HttpUtil
 import io.netty.handler.codec.http.HttpVersion
+import io.netty.handler.codec.http.LastHttpContent
 import io.netty.handler.codec.http.QueryStringDecoder
-import io.netty.handler.codec.http.multipart.InterfaceHttpData
-import io.netty.handler.codec.http.*
-import io.netty.handler.codec.http.DefaultFullHttpResponse
-import io.netty.handler.codec.http.FullHttpResponse
-import io.netty.handler.codec.http.HttpMethod
-import io.netty.handler.codec.http.HttpRequest
-import io.netty.handler.codec.http.HttpRequestDecoder
-import io.netty.handler.codec.http.HttpResponseEncoder
-import io.netty.handler.codec.http.HttpResponseStatus
-import io.netty.handler.codec.http.HttpUtil
-import io.netty.handler.codec.http.HttpVersion
-import io.netty.handler.codec.http.QueryStringDecoder
-import io.netty.handler.codec.http.multipart.InterfaceHttpData
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import org.sonarlint.intellij.config.Settings
 import io.netty.util.CharsetUtil
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.exception.StartSonarLintServerException
 import org.sonarlint.intellij.util.GlobalLogOutput
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.SonarLintUtils
 import java.net.BindException
 import java.util.*
@@ -92,19 +70,9 @@ const val OPEN_HOTSPOT = "/sonarlint/open-hotspot"
 const val OK = "200 OK"
 const val OPEN_IN_IDE_ERROR_TITLE = "Error during attempt to open issue in IDE"
 const val PROJECT_KEY = "projectKey"
-const val FILE_NAME = "fileName"
-const val LINE_NUMBER = "lineNumber"
-val LEGAL_REQUEST_PARAMETERS = listOf(
-        PROJECT_KEY,
-        FILE_NAME,
-        LINE_NUMBER,
-        "uuid",
-        "componentKeys",
-        "branch",
-        "pullRequest",
-        "commit")
-val MANDATORY_REQUEST_PARAMETERS = listOf("uuid")
+const val HOTSPOT_KEY = "hotspotKey"
 const val HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning"
+
 open class SonarLintHttpServer {
 
     fun start() {
@@ -133,7 +101,7 @@ open class SonarLintHttpServer {
                 b.group(bossGroup, workerGroup)
                         .channel(NioServerSocketChannel::class.java)
                         .handler(LoggingHandler(LogLevel.INFO))
-                        .childHandler(HttpSnoopServerInitializer())
+                        .childHandler(ServerInitializer())
                 val ch = b.bind(port).sync().channel()
                 ch.closeFuture().sync()
             } catch (e: Exception) {
@@ -146,54 +114,29 @@ open class SonarLintHttpServer {
     }
 }
 
-class HttpSnoopServerInitializer : ChannelInitializer<SocketChannel?>() {
+class ServerInitializer : ChannelInitializer<SocketChannel?>() {
     override fun initChannel(ch: SocketChannel?) {
         ch ?: return
         val p = ch.pipeline()
         p.addLast(HttpRequestDecoder())
         p.addLast(HttpResponseEncoder())
-        p.addLast(SonarHttpRequestHandler())
+        p.addLast(RequestHandler())
     }
 }
 
-
-class HttpSnoopServerHandler : SimpleChannelInboundHandler<Any?>() {
-
-    override fun channelReadComplete(ctx: ChannelHandlerContext) {
-        ctx.flush()
-    }
-
-    private fun String.resolvePath(): String {
-        return this.substringBefore('?')
-    }
-
-    private fun processRequest(request: HttpRequest): String {
-        if (request.uri().resolvePath() == ENVIRONMENT_ENDPOINT && request.method() == HttpMethod.GET) {
 open class RequestProcessor {
+
     fun processRequest(request: HttpRequest): String {
         if (request.uri() == ENVIRONMENT_ENDPOINT && request.method() == HttpMethod.GET) {
             return SonarLintUtils.getIdeVersionForTelemetry() ?: UNKNOWN_INTELLIJ_FLAVOR
         }
         if (request.uri().resolvePath() == OPEN_HOTSPOT && request.method() == HttpMethod.GET) {
-            GlobalScope.launch {
-                processOpenInIdeRequest(request)
-            }
+            processOpenInIdeRequest(request)
             return OK
         }
         return INVALID_REQUEST
     }
 
-    private fun processRequest(request: HttpRequest): String {
-        if (request.uri().resolvePath() == ENVIRONMENT_ENDPOINT && request.method() == HttpMethod.GET) {
-class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
-    var request: HttpRequest? = null
-
-    var buf = StringBuilder()
-    override fun channelReadComplete(ctx: ChannelHandlerContext) {
-        ctx.flush()
-    }
-
-    public override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
     private fun processOpenInIdeRequest(request: HttpRequest) {
         val parameters = QueryStringDecoder(request.uri()).parameters()
 
@@ -201,12 +144,8 @@ class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
             showModalWindow("Project is not specified in request.")
             return
         }
-        val fileName = parameters[FILE_NAME]?.getOrNull(0) ?: run {
-            showModalWindow("There is no file in request.")
-            return
-        }
-        val lineNumber = parameters[LINE_NUMBER]?.getOrNull(0) ?: run {
-            showModalWindow("There is no line number in request.")
+        val fileName = parameters[HOTSPOT_KEY]?.getOrNull(0) ?: run {
+            showModalWindow("There is no hotspot key in request.")
             return
         }
 
@@ -231,26 +170,6 @@ class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
             return
         }
 
-        val vFiles = ProjectRootManager.getInstance(project).contentRoots
-        var virtualFiles = vFiles.mapNotNull { it.findFileByRelativePath(fileName) }
-        if (virtualFiles.isEmpty()) {
-            showModalWindow("No such file.")
-            return
-        }
-
-        val virtualFile = virtualFiles[0]
-        UIUtil.invokeLaterIfNeeded {
-            val psiFile = PsiManager.getInstance(project).findFile(virtualFile)
-            if (psiFile != null && psiFile.isValid) {
-                val document = PsiDocumentManager.getInstance(project).getDocument(psiFile)
-                // Line numbers starts from 0 in IntelliJ. And they starts form 1 in SonarQube. We need to subtract 1.
-                if ((lineNumber.toInt() < 1)) {
-                    showModalWindow("Invalid line number")
-                }
-                val lineStartOffset = document!!.getLineStartOffset(lineNumber.toInt() - 1)
-                ApplicationManager.getApplication().invokeLater { OpenFileDescriptor(project, psiFile.virtualFile, lineStartOffset).navigate(true) }
-            }
-        }
     }
 
     private fun isConnectedMode(project: Project): Boolean {
@@ -258,6 +177,9 @@ class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
         return projectSettings.isBindingEnabled
     }
 
+    private fun String.resolvePath(): String {
+        return this.substringBefore('?')
+    }
 
     private fun showModalWindow(message: String) {
         UIUtil.invokeLaterIfNeeded {
@@ -293,23 +215,21 @@ class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
         }
     }
 
-    fun sanitizeParameters(bodyHttpDatas: List<InterfaceHttpData>): Boolean {
-        MANDATORY_REQUEST_PARAMETERS.forEach { mandatoryParam ->
-            if (!bodyHttpDatas.map { it.name }.contains(mandatoryParam)) return false
-        }
-        bodyHttpDatas.forEach {
-            if (!LEGAL_REQUEST_PARAMETERS.contains(it.name)) return false
-        }
-        return true
+
+}
+
+class RequestHandler : SimpleChannelInboundHandler<HttpObject?>() {
+    var request: HttpRequest? = null
+    var buf = StringBuilder()
+
+    override fun channelReadComplete(ctx: ChannelHandlerContext) {
+        ctx.flush()
     }
 
-    override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
-        val request: HttpRequest
+    override fun channelRead0(ctx: ChannelHandlerContext, msg: HttpObject?) {
         val buf = StringBuilder()
         if (msg is HttpRequest) {
-            request = msg
-            val request = request as HttpRequest
-            val response = RequestProcessor().processRequest(request)
+            val response = RequestProcessor().processRequest(msg)
             buf.setLength(0)
             buf.append(response)
         }
@@ -339,13 +259,5 @@ class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
         ctx.close()
     }
 
-    companion object {
-
-        fun send100Continue(ctx: ChannelHandlerContext) {
-            val response: FullHttpResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE, Unpooled.EMPTY_BUFFER)
-            ctx.write(response)
-        }
-
-    }
 }
 
