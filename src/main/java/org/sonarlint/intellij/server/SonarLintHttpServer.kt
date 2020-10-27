@@ -48,40 +48,40 @@ object SonarLintHttpServer {
     }
 
     fun tryToStart(numberOfAttempts: Int) {
-        try {
-            actualStart(STARTING_PORT + numberOfAttempts)
-        } catch (e: BindException) {
-            if (numberOfAttempts < PORT_RANGE) {
-                tryToStart(numberOfAttempts + 1)
-            } else {
-                throw RuntimeException("Couldn't start SonarLint server in port range: $STARTING_PORT - ${STARTING_PORT + PORT_RANGE}")
+        // don't block UI thread
+        thread {
+            try {
+                actualStart(STARTING_PORT + numberOfAttempts)
+            } catch (e: BindException) {
+                if (numberOfAttempts < PORT_RANGE) {
+                    tryToStart(numberOfAttempts + 1)
+                } else {
+                    throw RuntimeException("Couldn't start SonarLint server in port range: $STARTING_PORT - ${STARTING_PORT + PORT_RANGE}")
+                }
             }
         }
     }
 
     fun actualStart(port: Int) {
-        // don't block UI thread
-        thread {
-            val bossGroup: EventLoopGroup = NioEventLoopGroup(1)
-            val workerGroup: EventLoopGroup = NioEventLoopGroup()
-            try {
-                val b = ServerBootstrap()
-                b.group(bossGroup, workerGroup)
-                        .channel(NioServerSocketChannel::class.java)
-                        .handler(LoggingHandler(LogLevel.INFO))
-                        .childHandler(ServerInitializer())
-                val ch = b.bind(port).sync().channel()
-                System.err.println("Open your web browser and navigate to http://localhost:$port/")
-                ch.closeFuture().sync()
-                System.err.println("After close future")
-            } catch (e: Exception) {
-                System.err.println("Actual start error: ${e.message}")
-                throw e
-            } finally {
-                System.err.println("Finally after server start.")
-                bossGroup.shutdownGracefully()
-                workerGroup.shutdownGracefully()
-            }
+        val bossGroup: EventLoopGroup = NioEventLoopGroup(1)
+        val workerGroup: EventLoopGroup = NioEventLoopGroup()
+        try {
+            val b = ServerBootstrap()
+            b.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel::class.java)
+                    .handler(LoggingHandler(LogLevel.INFO))
+                    .childHandler(ServerInitializer())
+            val ch = b.bind(port).sync().channel()
+            System.err.println("Open your web browser and navigate to http://localhost:$port/")
+            ch.closeFuture().sync()
+            System.err.println("After close future")
+        } catch (e: Exception) {
+            System.err.println("Actual start error: ${e.message}")
+            throw e
+        } finally {
+            System.err.println("Finally after server start.")
+            bossGroup.shutdownGracefully()
+            workerGroup.shutdownGracefully()
         }
     }
 }
