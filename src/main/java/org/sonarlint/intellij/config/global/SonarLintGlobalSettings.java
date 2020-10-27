@@ -23,6 +23,7 @@ import com.intellij.util.xmlb.annotations.Attribute;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.intellij.util.xmlb.annotations.XCollection;
 import com.intellij.util.xmlb.annotations.XMap;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import java.util.ArrayList;
@@ -179,6 +180,12 @@ public final class SonarLintGlobalSettings {
   @Deprecated
   public void setExcludedRules(Set<String> excludedRules) {
     this.excludedRules = excludedRules;
+  }
+
+  public boolean hasConnectionTo(String serverUrl) {
+    return servers.stream()
+      .map(SonarQubeServer::getHostUrl)
+      .anyMatch(url -> url.equals(serverUrl));
   }
 
   public static class Rule {

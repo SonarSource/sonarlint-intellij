@@ -19,4 +19,4 @@
  */
 package org.sonarlint.intellij.exception
 
-class StartSonarLintServerException(s: String) : RuntimeException()
+class UnableToStartServerException(s: String) : RuntimeException(s)

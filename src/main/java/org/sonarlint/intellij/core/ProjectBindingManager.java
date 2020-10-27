@@ -27,7 +27,6 @@ import javax.annotation.Nullable;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.server.SonarLintHttpServer;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -107,6 +106,16 @@ public class ProjectBindingManager {
 
     Optional<SonarQubeServer> server = servers.stream().filter(s -> s.getName().equals(serverId)).findAny();
     return server.orElseThrow(() -> new InvalidBindingException("SonarQube server configuration does not exist for server id: " + serverId));
+  }
+
+  public boolean isBoundTo(String serverUrl, String projectKey) {
+    SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
+    String serverId = projectSettings.getServerId();
+    List<SonarQubeServer> servers = getGlobalSettings().getSonarQubeServers();
+
+    return projectSettings.isBoundWith(projectKey) && servers.stream()
+      .filter(s -> s.getName().equals(serverId))
+      .anyMatch(s -> s.getHostUrl().equals(serverUrl));
   }
 
   private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) throws InvalidBindingException {

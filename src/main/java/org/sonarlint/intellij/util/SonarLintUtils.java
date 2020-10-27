@@ -50,10 +50,7 @@ import java.awt.Image;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.Socket;
-import java.net.URI;
+import java.net.*;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -301,28 +298,10 @@ public class SonarLintUtils {
     return "php".equalsIgnoreCase(file.getFileType().getName());
   }
 
-  public static File getIdeIconForOpenInIde() {
-    try {
-      return ((ApplicationInfoImpl) getAppInfo()).getApplicationSvgIconFile();
-    } catch (NullPointerException e) {
-      return null;
-    }
-  }
-
-  public static boolean isPortAvailable(int portNumber) {
-    try {
-      LOG.debug("{}: Checking if port open by trying to connect as a client", portNumber);
-      Socket sock = new Socket("localhost", portNumber);
-      sock.close();
-      LOG.debug("{}: Someone responding on port - seems not open", portNumber);
-      return false;
-    } catch (Exception e) {
-      if (e.getMessage().contains("refused")) {
-        return true;
-      }
-      LOG.error("Troubles checking if port is open", e);
-      throw new PortAvailabilityCheckException("Troubles checking if port is open: " + portNumber, e);
-    }
+  public static String getIdeIcon() {
+//    ClassLoader classLoader = ApplicationInfo.getInstance().getClass().getClassLoader();
+//    URL rootResource = classLoader.getResource("");
+    return "/iconPath";
   }
 
   @CheckForNull

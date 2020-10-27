@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.core.ProjectServerNotifications;
 import org.sonarlint.intellij.core.UpdateChecker;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
+import org.sonarlint.intellij.server.SonarLintHttpServer;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -32,6 +33,7 @@ public class BootstrapStartupActivity implements StartupActivity {
 
   @Override
   public void runActivity(@NotNull Project project) {
+    SonarLintUtils.getService(SonarLintHttpServer.class).startOnce();
 
     SonarLintUtils.getService(project, ProjectServerNotifications.class).init();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
