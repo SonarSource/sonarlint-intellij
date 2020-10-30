@@ -66,7 +66,6 @@ import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.exception.PortAvailabilityCheckException;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
