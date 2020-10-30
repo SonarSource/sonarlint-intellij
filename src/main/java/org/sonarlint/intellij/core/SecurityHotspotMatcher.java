@@ -47,8 +47,7 @@ public class SecurityHotspotMatcher {
       }
     }
 
-    // XXX to handle
-    return null;
+    throw new IssueMatcher.NoMatchException("Cannot match file location");
   }
 
 }
