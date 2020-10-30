@@ -58,9 +58,9 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
     fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel(project);
 
     hotspotDetailsTab = new JBTabbedPane();
-    hotspotDetailsTab.addTab("What's the risk ?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
-    hotspotDetailsTab.addTab("Are you at risk ?", null, scrollable(vulnerabilityDescriptionPanel.getPanel()), "Vulnerability description");
-    hotspotDetailsTab.addTab("How can you fix it ?", null, scrollable(fixRecommendationsPanel.getPanel()), "Recommendations");
+    hotspotDetailsTab.addTab("What's the risk?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
+    hotspotDetailsTab.addTab("Are you at risk?", null, scrollable(vulnerabilityDescriptionPanel.getPanel()), "Vulnerability description");
+    hotspotDetailsTab.addTab("How can you fix it?", null, scrollable(fixRecommendationsPanel.getPanel()), "Recommendations");
     hotspotDetailsTab.addTab("Summary", null, scrollable(summaryPanel.getPanel()), "Details about the hotspot");
     hotspotDetailsTab.setVisible(false);
 
