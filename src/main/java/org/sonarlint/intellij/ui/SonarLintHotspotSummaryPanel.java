@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.util.ui.JBUI;
+import org.sonarlint.intellij.issue.hotspot.SecurityHotspotCategory;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 
 import javax.swing.BorderFactory;
@@ -76,10 +77,16 @@ public class SonarLintHotspotSummaryPanel {
   }
 
   public void setDetails(LocalHotspot hotspot) {
-    ruleKeyLabel.setText(hotspot.getRuleKey());
-    categoryLabel.setText(hotspot.getCategory());
+    categoryLabel.setText(getDisplayName(hotspot.getCategory()));
     authorLabel.setText(hotspot.getAuthor());
     statusLabel.setText(hotspot.getStatusDescription());
+    ruleKeyLabel.setText(hotspot.getRuleKey());
+  }
+
+  private static String getDisplayName(String shortName) {
+    return SecurityHotspotCategory.findByShortName(shortName)
+      .map(SecurityHotspotCategory::getLongName)
+      .orElse(shortName);
   }
 
   public JComponent getPanel() {

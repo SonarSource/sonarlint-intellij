@@ -50,7 +50,6 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
 
   public SonarLintHotspotsPanel(Project project) {
     super(false, true);
-    fillToolbar();
 
     hotspotsListPanel = new SonarLintHotspotsListPanel(project);
     summaryPanel = new SonarLintHotspotSummaryPanel();
@@ -59,9 +58,9 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
     fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel(project);
 
     hotspotDetailsTab = new JBTabbedPane();
-    hotspotDetailsTab.addTab("What's the risk ?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
-    hotspotDetailsTab.addTab("Are you at risk ?", null, scrollable(vulnerabilityDescriptionPanel.getPanel()), "Vulnerability description");
-    hotspotDetailsTab.addTab("How can you fix it ?", null, scrollable(fixRecommendationsPanel.getPanel()), "Recommendations");
+    hotspotDetailsTab.addTab("What's the risk?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
+    hotspotDetailsTab.addTab("Are you at risk?", null, scrollable(vulnerabilityDescriptionPanel.getPanel()), "Vulnerability description");
+    hotspotDetailsTab.addTab("How can you fix it?", null, scrollable(fixRecommendationsPanel.getPanel()), "Recommendations");
     hotspotDetailsTab.addTab("Summary", null, scrollable(summaryPanel.getPanel()), "Details about the hotspot");
     hotspotDetailsTab.setVisible(false);
 
@@ -75,21 +74,6 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
       ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
     return scrollableRulePanel;
-  }
-
-  private void fillToolbar() {
-    ActionToolbar mainToolbar = ActionManager.getInstance().createActionToolbar(ID, createActionGroup(), false);
-    mainToolbar.setTargetComponent(this);
-    Box toolBarBox = Box.createHorizontalBox();
-    toolBarBox.add(mainToolbar.getComponent());
-    super.setToolbar(toolBarBox);
-    mainToolbar.getComponent().setVisible(true);
-  }
-
-  private static ActionGroup createActionGroup() {
-    SimpleActionGroup actionGroup = new SimpleActionGroup();
-    actionGroup.add(ActionManager.getInstance().getAction("SonarLint.OpenHotspot"));
-    return actionGroup;
   }
 
   protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, Project project) {

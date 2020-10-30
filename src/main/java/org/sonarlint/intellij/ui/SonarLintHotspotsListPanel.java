@@ -22,16 +22,22 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
+import java.awt.BorderLayout;
+import javax.swing.JPanel;
+import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.nodes.HotspotNode;
 
 import javax.swing.JComponent;
 import javax.swing.tree.DefaultTreeModel;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintHotspotsListPanel {
+  private final JPanel mainPanel;
   private final Tree hotspotsTree;
   private final DefaultTreeModel treeModel;
   private final Project project;
@@ -43,7 +49,8 @@ public class SonarLintHotspotsListPanel {
     hotspotsTree = new Tree(treeModel);
     hotspotsTree.setCellRenderer(new HotspotCellRenderer());
     hotspotsTree.getEmptyText().setText("No hotspots to display, open one from SonarQube");
-
+    mainPanel = new JPanel(new BorderLayout());
+    mainPanel.add(ScrollPaneFactory.createScrollPane(hotspotsTree), BorderLayout.CENTER);
     EditSourceOnDoubleClickHandler.install(hotspotsTree, this::navigateToLocation);
     EditSourceOnEnterKeyHandler.install(hotspotsTree, this::navigateToLocation);
   }
@@ -51,10 +58,13 @@ public class SonarLintHotspotsListPanel {
   public void setHotspot(LocalHotspot hotspot) {
     hotspotNode = new HotspotNode(hotspot);
     treeModel.setRoot(hotspotNode);
+    hotspotsTree.addTreeSelectionListener(treeSelectionEvent ->
+      SonarLintUtils.getService(project, SonarLintHighlighting.class).highlight(hotspotNode.getHotspot())
+    );
   }
 
   public JComponent getPanel() {
-    return hotspotsTree;
+    return mainPanel;
   }
 
   private void navigateToLocation() {

@@ -19,136 +19,132 @@
  */
 package org.sonarlint.intellij.server
 
+import com.intellij.openapi.Disposable
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
-import io.netty.channel.*
+import io.netty.channel.ChannelHandlerContext
+import io.netty.channel.ChannelInitializer
+import io.netty.channel.EventLoopGroup
+import io.netty.channel.SimpleChannelInboundHandler
 import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
-import io.netty.handler.codec.http.*
+import io.netty.handler.codec.http.DefaultFullHttpResponse
+import io.netty.handler.codec.http.FullHttpResponse
+import io.netty.handler.codec.http.HttpHeaderNames
+import io.netty.handler.codec.http.HttpRequest
+import io.netty.handler.codec.http.HttpRequestDecoder
+import io.netty.handler.codec.http.HttpResponseEncoder
+import io.netty.handler.codec.http.HttpResponseStatus
+import io.netty.handler.codec.http.HttpVersion
+import io.netty.handler.codec.http.LastHttpContent
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
 import io.netty.util.CharsetUtil
-import org.sonarlint.intellij.exception.StartSonarLintServerException
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarlint.intellij.util.SonarLintUtils
+import org.sonarlint.intellij.util.SonarLintUtils.getService
 import java.net.BindException
-import kotlin.concurrent.thread
 
 const val STARTING_PORT = 64120
-const val INVALID_REQUEST = "Invalid request."
-const val UNKNOWN_INTELLIJ_FLAVOR = "Unknown IntelliJ flavor."
 const val PORT_RANGE = 3
-const val ENVIRONMENT_ENDPOINT = "/sonarlint/environment"
 
-open class SonarLintHttpServer {
+/**
+ * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
+ * @deprecated in 4.2 to silence a check in 2019.3
+ */
+class SonarLintHttpServer @java.lang.Deprecated constructor(private var nettyServer: NettyServer) : Disposable {
 
-    fun start() {
-        tryToStart(0)
-    }
+    constructor() : this(NettyServer())
 
-    fun tryToStart(numberOfAttempts: Int) {
-        try {
-            actualStart(STARTING_PORT + numberOfAttempts)
-        } catch (e: BindException) {
-            if (numberOfAttempts < PORT_RANGE) {
-                tryToStart(numberOfAttempts + 1)
-            } else {
-                throw StartSonarLintServerException("Couldn't start SonarLint server in port range: $STARTING_PORT - ${STARTING_PORT + PORT_RANGE}")
-            }
+    var isStarted = false
+
+    fun startOnce() {
+        var numberOfAttempts = 0
+        while (!isStarted && numberOfAttempts < PORT_RANGE) {
+            isStarted = nettyServer.bindTo(STARTING_PORT + numberOfAttempts)
+            numberOfAttempts++
         }
     }
 
-    fun actualStart(port: Int) {
-        // don't block UI thread
-        thread {
-            val bossGroup: EventLoopGroup = NioEventLoopGroup(1)
-            val workerGroup: EventLoopGroup = NioEventLoopGroup()
-            try {
-                val b = ServerBootstrap()
-                b.group(bossGroup, workerGroup)
-                        .channel(NioServerSocketChannel::class.java)
-                        .handler(LoggingHandler(LogLevel.INFO))
-                        .childHandler(HttpSnoopServerInitializer())
-                val ch = b.bind(port).sync().channel()
-                ch.closeFuture().sync()
-            } catch (e: Exception) {
-                throw e
-            } finally {
-                bossGroup.shutdownGracefully()
-                workerGroup.shutdownGracefully()
-            }
-        }
+    override fun dispose() {
+        nettyServer.stop()
     }
+
 }
 
-class HttpSnoopServerInitializer : ChannelInitializer<SocketChannel?>() {
+open class NettyServer {
+    private lateinit var bossGroup: EventLoopGroup
+    private lateinit var workerGroup: EventLoopGroup
+
+    open fun bindTo(port: Int): Boolean {
+        bossGroup = NioEventLoopGroup(1)
+        workerGroup = NioEventLoopGroup()
+        val b = ServerBootstrap()
+        b.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel::class.java)
+                .handler(LoggingHandler(LogLevel.INFO))
+                .childHandler(ServerInitializer())
+        try {
+            b.bind(port).sync().channel()
+        } catch (e: BindException) {
+            return false
+        }
+        return true
+    }
+
+    fun stop() {
+        bossGroup.shutdownGracefully()
+        workerGroup.shutdownGracefully()
+    }
+
+}
+
+class ServerInitializer : ChannelInitializer<SocketChannel?>() {
+
     override fun initChannel(ch: SocketChannel?) {
         ch ?: return
-        val p = ch.pipeline()
-        p.addLast(HttpRequestDecoder())
-        p.addLast(HttpResponseEncoder())
-        p.addLast(SonarHttpRequestHandler())
+        ch.pipeline().addLast(HttpRequestDecoder(), HttpResponseEncoder(), ServerHandler())
     }
+
 }
 
-open class RequestProcessor {
-    fun processRequest(request: HttpRequest): String {
-        if (request.uri() == ENVIRONMENT_ENDPOINT && request.method() == HttpMethod.GET) {
-            return SonarLintUtils.getIdeVersionForTelemetry() ?: UNKNOWN_INTELLIJ_FLAVOR
-        }
-        return INVALID_REQUEST
-    }
-}
+class ServerHandler : SimpleChannelInboundHandler<Any?>() {
 
-class SonarHttpRequestHandler : SimpleChannelInboundHandler<Any?>() {
-    var request: HttpRequest? = null
+    private var response: Response? = null
 
-    var buf = StringBuilder()
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
         ctx.flush()
     }
 
-    public override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
+    override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
         if (msg is HttpRequest) {
-            request = msg
-            val request = request as HttpRequest
-            val response = RequestProcessor().processRequest(request)
-            buf.setLength(0)
-            buf.append(response)
+            response = RequestProcessor().processRequest(Request(msg.uri(), msg.method()))
         }
-        if (msg is HttpContent && msg is LastHttpContent && !writeResponse(msg, ctx)) {
-            ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE)
+        if (msg is LastHttpContent) {
+            ctx.writeAndFlush(createResponse(response))
         }
     }
 
-    fun writeResponse(currentObj: HttpObject, ctx: ChannelHandlerContext): Boolean {
-        val keepAlive = HttpUtil.isKeepAlive(request)
+    private fun createResponse(res: Response?): FullHttpResponse {
         val response: FullHttpResponse = DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
-                if (currentObj.decoderResult().isSuccess) HttpResponseStatus.OK else HttpResponseStatus.BAD_REQUEST,
-                Unpooled.copiedBuffer(buf.toString(), CharsetUtil.UTF_8))
+                when (res) {
+                    is BadRequest -> HttpResponseStatus.BAD_REQUEST
+                    else -> HttpResponseStatus.OK
+                },
+                Unpooled.copiedBuffer(when (res) {
+                    is Success -> res.body ?: ""
+                    is BadRequest -> res.message
+                    else -> ""
+                }, CharsetUtil.UTF_8))
         response.headers()[HttpHeaderNames.CONTENT_TYPE] = "text/plain; charset=UTF-8"
-        if (keepAlive) {
-            response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
-            response.headers()[HttpHeaderNames.CONNECTION] = HttpHeaderValues.KEEP_ALIVE
-        }
-        ctx.write(response)
-        return keepAlive
+        response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
+        return response
     }
 
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
-        val service = SonarLintUtils.getService(GlobalLogOutput::class.java)
-        service.logError("Error during request handling in SonarLint server", cause)
+        getService(GlobalLogOutput::class.java).logError("Error processing request", cause)
         ctx.close()
     }
 
-    companion object {
-
-        fun send100Continue(ctx: ChannelHandlerContext) {
-            val response: FullHttpResponse = DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE, Unpooled.EMPTY_BUFFER)
-            ctx.write(response)
-        }
-
-    }
 }

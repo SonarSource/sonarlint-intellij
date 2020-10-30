@@ -155,6 +155,7 @@
                             serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
         <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotifications"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
@@ -252,13 +253,6 @@
                 text="Configure SonarLint"
                 description="Configure SonarLint"
                 icon="SonarLintIcons.TOOLS">
-        </action>
-
-        <action id="SonarLint.OpenHotspot"
-                class="org.sonarlint.intellij.actions.OpenHotspotAction"
-                text="Open hotspot"
-                description="Open a hotspot from the connected project"
-                icon="SonarLintIcons.OPEN_HOTSPOT">
         </action>
 
     </actions>

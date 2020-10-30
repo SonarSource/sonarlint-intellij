@@ -29,7 +29,6 @@ import java.util.stream.Collectors;
 import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.server.SonarLintHttpServer;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -43,11 +42,6 @@ public class SonarLintEngineManager implements Disposable {
 
   public SonarLintEngineManager() {
     this(new SonarLintEngineFactory());
-    startSonarLintWebServer();
-  }
-
-  private void startSonarLintWebServer() {
-    new SonarLintHttpServer().start();
   }
 
   /**
