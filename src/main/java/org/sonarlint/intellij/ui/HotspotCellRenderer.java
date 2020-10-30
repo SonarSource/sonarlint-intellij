@@ -49,6 +49,8 @@ class HotspotCellRenderer implements TreeCellRenderer {
   private static final int YELLOW = 0xeabe06;
   private static final int WHITE = 0xffffff;
 
+  private final JBColor whiteForeground = new JBColor(WHITE, WHITE);
+
   static {
     colorsByProbability.put(Probability.HIGH, new JBColor(RED, RED));
     colorsByProbability.put(Probability.MEDIUM, new JBColor(ORANGE, ORANGE));
@@ -66,12 +68,14 @@ class HotspotCellRenderer implements TreeCellRenderer {
     probabilityLabel.setBorder(border);
     probabilityLabel.setVerticalTextPosition(SwingConstants.TOP);
     probabilityLabel.setBackground(colorsByProbability.get(hotspot.getProbability()));
-    probabilityLabel.setForeground(new JBColor(WHITE, WHITE));
+    probabilityLabel.setForeground(whiteForeground);
     probabilityLabel.setOpaque(true);
     probabilityLabel.setFont(probabilityLabel.getFont().deriveFont(probabilityLabel.getFont().getStyle() | Font.BOLD));
     panel.add(probabilityLabel);
 
-    panel.add(new JLabel(hotspot.getMessage()));
+    JLabel messageLabel = new JLabel(hotspot.getMessage());
+    messageLabel.setForeground(selected ? whiteForeground : JBColor.BLACK);
+    panel.add(messageLabel);
 
     VirtualFile file = hotspot.primaryLocation.file;
     JLabel fileNameLabel = new JLabel();
@@ -79,7 +83,7 @@ class HotspotCellRenderer implements TreeCellRenderer {
 
     Integer lineNumber = hotspot.getLineNumber();
     JLabel lineLabel = new JLabel(file.getName() + (lineNumber != null ? (":" + lineNumber.toString()) : ""));
-    lineLabel.setForeground(JBColor.GRAY);
+    lineLabel.setForeground(selected ? whiteForeground : JBColor.GRAY);
     panel.add(lineLabel);
     return panel;
   }

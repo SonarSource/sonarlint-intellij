@@ -93,4 +93,8 @@ public final class SonarLintProjectSettings {
   public void setFileExclusions(List<String> fileExclusions) {
     this.fileExclusions = new ArrayList<>(fileExclusions);
   }
+
+  public boolean isBoundWith(String projectKey) {
+    return isBindingEnabled() && this.projectKey.equals(projectKey);
+  }
 }
