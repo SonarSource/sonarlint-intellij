@@ -51,23 +51,23 @@ public class WizardModel {
 
   }
 
-  public WizardModel(ServerConnection serverToEdit) {
-    if (SonarLintUtils.isSonarCloudAlias(serverToEdit.getHostUrl())) {
+  public WizardModel(ServerConnection connectionToEdit) {
+    if (SonarLintUtils.isSonarCloudAlias(connectionToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
     } else {
       serverType = ServerType.SONARQUBE;
-      serverUrl = serverToEdit.getHostUrl();
+      serverUrl = connectionToEdit.getHostUrl();
     }
-    this.proxyEnabled = serverToEdit.enableProxy();
-    this.token = serverToEdit.getToken();
-    this.login = serverToEdit.getLogin();
-    String pass = serverToEdit.getPassword();
+    this.proxyEnabled = connectionToEdit.enableProxy();
+    this.token = connectionToEdit.getToken();
+    this.login = connectionToEdit.getLogin();
+    String pass = connectionToEdit.getPassword();
     if (pass != null) {
       this.password = pass.toCharArray();
     }
-    this.organizationKey = serverToEdit.getOrganizationKey();
-    this.notificationsDisabled = serverToEdit.isDisableNotifications();
-    this.name = serverToEdit.getName();
+    this.organizationKey = connectionToEdit.getOrganizationKey();
+    this.notificationsDisabled = connectionToEdit.isDisableNotifications();
+    this.name = connectionToEdit.getName();
   }
 
   @CheckForNull
