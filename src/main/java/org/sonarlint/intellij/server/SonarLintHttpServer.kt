@@ -43,10 +43,11 @@ import io.netty.handler.logging.LoggingHandler
 import io.netty.util.CharsetUtil
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput
 import java.net.BindException
 
 const val STARTING_PORT = 64120
-const val PORT_RANGE = 3
+const val ENDING_PORT = 64130
 
 /**
  * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
@@ -59,10 +60,19 @@ class SonarLintHttpServer @java.lang.Deprecated constructor(private var nettySer
     var isStarted = false
 
     fun startOnce() {
-        var numberOfAttempts = 0
-        while (!isStarted && numberOfAttempts < PORT_RANGE) {
-            isStarted = nettyServer.bindTo(STARTING_PORT + numberOfAttempts)
-            numberOfAttempts++
+        var currentPort = STARTING_PORT
+        while (!isStarted && currentPort <= ENDING_PORT) {
+            isStarted = nettyServer.bindTo(currentPort)
+            if (!isStarted) currentPort++
+        }
+        displayStartStatus(currentPort)
+    }
+
+    private fun displayStartStatus(port: Int) {
+        if (isStarted) {
+            GlobalLogOutput.get().log("Server started on $port", LogOutput.Level.INFO)
+        } else {
+            GlobalLogOutput.get().log("Cannot start the SonarLint server", LogOutput.Level.ERROR)
         }
     }
 

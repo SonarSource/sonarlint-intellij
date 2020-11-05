@@ -39,13 +39,13 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
   private final SonarLintHotspotDescriptionPanel riskDescriptionPanel;
   private final SonarLintHotspotDescriptionPanel vulnerabilityDescriptionPanel;
   private final SonarLintHotspotDescriptionPanel fixRecommendationsPanel;
-  private final SonarLintHotspotSummaryPanel summaryPanel;
+  private final SonarLintHotspotDetailsPanel detailsPanel;
 
   public SonarLintHotspotsPanel(Project project) {
     super(false, true);
 
     hotspotsListPanel = new SonarLintHotspotsListPanel(project);
-    summaryPanel = new SonarLintHotspotSummaryPanel();
+    detailsPanel = new SonarLintHotspotDetailsPanel();
     riskDescriptionPanel = new SonarLintHotspotDescriptionPanel(project);
     vulnerabilityDescriptionPanel = new SonarLintHotspotDescriptionPanel(project);
     fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel(project);
@@ -54,7 +54,7 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
     hotspotDetailsTab.addTab("What's the risk?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
     hotspotDetailsTab.addTab("Are you at risk?", null, scrollable(vulnerabilityDescriptionPanel.getPanel()), "Vulnerability description");
     hotspotDetailsTab.addTab("How can you fix it?", null, scrollable(fixRecommendationsPanel.getPanel()), "Recommendations");
-    hotspotDetailsTab.addTab("Summary", null, scrollable(summaryPanel.getPanel()), "Details about the hotspot");
+    hotspotDetailsTab.addTab("Details", null, scrollable(detailsPanel.getPanel()), "Details about the hotspot");
     hotspotDetailsTab.setVisible(false);
 
     super.setContent(createSplitter(hotspotsListPanel.getPanel(), hotspotDetailsTab, SPLIT_PROPORTION_PROPERTY, project));
@@ -89,7 +89,7 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
     riskDescriptionPanel.setDescription(hotspot.remote.rule.riskDescription);
     vulnerabilityDescriptionPanel.setDescription(hotspot.remote.rule.vulnerabilityDescription);
     fixRecommendationsPanel.setDescription(hotspot.remote.rule.fixRecommendations);
-    summaryPanel.setDetails(hotspot);
+    detailsPanel.setDetails(hotspot);
   }
 
 }
