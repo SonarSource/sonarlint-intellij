@@ -95,7 +95,7 @@ open class NettyServer {
                 .handler(LoggingHandler(LogLevel.INFO))
                 .childHandler(ServerInitializer())
         try {
-            b.bind(port).sync().channel()
+            b.bind("localhost", port).sync().channel()
         } catch (e: BindException) {
             return false
         }
