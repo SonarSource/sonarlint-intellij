@@ -22,6 +22,7 @@ package org.sonarlint.intellij.server
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.project.ProjectManager
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.QueryStringDecoder
@@ -52,8 +53,13 @@ class RequestProcessor(private val appInfo: ApplicationInfo = ApplicationInfo.ge
     }
 
     private fun getStatusData(): Response {
-        val description = ProjectManager.getInstance().openProjects.joinToString(", ") { it.name }
-        val status = Status("${appInfo.versionName} ${appInfo.fullVersion}", description)
+        var description = appInfo.fullVersion
+        val edition = ApplicationNamesInfo.getInstance().editionName
+        if (edition != null) {
+            description += " ($edition)"
+        }
+        description += " - " + ProjectManager.getInstance().openProjects.joinToString(", ") { it.name }
+        val status = Status(appInfo.versionName, description)
         return Success(ObjectMapper().writeValueAsString(status))
     }
 
