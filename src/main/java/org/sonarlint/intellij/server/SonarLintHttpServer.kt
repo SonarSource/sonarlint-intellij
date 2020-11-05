@@ -111,6 +111,7 @@ class ServerInitializer : ChannelInitializer<SocketChannel?>() {
 class ServerHandler : SimpleChannelInboundHandler<Any?>() {
 
     private var response: Response? = null
+    private var origin: String? = null
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
         ctx.flush()
@@ -118,14 +119,15 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
         if (msg is HttpRequest) {
+            origin = msg.headers()[HttpHeaderNames.ORIGIN]
             response = RequestProcessor().processRequest(Request(msg.uri(), msg.method()))
         }
         if (msg is LastHttpContent) {
-            ctx.writeAndFlush(createResponse(response))
+            ctx.writeAndFlush(createResponse(response, origin))
         }
     }
 
-    private fun createResponse(res: Response?): FullHttpResponse {
+    private fun createResponse(res: Response?, origin: String?): FullHttpResponse {
         val response: FullHttpResponse = DefaultFullHttpResponse(
                 HttpVersion.HTTP_1_1,
                 when (res) {
@@ -137,7 +139,8 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
                     is BadRequest -> res.message
                     else -> ""
                 }, CharsetUtil.UTF_8))
-        response.headers()[HttpHeaderNames.CONTENT_TYPE] = "text/plain; charset=UTF-8"
+        response.headers()[HttpHeaderNames.CONTENT_TYPE] = "application/json; charset=UTF-8"
+        origin?.let { response.headers()[HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN] = origin }
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
         return response
     }
