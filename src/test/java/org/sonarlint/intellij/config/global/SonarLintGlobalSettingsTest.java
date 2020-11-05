@@ -132,4 +132,15 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     settings.resetRuleParam(RULE, PARAM);
     assertThat(settings.getRuleParamValue(RULE, PARAM)).isEmpty();
   }
+
+  @Test
+  public void testAddConnection() {
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+
+    settings.addServerConnection(ServerConnection.newBuilder().setHostUrl("host").setName("name").build());
+
+    assertThat(settings.getServerConnections())
+      .extracting(ServerConnection::getHostUrl)
+      .containsOnly("host");
+  }
 }

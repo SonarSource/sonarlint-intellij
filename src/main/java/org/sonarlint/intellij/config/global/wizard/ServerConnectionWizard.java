@@ -43,6 +43,13 @@ public class ServerConnectionWizard {
     return wizard;
   }
 
+  public static ServerConnectionWizard forNewConnection(ServerConnection prefilledConnection, Set<String> existingNames) {
+    ServerConnectionWizard wizard = new ServerConnectionWizard(new WizardModel(prefilledConnection));
+    List<AbstractWizardStepEx> steps = createSteps(wizard.model, false, existingNames);
+    wizard.wizardEx = new ServerConnectionWizardEx(steps, "New Connection");
+    return wizard;
+  }
+
   public static ServerConnectionWizard forConnectionEdition(ServerConnection connectionToEdit) {
     ServerConnectionWizard wizard = new ServerConnectionWizard(new WizardModel(connectionToEdit));
     List<AbstractWizardStepEx> steps = createSteps(wizard.model, true, Collections.emptySet());
