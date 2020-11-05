@@ -27,15 +27,16 @@ import org.mockito.Mockito.anyInt
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
+import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.eq
 
-class SonarLintHttpServerTest {
+class SonarLintHttpServerTest : AbstractSonarLintLightTests() {
 
     lateinit var underTest:SonarLintHttpServer
     private lateinit var nettyServerMock: NettyServer
 
     @Before
-    fun init() {
+    fun prepare() {
         nettyServerMock = mock(NettyServer::class.java)
         underTest = SonarLintHttpServer(nettyServerMock)
     }
@@ -62,14 +63,14 @@ class SonarLintHttpServerTest {
     }
 
     @Test
-    fun it_should_try_3_consecutive_ports_and_give_up(){
+    fun it_should_try_consecutive_ports_and_give_up_after_64130(){
         `when`(nettyServerMock.bindTo(anyInt())).thenReturn(false)
 
         underTest.startOnce()
 
         assertThat(underTest.isStarted).isFalse()
-        verify(nettyServerMock).bindTo(eq(64122))
-        verify(nettyServerMock, times(0)).bindTo(eq(64123))
+        verify(nettyServerMock).bindTo(eq(64130))
+        verify(nettyServerMock, times(0)).bindTo(eq(64131))
     }
 
 }

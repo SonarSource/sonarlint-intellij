@@ -33,7 +33,7 @@ import java.awt.GridBagLayout;
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.WEST;
 
-public class SonarLintHotspotSummaryPanel {
+public class SonarLintHotspotDetailsPanel {
   private static final int MARGIN = 10;
   public static final int PADDING = 5;
   public static final double COLUMNS_PROPORTION = 0.5;
@@ -43,7 +43,7 @@ public class SonarLintHotspotSummaryPanel {
   private final JLabel statusLabel;
   private final JLabel ruleKeyLabel;
 
-  public SonarLintHotspotSummaryPanel() {
+  public SonarLintHotspotDetailsPanel() {
     panel = new JPanel();
     panel.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN));
     GridBagLayout gridLayout = new GridBagLayout();
