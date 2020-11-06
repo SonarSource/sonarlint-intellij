@@ -45,6 +45,7 @@ import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput
 import java.net.BindException
+import java.net.InetAddress
 
 const val STARTING_PORT = 64120
 const val ENDING_PORT = 64130
@@ -95,7 +96,7 @@ open class NettyServer {
                 .handler(LoggingHandler(LogLevel.INFO))
                 .childHandler(ServerInitializer())
         try {
-            b.bind("localhost", port).sync().channel()
+            b.bind(InetAddress.getLoopbackAddress(), port).sync().channel()
         } catch (e: BindException) {
             return false
         }
