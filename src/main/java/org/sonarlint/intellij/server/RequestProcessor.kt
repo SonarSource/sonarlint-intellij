@@ -58,7 +58,10 @@ class RequestProcessor(private val appInfo: ApplicationInfo = ApplicationInfo.ge
         if (edition != null) {
             description += " ($edition)"
         }
-        description += " - " + ProjectManager.getInstance().openProjects.joinToString(", ") { it.name }
+        val openProjects = ProjectManager.getInstance().openProjects
+        if (openProjects.isNotEmpty()) {
+            description += " - " + openProjects.joinToString(", ") { it.name }
+        }
         val status = Status(appInfo.versionName, description)
         return Success(ObjectMapper().writeValueAsString(status))
     }
