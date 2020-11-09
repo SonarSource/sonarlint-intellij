@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
@@ -68,18 +69,22 @@ public class SonarLintHotspotsListPanel {
   }
 
   private void navigateToLocation() {
-    if (hotspotNode == null || !hotspotNode.getHotspot().isValid()) {
+    if (hotspotNode == null) {
+      return;
+    }
+    VirtualFile file = hotspotNode.getHotspot().getPrimaryLocation().getFile();
+    if (file == null) {
       return;
     }
 
     int offset;
-    RangeMarker range = hotspotNode.getHotspot().primaryLocation.range;
+    RangeMarker range = hotspotNode.getHotspot().getPrimaryLocation().getRange();
     if (range != null) {
       offset = range.getStartOffset();
     } else {
       offset = 0;
     }
-    new OpenFileDescriptor(project, hotspotNode.getHotspot().primaryLocation.file, offset).navigate(true);
+    new OpenFileDescriptor(project, file, offset).navigate(true);
   }
 
 }

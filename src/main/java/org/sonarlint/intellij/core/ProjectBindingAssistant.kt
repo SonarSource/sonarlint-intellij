@@ -31,13 +31,13 @@ import org.sonarlint.intellij.util.SonarLintUtils.getService
 
 data class BoundProject(val project: Project, val connection: ServerConnection)
 
-class ProjectBindingAssistant(private val title: String,
+open class ProjectBindingAssistant(private val title: String,
                               private val projectManager: ProjectManager = ProjectManager.getInstance(),
                               private val newConnectionWizard: NewConnectionWizard = NewConnectionWizard(),
                               private val modalPresenter: ModalPresenter = ModalPresenter(),
                               private val projectSelectionDialog: ProjectSelectionDialog = ProjectSelectionDialog()) {
 
-    fun bind(projectKey: String, serverUrl: String): BoundProject? {
+    open fun bind(projectKey: String, serverUrl: String): BoundProject? {
         val connection = findOrCreateConnectionTo(serverUrl) ?: return null
         return findBoundProjectAmongOpened(projectKey, connection) ?: selectAndBindProject(projectKey, connection)
     }

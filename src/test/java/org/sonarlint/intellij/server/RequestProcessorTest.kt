@@ -30,20 +30,20 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.eq
-import org.sonarlint.intellij.issue.hotspot.SecurityHotspotOpener
+import org.sonarlint.intellij.issue.hotspot.SecurityHotspotShowRequestHandler
 
 class RequestProcessorTest : AbstractSonarLintLightTests() {
 
     private lateinit var appInfoMock:ApplicationInfo
     lateinit var underTest : RequestProcessor
-    private lateinit var hotspotOpener: SecurityHotspotOpener
+    private lateinit var showRequestHandler: SecurityHotspotShowRequestHandler
     private val badRequest = BadRequest("Invalid path or method.")
 
     @Before
     fun setup() {
-        hotspotOpener = mock(SecurityHotspotOpener::class.java)
+        showRequestHandler = mock(SecurityHotspotShowRequestHandler::class.java)
         appInfoMock = mock(ApplicationInfo::class.java)
-        underTest = RequestProcessor(appInfoMock, hotspotOpener)
+        underTest = RequestProcessor(appInfoMock, showRequestHandler)
     }
 
     @Test
@@ -87,7 +87,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
 
         assertThat(result).isInstanceOf(Success::class.java)
         assertThat((result as Success).body).isNull()
-        verify(hotspotOpener).open(eq("p"), eq("h"), eq("s"))
+        verify(showRequestHandler).open(eq("p"), eq("h"), eq("s"))
     }
 
     @Test

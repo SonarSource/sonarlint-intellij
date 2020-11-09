@@ -25,7 +25,13 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.issue.hotspot.Location;
+import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot;
+
+import static org.sonarlint.intellij.issue.hotspot.LocalHotspotKt.fileOnlyLocation;
+import static org.sonarlint.intellij.issue.hotspot.LocalHotspotKt.resolvedLocation;
+import static org.sonarlint.intellij.issue.hotspot.LocalHotspotKt.unknownLocation;
 
 public class SecurityHotspotMatcher {
 
@@ -37,17 +43,28 @@ public class SecurityHotspotMatcher {
     issueMatcher = new IssueMatcher(project);
   }
 
-  public LocalHotspot match(RemoteHotspot remoteHotspot) throws IssueMatcher.NoMatchException {
+  public LocalHotspot match(RemoteHotspot remoteHotspot) {
+    return new LocalHotspot(matchLocation(remoteHotspot), remoteHotspot);
+  }
+
+  public Location matchLocation(RemoteHotspot remoteHotspot) {
     for (VirtualFile contentRoot : ProjectRootManager.getInstance(project)
       .getContentRoots()) {
       VirtualFile matchedFile = contentRoot.findFileByRelativePath(remoteHotspot.filePath);
       if (matchedFile != null) {
-        RangeMarker rangeMarker = issueMatcher.match(matchedFile, remoteHotspot.textRange);
-        return new LocalHotspot(new LocalHotspot.Location(matchedFile, rangeMarker), remoteHotspot);
+        return matchTextRange(matchedFile, remoteHotspot.textRange);
       }
     }
+    return unknownLocation();
+  }
 
-    throw new IssueMatcher.NoMatchException("Cannot match file location");
+  private Location matchTextRange(VirtualFile matchedFile, TextRange textRange) {
+    try {
+      RangeMarker rangeMarker = issueMatcher.match(matchedFile, textRange);
+      return resolvedLocation(matchedFile, rangeMarker);
+    } catch (IssueMatcher.NoMatchException e) {
+      return fileOnlyLocation(matchedFile);
+    }
   }
 
 }
