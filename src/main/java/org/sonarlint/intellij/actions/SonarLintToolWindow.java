@@ -21,13 +21,17 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.ui.content.ContentManagerListener;
+import java.awt.Window;
 import java.util.function.Consumer;
+import javax.swing.JComponent;
+import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
@@ -109,6 +113,16 @@ public class SonarLintToolWindow implements ContentManagerListener {
     SonarLintHotspotsPanel sonarLintHotspotsPanel = (SonarLintHotspotsPanel) content.getComponent();
     sonarLintHotspotsPanel.setHotspot(localHotspot);
     this.onHotspotsTabClosedCallback = onTabClosedCallback;
+    bringIdeToFront(project);
+  }
+
+  private void bringIdeToFront(Project project) {
+    JComponent component = getToolWindow().getComponent();
+    IdeFocusManager.getInstance(project).requestFocus(component, true);
+    Window window = SwingUtilities.getWindowAncestor(component);
+    if (window != null) {
+      window.toFront();
+    }
   }
 
   private Content ensureHotspotsTabCreated() {

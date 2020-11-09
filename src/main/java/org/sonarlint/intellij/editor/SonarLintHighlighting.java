@@ -115,7 +115,7 @@ public class SonarLintHighlighting {
   }
 
   public void highlight(LocalHotspot hotspot) {
-    RangeMarker hotspotRange = hotspot.primaryLocation.range;
+    RangeMarker hotspotRange = hotspot.getPrimaryLocation().getRange();
     if (hotspotRange != null) {
       HighlightInfo highlight = createHighlight(hotspotRange, hotspot.getMessage());
       updateHighlights(Collections.singletonList(highlight), hotspotRange.getDocument());
