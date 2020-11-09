@@ -17,27 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij
+package org.sonarlint.intellij.actions
 
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.analysis.SonarLintStatus
 
-/**
- * Returns Mockito.eq() as nullable type to avoid java.lang.IllegalStateException when
- * null is returned.
- *
- * Generic T is nullable because implicitly bounded by Any?.
- */
-fun <T> eq(value: T): T = Mockito.eq(value) ?: value
+class RetryAction(private val callback: () -> Unit) : AbstractSonarAction("Retry", null, null) {
 
-/**
- * Returns Mockito.any() as nullable type to avoid java.lang.IllegalStateException when
- * null is returned.
- */
-fun <T> any(): T = Mockito.any<T>()
+    override fun isEnabled(e: AnActionEvent, project: Project, status: SonarLintStatus) = true
 
-/**
- * Returns ArgumentCaptor.capture() as nullable type to avoid java.lang.IllegalStateException
- * when null is returned.
- */
-fun <T> capture(argumentCaptor: ArgumentCaptor<T>): T = argumentCaptor.capture()
+    override fun actionPerformed(e: AnActionEvent) {
+        callback()
+    }
+}

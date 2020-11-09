@@ -21,10 +21,11 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-import org.sonarlint.intellij.ui.nodes.HotspotNode;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot.Rule.Probability;
-
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.util.EnumMap;
+import java.util.Map;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -32,11 +33,10 @@ import javax.swing.JTree;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.tree.TreeCellRenderer;
-import java.awt.Component;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.util.EnumMap;
-import java.util.Map;
+import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.issue.hotspot.Location;
+import org.sonarlint.intellij.ui.nodes.HotspotNode;
+import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot.Rule.Probability;
 
 class HotspotCellRenderer implements TreeCellRenderer {
 
@@ -62,12 +62,13 @@ class HotspotCellRenderer implements TreeCellRenderer {
     LocalHotspot hotspot = ((HotspotNode) value).getHotspot();
     FlowLayout layout = new FlowLayout(FlowLayout.LEADING);
     JPanel panel = new JPanel(layout);
+    Location primaryLocation = hotspot.getPrimaryLocation();
 
     JLabel probabilityLabel = new JLabel(hotspot.getProbability().name());
     Border border = BorderFactory.createEmptyBorder(0, HORIZONTAL_PADDING, 0, HORIZONTAL_PADDING);
     probabilityLabel.setBorder(border);
     probabilityLabel.setVerticalTextPosition(SwingConstants.TOP);
-    probabilityLabel.setBackground(colorsByProbability.get(hotspot.getProbability()));
+    probabilityLabel.setBackground(primaryLocation.isResolved() ? colorsByProbability.get(hotspot.getProbability()) : JBColor.GRAY);
     probabilityLabel.setForeground(whiteForeground);
     probabilityLabel.setOpaque(true);
     probabilityLabel.setFont(probabilityLabel.getFont().deriveFont(probabilityLabel.getFont().getStyle() | Font.BOLD));
@@ -77,12 +78,10 @@ class HotspotCellRenderer implements TreeCellRenderer {
     messageLabel.setForeground(selected ? whiteForeground : JBColor.BLACK);
     panel.add(messageLabel);
 
-    VirtualFile file = hotspot.primaryLocation.file;
-    JLabel fileNameLabel = new JLabel();
-    panel.add(fileNameLabel);
-
+    VirtualFile file = hotspot.getPrimaryLocation().getFile();
+    String fileName = file == null ? hotspot.getFilePath() : file.getName();
     Integer lineNumber = hotspot.getLineNumber();
-    JLabel lineLabel = new JLabel(file.getName() + (lineNumber != null ? (":" + lineNumber.toString()) : ""));
+    JLabel lineLabel = new JLabel(fileName + (lineNumber != null ? (":" + lineNumber.toString()) : ""));
     lineLabel.setForeground(selected ? whiteForeground : JBColor.GRAY);
     panel.add(lineLabel);
     return panel;

@@ -24,7 +24,6 @@ import com.intellij.ide.actions.OpenProjectFileChooserDescriptor
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.fileChooser.FileChooser
 import com.intellij.openapi.fileChooser.FileChooserDescriptor
-import com.intellij.openapi.fileChooser.impl.FileChooserUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.VerticalFlowLayout
