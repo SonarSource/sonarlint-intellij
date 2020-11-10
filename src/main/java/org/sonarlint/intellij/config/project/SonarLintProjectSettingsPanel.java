@@ -27,8 +27,10 @@ import java.util.List;
 import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 
 import static java.util.Optional.ofNullable;
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
@@ -68,17 +70,17 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     exclusionsPanel.load(projectSettings);
   }
 
-  public void save(SonarLintProjectSettings projectSettings) {
+  public void save(Project project, SonarLintProjectSettings projectSettings) {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
-    projectSettings.setBindingEnabled(bindPanel.isBindingEnabled());
     exclusionsPanel.save(projectSettings);
 
-    if (bindPanel.isBindingEnabled()) {
-      projectSettings.setConnectionName(ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null));
-      projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
+    ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
+    ServerConnection connection = bindPanel.getSelectedConnection();
+    String projectKey = bindPanel.getSelectedProjectKey();
+    if (bindPanel.isBindingEnabled() && connection != null && projectKey != null) {
+      bindingManager.bindTo(connection, projectKey);
     } else {
-      projectSettings.setConnectionName(null);
-      projectSettings.setProjectKey(null);
+      bindingManager.unbind();
     }
   }
 

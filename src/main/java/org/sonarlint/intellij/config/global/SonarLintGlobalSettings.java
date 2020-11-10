@@ -38,6 +38,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import static org.sonarlint.intellij.util.SonarLintUtils.equalsIgnoringTrailingSlash;
+
 public final class SonarLintGlobalSettings {
 
   private boolean autoTrigger = true;
@@ -195,10 +197,10 @@ public final class SonarLintGlobalSettings {
     this.excludedRules = excludedRules;
   }
 
-  public boolean hasConnectionTo(String serverUrl) {
+  public List<ServerConnection> getConnectionsTo(String serverUrl) {
     return servers.stream()
-      .map(ServerConnection::getHostUrl)
-      .anyMatch(url -> url.equals(serverUrl));
+      .filter(it -> equalsIgnoringTrailingSlash(it.getHostUrl(), serverUrl))
+      .collect(Collectors.toList());
   }
 
   public static class Rule {

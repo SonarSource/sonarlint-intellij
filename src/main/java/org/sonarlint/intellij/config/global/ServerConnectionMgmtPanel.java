@@ -219,9 +219,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     for (Project openProject : openProjects) {
       SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
       if (projectSettings.getConnectionName() != null && deletedServerIds.contains(projectSettings.getConnectionName())) {
-        projectSettings.setBindingEnabled(false);
-        projectSettings.setConnectionName(null);
-        projectSettings.setProjectKey(null);
+        projectSettings.unbind();
       }
     }
   }

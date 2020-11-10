@@ -32,7 +32,7 @@ import java.util.Optional;
 import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.actions.IssuesViewTabOpener;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -68,7 +68,7 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
     if(!liveIssue.isPresent()) {
       return;
     }
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, IssuesViewTabOpener.class)
+    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
       .showIssueDescription(liveIssue.get()));
   }
 

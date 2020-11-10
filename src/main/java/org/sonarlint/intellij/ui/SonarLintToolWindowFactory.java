@@ -26,8 +26,11 @@ import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
 /**
  * Factory of SonarLint tool window.
@@ -46,10 +49,16 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     addAnalysisResultsTab(project, contentManager);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
+    SonarLintToolWindow sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
+    contentManager.addContentManagerListener(sonarLintToolWindow);
+    LocalHotspot activeHotspot = sonarLintToolWindow.getActiveHotspot();
+    if (activeHotspot != null) {
+      sonarLintToolWindow.show(activeHotspot);
+    }
   }
 
   private static void addIssuesTab(Project project, @NotNull ContentManager contentManager) {
-    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
+    IssueManager issueManager = getService(project, IssueManager.class);
     CurrentFileController scope = new CurrentFileController(project, issueManager);
     SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project, scope);
     Content issuesContent = contentManager.getFactory()

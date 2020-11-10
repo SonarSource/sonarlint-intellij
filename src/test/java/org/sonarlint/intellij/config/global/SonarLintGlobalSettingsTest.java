@@ -143,4 +143,14 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
       .extracting(ServerConnection::getHostUrl)
       .containsOnly("host");
   }
+
+  @Test
+  public void getConnectionTo_should_ignore_trailing_slashes() {
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
+    settings.addServerConnection(ServerConnection.newBuilder().setHostUrl("http://host/").setName("name").build());
+
+    assertThat(settings.getConnectionsTo("http://host"))
+      .extracting(ServerConnection::getName)
+      .containsOnly("name");
+  }
 }

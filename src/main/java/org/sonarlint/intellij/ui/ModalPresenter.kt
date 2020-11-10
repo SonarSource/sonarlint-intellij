@@ -17,32 +17,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions;
+package org.sonarlint.intellij.ui
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ui.UIUtil;
-import java.util.Set;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import com.intellij.openapi.ui.Messages
 
-public class ShowCurrentFileCallable implements AnalysisCallback {
-  private final Project project;
+open class ModalPresenter {
 
-  public ShowCurrentFileCallable(Project project) {
-    this.project = project;
-  }
+    open fun showConfirmModal(title: String, message: String, confirmText: String): Boolean {
+        return Messages.showYesNoDialog(null, message, title, confirmText, "Cancel", Messages.getWarningIcon()) == Messages.OK
+    }
 
-  @Override public void onError(Throwable e) {
-    // do nothing
-  }
-
-  @Override
-  public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
-    showCurrentFileTab();
-  }
-
-  private void showCurrentFileTab() {
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).openCurrentFile());
-  }
 }

@@ -31,10 +31,10 @@ import java.util.Collections.emptyMap
 
 open class NewConnectionWizard {
 
-    fun open(serverUrl: String): Boolean {
+    open fun open(serverUrl: String): ServerConnection? {
         val globalSettings = Settings.getGlobalSettings()
-        val serverToCreate = ServerConnection.newBuilder().setHostUrl(serverUrl).build()
-        val wizard = ServerConnectionWizard.forNewConnection(serverToCreate, globalSettings.serverNames)
+        val connectionToCreate = ServerConnection.newBuilder().setHostUrl(serverUrl).setDisableNotifications(false).build()
+        val wizard = ServerConnectionWizard.forNewConnection(connectionToCreate, globalSettings.serverNames)
         if (wizard.showAndGet()) {
             val created = wizard.connection
             globalSettings.addServerConnection(created)
@@ -43,8 +43,8 @@ open class NewConnectionWizard {
             val serverManager = SonarLintUtils.getService(SonarLintEngineManager::class.java)
             val task = BindingStorageUpdateTask(serverManager.getConnectedEngine(created.name), created, emptyMap(), false)
             ProgressManager.getInstance().run(task.asModal())
-            return true
+            return created
         }
-        return false
+        return null
     }
 }

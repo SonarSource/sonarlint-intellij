@@ -29,29 +29,24 @@ import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.ui.content.ContentManagerListener;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
-public class IssuesViewTabOpener {
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+
+public class SonarLintToolWindow implements ContentManagerListener {
   private static final String TAB_HOTSPOTS = "Security Hotspots";
   private static final int HOTSPOTS_TAB_INDEX = 2;
 
   private final Project project;
-  private Runnable onHotspotsTabClosedCallback;
+  private LocalHotspot activeHotspot;
 
-  public IssuesViewTabOpener(Project project) {
+  public SonarLintToolWindow(Project project) {
     this.project = project;
-    getToolWindow().getContentManager().addContentManagerListener(new ContentManagerListener() {
-      @Override
-      public void contentRemoved(@NotNull ContentManagerEvent event) {
-        if (onHotspotsTabClosedCallback != null) {
-          onHotspotsTabClosedCallback.run();
-        }
-      }
-    });
   }
 
   /**
@@ -111,12 +106,21 @@ public class IssuesViewTabOpener {
     showIssue(liveIssue, SonarLintIssuesPanel::selectLocationsTab);
   }
 
-  public void show(LocalHotspot localHotspot, Runnable onClosedCallback) {
+  public void show(LocalHotspot localHotspot) {
+    activeHotspot = localHotspot;
+    if (getToolWindow() == null) {
+      // can happen if we try to show while the project is opening
+      // we will show the hotspot when the tool window is built
+      return;
+    }
     Content content = ensureHotspotsTabCreated();
     openTab(TAB_HOTSPOTS);
     SonarLintHotspotsPanel sonarLintHotspotsPanel = (SonarLintHotspotsPanel) content.getComponent();
     sonarLintHotspotsPanel.setHotspot(localHotspot);
-    this.onHotspotsTabClosedCallback = onClosedCallback;
+  }
+
+  public LocalHotspot getActiveHotspot() {
+    return activeHotspot;
   }
 
   private Content ensureHotspotsTabCreated() {
@@ -132,5 +136,11 @@ public class IssuesViewTabOpener {
         false);
     contentManager.addContent(hotspotsContent, HOTSPOTS_TAB_INDEX);
     return hotspotsContent;
+  }
+
+  @Override
+  public void contentRemoved(@NotNull ContentManagerEvent event) {
+    // only hotspots tab is removable
+    getService(project, SonarLintHighlighting.class).removeHighlights();
   }
 }
