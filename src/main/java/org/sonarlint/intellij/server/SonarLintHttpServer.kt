@@ -64,16 +64,16 @@ class SonarLintHttpServer @java.lang.Deprecated constructor(private var nettySer
         var currentPort = STARTING_PORT
         while (!isStarted && currentPort <= ENDING_PORT) {
             isStarted = nettyServer.bindTo(currentPort)
-            if (!isStarted) currentPort++
+            displayStartStatus(currentPort)
+            currentPort++
         }
-        displayStartStatus(currentPort)
     }
 
     private fun displayStartStatus(port: Int) {
         if (isStarted) {
             GlobalLogOutput.get().log("Server started on $port", LogOutput.Level.INFO)
         } else {
-            GlobalLogOutput.get().log("Cannot start the SonarLint server", LogOutput.Level.ERROR)
+            GlobalLogOutput.get().log("Cannot start the SonarLint server on $port", LogOutput.Level.ERROR)
         }
     }
 

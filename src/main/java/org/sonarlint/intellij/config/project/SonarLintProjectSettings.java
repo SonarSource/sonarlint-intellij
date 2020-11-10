@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.config.global.ServerConnection;
 
 public final class SonarLintProjectSettings {
 
@@ -97,7 +99,13 @@ public final class SonarLintProjectSettings {
     this.fileExclusions = new ArrayList<>(fileExclusions);
   }
 
-  public boolean isBoundWith(String projectKey) {
-    return isBindingEnabled() && this.projectKey.equals(projectKey);
+  public boolean isBoundTo(String projectKey, ServerConnection connection) {
+    return isBindingEnabled() && this.projectKey.equals(projectKey) && connection.getName().equals(connectionId);
+  }
+
+  public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey) {
+    bindingEnabled = true;
+    connectionId = connection.getName();
+    this.projectKey = projectKey;
   }
 }

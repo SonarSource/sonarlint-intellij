@@ -17,32 +17,30 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions;
+package org.sonarlint.intellij.ui
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.ui.UIUtil;
-import java.util.Set;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.DialogWrapper
 
-public class ShowCurrentFileCallable implements AnalysisCallback {
-  private final Project project;
+class ProjectSelectionDialog : DialogWrapper(true) {
+    var selectedProject: Project? = null
 
-  public ShowCurrentFileCallable(Project project) {
-    this.project = project;
-  }
+    init {
+        super.init()
+        title = "Select a project"
+    }
 
-  @Override public void onError(Throwable e) {
-    // do nothing
-  }
+    fun selectProject(): Project? {
+        show()
+        return selectedProject
+    }
 
-  @Override
-  public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
-    showCurrentFileTab();
-  }
+    override fun createActions() = arrayOf(cancelAction)
 
-  private void showCurrentFileTab() {
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).openCurrentFile());
-  }
+    override fun createCenterPanel() = SelectProjectPanel(::onProjectSelected)
+
+    private fun onProjectSelected(project: Project) {
+        selectedProject = project
+        close(OK_EXIT_CODE)
+    }
 }
