@@ -30,7 +30,7 @@ import com.intellij.util.ui.UIUtil;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.actions.IssuesViewTabOpener;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -58,8 +58,8 @@ public class ShowLocationsIntentionAction implements IntentionAction, PriorityAc
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     SonarLintUtils.getService(project, SonarLintHighlighting.class).highlightIssue(issue);
-    IssuesViewTabOpener issuesViewTabOpener = SonarLintUtils.getService(project, IssuesViewTabOpener.class);
-    UIUtil.invokeLaterIfNeeded(() -> issuesViewTabOpener.showIssueLocations(issue));
+    SonarLintToolWindow sonarLintToolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
+    UIUtil.invokeLaterIfNeeded(() -> sonarLintToolWindow.showIssueLocations(issue));
 
   }
 

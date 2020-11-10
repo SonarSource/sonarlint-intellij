@@ -44,7 +44,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.actions.IssuesViewTabOpener;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -180,7 +180,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    SonarLintUtils.getService(project, IssuesViewTabOpener.class).openAnalysisResults();
+    SonarLintUtils.getService(project, SonarLintToolWindow.class).openAnalysisResults();
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent {

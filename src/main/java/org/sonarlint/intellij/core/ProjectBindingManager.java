@@ -108,16 +108,6 @@ public class ProjectBindingManager {
     return server.orElseThrow(() -> new InvalidBindingException("Server configuration does not exist for connection id: " + connectionId));
   }
 
-  public boolean isBoundTo(String serverUrl, String projectKey) {
-    SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
-    String serverId = projectSettings.getConnectionId();
-    List<ServerConnection> servers = getGlobalSettings().getServerConnections();
-
-    return projectSettings.isBoundWith(projectKey) && servers.stream()
-      .filter(s -> s.getName().equals(serverId))
-      .anyMatch(s -> s.getHostUrl().equals(serverUrl));
-  }
-
   private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) throws InvalidBindingException {
     if (serverId == null) {
       notifications.notifyConnectionIdInvalid();
