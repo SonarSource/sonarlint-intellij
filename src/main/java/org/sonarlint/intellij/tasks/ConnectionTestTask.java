@@ -23,7 +23,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.WsHelperImpl;
@@ -33,12 +33,12 @@ import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 
 public class ConnectionTestTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
-  private final SonarQubeServer server;
+  private final ServerConnection server;
   private Exception exception;
   private ValidationResult result;
 
-  public ConnectionTestTask(SonarQubeServer server) {
-    super(null, "Test Connection to SonarQube Server", true);
+  public ConnectionTestTask(ServerConnection server) {
+    super(null, "Test Connection to " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube"), true);
     this.server = server;
   }
 

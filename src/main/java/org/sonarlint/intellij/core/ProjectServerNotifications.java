@@ -29,7 +29,7 @@ import java.time.ZonedDateTime;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectState;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -78,10 +78,10 @@ public class ProjectServerNotifications {
     SonarLintProjectSettings settings = getSettingsFor(myProject);
     unregister();
     if (settings.isBindingEnabled()) {
-      SonarQubeServer server;
+      ServerConnection server;
       try {
         ProjectBindingManager bindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
-        server = bindingManager.getSonarQubeServer();
+        server = bindingManager.getServerConnection();
       } catch (InvalidBindingException e) {
         // do nothing
         return;
@@ -97,7 +97,7 @@ public class ProjectServerNotifications {
     ServerNotificationsFacade.get().unregister(eventListener);
   }
 
-  private NotificationConfiguration createConfiguration(SonarLintProjectSettings settings, SonarQubeServer server) {
+  private NotificationConfiguration createConfiguration(SonarLintProjectSettings settings, ServerConnection server) {
     String projectKey = settings.getProjectKey();
     return new NotificationConfiguration(eventListener, notificationTime, projectKey, () -> SonarLintUtils.getServerConfiguration(server));
   }

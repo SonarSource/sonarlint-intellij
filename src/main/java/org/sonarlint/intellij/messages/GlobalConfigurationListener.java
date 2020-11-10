@@ -22,7 +22,7 @@ package org.sonarlint.intellij.messages;
 import com.intellij.util.messages.Topic;
 import java.util.List;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 
 public interface GlobalConfigurationListener {
   Topic<GlobalConfigurationListener> TOPIC = Topic.create("Global configuration events", GlobalConfigurationListener.class);
@@ -30,7 +30,7 @@ public interface GlobalConfigurationListener {
   /**
    * Called immediately when list of servers is changed (servers added or removed), even before saving
    */
-  void changed(List<SonarQubeServer> serverList);
+  void changed(List<ServerConnection> serverList);
 
   /**
    * Called when settings are saved (clicking "Apply" or "Ok")
@@ -39,7 +39,7 @@ public interface GlobalConfigurationListener {
 
   abstract class Adapter implements GlobalConfigurationListener {
     @Override
-    public void changed(List<SonarQubeServer> serverList) {
+    public void changed(List<ServerConnection> serverList) {
       // nothing done by default
     }
 

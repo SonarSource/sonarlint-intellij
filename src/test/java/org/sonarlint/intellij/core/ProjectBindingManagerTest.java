@@ -25,7 +25,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -97,9 +97,9 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setProjectKey("project1");
     getProjectSettings().setServerId("server1");
 
-    SonarQubeServer server = SonarQubeServer.newBuilder().setName("server1").build();
-    getGlobalSettings().setSonarQubeServers(Collections.singletonList(server));
-    assertThat(projectBindingManager.getSonarQubeServer()).isEqualTo(server);
+    ServerConnection server = ServerConnection.newBuilder().setName("server1").build();
+    getGlobalSettings().setServerConnections(Collections.singletonList(server));
+    assertThat(projectBindingManager.getServerConnection()).isEqualTo(server);
   }
 
   @Test
@@ -108,10 +108,10 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setProjectKey("project1");
     getProjectSettings().setServerId("server1");
 
-    SonarQubeServer server = SonarQubeServer.newBuilder().setName("server2").build();
-    getGlobalSettings().setSonarQubeServers(Collections.singletonList(server));
+    ServerConnection server = ServerConnection.newBuilder().setName("server2").build();
+    getGlobalSettings().setServerConnections(Collections.singletonList(server));
     exception.expect(InvalidBindingException.class);
-    projectBindingManager.getSonarQubeServer();
+    projectBindingManager.getServerConnection();
   }
 
   @Test

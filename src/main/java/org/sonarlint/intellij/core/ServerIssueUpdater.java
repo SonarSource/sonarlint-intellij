@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -94,7 +94,7 @@ public class ServerIssueUpdater implements Disposable {
 
     try {
       ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
-      SonarQubeServer server = projectBindingManager.getSonarQubeServer();
+      ServerConnection connection = projectBindingManager.getServerConnection();
       ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
       String projectKey = projectSettings.getProjectKey();
 
@@ -115,7 +115,7 @@ public class ServerIssueUpdater implements Disposable {
       indicator.setText(msg);
 
       // submit tasks
-      List<Future<Void>> updateTasks = fetchAndMatchServerIssues(projectKey, filesPerModule, server, engine, downloadAll);
+      List<Future<Void>> updateTasks = fetchAndMatchServerIssues(projectKey, filesPerModule, connection, engine, downloadAll);
 
       if (waitForCompletion) {
         waitForTasks(updateTasks);
@@ -139,7 +139,7 @@ public class ServerIssueUpdater implements Disposable {
   }
 
   private List<Future<Void>> fetchAndMatchServerIssues(String projectKey, Map<Module, Collection<VirtualFile>> filesPerModule,
-    SonarQubeServer server, ConnectedSonarLintEngine engine, boolean downloadAll) {
+                                                       ServerConnection server, ConnectedSonarLintEngine engine, boolean downloadAll) {
     List<Future<Void>> futureList = new LinkedList<>();
 
     if (!downloadAll) {
@@ -152,7 +152,7 @@ public class ServerIssueUpdater implements Disposable {
     return futureList;
   }
 
-  private List<Future<Void>> downloadAndMatchAllServerIssues(String projectKey, Map<Module, Collection<VirtualFile>> filesPerModule, SonarQubeServer server,
+  private List<Future<Void>> downloadAndMatchAllServerIssues(String projectKey, Map<Module, Collection<VirtualFile>> filesPerModule, ServerConnection server,
     ConnectedSonarLintEngine engine) {
     IssueUpdater issueUpdater = new IssueUpdater(server, engine);
 
@@ -177,7 +177,7 @@ public class ServerIssueUpdater implements Disposable {
     return moduleBindingManager.getBinding();
   }
 
-  private List<Future<Void>> fetchAndMatchServerIssues(String projectKey, Module module, Collection<VirtualFile> files, SonarQubeServer server, ConnectedSonarLintEngine engine) {
+  private List<Future<Void>> fetchAndMatchServerIssues(String projectKey, Module module, Collection<VirtualFile> files, ServerConnection server, ConnectedSonarLintEngine engine) {
     List<Future<Void>> futureList = new LinkedList<>();
     ProjectBinding binding = getProjectBinding(module);
     Map<VirtualFile, String> relativePathPerFile = getRelativePaths(module.getProject(), files);
@@ -222,10 +222,10 @@ public class ServerIssueUpdater implements Disposable {
   }
 
   private class IssueUpdater {
-    private final SonarQubeServer server;
+    private final ServerConnection server;
     private final ConnectedSonarLintEngine engine;
 
-    private IssueUpdater(SonarQubeServer server, ConnectedSonarLintEngine engine) {
+    private IssueUpdater(ServerConnection server, ConnectedSonarLintEngine engine) {
       this.server = server;
       this.engine = engine;
     }

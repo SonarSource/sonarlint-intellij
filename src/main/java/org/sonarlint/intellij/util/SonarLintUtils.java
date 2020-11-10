@@ -65,7 +65,7 @@ import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 import org.sonarlint.intellij.SonarLintPlugin;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
@@ -226,11 +226,11 @@ public class SonarLintUtils {
     return JavaModuleSourceRootTypes.RESOURCES.contains(source.getRootType());
   }
 
-  public static ServerConfiguration getServerConfiguration(SonarQubeServer server) {
+  public static ServerConfiguration getServerConfiguration(ServerConnection server) {
     return getServerConfiguration(server, CONNECTION_TIMEOUT_MS, READ_TIMEOUT_MS);
   }
 
-  public static ServerConfiguration getServerConfiguration(SonarQubeServer server, int connectTimeout, int readTimeout) {
+  public static ServerConfiguration getServerConfiguration(ServerConnection server, int connectTimeout, int readTimeout) {
     CertificateManager certificateManager = CertificateManager.getInstance();
     SonarLintPlugin plugin = getService(SonarLintPlugin.class);
     ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()

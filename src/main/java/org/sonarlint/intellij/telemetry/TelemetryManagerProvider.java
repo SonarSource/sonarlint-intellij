@@ -118,16 +118,15 @@ public class TelemetryManagerProvider {
     return isAnyOpenProjectMatch(p -> {
       try {
         ProjectBindingManager bindingManager = SonarLintUtils.getService(p, ProjectBindingManager.class);
-        return bindingManager.getSonarQubeServer().isSonarCloud();
+        return bindingManager.getServerConnection().isSonarCloud();
       } catch (InvalidBindingException e) {
         return false;
       }
     });
   }
 
-
   private static boolean isDevNotificationsDisabled() {
-    return getGlobalSettings().getSonarQubeServers().stream().anyMatch(s -> !s.enableNotifications());
+    return getGlobalSettings().getServerConnections().stream().anyMatch(s -> !s.enableNotifications());
   }
 
   private static boolean isAnyOpenProjectMatch(Predicate<Project> predicate) {

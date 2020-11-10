@@ -41,7 +41,9 @@ import org.sonarlint.intellij.util.SonarLintUtils;
  * @see com.intellij.util.xmlb.annotations.OptionTag
  */
 @Immutable
-public class SonarQubeServer {
+// Don't change annotation, used for backward compatibility
+@Tag("SonarQubeServer")
+public class ServerConnection {
   @OptionTag
   private String hostUrl;
   @Tag
@@ -59,11 +61,11 @@ public class SonarQubeServer {
   @Tag
   private boolean enableNotifications;
 
-  private SonarQubeServer() {
+  private ServerConnection() {
     // necessary for XML deserialization
   }
 
-  private SonarQubeServer(Builder builder) {
+  private ServerConnection(Builder builder) {
     this.hostUrl = builder.hostUrl;
     this.token = builder.token;
     this.name = builder.name;
@@ -76,10 +78,10 @@ public class SonarQubeServer {
 
   @Override
   public boolean equals(Object o) {
-    if (!(o instanceof SonarQubeServer)) {
+    if (!(o instanceof ServerConnection)) {
       return false;
     }
-    SonarQubeServer other = (SonarQubeServer) o;
+    ServerConnection other = (ServerConnection) o;
 
     return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
       Comparing.equal(getPassword(), other.getPassword()) &&
@@ -173,8 +175,8 @@ public class SonarQubeServer {
       // no args
     }
 
-    public SonarQubeServer build() {
-      return new SonarQubeServer(this);
+    public ServerConnection build() {
+      return new ServerConnection(this);
     }
 
     public Builder setLogin(@Nullable String login) {

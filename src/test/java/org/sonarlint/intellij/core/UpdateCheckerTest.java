@@ -24,7 +24,7 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
@@ -40,7 +40,7 @@ import static org.mockito.Mockito.when;
 
 public class UpdateCheckerTest extends AbstractSonarLintLightTests {
   private UpdateChecker updateChecker;
-  private SonarQubeServer server;
+  private ServerConnection server;
   private SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
   private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
@@ -53,7 +53,7 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setProjectKey("key");
     getProjectSettings().setServerId("serverId");
     server = createServer();
-    when(bindingManager.getSonarQubeServer()).thenReturn(server);
+    when(bindingManager.getServerConnection()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 
     updateChecker = new UpdateChecker(getProject());
@@ -103,8 +103,8 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     verifyZeroInteractions(notifications);
   }
 
-  private SonarQubeServer createServer() {
-    return SonarQubeServer.newBuilder()
+  private ServerConnection createServer() {
+    return ServerConnection.newBuilder()
       .setHostUrl("http://localhost:9000")
       .setName("server1")
       .build();

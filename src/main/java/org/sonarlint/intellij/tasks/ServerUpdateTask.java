@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -57,19 +57,19 @@ import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 public class ServerUpdateTask {
   private static final Logger LOGGER = Logger.getInstance(ServerUpdateTask.class);
   private final ConnectedSonarLintEngine engine;
-  private final SonarQubeServer server;
+  private final ServerConnection connection;
   private final Map<String, List<Project>> projectsPerProjectKey;
   private final boolean onlyModules;
 
-  public ServerUpdateTask(ConnectedSonarLintEngine engine, SonarQubeServer server, Map<String, List<Project>> projectsPerProjectKey, boolean onlyModules) {
+  public ServerUpdateTask(ConnectedSonarLintEngine engine, ServerConnection connection, Map<String, List<Project>> projectsPerProjectKey, boolean onlyModules) {
     this.engine = engine;
-    this.server = server;
+    this.connection = connection;
     this.projectsPerProjectKey = projectsPerProjectKey;
     this.onlyModules = onlyModules;
   }
 
   public Task.Modal asModal() {
-    return new Task.Modal(null, "Updating SonarQube server '" + server.getName() + "'", true) {
+    return new Task.Modal(null, "Updating storage for connection '" + connection.getName() + "'", true) {
       @Override public void run(@NotNull ProgressIndicator indicator) {
         ServerUpdateTask.this.run(indicator);
       }
@@ -77,7 +77,7 @@ public class ServerUpdateTask {
   }
 
   public Task.Backgroundable asBackground() {
-    return new Task.Backgroundable(null, "Updating SonarQube server '" + server.getName() + "'", true, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
+    return new Task.Backgroundable(null, "Updating storage for connection '" + connection.getName() + "'", true, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
       @Override public void run(@NotNull ProgressIndicator indicator) {
         ServerUpdateTask.this.run(indicator);
       }
@@ -90,7 +90,7 @@ public class ServerUpdateTask {
     try {
       indicator.setIndeterminate(false);
       TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, null);
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
+      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(connection);
 
       if (!onlyModules) {
         UpdateResult updateResult = engine.update(serverConfiguration, monitor);
@@ -102,17 +102,17 @@ public class ServerUpdateTask {
           ApplicationManager.getApplication().invokeAndWait(() ->
             Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
         }
-        GlobalLogOutput.get().log("Server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+        GlobalLogOutput.get().log("Server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
       }
 
       updateProjects(serverConfiguration, monitor);
 
     } catch (CanceledException e) {
-      LOGGER.info("Update of server '" + server.getName() + "' was cancelled");
-      GlobalLogOutput.get().log("Update of server '" + server.getName() + "' was cancelled", LogOutput.Level.INFO);
+      LOGGER.info("Update of server '" + connection.getName() + "' was cancelled");
+      GlobalLogOutput.get().log("Update of server '" + connection.getName() + "' was cancelled", LogOutput.Level.INFO);
     } catch (Exception e) {
-      LOGGER.info("Error updating from server '" + server.getName() + "'", e);
-      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server configuration '" + server.getName() + "'");
+      LOGGER.info("Error updating from server '" + connection.getName() + "'", e);
+      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server connection '" + connection.getName() + "'");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
         @Override public void doRun() {
           Messages.showErrorDialog((Project) null, msg, "Update Failed");
@@ -122,7 +122,7 @@ public class ServerUpdateTask {
   }
 
   private static String buildMinimumVersionFailMessage(Collection<SonarAnalyzer> failingAnalyzers) {
-    String msg = "The following plugins do not meet the required minimum versions, please upgrade them in SonarQube: ";
+    String msg = "The following plugins do not meet the required minimum versions: ";
 
     return msg + failingAnalyzers.stream()
       .map(ServerUpdateTask::analyzerToString)
@@ -176,7 +176,7 @@ public class ServerUpdateTask {
 
   private void updateProject(ServerConfiguration serverConfiguration, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
     engine.updateProject(serverConfiguration, projectKey, monitor);
-    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + server.getName() + "' updated", LogOutput.Level.INFO);
+    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
     projects.forEach(this::updateModules);
     projects.forEach(ServerUpdateTask::analyzeOpenFiles);
   }

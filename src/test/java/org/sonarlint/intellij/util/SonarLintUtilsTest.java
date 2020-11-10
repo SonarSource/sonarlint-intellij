@@ -21,13 +21,12 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Random;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -77,7 +76,7 @@ public class SonarLintUtilsTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testServerConfigurationToken() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    ServerConnection server = ServerConnection.newBuilder()
       .setHostUrl("http://myhost")
       .setEnableProxy(false)
       .setToken("token")
@@ -94,7 +93,7 @@ public class SonarLintUtilsTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testServerConfigurationPassword() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    ServerConnection server = ServerConnection.newBuilder()
       .setHostUrl("http://myhost")
       .setLogin("token")
       .setPassword("pass")

@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -80,7 +80,7 @@ public class UpdateChecker implements Disposable {
 
     try {
       List<String> changelog = new ArrayList<>();
-      SonarQubeServer server = projectBindingManager.getSonarQubeServer();
+      ServerConnection server = projectBindingManager.getServerConnection();
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       log.log("Check for updates from server '" + server.getName() + "'...", LogOutput.Level.INFO);
       progressIndicator.setIndeterminate(false);

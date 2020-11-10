@@ -186,7 +186,7 @@ public class SonarLintSubmitter {
         Predicate<VirtualFile> testPredicate = f -> TestSourcesFilter.isTestSources(f, module.getProject());
         Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
         for (VirtualFile f : excluded) {
-          logExclusion(f, "not automatically analyzed due to exclusions configured in the SonarQube Server");
+          logExclusion(f, "not automatically analyzed due to exclusions configured in the bound project");
           filesToClearIssues.add(f);
         }
         virtualFiles.removeAll(excluded);

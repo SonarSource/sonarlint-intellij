@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.sonar.api.utils.log.Loggers;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
@@ -148,8 +148,8 @@ public class SonarLintEngineManager implements Disposable {
   }
 
   private static Set<String> getServerNames() {
-    return getGlobalSettings().getSonarQubeServers().stream()
-      .map(SonarQubeServer::getName)
+    return getGlobalSettings().getServerConnections().stream()
+      .map(ServerConnection::getName)
       .collect(Collectors.toSet());
   }
 

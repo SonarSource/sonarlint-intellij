@@ -20,11 +20,10 @@
 package org.sonarlint.intellij.config.global;
 
 import com.intellij.util.xmlb.annotations.Attribute;
+import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.intellij.util.xmlb.annotations.XCollection;
 import com.intellij.util.xmlb.annotations.XMap;
-import org.sonarlint.intellij.util.SonarLintUtils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,12 +36,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 public final class SonarLintGlobalSettings {
 
   private boolean autoTrigger = true;
   private String nodejsPath;
-  private List<SonarQubeServer> servers = new LinkedList<>();
+  private List<ServerConnection> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
   private Set<String> includedRules;
@@ -131,11 +131,13 @@ public final class SonarLintGlobalSettings {
     this.nodejsPath = nodejsPath;
   }
 
-  public List<SonarQubeServer> getSonarQubeServers() {
+  // Don't change annotation, used for backward compatibility
+  @OptionTag("sonarQubeServers")
+  public List<ServerConnection> getServerConnections() {
     return this.servers;
   }
 
-  public void setSonarQubeServers(List<SonarQubeServer> servers) {
+  public void setServerConnections(List<ServerConnection> servers) {
     this.servers = Collections.unmodifiableList(servers.stream()
       .filter(s -> !SonarLintUtils.isBlank(s.getName()))
       .collect(Collectors.toList()));
@@ -183,7 +185,7 @@ public final class SonarLintGlobalSettings {
 
   public boolean hasConnectionTo(String serverUrl) {
     return servers.stream()
-      .map(SonarQubeServer::getHostUrl)
+      .map(ServerConnection::getHostUrl)
       .anyMatch(url -> url.equals(serverUrl));
   }
 

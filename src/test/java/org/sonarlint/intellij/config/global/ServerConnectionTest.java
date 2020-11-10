@@ -23,10 +23,10 @@ import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SonarQubeServerTest {
+public class ServerConnectionTest {
   @Test
   public void testRoundTrip() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    ServerConnection server = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
@@ -46,7 +46,7 @@ public class SonarQubeServerTest {
 
   @Test
   public void testSonarCloud() {
-    SonarQubeServer server1 = SonarQubeServer.newBuilder()
+    ServerConnection server1 = ServerConnection.newBuilder()
       .setHostUrl("https://sonarqube.com")
       .setPassword("pass")
       .setToken("token")
@@ -58,7 +58,7 @@ public class SonarQubeServerTest {
 
   @Test
   public void testEqualsAndHash() {
-    SonarQubeServer server1 = SonarQubeServer.newBuilder()
+    ServerConnection server1 = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
@@ -66,7 +66,7 @@ public class SonarQubeServerTest {
       .setLogin("login")
       .build();
 
-    SonarQubeServer server2 = SonarQubeServer.newBuilder()
+    ServerConnection server2 = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
@@ -74,7 +74,7 @@ public class SonarQubeServerTest {
       .setLogin("login")
       .build();
 
-    SonarQubeServer server3 = SonarQubeServer.newBuilder()
+    ServerConnection server3 = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass1")
       .setToken("token")
@@ -91,7 +91,7 @@ public class SonarQubeServerTest {
 
   @Test
   public void testSetNullEncodedFields() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    ServerConnection server = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword(null)
       .setToken(null)
@@ -105,7 +105,7 @@ public class SonarQubeServerTest {
 
   @Test
   public void testEncoded() {
-    SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
+    ServerConnection.Builder builder = ServerConnection.newBuilder()
       .setPassword("pass")
       .setToken("token");
 

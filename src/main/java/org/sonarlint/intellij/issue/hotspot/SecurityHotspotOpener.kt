@@ -85,7 +85,7 @@ open class SecurityHotspotOpener(private val wsHelper: WsHelper, private val pro
     @Throws(InvalidBindingException::class)
     private fun getConnectedServerConfig(project: Project): ServerConfiguration {
         val bindingManager = getService(project, ProjectBindingManager::class.java)
-        val server = bindingManager.sonarQubeServer
+        val server = bindingManager.serverConnection
         return SonarLintUtils.getServerConfiguration(server)
     }
 

@@ -39,7 +39,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.InformationFetchTask;
@@ -176,7 +176,7 @@ public class AuthStep extends AbstractWizardStepEx {
   }
 
   private void fetchInformation() throws CommitStepException {
-    SonarQubeServer tmpServer = model.createServerWithoutOrganization();
+    ServerConnection tmpServer = model.createServerWithoutOrganization();
     InformationFetchTask task = new InformationFetchTask(tmpServer);
     ProgressManager.getInstance().run(task);
     if (task.getException() != null) {
@@ -187,30 +187,33 @@ public class AuthStep extends AbstractWizardStepEx {
       throw new CommitStepException(msg);
     }
 
-    model.setOrganizationList(task.organizations());
     model.setNotificationsSupported(task.notificationsSupported());
 
-    if (task.organizations().size() == 1) {
-      // for sonarqube not supporting organizations, there will only be the default one
-      model.setOrganizationKey(task.organizations().iterator().next().getKey());
-    } else if (model.getOrganizationKey() != null) {
-      // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
-      boolean orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(model.getOrganizationKey()));
-      if (!orgExists) {
-        GetOrganizationTask getOrganizationTask = new GetOrganizationTask(tmpServer, model.getOrganizationKey());
-        ProgressManager.getInstance().run(getOrganizationTask);
-        if (getOrganizationTask.getException() != null || !getOrganizationTask.organization().isPresent()) {
-          // ignore and reset organization
-          model.setOrganizationKey(null);
-        } else {
-          model.getOrganizationList().add(getOrganizationTask.organization().get());
+    if (tmpServer.isSonarCloud()) {
+      model.setOrganizationList(task.organizations());
+      if (model.getOrganizationKey() != null) {
+        // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
+        boolean orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(model.getOrganizationKey()));
+        if (!orgExists) {
+          GetOrganizationTask getOrganizationTask = new GetOrganizationTask(tmpServer, model.getOrganizationKey());
+          ProgressManager.getInstance().run(getOrganizationTask);
+          if (getOrganizationTask.getException() != null || !getOrganizationTask.organization().isPresent()) {
+            // ignore and reset organization
+            model.setOrganizationKey(null);
+          } else {
+            model.getOrganizationList().add(getOrganizationTask.organization().get());
+          }
         }
+      }
+      if (model.getOrganizationKey() == null && task.organizations().size() == 1) {
+        // if there is only one organization, we can preselect it
+        model.setOrganizationKey(task.organizations().iterator().next().getKey());
       }
     }
   }
 
   private void checkConnection() throws CommitStepException {
-    SonarQubeServer tmpServer = model.createServerWithoutOrganization();
+    ServerConnection tmpServer = model.createServerWithoutOrganization();
     ConnectionTestTask test = new ConnectionTestTask(tmpServer);
     ProgressManager.getInstance().run(test);
     ValidationResult r = test.result();
