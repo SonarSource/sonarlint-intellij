@@ -128,6 +128,17 @@ public class SonarLintUtils {
     return str == null || str.trim().isEmpty();
   }
 
+  public static boolean equalsIgnoringTrailingSlash(String aString, String anotherString) {
+    return withTrailingSlash(aString).equals(withTrailingSlash(anotherString));
+  }
+
+  private static String withTrailingSlash(String str) {
+    if (!str.endsWith("/")) {
+      return str + '/';
+    }
+    return str;
+  }
+
   public static Image iconToImage(Icon icon) {
     if (icon instanceof ImageIcon) {
       return ((ImageIcon) icon).getImage();

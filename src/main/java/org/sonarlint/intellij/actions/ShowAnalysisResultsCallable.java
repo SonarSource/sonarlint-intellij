@@ -60,7 +60,7 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   }
 
   private void showAnalysisResultsTab() {
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, IssuesViewTabOpener.class)
+    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
       .openAnalysisResults());
   }
 }

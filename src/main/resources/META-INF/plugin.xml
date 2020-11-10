@@ -129,7 +129,7 @@
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
         <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.actions.IssuesViewTabOpener"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.actions.SonarLintToolWindow"/>
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
 
         <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->

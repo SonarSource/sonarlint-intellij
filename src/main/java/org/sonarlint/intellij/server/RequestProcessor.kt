@@ -26,6 +26,7 @@ import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.project.ProjectManager
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.QueryStringDecoder
+import org.sonarlint.intellij.issue.hotspot.SecurityHotspotOpener
 
 const val STATUS_ENDPOINT = "/sonarlint/api/status"
 const val SHOW_HOTSPOT_ENDPOINT = "/sonarlint/api/hotspots/show"
@@ -36,7 +37,7 @@ const val SERVER_URL = "server"
 data class Status(val ideName: String, val description: String)
 
 class RequestProcessor(private val appInfo: ApplicationInfo = ApplicationInfo.getInstance(),
-                       private val orchestrator: SecurityHotspotOrchestrator = SecurityHotspotOrchestrator()) {
+                       private val opener: SecurityHotspotOpener = SecurityHotspotOpener()) {
 
     fun processRequest(request: Request): Response {
         if (request.path == STATUS_ENDPOINT && request.method == HttpMethod.GET) {
@@ -72,7 +73,7 @@ class RequestProcessor(private val appInfo: ApplicationInfo = ApplicationInfo.ge
         val serverUrl = request.getParameter(SERVER_URL) ?: return missingParameter(SERVER_URL)
 
         ApplicationManager.getApplication().invokeLater {
-            orchestrator.open(projectKey, hotspotKey, serverUrl)
+            opener.open(projectKey, hotspotKey, serverUrl)
         }
         return Success()
     }
