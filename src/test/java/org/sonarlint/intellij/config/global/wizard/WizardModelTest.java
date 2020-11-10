@@ -20,14 +20,14 @@
 package org.sonarlint.intellij.config.global.wizard;
 
 import org.junit.Test;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class WizardModelTest {
   @Test
   public void testCreateFromConfig() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    ServerConnection server = ServerConnection.newBuilder()
       .setName("name")
       .setToken("token")
       .setOrganizationKey("org")
@@ -57,7 +57,7 @@ public class WizardModelTest {
 
     model.setServerType(WizardModel.ServerType.SONARQUBE);
 
-    SonarQubeServer server = model.createServer();
+    ServerConnection server = model.createServer();
     assertThat(server.getHostUrl()).isEqualTo("url");
     assertThat(server.enableProxy()).isTrue();
     assertThat(server.getLogin()).isEqualTo("login");
@@ -76,7 +76,7 @@ public class WizardModelTest {
 
     model.setServerType(WizardModel.ServerType.SONARCLOUD);
 
-    SonarQubeServer server = model.createServer();
+    ServerConnection server = model.createServer();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
     assertThat(server.getLogin()).isNull();
     assertThat(server.getPassword()).isNull();
@@ -86,7 +86,7 @@ public class WizardModelTest {
 
   @Test
   public void testMigrationSonarCloud() {
-    SonarQubeServer server = SonarQubeServer.newBuilder()
+    ServerConnection server = ServerConnection.newBuilder()
       .setName("name")
       .setToken("token")
       .setOrganizationKey("org")

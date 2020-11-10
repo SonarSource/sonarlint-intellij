@@ -22,7 +22,7 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.progress.ProgressIndicator;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -32,7 +32,7 @@ public class ConnectionTestTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void fail_if_no_connection() {
-    SonarQubeServer server = SonarQubeServer.newBuilder().setHostUrl("invalid_url").build();
+    ServerConnection server = ServerConnection.newBuilder().setHostUrl("invalid_url").build();
     ConnectionTestTask task = new ConnectionTestTask(server);
     ProgressIndicator progress = mock(ProgressIndicator.class);
     task.run(progress);

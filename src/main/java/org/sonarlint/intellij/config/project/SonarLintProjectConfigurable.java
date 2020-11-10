@@ -33,7 +33,7 @@ import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.concurrency.Promise;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -64,7 +64,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     this.busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
     this.busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
-      public void changed(List<SonarQubeServer> newServerList) {
+      public void changed(List<ServerConnection> newServerList) {
         if (panel != null) {
           panel.serversChanged(newServerList);
         }
@@ -116,7 +116,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
 
       try {
-        SonarQubeServer server = bindingManager.getSonarQubeServer();
+        ServerConnection server = bindingManager.getServerConnection();
         ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
         String projectKey = projectSettings.getProjectKey();
 
@@ -141,11 +141,11 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
     getServersFromApplicationConfigurable()
       .onProcessed(sonarQubeServers ->
-        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getSonarQubeServers(), getSettingsFor(project))
+        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getServerConnections(), getSettingsFor(project))
       );
   }
 
-  private static Promise<List<SonarQubeServer>> getServersFromApplicationConfigurable() {
+  private static Promise<List<ServerConnection>> getServersFromApplicationConfigurable() {
     return DataManager.getInstance().getDataContextFromFocusAsync()
       .then(dataContext -> {
         Settings allSettings = Settings.KEY.getData(dataContext);

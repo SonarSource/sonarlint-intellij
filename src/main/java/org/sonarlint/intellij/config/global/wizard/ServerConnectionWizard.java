@@ -26,18 +26,18 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 
-public class SQServerWizard {
+public class ServerConnectionWizard {
   private final WizardModel model;
   private AbstractWizardEx wizard;
 
-  public SQServerWizard(SonarQubeServer serverToEdit) {
-    model = new WizardModel(serverToEdit);
+  public ServerConnectionWizard(ServerConnection connectionToEdit) {
+    model = new WizardModel(connectionToEdit);
     init(model, true, Collections.emptySet());
   }
 
-  public SQServerWizard(Set<String> existingNames) {
+  public ServerConnectionWizard(Set<String> existingNames) {
     model = new WizardModel();
     init(model, false, existingNames);
   }
@@ -46,7 +46,7 @@ public class SQServerWizard {
     List<AbstractWizardStepEx> steps = createSteps(model, editing, existingNames);
     String title = editing ? "Edit " : "New ";
     title = title + "Connection";
-    wizard = new SonarQubeWizard(steps, title);
+    wizard = new ServerConnectionWizardEx(steps, title);
   }
 
   private static List<AbstractWizardStepEx> createSteps(WizardModel model, boolean editing, Set<String> existingNames) {
@@ -62,12 +62,12 @@ public class SQServerWizard {
     return wizard.showAndGet();
   }
 
-  public SonarQubeServer getServer() {
+  public ServerConnection getServer() {
     return model.createServer();
   }
 
-  private static class SonarQubeWizard extends AbstractWizardEx {
-    public SonarQubeWizard(List<AbstractWizardStepEx> steps, String title) {
+  private static class ServerConnectionWizardEx extends AbstractWizardEx {
+    public ServerConnectionWizardEx(List<AbstractWizardStepEx> steps, String title) {
       super(title, null, steps);
       this.setHorizontalStretch(1.25f);
       this.setVerticalStretch(1.25f);

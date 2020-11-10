@@ -44,7 +44,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private static final int RULES_TAB_INDEX = 2;
   private static final int ABOUT_TAB_INDEX = 3;
   private JPanel rootPanel;
-  private SonarQubeServerMgmtPanel serversPanel;
+  private ServerConnectionMgmtPanel serversPanel;
   private SonarLintGlobalOptionsPanel globalPanel;
   private SonarLintAboutPanel about;
   private GlobalExclusionsPanel exclusions;
@@ -102,7 +102,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @CheckForNull
-  public List<SonarQubeServer> getCurrentServers() {
+  public List<ServerConnection> getCurrentServers() {
     if (serversPanel != null) {
       return serversPanel.getServers();
     }
@@ -143,7 +143,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       rules = new RuleConfigurationPanel();
       exclusions = new GlobalExclusionsPanel();
       globalPanel = new SonarLintGlobalOptionsPanel();
-      serversPanel = new SonarQubeServerMgmtPanel();
+      serversPanel = new ServerConnectionMgmtPanel();
 
       JPanel settingsPanel = new JPanel(new BorderLayout());
       settingsPanel.add(globalPanel.getComponent(), BorderLayout.NORTH);
@@ -153,7 +153,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       tabs = new JBTabbedPane();
       tabs.insertTab("Settings", null, settingsPanel, "Configure SonarLint for all projects", SETTINGS_TAB_INDEX);
       tabs.insertTab("File Exclusions", null, exclusions.getComponent(), "Configure which files should be excluded from analysis", FILE_EXCLUSIONS_TAB_INDEX);
-      tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not connected to SonarQube", RULES_TAB_INDEX);
+      tabs.insertTab("Rules", null, rules.getComponent(), "Choose which rules are enabled when not bound to SonarQube or SonarCloud", RULES_TAB_INDEX);
       tabs.insertTab("About", null, about.getComponent(), "About SonarLint", ABOUT_TAB_INDEX);
       rootPanel.add(tabs, BorderLayout.CENTER);
     }

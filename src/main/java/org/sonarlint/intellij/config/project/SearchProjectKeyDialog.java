@@ -48,17 +48,19 @@ import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
 
 public class SearchProjectKeyDialog extends DialogWrapper {
   private final Map<String, RemoteProject> projectsByKey;
+  private final boolean isSonarCloud;
 
   private String lastSelectedProjectKey;
   private JPanel contentPane;
   private JBScrollPane scrollPane;
   private JBList<RemoteProject> projectList;
 
-  public SearchProjectKeyDialog(Component parent, String selectedProjectKey, Map<String, RemoteProject> projectsByKey) {
+  public SearchProjectKeyDialog(Component parent, String selectedProjectKey, Map<String, RemoteProject> projectsByKey, boolean isSonarCloud) {
     super(parent, false);
     this.lastSelectedProjectKey = selectedProjectKey;
     this.projectsByKey = projectsByKey;
-    setTitle("Search Project in SonarQube Server");
+    this.isSonarCloud = isSonarCloud;
+    setTitle("Search Project in " + (isSonarCloud ? "SonarCloud" : "SonarQube"));
     init();
   }
 
@@ -81,7 +83,7 @@ public class SearchProjectKeyDialog extends DialogWrapper {
 
   private void createProjectList() {
     projectList = new JBList<>();
-    projectList.setEmptyText("No projects found in the selected SonarQube Server");
+    projectList.setEmptyText("No projects found in " + (isSonarCloud ? "SonarCloud" : "SonarQube"));
     projectList.setCellRenderer(new ProjectListRenderer());
     projectList.addListSelectionListener(new ProjectItemListener());
     projectList.addMouseListener(new ProjectMouseListener());

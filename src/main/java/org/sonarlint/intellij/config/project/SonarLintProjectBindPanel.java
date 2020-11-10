@@ -55,7 +55,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -73,7 +73,7 @@ public class SonarLintProjectBindPanel {
   private JBCheckBox bindEnable;
 
   // server mgmt
-  private JComboBox<SonarQubeServer> serverComboBox;
+  private JComboBox<ServerConnection> serverComboBox;
   private JButton configureServerButton;
 
   // binding mgmt
@@ -95,7 +95,7 @@ public class SonarLintProjectBindPanel {
     return rootPanel;
   }
 
-  public void load(Collection<SonarQubeServer> servers, boolean enabled, @Nullable String selectedServerId, @Nullable String selectedProjectKey) {
+  public void load(Collection<ServerConnection> servers, boolean enabled, @Nullable String selectedServerId, @Nullable String selectedProjectKey) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     this.bindEnable.setSelected(enabled);
 
@@ -108,12 +108,12 @@ public class SonarLintProjectBindPanel {
 
   @CheckForNull
   public String getSelectedStorageId() {
-    SonarQubeServer server = getSelectedServer();
+    ServerConnection server = getSelectedServer();
     return server != null ? server.getName() : null;
   }
 
   @CheckForNull
-  private SonarQubeServer getSelectedServer() {
+  private ServerConnection getSelectedServer() {
     // do things in a type safe way
     int idx = serverComboBox.getSelectedIndex();
     if (idx < 0) {
@@ -148,7 +148,7 @@ public class SonarLintProjectBindPanel {
   private Map<String, RemoteProject> downloadProjectList() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    SonarQubeServer selectedServer = getSelectedServer();
+    ServerConnection selectedServer = getSelectedServer();
     String storageId = getSelectedStorageId();
     if (selectedServer == null || storageId == null) {
       return null;
@@ -168,7 +168,7 @@ public class SonarLintProjectBindPanel {
     }
   }
 
-  public void serversChanged(List<SonarQubeServer> serverList) {
+  public void serversChanged(List<ServerConnection> serverList) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     // keep selection if possible
@@ -181,12 +181,12 @@ public class SonarLintProjectBindPanel {
    * Sets new servers in the combo box, or disable it if there aren't any.
    * Will also enable or disable other components.
    */
-  private void setServerList(Collection<SonarQubeServer> servers, @Nullable String previousSelectedStorageId) {
-    DefaultComboBoxModel<SonarQubeServer> model = (DefaultComboBoxModel<SonarQubeServer>) serverComboBox.getModel();
+  private void setServerList(Collection<ServerConnection> servers, @Nullable String previousSelectedStorageId) {
+    DefaultComboBoxModel<ServerConnection> model = (DefaultComboBoxModel<ServerConnection>) serverComboBox.getModel();
 
     if (servers.isEmpty()) {
       serverComboBox.setEnabled(false);
-      SonarQubeServer s = SonarQubeServer.newBuilder()
+      ServerConnection s = ServerConnection.newBuilder()
         .setName(SERVER_EMPTY_TEXT)
         .build();
       serverComboBox.setPrototypeDisplayValue(s);
@@ -195,7 +195,7 @@ public class SonarLintProjectBindPanel {
       serverComboBox.setEnabled(bindEnable.isSelected());
       int i = 0;
       int selectedIndex = -1;
-      for (SonarQubeServer s : servers) {
+      for (ServerConnection s : servers) {
         if (previousSelectedStorageId != null && s.getName() != null && previousSelectedStorageId.equals(s.getName())) {
           selectedIndex = i;
         }
@@ -242,7 +242,7 @@ public class SonarLintProjectBindPanel {
       @Override public void actionPerformed(ActionEvent e) {
         Map<String, RemoteProject> map = downloadProjectList();
         if (map != null) {
-          SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map);
+          SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map, getSelectedServer().isSonarCloud());
           if (dialog.showAndGet()) {
             projectKeyTextField.setText(dialog.getSelectedProjectKey() != null ? dialog.getSelectedProjectKey() : "");
           }
@@ -297,8 +297,8 @@ public class SonarLintProjectBindPanel {
   /**
    * Render SonarQube server in combo box
    */
-  private class ServerComboBoxRenderer extends ColoredListCellRenderer<SonarQubeServer> {
-    @Override protected void customizeCellRenderer(JList list, @Nullable SonarQubeServer value, int index, boolean selected, boolean hasFocus) {
+  private class ServerComboBoxRenderer extends ColoredListCellRenderer<ServerConnection> {
+    @Override protected void customizeCellRenderer(JList list, @Nullable ServerConnection value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
         if (serverComboBox.isEnabled()) {
           append(SERVER_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);

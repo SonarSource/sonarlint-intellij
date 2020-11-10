@@ -25,7 +25,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -36,12 +36,12 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 public class ServerDownloadProjectTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ServerDownloadProjectTask.class);
   private final ConnectedSonarLintEngine engine;
-  private final SonarQubeServer server;
+  private final ServerConnection server;
 
   private Exception exception;
   private Map<String, RemoteProject> result;
 
-  public ServerDownloadProjectTask(Project project, ConnectedSonarLintEngine engine, SonarQubeServer server) {
+  public ServerDownloadProjectTask(Project project, ConnectedSonarLintEngine engine, ServerConnection server) {
     super(project, "Downloading Project List", true);
     this.engine = engine;
     this.server = server;

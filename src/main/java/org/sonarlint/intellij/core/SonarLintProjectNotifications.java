@@ -29,8 +29,8 @@ import javax.annotation.Nullable;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
-import org.sonarlint.intellij.config.global.SonarQubeServerMgmtPanel;
+import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.ServerConnectionMgmtPanel;
 import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -120,7 +120,7 @@ public class SonarLintProjectNotifications {
     shown = true;
   }
 
-  void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, SonarQubeServer server, boolean onlyProjects) {
+  void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, ServerConnection server, boolean onlyProjects) {
     Notification notification = UPDATE_GROUP.createNotification(
       "SonarLint - Binding update available",
       "Change detected for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
@@ -128,7 +128,7 @@ public class SonarLintProjectNotifications {
       @Override
       public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
         notification.expire();
-        SonarQubeServerMgmtPanel.updateServerBinding(server, engine, onlyProjects);
+        ServerConnectionMgmtPanel.updateServerBinding(server, engine, onlyProjects);
       }
     });
     notification.notify(myProject);

@@ -29,7 +29,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.IssuesViewTabOpener;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarsource.sonarlint.core.WsHelperImpl;
 import org.sonarsource.sonarlint.core.client.api.common.TextRange;
@@ -169,8 +169,8 @@ public class SecurityHotspotOpenerTest extends AbstractSonarLintLightTests {
   }
 
   private void registerConnection() {
-    getGlobalSettings().setSonarQubeServers(
-      Collections.singletonList(SonarQubeServer.newBuilder().setHostUrl(CONNECTED_URL).setName(SERVER_ID).build())
+    getGlobalSettings().setServerConnections(
+      Collections.singletonList(ServerConnection.newBuilder().setHostUrl(CONNECTED_URL).setName(SERVER_ID).build())
     );
   }
 

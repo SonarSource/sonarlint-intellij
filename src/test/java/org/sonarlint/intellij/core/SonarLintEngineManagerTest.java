@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
@@ -61,7 +61,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
     manager = new SonarLintEngineManager(engineFactory);
-    getGlobalSettings().setSonarQubeServers(Collections.emptyList());
+    getGlobalSettings().setServerConnections(Collections.emptyList());
   }
 
   @Test
@@ -87,7 +87,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_fail_not_updated() throws InvalidBindingException {
-    getGlobalSettings().setSonarQubeServers(Collections.singletonList(createServer("server1")));
+    getGlobalSettings().setServerConnections(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager();
 
 
@@ -101,7 +101,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
-    getGlobalSettings().setSonarQubeServers(Collections.singletonList(createServer("server1")));
+    getGlobalSettings().setServerConnections(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager(engineFactory);
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);
@@ -110,8 +110,8 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     verify(connectedEngine).getState();
   }
 
-  private static SonarQubeServer createServer(String name) {
-    return SonarQubeServer.newBuilder().setName(name).build();
+  private static ServerConnection createServer(String name) {
+    return ServerConnection.newBuilder().setName(name).build();
   }
 
   private static ProjectStorageStatus projectOk = new ProjectStorageStatus() {

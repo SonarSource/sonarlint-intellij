@@ -42,10 +42,10 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     assertThat(settings.isAutoTrigger()).isTrue();
     assertThat(settings.getNodejsPath()).isBlank();
 
-    SonarQubeServer server = SonarQubeServer.newBuilder().setName("name").build();
+    ServerConnection server = ServerConnection.newBuilder().setName("name").build();
 
-    settings.setSonarQubeServers(Collections.singletonList(server));
-    assertThat(settings.getSonarQubeServers()).containsOnly(server);
+    settings.setServerConnections(Collections.singletonList(server));
+    assertThat(settings.getServerConnections()).containsOnly(server);
 
     settings.setAutoTrigger(false);
     assertThat(settings.isAutoTrigger()).isFalse();

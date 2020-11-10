@@ -24,7 +24,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.WsHelperImpl;
@@ -34,21 +34,21 @@ import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 
 public class GetOrganizationTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(GetOrganizationTask.class);
-  private final SonarQubeServer server;
+  private final ServerConnection server;
   private final String organizationKey;
 
   private Exception exception;
   private Optional<RemoteOrganization> organization;
 
-  public GetOrganizationTask(SonarQubeServer server, String organizationKey) {
-    super(null, "Fetch Organization From SonarQube Server", true);
+  public GetOrganizationTask(ServerConnection server, String organizationKey) {
+    super(null, "Fetch Organization From SonarCloud", true);
     this.server = server;
     this.organizationKey = organizationKey;
   }
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to " + server.getHostUrl() + "...");
+    indicator.setText("Connecting to SonarCloud...");
     indicator.setIndeterminate(false);
 
     try {

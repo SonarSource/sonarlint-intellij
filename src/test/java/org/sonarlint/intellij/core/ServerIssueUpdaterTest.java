@@ -28,7 +28,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -71,7 +71,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     replaceProjectService(ProjectBindingManager.class, bindingManager);
     doReturn(engine).when(bindingManager).getConnectedEngine();
     underTest = new ServerIssueUpdater(getProject());
-    getGlobalSettings().setSonarQubeServers(Collections.singletonList(SonarQubeServer.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
+    getGlobalSettings().setServerConnections(Collections.singletonList(ServerConnection.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
     getProjectSettings().setServerId(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);
 

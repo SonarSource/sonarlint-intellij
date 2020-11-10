@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.SonarLintConsole;
@@ -100,18 +100,18 @@ public class ProjectBindingManager {
     return engineManager.getConnectedEngine(notifications, serverId, projectKey);
   }
 
-  public synchronized SonarQubeServer getSonarQubeServer() throws InvalidBindingException {
+  public synchronized ServerConnection getServerConnection() throws InvalidBindingException {
     String serverId = getSettingsFor(myProject).getServerId();
-    List<SonarQubeServer> servers = getGlobalSettings().getSonarQubeServers();
+    List<ServerConnection> servers = getGlobalSettings().getServerConnections();
 
-    Optional<SonarQubeServer> server = servers.stream().filter(s -> s.getName().equals(serverId)).findAny();
+    Optional<ServerConnection> server = servers.stream().filter(s -> s.getName().equals(serverId)).findAny();
     return server.orElseThrow(() -> new InvalidBindingException("SonarQube server configuration does not exist for server id: " + serverId));
   }
 
   public boolean isBoundTo(String serverUrl, String projectKey) {
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     String serverId = projectSettings.getServerId();
-    List<SonarQubeServer> servers = getGlobalSettings().getSonarQubeServers();
+    List<ServerConnection> servers = getGlobalSettings().getServerConnections();
 
     return projectSettings.isBoundWith(projectKey) && servers.stream()
       .filter(s -> s.getName().equals(serverId))

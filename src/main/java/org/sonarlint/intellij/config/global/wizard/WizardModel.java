@@ -22,7 +22,7 @@ package org.sonarlint.intellij.config.global.wizard;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
@@ -50,7 +50,7 @@ public class WizardModel {
 
   }
 
-  public WizardModel(SonarQubeServer serverToEdit) {
+  public WizardModel(ServerConnection serverToEdit) {
     if (SonarLintUtils.isSonarCloudAlias(serverToEdit.getHostUrl())) {
       serverType = ServerType.SONARCLOUD;
     } else {
@@ -176,16 +176,16 @@ public class WizardModel {
     return this;
   }
 
-  public SonarQubeServer createServerWithoutOrganization() {
+  public ServerConnection createServerWithoutOrganization() {
     return createServer(null);
   }
 
-  public SonarQubeServer createServer() {
+  public ServerConnection createServer() {
     return createServer(organizationKey);
   }
 
-  private SonarQubeServer createServer(@Nullable String organizationKey) {
-    SonarQubeServer.Builder builder = SonarQubeServer.newBuilder()
+  private ServerConnection createServer(@Nullable String organizationKey) {
+    ServerConnection.Builder builder = ServerConnection.newBuilder()
       .setOrganizationKey(organizationKey)
       .setEnableProxy(proxyEnabled)
       .setName(name);

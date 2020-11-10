@@ -25,7 +25,7 @@ import com.intellij.openapi.progress.Task;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarQubeServer;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.WsHelperImpl;
@@ -36,24 +36,24 @@ import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
 public class InformationFetchTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
-  private final SonarQubeServer server;
+  private final ServerConnection connection;
   private Exception exception;
   private List<RemoteOrganization> organizations;
   private boolean notificationsSupported = false;
 
-  public InformationFetchTask(SonarQubeServer server) {
-    super(null, "Fetch Information From SonarQube Server", true);
-    this.server = server;
+  public InformationFetchTask(ServerConnection connection) {
+    super(null, "Fetch Information From " + (connection.isSonarCloud() ? "SonarCloud" : "SonarQube Server"), true);
+    this.connection = connection;
   }
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to " + server.getHostUrl() + "...");
+    indicator.setText("Connecting to " + connection.getHostUrl() + "...");
     indicator.setIndeterminate(false);
 
     try {
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      if (server.isSonarCloud()) {
+      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(connection);
+      if (connection.isSonarCloud()) {
         notificationsSupported = true;
         WsHelper wsHelper = new WsHelperImpl();
         organizations = wsHelper.listUserOrganizations(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
