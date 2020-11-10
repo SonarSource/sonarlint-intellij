@@ -22,29 +22,29 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.Disposable;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
-import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotificationListener;
-import org.sonarsource.sonarlint.core.notifications.SonarQubeNotifications;
+import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener;
+import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
-public class ServerNotifications implements Disposable {
-  private SonarQubeNotifications coreServerNotifications;
+public class ServerNotificationsFacade implements Disposable {
+  private ServerNotifications coreServerNotifications;
 
-  public static ServerNotifications get() {
-    return SonarLintUtils.getService(ServerNotifications.class);
+  public static ServerNotificationsFacade get() {
+    return SonarLintUtils.getService(ServerNotificationsFacade.class);
   }
 
   public void register(NotificationConfiguration configuration) {
     getServerNotifications().register(configuration);
   }
 
-  public void unregister(SonarQubeNotificationListener notificationListener) {
+  public void unregister(ServerNotificationListener notificationListener) {
     if (coreServerNotifications != null) {
       getServerNotifications().remove(notificationListener);
     }
   }
 
-  private SonarQubeNotifications getServerNotifications() {
+  private ServerNotifications getServerNotifications() {
     if (coreServerNotifications == null) {
-      coreServerNotifications = SonarQubeNotifications.get();
+      coreServerNotifications = ServerNotifications.get();
     }
     return coreServerNotifications;
   }

@@ -34,4 +34,8 @@ public interface SonarLintTelemetry {
   void analysisDoneOnSingleLanguage(@Nullable Language language, int time);
 
   void init();
+
+  void devNotificationsReceived();
+
+  void devNotificationsClicked();
 }

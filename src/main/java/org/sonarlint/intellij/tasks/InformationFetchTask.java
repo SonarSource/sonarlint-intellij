@@ -32,8 +32,7 @@ import org.sonarsource.sonarlint.core.WsHelperImpl;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
-import org.sonarsource.sonarlint.core.client.api.exceptions.UnsupportedServerException;
-import org.sonarsource.sonarlint.core.notifications.SonarQubeNotifications;
+import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
 public class InformationFetchTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
@@ -54,12 +53,15 @@ public class InformationFetchTask extends Task.Modal {
 
     try {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      indicator.setText("Checking support of notifications");
-      notificationsSupported = SonarQubeNotifications.get().isSupported(serverConfiguration);
-      WsHelper wsHelper = new WsHelperImpl();
-      organizations = wsHelper.listUserOrganizations(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
-    } catch (UnsupportedServerException e) {
-      organizations = Collections.emptyList();
+      if (server.isSonarCloud()) {
+        notificationsSupported = true;
+        WsHelper wsHelper = new WsHelperImpl();
+        organizations = wsHelper.listUserOrganizations(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
+      } else {
+        indicator.setText("Checking support of notifications");
+        notificationsSupported = ServerNotifications.get().isSupported(serverConfiguration);
+        organizations = Collections.emptyList();
+      }
     } catch (Exception e) {
       LOGGER.info("Failed to fetch information", e);
       exception = e;
