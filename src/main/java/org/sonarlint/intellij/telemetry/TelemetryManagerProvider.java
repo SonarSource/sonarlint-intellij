@@ -27,6 +27,8 @@ import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Optional;
+import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.core.NodeJsManager;
@@ -35,10 +37,12 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.common.Version;
-import org.sonarsource.sonarlint.core.telemetry.TelemetryClient;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryClientAttributesProvider;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryHttpClient;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;
 
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class TelemetryManagerProvider {
@@ -51,12 +55,32 @@ public class TelemetryManagerProvider {
   public TelemetryManager get() {
     TelemetryClientConfig clientConfig = getTelemetryClientConfig();
     SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    TelemetryClient client = new TelemetryClient(clientConfig, PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry());
-    return new TelemetryManager(getStorageFilePath(), client, this::isAnyProjectConnected, this::isAnyProjectConnectedToSonarCloud, this::getNodeJsVersion);
+    TelemetryHttpClient client = new TelemetryHttpClient(clientConfig, PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry());
+    return new TelemetryManager(getStorageFilePath(), client, new TelemetryClientAttributesProvider() {
+      @Override
+      public boolean usesConnectedMode() {
+        return isAnyProjectConnected();
+      }
+
+      @Override
+      public boolean useSonarCloud() {
+        return isAnyProjectConnectedToSonarCloud();
+      }
+
+      @Override
+      public Optional<String> nodeVersion() {
+        return Optional.ofNullable(getNodeJsVersion());
+      }
+
+      @Override
+      public boolean devNotificationsDisabled() {
+        return isDevNotificationsDisabled();
+      }
+    });
   }
 
   @CheckForNull
-  private String getNodeJsVersion() {
+  private static String getNodeJsVersion() {
     final Version nodeJsVersion = SonarLintUtils.getService(NodeJsManager.class).getNodeJsVersion();
     if (nodeJsVersion != null) {
       return nodeJsVersion.toString();
@@ -86,16 +110,12 @@ public class TelemetryManagerProvider {
     return Paths.get(PathManager.getSystemPath()).resolve(OLD_STORAGE_FILENAME);
   }
 
-  private boolean isAnyProjectConnected() {
-    ProjectManager projectManager = ProjectManager.getInstance();
-    Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> getSettingsFor(p).isBindingEnabled());
+  private static boolean isAnyProjectConnected() {
+    return isAnyOpenProjectMatch(p -> getSettingsFor(p).isBindingEnabled());
   }
 
-  private boolean isAnyProjectConnectedToSonarCloud() {
-    ProjectManager projectManager = ProjectManager.getInstance();
-    Project[] openProjects = projectManager.getOpenProjects();
-    return Arrays.stream(openProjects).anyMatch(p -> {
+  private static boolean isAnyProjectConnectedToSonarCloud() {
+    return isAnyOpenProjectMatch(p -> {
       try {
         ProjectBindingManager bindingManager = SonarLintUtils.getService(p, ProjectBindingManager.class);
         return bindingManager.getSonarQubeServer().isSonarCloud();
@@ -103,5 +123,16 @@ public class TelemetryManagerProvider {
         return false;
       }
     });
+  }
+
+
+  private static boolean isDevNotificationsDisabled() {
+    return getGlobalSettings().getSonarQubeServers().stream().anyMatch(s -> !s.enableNotifications());
+  }
+
+  private static boolean isAnyOpenProjectMatch(Predicate<Project> predicate) {
+    ProjectManager projectManager = ProjectManager.getInstance();
+    Project[] openProjects = projectManager.getOpenProjects();
+    return Arrays.stream(openProjects).anyMatch(predicate);
   }
 }

@@ -26,7 +26,8 @@ import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import java.time.ZonedDateTime;
-
+import javax.swing.event.HyperlinkEvent;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.SonarQubeServer;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -34,12 +35,12 @@ import org.sonarlint.intellij.config.project.SonarLintProjectState;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime;
-import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotification;
-import org.sonarsource.sonarlint.core.client.api.notifications.SonarQubeNotificationListener;
+import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification;
+import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -87,19 +88,18 @@ public class ProjectServerNotifications {
       }
       if (server.enableNotifications()) {
         NotificationConfiguration config = createConfiguration(settings, server);
-        ServerNotifications.get().register(config);
+        ServerNotificationsFacade.get().register(config);
       }
     }
   }
 
   public void unregister() {
-    ServerNotifications.get().unregister(eventListener);
+    ServerNotificationsFacade.get().unregister(eventListener);
   }
 
   private NotificationConfiguration createConfiguration(SonarLintProjectSettings settings, SonarQubeServer server) {
     String projectKey = settings.getProjectKey();
-    ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-    return new NotificationConfiguration(eventListener, notificationTime, projectKey, serverConfiguration);
+    return new NotificationConfiguration(eventListener, notificationTime, projectKey, () -> SonarLintUtils.getServerConfiguration(server));
   }
 
   /**
@@ -132,18 +132,27 @@ public class ProjectServerNotifications {
   /**
    * Simply displays the events and discards it
    */
-  private class EventListener implements SonarQubeNotificationListener {
-    @Override public void handle(SonarQubeNotification notification) {
+  private class EventListener implements ServerNotificationListener {
+    @Override public void handle(ServerNotification notification) {
+      SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+      telemetry.devNotificationsReceived();
       Notification notif = SONARQUBE_GROUP.createNotification(
         "<b>SonarQube event</b>",
         createMessage(notification),
         NotificationType.INFORMATION,
-        new NotificationListener.UrlOpeningListener(true));
+        new NotificationListener.UrlOpeningListener(true) {
+          @Override
+          protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
+            SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+            telemetry.devNotificationsClicked();
+            super.hyperlinkActivated(notification, event);
+          }
+        });
       notif.setImportant(true);
       notif.notify(myProject);
     }
 
-    private String createMessage(SonarQubeNotification notification) {
+    private String createMessage(ServerNotification notification) {
       return notification.message() + ".&nbsp;<a href=\"" + notification.link() + "\">Check it here</a>.";
     }
   }

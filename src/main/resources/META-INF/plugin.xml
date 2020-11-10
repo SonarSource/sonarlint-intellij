@@ -153,7 +153,7 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.util.SonarLintActions"/>
         <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
                             serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotifications"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotificationsFacade"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
 
