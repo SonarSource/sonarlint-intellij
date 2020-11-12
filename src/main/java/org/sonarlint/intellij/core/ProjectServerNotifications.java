@@ -20,16 +20,18 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
+import icons.SonarLintIcons;
 import java.time.ZonedDateTime;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectState;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -46,15 +48,15 @@ import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ProjectServerNotifications {
-  private static final NotificationGroup SONARQUBE_GROUP = NotificationGroup.balloonGroup("SonarLint: SonarQube Events");
-  private final EventListener eventListener;
+  private static final NotificationGroup SERVER_NOTIFICATIONS_GROUP =
+    new NotificationGroup("SonarLint: Server Notifications", NotificationDisplayType.STICKY_BALLOON, true, "SonarLint");
+  private EventListener eventListener;
   private final ProjectNotificationTime notificationTime;
   private final MessageBusConnection busConnection;
   private final Project myProject;
 
   public ProjectServerNotifications(Project project) {
     myProject = project;
-    this.eventListener = new EventListener();
     this.notificationTime = new ProjectNotificationTime();
     this.busConnection = project.getMessageBus().connect(myProject);
   }
@@ -68,7 +70,8 @@ public class ProjectServerNotifications {
       register();
     });
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void applied(SonarLintGlobalSettings settings) {
+      @Override
+      public void applied(SonarLintGlobalSettings settings) {
         register();
       }
     });
@@ -88,6 +91,7 @@ public class ProjectServerNotifications {
         return;
       }
       if (!server.isDisableNotifications()) {
+        this.eventListener = new EventListener(server.isSonarCloud());
         NotificationConfiguration config = createConfiguration(settings, server);
         if (ServerNotifications.get().isSupported(config.serverConfiguration().get())) {
           ServerNotificationsFacade.get().register(config);
@@ -97,7 +101,10 @@ public class ProjectServerNotifications {
   }
 
   public void unregister() {
-    ServerNotificationsFacade.get().unregister(eventListener);
+    if (eventListener != null) {
+      ServerNotificationsFacade.get().unregister(eventListener);
+      eventListener = null;
+    }
   }
 
   private NotificationConfiguration createConfiguration(SonarLintProjectSettings settings, ServerConnection server) {
@@ -111,7 +118,8 @@ public class ProjectServerNotifications {
    */
   private class ProjectNotificationTime implements LastNotificationTime {
 
-    @Override public ZonedDateTime get() {
+    @Override
+    public ZonedDateTime get() {
       SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling == null) {
@@ -121,7 +129,8 @@ public class ProjectServerNotifications {
       return lastEventPolling;
     }
 
-    @Override public void set(ZonedDateTime dateTime) {
+    @Override
+    public void set(ZonedDateTime dateTime) {
       SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling != null && dateTime.isBefore(lastEventPolling)) {
@@ -136,27 +145,37 @@ public class ProjectServerNotifications {
    * Simply displays the events and discards it
    */
   private class EventListener implements ServerNotificationListener {
-    @Override public void handle(ServerNotification notification) {
+
+    private final boolean isSonarCloud;
+
+    EventListener(boolean isSonarCloud) {
+      this.isSonarCloud = isSonarCloud;
+    }
+
+    @Override
+    public void handle(ServerNotification notification) {
       SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       telemetry.devNotificationsReceived();
-      Notification notif = SONARQUBE_GROUP.createNotification(
-        "<b>SonarQube event</b>",
-        createMessage(notification),
+      Notification notif = SERVER_NOTIFICATIONS_GROUP.createNotification(
+        "<b>" + (isSonarCloud ? "SonarCloud" : "SonarQube") + " Notification</b>",
+        createMessage(notification, isSonarCloud),
         NotificationType.INFORMATION,
-        new NotificationListener.UrlOpeningListener(true) {
+        new NotificationListener.UrlOpeningListener(false) {
           @Override
           protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
             SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
             telemetry.devNotificationsClicked();
             super.hyperlinkActivated(notification, event);
+            notification.hideBalloon();
           }
         });
+      notif.setIcon(isSonarCloud ? SonarLintIcons.ICON_SONARCLOUD_16 : SonarLintIcons.ICON_SONARQUBE_16);
       notif.setImportant(true);
       notif.notify(myProject);
     }
 
-    private String createMessage(ServerNotification notification) {
-      return notification.message() + ".&nbsp;<a href=\"" + notification.link() + "\">Check it here</a>.";
+    private String createMessage(ServerNotification notification, boolean isSonarCloud) {
+      return notification.message() + ".&nbsp;<a href=\"" + notification.link() + "\">Open in " + (isSonarCloud ? "SonarCloud" : "SonarQube") + "</a>.";
     }
   }
 }
