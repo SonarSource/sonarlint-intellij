@@ -28,6 +28,8 @@ import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 
+import static java.util.Optional.ofNullable;
+
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;
   private final JPanel root;
@@ -62,7 +64,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getServerId(), projectSettings.getProjectKey());
+    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getConnectionId(), projectSettings.getProjectKey());
     exclusionsPanel.load(projectSettings);
   }
 
@@ -72,10 +74,10 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     exclusionsPanel.save(projectSettings);
 
     if (bindPanel.isBindingEnabled()) {
-      projectSettings.setServerId(bindPanel.getSelectedStorageId());
+      projectSettings.setConnectionId(ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null));
       projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
     } else {
-      projectSettings.setServerId(null);
+      projectSettings.setConnectionId(null);
       projectSettings.setProjectKey(null);
     }
   }
@@ -86,7 +88,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     }
 
     if (bindPanel.isBindingEnabled()) {
-      if (!StringUtils.equals(projectSettings.getServerId(), bindPanel.getSelectedStorageId())) {
+      if (!StringUtils.equals(projectSettings.getConnectionId(), ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
         return true;
       }
 
@@ -121,7 +123,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   public void serversChanged(List<ServerConnection> serverList) {
     if (bindPanel != null) {
-      bindPanel.serversChanged(serverList);
+      bindPanel.connectionsChanged(serverList);
     }
   }
 }

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.project;
 
+import com.intellij.util.xmlb.annotations.Tag;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -32,7 +33,9 @@ public final class SonarLintProjectSettings {
   private boolean analysisLogsEnabled = false;
   private Map<String, String> additionalProperties = new LinkedHashMap<>();
   private boolean bindingEnabled = false;
-  private String serverId = null;
+  // For backward compatibility
+  @Tag("serverId")
+  private String connectionId = null;
   private String projectKey = null;
   private List<String> fileExclusions = new ArrayList<>();
 
@@ -62,12 +65,12 @@ public final class SonarLintProjectSettings {
   }
 
   @CheckForNull
-  public String getServerId() {
-    return serverId;
+  public String getConnectionId() {
+    return connectionId;
   }
 
-  public void setServerId(@Nullable String serverId) {
-    this.serverId = serverId;
+  public void setConnectionId(@Nullable String connectionId) {
+    this.connectionId = connectionId;
   }
 
   public boolean isBindingEnabled() {

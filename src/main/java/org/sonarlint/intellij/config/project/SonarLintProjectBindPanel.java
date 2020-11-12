@@ -54,8 +54,8 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -67,14 +67,14 @@ import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 
 public class SonarLintProjectBindPanel {
-  private static final String SERVER_EMPTY_TEXT = "<No connections configured>";
+  private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
 
   private JPanel rootPanel;
   private JBCheckBox bindEnable;
 
   // server mgmt
-  private JComboBox<ServerConnection> serverComboBox;
-  private JButton configureServerButton;
+  private JComboBox<ServerConnection> connectionComboBox;
+  private JButton configureConnectionButton;
 
   // binding mgmt
   private JPanel bindPanel;
@@ -95,32 +95,26 @@ public class SonarLintProjectBindPanel {
     return rootPanel;
   }
 
-  public void load(Collection<ServerConnection> servers, boolean enabled, @Nullable String selectedServerId, @Nullable String selectedProjectKey) {
+  public void load(Collection<ServerConnection> connections, boolean enabled, @Nullable String selectedConnectionId, @Nullable String selectedProjectKey) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     this.bindEnable.setSelected(enabled);
 
-    serverComboBox.removeAllItems();
-    setServerList(servers, selectedServerId);
+    connectionComboBox.removeAllItems();
+    setConnectionList(connections, selectedConnectionId);
     if (selectedProjectKey != null) {
       projectKeyTextField.setText(selectedProjectKey);
     }
   }
 
   @CheckForNull
-  public String getSelectedStorageId() {
-    ServerConnection server = getSelectedServer();
-    return server != null ? server.getName() : null;
-  }
-
-  @CheckForNull
-  private ServerConnection getSelectedServer() {
+  public ServerConnection getSelectedConnection() {
     // do things in a type safe way
-    int idx = serverComboBox.getSelectedIndex();
+    int idx = connectionComboBox.getSelectedIndex();
     if (idx < 0) {
       return null;
     }
 
-    return serverComboBox.getModel().getElementAt(idx);
+    return connectionComboBox.getModel().getElementAt(idx);
   }
 
   @CheckForNull
@@ -129,34 +123,28 @@ public class SonarLintProjectBindPanel {
   }
 
   /**
-   * If no server is selected, some components items disabled.
-   * Should be called when selected Server changes.
+   * If no connection is selected, some components items disabled.
+   * Should be called when selected connection changes.
    */
-  private void onServerSelected() {
+  private void onConnectionSelected() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    boolean serverSelected = getSelectedStorageId() != null;
-    projectKeyTextField.setEnabled(serverSelected);
-    projectKeyTextField.setEditable(serverSelected);
-    searchProjectButton.setEnabled(serverSelected);
+    boolean connectionSelected = getSelectedConnection() != null;
+    projectKeyTextField.setEnabled(connectionSelected);
+    projectKeyTextField.setEditable(connectionSelected);
+    searchProjectButton.setEnabled(connectionSelected);
   }
 
   /**
    * Assumes that it's bound and a server is selected
    */
   @CheckForNull
-  private Map<String, RemoteProject> downloadProjectList() {
+  private Map<String, RemoteProject> downloadProjectList(ServerConnection selectedConnection) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    ServerConnection selectedServer = getSelectedServer();
-    String storageId = getSelectedStorageId();
-    if (selectedServer == null || storageId == null) {
-      return null;
-    }
-
     SonarLintEngineManager core = SonarLintUtils.getService(SonarLintEngineManager.class);
-    ConnectedSonarLintEngine engine = core.getConnectedEngine(storageId);
-    ServerDownloadProjectTask downloadTask = new ServerDownloadProjectTask(project, engine, selectedServer);
+    ConnectedSonarLintEngine engine = core.getConnectedEngine(selectedConnection.getName());
+    ServerDownloadProjectTask downloadTask = new ServerDownloadProjectTask(project, engine, selectedConnection);
 
     try {
       ProgressManager.getInstance().run(downloadTask);
@@ -168,49 +156,50 @@ public class SonarLintProjectBindPanel {
     }
   }
 
-  public void serversChanged(List<ServerConnection> serverList) {
+  public void connectionsChanged(List<ServerConnection> connectionList) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     // keep selection if possible
-    String previousSelectedStorageId = getSelectedStorageId();
-    serverComboBox.removeAllItems();
-    setServerList(serverList, previousSelectedStorageId);
+    final ServerConnection selectedConnection = getSelectedConnection();
+    String previousSelectedStorageId = selectedConnection != null ? selectedConnection.getName() : null;
+    connectionComboBox.removeAllItems();
+    setConnectionList(connectionList, previousSelectedStorageId);
   }
 
   /**
-   * Sets new servers in the combo box, or disable it if there aren't any.
+   * Sets new connections in the combo box, or disable it if there aren't any.
    * Will also enable or disable other components.
    */
-  private void setServerList(Collection<ServerConnection> servers, @Nullable String previousSelectedStorageId) {
-    DefaultComboBoxModel<ServerConnection> model = (DefaultComboBoxModel<ServerConnection>) serverComboBox.getModel();
+  private void setConnectionList(Collection<ServerConnection> connections, @Nullable String previousSelectedStorageId) {
+    DefaultComboBoxModel<ServerConnection> model = (DefaultComboBoxModel<ServerConnection>) connectionComboBox.getModel();
 
-    if (servers.isEmpty()) {
-      serverComboBox.setEnabled(false);
+    if (connections.isEmpty()) {
+      connectionComboBox.setEnabled(false);
       ServerConnection s = ServerConnection.newBuilder()
-        .setName(SERVER_EMPTY_TEXT)
+        .setName(CONNECTION_EMPTY_TEXT)
         .build();
-      serverComboBox.setPrototypeDisplayValue(s);
+      connectionComboBox.setPrototypeDisplayValue(s);
       // ensure this is called, even when nothing is selected
     } else {
-      serverComboBox.setEnabled(bindEnable.isSelected());
+      connectionComboBox.setEnabled(bindEnable.isSelected());
       int i = 0;
       int selectedIndex = -1;
-      for (ServerConnection s : servers) {
-        if (previousSelectedStorageId != null && s.getName() != null && previousSelectedStorageId.equals(s.getName())) {
+      for (ServerConnection connection : connections) {
+        if (previousSelectedStorageId != null && connection.getName() != null && previousSelectedStorageId.equals(connection.getName())) {
           selectedIndex = i;
         }
-        serverComboBox.setPrototypeDisplayValue(null);
+        connectionComboBox.setPrototypeDisplayValue(null);
         // this won't call the change listener
-        model.insertElementAt(s, i);
+        model.insertElementAt(connection, i);
         i++;
       }
 
       // can be -1 (nothing selected)
-      serverComboBox.setSelectedIndex(selectedIndex);
+      connectionComboBox.setSelectedIndex(selectedIndex);
     }
 
     // ensure this is called, even when nothing is selected
-    onServerSelected();
+    onConnectionSelected();
   }
 
   private void createBindPanel() {
@@ -219,19 +208,20 @@ public class SonarLintProjectBindPanel {
     bindPanel = new JPanel(new GridBagLayout());
     bindPanel.setBorder(b);
 
-    configureServerButton = new JButton();
-    configureServerButton.setAction(new AbstractAction() {
-      @Override public void actionPerformed(ActionEvent e) {
-        actionConfigureServers();
+    configureConnectionButton = new JButton();
+    configureConnectionButton.setAction(new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        actionConfigureConnections();
       }
     });
-    configureServerButton.setText("Configure the connection...");
+    configureConnectionButton.setText("Configure the connection...");
 
-    serverComboBox = new ComboBox<>();
-    JLabel serverListLabel = new JLabel("Connection:");
+    connectionComboBox = new ComboBox<>();
+    JLabel connectionListLabel = new JLabel("Connection:");
 
-    serverComboBox.setRenderer(new ServerComboBoxRenderer());
-    serverComboBox.addItemListener(new ServerItemListener());
+    connectionComboBox.setRenderer(new ServerComboBoxRenderer());
+    connectionComboBox.addItemListener(new ServerItemListener());
 
     JLabel projectListLabel = new JLabel("Project:");
     projectKeyTextField = new JBTextField();
@@ -239,10 +229,15 @@ public class SonarLintProjectBindPanel {
 
     searchProjectButton = new JButton();
     searchProjectButton.setAction(new AbstractAction() {
-      @Override public void actionPerformed(ActionEvent e) {
-        Map<String, RemoteProject> map = downloadProjectList();
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        ServerConnection selectedConnection = getSelectedConnection();
+        if (selectedConnection == null) {
+          return;
+        }
+        Map<String, RemoteProject> map = downloadProjectList(selectedConnection);
         if (map != null) {
-          SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map, getSelectedServer().isSonarCloud());
+          SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map, selectedConnection.isSonarCloud());
           if (dialog.showAndGet()) {
             projectKeyTextField.setText(dialog.getSelectedProjectKey() != null ? dialog.getSelectedProjectKey() : "");
           }
@@ -251,15 +246,15 @@ public class SonarLintProjectBindPanel {
     });
     searchProjectButton.setText("Search in list...");
 
-    serverListLabel.setLabelFor(serverComboBox);
+    connectionListLabel.setLabelFor(connectionComboBox);
 
     JBInsets insets = JBUI.insets(2, 0, 0, 0);
 
-    bindPanel.add(serverListLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+    bindPanel.add(connectionListLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
-    bindPanel.add(serverComboBox, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+    bindPanel.add(connectionComboBox, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
-    bindPanel.add(configureServerButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+    bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
 
     bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
@@ -277,7 +272,7 @@ public class SonarLintProjectBindPanel {
   /**
    * Navigates to global configuration. There are 2 possible ways of doing it, depending on how the settings are opened.
    */
-  private void actionConfigureServers() {
+  private void actionConfigureConnections() {
     Settings allSettings = Settings.KEY.getData(DataManager.getInstance().getDataContext(rootPanel));
     if (allSettings != null) {
       final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
@@ -295,15 +290,16 @@ public class SonarLintProjectBindPanel {
   }
 
   /**
-   * Render SonarQube server in combo box
+   * Render a connection in combo box
    */
   private class ServerComboBoxRenderer extends ColoredListCellRenderer<ServerConnection> {
-    @Override protected void customizeCellRenderer(JList list, @Nullable ServerConnection value, int index, boolean selected, boolean hasFocus) {
+    @Override
+    protected void customizeCellRenderer(JList list, @Nullable ServerConnection value, int index, boolean selected, boolean hasFocus) {
       if (list.getModel().getSize() == 0) {
-        if (serverComboBox.isEnabled()) {
-          append(SERVER_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
+        if (connectionComboBox.isEnabled()) {
+          append(CONNECTION_EMPTY_TEXT, SimpleTextAttributes.ERROR_ATTRIBUTES);
         } else {
-          append(SERVER_EMPTY_TEXT, SimpleTextAttributes.GRAYED_ATTRIBUTES);
+          append(CONNECTION_EMPTY_TEXT, SimpleTextAttributes.GRAYED_ATTRIBUTES);
         }
         return;
       }
@@ -313,7 +309,7 @@ public class SonarLintProjectBindPanel {
       }
 
       SimpleTextAttributes attrs;
-      if (serverComboBox.isEnabled()) {
+      if (connectionComboBox.isEnabled()) {
         attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES;
       } else {
         attrs = SimpleTextAttributes.GRAYED_ATTRIBUTES;
@@ -333,7 +329,7 @@ public class SonarLintProjectBindPanel {
     @Override
     public void itemStateChanged(ItemEvent event) {
       if (event.getStateChange() == ItemEvent.SELECTED) {
-        onServerSelected();
+        onConnectionSelected();
       }
     }
   }
@@ -344,8 +340,8 @@ public class SonarLintProjectBindPanel {
       boolean bound = e.getStateChange() == ItemEvent.SELECTED;
 
       bindPanel.setEnabled(bound);
-      serverComboBox.setEnabled(bound);
-      configureServerButton.setEnabled(bound);
+      connectionComboBox.setEnabled(bound);
+      configureConnectionButton.setEnabled(bound);
     }
   }
 }

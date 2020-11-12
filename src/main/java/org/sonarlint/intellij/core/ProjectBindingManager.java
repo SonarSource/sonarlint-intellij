@@ -68,7 +68,7 @@ public class ProjectBindingManager {
     SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (projectSettings.isBindingEnabled()) {
-      String connectionId = projectSettings.getServerId();
+      String connectionId = projectSettings.getConnectionId();
       String projectKey = projectSettings.getProjectKey();
       checkBindingStatus(notifications, connectionId, projectKey);
       if (logDetails) {
@@ -83,7 +83,7 @@ public class ProjectBindingManager {
 
   public synchronized ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
-    return engineManager.getConnectedEngine(getSettingsFor(myProject).getServerId());
+    return engineManager.getConnectedEngine(getSettingsFor(myProject).getConnectionId());
   }
 
   public synchronized ConnectedSonarLintEngine getConnectedEngine() throws InvalidBindingException {
@@ -92,25 +92,25 @@ public class ProjectBindingManager {
       throw new IllegalStateException("Project is not bound to a SonarQube project");
     }
     SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
-    String serverId = projectSettings.getServerId();
+    String connectionId = projectSettings.getConnectionId();
     String projectKey = projectSettings.getProjectKey();
-    checkBindingStatus(notifications, serverId, projectKey);
+    checkBindingStatus(notifications, connectionId, projectKey);
 
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
-    return engineManager.getConnectedEngine(notifications, serverId, projectKey);
+    return engineManager.getConnectedEngine(notifications, connectionId, projectKey);
   }
 
   public synchronized ServerConnection getServerConnection() throws InvalidBindingException {
-    String serverId = getSettingsFor(myProject).getServerId();
+    String connectionId = getSettingsFor(myProject).getConnectionId();
     List<ServerConnection> servers = getGlobalSettings().getServerConnections();
 
-    Optional<ServerConnection> server = servers.stream().filter(s -> s.getName().equals(serverId)).findAny();
-    return server.orElseThrow(() -> new InvalidBindingException("SonarQube server configuration does not exist for server id: " + serverId));
+    Optional<ServerConnection> server = servers.stream().filter(s -> s.getName().equals(connectionId)).findAny();
+    return server.orElseThrow(() -> new InvalidBindingException("Server configuration does not exist for connection id: " + connectionId));
   }
 
   public boolean isBoundTo(String serverUrl, String projectKey) {
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
-    String serverId = projectSettings.getServerId();
+    String serverId = projectSettings.getConnectionId();
     List<ServerConnection> servers = getGlobalSettings().getServerConnections();
 
     return projectSettings.isBoundWith(projectKey) && servers.stream()
@@ -120,7 +120,7 @@ public class ProjectBindingManager {
 
   private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String serverId, @Nullable String projectKey) throws InvalidBindingException {
     if (serverId == null) {
-      notifications.notifyServerIdInvalid();
+      notifications.notifyConnectionIdInvalid();
       throw new InvalidBindingException("Project has an invalid binding");
     } else if (projectKey == null) {
       notifications.notifyModuleInvalid();
