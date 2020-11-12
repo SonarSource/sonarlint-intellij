@@ -59,7 +59,7 @@ public class ServerConnection {
   @Tag
   private String organizationKey;
   @Tag
-  private boolean enableNotifications;
+  private boolean disableNotifications;
 
   private ServerConnection() {
     // necessary for XML deserialization
@@ -73,7 +73,7 @@ public class ServerConnection {
     this.password = builder.password;
     this.enableProxy = builder.enableProxy;
     this.organizationKey = builder.organizationKey;
-    this.enableNotifications = builder.enableNotifications;
+    this.disableNotifications = builder.disableNotifications;
   }
 
   @Override
@@ -90,16 +90,16 @@ public class ServerConnection {
       Comparing.equal(getName(), other.getName()) &&
       Comparing.equal(getOrganizationKey(), other.getOrganizationKey()) &&
       Comparing.equal(enableProxy(), other.enableProxy()) &&
-      Comparing.equal(enableNotifications(), other.enableNotifications());
+      Comparing.equal(isDisableNotifications(), other.isDisableNotifications());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, enableNotifications);
+    return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, disableNotifications);
   }
 
-  public boolean enableNotifications() {
-    return enableNotifications;
+  public boolean isDisableNotifications() {
+    return disableNotifications;
   }
 
   @CheckForNull
@@ -169,7 +169,7 @@ public class ServerConnection {
     private String login;
     private String password;
     private boolean enableProxy;
-    private boolean enableNotifications;
+    private boolean disableNotifications;
 
     private Builder() {
       // no args
@@ -184,8 +184,8 @@ public class ServerConnection {
       return this;
     }
 
-    public Builder setEnableNotifications(boolean enableNotifications) {
-      this.enableNotifications = enableNotifications;
+    public Builder setDisableNotifications(boolean disableNotifications) {
+      this.disableNotifications = disableNotifications;
       return this;
     }
 

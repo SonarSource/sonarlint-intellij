@@ -40,7 +40,7 @@ public class WizardModelTest {
     assertThat(model.getPassword()).isNull();
     assertThat(model.getToken()).isEqualTo("token");
     assertThat(model.getOrganizationKey()).isEqualTo("org");
-    assertThat(model.getOrganizationList()).isNull();
+    assertThat(model.getOrganizationList()).isEmpty();
     assertThat(model.getName()).isEqualTo("name");
     assertThat(model.getServerUrl()).isEqualTo("url");
   }

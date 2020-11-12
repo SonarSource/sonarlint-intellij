@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.wizard;
 
+import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -36,10 +37,10 @@ public class WizardModel {
   private String name;
   private String organizationKey;
   private boolean proxyEnabled;
-  private boolean notificationsEnabled = true;
+  private boolean notificationsDisabled = false;
   private boolean notificationsSupported = false;
 
-  private List<RemoteOrganization> organizationList;
+  private List<RemoteOrganization> organizationList = new ArrayList<>();
 
   public enum ServerType {
     SONARCLOUD,
@@ -65,7 +66,7 @@ public class WizardModel {
       this.password = pass.toCharArray();
     }
     this.organizationKey = serverToEdit.getOrganizationKey();
-    this.notificationsEnabled = serverToEdit.enableNotifications();
+    this.notificationsDisabled = serverToEdit.isDisableNotifications();
     this.name = serverToEdit.getName();
   }
 
@@ -88,12 +89,12 @@ public class WizardModel {
     return this;
   }
 
-  public boolean isNotificationsEnabled() {
-    return notificationsEnabled;
+  public boolean isNotificationsDisabled() {
+    return notificationsDisabled;
   }
 
-  public WizardModel setNotificationsEnabled(boolean notificationsEnabled) {
-    this.notificationsEnabled = notificationsEnabled;
+  public WizardModel setNotificationsDisabled(boolean notificationsDisabled) {
+    this.notificationsDisabled = notificationsDisabled;
     return this;
   }
 
@@ -206,7 +207,7 @@ public class WizardModel {
         .setLogin(login)
         .setPassword(new String(password));
     }
-    builder.setEnableNotifications(notificationsEnabled && notificationsSupported);
+    builder.setDisableNotifications(notificationsDisabled);
     return builder.build();
   }
 }

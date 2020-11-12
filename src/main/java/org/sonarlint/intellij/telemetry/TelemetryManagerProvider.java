@@ -31,6 +31,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.SonarLintPlugin;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.NodeJsManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -126,7 +127,7 @@ public class TelemetryManagerProvider {
   }
 
   private static boolean isDevNotificationsDisabled() {
-    return getGlobalSettings().getServerConnections().stream().anyMatch(s -> !s.enableNotifications());
+    return getGlobalSettings().getServerConnections().stream().anyMatch(ServerConnection::isDisableNotifications);
   }
 
   private static boolean isAnyOpenProjectMatch(Predicate<Project> predicate) {
