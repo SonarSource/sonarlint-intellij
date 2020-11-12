@@ -138,7 +138,7 @@ public class SonarLintEngineManager implements Disposable {
 
     Set<String> configuredStorageIds = getServerNames();
     if (!configuredStorageIds.contains(serverId)) {
-      notifications.notifyServerIdInvalid();
+      notifications.notifyConnectionIdInvalid();
       throw new InvalidBindingException("Invalid server name: " + serverId);
     }
 

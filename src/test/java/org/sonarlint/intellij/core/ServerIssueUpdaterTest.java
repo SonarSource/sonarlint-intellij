@@ -72,7 +72,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     doReturn(engine).when(bindingManager).getConnectedEngine();
     underTest = new ServerIssueUpdater(getProject());
     getGlobalSettings().setServerConnections(Collections.singletonList(ServerConnection.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
-    getProjectSettings().setServerId(SERVER_ID);
+    getProjectSettings().setConnectionId(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);
 
   }

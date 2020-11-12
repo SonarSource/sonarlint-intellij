@@ -55,7 +55,7 @@ public class SonarLintProjectNotifications {
     shown = false;
   }
 
-  void notifyServerIdInvalid() {
+  void notifyConnectionIdInvalid() {
     if (shown) {
       return;
     }

@@ -112,7 +112,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     SonarLintProjectNotifications.get(project).reset();
     ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
     SonarLintProjectSettings projectSettings = getSettingsFor(project);
-    if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getServerId() != null) {
+    if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getConnectionId() != null) {
       ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
 
       try {

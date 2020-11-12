@@ -217,9 +217,9 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
     for (Project openProject : openProjects) {
       SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
-      if (projectSettings.getServerId() != null && deletedServerIds.contains(projectSettings.getServerId())) {
+      if (projectSettings.getConnectionId() != null && deletedServerIds.contains(projectSettings.getConnectionId())) {
         projectSettings.setBindingEnabled(false);
-        projectSettings.setServerId(null);
+        projectSettings.setConnectionId(null);
         projectSettings.setProjectKey(null);
       }
     }
@@ -348,7 +348,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     for (Project openProject : openProjects) {
       SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
       String projectKey = projectSettings.getProjectKey();
-      if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getServerId()) && projectKey != null) {
+      if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getConnectionId()) && projectKey != null) {
         List<Project> projects = projectsPerModule.computeIfAbsent(projectKey, k -> new ArrayList<>());
         projects.add(openProject);
       }
@@ -439,7 +439,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
       for (Project openProject : openProjects) {
         SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
-        if (server.getName().equals(projectSettings.getServerId())) {
+        if (server.getName().equals(projectSettings.getConnectionId())) {
           openProjectNames.add(openProject.getName());
         }
       }

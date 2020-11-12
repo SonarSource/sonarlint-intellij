@@ -165,7 +165,7 @@ public class SecurityHotspotOpenerTest extends AbstractSonarLintLightTests {
     registerConnection();
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setProjectKey(projectKey);
-    getProjectSettings().setServerId(serverId);
+    getProjectSettings().setConnectionId(serverId);
   }
 
   private void registerConnection() {
