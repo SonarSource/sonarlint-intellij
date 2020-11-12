@@ -20,14 +20,12 @@
 package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
-import java.util.List;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 
 public class ConfirmStep extends AbstractWizardStepEx {
   private static final String TEXT1 = "Connection successfully created.";
@@ -61,7 +59,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
     textArea2.setText(TEXT2);
     notificationsCheckBox.setVisible(model.isNotificationsSupported());
     notificationsCheckBox.setEnabled(model.isNotificationsSupported());
-    notificationsCheckBox.setSelected(model.isNotificationsSupported() && model.isNotificationsEnabled());
+    notificationsCheckBox.setSelected(!model.isNotificationsDisabled());
   }
 
   @NotNull @Override public Object getStepId() {
@@ -85,7 +83,7 @@ public class ConfirmStep extends AbstractWizardStepEx {
   }
 
   @Override public void commit(CommitType commitType) {
-    model.setNotificationsEnabled(notificationsCheckBox.isSelected());
+    model.setNotificationsDisabled(!notificationsCheckBox.isSelected());
   }
 
   @Nullable @Override public JComponent getPreferredFocusedComponent() {

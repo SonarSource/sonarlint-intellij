@@ -41,6 +41,7 @@ import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguratio
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime;
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification;
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener;
+import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -86,9 +87,11 @@ public class ProjectServerNotifications {
         // do nothing
         return;
       }
-      if (server.enableNotifications()) {
+      if (!server.isDisableNotifications()) {
         NotificationConfiguration config = createConfiguration(settings, server);
-        ServerNotificationsFacade.get().register(config);
+        if (ServerNotifications.get().isSupported(config.serverConfiguration().get())) {
+          ServerNotificationsFacade.get().register(config);
+        }
       }
     }
   }
