@@ -121,16 +121,16 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
   }
 
   @Override
-  public void devNotificationsReceived() {
+  public void devNotificationsReceived(String eventType) {
     if (enabled()) {
-      telemetry.devNotificationsReceived();
+      telemetry.devNotificationsReceived(eventType);
     }
   }
 
   @Override
-  public void devNotificationsClicked() {
+  public void devNotificationsClicked(String eventType) {
     if (enabled()) {
-      telemetry.devNotificationsClicked();
+      telemetry.devNotificationsClicked(eventType);
     }
   }
 

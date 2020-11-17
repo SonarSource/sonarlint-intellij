@@ -155,7 +155,8 @@ public class ProjectServerNotifications {
     @Override
     public void handle(ServerNotification notification) {
       SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-      telemetry.devNotificationsReceived();
+      final String category = notification.category();
+      telemetry.devNotificationsReceived(category);
       Notification notif = SERVER_NOTIFICATIONS_GROUP.createNotification(
         "<b>" + (isSonarCloud ? "SonarCloud" : "SonarQube") + " Notification</b>",
         createMessage(notification, isSonarCloud),
@@ -164,7 +165,7 @@ public class ProjectServerNotifications {
           @Override
           protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
             SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-            telemetry.devNotificationsClicked();
+            telemetry.devNotificationsClicked(category);
             super.hyperlinkActivated(notification, event);
             notification.hideBalloon();
           }

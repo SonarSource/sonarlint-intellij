@@ -35,7 +35,7 @@ public interface SonarLintTelemetry {
 
   void init();
 
-  void devNotificationsReceived();
+  void devNotificationsReceived(String eventType);
 
-  void devNotificationsClicked();
+  void devNotificationsClicked(String eventType);
 }
