@@ -19,18 +19,25 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
-import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.messages.MessageBusConnection;
+import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
 import java.time.ZonedDateTime;
-import javax.swing.event.HyperlinkEvent;
+import java.util.Optional;
+import javax.swing.JFrame;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectState;
@@ -38,6 +45,7 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime;
@@ -45,6 +53,7 @@ import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificatio
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener;
 import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
+import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ProjectServerNotifications {
@@ -82,17 +91,17 @@ public class ProjectServerNotifications {
     SonarLintProjectSettings settings = getSettingsFor(myProject);
     unregister();
     if (settings.isBindingEnabled()) {
-      ServerConnection server;
+      ServerConnection connection;
       try {
         ProjectBindingManager bindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
-        server = bindingManager.getServerConnection();
+        connection = bindingManager.getServerConnection();
       } catch (InvalidBindingException e) {
         // do nothing
         return;
       }
-      if (!server.isDisableNotifications()) {
-        this.eventListener = new EventListener(server.isSonarCloud());
-        NotificationConfiguration config = createConfiguration(settings, server);
+      if (!connection.isDisableNotifications()) {
+        this.eventListener = new EventListener(connection.isSonarCloud(), connection.getName());
+        NotificationConfiguration config = createConfiguration(settings, connection);
         if (ServerNotifications.get().isSupported(config.serverConfiguration().get())) {
           ServerNotificationsFacade.get().register(config);
         }
@@ -147,36 +156,77 @@ public class ProjectServerNotifications {
   private class EventListener implements ServerNotificationListener {
 
     private final boolean isSonarCloud;
+    private final String connectionName;
 
-    EventListener(boolean isSonarCloud) {
+    EventListener(boolean isSonarCloud, String connectionName) {
       this.isSonarCloud = isSonarCloud;
+      this.connectionName = connectionName;
     }
 
     @Override
-    public void handle(ServerNotification notification) {
+    public void handle(ServerNotification serverNotification) {
       SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-      final String category = notification.category();
+      final String category = serverNotification.category();
       telemetry.devNotificationsReceived(category);
+      final String label = isSonarCloud ? "SonarCloud" : "SonarQube";
       Notification notif = SERVER_NOTIFICATIONS_GROUP.createNotification(
-        "<b>" + (isSonarCloud ? "SonarCloud" : "SonarQube") + " Notification</b>",
-        createMessage(notification, isSonarCloud),
+        "<b>" + label + " Notification</b>",
+        serverNotification.message(),
         NotificationType.INFORMATION,
-        new NotificationListener.UrlOpeningListener(false) {
-          @Override
-          protected void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-            SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-            telemetry.devNotificationsClicked(category);
-            super.hyperlinkActivated(notification, event);
-            notification.hideBalloon();
-          }
-        });
+        null);
       notif.setIcon(isSonarCloud ? SonarLintIcons.ICON_SONARCLOUD_16 : SonarLintIcons.ICON_SONARQUBE_16);
       notif.setImportant(true);
+      notif.addAction(new OpenInServerAction(label, serverNotification.link(), category));
+      notif.addAction(new ConfigureNotificationsAction(connectionName));
       notif.notify(myProject);
     }
+  }
 
-    private String createMessage(ServerNotification notification, boolean isSonarCloud) {
-      return notification.message() + ".&nbsp;<a href=\"" + notification.link() + "\">Open in " + (isSonarCloud ? "SonarCloud" : "SonarQube") + "</a>.";
+  private static class OpenInServerAction extends NotificationAction {
+
+    private final String link;
+    private final String category;
+
+    private OpenInServerAction(String serverLabel, String link, String category) {
+      super("Open in " + serverLabel);
+      this.link = link;
+      this.category = category;
+    }
+
+    @Override
+    public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+      SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+      telemetry.devNotificationsClicked(category);
+      BrowserUtil.browse(link);
+      notification.hideBalloon();
+    }
+  }
+
+  private static class ConfigureNotificationsAction extends NotificationAction {
+
+    private final String connectionName;
+
+    private ConfigureNotificationsAction(String connectionName) {
+      super("Configure");
+      this.connectionName = connectionName;
+    }
+
+    @Override
+    public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+      final JFrame parent = WindowManager.getInstance().getFrame(e.getProject());
+      if (parent == null) {
+        return;
+      }
+      UIUtil.invokeLaterIfNeeded(() -> {
+        final Optional<ServerConnection> connection = getGlobalSettings().getServerConnections().stream().filter(s -> s.getName().equals(connectionName)).findAny();
+        if (connection.isPresent()) {
+          SonarLintGlobalConfigurable globalConfigurable = new SonarLintGlobalConfigurable();
+          ShowSettingsUtil.getInstance().editConfigurable(parent, globalConfigurable, () -> globalConfigurable.editNotifications(connection.get()));
+        } else if (e.getProject() != null) {
+          SonarLintConsole.get(e.getProject()).error("Unable to find connection with name: " + connectionName);
+          notification.expire();
+        }
+      });
     }
   }
 }

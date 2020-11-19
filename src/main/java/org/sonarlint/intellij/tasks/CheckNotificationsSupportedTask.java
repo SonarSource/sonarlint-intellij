@@ -22,42 +22,41 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
-import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.WsHelperImpl;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
+import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
-public class GetOrganizationTask extends Task.Modal {
-  private static final Logger LOGGER = Logger.getInstance(GetOrganizationTask.class);
-  private final ServerConnection server;
-  private final String organizationKey;
-
+/**
+ * Only useful for SonarQube, since we know notifications are available in SonarCloud
+ */
+public class CheckNotificationsSupportedTask extends Task.Modal {
+  private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
+  private final ServerConnection connection;
   private Exception exception;
-  private Optional<RemoteOrganization> organization = Optional.empty();
+  private boolean notificationsSupported = false;
 
-  public GetOrganizationTask(ServerConnection server, String organizationKey) {
-    super(null, "Fetch Organization From SonarCloud", true);
-    this.server = server;
-    this.organizationKey = organizationKey;
+  public CheckNotificationsSupportedTask(ServerConnection connection) {
+    super(null, "Check if smart notifications is available in the SonarQube edition", true);
+    this.connection = connection;
   }
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to SonarCloud...");
+    indicator.setText("Connecting to " + connection.getHostUrl() + "...");
     indicator.setIndeterminate(false);
 
     try {
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      indicator.setText("Searching organization");
-      WsHelper wsHelper = new WsHelperImpl();
-      organization = wsHelper.getOrganization(serverConfiguration, organizationKey, new TaskProgressMonitor(indicator, myProject));
+      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(connection);
+      if (connection.isSonarCloud()) {
+        notificationsSupported = true;
+      } else {
+        indicator.setText("Checking support of notifications");
+        notificationsSupported = ServerNotifications.get().isSupported(serverConfiguration);
+      }
     } catch (Exception e) {
-      LOGGER.info("Failed to fetch information", e);
+      LOGGER.info("Failed to check notifications", e);
       exception = e;
     }
   }
@@ -66,7 +65,8 @@ public class GetOrganizationTask extends Task.Modal {
     return exception;
   }
 
-  public Optional<RemoteOrganization> organization() {
-    return organization;
+  public boolean notificationsSupported() {
+    return notificationsSupported;
   }
+
 }

@@ -39,7 +39,7 @@ import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.tasks.ServerUpdateTask;
+import org.sonarlint.intellij.tasks.ConnectionUpdateTask;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -112,7 +112,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     SonarLintProjectNotifications.get(project).reset();
     ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
     SonarLintProjectSettings projectSettings = getSettingsFor(project);
-    if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getConnectionId() != null) {
+    if (projectSettings.isBindingEnabled() && projectSettings.getProjectKey() != null && projectSettings.getConnectionName() != null) {
       ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
 
       try {
@@ -120,7 +120,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
         ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
         String projectKey = projectSettings.getProjectKey();
 
-        ServerUpdateTask task = new ServerUpdateTask(engine, server, Collections.singletonMap(projectKey, Collections.singletonList(project)), true);
+        ConnectionUpdateTask task = new ConnectionUpdateTask(engine, server, Collections.singletonMap(projectKey, Collections.singletonList(project)), true);
         ProgressManager.getInstance().run(task.asModal());
       } catch (InvalidBindingException e) {
         // nothing to do, SonarLintEngineManager should have already shown a warning
@@ -152,7 +152,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
         if (allSettings != null) {
           final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
           if (globalConfigurable != null) {
-            return globalConfigurable.getCurrentServers();
+            return globalConfigurable.getCurrentConnections();
           }
         }
         return null;

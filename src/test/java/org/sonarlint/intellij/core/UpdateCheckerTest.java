@@ -51,7 +51,7 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     replaceProjectService(SonarLintProjectNotifications.class, notifications);
 
     getProjectSettings().setProjectKey("key");
-    getProjectSettings().setConnectionId("serverId");
+    getProjectSettings().setConnectionName("serverId");
     server = createServer();
     when(bindingManager.getServerConnection()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);

@@ -20,12 +20,12 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.util.xmlb.annotations.OptionTag;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 
 public final class SonarLintProjectSettings {
 
@@ -35,7 +35,7 @@ public final class SonarLintProjectSettings {
   private boolean bindingEnabled = false;
   // For backward compatibility
   @OptionTag("serverId")
-  private String connectionId = null;
+  private String connectionName = null;
   private String projectKey = null;
   private List<String> fileExclusions = new ArrayList<>();
 
@@ -65,12 +65,12 @@ public final class SonarLintProjectSettings {
   }
 
   @CheckForNull
-  public String getConnectionId() {
-    return connectionId;
+  public String getConnectionName() {
+    return connectionName;
   }
 
-  public void setConnectionId(@Nullable String connectionId) {
-    this.connectionId = connectionId;
+  public void setConnectionName(@Nullable String connectionName) {
+    this.connectionName = connectionName;
   }
 
   public boolean isBindingEnabled() {

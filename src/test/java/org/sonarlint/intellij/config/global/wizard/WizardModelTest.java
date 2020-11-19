@@ -57,7 +57,7 @@ public class WizardModelTest {
 
     model.setServerType(WizardModel.ServerType.SONARQUBE);
 
-    ServerConnection server = model.createServer();
+    ServerConnection server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("url");
     assertThat(server.enableProxy()).isTrue();
     assertThat(server.getLogin()).isEqualTo("login");
@@ -76,7 +76,7 @@ public class WizardModelTest {
 
     model.setServerType(WizardModel.ServerType.SONARCLOUD);
 
-    ServerConnection server = model.createServer();
+    ServerConnection server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
     assertThat(server.getLogin()).isNull();
     assertThat(server.getPassword()).isNull();
@@ -95,7 +95,7 @@ public class WizardModelTest {
       .build();
     WizardModel model = new WizardModel(server);
 
-    server = model.createServer();
+    server = model.createConnection();
     assertThat(server.enableProxy()).isTrue();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
   }

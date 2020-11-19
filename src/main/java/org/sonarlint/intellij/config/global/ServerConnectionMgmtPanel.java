@@ -75,7 +75,7 @@ import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.tasks.ServerUpdateTask;
+import org.sonarlint.intellij.tasks.ConnectionUpdateTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
@@ -91,32 +91,32 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   private JPanel panel;
   private Splitter splitter;
   private JPanel serversPanel;
-  private JBList<ServerConnection> serverList;
+  private JBList<ServerConnection> connectionList;
   private JPanel emptyPanel;
   private JLabel serverStatus;
   private JButton updateServerButton;
 
   // Model
-  private GlobalConfigurationListener serverChangeListener;
-  private final List<ServerConnection> servers = new ArrayList<>();
+  private GlobalConfigurationListener connectionChangeListener;
+  private final List<ServerConnection> connections = new ArrayList<>();
   private final Set<String> deletedServerIds = new HashSet<>();
   private ConnectedSonarLintEngine engine = null;
   private StateListener engineListener;
 
   private void create() {
     Application app = ApplicationManager.getApplication();
-    serverChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
-    serverList = new JBList<>();
-    serverList.getEmptyText().setText(LABEL_NO_SERVERS);
-    serverList.addMouseListener(new MouseAdapter() {
+    connectionChangeListener = app.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
+    connectionList = new JBList<>();
+    connectionList.getEmptyText().setText(LABEL_NO_SERVERS);
+    connectionList.addMouseListener(new MouseAdapter() {
       @Override
       public void mouseClicked(MouseEvent evt) {
         if (evt.getClickCount() == 2) {
-          editServer();
+          editSelectedConnection(false);
         }
       }
     });
-    serverList.addListSelectionListener(e -> {
+    connectionList.addListSelectionListener(e -> {
       if (!e.getValueIsAdjusting()) {
         onServerSelect();
       }
@@ -124,9 +124,9 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
     serversPanel = new JPanel(new BorderLayout());
 
-    ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(serverList)
+    ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(connectionList)
       .setEditActionName("Edit")
-      .setEditAction(e -> editServer())
+      .setEditAction(e -> editSelectedConnection(false))
       .disableUpDownActions();
 
     toolbarDecorator.setAddAction(new AddServerAction());
@@ -146,7 +146,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     panel.setBorder(b);
     panel.add(splitter);
 
-    serverList.setCellRenderer(new ColoredListCellRenderer<ServerConnection>() {
+    connectionList.setCellRenderer(new ColoredListCellRenderer<ServerConnection>() {
       @Override
       protected void customizeCellRenderer(JList list, ServerConnection server, int index, boolean selected, boolean hasFocus) {
         if (server.isSonarCloud()) {
@@ -196,7 +196,8 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     serverStatusPanel.add(flow2, new GridBagConstraints(1, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, JBUI.insets(0, 0, 0, 0), 0, 0));
 
     updateServerButton.setAction(new AbstractAction() {
-      @Override public void actionPerformed(ActionEvent e) {
+      @Override
+      public void actionPerformed(ActionEvent e) {
         actionUpdateServerTask();
       }
     });
@@ -217,9 +218,9 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
     for (Project openProject : openProjects) {
       SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
-      if (projectSettings.getConnectionId() != null && deletedServerIds.contains(projectSettings.getConnectionId())) {
+      if (projectSettings.getConnectionName() != null && deletedServerIds.contains(projectSettings.getConnectionName())) {
         projectSettings.setBindingEnabled(false);
-        projectSettings.setConnectionId(null);
+        projectSettings.setConnectionName(null);
         projectSettings.setProjectKey(null);
       }
     }
@@ -235,12 +236,12 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
   @Override
   public boolean isModified(SonarLintGlobalSettings settings) {
-    return !servers.equals(settings.getServerConnections());
+    return !connections.equals(settings.getServerConnections());
   }
 
   @Override
   public void save(SonarLintGlobalSettings settings) {
-    List<ServerConnection> copyList = new ArrayList<>(servers);
+    List<ServerConnection> copyList = new ArrayList<>(connections);
     settings.setServerConnections(copyList);
 
     //remove them even if a server with the same name was later added
@@ -249,30 +250,30 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
   @Override
   public void load(SonarLintGlobalSettings settings) {
-    servers.clear();
+    connections.clear();
     deletedServerIds.clear();
 
     CollectionListModel<ServerConnection> listModel = new CollectionListModel<>(new ArrayList<>());
     listModel.add(settings.getServerConnections());
-    servers.addAll(settings.getServerConnections());
-    serverList.setModel(listModel);
+    connections.addAll(settings.getServerConnections());
+    connectionList.setModel(listModel);
 
-    if (!servers.isEmpty()) {
-      serverList.setSelectedValue(servers.get(0), true);
+    if (!connections.isEmpty()) {
+      connectionList.setSelectedValue(connections.get(0), true);
     }
   }
 
   @Nullable
-  private ServerConnection getSelectedServer() {
-    return serverList.getSelectedValue();
+  private ServerConnection getSelectedConnection() {
+    return connectionList.getSelectedValue();
   }
 
-  List<ServerConnection> getServers() {
-    return servers;
+  List<ServerConnection> getConnections() {
+    return connections;
   }
 
   private void onServerSelect() {
-    switchTo(getSelectedServer());
+    switchTo(getSelectedConnection());
   }
 
   private void switchTo(@Nullable ServerConnection server) {
@@ -333,7 +334,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   }
 
   private void actionUpdateServerTask() {
-    ServerConnection server = getSelectedServer();
+    ServerConnection server = getSelectedConnection();
     if (server == null || engine == null || engine.getState() == ConnectedSonarLintEngine.State.UPDATING) {
       return;
     }
@@ -341,39 +342,49 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     updateServerBinding(server, engine, false);
   }
 
-  public static void updateServerBinding(ServerConnection server, ConnectedSonarLintEngine engine, boolean onlyProjects) {
+  public static void updateServerBinding(ServerConnection connection, ConnectedSonarLintEngine engine, boolean onlyProjects) {
     Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
     Map<String, List<Project>> projectsPerModule = new HashMap<>();
 
     for (Project openProject : openProjects) {
       SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
       String projectKey = projectSettings.getProjectKey();
-      if (projectSettings.isBindingEnabled() && server.getName().equals(projectSettings.getConnectionId()) && projectKey != null) {
+      if (projectSettings.isBindingEnabled() && connection.getName().equals(projectSettings.getConnectionName()) && projectKey != null) {
         List<Project> projects = projectsPerModule.computeIfAbsent(projectKey, k -> new ArrayList<>());
         projects.add(openProject);
       }
     }
 
-    ServerUpdateTask task = new ServerUpdateTask(engine, server, projectsPerModule, onlyProjects);
+    ConnectionUpdateTask task = new ConnectionUpdateTask(engine, connection, projectsPerModule, onlyProjects);
     ProgressManager.getInstance().run(task.asBackground());
   }
 
-  private void editServer() {
-    ServerConnection selectedServer = getSelectedServer();
-    int selectedIndex = serverList.getSelectedIndex();
+  private void editSelectedConnection(boolean forNotificationsOnly) {
+    ServerConnection selectedConnection = getSelectedConnection();
+    int selectedIndex = connectionList.getSelectedIndex();
 
-    if (selectedServer != null) {
-      ServerConnectionWizard serverEditor = new ServerConnectionWizard(selectedServer);
+    if (selectedConnection != null) {
+      ServerConnectionWizard serverEditor = forNotificationsOnly ? ServerConnectionWizard.forNotificationsEdition(selectedConnection) :
+        ServerConnectionWizard.forConnectionEdition(selectedConnection);
       if (serverEditor.showAndGet()) {
-        ServerConnection newServer = serverEditor.getServer();
-        ((CollectionListModel<ServerConnection>) serverList.getModel()).setElementAt(newServer, selectedIndex);
-        servers.set(servers.indexOf(selectedServer), newServer);
-        serverChangeListener.changed(servers);
+        ServerConnection newConnection = serverEditor.getConnection();
+        ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(newConnection, selectedIndex);
+        connections.set(connections.indexOf(selectedConnection), newConnection);
+        connectionChangeListener.changed(connections);
+        if (!forNotificationsOnly) {
+          updateConnectionStorage(selectedConnection);
+        }
       }
     }
   }
 
-  @Override public void dispose() {
+  public void editNotifications(ServerConnection connectionToEdit) {
+    connectionList.setSelectedValue(connectionToEdit, true);
+    editSelectedConnection(true);
+  }
+
+  @Override
+  public void dispose() {
     if (engineListener != null) {
       engine.removeStateListener(engineListener);
       engineListener = null;
@@ -384,26 +395,30 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   private class AddServerAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      Set<String> existingNames = servers.stream().map(ServerConnection::getName).collect(Collectors.toSet());
-      ServerConnectionWizard wizard = new ServerConnectionWizard(existingNames);
+      Set<String> existingNames = connections.stream().map(ServerConnection::getName).collect(Collectors.toSet());
+      ServerConnectionWizard wizard = ServerConnectionWizard.forNewConnection(existingNames);
       if (wizard.showAndGet()) {
-        ServerConnection created = wizard.getServer();
-        servers.add(created);
-        ((CollectionListModel<ServerConnection>) serverList.getModel()).add(created);
-        serverList.setSelectedIndex(serverList.getModel().getSize() - 1);
-        serverChangeListener.changed(servers);
-        SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
-        ServerUpdateTask task = new ServerUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
-        ProgressManager.getInstance().run(task.asBackground());
+        ServerConnection created = wizard.getConnection();
+        connections.add(created);
+        ((CollectionListModel<ServerConnection>) connectionList.getModel()).add(created);
+        connectionList.setSelectedIndex(connectionList.getModel().getSize() - 1);
+        connectionChangeListener.changed(connections);
+        updateConnectionStorage(created);
       }
     }
+  }
+
+  private void updateConnectionStorage(ServerConnection created) {
+    SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
+    ConnectionUpdateTask task = new ConnectionUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
+    ProgressManager.getInstance().run(task.asBackground());
   }
 
   private class RemoveServerAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      ServerConnection server = getSelectedServer();
-      int selectedIndex = serverList.getSelectedIndex();
+      ServerConnection server = getSelectedConnection();
+      int selectedIndex = connectionList.getSelectedIndex();
 
       if (server == null) {
         return;
@@ -422,15 +437,15 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
         }
       }
 
-      CollectionListModel<ServerConnection> model = (CollectionListModel<ServerConnection>) serverList.getModel();
+      CollectionListModel<ServerConnection> model = (CollectionListModel<ServerConnection>) connectionList.getModel();
       // it's not removed from serverIds and editorList
       model.remove(server);
-      servers.remove(server);
-      serverChangeListener.changed(servers);
+      connections.remove(server);
+      connectionChangeListener.changed(connections);
 
       if (model.getSize() > 0) {
         int newIndex = Math.min(model.getSize() - 1, Math.max(selectedIndex - 1, 0));
-        serverList.setSelectedValue(model.getElementAt(newIndex), true);
+        connectionList.setSelectedValue(model.getElementAt(newIndex), true);
       }
     }
 
@@ -439,7 +454,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
       for (Project openProject : openProjects) {
         SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
-        if (server.getName().equals(projectSettings.getConnectionId())) {
+        if (server.getName().equals(projectSettings.getConnectionName())) {
           openProjectNames.add(openProject.getName());
         }
       }

@@ -70,7 +70,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   public void should_get_connected_engine() throws InvalidBindingException {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setProjectKey("project1");
-    getProjectSettings().setConnectionId("server1");
+    getProjectSettings().setConnectionName("server1");
 
     assertThat(projectBindingManager.getConnectedEngine()).isNotNull();
     verify(engineManager).getConnectedEngine(any(SonarLintProjectNotifications.class), eq("server1"), eq("project1"));
@@ -86,7 +86,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   public void should_create_facade_connected() throws InvalidBindingException {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setProjectKey("project1");
-    getProjectSettings().setConnectionId("server1");
+    getProjectSettings().setConnectionName("server1");
 
     assertThat(projectBindingManager.getFacade()).isInstanceOf(ConnectedSonarLintFacade.class);
   }
@@ -95,7 +95,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   public void should_find_sq_server() throws InvalidBindingException {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setProjectKey("project1");
-    getProjectSettings().setConnectionId("server1");
+    getProjectSettings().setConnectionName("server1");
 
     ServerConnection server = ServerConnection.newBuilder().setName("server1").build();
     getGlobalSettings().setServerConnections(Collections.singletonList(server));
@@ -106,7 +106,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   public void fail_if_cant_find_server() throws InvalidBindingException {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setProjectKey("project1");
-    getProjectSettings().setConnectionId("server1");
+    getProjectSettings().setConnectionName("server1");
 
     ServerConnection server = ServerConnection.newBuilder().setName("server2").build();
     getGlobalSettings().setServerConnections(Collections.singletonList(server));
@@ -125,7 +125,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void fail_invalid_module_binding() throws InvalidBindingException {
     getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setConnectionId("server1");
+    getProjectSettings().setConnectionName("server1");
     getProjectSettings().setProjectKey(null);
 
     exception.expect(InvalidBindingException.class);

@@ -44,7 +44,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   private static final int RULES_TAB_INDEX = 2;
   private static final int ABOUT_TAB_INDEX = 3;
   private JPanel rootPanel;
-  private ServerConnectionMgmtPanel serversPanel;
+  private ServerConnectionMgmtPanel connectionsPanel;
   private SonarLintGlobalOptionsPanel globalPanel;
   private SonarLintAboutPanel about;
   private GlobalExclusionsPanel exclusions;
@@ -67,7 +67,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   public boolean isModified() {
     SonarLintGlobalSettings globalSettings = getGlobalSettings();
     SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-    return serversPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
+    return connectionsPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
       || about.isModified(telemetry) || exclusions.isModified(globalSettings) || rules.isModified(globalSettings);
   }
 
@@ -79,7 +79,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     final boolean rulesModified = rules.isModified(globalSettings);
     final boolean globalSettingsModified = globalPanel.isModified(globalSettings);
 
-    serversPanel.save(globalSettings);
+    connectionsPanel.save(globalSettings);
     globalPanel.save(globalSettings);
     about.save(telemetry);
     rules.save(globalSettings);
@@ -102,12 +102,18 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   @CheckForNull
-  public List<ServerConnection> getCurrentServers() {
-    if (serversPanel != null) {
-      return serversPanel.getServers();
+  public List<ServerConnection> getCurrentConnections() {
+    if (connectionsPanel != null) {
+      return connectionsPanel.getConnections();
     }
 
     return null;
+  }
+
+  public void editNotifications(ServerConnection connection) {
+    if (connectionsPanel != null) {
+      connectionsPanel.editNotifications(connection);
+    }
   }
 
   @Override
@@ -115,7 +121,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     SonarLintGlobalSettings globalSettings = getGlobalSettings();
     SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
 
-    serversPanel.load(globalSettings);
+    connectionsPanel.load(globalSettings);
     globalPanel.load(globalSettings);
     about.load(telemetry);
     rules.load(globalSettings);
@@ -128,9 +134,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       rootPanel.setVisible(false);
       rootPanel = null;
     }
-    if (serversPanel != null) {
-      serversPanel.dispose();
-      serversPanel = null;
+    if (connectionsPanel != null) {
+      connectionsPanel.dispose();
+      connectionsPanel = null;
     }
     about = null;
     rules = null;
@@ -143,11 +149,11 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       rules = new RuleConfigurationPanel();
       exclusions = new GlobalExclusionsPanel();
       globalPanel = new SonarLintGlobalOptionsPanel();
-      serversPanel = new ServerConnectionMgmtPanel();
+      connectionsPanel = new ServerConnectionMgmtPanel();
 
       JPanel settingsPanel = new JPanel(new BorderLayout());
       settingsPanel.add(globalPanel.getComponent(), BorderLayout.NORTH);
-      settingsPanel.add(serversPanel.getComponent(), BorderLayout.CENTER);
+      settingsPanel.add(connectionsPanel.getComponent(), BorderLayout.CENTER);
 
       rootPanel = new JPanel(new BorderLayout());
       tabs = new JBTabbedPane();

@@ -36,8 +36,8 @@ public class SonarLintProjectSettingsTest {
     settings.setProjectKey("project1");
     assertThat(settings.getProjectKey()).isEqualTo("project1");
 
-    settings.setConnectionId("server1");
-    assertThat(settings.getConnectionId()).isEqualTo("server1");
+    settings.setConnectionName("server1");
+    assertThat(settings.getConnectionName()).isEqualTo("server1");
 
     settings.setAnalysisLogsEnabled(true);
     assertThat(settings.isAnalysisLogsEnabled()).isTrue();

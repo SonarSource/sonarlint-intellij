@@ -64,7 +64,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getConnectionId(), projectSettings.getProjectKey());
+    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getConnectionName(), projectSettings.getProjectKey());
     exclusionsPanel.load(projectSettings);
   }
 
@@ -74,10 +74,10 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     exclusionsPanel.save(projectSettings);
 
     if (bindPanel.isBindingEnabled()) {
-      projectSettings.setConnectionId(ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null));
+      projectSettings.setConnectionName(ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null));
       projectSettings.setProjectKey(bindPanel.getSelectedProjectKey());
     } else {
-      projectSettings.setConnectionId(null);
+      projectSettings.setConnectionName(null);
       projectSettings.setProjectKey(null);
     }
   }
@@ -88,7 +88,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     }
 
     if (bindPanel.isBindingEnabled()) {
-      if (!StringUtils.equals(projectSettings.getConnectionId(), ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
+      if (!StringUtils.equals(projectSettings.getConnectionName(), ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
         return true;
       }
 
