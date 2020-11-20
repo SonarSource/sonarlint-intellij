@@ -38,4 +38,6 @@ public interface SonarLintTelemetry {
   void devNotificationsReceived(String eventType);
 
   void devNotificationsClicked(String eventType);
+
+  void showHotspotRequestReceived();
 }

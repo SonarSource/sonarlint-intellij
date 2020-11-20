@@ -30,6 +30,7 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingAssistant
 import org.sonarlint.intellij.core.SecurityHotspotMatcher
 import org.sonarlint.intellij.editor.SonarLintHighlighting
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.BalloonNotifier
 import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
@@ -46,15 +47,21 @@ const val FILE_NOT_FOUND_MESSAGE = "Cannot find hotspot file in the project."
 
 open class SecurityHotspotShowRequestHandler(
         private val projectBindingAssistant: ProjectBindingAssistant = ProjectBindingAssistant("Opening Security Hotspot..."),
-        private val wsHelper: WsHelper = WsHelperImpl()
+        private val wsHelper: WsHelper = WsHelperImpl(),
+        private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java)
 ) {
 
     private val OPEN_IN_IDE_GROUP = NotificationGroup.balloonGroup("SonarLint: Open in IDE")
 
     open fun open(projectKey: String, hotspotKey: String, serverUrl: String) {
+        telemetry.showHotspotRequestReceived()
+        doOpen(projectKey, hotspotKey, serverUrl)
+    }
+
+    private fun doOpen(projectKey: String, hotspotKey: String, serverUrl: String) {
         val (project, connection) = projectBindingAssistant.bind(projectKey, serverUrl) ?: return
 
-        val balloonRetryAction = RetryAction { open(projectKey, hotspotKey, serverUrl) }
+        val balloonRetryAction = RetryAction { doOpen(projectKey, hotspotKey, serverUrl) }
         val remoteHotspot = fetchHotspot(connection, hotspotKey, projectKey) ?: run {
             showBalloon(project, FETCHING_HOTSPOT_ERROR_MESSAGE, balloonRetryAction)
             return
