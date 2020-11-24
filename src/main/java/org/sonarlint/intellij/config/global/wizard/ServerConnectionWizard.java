@@ -75,7 +75,7 @@ public class ServerConnectionWizard {
 
     @Override
     protected void helpAction() {
-      BrowserUtil.browse("http://www.sonarlint.org/intellij/index.html#Connected");
+      BrowserUtil.browse("https://github.com/SonarSource/sonarlint-intellij/wiki/Connected-Mode");
     }
 
     @Override
