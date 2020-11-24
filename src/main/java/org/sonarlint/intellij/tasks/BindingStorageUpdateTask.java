@@ -54,14 +54,14 @@ import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
 import org.sonarsource.sonarlint.core.client.api.connected.UpdateResult;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
-public class ConnectionUpdateTask {
-  private static final Logger LOGGER = Logger.getInstance(ConnectionUpdateTask.class);
+public class BindingStorageUpdateTask {
+  private static final Logger LOGGER = Logger.getInstance(BindingStorageUpdateTask.class);
   private final ConnectedSonarLintEngine engine;
   private final ServerConnection connection;
   private final Map<String, List<Project>> projectsPerProjectKey;
   private final boolean onlyModules;
 
-  public ConnectionUpdateTask(ConnectedSonarLintEngine engine, ServerConnection connection, Map<String, List<Project>> projectsPerProjectKey, boolean onlyModules) {
+  public BindingStorageUpdateTask(ConnectedSonarLintEngine engine, ServerConnection connection, Map<String, List<Project>> projectsPerProjectKey, boolean onlyModules) {
     this.engine = engine;
     this.connection = connection;
     this.projectsPerProjectKey = projectsPerProjectKey;
@@ -71,7 +71,7 @@ public class ConnectionUpdateTask {
   public Task.Modal asModal() {
     return new Task.Modal(null, "Updating storage for connection '" + connection.getName() + "'", true) {
       @Override public void run(@NotNull ProgressIndicator indicator) {
-        ConnectionUpdateTask.this.run(indicator);
+        BindingStorageUpdateTask.this.run(indicator);
       }
     };
   }
@@ -79,7 +79,7 @@ public class ConnectionUpdateTask {
   public Task.Backgroundable asBackground() {
     return new Task.Backgroundable(null, "Updating storage for connection '" + connection.getName() + "'", true, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
       @Override public void run(@NotNull ProgressIndicator indicator) {
-        ConnectionUpdateTask.this.run(indicator);
+        BindingStorageUpdateTask.this.run(indicator);
       }
     };
   }
@@ -96,7 +96,7 @@ public class ConnectionUpdateTask {
         UpdateResult updateResult = engine.update(serverConfiguration, monitor);
         Collection<SonarAnalyzer> tooOld = updateResult.analyzers().stream()
           .filter(SonarAnalyzer::sonarlintCompatible)
-          .filter(ConnectionUpdateTask::tooOld)
+          .filter(BindingStorageUpdateTask::tooOld)
           .collect(Collectors.toList());
         if (!tooOld.isEmpty()) {
           ApplicationManager.getApplication().invokeAndWait(() ->
@@ -125,7 +125,7 @@ public class ConnectionUpdateTask {
     String msg = "The following plugins do not meet the required minimum versions: ";
 
     return msg + failingAnalyzers.stream()
-      .map(ConnectionUpdateTask::analyzerToString)
+      .map(BindingStorageUpdateTask::analyzerToString)
       .collect(Collectors.joining(","));
   }
 
@@ -178,7 +178,7 @@ public class ConnectionUpdateTask {
     engine.updateProject(serverConfiguration, projectKey, monitor);
     GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
     projects.forEach(this::updateModules);
-    projects.forEach(ConnectionUpdateTask::analyzeOpenFiles);
+    projects.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
   }
 
   private void updateModules(Project project) {

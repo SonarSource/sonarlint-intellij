@@ -75,7 +75,7 @@ import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.tasks.ConnectionUpdateTask;
+import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
@@ -112,7 +112,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
       @Override
       public void mouseClicked(MouseEvent evt) {
         if (evt.getClickCount() == 2) {
-          editSelectedConnection(false);
+          editSelectedConnection();
         }
       }
     });
@@ -126,7 +126,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
     ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(connectionList)
       .setEditActionName("Edit")
-      .setEditAction(e -> editSelectedConnection(false))
+      .setEditAction(e -> editSelectedConnection())
       .disableUpDownActions();
 
     toolbarDecorator.setAddAction(new AddServerAction());
@@ -355,32 +355,24 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
       }
     }
 
-    ConnectionUpdateTask task = new ConnectionUpdateTask(engine, connection, projectsPerModule, onlyProjects);
+    BindingStorageUpdateTask task = new BindingStorageUpdateTask(engine, connection, projectsPerModule, onlyProjects);
     ProgressManager.getInstance().run(task.asBackground());
   }
 
-  private void editSelectedConnection(boolean forNotificationsOnly) {
+  private void editSelectedConnection() {
     ServerConnection selectedConnection = getSelectedConnection();
     int selectedIndex = connectionList.getSelectedIndex();
 
     if (selectedConnection != null) {
-      ServerConnectionWizard serverEditor = forNotificationsOnly ? ServerConnectionWizard.forNotificationsEdition(selectedConnection) :
-        ServerConnectionWizard.forConnectionEdition(selectedConnection);
+      ServerConnectionWizard serverEditor = ServerConnectionWizard.forConnectionEdition(selectedConnection);
       if (serverEditor.showAndGet()) {
         ServerConnection newConnection = serverEditor.getConnection();
         ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(newConnection, selectedIndex);
         connections.set(connections.indexOf(selectedConnection), newConnection);
         connectionChangeListener.changed(connections);
-        if (!forNotificationsOnly) {
-          updateConnectionStorage(selectedConnection);
-        }
+        updateConnectionStorage(selectedConnection);
       }
     }
-  }
-
-  public void editNotifications(ServerConnection connectionToEdit) {
-    connectionList.setSelectedValue(connectionToEdit, true);
-    editSelectedConnection(true);
   }
 
   @Override
@@ -410,7 +402,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
   private void updateConnectionStorage(ServerConnection created) {
     SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
-    ConnectionUpdateTask task = new ConnectionUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
+    BindingStorageUpdateTask task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
     ProgressManager.getInstance().run(task.asBackground());
   }
 

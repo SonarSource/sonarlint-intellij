@@ -110,12 +110,6 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     return null;
   }
 
-  public void editNotifications(ServerConnection connection) {
-    if (connectionsPanel != null) {
-      connectionsPanel.editNotifications(connection);
-    }
-  }
-
   @Override
   public void reset() {
     SonarLintGlobalSettings globalSettings = getGlobalSettings();

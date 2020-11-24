@@ -39,7 +39,7 @@ import org.sonarlint.intellij.core.SonarLintProjectNotifications;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.tasks.ConnectionUpdateTask;
+import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -120,7 +120,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
         ConnectedSonarLintEngine engine = bindingManager.getConnectedEngineSkipChecks();
         String projectKey = projectSettings.getProjectKey();
 
-        ConnectionUpdateTask task = new ConnectionUpdateTask(engine, server, Collections.singletonMap(projectKey, Collections.singletonList(project)), true);
+        BindingStorageUpdateTask task = new BindingStorageUpdateTask(engine, server, Collections.singletonMap(projectKey, Collections.singletonList(project)), true);
         ProgressManager.getInstance().run(task.asModal());
       } catch (InvalidBindingException e) {
         // nothing to do, SonarLintEngineManager should have already shown a warning

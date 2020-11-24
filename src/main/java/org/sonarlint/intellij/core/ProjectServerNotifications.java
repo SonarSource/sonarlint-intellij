@@ -26,19 +26,19 @@ import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.WindowManager;
 import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Optional;
 import javax.swing.JFrame;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
+import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectState;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -202,7 +202,7 @@ public class ProjectServerNotifications {
     }
   }
 
-  private static class ConfigureNotificationsAction extends NotificationAction {
+  private class ConfigureNotificationsAction extends NotificationAction {
 
     private final String connectionName;
 
@@ -218,10 +218,16 @@ public class ProjectServerNotifications {
         return;
       }
       UIUtil.invokeLaterIfNeeded(() -> {
-        final Optional<ServerConnection> connection = getGlobalSettings().getServerConnections().stream().filter(s -> s.getName().equals(connectionName)).findAny();
-        if (connection.isPresent()) {
-          SonarLintGlobalConfigurable globalConfigurable = new SonarLintGlobalConfigurable();
-          ShowSettingsUtil.getInstance().editConfigurable(parent, globalConfigurable, () -> globalConfigurable.editNotifications(connection.get()));
+        final Optional<ServerConnection> connectionToEditOpt = getGlobalSettings().getServerConnections().stream().filter(s -> s.getName().equals(connectionName)).findAny();
+        if (connectionToEditOpt.isPresent()) {
+          final ServerConnection connectionToEdit = connectionToEditOpt.get();
+          final ServerConnectionWizard wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit);
+          if (wizard.showAndGet()) {
+            final ServerConnection editedConnection = wizard.getConnection();
+            final List<ServerConnection> serverConnections = getGlobalSettings().getServerConnections();
+            serverConnections.set(serverConnections.indexOf(connectionToEdit), editedConnection);
+            register();
+          }
         } else if (e.getProject() != null) {
           SonarLintConsole.get(e.getProject()).error("Unable to find connection with name: " + connectionName);
           notification.expire();
