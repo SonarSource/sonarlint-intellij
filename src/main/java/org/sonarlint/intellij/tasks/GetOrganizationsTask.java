@@ -22,7 +22,7 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
-import java.util.Optional;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -32,32 +32,31 @@ import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 
-public class GetOrganizationTask extends Task.Modal {
-  private static final Logger LOGGER = Logger.getInstance(GetOrganizationTask.class);
-  private final ServerConnection server;
-  private final String organizationKey;
-
+/**
+ * Only useful for SonarCloud
+ */
+public class GetOrganizationsTask extends Task.Modal {
+  private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
+  private final ServerConnection connection;
   private Exception exception;
-  private Optional<RemoteOrganization> organization = Optional.empty();
+  private List<RemoteOrganization> organizations;
 
-  public GetOrganizationTask(ServerConnection server, String organizationKey) {
-    super(null, "Fetch Organization From SonarCloud", true);
-    this.server = server;
-    this.organizationKey = organizationKey;
+  public GetOrganizationsTask(ServerConnection connection) {
+    super(null, "Fetch organizations from SonarCloud", true);
+    this.connection = connection;
   }
 
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Connecting to SonarCloud...");
+    indicator.setText("Connecting to " + connection.getHostUrl() + "...");
     indicator.setIndeterminate(false);
 
     try {
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      indicator.setText("Searching organization");
+      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(connection);
       WsHelper wsHelper = new WsHelperImpl();
-      organization = wsHelper.getOrganization(serverConfiguration, organizationKey, new TaskProgressMonitor(indicator, myProject));
+      organizations = wsHelper.listUserOrganizations(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
     } catch (Exception e) {
-      LOGGER.info("Failed to fetch information", e);
+      LOGGER.info("Failed to fetch organizations", e);
       exception = e;
     }
   }
@@ -66,7 +65,8 @@ public class GetOrganizationTask extends Task.Modal {
     return exception;
   }
 
-  public Optional<RemoteOrganization> organization() {
-    return organization;
+  public List<RemoteOrganization> organizations() {
+    return organizations;
   }
+
 }

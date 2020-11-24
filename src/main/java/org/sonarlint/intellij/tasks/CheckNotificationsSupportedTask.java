@@ -22,27 +22,23 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
-import java.util.Collections;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.WsHelperImpl;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
 import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
-public class InformationFetchTask extends Task.Modal {
+/**
+ * Only useful for SonarQube, since we know notifications are available in SonarCloud
+ */
+public class CheckNotificationsSupportedTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final ServerConnection connection;
   private Exception exception;
-  private List<RemoteOrganization> organizations;
   private boolean notificationsSupported = false;
 
-  public InformationFetchTask(ServerConnection connection) {
-    super(null, "Fetch Information From " + (connection.isSonarCloud() ? "SonarCloud" : "SonarQube Server"), true);
+  public CheckNotificationsSupportedTask(ServerConnection connection) {
+    super(null, "Check if smart notifications are available in the SonarQube edition", true);
     this.connection = connection;
   }
 
@@ -55,25 +51,18 @@ public class InformationFetchTask extends Task.Modal {
       ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(connection);
       if (connection.isSonarCloud()) {
         notificationsSupported = true;
-        WsHelper wsHelper = new WsHelperImpl();
-        organizations = wsHelper.listUserOrganizations(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
       } else {
         indicator.setText("Checking support of notifications");
         notificationsSupported = ServerNotifications.get().isSupported(serverConfiguration);
-        organizations = Collections.emptyList();
       }
     } catch (Exception e) {
-      LOGGER.info("Failed to fetch information", e);
+      LOGGER.info("Failed to check notifications", e);
       exception = e;
     }
   }
 
   public Exception getException() {
     return exception;
-  }
-
-  public List<RemoteOrganization> organizations() {
-    return organizations;
   }
 
   public boolean notificationsSupported() {

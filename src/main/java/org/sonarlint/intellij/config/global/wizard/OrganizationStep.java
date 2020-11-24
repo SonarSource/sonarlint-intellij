@@ -74,7 +74,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
           break;
         }
 
-        GetOrganizationTask task = new GetOrganizationTask(model.createServerWithoutOrganization(), organizationKey);
+        GetOrganizationTask task = new GetOrganizationTask(model.createConnectionWithoutOrganization(), organizationKey);
         ProgressManager.getInstance().run(task);
 
         if (task.organization().isPresent()) {
@@ -134,6 +134,9 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   @Nullable @Override public Object getNextStepId() {
+    if (model.isNotificationsSupported()) {
+      return NotificationsStep.class;
+    }
     return ConfirmStep.class;
   }
 

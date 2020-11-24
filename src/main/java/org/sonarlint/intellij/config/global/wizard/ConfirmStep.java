@@ -20,11 +20,7 @@
 package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.wizard.AbstractWizardStepEx;
-import com.intellij.ui.BrowserHyperlinkListener;
-import com.intellij.util.ui.SwingHelper;
-import javax.swing.JCheckBox;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +34,6 @@ public class ConfirmStep extends AbstractWizardStepEx {
   private JPanel panel;
   private JLabel textArea;
   private JLabel textArea2;
-  private JCheckBox notificationsCheckBox;
-  private JEditorPane notificationsDetails;
 
   public ConfirmStep(WizardModel model, boolean editing) {
     super("Configuration completed");
@@ -61,21 +55,6 @@ public class ConfirmStep extends AbstractWizardStepEx {
       textArea.setText(TEXT1);
     }
     textArea2.setText(TEXT2);
-    final boolean isSc = model.getServerType() == WizardModel.ServerType.SONARCLOUD;
-    final String sqOrSc = isSc ? "SonarCloud" : "SonarQube";
-    notificationsCheckBox.setText("Receive notifications from " + sqOrSc);
-    notificationsCheckBox.setVisible(model.isNotificationsSupported());
-    notificationsCheckBox.setEnabled(model.isNotificationsSupported());
-    notificationsCheckBox.setSelected(!model.isNotificationsDisabled());
-    final String docUrl = isSc ? "https://sonarcloud.io/documentation/user-guide/sonarlint-notifications/" :
-      "https://docs.sonarqube.org/latest/user-guide/sonarlint-notifications/";
-    notificationsDetails.setText("You will receive <a href=\"" + docUrl + "\">notifications</a> from " + sqOrSc + " in situations like:\n" +
-      "<ul>" +
-      "<li>the Quality Gate status of a bound project changes</li>" +
-      "<li>the latest analysis of a bound project on " + sqOrSc + " raises new issues assigned to you</li>" +
-      "</ul>");
-    notificationsDetails.addHyperlinkListener(new BrowserHyperlinkListener());
-    notificationsDetails.setVisible(model.isNotificationsSupported());
   }
 
   @NotNull
@@ -93,11 +72,13 @@ public class ConfirmStep extends AbstractWizardStepEx {
   @Nullable
   @Override
   public Object getPreviousStepId() {
+    if (model.isNotificationsSupported()) {
+      return NotificationsStep.class;
+    }
     if (model.getServerType() == WizardModel.ServerType.SONARCLOUD) {
       return OrganizationStep.class;
-    } else {
-      return AuthStep.class;
     }
+    return AuthStep.class;
   }
 
   @Override
@@ -107,7 +88,6 @@ public class ConfirmStep extends AbstractWizardStepEx {
 
   @Override
   public void commit(CommitType commitType) {
-    model.setNotificationsDisabled(!notificationsCheckBox.isSelected());
   }
 
   @Nullable
@@ -116,7 +96,4 @@ public class ConfirmStep extends AbstractWizardStepEx {
     return null;
   }
 
-  private void createUIComponents() {
-    notificationsDetails = SwingHelper.createHtmlViewer(false, null, null, null);
-  }
 }

@@ -30,23 +30,33 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 
 public class ServerConnectionWizard {
   private final WizardModel model;
-  private AbstractWizardEx wizard;
+  private AbstractWizardEx wizardEx;
 
-  public ServerConnectionWizard(ServerConnection connectionToEdit) {
-    model = new WizardModel(connectionToEdit);
-    init(model, true, Collections.emptySet());
+  private ServerConnectionWizard(WizardModel model) {
+    this.model = model;
   }
 
-  public ServerConnectionWizard(Set<String> existingNames) {
-    model = new WizardModel();
-    init(model, false, existingNames);
+  public static ServerConnectionWizard forNewConnection(Set<String> existingNames) {
+    ServerConnectionWizard wizard = new ServerConnectionWizard(new WizardModel());
+    List<AbstractWizardStepEx> steps = createSteps(wizard.model, false, existingNames);
+    wizard.wizardEx = new ServerConnectionWizardEx(steps, "New Connection");
+    return wizard;
   }
 
-  private void init(WizardModel model, boolean editing, Set<String> existingNames) {
-    List<AbstractWizardStepEx> steps = createSteps(model, editing, existingNames);
-    String title = editing ? "Edit " : "New ";
-    title = title + "Connection";
-    wizard = new ServerConnectionWizardEx(steps, title);
+  public static ServerConnectionWizard forConnectionEdition(ServerConnection connectionToEdit) {
+    ServerConnectionWizard wizard = new ServerConnectionWizard(new WizardModel(connectionToEdit));
+    List<AbstractWizardStepEx> steps = createSteps(wizard.model, true, Collections.emptySet());
+    wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
+    return wizard;
+  }
+
+  public static ServerConnectionWizard forNotificationsEdition(ServerConnection connectionToEdit) {
+    ServerConnectionWizard wizard = new ServerConnectionWizard(new WizardModel(connectionToEdit));
+    // Assume notifications are supported, if not, why would we want to edit the setting
+    wizard.model.setNotificationsSupported(true);
+    List<AbstractWizardStepEx> steps = Collections.singletonList(new NotificationsStep(wizard.model, true));
+    wizard.wizardEx = new ServerConnectionWizardEx(steps, "Edit Connection");
+    return wizard;
   }
 
   private static List<AbstractWizardStepEx> createSteps(WizardModel model, boolean editing, Set<String> existingNames) {
@@ -54,16 +64,17 @@ public class ServerConnectionWizard {
     steps.add(new ServerStep(model, editing, existingNames));
     steps.add(new AuthStep(model));
     steps.add(new OrganizationStep(model));
+    steps.add(new NotificationsStep(model, false));
     steps.add(new ConfirmStep(model, editing));
     return steps;
   }
 
   public boolean showAndGet() {
-    return wizard.showAndGet();
+    return wizardEx.showAndGet();
   }
 
-  public ServerConnection getServer() {
-    return model.createServer();
+  public ServerConnection getConnection() {
+    return model.createConnection();
   }
 
   private static class ServerConnectionWizardEx extends AbstractWizardEx {

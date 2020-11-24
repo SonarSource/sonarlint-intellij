@@ -94,7 +94,7 @@ public class UpdateChecker implements Disposable {
       if (!changelog.isEmpty()) {
         changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
         SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
-        notifications.notifyServerHasUpdates(projectSettings.getConnectionId(), engine, server, !hasGlobalUpdates);
+        notifications.notifyServerHasUpdates(projectSettings.getConnectionName(), engine, server, !hasGlobalUpdates);
       }
     } catch (Exception e) {
       log.log("There was an error while checking for updates: " + e.getMessage(), LogOutput.Level.WARN);
