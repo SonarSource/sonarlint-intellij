@@ -29,9 +29,9 @@ import org.sonarlint.intellij.tasks.BindingStorageUpdateTask
 import org.sonarlint.intellij.util.SonarLintUtils
 import java.util.Collections.emptyMap
 
-open class NewConnectionWizard {
+open class ServerConnectionCreator {
 
-    open fun open(serverUrl: String): ServerConnection? {
+    open fun createThroughWizard(serverUrl: String): ServerConnection? {
         val globalSettings = Settings.getGlobalSettings()
         val connectionToCreate = ServerConnection.newBuilder().setHostUrl(serverUrl).setDisableNotifications(false).build()
         val wizard = ServerConnectionWizard.forNewConnection(connectionToCreate, globalSettings.serverNames)
