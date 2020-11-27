@@ -27,7 +27,6 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.ContentManagerEvent;
-import com.intellij.ui.content.ContentManagerListener;
 import java.awt.Window;
 import java.util.function.Consumer;
 import javax.swing.JComponent;
@@ -36,13 +35,14 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
-public class SonarLintToolWindow implements ContentManagerListener {
+public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   private static final String TAB_HOTSPOTS = "Security Hotspots";
   private static final int HOTSPOTS_TAB_INDEX = 2;
 
