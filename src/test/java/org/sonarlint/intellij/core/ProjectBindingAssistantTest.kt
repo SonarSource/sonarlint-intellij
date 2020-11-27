@@ -30,7 +30,7 @@ import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.wizard.NewConnectionWizard
+import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.ui.ModalPresenter
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
@@ -38,7 +38,7 @@ import org.sonarlint.intellij.ui.ProjectSelectionDialog
 class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
 
     private lateinit var projectManager: ProjectManager
-    private lateinit var newConnectionWizard: NewConnectionWizard
+    private lateinit var connectionCreator: ServerConnectionCreator
     private lateinit var modalPresenter: ModalPresenter
     private lateinit var projectSelectionDialog: ProjectSelectionDialog
     private lateinit var bindingManager: ProjectBindingManager
@@ -48,12 +48,12 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
     fun setup() {
         modalPresenter = mock(ModalPresenter::class.java)
         projectManager = mock(ProjectManager::class.java)
-        newConnectionWizard = mock(NewConnectionWizard::class.java)
+        connectionCreator = mock(ServerConnectionCreator::class.java)
         projectSelectionDialog = mock(ProjectSelectionDialog::class.java)
         bindingManager = mock(ProjectBindingManager::class.java)
         assistant = ProjectBindingAssistant("title",
                 projectManager,
-                newConnectionWizard,
+                connectionCreator,
                 modalPresenter,
                 projectSelectionDialog)
 
@@ -81,7 +81,7 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
     @Test
     fun `it should select project after connection wizard is completed`() {
         `when`(modalPresenter.showConfirmModal("title", "No connections configured to 'serverUrl'.", "Create connection")).thenReturn(true)
-        `when`(newConnectionWizard.open("serverUrl")).thenReturn(ServerConnection.newBuilder().setHostUrl("serverUrl").build())
+        `when`(connectionCreator.createThroughWizard("serverUrl")).thenReturn(ServerConnection.newBuilder().setHostUrl("serverUrl").build())
 
         assistant.bind("projectKey", "serverUrl")
 
@@ -103,7 +103,7 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
     @Test
     fun `it should not return bound project if connection creation wizard is canceled`() {
         `when`(modalPresenter.showConfirmModal("title", "No connections configured to 'serverUrl'.", "Create connection")).thenReturn(true)
-        `when`(newConnectionWizard.open("serverUrl")).thenReturn(null)
+        `when`(connectionCreator.createThroughWizard("serverUrl")).thenReturn(null)
 
         val boundProject = assistant.bind("projectKey", "serverUrl")
 

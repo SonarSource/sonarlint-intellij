@@ -24,7 +24,7 @@ import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.wizard.NewConnectionWizard
+import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.ui.ModalPresenter
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.SonarLintUtils.getService
@@ -32,10 +32,10 @@ import org.sonarlint.intellij.util.SonarLintUtils.getService
 data class BoundProject(val project: Project, val connection: ServerConnection)
 
 open class ProjectBindingAssistant(private val title: String,
-                              private val projectManager: ProjectManager = ProjectManager.getInstance(),
-                              private val newConnectionWizard: NewConnectionWizard = NewConnectionWizard(),
-                              private val modalPresenter: ModalPresenter = ModalPresenter(),
-                              private val projectSelectionDialog: ProjectSelectionDialog = ProjectSelectionDialog()) {
+                                   private val projectManager: ProjectManager = ProjectManager.getInstance(),
+                                   private val connectionCreator: ServerConnectionCreator = ServerConnectionCreator(),
+                                   private val modalPresenter: ModalPresenter = ModalPresenter(),
+                                   private val projectSelectionDialog: ProjectSelectionDialog = ProjectSelectionDialog()) {
 
     open fun bind(projectKey: String, serverUrl: String): BoundProject? {
         val connection = findOrCreateConnectionTo(serverUrl) ?: return null
@@ -51,7 +51,7 @@ open class ProjectBindingAssistant(private val title: String,
     private fun createConnectionTo(serverUrl: String): ServerConnection? {
         val message = "No connections configured to '$serverUrl'."
         val confirmed = modalPresenter.showConfirmModal(title, message, "Create connection")
-        return if (confirmed) newConnectionWizard.open(serverUrl) else null
+        return if (confirmed) connectionCreator.createThroughWizard(serverUrl) else null
     }
 
     private fun findBoundProjectAmongOpened(projectKey: String, connection: ServerConnection): BoundProject? {
