@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui
 import com.intellij.ide.DataManager
 import com.intellij.ide.IdeBundle
 import com.intellij.ide.ProjectGroupActionGroup
-import com.intellij.ide.RecentProjectListActionProvider
+import com.intellij.ide.RecentProjectsManager
 import com.intellij.ide.ReopenProjectAction
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
@@ -194,7 +194,7 @@ open class SonarLintRecentProjectPanel(private val onProjectSelected: (Project) 
     }
 
     init {
-        var recentProjectActions = RecentProjectListActionProvider.getInstance().getActions()
+        var recentProjectActions = RecentProjectsManager.getInstance().getRecentProjectsActions(false, false).toList()
         recentProjectActions = recentProjectActions.filter { it is ReopenProjectAction && isPathValid(it.projectPath) }
         projectsList = ProjectsList(preferredScrollableViewportSize, recentProjectActions)
         projectsList.cellRenderer = RecentProjectItemRenderer()

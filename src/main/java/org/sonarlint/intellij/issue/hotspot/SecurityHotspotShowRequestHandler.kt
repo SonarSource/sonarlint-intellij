@@ -51,8 +51,6 @@ open class SecurityHotspotShowRequestHandler(
         private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java)
 ) {
 
-    private val OPEN_IN_IDE_GROUP = NotificationGroup.balloonGroup("SonarLint: Open in IDE")
-
     open fun open(projectKey: String, hotspotKey: String, serverUrl: String) {
         telemetry.showHotspotRequestReceived()
         doOpen(projectKey, hotspotKey, serverUrl)
@@ -91,10 +89,10 @@ open class SecurityHotspotShowRequestHandler(
     }
 
     open fun showBalloon(project: Project, message: String, action: AnAction) {
-        val notification = OPEN_IN_IDE_GROUP.createNotification(
+        val notification = SecurityHotspotNotifications.GROUP.createNotification(
                 NOTIFICATION_TITLE,
                 message,
-                NotificationType.ERROR)
+                NotificationType.ERROR, null)
         notification.isImportant = true
         notification.addAction(action)
         getService(project, BalloonNotifier::class.java).show(notification)
