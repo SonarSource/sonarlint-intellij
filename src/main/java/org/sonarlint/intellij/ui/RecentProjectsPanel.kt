@@ -131,7 +131,7 @@ open class SonarLintRecentProjectPanel(private val onProjectSelected: (Project) 
 
         init {
             setExpandableItemsEnabled(false)
-            setEmptyText("No project opened yet")
+            setEmptyText("No projects opened yet")
             selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
             getAccessibleContext().accessibleName = TITLE
         }
