@@ -23,10 +23,11 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.ActionLinkFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.utils.keyboard
-import java.io.File
+import com.intellij.remoterobot.search.locators.byXpath
+import java.nio.file.Paths
 
 fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
   find(WelcomeFrame::class.java).apply(function)
@@ -35,31 +36,38 @@ fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
 @FixtureName("Welcome Frame")
 @DefaultXpath("type", "//div[@class='FlatWelcomeFrame' and @visible='true']")
 class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+  // from 203+
+  private val newOpenButton
+    get() = button(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]"))
+
+  // from 201 up to 202
   private val openOrImportLink
     get() = actionLink(ActionLinkFixture.byText("Open or Import"))
 
+  // up to 193
   private val legacyImportLink
     get() = actionLink(ActionLinkFixture.byText("Import Project"))
 
-  fun importProject(projectName: String) {
-    try {
-      openOrImportLink.click()
-    } catch (e: Exception) {
-      // before 2020
-      importProjectLegacy(projectName)
-      return
-    }
-    dialog("Open File or Project") {
-      keyboard { enterText(File("projects/$projectName").absolutePath) }
-      button("OK").click()
+  private fun findOpenButton(): ComponentFixture {
+    val ideMajorVersion = remoteRobot.ideMajorVersion()
+    return when {
+      ideMajorVersion < 201 -> legacyImportLink
+      ideMajorVersion < 202 -> openOrImportLink
+      else -> newOpenButton
     }
   }
 
-  private fun importProjectLegacy(projectName: String) {
-    legacyImportLink.click()
-    dialog("Select File or Directory to Import") {
-      keyboard { enterText(File("projects/$projectName/pom.xml").absolutePath) }
-      button("OK").click()
-    }
+  private val openProjectFileBrowseDialog
+    get() = fileBrowserDialog(arrayOf(
+      // 2020+
+      "Open File or Project",
+      // up to 2019.3
+      "Select File or Directory to Import"
+    ))
+
+  fun importProject(projectName: String) {
+    findOpenButton().click()
+    val projectFile = if (remoteRobot.ideMajorVersion() < 201) "$projectName/pom.xml" else projectName
+    openProjectFileBrowseDialog.selectFile(Paths.get("projects", projectFile))
   }
 }

@@ -21,33 +21,40 @@ package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
-import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.search.locators.Locator
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitFor
+import java.nio.file.Path
 import java.time.Duration
 
-fun ContainerFixture.dialog(
-  title: String,
+fun ContainerFixture.fileBrowserDialog(
+  possibleTitles: Array<String>,
   timeout: Duration = Duration.ofSeconds(20),
-  function: DialogFixture.() -> Unit = {}): DialogFixture = step("Search for dialog with title $title") {
-  find<DialogFixture>(DialogFixture.byTitle(title), timeout).apply(function)
+  function: FileBrowserDialogFixture.() -> Unit = {}): FileBrowserDialogFixture = step("Search for file browser dialog with title containing $possibleTitles") {
+  find<FileBrowserDialogFixture>(DialogFixture.byPossibleTitles(possibleTitles), timeout).apply(function)
 }
 
-@FixtureName("Dialog")
-open class DialogFixture(
+@FixtureName("File Browser Dialog")
+class FileBrowserDialogFixture(
   remoteRobot: RemoteRobot,
-  remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+  remoteComponent: RemoteComponent) : DialogFixture(remoteRobot, remoteComponent) {
 
-  companion object {
-    @JvmStatic
-    fun byTitle(title: String) = byXpath("title $title", "//div[@title='$title' and @class='MyDialog']")
+  private val textField
+    get() = textField(byXpath("//div[(@class='BorderlessTextField' or @class='JTextField')]"))
 
-    @JvmStatic
-    fun byPossibleTitles(possibleTitles: Array<String>) =
-      byXpath("title part $possibleTitles",
-        "//div[contains('${possibleTitles.joinToString(",")}', @title) and @class='MyDialog']")
+  private fun actionButton(text: String): ComponentFixture {
+    return find(byXpath("//div[(@accessiblename='$text' and @class='ActionButton')]"))
+  }
+
+  fun selectFile(filePath: Path) {
+    val button = button("OK")
+    waitFor { button.isEnabled() }
+    textField.text = filePath.toAbsolutePath().normalize().toString()
+    // it helps locating the project
+    actionButton("Refresh").click()
+    button.click()
   }
 }
