@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
+import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
@@ -47,6 +48,7 @@ import org.sonarqube.ws.client.users.CreateRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
 import java.net.URL
+import java.nio.file.Paths
 
 const val PROJECT_KEY = "sample-java-hotspot"
 
@@ -82,7 +84,7 @@ class OpenInIdeTest : BaseUiTest() {
           button("Create connection").click()
         }
         dialog("New Connection: Server Details") {
-          keyboard { enterText("Next") }
+          keyboard { enterText("Orchestrator") }
           button("Next").click()
         }
         dialog("New Connection: Authentication") {
@@ -105,10 +107,8 @@ class OpenInIdeTest : BaseUiTest() {
         dialog("Select a project") {
           button("Open or import").click()
         }
-        dialog("Select Path") {
-          val path = File("projects/sample-java-hotspot").absolutePath
-          keyboard { enterText(path) }
-          button("OK").click()
+        fileBrowserDialog(arrayOf("Select Path")) {
+          selectFile(Paths.get("projects", "sample-java-hotspot"))
         }
         dialog("Opening Security Hotspot...") {
           button("Yes").click()
