@@ -37,8 +37,6 @@ import java.net.URL;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
@@ -64,7 +62,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
@@ -93,37 +90,39 @@ public class SonarLintRulePanel {
     show();
   }
 
-  public void setRuleKey(@Nullable LiveIssue issue) {
-    if (issue == null) {
+  public void setRuleKey(@Nullable String ruleKey) {
+    if(ruleKey == null) {
       nothingToDisplay(false);
-    } else {
-      try {
-        SonarLintFacade facade = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade();
-        RuleDetails rule = facade.getActiveRuleDetails(issue.getRuleKey());
-        String description = facade.getDescription(issue.getRuleKey());
-        if (rule == null || description == null) {
-          nothingToDisplay(true);
-          return;
-        }
-
-        StringBuilder builder = new StringBuilder(description.length() + 64);
-        builder.append("<h2>")
-          .append(StringEscapeUtils.escapeHtml(issue.getRuleName()))
-          .append("</h2>");
-        createTable(rule, builder);
-        builder.append("<br />")
-          .append(description);
-        if (rule instanceof StandaloneRuleDetails) {
-          builder.append(renderRuleParams((StandaloneRuleDetails) rule));
-        }
-        String htmlBody = builder.toString();
-        htmlBody = fixPreformattedText(htmlBody);
-
-        updateEditor(htmlBody, rule.getKey());
-      } catch (InvalidBindingException e) {
-        nothingToDisplay(true);
-      }
+      return;
     }
+    try {
+      SonarLintFacade facade = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade();
+      RuleDetails rule = facade.getActiveRuleDetails(ruleKey);
+
+      String description = facade.getDescription(ruleKey);
+      if (rule == null || description == null) {
+        nothingToDisplay(true);
+        return;
+      }
+
+      StringBuilder builder = new StringBuilder(description.length() + 64);
+      builder.append("<h2>")
+        .append(StringEscapeUtils.escapeHtml(rule.getName()))
+        .append("</h2>");
+      createTable(rule, builder);
+      builder.append("<br />")
+        .append(description);
+      if (rule instanceof StandaloneRuleDetails) {
+        builder.append(renderRuleParams((StandaloneRuleDetails) rule));
+      }
+      String htmlBody = builder.toString();
+      htmlBody = fixPreformattedText(htmlBody);
+
+      updateEditor(htmlBody, rule.getKey());
+    } catch (InvalidBindingException e) {
+      nothingToDisplay(true);
+    }
+
   }
 
   private static void createTable(RuleDetails rule, StringBuilder builder) {
@@ -253,7 +252,7 @@ public class SonarLintRulePanel {
     String defaultValue = paramDefaultValue != null ? paramDefaultValue : "(none)";
     String currentValue = getGlobalSettings().getRuleParamValue(ruleDetails.getKey(), param.name()).orElse(defaultValue);
     return "<tr class='tbody'>" +
-      // The <br/> elements are added to simulate a "vertical-align: top" (not supported by Java 11 CSS renderer)
+    // The <br/> elements are added to simulate a "vertical-align: top" (not supported by Java 11 CSS renderer)
       "<th>" + param.name() + "<br/><br/></th>" +
       "<td>" +
       paramDescription +

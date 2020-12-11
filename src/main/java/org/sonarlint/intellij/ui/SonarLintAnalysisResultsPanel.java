@@ -28,7 +28,6 @@ import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
-
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;

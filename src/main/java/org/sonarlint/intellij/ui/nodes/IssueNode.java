@@ -29,6 +29,7 @@ import icons.SonarLintIcons;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
@@ -43,8 +44,8 @@ public class IssueNode extends AbstractNode {
 
   private final LiveIssue issue;
 
-  public IssueNode(LiveIssue issue) {
-    this.issue = issue;
+  public IssueNode(Trackable issue) {
+    this.issue = ((LiveIssue) issue);
   }
 
   @Override public void render(TreeCellRenderer renderer) {

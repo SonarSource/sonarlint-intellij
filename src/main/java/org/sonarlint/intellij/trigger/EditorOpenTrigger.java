@@ -26,10 +26,11 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Arrays;
-import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 

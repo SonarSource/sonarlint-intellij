@@ -29,7 +29,9 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
+import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildVulnerabilitiesTabName;
 import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
 /**
@@ -41,12 +43,14 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TAB_LOGS = "Log";
   public static final String TAB_CURRENT_FILE = "Current file";
   public static final String TAB_ANALYSIS_RESULTS = "Report";
+  public static final String TAB_TAINT_VULNERABILITIES = "Taint vulnerabilities";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
     ContentManager contentManager = toolWindow.getContentManager();
     addIssuesTab(project, contentManager);
     addAnalysisResultsTab(project, contentManager);
+    addTaintIssuesTab(project, contentManager);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
     SonarLintToolWindow sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
@@ -82,6 +86,19 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     contentManager.addDataProvider(resultsPanel);
     contentManager.addContent(analysisResultsContent);
   }
+
+  private static void addTaintIssuesTab(Project project, @NotNull ContentManager contentManager) {
+    TaintVulnerabilitiesPanel vulnerabilitiesPanel = new TaintVulnerabilitiesPanel(project);
+    Content analysisResultsContent = contentManager.getFactory()
+            .createContent(
+                    vulnerabilitiesPanel,
+                    buildVulnerabilitiesTabName(0),
+                    false);
+    analysisResultsContent.setCloseable(false);
+    contentManager.addDataProvider(vulnerabilitiesPanel);
+    contentManager.addContent(analysisResultsContent);
+  }
+
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
     Content logContent = toolWindow.getContentManager().getFactory()
