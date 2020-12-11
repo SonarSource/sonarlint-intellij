@@ -29,7 +29,7 @@ import javax.swing.tree.TreeNode;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
-public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutableTreeNode {
+public abstract class AbstractNode extends DefaultMutableTreeNode {
   protected int issueCount;
   protected int fileCount;
 
@@ -75,21 +75,6 @@ public abstract class AbstractNode<T extends AbstractNode> extends DefaultMutabl
   public void add(MutableTreeNode newChild) {
     setDirty();
     super.add(newChild);
-  }
-
-  public int getInsertIdx(T newChild, Comparator<? super TreeNode> comparator) {
-    if (children == null) {
-      insert(newChild, 0);
-      return 0;
-    }
-    int i = Collections.binarySearch(children, newChild, comparator);
-    if (i >= 0) {
-      throw new IllegalArgumentException("Child already exists");
-    }
-
-    int insertIdx = -i - 1;
-    insert(newChild, insertIdx);
-    return insertIdx;
   }
 
   public void setDirty() {

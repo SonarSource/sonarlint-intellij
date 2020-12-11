@@ -71,7 +71,7 @@ public class IssueTreeModelBuilder {
     return summary.getIssueCount();
   }
 
-  private AbstractNode getFilesParent() {
+  private SummaryNode getFilesParent() {
     return summary;
   }
 
@@ -119,7 +119,7 @@ public class IssueTreeModelBuilder {
     setIssues(fNode, filtered);
 
     if (newFile) {
-      AbstractNode parent = getFilesParent();
+      SummaryNode parent = getFilesParent();
       int idx = parent.getInsertIdx(fNode, new FileNodeComparator());
       int[] newIdx = {idx};
       model.nodesWereInserted(parent, newIdx);
@@ -209,7 +209,7 @@ public class IssueTreeModelBuilder {
   }
 
   @CheckForNull
-  public IssueNode getNextIssue(AbstractNode<?> startNode) {
+  public IssueNode getNextIssue(AbstractNode startNode) {
     if (!(startNode instanceof IssueNode)) {
       return firstIssueDown(startNode);
     }
@@ -229,7 +229,7 @@ public class IssueTreeModelBuilder {
   }
 
   @CheckForNull
-  public IssueNode getPreviousIssue(AbstractNode<?> startNode) {
+  public IssueNode getPreviousIssue(AbstractNode startNode) {
     Object next = getPreviousNode(startNode);
 
     if (next == null) {

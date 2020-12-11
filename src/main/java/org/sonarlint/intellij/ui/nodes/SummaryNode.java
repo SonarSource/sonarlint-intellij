@@ -19,6 +19,12 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Vector;
+import java.util.stream.Collectors;
+import javax.swing.tree.TreeNode;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class SummaryNode extends AbstractNode {
@@ -42,6 +48,24 @@ public class SummaryNode extends AbstractNode {
     }
 
     return String.format("Found %d %s in %d %s", issues, issues == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
+  }
+
+  public int getInsertIdx(FileNode newChild, Comparator<FileNode> comparator) {
+    if (children == null) {
+      insert(newChild, 0);
+      return 0;
+    }
+
+    // keep the cast for Java 8 compat
+    List<FileNode> nodes = ((Vector<TreeNode>)children).stream().map(FileNode.class::cast).collect(Collectors.<FileNode>toList());
+    int i = Collections.binarySearch(nodes, newChild, comparator);
+    if (i >= 0) {
+      throw new IllegalArgumentException("Child already exists");
+    }
+
+    int insertIdx = -i - 1;
+    insert(newChild, insertIdx);
+    return insertIdx;
   }
 
   @Override public void render(TreeCellRenderer renderer) {

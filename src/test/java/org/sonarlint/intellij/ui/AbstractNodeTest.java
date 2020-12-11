@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
+import org.sonarlint.intellij.ui.nodes.SummaryNode;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,16 +48,17 @@ public class AbstractNodeTest {
 
   @Test
   public void testInsertion() {
-    assertThat(testNode.getInsertIdx(new FileNode(mockFile("name")), nameComparator)).isEqualTo(0);
-    assertThat(testNode.getInsertIdx(new FileNode(mockFile("file")), nameComparator)).isEqualTo(0);
-    assertThat(testNode.getInsertIdx(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
-    assertThat(testNode.getInsertIdx(new FileNode(mockFile("abc")), nameComparator)).isEqualTo(0);
+    SummaryNode summaryNode = new SummaryNode();
+    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("name")), nameComparator)).isZero();
+    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("file")), nameComparator)).isZero();
+    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
+    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("abc")), nameComparator)).isZero();
 
-    assertThat(testNode.getChildCount()).isEqualTo(4);
-    assertThat(((FileNode) testNode.getChildAt(0)).file().getName()).isEqualTo("abc");
-    assertThat(((FileNode) testNode.getChildAt(1)).file().getName()).isEqualTo("file");
-    assertThat(((FileNode) testNode.getChildAt(2)).file().getName()).isEqualTo("name");
-    assertThat(((FileNode) testNode.getChildAt(3)).file().getName()).isEqualTo("test");
+    assertThat(summaryNode.getChildCount()).isEqualTo(4);
+    assertThat(((FileNode) summaryNode.getChildAt(0)).file().getName()).isEqualTo("abc");
+    assertThat(((FileNode) summaryNode.getChildAt(1)).file().getName()).isEqualTo("file");
+    assertThat(((FileNode) summaryNode.getChildAt(2)).file().getName()).isEqualTo("name");
+    assertThat(((FileNode) summaryNode.getChildAt(3)).file().getName()).isEqualTo("test");
   }
 
   @Test
