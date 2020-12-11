@@ -32,6 +32,7 @@ import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
 import java.awt.Font;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 
 public class SonarLintHighlighting {
   private static final int HIGHLIGHT_GROUP_ID = 1001;
@@ -96,7 +98,7 @@ public class SonarLintHighlighting {
       highlights.add(createHighlight(issueRange, issue.getMessage()));
     }
 
-    updateHighlights(highlights, FileDocumentManager.getInstance().getDocument(issue.psiFile().getVirtualFile()));
+    updateHighlights(highlights, getDocumentFor(issue.psiFile().getVirtualFile()));
     issue.context().ifPresent(c -> displaySecondaryLocationNumbers(c.flows().get(0), null));
   }
 
@@ -120,6 +122,18 @@ public class SonarLintHighlighting {
       HighlightInfo highlight = createHighlight(hotspotRange, hotspot.getMessage());
       updateHighlights(Collections.singletonList(highlight), hotspotRange.getDocument());
     }
+  }
+
+  public void highlight(LocalTaintVulnerability vulnerability) {
+    RangeMarker rangeMarker = vulnerability.rangeMarker();
+    if (rangeMarker != null) {
+      HighlightInfo highlight = createHighlight(rangeMarker, vulnerability.message());
+      updateHighlights(Collections.singletonList(highlight), rangeMarker.getDocument());
+    }
+  }
+
+  private static Document getDocumentFor(VirtualFile file) {
+    return FileDocumentManager.getInstance().getDocument(file);
   }
 
   private void updateHighlights(List<HighlightInfo> highlights, @Nullable Document document) {
@@ -167,9 +181,9 @@ public class SonarLintHighlighting {
 
   private static List<HighlightInfo> createHighlights(List<LiveIssue.SecondaryLocation> locations) {
     return locations.stream()
-        .filter(Objects::nonNull)
-        .map(l -> createHighlight(l.location(), l.message()))
-        .collect(Collectors.toList());
+      .filter(Objects::nonNull)
+      .map(l -> createHighlight(l.location(), l.message()))
+      .collect(Collectors.toList());
   }
 
   private static HighlightInfo createHighlight(RangeMarker location, @Nullable String message) {

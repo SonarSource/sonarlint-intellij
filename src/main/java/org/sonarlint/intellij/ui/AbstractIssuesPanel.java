@@ -61,7 +61,7 @@ import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
+public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   private static final String ID = "SonarLint";
   private static final int RULE_TAB_INDEX = 0;
   private static final int LOCATIONS_TAB_INDEX = 1;
@@ -74,7 +74,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
   protected FlowsTreeModelBuilder flowsTreeBuilder;
   private ActionToolbar mainToolbar;
 
-  AbstractIssuesPanel(Project project) {
+  protected AbstractIssuesPanel(Project project) {
     super(false, true);
     this.project = project;
 
@@ -123,7 +123,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
       LiveIssue issue = selectedNodes[0].issue();
-      rulePanel.setRuleKey(issue);
+      rulePanel.setRuleKey(issue.getRuleKey());
       SonarLintUtils.getService(project, SonarLintHighlighting.class).highlightIssue(issue);
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
       flowsTreeBuilder.populateForIssue(issue);

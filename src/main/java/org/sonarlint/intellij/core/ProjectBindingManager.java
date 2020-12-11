@@ -86,7 +86,7 @@ public class ProjectBindingManager {
     return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());
   }
 
-  public synchronized ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
+  private synchronized ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
     return engineManager.getConnectedEngine(getSettingsFor(myProject).getConnectionName());
   }

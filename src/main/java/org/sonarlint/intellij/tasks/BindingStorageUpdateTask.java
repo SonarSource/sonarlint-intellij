@@ -30,6 +30,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.util.messages.Topic;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -179,6 +180,11 @@ public class BindingStorageUpdateTask {
     GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
     projects.forEach(this::updateModules);
     projects.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
+    projects.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
+  }
+
+  private static void notifyBindingStorageUpdated(Project project) {
+    project.getMessageBus().syncPublisher(Listener.TOPIC).updateFinished();
   }
 
   private void updateModules(Project project) {
@@ -202,5 +208,11 @@ public class BindingStorageUpdateTask {
       SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
     }
+  }
+
+  public interface Listener {
+    Topic<Listener> TOPIC = Topic.create("SonarLint Binding Update Status", Listener.class);
+
+    void updateFinished();
   }
 }

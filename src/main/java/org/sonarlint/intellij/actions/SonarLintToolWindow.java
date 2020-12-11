@@ -24,9 +24,11 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.ContentManagerEvent;
+import com.intellij.util.ui.UIUtil;
 import java.awt.Window;
 import java.util.function.Consumer;
 import javax.swing.JComponent;
@@ -35,10 +37,12 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
@@ -48,6 +52,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   private final Project project;
   private LocalHotspot activeHotspot;
+  private Content taintVulnerabilitiesContent;
 
   public SonarLintToolWindow(Project project) {
     this.project = project;
@@ -82,6 +87,32 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   private ToolWindow getToolWindow() {
     ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
     return toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
+  }
+
+  private Content getTaintVulnerabilitiesContent() {
+    if (taintVulnerabilitiesContent == null) {
+      taintVulnerabilitiesContent = getToolWindow().getContentManager()
+        .findContent(buildVulnerabilitiesTabName(0));
+    }
+    return taintVulnerabilitiesContent;
+  }
+
+  public void populateTaintVulnerabilitiesTab(TaintVulnerabilitiesStatus status) {
+    if (getToolWindow() == null) {
+      return;
+    }
+    Content content = getTaintVulnerabilitiesContent();
+    content.setDisplayName(buildVulnerabilitiesTabName(status.count()));
+    TaintVulnerabilitiesPanel taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
+    taintVulnerabilitiesPanel.populate(status);
+  }
+
+  public static String buildVulnerabilitiesTabName(int count) {
+    if (count == 0) {
+      return SonarLintToolWindowFactory.TAB_TAINT_VULNERABILITIES;
+    }
+    return "<html><body>" + SonarLintToolWindowFactory.TAB_TAINT_VULNERABILITIES + "<font color=\"" + ColorUtil.toHtmlColor(UIUtil.getInactiveTextColor()) + "\"> " + count
+      + "</font></body></html>";
   }
 
   private static void selectTab(ToolWindow toolWindow, String tabId) {
