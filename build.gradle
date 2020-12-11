@@ -1,4 +1,7 @@
 #!groovy
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+
+
 // The above triggers groovy syntax highlighting in vim
 
 plugins {
@@ -36,6 +39,19 @@ intellij {
   pluginName 'sonarlint-intellij'
   updateSinceUntilBuild false
   plugins = ['java']
+}
+
+runPluginVerifier {
+  ideVersions = ['IC-2018.3.6', intellij.version]
+  failureLevel EnumSet.complementOf(
+          EnumSet.of(
+                  // these are the only issues we tolerate
+                  RunPluginVerifierTask.FailureLevel.DEPRECATED_API_USAGES,
+                  RunPluginVerifierTask.FailureLevel.EXPERIMENTAL_API_USAGES,
+                  RunPluginVerifierTask.FailureLevel.NOT_DYNAMIC,
+                  RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES
+          )
+  )
 }
 
 protobuf {
