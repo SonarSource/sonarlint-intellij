@@ -246,7 +246,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     if (path == null) {
       return null;
     }
-    return occurrence(treeBuilder.getNextIssue((AbstractNode<?>) path.getLastPathComponent()));
+    return occurrence(treeBuilder.getNextIssue((AbstractNode) path.getLastPathComponent()));
   }
 
   @CheckForNull
@@ -256,7 +256,7 @@ abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements Occu
     if (path == null) {
       return null;
     }
-    return occurrence(treeBuilder.getPreviousIssue((AbstractNode<?>) path.getLastPathComponent()));
+    return occurrence(treeBuilder.getPreviousIssue((AbstractNode) path.getLastPathComponent()));
   }
 
   @Override public String getNextOccurenceActionName() {
