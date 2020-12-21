@@ -148,7 +148,8 @@ class OpenInIdeTest : BaseUiTest() {
     private var firstHotspotKey: String? = null
     lateinit var token: String
 
-    val ORCHESTRATOR: Orchestrator = Orchestrator.builderEnv()
+    private val ORCHESTRATOR: Orchestrator = Orchestrator.builderEnv()
+      .defaultForceAuthentication()
       .setSonarVersion(SONAR_VERSION)
       .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", ItUtils.javaVersion))
       .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
@@ -170,7 +171,11 @@ class OpenInIdeTest : BaseUiTest() {
 
       // Build and analyze project to raise hotspot
       val file = File("projects/sample-java-hotspot/pom.xml")
-      ORCHESTRATOR.executeBuild(MavenBuild.create(file).setCleanPackageSonarGoals())
+      ORCHESTRATOR.executeBuild(MavenBuild.create(file)
+        .setCleanPackageSonarGoals()
+        .setProperty("sonar.login", SONARLINT_USER)
+        .setProperty("sonar.password", SONARLINT_PWD)
+      )
 
       firstHotspotKey = getFirstHotspotKey(adminWsClient)
       val generateRequest = GenerateRequest()
