@@ -41,7 +41,7 @@ def remoteRobotVersion = "0.10.0"
 def fixturesVersion = "1.1.18"
 
 dependencies {
-  testImplementation("org.sonarsource.orchestrator:sonar-orchestrator:3.31.0.2646") {
+  testImplementation("org.sonarsource.orchestrator:sonar-orchestrator:3.34.0.2692") {
     exclude group: 'org.slf4j', module: "log4j-over-slf4j"
   }
   testImplementation "org.sonarsource.sonarqube:sonar-ws:8.5.1.38104"
