@@ -54,6 +54,20 @@ public final class SonarLintGlobalSettings {
   Collection<Rule> rules = new HashSet<>();
   @Transient
   Map<String, Rule> rulesByKey = new HashMap<>();
+  private boolean taintVulnerabilitiesTabDisclaimerDismissed;
+
+  public boolean isTaintVulnerabilitiesTabDisclaimerDismissed() {
+    return taintVulnerabilitiesTabDisclaimerDismissed;
+  }
+
+  public void dismissTaintVulnerabilitiesTabDisclaimer() {
+    setTaintVulnerabilitiesTabDisclaimerDismissed(true);
+  }
+
+  // used for deserializing
+  public void setTaintVulnerabilitiesTabDisclaimerDismissed(boolean dismissed) {
+    this.taintVulnerabilitiesTabDisclaimerDismissed = dismissed;
+  }
 
   public void setRuleParam(String ruleKey, String paramName, String paramValue) {
     rulesByKey.computeIfAbsent(ruleKey, s -> new Rule(ruleKey, true)).getParams().put(paramName, paramValue);
