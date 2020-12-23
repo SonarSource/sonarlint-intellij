@@ -27,7 +27,11 @@ import com.intellij.util.xmlb.annotations.Tag;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
+import javax.swing.Icon;
 import org.sonarlint.intellij.util.SonarLintUtils;
+
+import static icons.SonarLintIcons.ICON_SONARCLOUD_16;
+import static icons.SonarLintIcons.ICON_SONARQUBE_16;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -130,6 +134,14 @@ public class ServerConnection {
 
   public boolean isSonarCloud() {
     return SonarLintUtils.isSonarCloudAlias(hostUrl);
+  }
+
+  public String getProductName() {
+    return isSonarCloud() ? "SonarCloud" : "SonarQube";
+  }
+
+  public Icon getProductIcon() {
+    return isSonarCloud() ? ICON_SONARCLOUD_16 : ICON_SONARQUBE_16;
   }
 
   public boolean enableProxy() {

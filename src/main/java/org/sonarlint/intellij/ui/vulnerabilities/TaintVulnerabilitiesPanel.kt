@@ -26,6 +26,7 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
@@ -35,6 +36,7 @@ import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.components.JBTabbedPane
 import com.intellij.util.ui.tree.TreeUtil
+import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.editor.SonarLintHighlighting
@@ -75,7 +77,7 @@ private const val TREE_CARD_ID = "TREE_CARD"
 private const val TOOLBAR_GROUP_ID = "TaintVulnerabilities"
 
 class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindowPanel(false, true),
-  OccurenceNavigator {
+  OccurenceNavigator, DataProvider {
 
   private lateinit var rulePanel: SonarLintRulePanel
   private lateinit var tree: TaintVulnerabilityTree
@@ -301,6 +303,12 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
   override fun getPreviousOccurenceActionName(): String {
     return "Previous Issue"
+  }
+
+  override fun getData(dataId: String): Any? {
+    return if (OpenIssueInBrowserAction.TAINT_VULNERABILITY_DATA_KEY.`is`(dataId)) {
+      tree.getSelectedIssue()
+    } else null
   }
 
 }
