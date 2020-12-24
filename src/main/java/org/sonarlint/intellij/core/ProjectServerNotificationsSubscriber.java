@@ -45,36 +45,42 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.ui.BalloonNotifier;
 import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime;
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification;
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener;
-import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
-public class ProjectServerNotifications {
+public class ProjectServerNotificationsSubscriber {
   private static final NotificationGroup SERVER_NOTIFICATIONS_GROUP =
     new NotificationGroup("SonarLint: Server Notifications", NotificationDisplayType.STICKY_BALLOON, true, "SonarLint");
   private EventListener eventListener;
   private final ProjectNotificationTime notificationTime;
-  private final MessageBusConnection busConnection;
   private final Project myProject;
+  private final ServerNotificationsService notificationsService;
 
-  public ProjectServerNotifications(Project project) {
-    myProject = project;
-    this.notificationTime = new ProjectNotificationTime();
-    this.busConnection = project.getMessageBus().connect(myProject);
+  public ProjectServerNotificationsSubscriber(Project project) {
+    this(project, ServerNotificationsService.get());
   }
 
-  public void init() {
+  ProjectServerNotificationsSubscriber(Project project, ServerNotificationsService notificationsService) {
+    myProject = project;
+    this.notificationsService = notificationsService;
+    this.notificationTime = new ProjectNotificationTime();
+  }
+
+  public void start() {
     register();
+    MessageBusConnection busConnection = myProject.getMessageBus().connect();
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, settings -> {
       // always reset notification date, whether bound or not
-      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
+      SonarLintProjectState projectState = getService(myProject, SonarLintProjectState.class);
       projectState.setLastEventPolling(ZonedDateTime.now());
       register();
     });
@@ -86,14 +92,13 @@ public class ProjectServerNotifications {
     });
   }
 
-
   private void register() {
     SonarLintProjectSettings settings = getSettingsFor(myProject);
     unregister();
     if (settings.isBindingEnabled()) {
       ServerConnection connection;
       try {
-        ProjectBindingManager bindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
+        ProjectBindingManager bindingManager = getService(myProject, ProjectBindingManager.class);
         connection = bindingManager.getServerConnection();
       } catch (InvalidBindingException e) {
         // do nothing
@@ -102,16 +107,16 @@ public class ProjectServerNotifications {
       if (!connection.isDisableNotifications()) {
         this.eventListener = new EventListener(connection.isSonarCloud(), connection.getName());
         NotificationConfiguration config = createConfiguration(settings, connection);
-        if (ServerNotifications.get().isSupported(config.serverConfiguration().get())) {
-          ServerNotificationsFacade.get().register(config);
+        if (notificationsService.isSupported(config.serverConfiguration().get())) {
+          notificationsService.register(config);
         }
       }
     }
   }
 
-  public void unregister() {
+  private void unregister() {
     if (eventListener != null) {
-      ServerNotificationsFacade.get().unregister(eventListener);
+      notificationsService.unregister(eventListener);
       eventListener = null;
     }
   }
@@ -129,7 +134,7 @@ public class ProjectServerNotifications {
 
     @Override
     public ZonedDateTime get() {
-      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
+      SonarLintProjectState projectState = getService(myProject, SonarLintProjectState.class);
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling == null) {
         lastEventPolling = ZonedDateTime.now();
@@ -140,7 +145,7 @@ public class ProjectServerNotifications {
 
     @Override
     public void set(ZonedDateTime dateTime) {
-      SonarLintProjectState projectState = SonarLintUtils.getService(myProject, SonarLintProjectState.class);
+      SonarLintProjectState projectState = getService(myProject, SonarLintProjectState.class);
       ZonedDateTime lastEventPolling = projectState.getLastEventPolling();
       if (lastEventPolling != null && dateTime.isBefore(lastEventPolling)) {
         // this can happen if the settings changed between the read and write
@@ -165,7 +170,7 @@ public class ProjectServerNotifications {
 
     @Override
     public void handle(ServerNotification serverNotification) {
-      SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+      SonarLintTelemetry telemetry = getService(SonarLintTelemetry.class);
       final String category = serverNotification.category();
       telemetry.devNotificationsReceived(category);
       final String label = isSonarCloud ? "SonarCloud" : "SonarQube";
@@ -178,7 +183,7 @@ public class ProjectServerNotifications {
       notif.setImportant(true);
       notif.addAction(new OpenInServerAction(label, serverNotification.link(), category));
       notif.addAction(new ConfigureNotificationsAction(connectionName));
-      notif.notify(myProject);
+      getService(myProject, BalloonNotifier.class).show(notif);
     }
   }
 
@@ -195,7 +200,7 @@ public class ProjectServerNotifications {
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
-      SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+      SonarLintTelemetry telemetry = getService(SonarLintTelemetry.class);
       telemetry.devNotificationsClicked(category);
       BrowserUtil.browse(link);
       notification.hideBalloon();

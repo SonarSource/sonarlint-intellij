@@ -155,7 +155,7 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.util.SonarLintActions"/>
         <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
                             serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotificationsFacade"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotificationsService"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
 
@@ -166,7 +166,7 @@
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintJobManager"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectServerNotifications"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectServerNotificationsSubscriber"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.persistence.IssuePersistence"/>
