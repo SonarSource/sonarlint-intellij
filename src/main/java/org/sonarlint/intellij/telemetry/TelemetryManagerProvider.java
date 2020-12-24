@@ -34,7 +34,6 @@ import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.NodeJsManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.common.Version;
@@ -51,7 +50,6 @@ public class TelemetryManagerProvider {
   private static final String PRODUCT = "SonarLint IntelliJ";
 
   private static final String OLD_STORAGE_FILENAME = "sonarlint_usage";
-
 
   public TelemetryManager get() {
     TelemetryClientConfig clientConfig = getTelemetryClientConfig();
@@ -117,12 +115,10 @@ public class TelemetryManagerProvider {
 
   private static boolean isAnyProjectConnectedToSonarCloud() {
     return isAnyOpenProjectMatch(p -> {
-      try {
-        ProjectBindingManager bindingManager = SonarLintUtils.getService(p, ProjectBindingManager.class);
-        return bindingManager.getServerConnection().isSonarCloud();
-      } catch (InvalidBindingException e) {
-        return false;
-      }
+      ProjectBindingManager bindingManager = SonarLintUtils.getService(p, ProjectBindingManager.class);
+      return bindingManager.tryGetServerConnection()
+        .filter(ServerConnection::isSonarCloud)
+        .isPresent();
     });
   }
 

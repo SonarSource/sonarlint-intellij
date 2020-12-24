@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
@@ -38,6 +39,9 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 public class SonarLintProjectNotifications {
   private static final NotificationGroup BINDING_PROBLEM_GROUP = NotificationGroup.balloonGroup("SonarLint: Server Binding Errors");
   private static final NotificationGroup UPDATE_GROUP = NotificationGroup.balloonGroup("SonarLint: Configuration update");
+  // this constructor invokation has to remain in Java code, else the Kotlin overload with default arguments is used by compiler
+  public static final NotificationGroup SERVER_NOTIFICATIONS_GROUP = new NotificationGroup("SonarLint: Server Notifications", NotificationDisplayType.STICKY_BALLOON, true,
+    "SonarLint");
   private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the <a href='#'>SonarLint Settings</a>";
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the <a href='#'>SonarLint project configuration</a>";
   private volatile boolean shown = false;
@@ -125,12 +129,12 @@ public class SonarLintProjectNotifications {
       "SonarLint - Binding update available",
       "Change detected for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
       NotificationType.INFORMATION, new NotificationListener.Adapter() {
-      @Override
-      public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-        notification.expire();
-        ServerConnectionMgmtPanel.updateServerBinding(server, engine, onlyProjects);
-      }
-    });
+        @Override
+        public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
+          notification.expire();
+          ServerConnectionMgmtPanel.updateServerBinding(server, engine, onlyProjects);
+        }
+      });
     notification.notify(myProject);
   }
 
