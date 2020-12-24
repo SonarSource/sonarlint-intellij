@@ -106,11 +106,19 @@ public class ProjectBindingManager {
   }
 
   public synchronized ServerConnection getServerConnection() throws InvalidBindingException {
+    return tryGetServerConnection().orElseThrow(
+      () -> new InvalidBindingException("Unable to find a connection with name: " + getSettingsFor(myProject).getConnectionName())
+    );
+  }
+
+  public synchronized Optional<ServerConnection> tryGetServerConnection() {
+    if (!getSettingsFor(myProject).isBindingEnabled()) {
+      return Optional.empty();
+    }
     String connectionName = getSettingsFor(myProject).getConnectionName();
     List<ServerConnection> connections = getGlobalSettings().getServerConnections();
 
-    Optional<ServerConnection> connection = connections.stream().filter(s -> s.getName().equals(connectionName)).findAny();
-    return connection.orElseThrow(() -> new InvalidBindingException("Unable to find a connection with name: " + connectionName));
+    return connections.stream().filter(s -> s.getName().equals(connectionName)).findAny();
   }
 
   private static void checkBindingStatus(SonarLintProjectNotifications notifications, @Nullable String connectionName, @Nullable String projectKey) throws InvalidBindingException {
