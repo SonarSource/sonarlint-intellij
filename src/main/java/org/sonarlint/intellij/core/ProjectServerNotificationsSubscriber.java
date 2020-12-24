@@ -25,6 +25,7 @@ import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.WindowManager;
@@ -57,7 +58,7 @@ import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
-public class ProjectServerNotificationsSubscriber {
+public class ProjectServerNotificationsSubscriber implements Disposable {
   private static final NotificationGroup SERVER_NOTIFICATIONS_GROUP =
     new NotificationGroup("SonarLint: Server Notifications", NotificationDisplayType.STICKY_BALLOON, true, "SonarLint");
   private EventListener eventListener;
@@ -112,6 +113,11 @@ public class ProjectServerNotificationsSubscriber {
         }
       }
     }
+  }
+
+  @Override
+  public void dispose() {
+    unregister();
   }
 
   private void unregister() {

@@ -144,6 +144,17 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   }
 
   @Test
+  fun it_should_unregister_when_disposed() {
+    connectProjectTo("host", "name", "projectKey")
+    `when`(serverNotificationsService.isSupported(any())).thenReturn(true)
+    projectServerNotificationsSubscriber.start()
+
+    projectServerNotificationsSubscriber.dispose()
+
+    verify(serverNotificationsService).unregister(any())
+  }
+
+  @Test
   fun it_should_display_a_balloon_when_receiving_a_notification() {
     connectProjectWithNotifications()
     projectServerNotificationsSubscriber.start()
