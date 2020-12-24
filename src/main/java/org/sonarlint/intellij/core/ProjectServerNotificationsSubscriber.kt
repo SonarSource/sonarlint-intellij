@@ -89,8 +89,12 @@ class ProjectServerNotificationsSubscriber : Disposable {
       .ifPresent {
         eventListener = EventListener(it.isSonarCloud, it.name)
         val config = createConfiguration(Settings.getSettingsFor(project), it)
-        if (notificationsService.isSupported(config.serverConfiguration().get())) {
-          notificationsService.register(config)
+        try {
+          if (notificationsService.isSupported(config.serverConfiguration().get())) {
+            notificationsService.register(config)
+          }
+        } catch (e: Exception) {
+          SonarLintConsole.get(project).error("Cannot register for server notifications. The server might be unreachable", e)
         }
       }
   }
