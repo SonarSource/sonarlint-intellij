@@ -22,14 +22,15 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.Disposable;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
+import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener;
 import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
 
-public class ServerNotificationsFacade implements Disposable {
+public class ServerNotificationsService implements Disposable {
   private ServerNotifications coreServerNotifications;
 
-  public static ServerNotificationsFacade get() {
-    return SonarLintUtils.getService(ServerNotificationsFacade.class);
+  public static ServerNotificationsService get() {
+    return SonarLintUtils.getService(ServerNotificationsService.class);
   }
 
   public void register(NotificationConfiguration configuration) {
@@ -40,6 +41,10 @@ public class ServerNotificationsFacade implements Disposable {
     if (coreServerNotifications != null) {
       getServerNotifications().remove(notificationListener);
     }
+  }
+
+  public boolean isSupported(ServerConfiguration serverConfiguration) {
+    return getServerNotifications().isSupported(serverConfiguration);
   }
 
   private ServerNotifications getServerNotifications() {
@@ -55,5 +60,4 @@ public class ServerNotificationsFacade implements Disposable {
       coreServerNotifications.stop();
     }
   }
-
 }

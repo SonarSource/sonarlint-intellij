@@ -19,10 +19,11 @@
  */
 package org.sonarlint.intellij;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.core.ProjectServerNotifications;
+import org.sonarlint.intellij.core.ProjectServerNotificationsSubscriber;
 import org.sonarlint.intellij.core.UpdateChecker;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.server.SonarLintHttpServer;
@@ -33,9 +34,13 @@ public class BootstrapStartupActivity implements StartupActivity {
 
   @Override
   public void runActivity(@NotNull Project project) {
+    if (ApplicationManager.getApplication().isUnitTestMode()) {
+      return;
+    }
+
     SonarLintUtils.getService(SonarLintHttpServer.class).startOnce();
 
-    SonarLintUtils.getService(project, ProjectServerNotifications.class).init();
+    SonarLintUtils.getService(project, ProjectServerNotificationsSubscriber.class).start();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
 

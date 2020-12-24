@@ -35,6 +35,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
 import org.sonarlint.intellij.config.Settings;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -115,5 +116,16 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   public void loadToolWindow() {
     toolWindowFixture = SonarLintToolWindowFixture.createFor(getProject());
     replaceProjectService(ToolWindowManager.class, toolWindowFixture.getManager());
+  }
+
+  protected void connectProjectTo(String hostUrl, String connectionName, String projectKey) {
+    ServerConnection connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
+    globalSettings.addServerConnection(connection);
+    projectSettings.bindTo(connection, projectKey);
+  }
+
+  protected void connectProjectTo(ServerConnection connection, String projectKey) {
+    globalSettings.addServerConnection(connection);
+    projectSettings.bindTo(connection, projectKey);
   }
 }
