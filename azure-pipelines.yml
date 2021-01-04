@@ -38,7 +38,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: :buildPlugin :artifactoryPublish :runPluginVerifier
+          tasks: :buildPlugin :artifactoryPublish
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         env:
@@ -84,6 +84,12 @@ stages:
           testRunTitle: 'UTs on Windows'
           jdkVersionOption: '1.11'
         displayName: 'Run UTs'
+      - task: Gradle@2
+        inputs:
+          options: --build-cache --stacktrace -i
+          tasks: :runPluginVerifier
+          jdkVersionOption: '1.11'
+        displayName: 'Run plugin verifier'
       - task: Gradle@2
         inputs:
           options: --stop
