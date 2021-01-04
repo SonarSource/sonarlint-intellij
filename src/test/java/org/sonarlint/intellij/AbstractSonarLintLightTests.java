@@ -20,6 +20,8 @@
 package org.sonarlint.intellij;
 
 import com.intellij.lang.Language;
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
@@ -30,7 +32,9 @@ import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
@@ -41,6 +45,7 @@ import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.ui.fixtures.SonarLintToolWindowFixture;
 
+import static com.intellij.notification.NotificationsManager.getNotificationsManager;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
@@ -79,6 +84,16 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
       SonarLintStatus.get(getProject()).stopRun();
     }
     Disposer.dispose(disposable);
+  }
+
+  protected void clearNotifications() {
+    NotificationsManager mgr = getNotificationsManager();
+    Arrays.stream(mgr.getNotificationsOfType(Notification.class, getProject()))
+      .forEach(mgr::expire);
+  }
+
+  protected List<Notification> getProjectNotifications() {
+    return Arrays.asList(getNotificationsManager().getNotificationsOfType(Notification.class, getProject()));
   }
 
   protected <T> void replaceProjectService(Class<T> clazz, T newInstance) {

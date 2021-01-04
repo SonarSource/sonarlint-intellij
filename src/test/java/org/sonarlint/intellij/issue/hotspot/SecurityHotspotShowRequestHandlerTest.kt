@@ -19,15 +19,14 @@
  */
 package org.sonarlint.intellij.issue.hotspot
 
-import com.intellij.notification.Notification
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
-import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
@@ -36,14 +35,12 @@ import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.any
-import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BoundProject
 import org.sonarlint.intellij.core.ProjectBindingAssistant
 import org.sonarlint.intellij.editor.SonarLintHighlighting
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarlint.intellij.ui.BalloonNotifier
 import org.sonarsource.sonarlint.core.client.api.common.TextRange
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot
 import org.sonarsource.sonarlint.core.client.api.connected.WsHelper
@@ -71,15 +68,11 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
     @Mock
     lateinit var wsHelper: WsHelper
     @Mock
-    lateinit var balloonNotifier: BalloonNotifier
-    @Mock
     lateinit var toolWindow: SonarLintToolWindow
     @Mock
     lateinit var highlighter: SonarLintHighlighting
     @Mock
     private lateinit var telemetry: SonarLintTelemetry
-    @Captor
-    lateinit var notificationCaptor: ArgumentCaptor<Notification>
 
     private lateinit var requestHandler: SecurityHotspotShowRequestHandler
 
@@ -88,7 +81,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
         requestHandler = SecurityHotspotShowRequestHandler(projectBindingAssistant, wsHelper, telemetry)
         replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
         replaceProjectService(SonarLintHighlighting::class.java, highlighter)
-        replaceProjectService(BalloonNotifier::class.java, balloonNotifier)
+        clearNotifications()
     }
 
     @Test
@@ -115,12 +108,9 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
         requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-        verify(balloonNotifier).show(capture(notificationCaptor))
-        val notification = notificationCaptor.value
-        assertThat(notification.title).isEqualTo("Error opening security hotspot")
-        assertThat(notification.content).isEqualTo("Cannot fetch hotspot details. Server is unreachable or credentials are invalid.")
-        assertThat(notification.actions).isNotEmpty
-
+        assertThat(projectNotifications)
+          .extracting("title", "content")
+          .containsExactly(tuple("Error opening security hotspot", "Cannot fetch hotspot details. Server is unreachable or credentials are invalid."))
     }
 
     @Test
@@ -134,11 +124,9 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
         verify(toolWindow).show(eq(LocalHotspot(Location(null, null), remoteHotspot)))
         verifyZeroInteractions(highlighter)
-        verify(balloonNotifier).show(capture(notificationCaptor))
-        val notification = notificationCaptor.value
-        assertThat(notification.title).isEqualTo("Error opening security hotspot")
-        assertThat(notification.content).isEqualTo("Cannot find hotspot file in the project.")
-        assertThat(notification.actions).isNotEmpty
+        assertThat(projectNotifications)
+          .extracting("title", "content")
+          .containsExactly(tuple("Error opening security hotspot", "Cannot find hotspot file in the project."))
     }
 
     @Test
@@ -179,10 +167,8 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
         val (primaryLocation) = localHotspotCaptor.value
         assertThat(primaryLocation.file).isEqualTo(file)
         assertThat(primaryLocation.range).isNull()
-        verify(balloonNotifier).show(capture(notificationCaptor))
-        val notification = notificationCaptor.value
-        assertThat(notification.title).isEqualTo("Error opening security hotspot")
-        assertThat(notification.content).isEqualTo("The local source code does not match the branch/revision analyzed by SonarQube")
-        assertThat(notification.actions).isNotEmpty
+        assertThat(projectNotifications)
+          .extracting("title", "content")
+          .containsExactly(tuple("Error opening security hotspot", "The local source code does not match the branch/revision analyzed by SonarQube"))
     }
 }
