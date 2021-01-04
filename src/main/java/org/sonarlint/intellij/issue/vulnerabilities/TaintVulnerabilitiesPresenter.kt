@@ -22,6 +22,7 @@ package org.sonarlint.intellij.issue.vulnerabilities
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.editor.SonarLintHighlighting
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 
@@ -48,6 +49,10 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
     getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
     highlightTaintVulnerabilities(status)
+    if (!status.isEmpty()) {
+      // annotate the code with intention actions
+      getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+    }
   }
 
   private fun highlightTaintVulnerabilities(status: TaintVulnerabilitiesStatus) {
