@@ -19,36 +19,33 @@
  */
 package org.sonarlint.intellij.core
 
-import org.sonarlint.intellij.messages.ProjectConfigurationListener
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings
-import org.sonarlint.intellij.config.project.SonarLintProjectState
-import org.sonarlint.intellij.messages.GlobalConfigurationListener
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
-import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime
-import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener
-import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import com.intellij.notification.NotificationType
-import icons.SonarLintIcons
-import org.sonarlint.intellij.ui.BalloonNotifier
-import com.intellij.notification.NotificationAction
-import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.Notification
-import com.intellij.openapi.wm.WindowManager
-import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard
-import org.sonarlint.intellij.ui.SonarLintConsole
-import com.intellij.notification.NotificationGroup
-import com.intellij.notification.NotificationDisplayType
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.ui.UIUtil
+import icons.SonarLintIcons
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings
+import org.sonarlint.intellij.config.project.SonarLintProjectState
 import org.sonarlint.intellij.core.SonarLintProjectNotifications.SERVER_NOTIFICATIONS_GROUP
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.messages.ProjectConfigurationListener
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarlint.intellij.ui.SonarLintConsole
 import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
+import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime
+import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
+import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener
 import java.time.ZonedDateTime
 import java.util.function.Supplier
 
@@ -160,7 +157,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
       notif.isImportant = true
       notif.addAction(OpenInServerAction(label, serverNotification.link(), category))
       notif.addAction(ConfigureNotificationsAction(connectionName))
-      getService(project, BalloonNotifier::class.java).show(notif)
+      notif.notify(project)
     }
   }
 

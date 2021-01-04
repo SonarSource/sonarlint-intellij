@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue.hotspot
 
-import com.intellij.notification.NotificationGroup
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -31,7 +30,6 @@ import org.sonarlint.intellij.core.ProjectBindingAssistant
 import org.sonarlint.intellij.core.SecurityHotspotMatcher
 import org.sonarlint.intellij.editor.SonarLintHighlighting
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarlint.intellij.ui.BalloonNotifier
 import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.WsHelperImpl
@@ -95,7 +93,7 @@ open class SecurityHotspotShowRequestHandler(
                 NotificationType.ERROR, null)
         notification.isImportant = true
         notification.addAction(action)
-        getService(project, BalloonNotifier::class.java).show(notification)
+        notification.notify(project)
     }
 
     private fun openFile(project: Project, location: Location) {

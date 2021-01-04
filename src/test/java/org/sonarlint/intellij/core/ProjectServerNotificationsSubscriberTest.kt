@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.core
 
-import com.intellij.notification.Notification
 import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.tuple
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -38,28 +38,23 @@ import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
-import org.sonarlint.intellij.ui.BalloonNotifier
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 
 @RunWith(MockitoJUnitRunner::class)
 class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   private lateinit var serverNotificationsService: ServerNotificationsService
-  private val balloonNotifier = mock(BalloonNotifier::class.java)
   private lateinit var projectServerNotificationsSubscriber: ProjectServerNotificationsSubscriber
 
   @Captor
   private lateinit var notificationConfigurationCaptor: ArgumentCaptor<NotificationConfiguration>
 
-  @Captor
-  private lateinit var balloonNotificationCaptor: ArgumentCaptor<Notification>
-
   @Before
   fun setup() {
-    replaceProjectService(BalloonNotifier::class.java, balloonNotifier)
     serverNotificationsService = mock(ServerNotificationsService::class.java)
     projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService)
     projectSettings.unbind()
     globalSettings.serverConnections = emptyList()
+    clearNotifications()
   }
 
   @Test
@@ -163,10 +158,9 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     listener.handle(aServerNotification("category", "message", "link", "projectKey"))
 
-    verify(balloonNotifier).show(capture(balloonNotificationCaptor))
-    val balloonNotification = balloonNotificationCaptor.value
-    assertThat(balloonNotification.title).isEqualTo("<b>SonarQube Notification</b>")
-    assertThat(balloonNotification.content).isEqualTo("message")
+    assertThat(projectNotifications)
+      .extracting("title", "content")
+      .containsExactly(tuple("<b>SonarQube Notification</b>", "message"))
   }
 
   private fun connectProjectWithNotifications() {
