@@ -42,6 +42,7 @@ import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.editor.SonarLintHighlighting
 import org.sonarlint.intellij.issue.vulnerabilities.FoundTaintVulnerabilities
 import org.sonarlint.intellij.issue.vulnerabilities.InvalidBinding
+import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.issue.vulnerabilities.NoBinding
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus
 import org.sonarlint.intellij.ui.SonarLintRulePanel
@@ -179,6 +180,13 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         }
       }
     }
+  }
+
+  fun setSelectedVulnerability(vulnerability: LocalTaintVulnerability) {
+    val vulnerabilityNode = TreeUtil.findNode((tree.model.root as DefaultMutableTreeNode))
+    { node: DefaultMutableTreeNode? -> node is LocalTaintVulnerabilityNode && node.issue().key() == vulnerability.key() } ?: return
+    tree.selectionPath = null
+    tree.addSelectionPath(TreePath(vulnerabilityNode.path))
   }
 
   private fun createRulePanel(): JBTabbedPane {

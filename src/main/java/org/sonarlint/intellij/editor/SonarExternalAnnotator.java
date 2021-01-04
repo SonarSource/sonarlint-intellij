@@ -32,11 +32,11 @@ import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.keymap.KeymapUtil;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
-
 import java.util.Collection;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NonNls;
@@ -45,9 +45,14 @@ import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.vulnerabilities.FoundTaintVulnerabilities;
+import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesLoader;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import static java.util.Collections.emptyList;
 import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFile;
 import static org.sonarlint.intellij.util.SonarLintUtils.isPhpLanguageRegistered;
 
@@ -59,7 +64,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       return;
     }
 
-    IssueManager issueManager = SonarLintUtils.getService(file.getProject(), IssueManager.class);
+    Project project = file.getProject();
+    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
     Collection<LiveIssue> issues = issueManager.getForFile(file.getVirtualFile());
     issues.stream()
       .filter(issue -> !issue.isResolved())
@@ -70,6 +76,13 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
           addAnnotation(issue, holder);
         }
       });
+
+    TaintVulnerabilitiesStatus status = TaintVulnerabilitiesLoader.INSTANCE.getTaintVulnerabilitiesByOpenedFiles(project);
+    if (!status.isEmpty()) {
+      ((FoundTaintVulnerabilities) status).getByFile()
+        .getOrDefault(file.getVirtualFile(), emptyList())
+        .forEach(vulnerability -> addAnnotation(vulnerability, holder));
+    }
   }
 
   private static boolean shouldSkip(@NotNull PsiFile file) {
@@ -128,6 +141,26 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     annotation.setHighlightType(getType(issue.getSeverity()));
   }
 
+  private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
+    TextRange textRange = createTextRange(vulnerability.rangeMarker());
+    String htmlMsg = getHtmlMessage(vulnerability);
+
+    Annotation annotation = annotationHolder
+      .createAnnotation(getSeverity(vulnerability.severity()), textRange, vulnerability.message(), htmlMsg);
+    annotation.registerFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability));
+    annotation.setTextAttributes(getTextAttrsKey(vulnerability.severity()));
+
+    /*
+     * 3 possible ways to set text attributes and error stripe color:
+     * - enforce text attributes ({@link Annotation#setEnforcedTextAttributes}) and we need to set everything
+     * manually (including error stripe color). This won't be configurable in a standard way and won't change based on used color scheme
+     * - rely on one of the default attributes by giving a key {@link com.intellij.openapi.editor.colors.CodeInsightColors} or your own
+     * key (SonarLintTextAttributes) to Annotation#setTextAttributes
+     * - let Annotation#getTextAttributes decide it based on highlight type and severity.
+     */
+    annotation.setHighlightType(getType(vulnerability.severity()));
+  }
+
   static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
     if (severity == null) {
       return SonarLintTextAttributes.MAJOR;
@@ -167,6 +200,21 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;
     return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.context().map(IssueContext::getSummaryDescription).orElse("") + link);
+  }
+  private static String getHtmlMessage(LocalTaintVulnerability vulnerability) {
+    String shortcut = "";
+    final KeymapManager keymapManager = KeymapManager.getInstance();
+    if (keymapManager != null) {
+      final Keymap keymap = keymapManager.getActiveKeymap();
+      shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
+    }
+
+    @NonNls
+    final String link = " <a "
+      + "href=\"#sonarissue/" + vulnerability.ruleKey() + "\""
+      + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
+      + ">more...</a> " + shortcut;
+    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + vulnerability.message()) + link);
   }
 
   /**

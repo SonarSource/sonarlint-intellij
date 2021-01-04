@@ -62,7 +62,7 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this);
   }
 
-  void refreshAllFiles() {
+  public void refreshOpenFiles() {
     if (myProject.isDisposed()) {
       return;
     }
@@ -101,6 +101,6 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
   }
 
   @Override public void allChanged() {
-    ApplicationManager.getApplication().invokeLater(this::refreshAllFiles);
+    ApplicationManager.getApplication().invokeLater(this::refreshOpenFiles);
   }
 }

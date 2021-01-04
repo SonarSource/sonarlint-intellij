@@ -37,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.editor.SonarLintHighlighting;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
@@ -84,6 +85,14 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     }
   }
 
+  public void openTab(Content content) {
+    ApplicationManager.getApplication().assertIsDispatchThread();
+    ToolWindow toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      toolWindow.show(() -> toolWindow.getContentManager().setSelectedContent(content));
+    }
+  }
+
   private ToolWindow getToolWindow() {
     ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
     return toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
@@ -113,6 +122,12 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     }
     return "<html><body>" + SonarLintToolWindowFactory.TAB_TAINT_VULNERABILITIES + "<font color=\"" + ColorUtil.toHtmlColor(UIUtil.getInactiveTextColor()) + "\"> " + count
       + "</font></body></html>";
+  }
+
+  public void showTaintVulnerabilityDescription(LocalTaintVulnerability vulnerability) {
+    Content content = getTaintVulnerabilitiesContent();
+    openTab(content);
+    ((TaintVulnerabilitiesPanel)content.getComponent()).setSelectedVulnerability(vulnerability);
   }
 
   private static void selectTab(ToolWindow toolWindow, String tabId) {
