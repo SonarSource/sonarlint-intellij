@@ -33,11 +33,13 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.ui.Splitter
 import com.intellij.tools.SimpleActionGroup
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.SimpleColoredComponent
 import com.intellij.ui.components.JBTabbedPane
+import com.intellij.ui.components.labels.ActionLink
+import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
 import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
+import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.editor.SonarLintHighlighting
 import org.sonarlint.intellij.issue.vulnerabilities.FoundTaintVulnerabilities
@@ -59,9 +61,9 @@ import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.Box
 import javax.swing.JComponent
+import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.ScrollPaneConstants
-import javax.swing.SwingConstants
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
@@ -98,13 +100,13 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
 
     fun show(id: String) {
       container.remove(0)
-      container.add(subPanels[id])
+      container.add(subPanels[id]!!, BorderLayout.CENTER)
     }
   }
 
   init {
-    cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud"), NO_BINDING_CARD_ID)
-    cards.add(centeredLabel("The project binding is invalid"), INVALID_BINDING_CARD_ID)
+    cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", ActionLink("Configure Binding", SonarConfigureProject())), NO_BINDING_CARD_ID)
+    cards.add(centeredLabel("The project binding is invalid", ActionLink("Edit Binding", SonarConfigureProject())), INVALID_BINDING_CARD_ID)
     cards.add(centeredLabel("No vulnerabilities found in currently opened files."), NO_ISSUES_CARD_ID)
     cards.add(createSplitter(
       ScrollPaneFactory.createScrollPane(createTree()),
@@ -121,13 +123,10 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     setupToolbar(OpenTaintVulnerabilityDocumentationAction())
   }
 
-  private fun centeredLabel(text: String): JPanel {
-    val labelPanel = JPanel(BorderLayout())
-    with(SimpleColoredComponent()) {
-      setTextAlign(SwingConstants.CENTER)
-      append(text)
-      labelPanel.add(this, BorderLayout.CENTER)
-    }
+  private fun centeredLabel(text: String, actionLink: ActionLink? = null): JPanel {
+    val labelPanel = JPanel(HorizontalLayout(5))
+    labelPanel.add(JLabel(text), HorizontalLayout.CENTER)
+    if (actionLink != null) labelPanel.add(actionLink, HorizontalLayout.CENTER)
     return labelPanel
   }
 
