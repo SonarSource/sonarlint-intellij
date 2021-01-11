@@ -99,8 +99,12 @@ public final class SonarLintProjectSettings {
     this.fileExclusions = new ArrayList<>(fileExclusions);
   }
 
+  public boolean isBound() {
+    return isBindingEnabled() && this.projectKey != null && connectionName != null;
+  }
+
   public boolean isBoundTo(String projectKey, ServerConnection connection) {
-    return isBindingEnabled() && this.projectKey.equals(projectKey) && connection.getName().equals(connectionName);
+    return isBindingEnabled() && projectKey.equals(this.projectKey) && connection.getName().equals(connectionName);
   }
 
   public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey) {

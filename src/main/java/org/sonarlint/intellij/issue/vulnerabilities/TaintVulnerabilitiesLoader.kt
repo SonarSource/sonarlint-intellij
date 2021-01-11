@@ -26,9 +26,10 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.exception.InvalidBindingException
-import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
+import org.sonarlint.intellij.util.getRelativePathOf
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue
 
@@ -40,17 +41,8 @@ object TaintVulnerabilitiesLoader {
 
   fun getTaintVulnerabilitiesByOpenedFiles(project: Project): TaintVulnerabilitiesStatus {
     if (!getSettingsFor(project).isBindingEnabled) return NoBinding
-    val connectedEngine = getValidConnectedEngine(project) ?: return InvalidBinding
+    val connectedEngine = getService(project, ProjectBindingManager::class.java).validConnectedEngine ?: return InvalidBinding
     return FoundTaintVulnerabilities(byFile = project.getOpenFiles().associateWith { getLocalTaintVulnerabilitiesForFile(it, project, connectedEngine) })
-  }
-
-  private fun getValidConnectedEngine(project: Project): ConnectedSonarLintEngine? {
-    val projectBindingManager = getService(project, ProjectBindingManager::class.java)
-    return try {
-      projectBindingManager.connectedEngine
-    } catch (e: Exception) {
-      null
-    }
   }
 
   private fun getLocalTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<LocalTaintVulnerability> {
@@ -59,16 +51,17 @@ object TaintVulnerabilitiesLoader {
   }
 
   private fun loadServerTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<ServerIssue> {
-    val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return emptyList()
+    val module = project.findModuleOf(file) ?: return emptyList()
     val moduleBindingManager = getService(module, ModuleBindingManager::class.java)
     val projectBinding = moduleBindingManager.binding
       ?: throw InvalidBindingException("Module ${module.name} is not bound")
-    val filePath = SonarLintAppUtils.getPathRelativeToProjectBaseDir(project, file)
+    val filePath = project.getRelativePathOf(file)
     if (filePath == null) {
       LOG.error("Filepath for file ${file.canonicalPath} was not resolved.")
       return emptyList()
     }
     return connectedEngine.getServerIssues(projectBinding, filePath)
       .filter { it.ruleKey().contains(SECURITY_REPOSITORY_HINT) }
+      .filter { it.resolution().isEmpty() }
   }
 }
