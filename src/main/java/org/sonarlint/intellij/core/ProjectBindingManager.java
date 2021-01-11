@@ -105,6 +105,14 @@ public class ProjectBindingManager {
     return engineManager.getConnectedEngine(notifications, connectionName, projectKey);
   }
 
+  public synchronized boolean isBindingValid() {
+    return getSettingsFor(myProject).isBound() && tryGetServerConnection().isPresent();
+  }
+
+  public synchronized @Nullable ConnectedSonarLintEngine getValidConnectedEngine() {
+    return isBindingValid() ? getConnectedEngineSkipChecks() : null;
+  }
+
   public synchronized ServerConnection getServerConnection() throws InvalidBindingException {
     return tryGetServerConnection().orElseThrow(
       () -> new InvalidBindingException("Unable to find a connection with name: " + getSettingsFor(myProject).getConnectionName())

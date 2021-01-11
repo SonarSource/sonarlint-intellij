@@ -39,6 +39,7 @@ import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
 import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
+import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.editor.SonarLintHighlighting
@@ -60,6 +61,7 @@ import java.awt.event.FocusEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.Box
+import javax.swing.BoxLayout
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -88,19 +90,24 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
   private val cards = CardPanel()
 
   class CardPanel {
-    val container = JPanel(BorderLayout())
+    val container = JPanel()
     private var subPanels = mutableMapOf<String, JComponent>()
 
+    init {
+      container.layout = BoxLayout(container, BoxLayout.PAGE_AXIS)
+    }
+
     fun add(panel: JComponent, id: String) {
-      if (subPanels.isEmpty()) {
-        container.add(panel, BorderLayout.CENTER)
-      }
+      panel.isVisible = subPanels.isEmpty()
+      panel.alignmentX = 0.5f
+      panel.alignmentY = 0.5f
+      container.add(panel)
       subPanels[id] = panel
     }
 
     fun show(id: String) {
-      container.remove(0)
-      container.add(subPanels[id]!!, BorderLayout.CENTER)
+      subPanels.values.forEach { it.isVisible = false }
+      subPanels[id]!!.isVisible = true
     }
   }
 
@@ -120,7 +127,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     }
     issuesPanel.add(cards.container, BorderLayout.CENTER)
     setContent(issuesPanel)
-    setupToolbar(OpenTaintVulnerabilityDocumentationAction())
+    setupToolbar(listOf(RefreshTaintVulnerabilitiesAction(), OpenTaintVulnerabilityDocumentationAction()))
   }
 
   private fun centeredLabel(text: String, actionLink: ActionLink? = null): JPanel {
@@ -150,9 +157,9 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     return stripePanel
   }
 
-  private fun setupToolbar(action: AnAction) {
+  private fun setupToolbar(actions: List<AnAction>) {
     val group = SimpleActionGroup()
-    group.add(action)
+    actions.forEach { group.add(it) }
     val toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_GROUP_ID, group, false)
     toolbar.setTargetComponent(this)
     val toolBarBox = Box.createHorizontalBox()
