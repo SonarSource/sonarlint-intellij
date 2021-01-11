@@ -19,13 +19,22 @@
  */
 package org.sonarlint.intellij.issue.vulnerabilities
 
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.core.ModuleBindingManager
+import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.editor.SonarLintHighlighting
+import org.sonarlint.intellij.ui.SonarLintConsole
+import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
-
+import org.sonarlint.intellij.util.findModuleOf
+import org.sonarlint.intellij.util.getOpenFiles
+import org.sonarlint.intellij.util.getRelativePathOf
 
 sealed class TaintVulnerabilitiesStatus {
   fun isEmpty() = count() == 0
@@ -40,7 +49,30 @@ data class FoundTaintVulnerabilities(val byFile: Map<VirtualFile, Collection<Loc
   override fun count() = byFile.values.stream().mapToInt { it.size }.sum()
 }
 
+const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint vulnerabilities"
+
 class TaintVulnerabilitiesPresenter(private val project: Project) {
+
+  fun refreshTaintVulnerabilitiesForOpenFiles(project: Project) {
+    try {
+      project.getOpenFiles().forEach { refreshTaintVulnerabilitiesFor(project, it) }
+    }
+    catch (e: Exception) {
+      showBalloon(project, TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE, RefreshTaintVulnerabilitiesAction("Retry"))
+      SonarLintConsole.get(project).error(TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE, e)
+    }
+    presentTaintVulnerabilitiesForOpenFiles()
+  }
+
+  private fun refreshTaintVulnerabilitiesFor(project: Project, file: VirtualFile) {
+    val bindingManager = getService(project, ProjectBindingManager::class.java)
+    val module = project.findModuleOf(file) ?: return
+    val projectBinding = getService(module, ModuleBindingManager::class.java).binding ?: return
+    val relativePath = project.getRelativePathOf(file) ?: return
+
+    val serverConnection = bindingManager.serverConnection
+    bindingManager.connectedEngine.downloadServerIssues(SonarLintUtils.getServerConfiguration(serverConnection), projectBinding, relativePath)
+  }
 
   fun presentTaintVulnerabilitiesForOpenFiles() {
     if (project.isDisposed) {
@@ -62,5 +94,15 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
         status.byFile.values.flatten().forEach { highlighter.highlight(it) }
       else -> highlighter.removeHighlights()
     }
+  }
+
+  private fun showBalloon(project: Project, message: String, action: AnAction) {
+    val notification = TaintVulnerabilitiesNotifications.GROUP.createNotification(
+      "Taint vulnerabilities",
+      message,
+      NotificationType.ERROR, null)
+    notification.isImportant = true
+    notification.addAction(action)
+    notification.notify(project)
   }
 }

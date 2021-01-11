@@ -19,11 +19,25 @@
  */
 package org.sonarlint.intellij.util
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.vfs.VirtualFile
 
 fun Project.getOpenFiles() = FileEditorManager.getInstance(this).openFiles.toList()
+
+fun Project.getRelativePathOf(file: VirtualFile) = SonarLintAppUtils.getPathRelativeToProjectBaseDir(this, file)
+
+fun Project.findModuleOf(file: VirtualFile): Module? {
+  return ApplicationManager.getApplication().runReadAction<Module?> {
+    if (!isOpen) {
+      return@runReadAction null
+    }
+    return@runReadAction ProjectFileIndex.SERVICE.getInstance(this).getModuleForFile(file, false)
+  }
+}
 
 fun VirtualFile.getDocument() = FileDocumentManager.getInstance().getDocument(this)
