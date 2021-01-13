@@ -22,9 +22,11 @@ package org.sonarlint.intellij.its.fixtures.tool.window
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import java.time.Duration
@@ -32,14 +34,37 @@ import java.time.Duration
 fun ContainerFixture.toolWindow(
   title: String,
   function: ToolWindowFixture.() -> Unit = {}): ToolWindowFixture = step("Search for tool window with title $title") {
-  find<ToolWindowFixture>(Duration.ofSeconds(5)).apply(function)
+  val toolWindowPane = find<ToolWindowFixture>(Duration.ofSeconds(5))
+  toolWindowPane.title = title
+  toolWindowPane.apply(function)
 }
 
 @DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowsPane']")
 @FixtureName(name = "Tool Window")
 class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+  var title: String? = null
 
-  fun tab(title: String, classType: String, function: TabFixture.() -> Unit = {}): TabFixture {
-    return find<TabFixture>(byXpath("tab with title $title", "//div[@class='$classType']")).apply(function)
+  fun tab(title: String, function: TabTitleFixture.() -> Unit = {}) =
+    find<TabTitleFixture>(byXpath("tab with title $title", "//div[@class='ContentTabLabel' and @text='$title']")).apply(function)
+
+  fun tabTitleContains(text: String, function: TabTitleFixture.() -> Unit = {}): TabTitleFixture {
+    return find<TabTitleFixture>(byXpath("tab with title $text", "//div[@class='ContentTabLabel' and contains(@text, '$text')]")).apply(function)
   }
+
+  fun content(classType: String, function: TabContentFixture.() -> Unit = {}) =
+    find<TabContentFixture>(byXpath("tab with content of type $classType", "//div[@class='$classType']")).apply(function)
+
+  fun ensureOpen() {
+    try {
+      findToolWindowPanelTitle()
+    } catch (e: Exception) {
+      stripeButton().click()
+    }
+  }
+
+  private fun findToolWindowPanelTitle() {
+    find<ComponentFixture>(byXpath("//div[@accessiblename='$title:' and @class='BaseLabel' and @text='$title:']"))
+  }
+
+  private fun stripeButton() = find<JButtonFixture>(byXpath("//div[@accessiblename='$title' and @class='StripeButton' and @text='$title']"))
 }

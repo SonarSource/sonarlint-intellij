@@ -27,14 +27,14 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
-import java.nio.file.Paths
+import java.time.Duration
 
 fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
-  find(WelcomeFrame::class.java).apply(function)
+  find(WelcomeFrame::class.java, Duration.ofSeconds(5)).apply(function)
 }
 
 @FixtureName("Welcome Frame")
-@DefaultXpath("type", "//div[@class='FlatWelcomeFrame' and @visible='true']")
+@DefaultXpath("type", "//div[@class='FlatWelcomeFrame']")
 class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
   // from 203+
   private val newOpenButton
@@ -48,26 +48,12 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
   private val legacyImportLink
     get() = actionLink(ActionLinkFixture.byText("Import Project"))
 
-  private fun findOpenButton(): ComponentFixture {
+  fun openProjectButton(): ComponentFixture {
     val ideMajorVersion = remoteRobot.ideMajorVersion()
     return when {
       ideMajorVersion < 201 -> legacyImportLink
       ideMajorVersion < 202 -> openOrImportLink
       else -> newOpenButton
     }
-  }
-
-  private val openProjectFileBrowseDialog
-    get() = fileBrowserDialog(arrayOf(
-      // 2020+
-      "Open File or Project",
-      // up to 2019.3
-      "Select File or Directory to Import"
-    ))
-
-  fun importProject(projectName: String) {
-    findOpenButton().click()
-    val projectFile = if (remoteRobot.ideMajorVersion() < 201) "$projectName/pom.xml" else projectName
-    openProjectFileBrowseDialog.selectFile(Paths.get("projects", projectFile))
   }
 }

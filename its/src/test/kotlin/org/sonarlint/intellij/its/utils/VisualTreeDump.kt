@@ -17,21 +17,18 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.fixtures
+package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.data.RemoteComponent
-import com.intellij.remoterobot.fixtures.CommonContainerFixture
-import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.search.locators.byXpath
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.TestWatcher
+import org.sonarlint.intellij.its.robotUrl
+import java.net.URL
 
-@FixtureName("Action Menu")
-class ActionMenuFixture(
-  remoteRobot: RemoteRobot,
-  remoteComponent: RemoteComponent
-) : CommonContainerFixture(remoteRobot, remoteComponent) {
-
-  fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return find<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
+class VisualTreeDump : TestWatcher {
+  override fun testFailed(context: ExtensionContext, cause: Throwable) {
+    println("Test '${context.displayName}' failed")
+    println("Printing visual tree")
+    println()
+    URL(robotUrl).openStream().reader().use { println(it.readText()) }
   }
 }
