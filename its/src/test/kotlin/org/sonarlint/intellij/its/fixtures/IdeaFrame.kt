@@ -31,8 +31,8 @@ import com.intellij.remoterobot.utils.waitFor
 import org.sonarlint.intellij.its.utils.optionalStep
 import java.time.Duration
 
-fun RemoteRobot.idea(duration: Duration = Duration.ofSeconds(20), function: IdeaFrame.() -> Unit) {
-  find<IdeaFrame>(duration).apply(function)
+fun RemoteRobot.idea(duration: Duration = Duration.ofSeconds(20), function: IdeaFrame.() -> Unit = {}): IdeaFrame {
+  return find<IdeaFrame>(duration).apply(function)
 }
 
 @FixtureName("Idea frame")
@@ -58,7 +58,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   }
 
   private fun isDumbMode(): Boolean {
-    return callJs("com.intellij.openapi. project.DumbService.isDumb(component.project);", true)
+    return callJs("!component.project || com.intellij.openapi. project.DumbService.isDumb(component.project);", true)
   }
 
   fun closeTipOfTheDay() {
@@ -95,7 +95,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   }
 
   fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
-    return find<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']")).apply(function)
+    return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
   }
 
 }

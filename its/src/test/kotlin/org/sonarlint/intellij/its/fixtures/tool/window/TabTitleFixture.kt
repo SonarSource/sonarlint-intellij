@@ -17,21 +17,16 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.fixtures
+package org.sonarlint.intellij.its.fixtures.tool.window
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.search.locators.byXpath
 
-@FixtureName("Action Menu")
-class ActionMenuFixture(
-  remoteRobot: RemoteRobot,
-  remoteComponent: RemoteComponent
-) : CommonContainerFixture(remoteRobot, remoteComponent) {
-
-  fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return find<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
+@FixtureName(name = "Tool Window Tab Title")
+class TabTitleFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+  fun select() {
+    click()
   }
 }

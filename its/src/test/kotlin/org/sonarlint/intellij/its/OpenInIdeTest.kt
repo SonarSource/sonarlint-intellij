@@ -21,14 +21,13 @@ package org.sonarlint.intellij.its
 
 import com.google.protobuf.InvalidProtocolBufferException
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.fixtures.JTextFieldFixture
-import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.sonar.orchestrator.Orchestrator
 import com.sonar.orchestrator.build.MavenBuild
 import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -36,8 +35,8 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.jTextField
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.ItUtils
 import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
 import org.sonarqube.ws.client.HttpConnector
@@ -48,7 +47,6 @@ import org.sonarqube.ws.client.users.CreateRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
 import java.net.URL
-import java.nio.file.Paths
 
 const val PROJECT_KEY = "sample-java-hotspot"
 
@@ -56,25 +54,13 @@ class OpenInIdeTest : BaseUiTest() {
 
   @Test
   fun opensHotspotAfterConfiguringConnectionAndBinding() = uiTest {
-    openProjectFromWelcomeFrame(this)
+    importTestProject(this, "sample-java-hotspot")
 
     triggerOpenHotspotRequest()
 
     createConnection(this)
     bindRecentProject(this)
     verifyHotspotOpened(this)
-  }
-
-  private fun openProjectFromWelcomeFrame(robot: RemoteRobot) {
-    with(robot) {
-      welcomeFrame {
-        importProject("sample-java-hotspot")
-      }
-      idea {
-        closeTipOfTheDay()
-        waitBackgroundTasksFinished()
-      }
-    }
   }
 
   private fun createConnection(robot: RemoteRobot) {
@@ -88,7 +74,7 @@ class OpenInIdeTest : BaseUiTest() {
           button("Next").click()
         }
         dialog("New Connection: Authentication") {
-          find<JTextFieldFixture>(byXpath("//div[@class='JTextField']")).text = token
+          jTextField().text = token
           button("Next").click()
         }
         dialog("New Connection: Configuration completed") {
@@ -108,7 +94,7 @@ class OpenInIdeTest : BaseUiTest() {
           button("Open or import").click()
         }
         fileBrowserDialog(arrayOf("Select Path")) {
-          selectFile(Paths.get("projects", "sample-java-hotspot"))
+          selectProjectFile("sample-java-hotspot")
         }
         dialog("Opening Security Hotspot...") {
           button("Yes").click()
@@ -134,9 +120,11 @@ class OpenInIdeTest : BaseUiTest() {
     with(robot) {
       idea {
         toolWindow("SonarLint") {
-          tab("Security Hotspots", "SonarLintHotspotsPanel") {
-            hasText("LOW")
-            hasText("Make sure using this hardcoded IP address is safe here.")
+          tab("Security Hotspots") {
+            content("SonarLintHotspotsPanel") {
+              assertThat(hasText("LOW")).isTrue()
+              assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
+            }
           }
         }
       }

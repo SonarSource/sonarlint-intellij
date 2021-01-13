@@ -198,12 +198,22 @@ stages:
           ffmpeg -loglevel warning -f x11grab -video_size 1024x768 -framerate 10 -i :10 -q:v 0 /tmp/recording_$(IDEA_VERSION).mp4 &
           echo "##vso[task.setvariable variable=recordingPid;isOutput=true]$!"
 
-          echo 'Launching tests'
-          ./gradlew --stacktrace --info -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin :its:check
-        name: 'runIts'
-        displayName: 'Run UI tests on $(IDEA_VERSION)'
+        name: 'prepareIts'
+        displayName: 'Prepare UI tests on $(IDEA_VERSION)'
+      - task: Gradle@2
+        displayName: 'Run ITs on $(IDEA_VERSION)'
+        inputs:
+          options: --build-cache --stacktrace -i -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin
+          tasks: :its:check
+          publishJUnitResults: true
+          testRunTitle: 'Run ITs on $(IDEA_VERSION)'
+          jdkVersionOption: '1.11'
+        env:
+          ARTIFACTORY_API_KEY: $(ARTIFACTORY_API_KEY)
+          GITHUB_TOKEN: $(GITHUB_TOKEN)
+          DISPLAY: :10
       - bash: |
-          kill -2 $(runIts.recordingPid)
+          kill -2 $(prepareIts.recordingPid)
         displayName: 'Stop video recording'
         condition: always()
       - publish: /tmp/recording_$(IDEA_VERSION).mp4

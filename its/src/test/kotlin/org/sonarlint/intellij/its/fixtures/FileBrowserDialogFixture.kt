@@ -22,20 +22,27 @@ package org.sonarlint.intellij.its.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.ComponentFixture
-import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.waitFor
-import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 
-fun ContainerFixture.fileBrowserDialog(
+fun RemoteRobot.fileBrowserDialog(
   possibleTitles: Array<String>,
   timeout: Duration = Duration.ofSeconds(20),
   function: FileBrowserDialogFixture.() -> Unit = {}): FileBrowserDialogFixture = step("Search for file browser dialog with title containing $possibleTitles") {
   find<FileBrowserDialogFixture>(DialogFixture.byPossibleTitles(possibleTitles), timeout).apply(function)
 }
+
+fun RemoteRobot.openProjectFileBrowserDialog(function: FileBrowserDialogFixture.() -> Unit = {}) = fileBrowserDialog(arrayOf(
+  // 2020+
+  "Open File or Project",
+  // up to 2019.3
+  "Select File or Directory to Import"
+)).apply(function)
+
 
 @FixtureName("File Browser Dialog")
 class FileBrowserDialogFixture(
@@ -45,16 +52,18 @@ class FileBrowserDialogFixture(
   private val textField
     get() = textField(byXpath("//div[(@class='BorderlessTextField' or @class='JTextField')]"))
 
-  private fun actionButton(text: String): ComponentFixture {
-    return find(byXpath("//div[(@accessiblename='$text' and @class='ActionButton')]"))
+  private fun refreshButton(): ComponentFixture {
+    return find(byXpath("//div[(@accessiblename='Refresh' and @class='ActionButton')]"))
   }
 
-  fun selectFile(filePath: Path) {
+  fun selectProjectFile(projectName: String) {
+    val projectFile = if (remoteRobot.ideMajorVersion() < 201) "$projectName/pom.xml" else projectName
+    val projectPath = Paths.get("projects", projectFile)
     val button = button("OK")
     waitFor { button.isEnabled() }
-    textField.text = filePath.toAbsolutePath().normalize().toString()
+    textField.text = projectPath.toAbsolutePath().normalize().toString()
     // it helps locating the project
-    actionButton("Refresh").click()
+    refreshButton().click()
     button.click()
   }
 }
