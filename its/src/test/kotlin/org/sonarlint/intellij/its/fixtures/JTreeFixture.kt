@@ -17,12 +17,20 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.fixtures.tool.window
+package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 
-@FixtureName(name = "Tool Window Tab")
-class TabFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent)
+@FixtureName("JTree")
+class JTreeFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+  fun select(path: String) {
+    val script =
+      "const jTreeFixture = JTreeFixture(robot, component);" +
+      "jTreeFixture.clickPath('$path');"
+    runJs(script)
+  }
+}

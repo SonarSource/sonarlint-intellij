@@ -46,8 +46,12 @@ open class DialogFixture(
     fun byTitle(title: String) = byXpath("title $title", "//div[@title='$title' and @class='MyDialog']")
 
     @JvmStatic
-    fun byPossibleTitles(possibleTitles: Array<String>) =
-      byXpath("title part $possibleTitles",
-        "//div[contains('${possibleTitles.joinToString(",")}', @title) and @class='MyDialog']")
+    fun byPossibleTitles(possibleTitles: Array<String>): Locator {
+      val titles = possibleTitles.joinToString(" or ")
+      return byXpath("title part $titles",
+        "//div[@class='MyDialog' and (${or("title", possibleTitles)})]")
+    }
+
+    fun or(attribute: String, values: Array<String>) = values.joinToString(" or ") { "@$attribute='$it'" }
   }
 }

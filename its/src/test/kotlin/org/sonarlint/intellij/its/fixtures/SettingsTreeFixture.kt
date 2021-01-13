@@ -20,18 +20,7 @@
 package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.data.RemoteComponent
-import com.intellij.remoterobot.fixtures.CommonContainerFixture
-import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
 
-@FixtureName("Action Menu")
-class ActionMenuFixture(
-  remoteRobot: RemoteRobot,
-  remoteComponent: RemoteComponent
-) : CommonContainerFixture(remoteRobot, remoteComponent) {
-
-  fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return find<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
-  }
-}
+fun RemoteRobot.settingsTree(function: JTreeFixture.() -> Unit) =
+  find<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)

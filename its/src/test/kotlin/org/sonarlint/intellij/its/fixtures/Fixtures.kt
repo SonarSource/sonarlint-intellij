@@ -19,19 +19,26 @@
  */
 package org.sonarlint.intellij.its.fixtures
 
-import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
-import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.fixtures.JRadioButtonFixture
+import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.utils.waitFor
+import java.time.Duration
 
-@FixtureName("Action Menu")
-class ActionMenuFixture(
-  remoteRobot: RemoteRobot,
-  remoteComponent: RemoteComponent
-) : CommonContainerFixture(remoteRobot, remoteComponent) {
+fun ContainerFixture.jbTextFields() = findAll<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
 
-  fun item(label: String, function: ActionMenuItemFixture.() -> Unit = {}): ActionMenuItemFixture {
-    return find<ActionMenuItemFixture>(byXpath("menu item $label", "//div[@class='ActionMenuItem' and @text='$label']")).apply(function)
+fun ContainerFixture.jRadioButtons() = findAll<JRadioButtonFixture>(byXpath("//div[@class='JRadioButton']"))
+
+fun ContainerFixture.jbTextField() = find<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
+
+fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JTextField']"))
+
+fun ActionButtonFixture.clickWhenEnabled() {
+  waitFor(Duration.ofSeconds(5)) {
+    isEnabled()
   }
+  click()
 }
