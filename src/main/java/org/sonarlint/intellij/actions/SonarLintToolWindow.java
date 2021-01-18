@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.editor.SonarLintHighlighting;
+import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
@@ -201,6 +201,6 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   @Override
   public void contentRemoved(@NotNull ContentManagerEvent event) {
     // only hotspots tab is removable
-    getService(project, SonarLintHighlighting.class).removeHighlights();
+    getService(project, EditorDecorator.class).removeHighlights();
   }
 }

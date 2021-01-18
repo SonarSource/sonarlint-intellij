@@ -17,31 +17,28 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes;
+package org.sonarlint.intellij.ui.nodes.taint.vulnerabilities
 
-import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder;
-import com.intellij.ui.SimpleTextAttributes;
-import com.intellij.util.ui.JBUI;
-import org.sonarlint.intellij.issue.Flow;
-import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import com.intellij.ui.SimpleTextAttributes
+import com.intellij.util.ui.JBUI
+import org.sonarlint.intellij.issue.Flow
+import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.ui.nodes.AbstractNode
+import org.sonarlint.intellij.ui.tree.TreeCellRenderer
+import java.util.Objects
 
-public class FlowNode extends AbstractNode {
-  private final String label;
-  private final Flow flow;
+class FlowNode(val flow: Flow, private val label: String, val issue: LocalTaintVulnerability) : AbstractNode() {
 
-  public FlowNode(Flow flow, String label) {
-    this.flow = flow;
-    this.label = label;
+  override fun render(renderer: TreeCellRenderer) {
+    renderer.ipad = JBUI.insets(3, 3, 3, 3)
+    renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true)
   }
 
-  public Flow getFlow() {
-    return flow;
+  override fun equals(other: Any?): Boolean {
+    return other is FlowNode && other.label == label
   }
 
-  @Override
-  public void render(TreeCellRenderer renderer) {
-    renderer.setIpad(JBUI.insets(3, 3, 3, 3));
-    renderer.setBorder(new BottomLineBorder());
-    renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
+  override fun hashCode(): Int {
+    return Objects.hash(label)
   }
 }

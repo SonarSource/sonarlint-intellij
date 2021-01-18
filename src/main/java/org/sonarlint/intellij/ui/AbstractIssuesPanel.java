@@ -51,7 +51,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import org.sonarlint.intellij.editor.SonarLintHighlighting;
+import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
@@ -124,7 +124,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     if (selectedNodes.length > 0) {
       LiveIssue issue = selectedNodes[0].issue();
       rulePanel.setRuleKey(issue.getRuleKey());
-      SonarLintUtils.getService(project, SonarLintHighlighting.class).highlightIssue(issue);
+      SonarLintUtils.getService(project, EditorDecorator.class).highlightIssue(issue);
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
       flowsTreeBuilder.populateForIssue(issue);
       flowsTree.expandAll();
@@ -132,7 +132,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       flowsTreeBuilder.clearFlows();
       flowsTree.getEmptyText().setText("No issue selected");
       rulePanel.setRuleKey(null);
-      SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
+      EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
       highlighting.removeHighlights();
     }
   }
@@ -178,7 +178,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       @Override
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
-          SonarLintHighlighting highlighting = SonarLintUtils.getService(project, SonarLintHighlighting.class);
+          EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
           highlighting.removeHighlights();
         }
       }

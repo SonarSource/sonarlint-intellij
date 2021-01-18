@@ -42,7 +42,10 @@ object TaintVulnerabilitiesLoader {
   fun getTaintVulnerabilitiesByOpenedFiles(project: Project): TaintVulnerabilitiesStatus {
     if (!getSettingsFor(project).isBindingEnabled) return NoBinding
     val connectedEngine = getService(project, ProjectBindingManager::class.java).validConnectedEngine ?: return InvalidBinding
-    return FoundTaintVulnerabilities(byFile = project.getOpenFiles().associateWith { getLocalTaintVulnerabilitiesForFile(it, project, connectedEngine) })
+    return FoundTaintVulnerabilities(
+      byFile = project.getOpenFiles().associateWith { getLocalTaintVulnerabilitiesForFile(it, project, connectedEngine) }
+        .filter { it.value.isNotEmpty() }
+    )
   }
 
   private fun getLocalTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<LocalTaintVulnerability> {

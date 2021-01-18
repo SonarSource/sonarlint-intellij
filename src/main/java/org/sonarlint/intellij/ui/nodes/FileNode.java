@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.SimpleTextAttributes;
+import java.util.Objects;
 import javax.swing.Icon;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
@@ -60,5 +61,22 @@ public class FileNode extends AbstractNode {
       issues = " issue)";
     }
     renderer.append(spaceAndThinSpace() + "(" + getIssueCount() + issues, SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()){
+      return false;
+    }
+    FileNode fileNode = (FileNode) o;
+    return Objects.equals(file, fileNode.file);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(file);
   }
 }

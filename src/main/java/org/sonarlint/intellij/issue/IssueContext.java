@@ -24,9 +24,9 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class IssueContext {
   private final String summaryDescription;
-  private final List<LiveIssue.Flow> flows;
+  private final List<Flow> flows;
 
-  public IssueContext(List<LiveIssue.Flow> flows) {
+  public IssueContext(List<Flow> flows) {
     this.flows = flows;
     summaryDescription = computeSummaryDescription();
   }
@@ -34,7 +34,7 @@ public class IssueContext {
   private String computeSummaryDescription() {
     String description;
     if (hasUniqueFlow()) {
-      int numLocations = flows.get(0).locations().size();
+      int numLocations = flows.get(0).getLocations().size();
       description = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
     } else {
       description = String.format(" [+%d flows]", flows().size());
@@ -46,7 +46,7 @@ public class IssueContext {
     return summaryDescription;
   }
 
-  public List<LiveIssue.Flow> flows() {
+  public List<Flow> flows() {
     return flows;
   }
 

@@ -25,7 +25,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.Flow;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;
@@ -48,7 +48,7 @@ public class PrimaryLocationNodeTest {
 
   @Test
   public void testRenderer() {
-    node = new PrimaryLocationNode(3, range, "msg", new LiveIssue.Flow(Collections.emptyList()));
+    node = new PrimaryLocationNode(3, range, "msg", new Flow(Collections.emptyList()));
     TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
@@ -60,7 +60,7 @@ public class PrimaryLocationNodeTest {
 
   @Test
   public void testNoMessage() {
-    node = new PrimaryLocationNode(3, range, "...", new LiveIssue.Flow(Collections.emptyList()));
+    node = new PrimaryLocationNode(3, range, "...", new Flow(Collections.emptyList()));
     TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 

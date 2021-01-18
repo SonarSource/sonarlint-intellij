@@ -28,7 +28,6 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
-import org.sonarlint.intellij.editor.SonarLintHighlighting
 import org.sonarlint.intellij.ui.SonarLintConsole
 import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
@@ -71,7 +70,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val relativePath = project.getRelativePathOf(file) ?: return
 
     val serverConnection = bindingManager.serverConnection
-    bindingManager.connectedEngine.downloadServerIssues(SonarLintUtils.getServerConfiguration(serverConnection), projectBinding, relativePath)
+    bindingManager.connectedEngine.downloadServerIssues(SonarLintUtils.getServerConfiguration(serverConnection), projectBinding, relativePath, null)
   }
 
   fun presentTaintVulnerabilitiesForOpenFiles() {
@@ -80,19 +79,9 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     }
     val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
     getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
-    highlightTaintVulnerabilities(status)
     if (!status.isEmpty()) {
       // annotate the code with intention actions
       getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-    }
-  }
-
-  private fun highlightTaintVulnerabilities(status: TaintVulnerabilitiesStatus) {
-    val highlighter = getService(project, SonarLintHighlighting::class.java)
-    when {
-      status is FoundTaintVulnerabilities && !status.isEmpty() ->
-        status.byFile.values.flatten().forEach { highlighter.highlight(it) }
-      else -> highlighter.removeHighlights()
     }
   }
 

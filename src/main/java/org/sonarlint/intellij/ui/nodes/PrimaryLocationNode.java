@@ -25,21 +25,21 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.Flow;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class PrimaryLocationNode extends AbstractNode {
   private final String message;
-  private final LiveIssue.Flow associatedFlow;
+  private final Flow associatedFlow;
   private final Integer number;
   private final RangeMarker rangeMarker;
   private boolean bold = false;
 
-  public PrimaryLocationNode(RangeMarker rangeMarker, @Nullable String message, LiveIssue.Flow associatedFlow) {
+  public PrimaryLocationNode(RangeMarker rangeMarker, @Nullable String message, Flow associatedFlow) {
     this(null, rangeMarker, message, associatedFlow);
   }
 
-  protected PrimaryLocationNode(@Nullable Integer number, RangeMarker rangeMarker, @Nullable String message, LiveIssue.Flow associatedFlow) {
+  protected PrimaryLocationNode(@Nullable Integer number, RangeMarker rangeMarker, @Nullable String message, Flow associatedFlow) {
     this.number = number;
     this.rangeMarker = rangeMarker;
     this.message = message;
@@ -59,7 +59,7 @@ public class PrimaryLocationNode extends AbstractNode {
     return message;
   }
 
-  public LiveIssue.Flow getAssociatedFlow() {
+  public Flow getAssociatedFlow() {
     return associatedFlow;
   }
 

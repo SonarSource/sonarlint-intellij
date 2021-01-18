@@ -29,30 +29,30 @@ import java.util.stream.Collectors;
 import static java.util.Collections.singletonList;
 
 public class MatchedFlowsAdapter {
-  public static Optional<IssueContext> adapt(List<LiveIssue.Flow> flows) {
+  public static Optional<IssueContext> adapt(List<Flow> flows) {
     return flows.isEmpty()
       ? Optional.empty()
       : Optional.of(new IssueContext(adaptFlows(flows)));
   }
 
-  private static List<LiveIssue.Flow> adaptFlows(List<LiveIssue.Flow> flows) {
-    return flows.stream().anyMatch(LiveIssue.Flow::hasMoreThanOneLocation)
+  private static List<Flow> adaptFlows(List<Flow> flows) {
+    return flows.stream().anyMatch(Flow::hasMoreThanOneLocation)
       ? reverse(flows)
       : singletonList(groupToSingleFlow(flows));
   }
 
-  private static LiveIssue.Flow groupToSingleFlow(List<LiveIssue.Flow> flows) {
-    return new LiveIssue.Flow(flows.stream()
-      .flatMap(f -> f.locations().stream())
-      .sorted(Comparator.comparing(i -> i.location().getStartOffset()))
+  private static Flow groupToSingleFlow(List<Flow> flows) {
+    return new Flow(flows.stream()
+      .flatMap(f -> f.getLocations().stream())
+      .sorted(Comparator.comparing(i -> i.getRange().getStartOffset()))
       .collect(Collectors.toList()));
   }
 
-  private static List<LiveIssue.Flow> reverse(List<LiveIssue.Flow> flows) {
+  private static List<Flow> reverse(List<Flow> flows) {
     return flows.stream().map(f -> {
-      ArrayList<LiveIssue.SecondaryLocation> reorderedLocations = new ArrayList<>(f.locations());
+      ArrayList<Location> reorderedLocations = new ArrayList<>(f.getLocations());
       Collections.reverse(reorderedLocations);
-      return new LiveIssue.Flow(reorderedLocations);
+      return new Flow(reorderedLocations);
     }).collect(Collectors.toList());
   }
 

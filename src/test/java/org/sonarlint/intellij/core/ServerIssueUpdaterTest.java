@@ -97,7 +97,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     ServerIssue serverIssue = mock(ServerIssue.class);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(FOO_PHP)))
+    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(FOO_PHP), eq(null)))
       .thenReturn(Collections.singletonList(serverIssue));
 
     // run
@@ -131,7 +131,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
-    verify(engine).downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY));
+    verify(engine).downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY), eq(null));
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }

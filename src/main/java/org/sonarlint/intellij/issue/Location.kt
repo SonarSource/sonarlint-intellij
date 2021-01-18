@@ -17,31 +17,24 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes;
+package org.sonarlint.intellij.issue
 
-import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder;
-import com.intellij.ui.SimpleTextAttributes;
-import com.intellij.util.ui.JBUI;
-import org.sonarlint.intellij.issue.Flow;
-import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
+import com.intellij.openapi.editor.RangeMarker
+import com.intellij.openapi.vfs.VirtualFile
+import java.nio.file.Paths
 
-public class FlowNode extends AbstractNode {
-  private final String label;
-  private final Flow flow;
+fun unknownLocation(message: String?, filePath: String?): Location {
+  return Location(null, null, message, filePath?.let { Paths.get(it).fileName.toString() })
+}
 
-  public FlowNode(Flow flow, String label) {
-    this.flow = flow;
-    this.label = label;
-  }
+fun fileOnlyLocation(file: VirtualFile?, message: String?): Location {
+  return Location(file, null, message)
+}
 
-  public Flow getFlow() {
-    return flow;
-  }
+fun resolvedLocation(file: VirtualFile?, range: RangeMarker?, message: String?): Location {
+  return Location(file, range, message)
+}
 
-  @Override
-  public void render(TreeCellRenderer renderer) {
-    renderer.setIpad(JBUI.insets(3, 3, 3, 3));
-    renderer.setBorder(new BottomLineBorder());
-    renderer.append(label, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES, true);
-  }
+data class Location(val file: VirtualFile?, val range: RangeMarker?, val message: String?, val originalFileName: String? = null) {
+  val isResolved = file != null && file.isValid && range != null && range.isValid
 }
