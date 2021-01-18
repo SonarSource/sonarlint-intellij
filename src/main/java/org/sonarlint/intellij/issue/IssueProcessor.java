@@ -50,6 +50,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 import static java.util.stream.Collectors.toList;
+import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
 
 public class IssueProcessor {
   private static final Logger LOGGER = Logger.getInstance(IssueProcessor.class);
@@ -191,16 +192,16 @@ public class IssueProcessor {
   }
 
   private Optional<IssueContext> transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
-    List<LiveIssue.Flow> matchedFlows = new LinkedList<>();
+    List<Flow> matchedFlows = new LinkedList<>();
 
     for (Issue.Flow f : flows) {
-      List<LiveIssue.SecondaryLocation> matchedLocations = new LinkedList<>();
+      List<Location> matchedLocations = new LinkedList<>();
       for (IssueLocation loc : f.locations()) {
         try {
           TextRange textRange = loc.getTextRange();
           if (textRange != null) {
             RangeMarker range = matcher.match(psiFile, textRange);
-            matchedLocations.add(new LiveIssue.SecondaryLocation(range, loc.getMessage()));
+            matchedLocations.add(resolvedLocation(psiFile.getVirtualFile(), range, loc.getMessage()));
           }
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
@@ -212,7 +213,7 @@ public class IssueProcessor {
           return Optional.empty();
         }
       }
-      LiveIssue.Flow matchedFlow = new LiveIssue.Flow(matchedLocations);
+      Flow matchedFlow = new Flow(matchedLocations);
       matchedFlows.add(matchedFlow);
 
     }

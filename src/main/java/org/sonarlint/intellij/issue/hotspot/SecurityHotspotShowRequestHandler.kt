@@ -28,7 +28,8 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingAssistant
 import org.sonarlint.intellij.core.SecurityHotspotMatcher
-import org.sonarlint.intellij.editor.SonarLintHighlighting
+import org.sonarlint.intellij.editor.EditorDecorator
+import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
@@ -73,7 +74,7 @@ open class SecurityHotspotShowRequestHandler(
     }
 
     private fun display(project: Project, localHotspot: LocalHotspot, retryAction: RetryAction) {
-        val highlighter = getService(project, SonarLintHighlighting::class.java)
+        val highlighter = getService(project, EditorDecorator::class.java)
         getService(project, SonarLintToolWindow::class.java).show(localHotspot)
         if (localHotspot.primaryLocation.file != null) {
             openFile(project, localHotspot.primaryLocation)

@@ -19,8 +19,7 @@
  */
 package org.sonarlint.intellij.issue.hotspot
 
-import com.intellij.openapi.editor.RangeMarker
-import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.issue.Location
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot
 
 data class LocalHotspot(val primaryLocation: Location, val remote: RemoteHotspot) {
@@ -39,20 +38,4 @@ data class LocalHotspot(val primaryLocation: Location, val remote: RemoteHotspot
     val category: String = remote.rule.securityCategory
 
     val lineNumber: Int? = remote.textRange.startLine
-}
-
-fun unknownLocation(): Location {
-    return Location(null, null)
-}
-
-fun fileOnlyLocation(file: VirtualFile?): Location {
-    return Location(file, null)
-}
-
-fun resolvedLocation(file: VirtualFile?, range: RangeMarker?): Location {
-    return Location(file, range)
-}
-
-data class Location (val file: VirtualFile?, val range: RangeMarker?) {
-    val isResolved = file != null && file.isValid && range != null && range.isValid
 }

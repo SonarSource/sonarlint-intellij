@@ -29,7 +29,7 @@ import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
-import org.sonarlint.intellij.editor.SonarLintHighlighting;
+import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.nodes.HotspotNode;
 
@@ -60,7 +60,7 @@ public class SonarLintHotspotsListPanel {
     hotspotNode = new HotspotNode(hotspot);
     treeModel.setRoot(hotspotNode);
     hotspotsTree.addTreeSelectionListener(treeSelectionEvent ->
-      SonarLintUtils.getService(project, SonarLintHighlighting.class).highlight(hotspotNode.getHotspot())
+      SonarLintUtils.getService(project, EditorDecorator.class).highlight(hotspotNode.getHotspot())
     );
   }
 

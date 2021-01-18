@@ -128,7 +128,7 @@
         <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
         <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.editor.SonarLintHighlighting"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.editor.EditorDecorator"/>
         <projectService serviceImplementation="org.sonarlint.intellij.ui.BalloonNotifier"/>
         <projectService serviceImplementation="org.sonarlint.intellij.actions.SonarLintToolWindow"/>
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>

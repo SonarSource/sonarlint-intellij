@@ -33,8 +33,8 @@ import javax.swing.JTree;
 import javax.swing.SwingConstants;
 import javax.swing.border.Border;
 import javax.swing.tree.TreeCellRenderer;
+import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-import org.sonarlint.intellij.issue.hotspot.Location;
 import org.sonarlint.intellij.ui.nodes.HotspotNode;
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot.Rule.Probability;
 

@@ -35,12 +35,12 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public Integer getLine() {
-    return serverIssue.line() != 0 ? serverIssue.line() : null;
+    return serverIssue.getStartLine();
   }
 
   @Override
   public String getMessage() {
-    return serverIssue.message();
+    return serverIssue.getMessage();
   }
 
   @CheckForNull
@@ -52,7 +52,7 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public Integer getLineHash() {
-    return serverIssue.checksum().hashCode();
+    return serverIssue.lineHash().hashCode();
   }
 
   @Override

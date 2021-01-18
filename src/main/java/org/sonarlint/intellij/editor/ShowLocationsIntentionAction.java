@@ -57,7 +57,7 @@ public class ShowLocationsIntentionAction implements IntentionAction, PriorityAc
   }
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
-    SonarLintUtils.getService(project, SonarLintHighlighting.class).highlightIssue(issue);
+    SonarLintUtils.getService(project, EditorDecorator.class).highlightIssue(issue);
     SonarLintToolWindow sonarLintToolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
     UIUtil.invokeLaterIfNeeded(() -> sonarLintToolWindow.showIssueLocations(issue));
 
