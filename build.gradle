@@ -93,7 +93,6 @@ configurations {
 }
 
 dependencies {
-  compile "org.sonarsource.sonarlint.core:sonarlint-client-api:$sonarlintCoreVersion"
   compile "org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion"
   compile 'commons-lang:commons-lang:2.6'
   compileOnly 'com.google.code.findbugs:jsr305:2.0.2'

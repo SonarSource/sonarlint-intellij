@@ -20,17 +20,18 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.Flow;
+import org.sonarlint.intellij.issue.Location;
 
 public class FlowSecondaryLocationNode extends PrimaryLocationNode {
-  private final LiveIssue.SecondaryLocation secondaryLocation;
+  private final Location secondaryLocation;
 
-  public FlowSecondaryLocationNode(@Nullable Integer number, LiveIssue.SecondaryLocation secondaryLocation, LiveIssue.Flow parentFlow) {
-    super(number, secondaryLocation.location(), secondaryLocation.message(), parentFlow);
+  public FlowSecondaryLocationNode(@Nullable Integer number, Location secondaryLocation, Flow parentFlow) {
+    super(number, secondaryLocation.getRange(), secondaryLocation.getMessage(), parentFlow);
     this.secondaryLocation = secondaryLocation;
   }
 
-  public LiveIssue.SecondaryLocation getSecondaryLocation() {
+  public Location getSecondaryLocation() {
     return secondaryLocation;
   }
 }

@@ -203,39 +203,4 @@ public class LiveIssue implements Trackable {
   public Optional<IssueContext> context() {
     return Optional.ofNullable(context);
   }
-
-  public static class Flow {
-    private final List<SecondaryLocation> locations;
-
-    public Flow(List<SecondaryLocation> locations) {
-      this.locations = locations;
-    }
-
-    public List<SecondaryLocation> locations() {
-      return locations;
-    }
-
-    public boolean hasMoreThanOneLocation() {
-      return locations().size() > 1;
-    }
-  }
-
-  public static class SecondaryLocation {
-    private final RangeMarker location;
-    private final String message;
-
-    public SecondaryLocation(RangeMarker location, @Nullable String message) {
-      this.location = location;
-      this.message = message;
-    }
-
-    @CheckForNull
-    public String message() {
-      return message;
-    }
-
-    public RangeMarker location() {
-      return location;
-    }
-  }
 }

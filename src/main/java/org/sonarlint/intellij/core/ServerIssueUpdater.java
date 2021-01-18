@@ -244,7 +244,7 @@ public class ServerIssueUpdater implements Disposable {
       try {
         ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
         LOGGER.debug("fetchServerIssues projectKey=" + projectKey);
-        engine.downloadServerIssues(serverConfiguration, projectKey);
+        engine.downloadServerIssues(serverConfiguration, projectKey, null);
       } catch (DownloadException e) {
         SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -272,7 +272,7 @@ public class ServerIssueUpdater implements Disposable {
       try {
         ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
         LOGGER.debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
-        return engine.downloadServerIssues(serverConfiguration, projectBinding, relativePath);
+        return engine.downloadServerIssues(serverConfiguration, projectBinding, relativePath, null);
       } catch (DownloadException e) {
         SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());

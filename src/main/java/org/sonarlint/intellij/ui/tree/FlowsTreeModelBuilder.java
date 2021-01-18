@@ -24,8 +24,10 @@ import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
+import org.sonarlint.intellij.issue.Flow;
 import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
@@ -63,18 +65,18 @@ public class FlowsTreeModelBuilder {
     }
   }
 
-  private void setMultipleFlows(List<LiveIssue.Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
+  private void setMultipleFlows(List<Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
     PrimaryLocationNode primaryLocationNode = new PrimaryLocationNode(rangeMarker, message, flows.get(0));
     summary.add(primaryLocationNode);
 
     int i = 1;
-    for (LiveIssue.Flow f : flows) {
+    for (Flow f : flows) {
       FlowNode flowNode = new FlowNode(f, "Flow " + i);
       primaryLocationNode.add(flowNode);
 
       int j = 1;
-      for (LiveIssue.SecondaryLocation location : f.locations()) {
+      for (Location location : f.getLocations()) {
         FlowSecondaryLocationNode locationNode = new FlowSecondaryLocationNode(j, location, f);
         flowNode.add(locationNode);
         j++;
@@ -84,14 +86,14 @@ public class FlowsTreeModelBuilder {
     model.setRoot(summary);
   }
 
-  private void setSingleFlow(LiveIssue.Flow flow, RangeMarker rangeMarker, @Nullable String message) {
+  private void setSingleFlow(Flow flow, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
     PrimaryLocationNode primaryLocation = new PrimaryLocationNode(rangeMarker, message, flow);
     primaryLocation.setBold(true);
     summary.add(primaryLocation);
 
     int i = 1;
-    for (LiveIssue.SecondaryLocation location : flow.locations()) {
+    for (Location location : flow.getLocations()) {
       FlowSecondaryLocationNode locationNode = new FlowSecondaryLocationNode(i++, location, flow);
       primaryLocation.add(locationNode);
     }

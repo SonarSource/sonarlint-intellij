@@ -38,8 +38,9 @@ import org.sonarlint.intellij.any
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.BoundProject
 import org.sonarlint.intellij.core.ProjectBindingAssistant
-import org.sonarlint.intellij.editor.SonarLintHighlighting
+import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.eq
+import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarsource.sonarlint.core.client.api.common.TextRange
 import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot
@@ -70,7 +71,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
     @Mock
     lateinit var toolWindow: SonarLintToolWindow
     @Mock
-    lateinit var highlighter: SonarLintHighlighting
+    lateinit var highlighter: EditorDecorator
     @Mock
     private lateinit var telemetry: SonarLintTelemetry
 
@@ -80,7 +81,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
     fun prepare() {
         requestHandler = SecurityHotspotShowRequestHandler(projectBindingAssistant, wsHelper, telemetry)
         replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
-        replaceProjectService(SonarLintHighlighting::class.java, highlighter)
+        replaceProjectService(EditorDecorator::class.java, highlighter)
         clearNotifications()
     }
 
@@ -122,7 +123,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
         requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-        verify(toolWindow).show(eq(LocalHotspot(Location(null, null), remoteHotspot)))
+        verify(toolWindow).show(eq(LocalHotspot(Location(null, null, "Very hotspot", "MyFile.java"), remoteHotspot)))
         verifyZeroInteractions(highlighter)
         assertThat(projectNotifications)
           .extracting("title", "content")
