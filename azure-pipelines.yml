@@ -173,7 +173,8 @@ stages:
           ARTIFACTORY_QA_READER_PASSWORD: $(ARTIFACTORY_QA_READER_PASSWORD)
       - bash: |
           set -e -o pipefail -u
-          sudo apt-get update && sudo apt-get install -y metacity xvfb xauth ffmpeg
+          sudo apt-get update
+          sudo apt-get install -y metacity xvfb xauth ffmpeg
 
           # init xvfb and metacity
           sudo cp .azure-pipelines/xvfb.init /etc/init.d/xvfb
@@ -195,7 +196,7 @@ stages:
           cp .azure-pipelines/accepted ~/.local/share/JetBrains/consentOptions
 
           echo 'Recording tests on video'
-          ffmpeg -loglevel warning -f x11grab -video_size 1024x768 -framerate 10 -i :10 -q:v 0 /tmp/recording_$(IDEA_VERSION).mp4 &
+          ffmpeg -loglevel warning -f x11grab -video_size 1280x960 -framerate 10 -i :10 -q:v 0 /tmp/recording_$(IDEA_VERSION).mp4 &
           echo "##vso[task.setvariable variable=recordingPid;isOutput=true]$!"
 
         name: 'prepareIts'
