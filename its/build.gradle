@@ -158,14 +158,3 @@ closeIde.doLast {
 }
 
 runIts.finalizedBy closeIde
-
-// XXX workaround to prevent https://discuss.sonarsource.com/t/error-when-analyzing-a-kotlin-gradle-project-that-has-a-sub-module/6487
-gradle.taskGraph.whenReady { taskGraph ->
-  if (!gradle.taskGraph.hasTask("test")) {
-    sonarqube {
-      properties {
-        property "sonar.junit.reportPaths", ""
-      }
-    }
-  }
-}
