@@ -141,6 +141,20 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
     }
   }
 
+  @Override
+  public void taintVulnerabilitiesInvestigatedRemotely() {
+    if (enabled()) {
+      telemetry.taintVulnerabilitiesInvestigatedRemotely();
+    }
+  }
+
+  @Override
+  public void taintVulnerabilitiesInvestigatedLocally() {
+    if (enabled()) {
+      telemetry.taintVulnerabilitiesInvestigatedLocally();
+    }
+  }
+
   @VisibleForTesting
   void stop() {
     if (enabled()) {

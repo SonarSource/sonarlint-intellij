@@ -28,6 +28,7 @@ import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.util.StringUtils
 
@@ -54,6 +55,7 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
     val key = issue?.key() ?: return
     val serverUrl = serverConnection(project)?.hostUrl ?: return
     BrowserUtil.browse(buildLink(serverUrl, getSettingsFor(project).projectKey!!, key))
+    getService(SonarLintTelemetry::class.java).taintVulnerabilitiesInvestigatedRemotely()
   }
 
   override fun isEnabled(e: AnActionEvent, project: Project, status: SonarLintStatus): Boolean {
