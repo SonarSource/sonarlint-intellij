@@ -40,4 +40,8 @@ public interface SonarLintTelemetry {
   void devNotificationsClicked(String eventType);
 
   void showHotspotRequestReceived();
+
+  void taintVulnerabilitiesInvestigatedRemotely();
+
+  void taintVulnerabilitiesInvestigatedLocally();
 }
