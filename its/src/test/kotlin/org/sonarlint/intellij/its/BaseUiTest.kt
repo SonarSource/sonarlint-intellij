@@ -84,7 +84,7 @@ open class BaseUiTest {
             select("Tools/SonarLint")
           }
           // the view can take time to appear the first time
-          val connectionsList = jList(JListFixture.byType(), Duration.ofSeconds(10))
+          val connectionsList = jList(JListFixture.byType(), Duration.ofSeconds(20))
           val removeButton = actionButton(byTooltipText("Remove"))
           while (connectionsList.items.isNotEmpty()) {
             removeButton.clickWhenEnabled()
