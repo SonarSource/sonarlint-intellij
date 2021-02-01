@@ -106,7 +106,7 @@ dependencies {
   testImplementation 'org.mockito:mockito-core:2.19.0'
   sqplugins (
     'org.sonarsource.java:sonar-java-plugin:6.11.0.24617@jar',
-    'org.sonarsource.javascript:sonar-javascript-plugin:6.7.0.14237@jar',
+    'org.sonarsource.javascript:sonar-javascript-plugin:7.1.0.14721@jar',
     'org.sonarsource.php:sonar-php-plugin:3.12.0.6710@jar',
     'org.sonarsource.python:sonar-python-plugin:3.1.0.7619@jar',
     'org.sonarsource.slang:sonar-kotlin-plugin:1.8.1.1804@jar',
