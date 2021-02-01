@@ -50,6 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.14 - New rules for regexp in Java.</li>
         <li>4.13 - New or improved rules for access control or authentication in Java. Security rules for JS/TS. Support of PHP 8, improved rules. Updated Kotlin and Ruby analyzers, supporting latest language features and improved rules. Updated HTML analyzer with improved rules. Reworked server notifications. Review a Security Hotspot within its context.</li>
         <li>4.12 - Lots of new rules for Java (including test code), support analysis of Java 14. 20 new rules for PHP, including 13 related to unit tests. 2 new rules for JavaScript. 3 new rules for Python. Bug fixes and improvements.</li>
         <li>4.11 - Improve issues, flows and secondary locations navigation and highlighting. Show secondary location indexes in the editor. Add 'Show rule description' and 'Show data flow/issue locations' contextual actions. Relax search criteria in rule configuration filter. Show effective rule parameter in the rule description panel. Bug fixes and improvements.</li>
