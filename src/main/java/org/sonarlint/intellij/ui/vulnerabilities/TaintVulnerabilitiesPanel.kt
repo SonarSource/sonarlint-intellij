@@ -42,6 +42,7 @@ import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarConfigureProject
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
+import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.issue.vulnerabilities.FoundTaintVulnerabilities
 import org.sonarlint.intellij.issue.vulnerabilities.InvalidBinding
@@ -60,6 +61,7 @@ import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
+import java.util.ArrayList
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.JComponent
@@ -70,8 +72,6 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeNode
 import javax.swing.tree.TreePath
 import javax.swing.tree.TreeSelectionModel
-
-import java.util.ArrayList
 
 
 private const val SPLIT_PROPORTION_PROPERTY = "SONARLINT_TAINT_VULNERABILITIES_SPLIT_PROPORTION"
@@ -90,6 +90,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
   private lateinit var rulePanel: SonarLintRulePanel
   private lateinit var tree: TaintVulnerabilityTree
   private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
+  private val noVulnerabilitiesLabel = JLabel("")
   private val cards = CardPanel()
 
   class CardPanel {
@@ -117,7 +118,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
   init {
     cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", ActionLink("Configure Binding", SonarConfigureProject())), NO_BINDING_CARD_ID)
     cards.add(centeredLabel("The project binding is invalid", ActionLink("Edit Binding", SonarConfigureProject())), INVALID_BINDING_CARD_ID)
-    cards.add(centeredLabel("No vulnerabilities found in currently opened files."), NO_ISSUES_CARD_ID)
+    cards.add(centeredLabel(noVulnerabilitiesLabel), NO_ISSUES_CARD_ID)
     cards.add(createSplitter(
       ScrollPaneFactory.createScrollPane(createTree()),
       createRulePanel()),
@@ -133,9 +134,11 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     setupToolbar(listOf(RefreshTaintVulnerabilitiesAction(), OpenTaintVulnerabilityDocumentationAction()))
   }
 
-  private fun centeredLabel(text: String, actionLink: ActionLink? = null): JPanel {
+  private fun centeredLabel(text: String, actionLink: ActionLink? = null) = centeredLabel(JLabel(text), actionLink)
+
+  private fun centeredLabel(textLabel: JLabel, actionLink: ActionLink? = null): JPanel {
     val labelPanel = JPanel(HorizontalLayout(5))
-    labelPanel.add(JLabel(text), HorizontalLayout.CENTER)
+    labelPanel.add(textLabel, HorizontalLayout.CENTER)
     if (actionLink != null) labelPanel.add(actionLink, HorizontalLayout.CENTER)
     return labelPanel
   }
@@ -190,11 +193,11 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
       }
       is FoundTaintVulnerabilities -> {
         if (status.isEmpty()) {
-          showCard(NO_ISSUES_CARD_ID)
+          showNoVulnerabilitiesLabel()
           highlighting.removeHighlights()
         } else {
           showCard(TREE_CARD_ID)
-          val selectionPath : TreePath? = tree.selectionPath
+          val selectionPath: TreePath? = tree.selectionPath
           val expandedPaths = getExpandedPaths()
           treeBuilder.updateModel(status.byFile)
           tree.selectionPath = selectionPath
@@ -204,6 +207,13 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
       }
     }
   }
+
+  private fun showNoVulnerabilitiesLabel() {
+    val serverConnection = getService(project, ProjectBindingManager::class.java).serverConnection
+    noVulnerabilitiesLabel.text = "No vulnerabilities found for currently opened files in the latest analysis on ${serverConnection.productName}."
+    showCard(NO_ISSUES_CARD_ID)
+  }
+
   private fun getExpandedPaths(): List<TreePath> {
     val expanded: MutableList<TreePath> = ArrayList()
     for (i in 0 until tree.rowCount - 1) {
