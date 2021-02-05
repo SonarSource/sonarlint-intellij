@@ -214,6 +214,7 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
         exportedLibInDependentModuleFile.toPath(),
         testDependentModCompilerOutputDirFile.toPath(),
         exportedLibInTestDependentModuleFile.toPath());
+    assertThat(Paths.get(props.get("sonar.java.jdkHome"))).isEqualTo(FAKE_JDK_ROOT_PATH.resolve("jdk1.8"));
   }
 
   private static Sdk addRtJarTo(@NotNull Sdk jdk) {
@@ -223,6 +224,7 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
       throw new RuntimeException(e);
     }
     SdkModificator sdkModificator = jdk.getSdkModificator();
+    sdkModificator.setHomePath(FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toString());
     sdkModificator.addRoot(findJar("jdk1.8/lib/rt.jar"), OrderRootType.CLASSES);
     sdkModificator.addRoot(findJar("jdk1.8/lib/another.jar"), OrderRootType.CLASSES);
     sdkModificator.commitChanges();

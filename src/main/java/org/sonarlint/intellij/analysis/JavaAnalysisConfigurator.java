@@ -65,6 +65,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static final String JAVA_TARGET_PROPERTY = "sonar.java.target";
   private static final String JAVA_TEST_LIBRARIES_PROPERTY = "sonar.java.test.libraries";
   private static final String JAVA_TEST_BINARIES_PROPERTY = "sonar.java.test.binaries";
+  private static final String JAVA_JDK_HOME_PROPERTY = "sonar.java.jdkHome";
 
   private static final char SEPARATOR = ',';
 
@@ -79,6 +80,9 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     setMultiValuePropertyIfNonEmpty(properties, JAVA_BINARIES_PROPERTY, moduleClasspath.binaries());
     setMultiValuePropertyIfNonEmpty(properties, JAVA_TEST_BINARIES_PROPERTY, moduleClasspath.testBinaries());
     configureJavaSourceTarget(ijModule, properties);
+    if (moduleClasspath.getJdkHome() != null) {
+      properties.put(JAVA_JDK_HOME_PROPERTY, moduleClasspath.getJdkHome());
+    }
     return properties;
   }
 
@@ -122,7 +126,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
       } else if (entry instanceof LibraryOrderEntry) {
         processLibraryOrderEntry(moduleClasspath, (LibraryOrderEntry) entry, testClasspathOnly);
       } else if (entry instanceof JdkOrderEntry) {
-        processJdkOrderEntry(moduleClasspath, ((JdkOrderEntry) entry).getJdk());
+        processJdkOrderEntry(module, moduleClasspath, ((JdkOrderEntry) entry).getJdk());
       }
     }
   }
@@ -195,8 +199,13 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     return (entry instanceof ExportableOrderEntry) && ((ExportableOrderEntry) entry).isExported();
   }
 
-  private static void processJdkOrderEntry(JavaModuleClasspath moduleClasspath, Sdk jdk) {
+  private static void processJdkOrderEntry(final Module module, JavaModuleClasspath moduleClasspath, Sdk jdk) {
     String jdkHomePath = jdk.getHomePath();
+    if (moduleClasspath.getJdkHome() != null) {
+      LOGGER.warn("Multiple Jdk configured for module: " + module.getName());
+    } else {
+      moduleClasspath.setJdkHome(jdkHomePath);
+    }
     if (jdkHomePath != null && JdkUtil.isModularRuntime(jdkHomePath)) {
       final File jrtFs = new File(jdkHomePath, "lib/jrt-fs.jar");
       if (jrtFs.isFile()) {

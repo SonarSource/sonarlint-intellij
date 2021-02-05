@@ -22,6 +22,8 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.module.Module;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 
 public class JavaModuleClasspath {
 
@@ -31,6 +33,7 @@ public class JavaModuleClasspath {
   private final Set<String> testLibraries = new LinkedHashSet<>();
   private final Set<String> binaries = new LinkedHashSet<>();
   private final Set<String> testBinaries = new LinkedHashSet<>();
+  private String jdkHome;
 
   public Set<Module> dependentModules() {
     return dependentModules;
@@ -56,4 +59,12 @@ public class JavaModuleClasspath {
     return testBinaries;
   }
 
+  public void setJdkHome(@Nullable String jdkHome) {
+    this.jdkHome = jdkHome;
+  }
+
+  @CheckForNull
+  public String getJdkHome() {
+    return jdkHome;
+  }
 }

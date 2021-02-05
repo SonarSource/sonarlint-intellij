@@ -58,6 +58,7 @@ public class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLi
       .containsExactly(FAKE_JDK_ROOT_PATH.resolve("jdk9/lib/jrt-fs.jar"));
     assertThat(Stream.of(props.get("sonar.java.test.libraries").split(",")).map(Paths::get))
       .containsExactly(FAKE_JDK_ROOT_PATH.resolve("jdk9/lib/jrt-fs.jar"));
+    assertThat(Paths.get(props.get("sonar.java.jdkHome"))).isEqualTo(FAKE_JDK_ROOT_PATH.resolve("jdk9"));
   }
 
   private static Sdk addJrtFsJarTo(@NotNull Sdk jdk) {
