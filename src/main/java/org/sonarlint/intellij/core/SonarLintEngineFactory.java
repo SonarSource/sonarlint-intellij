@@ -21,17 +21,13 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.PathManager;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.sonarlint.intellij.SonarLintPlugin;
@@ -115,43 +111,21 @@ public class SonarLintEngineFactory  {
   }
 
 
-  private URL[] loadPlugins() throws IOException, URISyntaxException {
-    URL pluginsDir = this.getClass().getClassLoader().getResource("plugins");
-    if (pluginsDir == null) {
-      throw new IllegalStateException("Couldn't find plugins");
-    }
-
-    if ("file".equalsIgnoreCase(pluginsDir.toURI().getScheme())) {
-      return getPluginsUrls(pluginsDir);
-    } else {
-      return getPluginsUrlsWithFs(pluginsDir);
-    }
+  private static URL[] loadPlugins() throws IOException {
+    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    return getPluginsUrls(plugin.getPath().resolve("plugins"));
   }
 
-  private URL[] getPluginsUrlsWithFs(URL pluginsDir) throws IOException, URISyntaxException {
-    Map<String, String> env = new HashMap<>();
-    env.put("create", "true");
-    try (FileSystem fs = FileSystems.newFileSystem(pluginsDir.toURI(), env)) {
-      return getPluginsUrls(pluginsDir);
-    }
-  }
-
-  private URL[] getPluginsUrls(URL pluginsDir) throws IOException, URISyntaxException {
+  private static URL[] getPluginsUrls(Path pluginsDir) throws IOException {
     List<URL> pluginsUrls = new ArrayList<>();
 
-    try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(Paths.get(pluginsDir.toURI()), "*.jar")) {
-      GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
-      for (Path path : directoryStream) {
-        globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
-
-        URL newUrl;
-        if ("file".equalsIgnoreCase(pluginsDir.toURI().getScheme())) {
-          newUrl = path.toUri().toURL();
-        } else {
-          // any attempt to convert path directly to URL or URI will result in having spaces double escaped
-          newUrl = new URL(pluginsDir, path.toString());
+    if (Files.isDirectory(pluginsDir)) {
+      try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(pluginsDir, "*.jar")) {
+        GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
+        for (Path path : directoryStream) {
+          globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
+          pluginsUrls.add(path.toUri().toURL());
         }
-        pluginsUrls.add(newUrl);
       }
     }
     return pluginsUrls.toArray(new URL[0]);
@@ -165,7 +139,7 @@ public class SonarLintEngineFactory  {
     return Paths.get(PathManager.getTempPath()).resolve("sonarlint");
   }
 
-  private Map<String, String> prepareExtraProps() {
+  private static Map<String, String> prepareExtraProps() {
     SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", plugin.getPath().toString());
   }
