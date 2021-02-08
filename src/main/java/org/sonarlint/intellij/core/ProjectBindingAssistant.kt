@@ -35,7 +35,7 @@ open class ProjectBindingAssistant(private val title: String,
                                    private val projectManager: ProjectManager = ProjectManager.getInstance(),
                                    private val connectionCreator: ServerConnectionCreator = ServerConnectionCreator(),
                                    private val modalPresenter: ModalPresenter = ModalPresenter(),
-                                   private val projectSelectionDialog: ProjectSelectionDialog = ProjectSelectionDialog()) {
+                                   private val projectSelectionDialogFactory: () -> ProjectSelectionDialog = { ProjectSelectionDialog()}) {
 
     open fun bind(projectKey: String, serverUrl: String): BoundProject? {
         val connection = findOrCreateConnectionTo(serverUrl) ?: return null
@@ -68,7 +68,7 @@ open class ProjectBindingAssistant(private val title: String,
     }
 
     private fun selectProject(projectKey: String, hostUrl: String): Project? {
-        return if (shouldSelectProject(projectKey, hostUrl)) projectSelectionDialog.selectProject() else null
+        return if (shouldSelectProject(projectKey, hostUrl)) projectSelectionDialogFactory().selectProject() else null
     }
 
     private fun shouldSelectProject(projectKey: String, hostUrl: String): Boolean {

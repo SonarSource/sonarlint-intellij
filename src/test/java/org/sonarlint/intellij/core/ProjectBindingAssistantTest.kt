@@ -55,7 +55,7 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
                 projectManager,
                 connectionCreator,
                 modalPresenter,
-                projectSelectionDialog)
+                {projectSelectionDialog})
 
         `when`(projectManager.openProjects).thenReturn(emptyArray())
         globalSettings.serverConnections = emptyList()

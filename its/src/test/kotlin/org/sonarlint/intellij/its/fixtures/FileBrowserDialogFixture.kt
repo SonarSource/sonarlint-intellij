@@ -64,6 +64,8 @@ class FileBrowserDialogFixture(
     textField.text = projectPath.toAbsolutePath().normalize().toString()
     // it helps locating the project
     refreshButton().click()
+    // Give some time for the refresh to work
+    Thread.sleep(2000)
     button.click()
   }
 }
