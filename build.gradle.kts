@@ -113,17 +113,6 @@ dependencies {
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
 
-tasks.register<Delete>("cleanSQPlugins") {
-    delete(fileTree("src/main/resources/plugins").include("**/*.jar"))
-}
-
-tasks.register<Copy>("downloadSQPlugins") {
-    dependsOn(tasks.named("cleanSQPlugins"))
-    outputs.upToDateWhen { false }
-    from(configurations.get("sqplugins"))
-    into("src/main/resources/plugins")
-}
-
 tasks.prepareSandbox {
     doLast {
         val tsBundlePath = project.configurations.get("typescript").iterator().next()
@@ -136,11 +125,11 @@ tasks.prepareSandbox {
             into(file("$destinationDir/$pluginName"))
         }
         file("$destinationDir/$pluginName/package").renameTo(file("$destinationDir/$pluginName/typescript"))
+        copy {
+            from(project.configurations.get("sqplugins"))
+            into(file("$destinationDir/$pluginName/plugins"))
+        }
     }
-}
-
-tasks.classes {
-    dependsOn("downloadSQPlugins")
 }
 
 sonarqube {
