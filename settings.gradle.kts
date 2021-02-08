@@ -1,0 +1,2 @@
+rootProject.name = "sonarlint-intellij"
+include("its")
