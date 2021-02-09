@@ -23,7 +23,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
-import com.intellij.util.net.ssl.CertificateManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -34,8 +33,8 @@ import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.NodeJsManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
 import org.sonarsource.sonarlint.core.client.api.common.Version;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryClientAttributesProvider;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryHttpClient;
@@ -52,9 +51,8 @@ public class TelemetryManagerProvider {
   private static final String OLD_STORAGE_FILENAME = "sonarlint_usage";
 
   public TelemetryManager get() {
-    TelemetryClientConfig clientConfig = getTelemetryClientConfig();
     SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    TelemetryHttpClient client = new TelemetryHttpClient(clientConfig, PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry());
+    TelemetryHttpClient client = new TelemetryHttpClient(PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry(), ApacheHttpClient.getDefault());
     return new TelemetryManager(getStorageFilePath(), client, new TelemetryClientAttributesProvider() {
       @Override
       public boolean usesConnectedMode() {
@@ -85,18 +83,6 @@ public class TelemetryManagerProvider {
       return nodeJsVersion.toString();
     }
     return null;
-  }
-
-  private static TelemetryClientConfig getTelemetryClientConfig() {
-    CertificateManager certificateManager = CertificateManager.getInstance();
-    TelemetryClientConfig.Builder clientConfigBuilder = new TelemetryClientConfig.Builder()
-      .userAgent("SonarLint")
-      .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
-      .sslTrustManager(certificateManager.getCustomTrustManager());
-
-    SonarLintUtils.configureProxy(TelemetryManager.TELEMETRY_ENDPOINT, clientConfigBuilder);
-
-    return clientConfigBuilder.build();
   }
 
   @VisibleForTesting

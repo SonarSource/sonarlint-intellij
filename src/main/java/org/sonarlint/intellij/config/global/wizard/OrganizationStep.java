@@ -39,16 +39,16 @@ import javax.swing.ListSelectionModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
+import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 
 import static javax.swing.JList.VERTICAL;
 
 public class OrganizationStep extends AbstractWizardStepEx {
   private final WizardModel model;
-  private JList<RemoteOrganization> orgList;
+  private JList<ServerOrganization> orgList;
   private JPanel panel;
   private JButton selectOtherOrganizationButton;
-  private DefaultListModel<RemoteOrganization> listModel;
+  private DefaultListModel<ServerOrganization> listModel;
 
   public OrganizationStep(WizardModel model) {
     super("Organization");
@@ -94,7 +94,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   private void save() {
-    RemoteOrganization org = orgList.getSelectedValue();
+    ServerOrganization org = orgList.getSelectedValue();
     if (org != null) {
       model.setOrganizationKey(org.getKey());
     } else {
@@ -119,7 +119,7 @@ public class OrganizationStep extends AbstractWizardStepEx {
 
   private boolean selectOrganizationIfExists(String organizationKey) {
     for (int i = 0; i < listModel.getSize(); i++) {
-      RemoteOrganization org = listModel.getElementAt(i);
+      ServerOrganization org = listModel.getElementAt(i);
       if (organizationKey.equals(org.getKey())) {
         orgList.setSelectedIndex(i);
         orgList.ensureIndexIsVisible(i);
@@ -165,18 +165,18 @@ public class OrganizationStep extends AbstractWizardStepEx {
   }
 
   private void createUIComponents() {
-    JBList<RemoteOrganization> list = new JBList<>();
+    JBList<ServerOrganization> list = new JBList<>();
     list.setLayoutOrientation(VERTICAL);
     list.setVisibleRowCount(8);
     list.setEnabled(true);
     list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     list.setCellRenderer(new ListRenderer());
-    new ListSpeedSearch<>(list, (Function<RemoteOrganization, String>) o -> o.getName() + " " + o.getKey());
+    new ListSpeedSearch<>(list, (Function<ServerOrganization, String>) o -> o.getName() + " " + o.getKey());
     orgList = list;
   }
 
-  private static class ListRenderer extends ColoredListCellRenderer<RemoteOrganization> {
-    @Override protected void customizeCellRenderer(JList list, @Nullable RemoteOrganization value, int index, boolean selected, boolean hasFocus) {
+  private static class ListRenderer extends ColoredListCellRenderer<ServerOrganization> {
+    @Override protected void customizeCellRenderer(JList list, @Nullable ServerOrganization value, int index, boolean selected, boolean hasFocus) {
       if (value == null) {
         return;
       }

@@ -30,7 +30,7 @@ import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
+import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 
 public class WizardModel {
   private static final String SONARCLOUD_URL = "https://sonarcloud.io";
@@ -45,7 +45,7 @@ public class WizardModel {
   private boolean notificationsDisabled = false;
   private boolean notificationsSupported = false;
 
-  private List<RemoteOrganization> organizationList = new ArrayList<>();
+  private List<ServerOrganization> organizationList = new ArrayList<>();
 
   public enum ServerType {
     SONARCLOUD,
@@ -124,7 +124,7 @@ public class WizardModel {
         if (!orgExists) {
           GetOrganizationTask getOrganizationTask = new GetOrganizationTask(partialConnection, presetOrganizationKey);
           ProgressManager.getInstance().run(getOrganizationTask);
-          final Optional<RemoteOrganization> fetchedOrganization = getOrganizationTask.organization();
+          final Optional<ServerOrganization> fetchedOrganization = getOrganizationTask.organization();
           if (getOrganizationTask.getException() != null || !fetchedOrganization.isPresent()) {
             // ignore and reset organization
             setOrganizationKey(null);
@@ -158,11 +158,11 @@ public class WizardModel {
     return this;
   }
 
-  public List<RemoteOrganization> getOrganizationList() {
+  public List<ServerOrganization> getOrganizationList() {
     return organizationList;
   }
 
-  public WizardModel setOrganizationList(List<RemoteOrganization> organizationList) {
+  public WizardModel setOrganizationList(List<ServerOrganization> organizationList) {
     this.organizationList = organizationList;
     return this;
   }

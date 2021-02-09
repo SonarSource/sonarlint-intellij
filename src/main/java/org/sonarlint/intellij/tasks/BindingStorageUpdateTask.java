@@ -50,10 +50,10 @@ import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.Version;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
 import org.sonarsource.sonarlint.core.client.api.connected.UpdateResult;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
+import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 public class BindingStorageUpdateTask {
   private static final Logger LOGGER = Logger.getInstance(BindingStorageUpdateTask.class);
@@ -91,10 +91,10 @@ public class BindingStorageUpdateTask {
     try {
       indicator.setIndeterminate(false);
       TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, null);
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(connection);
 
+      EndpointParams connectedModeEndpoint = connection.getEndpointParams();
       if (!onlyModules) {
-        UpdateResult updateResult = engine.update(serverConfiguration, monitor);
+        UpdateResult updateResult = engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
         Collection<SonarAnalyzer> tooOld = updateResult.analyzers().stream()
           .filter(SonarAnalyzer::sonarlintCompatible)
           .filter(BindingStorageUpdateTask::tooOld)
@@ -106,7 +106,7 @@ public class BindingStorageUpdateTask {
         GlobalLogOutput.get().log("Server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
       }
 
-      updateProjects(serverConfiguration, monitor);
+      updateProjects(connection, monitor);
 
     } catch (CanceledException e) {
       LOGGER.info("Update of server '" + connection.getName() + "' was cancelled");
@@ -149,11 +149,11 @@ public class BindingStorageUpdateTask {
    * Updates all known projects belonging to a server configuration.
    * It assumes that the server binding is updated.
    */
-  private void updateProjects(ServerConfiguration serverConfiguration, TaskProgressMonitor monitor) {
+  private void updateProjects(ServerConnection connection, TaskProgressMonitor monitor) {
     Set<String> failedProjects = new LinkedHashSet<>();
     for (Map.Entry<String, List<Project>> entry : projectsPerProjectKey.entrySet()) {
       try {
-        updateProject(serverConfiguration, entry.getKey(), entry.getValue(), monitor);
+        updateProject(connection, entry.getKey(), entry.getValue(), monitor);
       } catch (Throwable e) {
         // in case of error, save project key and keep updating other projects
         LOGGER.info(e.getMessage(), e);
@@ -175,9 +175,9 @@ public class BindingStorageUpdateTask {
     }
   }
 
-  private void updateProject(ServerConfiguration serverConfiguration, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
-    engine.updateProject(serverConfiguration, projectKey, monitor);
-    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
+  private void updateProject(ServerConnection connection, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
+    engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey, true, monitor);
+    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + this.connection.getName() + "' updated", LogOutput.Level.INFO);
     projects.forEach(this::updateModules);
     projects.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
     projects.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);

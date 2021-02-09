@@ -29,7 +29,7 @@ import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot;
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_HOTSPOTS_SPLIT_PROPORTION";
@@ -87,7 +87,7 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
   public void setHotspot(LocalHotspot hotspot) {
     hotspotDetailsTab.setVisible(true);
     hotspotsListPanel.setHotspot(hotspot);
-    RemoteHotspot.Rule hotspotRule = hotspot.getRemote().rule;
+    ServerHotspot.Rule hotspotRule = hotspot.getRule();
     riskDescriptionPanel.setDescription(hotspotRule.riskDescription);
     vulnerabilityDescriptionPanel.setDescription(hotspotRule.vulnerabilityDescription);
     fixRecommendationsPanel.setDescription(hotspotRule.fixRecommendations);

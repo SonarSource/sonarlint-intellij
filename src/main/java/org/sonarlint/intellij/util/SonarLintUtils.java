@@ -35,12 +35,8 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
-import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.net.HttpConfigurable;
-import com.intellij.util.net.ssl.CertificateManager;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -48,14 +44,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Transparency;
 import java.awt.image.BufferedImage;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.URI;
 import java.util.Arrays;
-import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Consumer;
-import java.util.regex.Pattern;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
@@ -64,27 +53,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
-import org.sonarlint.intellij.SonarLintPlugin;
-import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarsource.sonarlint.core.client.api.common.TelemetryClientConfig;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarLintUtils {
 
   private static final Logger LOG = Logger.getInstance(SonarLintUtils.class);
-  static final int CONNECTION_TIMEOUT_MS = 30_000;
-  static final int READ_TIMEOUT_MS = 10 * 60_000;
   private static final String[] SONARCLOUD_ALIAS = {"https://sonarqube.com", "https://www.sonarqube.com",
     "https://www.sonarcloud.io", "https://sonarcloud.io"};
 
   private SonarLintUtils() {
     // Utility class
   }
-
 
   public static <T> T getService(Class<T> clazz) {
     T t = ServiceManager.getService(clazz);
@@ -178,39 +160,6 @@ public class SonarLintUtils {
     return null;
   }
 
-  public static void configureProxy(String host, ServerConfiguration.Builder builder) {
-    configureProxy(host, builder::proxy, builder::proxyCredentials);
-  }
-
-  public static void configureProxy(String host, TelemetryClientConfig.Builder builder) {
-    configureProxy(host, builder::proxy, (user, pwd) -> {
-      builder.proxyLogin(user);
-      builder.proxyPassword(pwd);
-    });
-  }
-
-  private static void configureProxy(String host, Consumer<Proxy> proxyConsumer, BiConsumer<String, String> credentialsConsumer) {
-    HttpConfigurable httpConfigurable = HttpConfigurable.getInstance();
-    if (httpConfigurable == null) {
-      // Unit tests
-      return;
-    }
-    if (!isHttpProxyEnabledForUrl(httpConfigurable, host)) {
-      return;
-    }
-    Proxy.Type type = httpConfigurable.PROXY_TYPE_IS_SOCKS ? Proxy.Type.SOCKS : Proxy.Type.HTTP;
-
-    Proxy proxy = new Proxy(type, new InetSocketAddress(httpConfigurable.PROXY_HOST, httpConfigurable.PROXY_PORT));
-    proxyConsumer.accept(proxy);
-
-    if (httpConfigurable.PROXY_AUTHENTICATION) {
-      String proxyLogin = httpConfigurable.getProxyLogin();
-      if (proxyLogin != null) {
-        credentialsConsumer.accept(proxyLogin, httpConfigurable.getPlainProxyPassword());
-      }
-    }
-  }
-
   public static boolean isGeneratedSource(SourceFolder sourceFolder) {
     // copied from JavaProjectRootsUtil. Don't use that class because it's not available in other flavors of Intellij
     JavaSourceRootProperties properties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
@@ -235,62 +184,6 @@ public class SonarLintUtils {
 
   public static boolean isJavaResource(SourceFolder source) {
     return JavaModuleSourceRootTypes.RESOURCES.contains(source.getRootType());
-  }
-
-  public static ServerConfiguration getServerConfiguration(ServerConnection server) {
-    return getServerConfiguration(server, CONNECTION_TIMEOUT_MS, READ_TIMEOUT_MS);
-  }
-
-  public static ServerConfiguration getServerConfiguration(ServerConnection server, int connectTimeout, int readTimeout) {
-    CertificateManager certificateManager = CertificateManager.getInstance();
-    SonarLintPlugin plugin = getService(SonarLintPlugin.class);
-    ServerConfiguration.Builder serverConfigBuilder = ServerConfiguration.builder()
-      .userAgent("SonarLint IntelliJ " + plugin.getVersion())
-      .connectTimeoutMilliseconds(connectTimeout)
-      .readTimeoutMilliseconds(readTimeout)
-      .sslSocketFactory(certificateManager.getSslContext().getSocketFactory())
-      .trustManager(certificateManager.getCustomTrustManager())
-      .url(server.getHostUrl());
-    if (!isBlank(server.getOrganizationKey())) {
-      serverConfigBuilder.organizationKey(server.getOrganizationKey());
-    }
-    if (!isBlank(server.getToken())) {
-      serverConfigBuilder.token(server.getToken());
-    } else {
-      serverConfigBuilder.credentials(server.getLogin(), server.getPassword());
-    }
-
-    if (server.enableProxy()) {
-      configureProxy(server.getHostUrl(), serverConfigBuilder);
-    }
-    return serverConfigBuilder.build();
-  }
-
-  /**
-   * Copy of {@link HttpConfigurable#isHttpProxyEnabledForUrl(String)}, which doesn't exist in IDEA 14.
-   */
-  public static boolean isHttpProxyEnabledForUrl(HttpConfigurable httpConfigurable, @Nullable String url) {
-    if (!httpConfigurable.USE_HTTP_PROXY) {
-      return false;
-    }
-    URI uri = url != null ? VfsUtil.toUri(url) : null;
-    return uri == null || !isProxyException(httpConfigurable, uri.getHost());
-  }
-
-  public static boolean isProxyException(HttpConfigurable httpConfigurable, @org.jetbrains.annotations.Nullable String uriHost) {
-    if (StringUtil.isEmptyOrSpaces(uriHost) || StringUtil.isEmptyOrSpaces(httpConfigurable.PROXY_EXCEPTIONS)) {
-      return false;
-    }
-
-    List<String> hosts = StringUtil.split(httpConfigurable.PROXY_EXCEPTIONS, ",");
-    for (String hostPattern : hosts) {
-      String regexpPattern = StringUtil.escapeToRegexp(hostPattern.trim()).replace("\\*", ".*");
-      if (Pattern.compile(regexpPattern).matcher(uriHost).matches()) {
-        return true;
-      }
-    }
-
-    return false;
   }
 
   public static String pluralize(String str, long i) {

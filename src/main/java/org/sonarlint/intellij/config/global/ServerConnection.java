@@ -28,10 +28,16 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
+import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
+import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
+import org.sonarsource.sonarlint.core.serverapi.HttpClient;
+import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 
 import static icons.SonarLintIcons.ICON_SONARCLOUD_16;
 import static icons.SonarLintIcons.ICON_SONARQUBE_16;
+import static org.sonarlint.intellij.util.SonarLintUtils.isBlank;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.
@@ -162,6 +168,26 @@ public class ServerConnection {
 
   public String getName() {
     return name;
+  }
+
+  public EndpointParams getEndpointParams() {
+    return new EndpointParams(getHostUrl(), isSonarCloud(), getOrganizationKey());
+  }
+
+  public HttpClient getHttpClient() {
+    return ApacheHttpClient.getDefault().withCredentials(getApacheCredentials());
+  }
+
+  private UsernamePasswordCredentials getApacheCredentials() {
+    String userToken = getToken();
+    String userName = !isBlank(userToken) ? userToken : getLogin();
+    String userPassword = getPassword();
+    char[] passwordArray = userPassword == null ? null : userPassword.toCharArray();
+    return userName == null ? null : new UsernamePasswordCredentials(userName,  passwordArray);
+  }
+
+  public ServerApi api() {
+    return new ServerApi(getEndpointParams(), getHttpClient());
   }
 
   @Override

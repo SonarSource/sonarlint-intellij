@@ -29,7 +29,6 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.ui.SonarLintConsole
-import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
@@ -70,7 +69,8 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val relativePath = project.getRelativePathOf(file) ?: return
 
     val serverConnection = bindingManager.serverConnection
-    bindingManager.connectedEngine.downloadServerIssues(SonarLintUtils.getServerConfiguration(serverConnection), projectBinding, relativePath, null)
+    bindingManager.connectedEngine.downloadServerIssues(serverConnection.endpointParams,
+      serverConnection.httpClient, projectBinding, relativePath, true, null)
   }
 
   fun presentTaintVulnerabilitiesForOpenFiles() {

@@ -29,6 +29,7 @@ import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyZeroInteractions
 import org.mockito.junit.MockitoJUnitRunner
@@ -43,8 +44,9 @@ import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarsource.sonarlint.core.client.api.common.TextRange
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot
-import org.sonarsource.sonarlint.core.client.api.connected.WsHelper
+import org.sonarsource.sonarlint.core.serverapi.ServerApi
+import org.sonarsource.sonarlint.core.serverapi.hotspot.HotspotApi
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
 import java.util.Optional
 
 const val FILE_PATH = "com/sonarsource/sample/MyFile.java"
@@ -52,124 +54,144 @@ const val CONNECTED_URL = "serverUrl"
 const val PROJECT_KEY = "projectKey"
 const val HOTSPOT_KEY = "hotspotKey"
 
-private fun aRemoteHotspot(textRange: TextRange): RemoteHotspot {
-    return RemoteHotspot("Very hotspot",
-            FILE_PATH,
-            textRange,
-            "author",
-            RemoteHotspot.Status.TO_REVIEW,
-            null,
-            RemoteHotspot.Rule("rulekey", "rulename", "category", RemoteHotspot.Rule.Probability.HIGH, "", "", ""))
+private fun aRemoteHotspot(textRange: TextRange): ServerHotspot {
+  return ServerHotspot(
+    "Very hotspot",
+    FILE_PATH,
+    textRange,
+    "author",
+    ServerHotspot.Status.TO_REVIEW,
+    null,
+    ServerHotspot.Rule("rulekey", "rulename", "category", ServerHotspot.Rule.Probability.HIGH, "", "", "")
+  )
 }
 
 @RunWith(MockitoJUnitRunner::class)
 class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
-    @Mock
-    lateinit var projectBindingAssistant: ProjectBindingAssistant
-    @Mock
-    lateinit var wsHelper: WsHelper
-    @Mock
-    lateinit var toolWindow: SonarLintToolWindow
-    @Mock
-    lateinit var highlighter: EditorDecorator
-    @Mock
-    private lateinit var telemetry: SonarLintTelemetry
+  @Mock
+  lateinit var projectBindingAssistant: ProjectBindingAssistant
 
-    private lateinit var requestHandler: SecurityHotspotShowRequestHandler
+  @Mock
+  lateinit var toolWindow: SonarLintToolWindow
 
-    @Before
-    fun prepare() {
-        requestHandler = SecurityHotspotShowRequestHandler(projectBindingAssistant, wsHelper, telemetry)
-        replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
-        replaceProjectService(EditorDecorator::class.java, highlighter)
-        clearNotifications()
-    }
+  @Mock
+  lateinit var highlighter: EditorDecorator
 
-    @Test
-    fun it_should_inform_telemetry_that_a_request_is_received() {
-        requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
+  @Mock
+  private lateinit var telemetry: SonarLintTelemetry
 
-        verify(telemetry).showHotspotRequestReceived()
-    }
+  private lateinit var requestHandler: SecurityHotspotShowRequestHandler
 
-    @Test
-    fun it_should_do_nothing_when_there_is_no_bound_project() {
-        `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(null)
+  @Before
+  fun prepare() {
+    requestHandler = SecurityHotspotShowRequestHandler(projectBindingAssistant, telemetry)
+    replaceProjectService(SonarLintToolWindow::class.java, toolWindow)
+    replaceProjectService(EditorDecorator::class.java, highlighter)
+    clearNotifications()
+  }
 
-        requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
+  @Test
+  fun it_should_inform_telemetry_that_a_request_is_received() {
+    requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-        verifyZeroInteractions(wsHelper)
-    }
+    verify(telemetry).showHotspotRequestReceived()
+  }
 
-    @Test
-    fun it_should_show_a_balloon_notification_when_an_error_occurs_when_fetching_hotspot_details() {
-        val connection = ServerConnection.newBuilder().setHostUrl(CONNECTED_URL).build()
-        `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
-        `when`(wsHelper.getHotspot(any(), any())).thenReturn(Optional.empty())
+  @Test
+  fun it_should_do_nothing_when_there_is_no_bound_project() {
+    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(null)
 
-        requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
+    requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-        assertThat(projectNotifications)
-          .extracting("title", "content")
-          .containsExactly(tuple("Error opening security hotspot", "Cannot fetch hotspot details. Server is unreachable or credentials are invalid."))
-    }
+    verifyZeroInteractions(toolWindow)
+  }
 
-    @Test
-    fun it_should_partially_display_a_hotspot_and_a_balloon_notification_if_file_is_not_found() {
-        val connection = ServerConnection.newBuilder().setHostUrl(CONNECTED_URL).build()
-        `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
-        val remoteHotspot = aRemoteHotspot(TextRange(1, 14, 1, 20))
-        `when`(wsHelper.getHotspot(any(), any())).thenReturn(Optional.of(remoteHotspot))
+  @Test
+  fun it_should_show_a_balloon_notification_when_an_error_occurs_when_fetching_hotspot_details() {
+    val connection = aServerConnectionReturningHotspot(null)
+    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
 
-        requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
+    requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-        verify(toolWindow).show(eq(LocalHotspot(Location(null, null, "Very hotspot", "MyFile.java"), remoteHotspot)))
-        verifyZeroInteractions(highlighter)
-        assertThat(projectNotifications)
-          .extracting("title", "content")
-          .containsExactly(tuple("Error opening security hotspot", "Cannot find hotspot file in the project."))
-    }
+    assertThat(projectNotifications)
+      .extracting("title", "content")
+      .containsExactly(
+        tuple(
+          "Error opening security hotspot",
+          "Cannot fetch hotspot details. Server is unreachable or credentials are invalid."
+        )
+      )
+  }
 
-    @Test
-    fun it_should_open_a_hotspot_file_if_found() {
-        val connection = ServerConnection.newBuilder().setHostUrl(CONNECTED_URL).build()
-        `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
-        val remoteHotspot = aRemoteHotspot(TextRange(1, 14, 1, 20))
-        `when`(wsHelper.getHotspot(any(), any())).thenReturn(Optional.of(remoteHotspot))
-        val file = myFixture.copyFileToProject(FILE_PATH)
+  @Test
+  fun it_should_partially_display_a_hotspot_and_a_balloon_notification_if_file_is_not_found() {
+    val remoteHotspot = aRemoteHotspot(TextRange(1, 14, 1, 20))
+    val connection = aServerConnectionReturningHotspot(remoteHotspot)
+    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
 
-        requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
+    requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-        val localHotspotCaptor = ArgumentCaptor.forClass(LocalHotspot::class.java)
-        verify(toolWindow).show(localHotspotCaptor.capture())
-        val localHotspot = localHotspotCaptor.value
-        assertThat(localHotspot.primaryLocation.file).isEqualTo(file)
-        assertThat(localHotspot.primaryLocation.range)
-                .extracting("startOffset", "endOffset")
-                .containsOnly(14, 20)
-        verify(highlighter).highlight(localHotspot)
-        assertThat(FileEditorManager.getInstance(project).openFiles)
-                .extracting<String, RuntimeException> { obj: VirtualFile -> obj.name }
-                .containsOnly("MyFile.java")
-    }
+    verify(toolWindow).show(eq(LocalHotspot(Location(null, null, "Very hotspot", "MyFile.java"), remoteHotspot)))
+    verifyZeroInteractions(highlighter)
+    assertThat(projectNotifications)
+      .extracting("title", "content")
+      .containsExactly(tuple("Error opening security hotspot", "Cannot find hotspot file in the project."))
+  }
 
-    @Test
-    fun it_should_show_a_balloon_notification_when_the_text_range_does_not_match() {
-        val connection = ServerConnection.newBuilder().setHostUrl(CONNECTED_URL).build()
-        `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
-        val remoteHotspot = aRemoteHotspot(TextRange(10, 14, 10, 20))
-        `when`(wsHelper.getHotspot(any(), any())).thenReturn(Optional.of(remoteHotspot))
-        val file = myFixture.copyFileToProject(FILE_PATH)
+  @Test
+  fun it_should_open_a_hotspot_file_if_found() {
+    val remoteHotspot = aRemoteHotspot(TextRange(1, 14, 1, 20))
+    val connection = aServerConnectionReturningHotspot(remoteHotspot)
+    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
+    val file = myFixture.copyFileToProject(FILE_PATH)
 
-        requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
+    requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-        val localHotspotCaptor = ArgumentCaptor.forClass(LocalHotspot::class.java)
-        verify(toolWindow).show(localHotspotCaptor.capture())
-        val (primaryLocation) = localHotspotCaptor.value
-        assertThat(primaryLocation.file).isEqualTo(file)
-        assertThat(primaryLocation.range).isNull()
-        assertThat(projectNotifications)
-          .extracting("title", "content")
-          .containsExactly(tuple("Error opening security hotspot", "The local source code does not match the branch/revision analyzed by SonarQube"))
-    }
+    val localHotspotCaptor = ArgumentCaptor.forClass(LocalHotspot::class.java)
+    verify(toolWindow).show(localHotspotCaptor.capture())
+    val localHotspot = localHotspotCaptor.value
+    assertThat(localHotspot.primaryLocation.file).isEqualTo(file)
+    assertThat(localHotspot.primaryLocation.range)
+      .extracting("startOffset", "endOffset")
+      .containsOnly(14, 20)
+    verify(highlighter).highlight(localHotspot)
+    assertThat(FileEditorManager.getInstance(project).openFiles)
+      .extracting<String, RuntimeException> { obj: VirtualFile -> obj.name }
+      .containsOnly("MyFile.java")
+  }
+
+  @Test
+  fun it_should_show_a_balloon_notification_when_the_text_range_does_not_match() {
+    val remoteHotspot = aRemoteHotspot(TextRange(10, 14, 10, 20))
+    val connection = aServerConnectionReturningHotspot(remoteHotspot)
+    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
+    val file = myFixture.copyFileToProject(FILE_PATH)
+
+    requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
+
+    val localHotspotCaptor = ArgumentCaptor.forClass(LocalHotspot::class.java)
+    verify(toolWindow).show(localHotspotCaptor.capture())
+    val (primaryLocation) = localHotspotCaptor.value
+    assertThat(primaryLocation.file).isEqualTo(file)
+    assertThat(primaryLocation.range).isNull()
+    assertThat(projectNotifications)
+      .extracting("title", "content")
+      .containsExactly(
+        tuple(
+          "Error opening security hotspot",
+          "The local source code does not match the branch/revision analyzed by SonarQube"
+        )
+      )
+  }
+
+  private fun aServerConnectionReturningHotspot(serverHotspot: ServerHotspot?): ServerConnection {
+    val serverConnection = mock(ServerConnection::class.java)
+    `when`(serverConnection.hostUrl).thenReturn(CONNECTED_URL)
+    val serverApi = mock(ServerApi::class.java)
+    `when`(serverConnection.api()).thenReturn(serverApi)
+    val hotspotApi = mock(HotspotApi::class.java)
+    `when`(serverApi.hotspot()).thenReturn(hotspotApi)
+    `when`(hotspotApi.fetch(any())).thenReturn(Optional.ofNullable(serverHotspot))
+    return serverConnection
+  }
 }

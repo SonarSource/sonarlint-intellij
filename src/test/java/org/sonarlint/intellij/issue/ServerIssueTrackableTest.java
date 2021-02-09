@@ -22,6 +22,7 @@ package org.sonarlint.intellij.issue;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
@@ -91,6 +92,12 @@ public class ServerIssueTrackableTest {
 
     @Override public String getFilePath() {
       return "filePath";
+    }
+
+    @Nullable
+    @Override
+    public String getCodeSnippet() {
+      return "snippet";
     }
 
     @Override public String severity() {
