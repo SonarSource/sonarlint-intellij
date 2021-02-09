@@ -35,8 +35,8 @@ import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
+import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -92,12 +92,12 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void testServerIssueTracking() throws InvalidBindingException {
+  public void testServerIssueTracking() {
     VirtualFile file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
     ServerIssue serverIssue = mock(ServerIssue.class);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_BINDING), eq(FOO_PHP), eq(null)))
+    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), eq(null)))
       .thenReturn(Collections.singletonList(serverIssue));
 
     // run
@@ -131,7 +131,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
-    verify(engine).downloadServerIssues(any(ServerConfiguration.class), eq(PROJECT_KEY), eq(null));
+    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), eq(true), eq(null));
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }

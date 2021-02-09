@@ -60,7 +60,7 @@ import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
+import org.sonarsource.sonarlint.core.serverapi.project.ServerProject;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
@@ -139,7 +139,7 @@ public class SonarLintProjectBindPanel {
    * Assumes that it's bound and a server is selected
    */
   @CheckForNull
-  private Map<String, RemoteProject> downloadProjectList(ServerConnection selectedConnection) {
+  private Map<String, ServerProject> downloadProjectList(ServerConnection selectedConnection) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     SonarLintEngineManager core = SonarLintUtils.getService(SonarLintEngineManager.class);
@@ -235,7 +235,7 @@ public class SonarLintProjectBindPanel {
         if (selectedConnection == null) {
           return;
         }
-        Map<String, RemoteProject> map = downloadProjectList(selectedConnection);
+        Map<String, ServerProject> map = downloadProjectList(selectedConnection);
         if (map != null) {
           SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map, selectedConnection.isSonarCloud());
           if (dialog.showAndGet()) {

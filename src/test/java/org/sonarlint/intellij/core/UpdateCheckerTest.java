@@ -27,7 +27,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -73,13 +72,13 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     StorageUpdateCheckResult result = mock(StorageUpdateCheckResult.class);
     when(result.needUpdate()).thenReturn(false);
 
-    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any())).thenReturn(result);
-    when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any())).thenReturn(result);
+    when(engine.checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any())).thenReturn(result);
+    when(engine.checkIfGlobalStorageNeedUpdate(any(), any(), any())).thenReturn(result);
 
     updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
 
-    verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any());
-    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any());
+    verify(engine).checkIfGlobalStorageNeedUpdate(any(), any(), any());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any());
 
     verifyZeroInteractions(notifications);
   }
@@ -90,13 +89,13 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     when(result.needUpdate()).thenReturn(true);
     when(result.changelog()).thenReturn(Collections.singletonList("change1"));
 
-    when(engine.checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any())).thenReturn(result);
-    when(engine.checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any())).thenReturn(result);
+    when(engine.checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any())).thenReturn(result);
+    when(engine.checkIfGlobalStorageNeedUpdate(any(), any(), any())).thenReturn(result);
 
     updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
 
-    verify(engine).checkIfGlobalStorageNeedUpdate(any(ServerConfiguration.class), any());
-    verify(engine).checkIfProjectStorageNeedUpdate(any(ServerConfiguration.class), anyString(), any());
+    verify(engine).checkIfGlobalStorageNeedUpdate(any(), any(), any());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any());
     verify(notifications).notifyServerHasUpdates("serverId", engine, server, false);
 
     verifyNoMoreInteractions(engine);

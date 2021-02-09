@@ -44,18 +44,18 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteProject;
+import org.sonarsource.sonarlint.core.serverapi.project.ServerProject;
 
 public class SearchProjectKeyDialog extends DialogWrapper {
-  private final Map<String, RemoteProject> projectsByKey;
+  private final Map<String, ServerProject> projectsByKey;
   private final boolean isSonarCloud;
 
   private String lastSelectedProjectKey;
   private JPanel contentPane;
   private JBScrollPane scrollPane;
-  private JBList<RemoteProject> projectList;
+  private JBList<ServerProject> projectList;
 
-  public SearchProjectKeyDialog(Component parent, String selectedProjectKey, Map<String, RemoteProject> projectsByKey, boolean isSonarCloud) {
+  public SearchProjectKeyDialog(Component parent, String selectedProjectKey, Map<String, ServerProject> projectsByKey, boolean isSonarCloud) {
     super(parent, false);
     this.lastSelectedProjectKey = selectedProjectKey;
     this.projectsByKey = projectsByKey;
@@ -77,7 +77,7 @@ public class SearchProjectKeyDialog extends DialogWrapper {
 
   @CheckForNull
   public String getSelectedProjectKey() {
-    RemoteProject project = projectList.getSelectedValue();
+    ServerProject project = projectList.getSelectedValue();
     return project == null ? null : project.getKey();
   }
 
@@ -90,14 +90,14 @@ public class SearchProjectKeyDialog extends DialogWrapper {
     projectList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     projectList.setVisibleRowCount(10);
     projectList.setBorder(IdeBorderFactory.createBorder());
-    new ListSpeedSearch<>(projectList, (Function<RemoteProject, String>) o -> o.getName() + " " + o.getKey());
+    new ListSpeedSearch<>(projectList, (Function<ServerProject, String>) o -> o.getName() + " " + o.getKey());
 
     scrollPane = new JBScrollPane(projectList);
 
   }
 
-  private void setProjectsInList(Collection<RemoteProject> projects) {
-    Comparator<RemoteProject> projectComparator = (o1, o2) -> {
+  private void setProjectsInList(Collection<ServerProject> projects) {
+    Comparator<ServerProject> projectComparator = (o1, o2) -> {
       int c1 = o1.getName().compareToIgnoreCase(o2.getName());
       if (c1 != 0) {
         return c1;
@@ -105,24 +105,24 @@ public class SearchProjectKeyDialog extends DialogWrapper {
       return o1.getKey().compareToIgnoreCase(o2.getKey());
     };
 
-    List<RemoteProject> sortedProjects = projects.stream()
+    List<ServerProject> sortedProjects = projects.stream()
       .sorted(projectComparator)
       .collect(Collectors.toList());
 
-    RemoteProject selected = null;
+    ServerProject selected = null;
     if (lastSelectedProjectKey != null) {
       selected = sortedProjects.stream()
         .filter(project -> lastSelectedProjectKey.equals(project.getKey()))
         .findAny().orElse(null);
     }
-    CollectionListModel<RemoteProject> projectListModel = new CollectionListModel<>(sortedProjects);
+    CollectionListModel<ServerProject> projectListModel = new CollectionListModel<>(sortedProjects);
 
     projectList.setModel(projectListModel);
     projectList.setCellRenderer(new ProjectListRenderer());
     setSelectedProject(selected);
   }
 
-  private void setSelectedProject(@Nullable RemoteProject selected) {
+  private void setSelectedProject(@Nullable ServerProject selected) {
     if (selected != null) {
       projectList.setSelectedValue(selected, true);
     } else if (!projectList.isEmpty() && lastSelectedProjectKey == null) {
@@ -140,8 +140,8 @@ public class SearchProjectKeyDialog extends DialogWrapper {
   /**
    * Render projects in combo box
    */
-  private static class ProjectListRenderer extends ColoredListCellRenderer<RemoteProject> {
-    @Override protected void customizeCellRenderer(JList list, @Nullable RemoteProject value, int index, boolean selected, boolean hasFocus) {
+  private static class ProjectListRenderer extends ColoredListCellRenderer<ServerProject> {
+    @Override protected void customizeCellRenderer(JList list, @Nullable ServerProject value, int index, boolean selected, boolean hasFocus) {
       if (value == null) {
         // should never happen
         return;

@@ -27,7 +27,7 @@ import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarsource.sonarlint.core.client.api.common.TextRange;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot;
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 import static org.sonarlint.intellij.issue.LocationKt.fileOnlyLocation;
 import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
@@ -43,19 +43,19 @@ public class SecurityHotspotMatcher {
     issueMatcher = new IssueMatcher(project);
   }
 
-  public LocalHotspot match(RemoteHotspot remoteHotspot) {
-    return new LocalHotspot(matchLocation(remoteHotspot), remoteHotspot);
+  public LocalHotspot match(ServerHotspot serverHotspot) {
+    return new LocalHotspot(matchLocation(serverHotspot), serverHotspot);
   }
 
-  public Location matchLocation(RemoteHotspot remoteHotspot) {
+  public Location matchLocation(ServerHotspot serverHotspot) {
     for (VirtualFile contentRoot : ProjectRootManager.getInstance(project)
       .getContentRoots()) {
-      VirtualFile matchedFile = contentRoot.findFileByRelativePath(remoteHotspot.filePath);
+      VirtualFile matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
       if (matchedFile != null) {
-        return matchTextRange(matchedFile, remoteHotspot.textRange, remoteHotspot.message);
+        return matchTextRange(matchedFile, serverHotspot.textRange, serverHotspot.message);
       }
     }
-    return unknownLocation(remoteHotspot.message, remoteHotspot.filePath);
+    return unknownLocation(serverHotspot.message, serverHotspot.filePath);
   }
 
   private Location matchTextRange(VirtualFile matchedFile, TextRange textRange, String message) {

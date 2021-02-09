@@ -94,15 +94,22 @@ configurations {
 
 val sonarlintCoreVersion: String by project
 val typescriptVersion: String by project
+val jettyVersion: String by project
 
 dependencies {
     // Don't change to implementation until https://github.com/JetBrains/gradle-intellij-plugin/issues/239 is fixed
     compile("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     compile("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
+    compile ("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
+        exclude(module = "slf4j-api")
+    }
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.16.1")
     testImplementation("org.mockito:mockito-core:2.19.0")
+    testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
+    testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
+    testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:6.11.0.24617@jar")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:7.1.0.14721@jar")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.15.0.7197@jar")

@@ -107,7 +107,6 @@ open class NettyServer {
         bossGroup.shutdownGracefully()
         workerGroup.shutdownGracefully()
     }
-
 }
 
 class ServerInitializer : ChannelInitializer<SocketChannel?>() {

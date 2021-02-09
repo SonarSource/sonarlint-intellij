@@ -54,7 +54,6 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 import org.sonarsource.sonarlint.core.client.api.exceptions.DownloadException;
 
@@ -67,8 +66,6 @@ public class ServerIssueUpdater implements Disposable {
   private static final int THREADS_NUM = 5;
   private static final int QUEUE_LIMIT = 100;
   private static final int FETCH_ALL_ISSUES_THRESHOLD = 10;
-  private static final int CONNECTION_TIMEOUT = 5_000;
-  private static final int READ_TIMEOUT = 2 * 60_000;
   private final Project myProject;
 
   private final ExecutorService executorService;
@@ -242,9 +239,8 @@ public class ServerIssueUpdater implements Disposable {
 
     public void downloadAllServerIssues(String projectKey) {
       try {
-        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
         LOGGER.debug("fetchServerIssues projectKey=" + projectKey);
-        engine.downloadServerIssues(serverConfiguration, projectKey, null);
+        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, true, null);
       } catch (DownloadException e) {
         SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -270,9 +266,8 @@ public class ServerIssueUpdater implements Disposable {
 
     private List<ServerIssue> fetchServerIssuesForFile(ProjectBinding projectBinding, String relativePath) {
       try {
-        ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server, CONNECTION_TIMEOUT, READ_TIMEOUT);
         LOGGER.debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
-        return engine.downloadServerIssues(serverConfiguration, projectBinding, relativePath, null);
+        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, true,null);
       } catch (DownloadException e) {
         SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());

@@ -40,7 +40,6 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.ui.SonarLintConsole
-import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime
@@ -85,9 +84,9 @@ class ProjectServerNotificationsSubscriber : Disposable {
       .filter { !it.isDisableNotifications }
       .ifPresent {
         eventListener = EventListener(it.isSonarCloud, it.name)
-        val config = createConfiguration(Settings.getSettingsFor(project), it)
         try {
-          if (notificationsService.isSupported(config.serverConfiguration().get())) {
+          if (notificationsService.isSupported(it)) {
+            val config = createConfiguration(Settings.getSettingsFor(project), it)
             notificationsService.register(config)
           }
         } catch (e: Exception) {
@@ -109,7 +108,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
 
   private fun createConfiguration(settings: SonarLintProjectSettings, server: ServerConnection): NotificationConfiguration {
     val projectKey = settings.projectKey
-    return NotificationConfiguration(eventListener, notificationTime, projectKey, Supplier { SonarLintUtils.getServerConfiguration(server) })
+    return NotificationConfiguration(eventListener, notificationTime, projectKey, Supplier { server.endpointParams }, Supplier { server.httpClient })
   }
 
   /**

@@ -31,74 +31,71 @@ import org.sonarlint.intellij.core.SecurityHotspotMatcher
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
-import org.sonarsource.sonarlint.core.WsHelperImpl
-import org.sonarsource.sonarlint.core.client.api.connected.GetSecurityHotspotRequestParams
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot
-import org.sonarsource.sonarlint.core.client.api.connected.WsHelper
+import org.sonarsource.sonarlint.core.serverapi.hotspot.GetSecurityHotspotRequestParams
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
 
 const val NOTIFICATION_TITLE = "Error opening security hotspot"
 
-const val FETCHING_HOTSPOT_ERROR_MESSAGE = "Cannot fetch hotspot details. Server is unreachable or credentials are invalid."
+const val FETCHING_HOTSPOT_ERROR_MESSAGE =
+  "Cannot fetch hotspot details. Server is unreachable or credentials are invalid."
 const val NOT_MATCHING_CODE_MESSAGE = "The local source code does not match the branch/revision analyzed by SonarQube"
 const val FILE_NOT_FOUND_MESSAGE = "Cannot find hotspot file in the project."
 
 open class SecurityHotspotShowRequestHandler(
-        private val projectBindingAssistant: ProjectBindingAssistant = ProjectBindingAssistant("Opening Security Hotspot..."),
-        private val wsHelper: WsHelper = WsHelperImpl(),
-        private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java)
+  private val projectBindingAssistant: ProjectBindingAssistant = ProjectBindingAssistant("Opening Security Hotspot..."),
+  private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java)
 ) {
 
-    open fun open(projectKey: String, hotspotKey: String, serverUrl: String) {
-        telemetry.showHotspotRequestReceived()
-        doOpen(projectKey, hotspotKey, serverUrl)
-    }
+  open fun open(projectKey: String, hotspotKey: String, serverUrl: String) {
+    telemetry.showHotspotRequestReceived()
+    doOpen(projectKey, hotspotKey, serverUrl)
+  }
 
-    private fun doOpen(projectKey: String, hotspotKey: String, serverUrl: String) {
-        val (project, connection) = projectBindingAssistant.bind(projectKey, serverUrl) ?: return
+  private fun doOpen(projectKey: String, hotspotKey: String, serverUrl: String) {
+    val (project, connection) = projectBindingAssistant.bind(projectKey, serverUrl) ?: return
 
-        val balloonRetryAction = RetryAction { doOpen(projectKey, hotspotKey, serverUrl) }
-        val remoteHotspot = fetchHotspot(connection, hotspotKey, projectKey) ?: run {
-            showBalloon(project, FETCHING_HOTSPOT_ERROR_MESSAGE, balloonRetryAction)
-            return
-        }
-        val localHotspot = SecurityHotspotMatcher(project).match(remoteHotspot)
-        display(project, localHotspot, balloonRetryAction)
+    val balloonRetryAction = RetryAction { doOpen(projectKey, hotspotKey, serverUrl) }
+    val serverHotspot = fetchHotspot(connection, hotspotKey, projectKey) ?: run {
+      showBalloon(project, FETCHING_HOTSPOT_ERROR_MESSAGE, balloonRetryAction)
+      return
     }
+    val localHotspot = SecurityHotspotMatcher(project).match(serverHotspot)
+    display(project, localHotspot, balloonRetryAction)
+  }
 
-    private fun fetchHotspot(connection: ServerConnection, hotspotKey: String, projectKey: String): RemoteHotspot? {
-        val serverConfiguration = SonarLintUtils.getServerConfiguration(connection)
-        val params = GetSecurityHotspotRequestParams(hotspotKey, projectKey)
-        return wsHelper.getHotspot(serverConfiguration, params).orElse(null)
-    }
+  private fun fetchHotspot(connection: ServerConnection, hotspotKey: String, projectKey: String): ServerHotspot? {
+    val params = GetSecurityHotspotRequestParams(hotspotKey, projectKey)
+    return connection.api().hotspot().fetch(params).orElse(null)
+  }
 
-    private fun display(project: Project, localHotspot: LocalHotspot, retryAction: RetryAction) {
-        val highlighter = getService(project, EditorDecorator::class.java)
-        getService(project, SonarLintToolWindow::class.java).show(localHotspot)
-        if (localHotspot.primaryLocation.file != null) {
-            openFile(project, localHotspot.primaryLocation)
-            highlighter.highlight(localHotspot)
-            if (localHotspot.primaryLocation.range == null) {
-                showBalloon(project, NOT_MATCHING_CODE_MESSAGE, retryAction)
-            }
-        } else {
-            showBalloon(project, FILE_NOT_FOUND_MESSAGE, retryAction)
-        }
+  private fun display(project: Project, localHotspot: LocalHotspot, retryAction: RetryAction) {
+    val highlighter = getService(project, EditorDecorator::class.java)
+    getService(project, SonarLintToolWindow::class.java).show(localHotspot)
+    if (localHotspot.primaryLocation.file != null) {
+      openFile(project, localHotspot.primaryLocation)
+      highlighter.highlight(localHotspot)
+      if (localHotspot.primaryLocation.range == null) {
+        showBalloon(project, NOT_MATCHING_CODE_MESSAGE, retryAction)
+      }
+    } else {
+      showBalloon(project, FILE_NOT_FOUND_MESSAGE, retryAction)
     }
+  }
 
-    open fun showBalloon(project: Project, message: String, action: AnAction) {
-        val notification = SecurityHotspotNotifications.GROUP.createNotification(
-                NOTIFICATION_TITLE,
-                message,
-                NotificationType.ERROR, null)
-        notification.isImportant = true
-        notification.addAction(action)
-        notification.notify(project)
-    }
+  open fun showBalloon(project: Project, message: String, action: AnAction) {
+    val notification = SecurityHotspotNotifications.GROUP.createNotification(
+      NOTIFICATION_TITLE,
+      message,
+      NotificationType.ERROR, null
+    )
+    notification.isImportant = true
+    notification.addAction(action)
+    notification.notify(project)
+  }
 
-    private fun openFile(project: Project, location: Location) {
-        OpenFileDescriptor(project, location.file!!, location.range?.startOffset ?: 0)
-                .navigate(true)
-    }
+  private fun openFile(project: Project, location: Location) {
+    OpenFileDescriptor(project, location.file!!, location.range?.startOffset ?: 0)
+      .navigate(true)
+  }
 }

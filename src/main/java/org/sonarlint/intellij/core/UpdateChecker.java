@@ -37,7 +37,6 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -80,37 +79,38 @@ public class UpdateChecker implements Disposable {
 
     try {
       List<String> changelog = new ArrayList<>();
-      ServerConnection server = projectBindingManager.getServerConnection();
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
-      log.log("Check for updates from server '" + server.getName() + "'...", LogOutput.Level.INFO);
+      ServerConnection serverConnection = projectBindingManager.getServerConnection();
+      log.log("Check for updates from server '" + serverConnection.getName() + "'...", LogOutput.Level.INFO);
       progressIndicator.setIndeterminate(false);
       progressIndicator.setFraction(0.0);
-      boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConfiguration, progressIndicator);
+      boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConnection, progressIndicator);
       SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
-      log.log("Check for updates from server '" + server.getName() +
+      log.log("Check for updates from server '" + serverConnection.getName() +
         "' for project '" + projectSettings.getProjectKey() + "'...", LogOutput.Level.INFO);
       progressIndicator.setFraction(0.8);
-      checkForProjectUpdates(changelog, engine, serverConfiguration, progressIndicator);
+      checkForProjectUpdates(changelog, engine, serverConnection, progressIndicator);
       if (!changelog.isEmpty()) {
         changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
         SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
-        notifications.notifyServerHasUpdates(projectSettings.getConnectionName(), engine, server, !hasGlobalUpdates);
+        notifications.notifyServerHasUpdates(projectSettings.getConnectionName(), engine, serverConnection, !hasGlobalUpdates);
       }
     } catch (Exception e) {
       log.log("There was an error while checking for updates: " + e.getMessage(), LogOutput.Level.WARN);
     }
   }
 
-  private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, ProgressIndicator indicator) {
-    StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConfiguration, getSettingsFor(myProject).getProjectKey(),
+  private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator) {
+    StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConnection.getEndpointParams(), serverConnection.getHttpClient(),
+      getSettingsFor(myProject).getProjectKey(),
       new TaskProgressMonitor(indicator, myProject));
     if (projectUpdateCheckResult.needUpdate()) {
       changelog.addAll(projectUpdateCheckResult.changelog());
     }
   }
 
-  private boolean checkForGlobalUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConfiguration serverConfiguration, ProgressIndicator indicator) {
-    StorageUpdateCheckResult checkForUpdateResult = engine.checkIfGlobalStorageNeedUpdate(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
+  private boolean checkForGlobalUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator) {
+    StorageUpdateCheckResult checkForUpdateResult = engine.checkIfGlobalStorageNeedUpdate(serverConnection.getEndpointParams(), serverConnection.getHttpClient(),
+      new TaskProgressMonitor(indicator, myProject));
     if (checkForUpdateResult.needUpdate()) {
       changelog.addAll(checkForUpdateResult.changelog());
       return true;

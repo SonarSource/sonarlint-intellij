@@ -20,44 +20,41 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.Disposable;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener;
-import org.sonarsource.sonarlint.core.notifications.ServerNotifications;
+import org.sonarsource.sonarlint.core.notifications.ServerNotificationsRegistry;
 
 public class ServerNotificationsService implements Disposable {
-  private ServerNotifications coreServerNotifications;
+
+  private final ServerNotificationsRegistry serverNotificationsRegistry;
+
+  public ServerNotificationsService() {
+    serverNotificationsRegistry = new ServerNotificationsRegistry();
+  }
 
   public static ServerNotificationsService get() {
     return SonarLintUtils.getService(ServerNotificationsService.class);
   }
 
   public void register(NotificationConfiguration configuration) {
-    getServerNotifications().register(configuration);
+    serverNotificationsRegistry.register(configuration);
   }
 
   public void unregister(ServerNotificationListener notificationListener) {
-    if (coreServerNotifications != null) {
-      getServerNotifications().remove(notificationListener);
-    }
+    serverNotificationsRegistry.remove(notificationListener);
   }
 
-  public boolean isSupported(ServerConfiguration serverConfiguration) {
-    return getServerNotifications().isSupported(serverConfiguration);
-  }
-
-  private ServerNotifications getServerNotifications() {
-    if (coreServerNotifications == null) {
-      coreServerNotifications = ServerNotifications.get();
-    }
-    return coreServerNotifications;
+  public boolean isSupported(ServerConnection serverConnection) {
+    return ServerNotificationsRegistry.isSupported(
+      serverConnection.getEndpointParams(),
+      serverConnection.getHttpClient()
+    );
   }
 
   @Override
   public void dispose() {
-    if (coreServerNotifications != null) {
-      coreServerNotifications.stop();
-    }
+    serverNotificationsRegistry.stop();
   }
 }

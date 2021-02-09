@@ -25,12 +25,8 @@ import com.intellij.openapi.progress.Task;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.WsHelperImpl;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
+import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 
 /**
  * Only useful for SonarCloud
@@ -39,7 +35,7 @@ public class GetOrganizationsTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final ServerConnection connection;
   private Exception exception;
-  private List<RemoteOrganization> organizations;
+  private List<ServerOrganization> organizations;
 
   public GetOrganizationsTask(ServerConnection connection) {
     super(null, "Fetch organizations from SonarCloud", true);
@@ -52,9 +48,7 @@ public class GetOrganizationsTask extends Task.Modal {
     indicator.setIndeterminate(false);
 
     try {
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(connection);
-      WsHelper wsHelper = new WsHelperImpl();
-      organizations = wsHelper.listUserOrganizations(serverConfiguration, new TaskProgressMonitor(indicator, myProject));
+      organizations = connection.api().organization().listUserOrganizations(new TaskProgressMonitor(indicator, myProject));
     } catch (Exception e) {
       LOGGER.info("Failed to fetch organizations", e);
       exception = e;
@@ -65,7 +59,7 @@ public class GetOrganizationsTask extends Task.Modal {
     return exception;
   }
 
-  public List<RemoteOrganization> organizations() {
+  public List<ServerOrganization> organizations() {
     return organizations;
   }
 

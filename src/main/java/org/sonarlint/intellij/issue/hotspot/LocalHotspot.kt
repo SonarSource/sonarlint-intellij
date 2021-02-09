@@ -20,22 +20,24 @@
 package org.sonarlint.intellij.issue.hotspot
 
 import org.sonarlint.intellij.issue.Location
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
 
-data class LocalHotspot(val primaryLocation: Location, val remote: RemoteHotspot) {
-    val filePath: String = remote.filePath
+data class LocalHotspot(val primaryLocation: Location, private val serverHotspot: ServerHotspot) {
+    val filePath: String = serverHotspot.filePath
 
-    val message: String = remote.message
+    val message: String = serverHotspot.message
 
-    val ruleKey: String = remote.rule.key
+    val ruleKey: String = serverHotspot.rule.key
 
-    val author: String = remote.author
+    val author: String = serverHotspot.author
 
-    val statusDescription: String = remote.status.description + if (remote.resolution == null) "" else " as " + remote.resolution.description
+    val statusDescription: String = serverHotspot.status.description + if (serverHotspot.resolution == null) "" else " as " + serverHotspot.resolution.description
 
-    val probability: RemoteHotspot.Rule.Probability = remote.rule.vulnerabilityProbability
+    val probability: ServerHotspot.Rule.Probability = serverHotspot.rule.vulnerabilityProbability
 
-    val category: String = remote.rule.securityCategory
+    val category: String = serverHotspot.rule.securityCategory
 
-    val lineNumber: Int? = remote.textRange.startLine
+    val lineNumber: Int? = serverHotspot.textRange.startLine
+
+    val rule: ServerHotspot.Rule = serverHotspot.rule
 }

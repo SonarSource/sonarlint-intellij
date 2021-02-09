@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.config.global;
 
 import org.junit.Test;
+import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -111,5 +113,21 @@ public class ServerConnectionTest {
 
     assertThat(builder.build().getPassword()).isEqualTo("pass");
     assertThat(builder.build().getToken()).isEqualTo("token");
+  }
+
+  @Test
+  public void testEndpointParams() {
+    ServerConnection server = ServerConnection.newBuilder()
+      .setHostUrl("http://myhost")
+      .setEnableProxy(false)
+      .setToken("token")
+      .setOrganizationKey("org")
+      .build();
+
+    EndpointParams endpointParams = server.getEndpointParams();
+
+    assertThat(endpointParams.getBaseUrl()).isEqualTo("http://myhost");
+    assertThat(endpointParams.getOrganization()).isEmpty();
+    assertThat(endpointParams.isSonarCloud()).isFalse();
   }
 }

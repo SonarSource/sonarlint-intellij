@@ -36,13 +36,13 @@ import javax.swing.tree.TreeCellRenderer;
 import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.nodes.HotspotNode;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteHotspot.Rule.Probability;
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 class HotspotCellRenderer implements TreeCellRenderer {
 
   private static final int HORIZONTAL_PADDING = 15;
 
-  private static final Map<Probability, JBColor> colorsByProbability = new EnumMap<>(Probability.class);
+  private static final Map<ServerHotspot.Rule.Probability, JBColor> colorsByProbability = new EnumMap<>(ServerHotspot.Rule.Probability.class);
 
   private static final int RED = 0xd4333f;
   private static final int ORANGE = 0xed7d20;
@@ -52,9 +52,9 @@ class HotspotCellRenderer implements TreeCellRenderer {
   private final JBColor whiteForeground = new JBColor(WHITE, WHITE);
 
   static {
-    colorsByProbability.put(Probability.HIGH, new JBColor(RED, RED));
-    colorsByProbability.put(Probability.MEDIUM, new JBColor(ORANGE, ORANGE));
-    colorsByProbability.put(Probability.LOW, new JBColor(YELLOW, YELLOW));
+    colorsByProbability.put(ServerHotspot.Rule.Probability.HIGH, new JBColor(RED, RED));
+    colorsByProbability.put(ServerHotspot.Rule.Probability.MEDIUM, new JBColor(ORANGE, ORANGE));
+    colorsByProbability.put(ServerHotspot.Rule.Probability.LOW, new JBColor(YELLOW, YELLOW));
   }
 
   @Override

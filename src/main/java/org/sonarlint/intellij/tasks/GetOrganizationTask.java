@@ -25,12 +25,8 @@ import com.intellij.openapi.progress.Task;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.WsHelperImpl;
-import org.sonarsource.sonarlint.core.client.api.connected.RemoteOrganization;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerConfiguration;
-import org.sonarsource.sonarlint.core.client.api.connected.WsHelper;
+import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 
 public class GetOrganizationTask extends Task.Modal {
   private static final Logger LOGGER = Logger.getInstance(GetOrganizationTask.class);
@@ -38,7 +34,7 @@ public class GetOrganizationTask extends Task.Modal {
   private final String organizationKey;
 
   private Exception exception;
-  private Optional<RemoteOrganization> organization = Optional.empty();
+  private Optional<ServerOrganization> organization = Optional.empty();
 
   public GetOrganizationTask(ServerConnection server, String organizationKey) {
     super(null, "Fetch Organization From SonarCloud", true);
@@ -52,10 +48,8 @@ public class GetOrganizationTask extends Task.Modal {
     indicator.setIndeterminate(false);
 
     try {
-      ServerConfiguration serverConfiguration = SonarLintUtils.getServerConfiguration(server);
       indicator.setText("Searching organization");
-      WsHelper wsHelper = new WsHelperImpl();
-      organization = wsHelper.getOrganization(serverConfiguration, organizationKey, new TaskProgressMonitor(indicator, myProject));
+      organization = server.api().organization().getOrganization(organizationKey, new TaskProgressMonitor(indicator, myProject));
     } catch (Exception e) {
       LOGGER.info("Failed to fetch information", e);
       exception = e;
@@ -66,7 +60,7 @@ public class GetOrganizationTask extends Task.Modal {
     return exception;
   }
 
-  public Optional<RemoteOrganization> organization() {
+  public Optional<ServerOrganization> organization() {
     return organization;
   }
 }
