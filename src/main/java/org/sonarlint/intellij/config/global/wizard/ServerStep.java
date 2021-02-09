@@ -62,7 +62,6 @@ public class ServerStep extends AbstractWizardStepEx {
   private JLabel sonarqubeIcon;
   private JEditorPane sonarcloudText;
   private JEditorPane sonarqubeText;
-  private JCheckBox proxyCheck;
   private JButton proxyButton;
   private ErrorPainter errorPainter;
 
@@ -105,11 +104,8 @@ public class ServerStep extends AbstractWizardStepEx {
       });
     }
 
-    proxyCheck.setMnemonic('y');
-    proxyCheck.setEnabled(HttpConfigurable.getInstance().USE_HTTP_PROXY);
     proxyButton.addActionListener(evt -> {
       HttpConfigurable.editConfigurable(panel);
-      proxyCheck.setEnabled(HttpConfigurable.getInstance().USE_HTTP_PROXY);
     });
 
     load(editing);
