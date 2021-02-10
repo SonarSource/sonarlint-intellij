@@ -22,7 +22,6 @@ package org.sonarlint.intellij.http
 import com.intellij.util.net.ssl.CertificateManager
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jetty.http.HttpVersion
-import org.eclipse.jetty.proxy.ProxyServlet
 import org.eclipse.jetty.server.HttpConfiguration
 import org.eclipse.jetty.server.HttpConnectionFactory
 import org.eclipse.jetty.server.Server
@@ -36,20 +35,26 @@ import org.eclipse.jetty.util.ssl.SslContextFactory
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import java.io.IOException
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.nio.file.Paths
+import javax.servlet.http.HttpServlet
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
-@Ignore("Not fully working")
+private const val SERVER_KEYSTORE = "server.p12"
+private const val SERVER_KEYSTORE_PASSWORD = "pwdServerP12"
+private const val SERVER_TRUSTSTORE_WITH_CLIENT_CA = "server-with-client-ca.p12"
+private const val SERVER_TRUSTSTORE_WITH_CLIENT_CA_PASSWORD = "pwdServerWithClientCA"
+
 class SSLTest : AbstractSonarLintLightTests() {
   @Before
   fun removeCertificatesFromStore() {
     val trustManager = CertificateManager.getInstance().customTrustManager
-//    trustManager.certificates.forEach { trustManager.removeCertificate(it) }
+    trustManager.certificates.forEach { trustManager.removeCertificate(it) }
   }
 
   @After
@@ -60,132 +65,22 @@ class SSLTest : AbstractSonarLintLightTests() {
   }
 
   @Test
-  fun simple_analysis_with_server_and_client_certificate() {
-    startSSLTransparentReverseProxy(false)
+  fun can_connect_to_https_server_with_custom_certificate() {
+    val httpsPort = startSSLTransparentReverseProxy(false)
 
-    val customTrustManager = CertificateManager.getInstance().customTrustManager
-    customTrustManager.addCertificate("$testDataPath/ca.crt")
-//    customTrustManager.addCertificate("$testDataPath/ca-client-auth.crt")
-//    customTrustManager.addCertificate("$testDataPath/client.pem")
-//    customTrustManager.addCertificate("$testDataPath/server.crt")
-    customTrustManager.addCertificate("$testDataPath/server.pem")
+    // IntelliJ automatically accepts the server certificate when in unit test mode
+    val response = ApacheHttpClient.default.post("https://localhost:$httpsPort/echo", "text/plain", "Hello")
 
-    val response = ApacheHttpClient.default.get("https://localhost:$httpsPort/")
-
-    assertThat(response.isSuccessful).isTrue()
+    assertThat(response.isSuccessful).isTrue
+    assertThat(response.bodyAsString()).isEqualTo("Hello")
   }
 
-//  @Test
-//  fun simple_analysis_with_server_and_client_certificate() {
-//    startSSLTransparentReverseProxy(true)
-//    val scanner = SimpleScanner()
-//    var buildResult: BuildResult = scanner.executeSimpleProject(project("js-sample"), "https://localhost:" + httpsPort)
-//    assertThat(buildResult.getLastStatus()).isNotEqualTo(0)
-//    assertThat(buildResult.getLogs()).contains("javax.net.ssl.SSLHandshakeException")
-//    val clientTruststore = Paths.get(SSLTest::class.java.getResource(KEYSTORE_CLIENT_WITH_CA).toURI()).toAbsolutePath()
-//    assertThat(clientTruststore).exists()
-//    val clientKeystore = Paths.get(SSLTest::class.java.getResource(CLIENT_KEYSTORE).toURI()).toAbsolutePath()
-//    assertThat(clientKeystore).exists()
-//    val params: MutableMap<String, String> = HashMap()
-//    // In the truststore we have the CA allowing to connect to local TLS server
-//    params["javax.net.ssl.trustStore"] = clientTruststore.toString()
-//    params["javax.net.ssl.trustStorePassword"] = CLIENT_WITH_CA_KEYSTORE_PASSWORD
-//    // The KeyStore is storing the certificate to identify the user
-//    params["javax.net.ssl.keyStore"] = clientKeystore.toString()
-//    params["javax.net.ssl.keyStorePassword"] = CLIENT_KEYSTORE_PASSWORD
-//    buildResult = scanner.executeSimpleProject(project("js-sample"), "https://localhost:" + httpsPort, params)
-//    assertThat(buildResult.getLastStatus()).isEqualTo(0)
-//  }
-//
-//  @Test
-//  fun simple_analysis_with_server_and_without_client_certificate_is_failing() {
-//    startSSLTransparentReverseProxy(true)
-//    val scanner = SimpleScanner()
-//    var buildResult: BuildResult = scanner.executeSimpleProject(project("js-sample"), "https://localhost:" + httpsPort)
-//    assertThat(buildResult.getLastStatus()).isNotEqualTo(0)
-//    assertThat(buildResult.getLogs()).contains("javax.net.ssl.SSLHandshakeException")
-//    val clientTruststore = Paths.get(SSLTest::class.java.getResource(KEYSTORE_CLIENT_WITH_CA).toURI()).toAbsolutePath()
-//    assertThat(clientTruststore).exists()
-//    val clientKeystore = Paths.get(SSLTest::class.java.getResource(CLIENT_KEYSTORE).toURI()).toAbsolutePath()
-//    assertThat(clientKeystore).exists()
-//    val params: MutableMap<String, String> = HashMap()
-//    // In the truststore we have the CA allowing to connect to local TLS server
-//    params["javax.net.ssl.trustStore"] = clientTruststore.toString()
-//    params["javax.net.ssl.trustStorePassword"] = CLIENT_WITH_CA_KEYSTORE_PASSWORD
-//    // Voluntary missing client keystore
-//    buildResult = scanner.executeSimpleProject(project("js-sample"), "https://localhost:" + httpsPort, params)
-//    assertThat(buildResult.getLastStatus()).isEqualTo(1)
-//
-//    // different exception is thrown depending on the JDK version. See: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8172163
-//    assertThat(buildResult.getLogs())
-//      .matches({ p ->
-//        (p.matches(
-//          "(?s).*org\\.sonarsource\\.scanner\\.api\\.internal\\.ScannerException: Unable to execute SonarScanner analysis.*" +
-//            "Caused by: javax\\.net\\.ssl\\.SSLException: Broken pipe \\(Write failed\\).*"
-//        )
-//          ||
-//          p.matches(
-//            "(?s).*org\\.sonarsource\\.scanner\\.api\\.internal\\.ScannerException: Unable to execute SonarScanner analysis.*" +
-//              "Caused by: javax\\.net\\.ssl\\.SSLProtocolException: Broken pipe \\(Write failed\\).*"
-//          )
-//          ||
-//          p.matches(
-//            "(?s).*org\\.sonarsource\\.scanner\\.api\\.internal\\.ScannerException: Unable to execute SonarScanner analysis.*" +
-//              "Caused by: javax\\.net\\.ssl\\.SSLHandshakeException: Received fatal alert: bad_certificate.*"
-//          )
-//          ||
-//          p.matches(
-//            "(?s).*org\\.sonarsource\\.scanner\\.api\\.internal\\.ScannerException: Unable to execute SonarScanner analysis.*" +
-//              "Caused by: java\\.net\\.SocketException: Broken pipe \\(Write failed\\).*" +
-//              "java\\.base/sun\\.security\\.ssl\\.SSLSocketOutputRecord.*"
-//          ))
-//      })
-//  }
-//
-//  @Test
-//  fun simple_analysis_with_server_certificate_using_ca_in_truststore() {
-//    simple_analysis_with_server_certificate(KEYSTORE_CLIENT_WITH_CA, CLIENT_WITH_CA_KEYSTORE_PASSWORD)
-//  }
-//
-//  @Test
-//  fun simple_analysis_with_server_certificate_using_server_certificate_in_truststore() {
-//    simple_analysis_with_server_certificate(KEYSTORE_CLIENT_WITH_CERTIFICATE, CLIENT_WITH_CERTIFICATE_KEYSTORE_PASSWORD)
-//  }
-//
-//  private fun simple_analysis_with_server_certificate(clientTrustStore: String, keyStorePassword: String) {
-//    startSSLTransparentReverseProxy(false)
-//    val scanner = SimpleScanner()
-//    var buildResult: BuildResult = scanner.executeSimpleProject(project("js-sample"), "https://localhost:" + httpsPort)
-//    assertThat(buildResult.getLastStatus()).isNotEqualTo(0)
-//    assertThat(buildResult.getLogs()).contains("javax.net.ssl.SSLHandshakeException")
-//    val clientTruststore = Paths.get(SSLTest::class.java.getResource(clientTrustStore).toURI()).toAbsolutePath()
-//    assertThat(clientTruststore).exists()
-//    val params: MutableMap<String, String> = HashMap()
-//    params["javax.net.ssl.trustStore"] = clientTruststore.toString()
-//    params["javax.net.ssl.trustStorePassword"] = keyStorePassword
-//    buildResult = scanner.executeSimpleProject(project("js-sample"), "https://localhost:" + httpsPort, params)
-//    assertThat(buildResult.getLastStatus()).isEqualTo(0)
-//  }
-
-  // This keystore contains only the CA used to sign the server certificate
-  private val KEYSTORE_CLIENT_WITH_CA = "/SSLTest/client-with-ca.p12"
-  private val CLIENT_WITH_CA_KEYSTORE_PASSWORD = "pwdClientCAP12"
-
   // This keystore contains only the server certificate
-  private val KEYSTORE_CLIENT_WITH_CERTIFICATE = "/SSLTest/client-with-certificate.p12"
-  private val CLIENT_WITH_CERTIFICATE_KEYSTORE_PASSWORD = "pwdClientP12"
-  private val SERVER_KEYSTORE = "server.p12"
-  private val SERVER_KEYSTORE_PASSWORD = "pwdServerP12"
-  private val SERVER_TRUSTSTORE_WITH_CLIENT_CA = "server-with-client-ca.p12"
-  private val SERVER_TRUSTSTORE_WITH_CLIENT_CA_PASSWORD = "pwdServerWithClientCA"
-  private val CLIENT_KEYSTORE = "/SSLTest/client.p12"
-  private val CLIENT_KEYSTORE_PASSWORD = "pwdClientCertP12"
   private var server: Server? = null
-  private var httpsPort = 0
 
-  private fun startSSLTransparentReverseProxy(requireClientAuth: Boolean) {
+  private fun startSSLTransparentReverseProxy(requireClientAuth: Boolean): Int {
     val httpPort: Int = getNextAvailablePort()
-    httpsPort = getNextAvailablePort()
+    val httpsPort = getNextAvailablePort()
 
     // Setup Threadpool
     val threadPool = QueuedThreadPool()
@@ -241,6 +136,7 @@ class SSLTest : AbstractSonarLintLightTests() {
     sslConnector.port = httpsPort
     server!!.addConnector(sslConnector)
     server!!.start()
+    return httpsPort
   }
 
   private fun proxyHandler(): ServletContextHandler {
@@ -251,7 +147,7 @@ class SSLTest : AbstractSonarLintLightTests() {
 
   private fun newServletHandler(): ServletHandler {
     val handler = ServletHandler()
-    handler.addServletWithMapping(ProxyServlet.Transparent::class.java, "/*")
+    handler.addServletWithMapping(EchoServlet::class.java, "/echo")
     return handler
   }
 
@@ -263,4 +159,17 @@ class SSLTest : AbstractSonarLintLightTests() {
       throw IllegalStateException("Fail to find an available port on $address", e)
     }
   }
+}
+
+class EchoServlet : HttpServlet() {
+
+  override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
+    try {
+      resp.writer.write(req.reader.readText())
+//    resp.outputStream.flush()
+    } catch (e: Exception) {
+      e.printStackTrace()
+    }
+  }
+
 }
