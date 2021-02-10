@@ -21,20 +21,16 @@ package org.sonarlint.intellij.http
 
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import org.apache.hc.client5.http.auth.CredentialsProvider
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials
 import org.apache.hc.client5.http.classic.HttpClient
 import org.apache.hc.client5.http.classic.methods.HttpDelete
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase
 import org.apache.hc.client5.http.config.RequestConfig
-import org.apache.hc.client5.http.impl.DefaultSchemePortResolver
 import org.apache.hc.client5.http.impl.auth.SystemDefaultCredentialsProvider
 import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder
 import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner
-import org.apache.hc.client5.http.protocol.HttpClientContext
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder
 import org.apache.hc.core5.http.ClassicHttpResponse
 import org.apache.hc.core5.http.ContentType
@@ -44,22 +40,17 @@ import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
 import java.io.IOException
-import java.net.ProxySelector
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 
 class ApacheHttpClient private constructor(
   private val client: HttpClient,
-  credentials: UsernamePasswordCredentials? = null
+  private val login: String? = null,
+  private val password: String? = null
 ) : org.sonarsource.sonarlint.core.serverapi.HttpClient {
 
-  private val authContext: HttpClientContext = HttpClientContext.create()
-  private val proxyAuth = SystemDefaultCredentialsProvider()
-
-  init {
-    authContext.credentialsProvider = CredentialsProvider { authScope, context -> proxyAuth.getCredentials(authScope, context) ?: credentials }
-  }
-
-  fun withCredentials(credentials: UsernamePasswordCredentials?): ApacheHttpClient {
-    return ApacheHttpClient(client, credentials)
+  fun withCredentials(login: String?, password: String?): ApacheHttpClient {
+    return ApacheHttpClient(client, login, password)
   }
 
   override fun get(url: String): Response {
@@ -80,11 +71,18 @@ class ApacheHttpClient private constructor(
 
   private fun execute(httpRequest: HttpUriRequestBase): Response {
     try {
-      val httpResponse = client.execute(httpRequest, authContext)
+      login?.let { httpRequest.setHeader("Authorization", basic(login, password ?: "")) }
+      val httpResponse = client.execute(httpRequest)
       return ApacheHttpResponse(httpRequest.requestUri, httpResponse as ClassicHttpResponse)
     } catch (e: IOException) {
       throw RuntimeException("Error processing HTTP request", e)
     }
+  }
+
+  fun basic(username: String, password: String): String {
+    val usernameAndPassword = "$username:$password"
+    val encoded = Base64.getEncoder().encodeToString(usernameAndPassword.toByteArray(StandardCharsets.ISO_8859_1))
+    return "Basic $encoded"
   }
 
   companion object {
@@ -96,17 +94,19 @@ class ApacheHttpClient private constructor(
       HttpClients.custom()
         .setConnectionManager(
           PoolingHttpClientConnectionManagerBuilder.create()
-          .setSSLSocketFactory(
-            SSLConnectionSocketFactoryBuilder.create()
-            .setSslContext(CertificateManager.getInstance().sslContext)
-            .build())
-          .build())
-        .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
-        .setRoutePlanner(
-          SystemDefaultRoutePlanner(
-            DefaultSchemePortResolver.INSTANCE, CommonProxy.getInstance()
-          )
+            .setSSLSocketFactory(
+              SSLConnectionSocketFactoryBuilder.create()
+                .setSslContext(CertificateManager.getInstance().sslContext)
+                .build()
+            )
+            .build()
         )
+        .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
+
+        // proxy settings
+        .setRoutePlanner(SystemDefaultRoutePlanner(CommonProxy.getInstance()))
+        .setDefaultCredentialsProvider(SystemDefaultCredentialsProvider())
+
         .setDefaultRequestConfig(
           RequestConfig.copy(RequestConfig.DEFAULT)
             .setConnectionRequestTimeout(CONNECTION_TIMEOUT)

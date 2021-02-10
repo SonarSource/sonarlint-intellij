@@ -28,7 +28,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
-import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
@@ -175,15 +174,8 @@ public class ServerConnection {
   }
 
   public HttpClient getHttpClient() {
-    return ApacheHttpClient.getDefault().withCredentials(getApacheCredentials());
-  }
-
-  private UsernamePasswordCredentials getApacheCredentials() {
     String userToken = getToken();
-    String userName = !isBlank(userToken) ? userToken : getLogin();
-    String userPassword = getPassword();
-    char[] passwordArray = userPassword == null ? null : userPassword.toCharArray();
-    return userName == null ? null : new UsernamePasswordCredentials(userName,  passwordArray);
+    return ApacheHttpClient.getDefault().withCredentials(isBlank(userToken) ? getLogin() : userToken, getPassword());
   }
 
   public ServerApi api() {
