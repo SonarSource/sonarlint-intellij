@@ -21,13 +21,13 @@ package org.sonarlint.intellij.http
 
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import org.apache.hc.client5.http.classic.HttpClient
 import org.apache.hc.client5.http.classic.methods.HttpDelete
 import org.apache.hc.client5.http.classic.methods.HttpGet
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase
 import org.apache.hc.client5.http.config.RequestConfig
 import org.apache.hc.client5.http.impl.auth.SystemDefaultCredentialsProvider
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
 import org.apache.hc.client5.http.impl.classic.HttpClients
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder
 import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner
@@ -44,7 +44,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 
 class ApacheHttpClient private constructor(
-  private val client: HttpClient,
+  private val client: CloseableHttpClient,
   private val login: String? = null,
   private val password: String? = null
 ) : org.sonarsource.sonarlint.core.serverapi.HttpClient {
@@ -83,6 +83,10 @@ class ApacheHttpClient private constructor(
     val usernameAndPassword = "$username:$password"
     val encoded = Base64.getEncoder().encodeToString(usernameAndPassword.toByteArray(StandardCharsets.ISO_8859_1))
     return "Basic $encoded"
+  }
+
+  fun close() {
+    client.close()
   }
 
   companion object {
