@@ -21,13 +21,17 @@ package org.sonarlint.intellij.issue.vulnerabilities
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.issue.LiveIssue
+import org.sonarlint.intellij.messages.IssueStoreListener
 import org.sonarlint.intellij.ui.SonarLintConsole
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.findModuleOf
@@ -49,7 +53,11 @@ data class FoundTaintVulnerabilities(val byFile: Map<VirtualFile, Collection<Loc
 
 const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint vulnerabilities"
 
-class TaintVulnerabilitiesPresenter(private val project: Project) {
+class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreListener {
+  init {
+    val busConnection: MessageBusConnection = project.messageBus.connect()
+    busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this)
+  }
 
   fun refreshTaintVulnerabilitiesForOpenFiles(project: Project) {
     try {
@@ -93,5 +101,17 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     notification.isImportant = true
     notification.addAction(action)
     notification.notify(project)
+  }
+
+  override fun filesChanged(map: MutableMap<VirtualFile, MutableCollection<LiveIssue>>) {
+    ApplicationManager.getApplication().invokeLater {
+      refreshTaintVulnerabilitiesForOpenFiles(project)
+    }
+  }
+
+  override fun allChanged() {
+    ApplicationManager.getApplication().invokeLater {
+      refreshTaintVulnerabilitiesForOpenFiles(project)
+    }
   }
 }
