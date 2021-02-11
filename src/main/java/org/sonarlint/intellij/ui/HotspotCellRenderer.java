@@ -68,7 +68,7 @@ class HotspotCellRenderer implements TreeCellRenderer {
     Border border = BorderFactory.createEmptyBorder(0, HORIZONTAL_PADDING, 0, HORIZONTAL_PADDING);
     probabilityLabel.setBorder(border);
     probabilityLabel.setVerticalTextPosition(SwingConstants.TOP);
-    probabilityLabel.setBackground(primaryLocation.isResolved() ? colorsByProbability.get(hotspot.getProbability()) : JBColor.GRAY);
+    probabilityLabel.setBackground(primaryLocation.exists() ? colorsByProbability.get(hotspot.getProbability()) : JBColor.GRAY);
     probabilityLabel.setForeground(whiteForeground);
     probabilityLabel.setOpaque(true);
     probabilityLabel.setFont(probabilityLabel.getFont().deriveFont(probabilityLabel.getFont().getStyle() | Font.BOLD));

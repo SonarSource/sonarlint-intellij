@@ -41,15 +41,16 @@ class LocationNode(private val number: Int?, val location: Location, val associa
     if (message != null && message.isNotEmpty() && "..." != message) {
       renderer.append(message, SimpleTextAttributes.REGULAR_ATTRIBUTES)
     }
-    if (!isLocationValid()) {
+    if (!location.exists()) {
       renderer.append(" (unreachable in local code)", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
+    }
+    else if (!location.codeMatches()) {
+      renderer.append(" (local code not matching)", SimpleTextAttributes.GRAYED_SMALL_ATTRIBUTES)
     }
   }
 
-  private fun isLocationValid() = location.range != null && location.range.isValid
-
   private fun issueCoordinates(): String {
-    if (!isLocationValid()) {
+    if (!location.exists()) {
       return "(-, -) "
     }
     val rangeMarker = location.range!!
