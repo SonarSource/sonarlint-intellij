@@ -36,6 +36,8 @@ fun ContainerFixture.jbTextField() = find<JTextFieldFixture>(byXpath("//div[@cla
 
 fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JTextField']"))
 
+fun CommonContainerFixture.searchField() = textField(byXpath("//div[@class='SearchField']"))
+
 fun ActionButtonFixture.clickWhenEnabled() {
   waitFor(Duration.ofSeconds(5)) {
     isEnabled()
