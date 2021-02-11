@@ -30,6 +30,7 @@ import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
+import org.sonarlint.intellij.its.fixtures.searchField
 import org.sonarlint.intellij.its.fixtures.settingsTree
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.VisualTreeDump
@@ -57,7 +58,7 @@ open class BaseUiTest {
             click(Point(10, 10))
           }
         }
-        keyboard { enterText(className) }
+        searchField().text = className
         keyboard { enter() }
       }
     }

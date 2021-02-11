@@ -62,7 +62,6 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
   }
 
   @Test
-  @Ignore("Not passing on EAP, should fix right after")
   fun should_display_sink() = uiTest {
     importTestProject(this, "sample-java-taint-vulnerability")
     bindProjectFromPanel(this)
