@@ -131,7 +131,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-    verify(toolWindow).show(eq(LocalHotspot(Location(null, null, "Very hotspot", "MyFile.java"), remoteHotspot)))
+    verify(toolWindow).show(eq(LocalHotspot(Location(null, null, "Very hotspot", "MyFile.java", null), remoteHotspot)))
     verifyZeroInteractions(highlighter)
     assertThat(projectNotifications)
       .extracting("title", "content")

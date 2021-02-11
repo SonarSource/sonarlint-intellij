@@ -21,20 +21,22 @@ package org.sonarlint.intellij.issue
 
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.impl.source.tree.injected.changesHandler.range
 import java.nio.file.Paths
 
 fun unknownLocation(message: String?, filePath: String?): Location {
-  return Location(null, null, message, filePath?.let { Paths.get(it).fileName.toString() })
+  return Location(null, null, message, filePath?.let { Paths.get(it).fileName.toString() }, null)
 }
 
 fun fileOnlyLocation(file: VirtualFile?, message: String?): Location {
-  return Location(file, null, message)
+  return Location(file, null, message, null, null)
 }
 
-fun resolvedLocation(file: VirtualFile?, range: RangeMarker?, message: String?): Location {
-  return Location(file, range, message)
+fun resolvedLocation(file: VirtualFile?, range: RangeMarker?, message: String?, originalCode: String?): Location {
+  return Location(file, range, message, null, originalCode)
 }
 
-data class Location(val file: VirtualFile?, val range: RangeMarker?, val message: String?, val originalFileName: String? = null) {
-  val isResolved = file != null && file.isValid && range != null && range.isValid
+data class Location(val file: VirtualFile?, val range: RangeMarker?, val message: String?, val originalFileName: String? = null, val originalCode: String?) {
+  fun exists() = file != null && file.isValid && range != null && range.isValid && range.startOffset != range.endOffset
+  fun codeMatches() = exists() && (originalCode == null || originalCode == range!!.document.getText(range.range))
 }

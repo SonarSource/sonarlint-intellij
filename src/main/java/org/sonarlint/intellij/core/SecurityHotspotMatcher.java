@@ -61,7 +61,7 @@ public class SecurityHotspotMatcher {
   private Location matchTextRange(VirtualFile matchedFile, TextRange textRange, String message) {
     try {
       RangeMarker rangeMarker = issueMatcher.match(matchedFile, textRange);
-      return resolvedLocation(matchedFile, rangeMarker, message);
+      return resolvedLocation(matchedFile, rangeMarker, message, null);
     } catch (IssueMatcher.NoMatchException e) {
       return fileOnlyLocation(matchedFile, message);
     }

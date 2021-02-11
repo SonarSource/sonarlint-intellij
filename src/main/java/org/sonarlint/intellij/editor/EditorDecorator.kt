@@ -68,7 +68,7 @@ open class EditorDecorator(private val project: Project) {
 
   private fun displaySecondaryLocationNumbers(flow: Flow, selectedLocation: Location?) {
     flow.locations.forEachIndexed { index, location ->
-      drawSecondaryLocationNumbers(location.range, index + 1, selectedLocation != null && selectedLocation == location)
+      drawSecondaryLocationNumbers(location, index + 1, selectedLocation != null && selectedLocation == location)
     }
   }
 
@@ -130,13 +130,13 @@ open class EditorDecorator(private val project: Project) {
       }
   }
 
-  private fun drawSecondaryLocationNumbers(rangeMarker: RangeMarker?, index: Int, selected: Boolean) {
-    val marker = rangeMarker ?: return
-    if (!marker.isValid) {
-      return;
+  private fun drawSecondaryLocationNumbers(location: Location, index: Int, selected: Boolean) {
+    if (!location.exists()) {
+      return
     }
+    val marker = location.range!!
     getEditors(marker.document)
-      .forEach { it.inlayModel.addInlineElement(marker.startOffset, SecondaryLocationIndexRenderer(index, selected)) }
+      .forEach { it.inlayModel.addInlineElement(marker.startOffset, SecondaryLocationIndexRenderer(location, index, selected)) }
   }
 
   private fun getEditors(document: Document): List<Editor> {
@@ -163,13 +163,17 @@ open class EditorDecorator(private val project: Project) {
       .toMutableList()
   }
 
+  private fun locationInvalid(location: RangeMarker?): Boolean {
+    return location == null || !location.isValid || location.startOffset == location.endOffset
+  }
+
   private fun createHighlight(location: RangeMarker?, message: String?): Highlight? {
-    if (location == null) {
+    if (locationInvalid(location)) {
       return null
     }
     // Creating the HighlightInfo with high severity will ensure that it will override most other highlighters.
     val builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
-      .range(location.startOffset, location.endOffset)
+      .range(location!!.startOffset, location.endOffset)
       .severity(HighlightSeverity.ERROR)
       .textAttributes(SonarLintTextAttributes.SELECTED)
     if (message != null && message.isNotEmpty() && "..." != message) {

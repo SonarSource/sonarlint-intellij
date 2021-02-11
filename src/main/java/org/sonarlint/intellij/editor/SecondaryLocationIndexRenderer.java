@@ -34,6 +34,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.issue.Location;
 
 @SuppressWarnings("UseJBColor")
 public class SecondaryLocationIndexRenderer implements EditorCustomElementRenderer {
@@ -54,10 +55,12 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
   private static final JBColor INDEX_JB_COLOR = new JBColor(Color.WHITE, Color.LIGHT_GRAY);
   private static final JBColor SELECTED_INDEX_JB_COLOR = new JBColor(Color.WHITE, Color.WHITE);
 
+  private final Location location;
   private final String index;
   private final boolean selected;
 
-  public SecondaryLocationIndexRenderer(int index, boolean selected) {
+  public SecondaryLocationIndexRenderer(@NotNull Location location, int index, boolean selected) {
+    this.location = location;
     this.index = Integer.toString(index);
     this.selected = selected;
   }
@@ -78,7 +81,7 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
   @Override
   public void paint(@NotNull Inlay inlay, @NotNull Graphics g, @NotNull Rectangle targetRegion, @NotNull TextAttributes textAttributes) {
     GraphicsUtil.setupRoundedBorderAntialiasing(g);
-    g.setColor(selected ? SELECTED_BACKGROUND_JB_COLOR : BACKGROUND_JB_COLOR);
+    g.setColor(getInlayColor(location, selected));
     g.fillRoundRect(
       targetRegion.x + HORIZONTAL_MARGIN,
       targetRegion.y + VERTICAL_PADDING,
@@ -91,5 +94,12 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
     g.setFont(fontInfo.getFont());
     g.setColor(selected ? SELECTED_INDEX_JB_COLOR : INDEX_JB_COLOR);
     g.drawString(index, targetRegion.x + HORIZONTAL_PADDING + HORIZONTAL_MARGIN, targetRegion.y + fontInfo.fontMetrics().getAscent() + 2);
+  }
+
+  private static JBColor getInlayColor(Location location, boolean selected) {
+    if (!location.codeMatches()) {
+      return JBColor.LIGHT_GRAY;
+    }
+    return selected ? SELECTED_BACKGROUND_JB_COLOR : BACKGROUND_JB_COLOR;
   }
 }

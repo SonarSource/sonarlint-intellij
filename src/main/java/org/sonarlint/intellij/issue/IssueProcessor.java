@@ -201,7 +201,7 @@ public class IssueProcessor {
           TextRange textRange = loc.getTextRange();
           if (textRange != null) {
             RangeMarker range = matcher.match(psiFile, textRange);
-            matchedLocations.add(resolvedLocation(psiFile.getVirtualFile(), range, loc.getMessage()));
+            matchedLocations.add(resolvedLocation(psiFile.getVirtualFile(), range, loc.getMessage(), null));
           }
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
