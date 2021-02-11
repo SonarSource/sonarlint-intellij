@@ -22,6 +22,7 @@ package org.sonarlint.intellij.its
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
 import com.intellij.remoterobot.utils.keyboard
+import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
 import com.sonar.orchestrator.build.MavenBuild
 import com.sonar.orchestrator.container.Edition
@@ -46,6 +47,7 @@ import org.sonarqube.ws.client.WsClientFactories
 import org.sonarqube.ws.client.users.CreateRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
+import java.time.Duration
 
 
 const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
@@ -108,6 +110,8 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
           comboBox("Connection:").selectItem("Orchestrator")
           jbTextField().text = TAINT_VULNERABILITY_PROJECT_KEY
           button("OK").click()
+          // wait for binding fully established
+          waitFor(Duration.ofSeconds(10)) { !isShowing }
         }
       }
     }
