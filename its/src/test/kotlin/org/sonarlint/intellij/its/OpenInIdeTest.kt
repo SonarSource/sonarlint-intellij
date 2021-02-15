@@ -77,6 +77,9 @@ class OpenInIdeTest : BaseUiTest() {
           jTextField().text = token
           button("Next").click()
         }
+        dialog("New Connection: Configure Notifications") {
+          button("Next").click()
+        }
         dialog("New Connection: Configuration completed") {
           button("Finish").click()
         }
