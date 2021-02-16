@@ -91,7 +91,7 @@ public class SonarLintRulePanel {
   }
 
   public void setRuleKey(@Nullable String ruleKey) {
-    if(ruleKey == null) {
+    if (ruleKey == null) {
       nothingToDisplay(false);
       return;
     }
@@ -115,8 +115,7 @@ public class SonarLintRulePanel {
       if (rule instanceof StandaloneRuleDetails) {
         builder.append(renderRuleParams((StandaloneRuleDetails) rule));
       }
-      String htmlBody = builder.toString();
-      htmlBody = fixPreformattedText(htmlBody);
+      String htmlBody = fixPreformattedText(builder.toString());
 
       updateEditor(htmlBody, rule.getKey());
     } catch (InvalidBindingException e) {
@@ -252,7 +251,7 @@ public class SonarLintRulePanel {
     String defaultValue = paramDefaultValue != null ? paramDefaultValue : "(none)";
     String currentValue = getGlobalSettings().getRuleParamValue(ruleDetails.getKey(), param.name()).orElse(defaultValue);
     return "<tr class='tbody'>" +
-    // The <br/> elements are added to simulate a "vertical-align: top" (not supported by Java 11 CSS renderer)
+      // The <br/> elements are added to simulate a "vertical-align: top" (not supported by Java 11 CSS renderer)
       "<th>" + param.name() + "<br/><br/></th>" +
       "<td>" +
       paramDescription +

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue.vulnerabilities
 
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -47,8 +48,11 @@ object TaintVulnerabilitiesLoader {
   }
 
   private fun getLocalTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<LocalTaintVulnerability> {
-    return loadServerTaintVulnerabilitiesForFile(file, project, connectedEngine)
-      .map { TaintVulnerabilityMatcher(project).match(it) }
+    val vulnerabilities = loadServerTaintVulnerabilitiesForFile(file, project, connectedEngine);
+    return if (vulnerabilities.isEmpty()) emptyList()
+    else ReadAction.compute<List<LocalTaintVulnerability>, RuntimeException> {
+      vulnerabilities.map { TaintVulnerabilityMatcher(project).match(it) }
+    }
   }
 
   private fun loadServerTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<ServerIssue> {

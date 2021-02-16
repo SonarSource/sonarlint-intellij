@@ -21,9 +21,13 @@ package org.sonarlint.intellij.issue.vulnerabilities
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.GuiUtils
 import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -85,12 +89,19 @@ class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreLi
     if (project.isDisposed) {
       return
     }
-    val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
-    getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
-    if (!status.isEmpty()) {
-      // annotate the code with intention actions
-      getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
-    }
+    ProgressManager.getInstance()
+      .run(object : Task.Backgroundable(project, "Loading taint vulnerabilities...", false, ALWAYS_BACKGROUND) {
+        override fun run(indicator: ProgressIndicator) {
+          val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
+          GuiUtils.invokeLaterIfNeeded({
+            getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
+            // annotate the code with intention actions
+            if (!status.isEmpty()) {
+              getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+            }
+          }, ModalityState.defaultModalityState(), project.disposed)
+        }
+      })
   }
 
   private fun showBalloon(project: Project, message: String, action: AnAction) {
@@ -104,14 +115,10 @@ class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreLi
   }
 
   override fun filesChanged(map: MutableMap<VirtualFile, MutableCollection<LiveIssue>>) {
-    ApplicationManager.getApplication().invokeLater {
-      refreshTaintVulnerabilitiesForOpenFiles(project)
-    }
+    presentTaintVulnerabilitiesForOpenFiles()
   }
 
   override fun allChanged() {
-    ApplicationManager.getApplication().invokeLater {
-      refreshTaintVulnerabilitiesForOpenFiles(project)
-    }
+    presentTaintVulnerabilitiesForOpenFiles()
   }
 }
