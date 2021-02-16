@@ -19,13 +19,13 @@
  */
 package org.sonarlint.intellij.issue.vulnerabilities
 
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.exception.InvalidBindingException
+import org.sonarlint.intellij.ui.SonarLintConsole
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
@@ -36,8 +36,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue
 private const val SECURITY_REPOSITORY_HINT = "security"
 
 object TaintVulnerabilitiesLoader {
-
-  private val LOG = Logger.getInstance(TaintVulnerabilitiesLoader::class.java)
 
   fun getTaintVulnerabilitiesByOpenedFiles(project: Project): TaintVulnerabilitiesStatus {
     if (!getSettingsFor(project).isBindingEnabled) return NoBinding
@@ -60,7 +58,7 @@ object TaintVulnerabilitiesLoader {
       ?: throw InvalidBindingException("Module ${module.name} is not bound")
     val filePath = project.getRelativePathOf(file)
     if (filePath == null) {
-      LOG.error("Filepath for file ${file.canonicalPath} was not resolved.")
+      SonarLintConsole.get(project).debug("Filepath for file ${file.canonicalPath} was not resolved.")
       return emptyList()
     }
     return connectedEngine.getServerIssues(projectBinding, filePath)
