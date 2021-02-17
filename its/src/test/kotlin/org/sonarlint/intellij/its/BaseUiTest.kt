@@ -22,12 +22,13 @@ package org.sonarlint.intellij.its
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
 import com.intellij.remoterobot.fixtures.JListFixture
-import com.intellij.remoterobot.utils.keyboard
+import com.intellij.remoterobot.utils.waitFor
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.searchField
@@ -59,7 +60,11 @@ open class BaseUiTest {
           }
         }
         searchField().text = className
-        keyboard { enter() }
+        val fileList = jList(JListFixture.byType(), Duration.ofSeconds(5))
+        waitFor(Duration.ofSeconds(5)) { fileList.items.isNotEmpty() }
+        fileList.selectItem(fileList.items[0], false)
+        waitFor(Duration.ofSeconds(10)) { editor("$className.java").isShowing }
+        waitBackgroundTasksFinished()
       }
     }
   }
