@@ -45,14 +45,12 @@ import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.issue.vulnerabilities.FoundTaintVulnerabilities;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
-import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesLoader;
-import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.util.SonarLintSeverity;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static java.util.Collections.emptyList;
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFile;
 import static org.sonarlint.intellij.util.SonarLintUtils.isPhpLanguageRegistered;
 
@@ -65,7 +63,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     Project project = file.getProject();
-    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
+    IssueManager issueManager = getService(project, IssueManager.class);
     Collection<LiveIssue> issues = issueManager.getForFile(file.getVirtualFile());
     issues.stream()
       .filter(issue -> !issue.isResolved())
@@ -77,12 +75,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         }
       });
 
-    TaintVulnerabilitiesStatus status = TaintVulnerabilitiesLoader.INSTANCE.getTaintVulnerabilitiesByOpenedFiles(project);
-    if (!status.isEmpty()) {
-      ((FoundTaintVulnerabilities) status).getByFile()
-        .getOrDefault(file.getVirtualFile(), emptyList())
-        .forEach(vulnerability -> addAnnotation(vulnerability, holder));
-    }
+    getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
+      .getOrDefault(file.getVirtualFile(), emptyList())
+      .forEach(vulnerability -> addAnnotation(vulnerability, holder));
   }
 
   private static boolean shouldSkip(@NotNull PsiFile file) {
