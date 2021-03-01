@@ -58,6 +58,8 @@ data class FoundTaintVulnerabilities(val byFile: Map<VirtualFile, Collection<Loc
 const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint vulnerabilities"
 
 class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreListener {
+  var currentVulnerabilitiesByFile : Map<VirtualFile, Collection<LocalTaintVulnerability>> = emptyMap()
+
   init {
     val busConnection: MessageBusConnection = project.messageBus.connect()
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this)
@@ -93,6 +95,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreLi
       .run(object : Task.Backgroundable(project, "Loading taint vulnerabilities...", false, ALWAYS_BACKGROUND) {
         override fun run(indicator: ProgressIndicator) {
           val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
+          currentVulnerabilitiesByFile = if (status is FoundTaintVulnerabilities) status.byFile else emptyMap()
           GuiUtils.invokeLaterIfNeeded({
             getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
             // annotate the code with intention actions
