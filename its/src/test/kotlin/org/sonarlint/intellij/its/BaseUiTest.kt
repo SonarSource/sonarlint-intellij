@@ -139,6 +139,12 @@ open class BaseUiTest {
         deleteIdeaProjectFiles(projectName)
         selectProjectFile(projectName)
       }
+      optionalStep {
+        // from 2021.1+
+        dialog("Untrusted Maven Project", Duration.ofSeconds(5)) {
+          button("Open and Import Project").click()
+        }
+      }
       idea {
         closeTipOfTheDay()
         waitBackgroundTasksFinished()
