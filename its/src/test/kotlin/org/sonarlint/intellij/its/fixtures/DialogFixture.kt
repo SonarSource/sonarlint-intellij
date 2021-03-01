@@ -36,6 +36,13 @@ fun ContainerFixture.dialog(
   find<DialogFixture>(DialogFixture.byTitle(title), timeout).apply(function)
 }
 
+fun RemoteRobot.dialog(
+  title: String,
+  timeout: Duration = Duration.ofSeconds(20),
+  function: DialogFixture.() -> Unit = {}): DialogFixture = step("Search for dialog with title $title") {
+  find<DialogFixture>(DialogFixture.byTitle(title), timeout).apply(function)
+}
+
 @FixtureName("Dialog")
 open class DialogFixture(
   remoteRobot: RemoteRobot,
