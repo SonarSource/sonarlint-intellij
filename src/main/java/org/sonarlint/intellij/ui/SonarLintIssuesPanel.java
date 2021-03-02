@@ -28,6 +28,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
+import java.awt.EventQueue;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -89,6 +90,11 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
+    // workaround for https://youtrack.jetbrains.com/issue/IDEA-262818
+    // remove if fixed before the official 2021.1
+    if (!EventQueue.isDispatchThread()) {
+      return null;
+    }
     if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
       return SonarLintUtils.getSelectedFile(project);
     }
