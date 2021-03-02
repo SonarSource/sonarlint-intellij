@@ -48,7 +48,7 @@ object TaintVulnerabilitiesLoader {
   }
 
   private fun getLocalTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<LocalTaintVulnerability> {
-    val vulnerabilities = loadServerTaintVulnerabilitiesForFile(file, project, connectedEngine);
+    val vulnerabilities = loadServerTaintVulnerabilitiesForFile(file, project, connectedEngine)
     return if (vulnerabilities.isEmpty()) emptyList()
     else ReadAction.compute<List<LocalTaintVulnerability>, RuntimeException> {
       vulnerabilities.map { TaintVulnerabilityMatcher(project).match(it) }
@@ -65,8 +65,14 @@ object TaintVulnerabilitiesLoader {
       SonarLintConsole.get(project).debug("Filepath for file ${file.canonicalPath} was not resolved.")
       return emptyList()
     }
-    return connectedEngine.getServerIssues(projectBinding, filePath)
-      .filter { it.ruleKey().contains(SECURITY_REPOSITORY_HINT) }
-      .filter { it.resolution().isEmpty() }
+    return try {
+      connectedEngine.getServerIssues(projectBinding, filePath)
+        .filter { it.ruleKey().contains(SECURITY_REPOSITORY_HINT) }
+        .filter { it.resolution().isEmpty() }
+    } catch(e: Exception) {
+      // can happen if binding is invalid, user should already be notified
+      SonarLintConsole.get(project).debug("Unable to load server issues: " + e.message)
+      emptyList()
+    }
   }
 }
