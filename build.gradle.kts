@@ -2,8 +2,15 @@ import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.EnumSet
 import com.google.protobuf.gradle.*
+import com.jetbrains.plugin.blockmap.core.BlockMap
 import groovy.lang.GroovyObject
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
+import java.util.zip.ZipOutputStream
+import java.io.BufferedOutputStream
+import java.io.FileOutputStream
+import java.io.FileInputStream
+import java.io.BufferedInputStream
+import java.util.zip.ZipEntry
 
 plugins {
     kotlin("jvm") version "1.4.30"
@@ -15,6 +22,15 @@ plugins {
     id("com.jfrog.artifactory") version "4.11.0"
     id("com.google.protobuf") version "0.8.10"
     idea
+}
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.2")
+    }
 }
 
 group = "org.sonarsource.sonarlint.intellij"
@@ -137,6 +153,47 @@ tasks.prepareSandbox {
             into(file("$destinationDir/$pluginName/plugins"))
         }
     }
+}
+
+val buildPluginBlockmap by tasks.registering {
+    inputs.file(tasks.buildPlugin.get().archiveFile)
+    doLast {
+        val distribZip = tasks.buildPlugin.get().archiveFile.get().asFile
+        val blockMapBytes = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
+        val blockMapFile = File(distribZip.parentFile, "blockmap.json")
+        blockMapFile.writeBytes(blockMapBytes)
+        val blockMapFileZipFile = file(distribZip.absolutePath + ".blockmap.zip")
+        val blockMapFileZip = ZipOutputStream(BufferedOutputStream(FileOutputStream(blockMapFileZipFile)))
+        val data = ByteArray(1024)
+        val fi = FileInputStream(blockMapFile)
+        val origin = BufferedInputStream(fi)
+        val entry = ZipEntry(blockMapFile.name)
+        blockMapFileZip.putNextEntry(entry)
+        origin.buffered(1024).reader().forEachLine {
+            blockMapFileZip.write(data)
+        }
+        origin.close()
+        blockMapFileZip.close()
+        val blockMapFileZipArtifact = artifacts.add("archives", blockMapFileZipFile) {
+            name = project.name
+            extension = "zip.blockmap.zip"
+            type = "zip"
+            builtBy("buildPluginBlockmap")
+        }
+        val fileHash = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
+        val fileHashJsonFile = file(distribZip.absolutePath + ".hash.json")
+        fileHashJsonFile.writeText(fileHash)
+        val fileHashJsonFileArtifact = artifacts.add("archives", fileHashJsonFile) {
+            name = project.name
+            extension = "zip.hash.json"
+            type = "json"
+            builtBy("buildPluginBlockmap")
+        }
+    }
+}
+
+tasks.buildPlugin {
+    finalizedBy(buildPluginBlockmap)
 }
 
 sonarqube {
