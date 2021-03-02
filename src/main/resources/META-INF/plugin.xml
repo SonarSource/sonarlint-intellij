@@ -50,6 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.14.2 - Fix exceptions thrown during analysis and work around an issue with latest EAP.</li>
         <li>4.14.1 - Fix an error occurring after each analysis. Fix the regression on UI responsiveness.</li>
         <li>4.14 - New rules for regexp in Java, Java 15 support. All JS rules now based on the TypeScript parser. Rules improvements for PHP and Python. Support for Ruby 3.0.0. Support of Python 3.9. Investigate taint vulnerabilities detected by SonarQube 8.6+ or SonarCloud.</li>
         <li>4.13 - New or improved rules for access control or authentication in Java. Security rules for JS/TS. Support of PHP 8, improved rules. Updated Kotlin and Ruby analyzers, supporting latest language features and improved rules. Updated HTML analyzer with improved rules. Reworked server notifications. Review a Security Hotspot within its context.</li>
