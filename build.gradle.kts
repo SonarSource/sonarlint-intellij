@@ -185,7 +185,7 @@ val buildPluginBlockmap by tasks.registering {
         fileHashJsonFile.writeText(fileHash)
         val fileHashJsonFileArtifact = artifacts.add("archives", fileHashJsonFile) {
             name = project.name
-            extension = "hash.json"
+            extension = "zip.hash.json"
             type = "json"
             builtBy("buildPluginBlockmap")
         }
