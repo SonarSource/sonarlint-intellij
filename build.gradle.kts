@@ -164,17 +164,14 @@ val buildPluginBlockmap by tasks.registering {
         blockMapFile.writeBytes(blockMapBytes)
         val blockMapFileZipFile = file(distribZip.absolutePath + ".blockmap.zip")
         val blockMapFileZip = ZipOutputStream(BufferedOutputStream(FileOutputStream(blockMapFileZipFile)))
-        val data = ByteArray(1024)
         val fi = FileInputStream(blockMapFile)
         val origin = BufferedInputStream(fi)
         val entry = ZipEntry(blockMapFile.name)
         blockMapFileZip.putNextEntry(entry)
-        origin.buffered(1024).reader().forEachLine {
-            blockMapFileZip.write(data)
-        }
+        origin.copyTo(blockMapFileZip, 1024)
         origin.close()
         blockMapFileZip.close()
-        val blockMapFileZipArtifact = artifacts.add("archives", blockMapFileZipFile) {
+        artifacts.add("archives", blockMapFileZipFile) {
             name = project.name
             extension = "zip.blockmap.zip"
             type = "zip"
@@ -183,7 +180,7 @@ val buildPluginBlockmap by tasks.registering {
         val fileHash = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
         val fileHashJsonFile = file(distribZip.absolutePath + ".hash.json")
         fileHashJsonFile.writeText(fileHash)
-        val fileHashJsonFileArtifact = artifacts.add("archives", fileHashJsonFile) {
+        artifacts.add("archives", fileHashJsonFile) {
             name = project.name
             extension = "zip.hash.json"
             type = "json"
@@ -193,6 +190,7 @@ val buildPluginBlockmap by tasks.registering {
 }
 
 tasks.buildPlugin {
+
     finalizedBy(buildPluginBlockmap)
 }
 
