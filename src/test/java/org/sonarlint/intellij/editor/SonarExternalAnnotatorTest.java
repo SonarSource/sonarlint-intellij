@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.impl.AnnotationHolderImpl;
-import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.lang.annotation.AnnotationSession;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.Document;
@@ -28,9 +27,6 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -39,6 +35,10 @@ import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -60,8 +60,6 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
     replaceProjectService(IssueManager.class, store);
     when(psiFile.getTextRange()).thenReturn(psiFileRange);
     when(psiFile.getVirtualFile()).thenReturn(virtualFile);
-    when(psiFile.getFileType()).thenReturn(JavaFileType.INSTANCE);
-    when(psiFile.getProject()).thenReturn(getProject());
   }
 
   @Test

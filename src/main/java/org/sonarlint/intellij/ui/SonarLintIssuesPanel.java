@@ -90,6 +90,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements DataPro
   @Override
   public Object getData(@NonNls String dataId) {
     if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
+      // TODO should run in EDT
       return SonarLintUtils.getSelectedFile(project);
     }
 

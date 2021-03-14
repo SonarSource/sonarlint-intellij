@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
+import org.sonarlint.clion.CLionInitializer;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -68,6 +70,10 @@ public class SonarLintAnalyzer {
       pluginProps.putAll(config.configure(module));
     }
 
+    if (inCLion()) {
+      CLionInitializer.initCLion(module, myProject, filesToAnalyze, pluginProps);
+    }
+
     // configure files
     List<ClientInputFile> inputFiles = getInputFiles(module, filesToAnalyze);
 
@@ -99,6 +105,11 @@ public class SonarLintAnalyzer {
       // should not happen, as analysis should not have been submitted in this case.
       throw new IllegalStateException(e);
     }
+  }
+
+  private boolean inCLion() {
+    ApplicationInfo appInfo = ApplicationInfo.getInstance();
+    return appInfo.getVersionName().equals("CLion");
   }
 
   private List<ClientInputFile> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze) {

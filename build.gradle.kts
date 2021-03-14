@@ -1,9 +1,10 @@
+import com.google.protobuf.gradle.protobuf
+import com.google.protobuf.gradle.protoc
+import groovy.lang.GroovyObject
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.util.EnumSet
-import com.google.protobuf.gradle.*
-import groovy.lang.GroovyObject
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
+import java.util.*
 
 plugins {
     kotlin("jvm") version "1.4.30"
@@ -14,6 +15,7 @@ plugins {
     id("com.github.hierynomus.license") version "0.15.0"
     id("com.jfrog.artifactory") version "4.11.0"
     id("com.google.protobuf") version "0.8.10"
+    id("net.linguica.maven-settings") version "0.5"
     idea
 }
 
@@ -72,11 +74,17 @@ tasks.runIde {
     systemProperty("sonarlint.telemetry.disabled", "true")
 }
 
+// enable loading of credentials from Maven settings.xml:
+apply(plugin = "net.linguica.maven-settings")
+
 repositories {
     jcenter()
     mavenLocal()
     maven("https://repox.jfrog.io/repox/sonarsource") {
         content { excludeGroup("typescript") }
+        authentication {
+            create<BasicAuthentication>("basic")
+        }
     }
     ivy("https://repox.jfrog.io/repox/api/npm/npm") {
         patternLayout {
@@ -101,9 +109,10 @@ dependencies {
     compile("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     compile("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
-    compile ("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
+    compile("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
         exclude(module = "slf4j-api")
     }
+    implementation(project(":clion"))
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.16.1")
     testImplementation("org.mockito:mockito-core:2.19.0")
@@ -117,6 +126,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-kotlin-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.3.0.2534@jar")
+    "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.18.0.27772@jar")
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
 

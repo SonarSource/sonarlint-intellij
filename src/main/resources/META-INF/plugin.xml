@@ -109,22 +109,27 @@
       ]]>
     </change-notes>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-    // we need listeners registration
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  // we need listeners registration
     <idea-version since-build="183.4588.3"/>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <depends>com.intellij.modules.lang</depends>
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.lang</depends>
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="plugin-cfamily.xml">com.intellij.modules.clion</depends>
 
 
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
-        <toolWindow id="SonarLint" anchor="bottom" icon="/images/ico-sonarlint-13.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
-        <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarLint" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
-        <projectConfigurable parentId="sonarlint" displayName="Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
-        <moduleConfigurable id="SonarLint" displayName="SonarLint" instance="org.sonarlint.intellij.config.module.SonarLintModuleConfigurable"/>
+        <toolWindow id="SonarLint" anchor="bottom" icon="/images/ico-sonarlint-13.png"
+                    factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
+        <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarLint"
+                                 instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
+        <projectConfigurable parentId="sonarlint" displayName="Project Settings"
+                             instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
+        <moduleConfigurable id="SonarLint" displayName="SonarLint"
+                            instance="org.sonarlint.intellij.config.module.SonarLintModuleConfigurable"/>
         <colorSettingsPage implementation="org.sonarlint.intellij.config.SonarLintColorSettingsPage"/>
         <checkinHandlerFactory implementation="org.sonarlint.intellij.trigger.SonarLintCheckinHandlerFactory"/>
         <additionalTextAttributes scheme="Default" file="colorSchemes/SonarLintDefault.xml"/>
@@ -135,18 +140,21 @@
         <projectService serviceImplementation="org.sonarlint.intellij.actions.SonarLintToolWindow"/>
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
 
-        <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->
-        <externalAnnotator language="JAVA" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+      <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->
+      <externalAnnotator language="JAVA" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="kotlin" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="Python" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="PHP" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <!-- JavaScript is the base language for TypeScript, EcmaScript, jsx, ...-->
-        <externalAnnotator language="JavaScript" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+      <!-- JavaScript is the base language for TypeScript, EcmaScript, jsx, ...-->
+      <externalAnnotator language="JavaScript" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="ruby" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
-        <!-- XML is the base language for HTML, XHTML, ...-->
-        <externalAnnotator language="XML" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+      <!-- XML is the base language for HTML, XHTML, ...-->
+      <externalAnnotator language="XML" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="Scala" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="Swift" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="ObjectiveC" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="C" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+        <externalAnnotator language="C++" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineManager"/>
@@ -156,7 +164,7 @@
                             testServiceImplementation="org.sonarlint.intellij.util.GlobalLogOutputTestImpl"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.util.SonarLintActions"/>
         <applicationService serviceInterface="org.sonarlint.intellij.telemetry.SonarLintTelemetry"
-                            serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
+                            serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotificationsService"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
@@ -197,9 +205,9 @@
 
     <actions>
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
-        <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="false" icon="/images/ico-sonarlint-13.png">
+      <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="false" icon="/images/ico-sonarlint-13.png">
             <separator/>
-            <!-- This group is programmatically added to AnalyzeMenu if it exists -->
+        <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
 
         <action id="SonarLint.AnalyzeFiles"
