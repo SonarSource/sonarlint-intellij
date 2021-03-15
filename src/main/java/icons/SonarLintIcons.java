@@ -20,7 +20,6 @@
 package icons;
 
 import com.intellij.openapi.util.IconLoader;
-
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;

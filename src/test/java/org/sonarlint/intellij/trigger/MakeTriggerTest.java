@@ -25,8 +25,7 @@ import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;

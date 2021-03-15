@@ -37,6 +37,7 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.sonarlint.intellij.ui.HtmlUtils.fixPreformattedText;
 

@@ -21,21 +21,10 @@ package org.sonarlint.intellij.http
 
 import org.eclipse.jetty.http.HttpHeader
 import org.eclipse.jetty.proxy.ProxyServlet
-import org.eclipse.jetty.security.ConstraintMapping
-import org.eclipse.jetty.security.ConstraintSecurityHandler
-import org.eclipse.jetty.security.HashLoginService
-import org.eclipse.jetty.security.SecurityHandler
-import org.eclipse.jetty.security.ServerAuthException
-import org.eclipse.jetty.security.UserAuthentication
-import org.eclipse.jetty.security.UserStore
+import org.eclipse.jetty.security.*
 import org.eclipse.jetty.security.authentication.DeferredAuthentication
 import org.eclipse.jetty.security.authentication.LoginAuthenticator
-import org.eclipse.jetty.server.Authentication
-import org.eclipse.jetty.server.HttpConfiguration
-import org.eclipse.jetty.server.HttpConnectionFactory
-import org.eclipse.jetty.server.Server
-import org.eclipse.jetty.server.ServerConnector
-import org.eclipse.jetty.server.UserIdentity
+import org.eclipse.jetty.server.*
 import org.eclipse.jetty.server.handler.DefaultHandler
 import org.eclipse.jetty.server.handler.HandlerCollection
 import org.eclipse.jetty.servlet.ServletContextHandler

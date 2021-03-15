@@ -28,10 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Mock
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyZeroInteractions
+import org.mockito.Mockito.*
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -47,7 +44,7 @@ import org.sonarsource.sonarlint.core.client.api.common.TextRange
 import org.sonarsource.sonarlint.core.serverapi.ServerApi
 import org.sonarsource.sonarlint.core.serverapi.hotspot.HotspotApi
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
-import java.util.Optional
+import java.util.*
 
 const val FILE_PATH = "com/sonarsource/sample/MyFile.java"
 const val CONNECTED_URL = "serverUrl"
@@ -62,7 +59,8 @@ private fun aRemoteHotspot(textRange: TextRange): ServerHotspot {
     "author",
     ServerHotspot.Status.TO_REVIEW,
     null,
-    ServerHotspot.Rule("rulekey", "rulename", "category", ServerHotspot.Rule.Probability.HIGH, "", "", "")
+    ServerHotspot.Rule("rulekey", "rulename", "category", ServerHotspot.Rule.Probability.HIGH, "", "", ""),
+    ""
   )
 }
 

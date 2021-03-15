@@ -25,6 +25,7 @@ import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
+import java.util.Collections;
 import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -56,7 +57,7 @@ public class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLint
 
   @Test
   public void testClasspathIgnoreInvalidJdkEntries() {
-    final Map<String, String> props = underTest.configure(getModule());
+    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList());
     assertThat(props).containsOnlyKeys("sonar.java.source", "sonar.java.target");
   }
 

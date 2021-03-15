@@ -32,12 +32,12 @@ import com.intellij.ui.GuiUtils
 import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.issue.LiveIssue
 import org.sonarlint.intellij.messages.IssueStoreListener
-import org.sonarlint.intellij.ui.SonarLintConsole
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles

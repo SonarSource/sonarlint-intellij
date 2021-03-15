@@ -17,16 +17,24 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui;
+package org.sonarlint.intellij.common.ui;
 
 import com.intellij.execution.ui.ConsoleView;
+import com.intellij.openapi.components.ServiceManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public interface SonarLintConsole {
+
   static SonarLintConsole get(@NotNull Project p) {
-    return SonarLintUtils.getService(p, SonarLintConsole.class);
+    SonarLintConsole t = ServiceManager.getService(p, SonarLintConsole.class);
+    if (t == null) {
+      Logger.getInstance(SonarLintConsole.class).error("Could not find service: " + SonarLintConsole.class.getName());
+      throw new IllegalArgumentException("Class not found: " + SonarLintConsole.class.getName());
+    }
+
+    return t;
   }
 
   void debug(String msg);

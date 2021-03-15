@@ -24,11 +24,10 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.HeavyPlatformTestCase;
 import com.intellij.testFramework.PlatformTestUtil;
-import org.jdom.JDOMException;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.function.BooleanSupplier;
+import org.jdom.JDOMException;
+import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

@@ -37,10 +37,10 @@ import java.util.function.Supplier;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -97,7 +97,7 @@ public class SonarLintSubmitter {
       List<VirtualFile> filesToClearIssues = new ArrayList<>();
       Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, false, filesToClearIssues);
       if (!files.isEmpty()) {
-        SonarLintConsole console = SonarLintUtils.getService(myProject,SonarLintConsole.class);
+        SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
         console.debug("Trigger: " + trigger);
         SonarLintJobManager sonarLintJobManager = SonarLintUtils.getService(myProject, SonarLintJobManager.class);
         sonarLintJobManager.submitManual(filesByModule, filesToClearIssues, trigger, true, callback);

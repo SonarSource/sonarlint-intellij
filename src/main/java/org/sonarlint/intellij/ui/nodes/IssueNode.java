@@ -26,6 +26,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
+import java.util.Locale;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -33,8 +34,6 @@ import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 import org.sonarlint.intellij.util.CompoundIcon;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
-
-import java.util.Locale;
 
 import static com.intellij.ui.SimpleTextAttributes.STYLE_SMALLER;
 

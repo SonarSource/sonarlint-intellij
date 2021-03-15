@@ -14,7 +14,7 @@ import java.util.zip.ZipEntry
 
 plugins {
     kotlin("jvm") version "1.4.30"
-    id("org.jetbrains.intellij") version "0.6.5"
+    id("org.jetbrains.intellij") version "0.7.2"
     id("org.sonarqube") version "3.0"
     java
     jacoco
@@ -36,23 +36,60 @@ buildscript {
 group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
-tasks.withType<KotlinCompile> {
-    kotlinOptions {
-        jvmTarget = "1.8"
-        apiVersion = "1.3"
-    }
-}
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(8))
+// The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
+// On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_READER_USERNAME") ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_READER_PASSWORD") ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
+
+allprojects {
+    apply {
+        plugin("idea")
+        plugin("java")
+        plugin("org.jetbrains.intellij")
+    }
+
+    repositories {
+        mavenLocal()
+        maven("https://repox.jfrog.io/repox/sonarsource") {
+            content { excludeGroup("typescript") }
+            if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+                credentials {
+                    username = artifactoryUsername
+                    password = artifactoryPassword
+                }
+            }
+        }
+        ivy("https://repox.jfrog.io/repox/api/npm/npm") {
+            patternLayout {
+                artifact("[organization]/-/[module]-[revision].[ext]")
+                metadataSources { artifact() }
+            }
+            content { includeGroup("typescript") }
+        }
+    }
+
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(8))
+        }
+    }
+
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = "1.8"
+            apiVersion = "1.3"
+        }
+    }
+
+    intellij {
+        version = "IC-2020.1.3"
+        pluginName = "sonarlint-intellij"
+        updateSinceUntilBuild = false
     }
 }
 
 intellij {
-    version = "IC-2020.1.3"
-    pluginName = "sonarlint-intellij"
-    updateSinceUntilBuild = false
     setPlugins("java")
 }
 
@@ -65,7 +102,9 @@ tasks.runPluginVerifier {
                 RunPluginVerifierTask.FailureLevel.DEPRECATED_API_USAGES,
                 RunPluginVerifierTask.FailureLevel.EXPERIMENTAL_API_USAGES,
                 RunPluginVerifierTask.FailureLevel.NOT_DYNAMIC,
-                RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES
+                RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
+                // TODO Workaround for CLion
+                RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES
             )
         )
     )
@@ -88,21 +127,6 @@ tasks.runIde {
     systemProperty("sonarlint.telemetry.disabled", "true")
 }
 
-repositories {
-    jcenter()
-    mavenLocal()
-    maven("https://repox.jfrog.io/repox/sonarsource") {
-        content { excludeGroup("typescript") }
-    }
-    ivy("https://repox.jfrog.io/repox/api/npm/npm") {
-        patternLayout {
-            artifact("[organization]/-/[module]-[revision].[ext]")
-            metadataSources { artifact() }
-        }
-        content { includeGroup("typescript") }
-    }
-}
-
 configurations {
     create("sqplugins") { isTransitive = false }
     create("typescript") { isCanBeConsumed = false }
@@ -120,6 +144,8 @@ dependencies {
     compile ("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
         exclude(module = "slf4j-api")
     }
+    compile(project(":clion"))
+    compile(project(":common"))
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.16.1")
     testImplementation("org.mockito:mockito-core:2.19.0")
@@ -133,7 +159,19 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-kotlin-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.3.0.2534@jar")
+    if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.18.0.28883@jar")
+    }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
+}
+
+project(":clion") {
+    intellij {
+        version = "CL-2020.1.3"
+    }
+    dependencies {
+        compile(project(":common"))
+    }
 }
 
 tasks.prepareSandbox {
@@ -190,7 +228,6 @@ val buildPluginBlockmap by tasks.registering {
 }
 
 tasks.buildPlugin {
-
     finalizedBy(buildPluginBlockmap)
 }
 

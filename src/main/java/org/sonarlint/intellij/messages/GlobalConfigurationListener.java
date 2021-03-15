@@ -21,8 +21,8 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.util.messages.Topic;
 import java.util.List;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 public interface GlobalConfigurationListener {
   Topic<GlobalConfigurationListener> TOPIC = Topic.create("Global configuration events", GlobalConfigurationListener.class);

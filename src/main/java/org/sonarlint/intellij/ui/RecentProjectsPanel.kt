@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui
 
 import com.intellij.ide.DataManager
-import com.intellij.ide.IdeBundle
 import com.intellij.ide.ProjectGroupActionGroup
 import com.intellij.ide.RecentProjectsManager
 import com.intellij.ide.ReopenProjectAction
@@ -46,28 +45,14 @@ import com.intellij.util.SystemProperties
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.accessibility.AccessibleContextUtil
-import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Component
-import java.awt.Cursor
-import java.awt.Dimension
-import java.awt.KeyboardFocusManager
+import java.awt.*
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.nio.file.Files
 import java.nio.file.Paths
-import javax.swing.JComponent
-import javax.swing.JLabel
-import javax.swing.JList
-import javax.swing.JPanel
-import javax.swing.JRootPane
-import javax.swing.KeyStroke
-import javax.swing.ListCellRenderer
-import javax.swing.ListSelectionModel
-import javax.swing.ScrollPaneConstants
-import javax.swing.SwingConstants
+import javax.swing.*
 import javax.swing.border.LineBorder
 import kotlin.math.min
 

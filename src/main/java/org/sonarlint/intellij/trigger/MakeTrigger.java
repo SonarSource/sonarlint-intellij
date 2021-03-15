@@ -29,7 +29,7 @@ import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.util.messages.MessageBusConnection;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class MakeTrigger implements BuildManagerListener, CompilationStatusListener, StartupActivity {
