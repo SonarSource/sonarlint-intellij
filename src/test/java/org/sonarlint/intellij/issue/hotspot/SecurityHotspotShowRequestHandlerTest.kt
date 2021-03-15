@@ -62,7 +62,8 @@ private fun aRemoteHotspot(textRange: TextRange): ServerHotspot {
     "author",
     ServerHotspot.Status.TO_REVIEW,
     null,
-    ServerHotspot.Rule("rulekey", "rulename", "category", ServerHotspot.Rule.Probability.HIGH, "", "", "")
+    ServerHotspot.Rule("rulekey", "rulename", "category", ServerHotspot.Rule.Probability.HIGH, "", "", ""),
+    ""
   )
 }
 

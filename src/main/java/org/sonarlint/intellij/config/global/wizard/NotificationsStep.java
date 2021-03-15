@@ -22,10 +22,7 @@ package org.sonarlint.intellij.config.global.wizard;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.SwingHelper;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JEditorPane;
-import javax.swing.JPanel;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

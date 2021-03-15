@@ -21,15 +21,10 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
-import java.awt.CardLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.*;
 import java.time.Instant;
 import javax.annotation.Nullable;
-import javax.swing.Box;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.Timer;
+import javax.swing.*;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class LastAnalysisPanel {

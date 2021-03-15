@@ -20,8 +20,7 @@
 package org.sonarlint.intellij.config.module;
 
 import com.intellij.openapi.module.Module;
-import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.*;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 

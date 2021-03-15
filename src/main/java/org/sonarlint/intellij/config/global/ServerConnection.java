@@ -27,7 +27,7 @@ import com.intellij.util.xmlb.annotations.Tag;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import javax.swing.Icon;
+import javax.swing.*;
 import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;

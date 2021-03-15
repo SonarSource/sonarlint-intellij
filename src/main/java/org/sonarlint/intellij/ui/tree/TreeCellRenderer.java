@@ -21,7 +21,7 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.ui.ColoredTreeCellRenderer;
 import java.awt.event.MouseEvent;
-import javax.swing.JTree;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 

@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.config;
 
-import javax.swing.JComponent;
+import javax.swing.*;
 
 public interface ConfigurationPanel<T> {
   JComponent getComponent();

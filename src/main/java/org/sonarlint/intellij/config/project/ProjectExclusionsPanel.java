@@ -25,8 +25,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
+import javax.swing.*;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 
 public class ProjectExclusionsPanel implements ConfigurationPanel<SonarLintProjectSettings> {

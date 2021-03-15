@@ -21,7 +21,7 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
-import javax.swing.JComponent;
+import javax.swing.*;
 import org.jetbrains.annotations.Nullable;
 
 public class CodeAnalyzersDialog extends DialogWrapper {

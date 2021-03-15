@@ -1,0 +1,7 @@
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" allow-bundled-update="true">
+    <depends>com.intellij.modules.clion</depends>
+
+    <extensions defaultExtensionNs="org.sonarlint.idea">
+        <AnalysisConfiguration implementation="org.sonarlint.intellij.clion.CFamilyAnalysisConfigurator"/>
+    </extensions>
+</idea-plugin>
