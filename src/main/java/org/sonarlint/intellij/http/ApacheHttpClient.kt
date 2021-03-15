@@ -41,7 +41,7 @@ import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import java.util.Base64
+import java.util.*
 
 class ApacheHttpClient private constructor(
   private val client: CloseableHttpClient,

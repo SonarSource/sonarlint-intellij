@@ -23,7 +23,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.SimpleTextAttributes;
 import java.util.Objects;
-import javax.swing.Icon;
+import javax.swing.*;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class FileNode extends AbstractNode {

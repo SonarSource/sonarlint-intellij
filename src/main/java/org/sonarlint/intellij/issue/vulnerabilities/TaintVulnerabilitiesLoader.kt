@@ -22,11 +22,11 @@ package org.sonarlint.intellij.issue.vulnerabilities
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.exception.InvalidBindingException
-import org.sonarlint.intellij.ui.SonarLintConsole
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles

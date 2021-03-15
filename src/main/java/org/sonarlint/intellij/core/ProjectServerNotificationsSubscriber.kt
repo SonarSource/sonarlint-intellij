@@ -29,6 +29,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.ui.UIUtil
 import icons.SonarLintIcons
+import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
@@ -39,7 +40,6 @@ import org.sonarlint.intellij.core.SonarLintProjectNotifications.SERVER_NOTIFICA
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarlint.intellij.ui.SonarLintConsole
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime

@@ -20,7 +20,6 @@ val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 compileTestKotlin.kotlinOptions.jvmTarget = "1.8"
 
 repositories {
-    jcenter()
     mavenLocal()
     mavenCentral()
     maven("https://repox.jfrog.io/repox/sonarsource")

@@ -21,7 +21,7 @@ package org.sonarlint.intellij.config.module;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.Configurable;
-import javax.swing.JComponent;
+import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 

@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.execution.ui.ConsoleView;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class SonarLintConsoleTestImpl implements SonarLintConsole {
 

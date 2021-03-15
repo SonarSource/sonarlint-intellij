@@ -1,2 +1,2 @@
 rootProject.name = "sonarlint-intellij"
-include("its")
+include("its", "clion", "common")

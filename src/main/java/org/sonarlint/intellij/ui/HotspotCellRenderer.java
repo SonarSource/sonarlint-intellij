@@ -21,16 +21,10 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.JBColor;
-import java.awt.Component;
-import java.awt.FlowLayout;
-import java.awt.Font;
+import java.awt.*;
 import java.util.EnumMap;
 import java.util.Map;
-import javax.swing.BorderFactory;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JTree;
-import javax.swing.SwingConstants;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.tree.TreeCellRenderer;
 import org.sonarlint.intellij.issue.Location;

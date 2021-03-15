@@ -25,10 +25,9 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import com.intellij.util.ui.PlatformColors;
 import com.intellij.util.ui.UIUtil;
-import java.awt.Color;
-import java.awt.Component;
+import java.awt.*;
 import java.util.function.Supplier;
-import javax.swing.JTree;
+import javax.swing.*;
 import org.jdesktop.swingx.renderer.DefaultTreeRenderer;
 
 public class RulesTreeTableRenderer extends DefaultTreeRenderer {

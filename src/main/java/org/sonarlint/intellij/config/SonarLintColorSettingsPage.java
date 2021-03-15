@@ -31,7 +31,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
-import javax.swing.Icon;
+import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
 public class SonarLintColorSettingsPage implements ColorSettingsPage {

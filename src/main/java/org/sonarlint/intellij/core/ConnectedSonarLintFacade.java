@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;

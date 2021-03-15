@@ -23,7 +23,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static org.mockito.Mockito.mock;

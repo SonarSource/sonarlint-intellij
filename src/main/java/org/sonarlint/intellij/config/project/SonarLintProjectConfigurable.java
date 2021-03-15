@@ -27,7 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 import java.util.List;
 import javax.annotation.Nullable;
-import javax.swing.JComponent;
+import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.concurrency.Promise;
 import org.sonarlint.intellij.config.global.ServerConnection;

@@ -19,9 +19,8 @@
  */
 package org.sonarlint.intellij.util;
 
-import java.awt.Component;
-import java.awt.Graphics;
-import javax.swing.Icon;
+import java.awt.*;
+import javax.swing.*;
 
 public class CompoundIcon implements Icon {
   public enum Axis {

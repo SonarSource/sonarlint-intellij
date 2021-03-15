@@ -29,10 +29,7 @@ import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.GraphicsUtil;
-import java.awt.Color;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Rectangle;
+import java.awt.*;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.Location;
 

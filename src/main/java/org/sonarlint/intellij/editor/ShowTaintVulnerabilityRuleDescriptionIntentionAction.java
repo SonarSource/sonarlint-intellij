@@ -27,7 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
-import javax.swing.Icon;
+import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;

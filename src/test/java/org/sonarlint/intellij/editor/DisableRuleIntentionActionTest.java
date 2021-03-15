@@ -25,14 +25,13 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 import org.sonarlint.intellij.util.SonarLintUtils;
-
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
