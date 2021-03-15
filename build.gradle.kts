@@ -213,7 +213,6 @@ val buildPluginBlockmap by tasks.registering {
 }
 
 tasks.buildPlugin {
-
     finalizedBy(buildPluginBlockmap)
 }
 

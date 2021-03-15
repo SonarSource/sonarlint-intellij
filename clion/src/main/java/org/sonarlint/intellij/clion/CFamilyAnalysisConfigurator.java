@@ -1,7 +1,6 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
@@ -11,15 +10,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
-public class CLionInitializer {
+public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
-  public static void initCLion(Module module, Project project, Collection<VirtualFile> filesToAnalyze, Map<String, String> pluginProps) {
+  @Override
+  public Map<String, String> configure(Module module, Collection<VirtualFile> filesToAnalyze) {
     OCResolveConfiguration configuration = OCWorkspaceRunConfigurationListener.getSelectedResolveConfiguration(module.getProject());
     if (configuration != null) {
-      CLionConfiguration.debugAllFilesConfiguration(project.getService(SonarLintConsole.class), module, filesToAnalyze, configuration);
+      Map<String, String> result = new HashMap<>();
+      CLionConfiguration.debugAllFilesConfiguration(module.getProject().getService(SonarLintConsole.class), module, filesToAnalyze, configuration);
       String buildWrapperJson = CLionConfiguration.BuildWrapperJsonFactory.create(module.getProject(), configuration, filesToAnalyze);
 
       File buildWrapperDir;
@@ -31,8 +35,9 @@ public class CLionInitializer {
       } catch (IOException e) {
         throw new IllegalStateException(e);
       }
-      pluginProps.put("sonar.cfamily.build-wrapper-output", buildWrapperDir.getAbsolutePath());
+      result.put("sonar.cfamily.build-wrapper-output", buildWrapperDir.getAbsolutePath());
+      return result;
     }
+    return Collections.emptyMap();
   }
-
 }
