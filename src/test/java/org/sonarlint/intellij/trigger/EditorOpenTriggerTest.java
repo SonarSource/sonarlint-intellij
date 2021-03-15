@@ -28,7 +28,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
 
 public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
   private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);

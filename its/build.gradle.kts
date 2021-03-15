@@ -13,6 +13,12 @@ plugins {
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
 val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 compileKotlin.kotlinOptions.jvmTarget = "1.8"
 
@@ -20,7 +26,6 @@ val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 compileTestKotlin.kotlinOptions.jvmTarget = "1.8"
 
 repositories {
-    jcenter()
     mavenLocal()
     mavenCentral()
     maven("https://repox.jfrog.io/repox/sonarsource")
@@ -43,6 +48,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    testLogging.showStandardStreams = true
 }
 
 license {

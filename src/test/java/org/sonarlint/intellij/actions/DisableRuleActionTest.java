@@ -27,7 +27,8 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class DisableRuleActionTest extends AbstractSonarLintLightTests {
   private static final String RULE_KEY = "key";

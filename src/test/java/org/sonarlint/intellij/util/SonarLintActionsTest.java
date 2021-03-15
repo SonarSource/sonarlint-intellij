@@ -25,7 +25,6 @@ import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.RETURNS_DEEP_STUBS;

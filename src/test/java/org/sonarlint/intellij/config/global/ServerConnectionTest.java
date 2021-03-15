@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.global;
 
 import org.junit.Test;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 import static org.assertj.core.api.Assertions.assertThat;

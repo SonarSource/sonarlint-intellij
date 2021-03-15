@@ -25,7 +25,6 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import java.util.ArrayList;
 import java.util.List;
 import javax.annotation.CheckForNull;
-
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;

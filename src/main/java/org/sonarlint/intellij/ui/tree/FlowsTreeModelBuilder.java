@@ -29,8 +29,8 @@ import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
-import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
+import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
 
 public class FlowsTreeModelBuilder {

@@ -27,7 +27,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 public class TelemetryManagerProviderTest extends AbstractSonarLintLightTests {
 

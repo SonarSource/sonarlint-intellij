@@ -23,7 +23,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class SonarCleanConsoleAction extends AnAction {
   public SonarCleanConsoleAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {

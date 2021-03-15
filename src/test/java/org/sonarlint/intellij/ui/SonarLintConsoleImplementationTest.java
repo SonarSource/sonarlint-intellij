@@ -24,9 +24,12 @@ import com.intellij.execution.ui.ConsoleViewContentType;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class SonarLintConsoleImplementationTest extends AbstractSonarLintLightTests {
   private ConsoleView consoleView = mock(ConsoleView.class);

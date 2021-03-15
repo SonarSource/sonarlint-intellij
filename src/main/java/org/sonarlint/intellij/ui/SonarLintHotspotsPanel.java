@@ -25,10 +25,10 @@ import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {

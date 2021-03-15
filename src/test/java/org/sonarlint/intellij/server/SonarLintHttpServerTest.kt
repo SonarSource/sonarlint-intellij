@@ -22,11 +22,7 @@ package org.sonarlint.intellij.server
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.`when`
-import org.mockito.Mockito.anyInt
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
+import org.mockito.Mockito.*
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.eq
 
