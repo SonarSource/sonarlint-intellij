@@ -22,7 +22,6 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-
 import java.util.HashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;

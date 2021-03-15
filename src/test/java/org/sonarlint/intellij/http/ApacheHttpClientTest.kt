@@ -23,7 +23,6 @@ import com.intellij.util.net.HttpConfigurable
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import java.io.IOException

@@ -47,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -176,22 +177,22 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     CompilerConfiguration.getInstance(getProject()).setBytecodeTargetLevel(getModule(), null);
 
     IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_1_8);
-    assertThat(underTest.configure(getModule())).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "8"));
+    assertThat(underTest.configure(getModule(), Collections.emptyList())).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "8"));
 
     IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_1_9);
-    assertThat(underTest.configure(getModule())).contains(entry("sonar.java.source", "9"), entry("sonar.java.target", "9"));
+    assertThat(underTest.configure(getModule(), Collections.emptyList())).contains(entry("sonar.java.source", "9"), entry("sonar.java.target", "9"));
   }
 
   @Test
   public void testSourceAndTarget_with_different_target() {
     IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_1_8);
     CompilerConfiguration.getInstance(getProject()).setBytecodeTargetLevel(getModule(), "7");
-    assertThat(underTest.configure(getModule())).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "7"));
+    assertThat(underTest.configure(getModule(), Collections.emptyList())).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "7"));
   }
 
   @Test
   public void testClasspath() {
-    final Map<String, String> props = underTest.configure(getModule());
+    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList());
     assertThat(Stream.of(props.get("sonar.java.binaries").split(",")).map(Paths::get))
       .containsExactly(compilerOutputDirFile.toPath());
     assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))

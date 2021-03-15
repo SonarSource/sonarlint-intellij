@@ -20,15 +20,14 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.util.ui.JBUI;
-import org.sonarlint.intellij.issue.hotspot.SecurityHotspotCategory;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.issue.hotspot.SecurityHotspotCategory;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.WEST;

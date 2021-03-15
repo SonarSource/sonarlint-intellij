@@ -20,14 +20,13 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.Instant;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
-
-import java.time.Instant;
-import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

@@ -23,7 +23,6 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.extensions.PluginId;
-
 import java.nio.file.Path;
 import org.sonarlint.intellij.http.ApacheHttpClient;
 

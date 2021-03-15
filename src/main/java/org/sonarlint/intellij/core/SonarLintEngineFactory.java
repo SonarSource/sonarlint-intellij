@@ -52,7 +52,9 @@ public class SonarLintEngineFactory  {
     Language.PHP,
     Language.PYTHON,
     Language.RUBY,
-    Language.TS
+    Language.TS,
+    Language.C,
+    Language.CPP
   };
 
   private static final Language[] CONNECTED_ADDITIONAL_LANGUAGES = {

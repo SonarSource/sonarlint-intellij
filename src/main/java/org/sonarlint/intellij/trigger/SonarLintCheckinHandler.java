@@ -46,8 +46,8 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
 

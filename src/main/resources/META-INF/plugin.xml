@@ -119,6 +119,7 @@
          on how to target different products -->
     <depends>com.intellij.modules.lang</depends>
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
+    <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
 
 
     <extensions defaultExtensionNs="com.intellij">
@@ -166,7 +167,7 @@
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.SonarLintProjectNotifications"/>
-        <projectService serviceInterface="org.sonarlint.intellij.ui.SonarLintConsole"
+        <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintJobManager"/>
@@ -194,7 +195,7 @@
     </extensions>
 
     <extensionPoints>
-        <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.analysis.AnalysisConfigurator" dynamic="true"/>
+        <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.common.analysis.AnalysisConfigurator" dynamic="true"/>
     </extensionPoints>
 
     <actions>
