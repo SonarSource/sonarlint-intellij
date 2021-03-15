@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

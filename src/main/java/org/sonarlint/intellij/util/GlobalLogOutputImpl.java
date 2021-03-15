@@ -23,7 +23,7 @@ import com.intellij.openapi.project.ProjectManager;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class GlobalLogOutputImpl implements GlobalLogOutput {
 

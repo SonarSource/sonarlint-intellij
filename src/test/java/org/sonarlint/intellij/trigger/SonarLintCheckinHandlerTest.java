@@ -27,7 +27,6 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;

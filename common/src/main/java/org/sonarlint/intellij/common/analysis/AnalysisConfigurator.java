@@ -17,15 +17,17 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis;
+package org.sonarlint.intellij.common.analysis;
 
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collection;
 import java.util.Map;
 
 public interface AnalysisConfigurator {
   // Name is constructed from plugin-id.extension-point-name
   ExtensionPointName<AnalysisConfigurator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.AnalysisConfiguration");
 
-  Map<String, String> configure(Module module);
+  Map<String, String> configure(Module module, Collection<VirtualFile> filesToAnalyze);
 }

@@ -53,6 +53,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JpsJavaSdkType;
+import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
 
@@ -70,7 +71,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static final char SEPARATOR = ',';
 
   @Override
-  public Map<String, String> configure(@NotNull Module ijModule) {
+  public Map<String, String> configure(@NotNull Module ijModule, Collection<VirtualFile> filesToAnalyze) {
     JavaModuleClasspath moduleClasspath = new JavaModuleClasspath();
     moduleClasspath.dependentModules().add(ijModule);
     collectModuleClasspath(moduleClasspath, ijModule, true, false);

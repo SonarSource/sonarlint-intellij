@@ -20,11 +20,8 @@
 package org.sonarlint.intellij.ui.vulnerabilities
 
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.editor.colors.EditorColors
-import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder
 import com.intellij.ui.components.labels.ActionLink
-import com.intellij.util.ui.UIUtil
 import java.awt.FlowLayout
 import javax.swing.Icon
 import javax.swing.JLabel
