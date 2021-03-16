@@ -55,7 +55,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
   public boolean submit(@NotNull IdeaLoggingEvent[] events,
     @Nullable String additionalInfo,
     @NotNull Component parentComponent,
-    @NotNull Consumer<? super SubmittedReportInfo> consumer) {
+    @NotNull Consumer<SubmittedReportInfo> consumer) {
     StringBuilder description = new StringBuilder();
     description.append("Environment:\n");
     description.append("* Java version=").append(System.getProperty("java.version")).append("\n");

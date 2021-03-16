@@ -1,6 +1,5 @@
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import org.gradle.api.JavaVersion.VERSION_1_8
 import java.util.EnumSet
 import com.google.protobuf.gradle.*
 import com.jetbrains.plugin.blockmap.core.BlockMap
@@ -40,16 +39,13 @@ description = "SonarLint for IntelliJ IDEA"
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
-val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_READER_USERNAME")
-    ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_READER_PASSWORD")
-    ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_READER_USERNAME") ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_READER_PASSWORD") ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 allprojects {
     apply {
         plugin("idea")
         plugin("java")
-        plugin("kotlin")
         plugin("org.jetbrains.intellij")
     }
 
@@ -73,9 +69,10 @@ allprojects {
         }
     }
 
-    configure<JavaPluginConvention> {
-        sourceCompatibility = VERSION_1_8
-        targetCompatibility = VERSION_1_8
+    java {
+        toolchain {
+            languageVersion.set(JavaLanguageVersion.of(8))
+        }
     }
 
     tasks.withType<KotlinCompile> {
@@ -86,7 +83,7 @@ allprojects {
     }
 
     intellij {
-        version = "IC-2020.3.2"
+        version = "IC-2020.1.3"
         pluginName = "sonarlint-intellij"
         updateSinceUntilBuild = false
     }
@@ -142,7 +139,7 @@ dependencies {
     compile("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     compile("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
-    compile("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
+    compile ("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
         exclude(module = "slf4j-api")
     }
     compile(project(":clion"))
@@ -168,8 +165,7 @@ dependencies {
 
 project(":clion") {
     intellij {
-        version = "CL-2020.3.2"
-        setPlugins("com.intellij.cidr.base", "com.intellij.cidr.lang", "com.intellij.clion")
+        version = "CL-2020.1.3"
     }
     dependencies {
         compile(project(":common"))
@@ -199,8 +195,7 @@ val buildPluginBlockmap by tasks.registering {
     inputs.file(tasks.buildPlugin.get().archiveFile)
     doLast {
         val distribZip = tasks.buildPlugin.get().archiveFile.get().asFile
-        val blockMapBytes =
-            com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
+        val blockMapBytes = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
         val blockMapFile = File(distribZip.parentFile, "blockmap.json")
         blockMapFile.writeBytes(blockMapBytes)
         val blockMapFileZipFile = file(distribZip.absolutePath + ".blockmap.zip")
@@ -218,8 +213,7 @@ val buildPluginBlockmap by tasks.registering {
             type = "zip"
             builtBy("buildPluginBlockmap")
         }
-        val fileHash = com.fasterxml.jackson.databind.ObjectMapper()
-            .writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
+        val fileHash = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
         val fileHashJsonFile = file(distribZip.absolutePath + ".hash.json")
         fileHashJsonFile.writeText(fileHash)
         artifacts.add("archives", fileHashJsonFile) {
