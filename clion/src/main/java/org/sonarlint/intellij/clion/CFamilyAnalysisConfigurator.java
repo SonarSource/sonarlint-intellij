@@ -23,7 +23,7 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
     OCResolveConfiguration configuration = OCWorkspaceRunConfigurationListener.getSelectedResolveConfiguration(module.getProject());
     if (configuration != null) {
       Map<String, String> result = new HashMap<>();
-      CLionConfiguration.debugAllFilesConfiguration(module.getProject().getService(SonarLintConsole.class), module, filesToAnalyze, configuration);
+      CLionConfiguration.debugAllFilesConfiguration(SonarLintConsole.get(module.getProject()), module, filesToAnalyze, configuration);
       String buildWrapperJson = CLionConfiguration.BuildWrapperJsonFactory.create(module.getProject(), configuration, filesToAnalyze);
 
       File buildWrapperDir;
