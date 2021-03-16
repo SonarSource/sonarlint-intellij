@@ -23,19 +23,10 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
     OCResolveConfiguration configuration = OCWorkspaceRunConfigurationListener.getSelectedResolveConfiguration(module.getProject());
     if (configuration != null) {
       Map<String, String> result = new HashMap<>();
-      CLionConfiguration.debugAllFilesConfiguration(SonarLintConsole.get(module.getProject()), module, filesToAnalyze, configuration);
+      //CLionConfiguration.debugAllFilesConfiguration(SonarLintConsole.get(module.getProject()), module, filesToAnalyze, configuration);
       String buildWrapperJson = CLionConfiguration.BuildWrapperJsonFactory.create(module.getProject(), configuration, filesToAnalyze);
 
-      File buildWrapperDir;
-      try {
-        buildWrapperDir = FileUtil.createTempDirectory("cfamily", null);
-        Files.write(
-          new File(buildWrapperDir, "build-wrapper-dump.json").toPath(),
-          buildWrapperJson.getBytes(StandardCharsets.UTF_8));
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
-      }
-      result.put("sonar.cfamily.build-wrapper-output", buildWrapperDir.getAbsolutePath());
+      result.put("sonar.cfamily.build-wrapper-content", buildWrapperJson);
       return result;
     }
     return Collections.emptyMap();
