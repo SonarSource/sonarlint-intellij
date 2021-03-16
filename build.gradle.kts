@@ -102,7 +102,9 @@ tasks.runPluginVerifier {
                 RunPluginVerifierTask.FailureLevel.DEPRECATED_API_USAGES,
                 RunPluginVerifierTask.FailureLevel.EXPERIMENTAL_API_USAGES,
                 RunPluginVerifierTask.FailureLevel.NOT_DYNAMIC,
-                RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES
+                RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
+                // TODO Workaround for CLion
+                RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES
             )
         )
     )
