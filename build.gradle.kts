@@ -37,6 +37,11 @@ group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
 
+// The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
+// On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_READER_USERNAME") ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_READER_PASSWORD") ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
+
 allprojects {
     apply {
         plugin("idea")
@@ -48,6 +53,12 @@ allprojects {
         mavenLocal()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             content { excludeGroup("typescript") }
+            if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+                credentials {
+                    username = artifactoryUsername
+                    password = artifactoryPassword
+                }
+            }
         }
         ivy("https://repox.jfrog.io/repox/api/npm/npm") {
             patternLayout {
@@ -146,7 +157,9 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-kotlin-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.3.0.2534@jar")
-    "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.18.0.27772@jar")
+    if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.18.0.27772@jar")
+    }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
 

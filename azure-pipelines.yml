@@ -25,6 +25,8 @@ stages:
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
         fixedBranch: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
+        ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
+        ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
       steps:
       - checkout: self
         fetchDepth: 1
