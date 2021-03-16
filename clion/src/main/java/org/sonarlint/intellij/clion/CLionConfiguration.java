@@ -125,7 +125,7 @@ public class CLionConfiguration {
     compilerSettings.getHeadersSearchPaths().forEach(headersSearchPath -> console.debug(headersSearchPath.getPath()));
 
     console.debug("macros:");
-    console.debug(compilerSettings.getPreprocessorDefines());
+    compilerSettings.getPreprocessorDefines().forEach(console::debug);
 
     console.debug("implicitIncludes: ");
     compilerSettings.getImplicitIncludes().forEach(virtualFile1 -> console.debug(virtualFile1.getCanonicalPath()));
