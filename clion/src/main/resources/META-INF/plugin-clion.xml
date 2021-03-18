@@ -1,6 +1,0 @@
-<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude" allow-bundled-update="true">
-    <extensions defaultExtensionNs="org.sonarlint.idea">
-        <analysisConfiguration implementation="org.sonarlint.intellij.clion.CFamilyAnalysisConfigurator"/>
-        <languageActivator implementation="org.sonarlint.intellij.clion.CFamilyLanguageActivator"/>
-    </extensions>
-</idea-plugin>
