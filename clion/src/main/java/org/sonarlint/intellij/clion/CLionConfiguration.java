@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.clion;
 
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.CLanguageKind;
@@ -30,15 +29,11 @@ import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCLanguageKindCalculator;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
-import com.jetbrains.cidr.lang.workspace.compiler.GCCCompiler;
-import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 public class CLionConfiguration {
 
@@ -75,60 +70,6 @@ public class CLionConfiguration {
       }
     }
     return null;
-  }
-
-  static void debugAllFilesConfiguration(SonarLintConsole console, Module module, Collection<VirtualFile> filesToAnalyze, OCResolveConfiguration configuration) {
-    filesToAnalyze.forEach(virtualFile -> {
-      console.debug("##### begin");
-      console.debug("virtualFile: " + virtualFile.getPath());
-      OCLanguageKind language = configuration.getDeclaredLanguageKind(virtualFile);
-      console.debug("language1: " + language);
-
-      if (language == null) {
-        language = getDeclaredLanguageKind(module.getProject(), virtualFile);
-        console.debug("language2: " + language);
-      }
-
-      if (language != null) {
-        console.debug(language.getDisplayName());
-        OCCompilerSettings compilerSettings = configuration.getCompilerSettings(language, virtualFile);
-        debugAllSettings(console, language, compilerSettings);
-      }
-      console.debug("##### end");
-    });
-  }
-
-  private static void debugAllSettings(SonarLintConsole console, OCLanguageKind language, OCCompilerSettings compilerSettings) {
-    if (language != null) {
-      console.debug("language: " + language.getDisplayName());
-    }
-    File compilerExecutable = compilerSettings.getCompilerExecutable();
-    console.debug("compilerExecutable: " + compilerExecutable);
-    OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
-    if (compilerKind != null) {
-      console.debug("compilerKind: " + compilerKind.getDisplayName());
-    }
-    CidrCompilerSwitches switches = compilerSettings.getCompilerSwitches();
-    if (switches != null) {
-      console.debug("switches:");
-      for (String s : switches.getList(CidrCompilerSwitches.Format.RAW)) {
-        console.debug(s);
-      }
-    }
-    if (language != null) {
-      console.debug("GCCCompiler.getLanguageOption: " + GCCCompiler.getLanguageOption(language));
-    }
-    console.debug("headerSearchRoots:");
-    compilerSettings.getHeadersSearchRoots().getAllRoots().forEach(headersSearchRoot -> console.debug(headersSearchRoot.toString()));
-
-    console.debug("getHeadersSearchPaths:");
-    compilerSettings.getHeadersSearchPaths().forEach(headersSearchPath -> console.debug(headersSearchPath.getPath()));
-
-    console.debug("macros:");
-    console.debug(compilerSettings.getPreprocessorDefines());
-
-    console.debug("implicitIncludes: ");
-    compilerSettings.getImplicitIncludes().forEach(virtualFile1 -> console.debug(virtualFile1.getCanonicalPath()));
   }
 
   static class BuildWrapperJsonFactory {

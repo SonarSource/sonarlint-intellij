@@ -141,8 +141,8 @@ open class BaseUiTest {
       }
       optionalStep {
         // from 2021.1+
-        dialog("Untrusted Maven Project", Duration.ofSeconds(5)) {
-          button("Open and Import Project").click()
+        dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
+          button("Trust Project").click()
         }
       }
       idea {
