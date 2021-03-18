@@ -30,6 +30,7 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
