@@ -138,7 +138,6 @@
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
 
         <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->
-        <externalAnnotator language="JAVA" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="kotlin" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="Python" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="PHP" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
