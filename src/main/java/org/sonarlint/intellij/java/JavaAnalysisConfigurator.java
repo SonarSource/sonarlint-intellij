@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis;
+package org.sonarlint.intellij.java;
 
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
@@ -53,6 +53,7 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JpsJavaSdkType;
+import org.sonarlint.intellij.analysis.JavaModuleClasspath;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;

@@ -48,7 +48,6 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 public class SonarLintEngineFactory  {
 
   private static final Set<Language> STANDALONE_LANGUAGES = EnumSet.of(Language.HTML,
-    Language.JAVA,
     Language.JS,
     Language.KOTLIN,
     Language.PHP,
