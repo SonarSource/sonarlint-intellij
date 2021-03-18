@@ -195,7 +195,8 @@
     </extensions>
 
     <extensionPoints>
-        <extensionPoint name="AnalysisConfiguration" interface="org.sonarlint.intellij.common.analysis.AnalysisConfigurator" dynamic="true"/>
+        <extensionPoint name="analysisConfiguration" interface="org.sonarlint.intellij.common.analysis.AnalysisConfigurator" dynamic="true"/>
+        <extensionPoint name="languageActivator" interface="org.sonarlint.intellij.common.LanguageActivator" dynamic="true"/>
     </extensionPoints>
 
     <actions>

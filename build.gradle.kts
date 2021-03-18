@@ -177,6 +177,12 @@ project(":clion") {
     }
 }
 
+project(":common") {
+    dependencies {
+        compile("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    }
+}
+
 tasks.prepareSandbox {
     doLast {
         val tsBundlePath = project.configurations.get("typescript").iterator().next()

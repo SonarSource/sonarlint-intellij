@@ -21,7 +21,7 @@
 -->
 <idea-plugin>
     <extensions defaultExtensionNs="org.sonarlint.idea">
-        <AnalysisConfiguration implementation="org.sonarlint.intellij.analysis.JavaAnalysisConfigurator"/>
+        <analysisConfiguration implementation="org.sonarlint.intellij.analysis.JavaAnalysisConfigurator"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">

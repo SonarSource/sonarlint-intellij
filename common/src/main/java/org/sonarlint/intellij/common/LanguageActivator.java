@@ -17,17 +17,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.common.analysis;
+package org.sonarlint.intellij.common;
 
 import com.intellij.openapi.extensions.ExtensionPointName;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
-import java.util.Map;
+import java.util.Set;
 
-public interface AnalysisConfigurator {
+public interface LanguageActivator {
   // Name is constructed from plugin-id.extension-point-name
-  ExtensionPointName<AnalysisConfigurator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.analysisConfiguration");
+  ExtensionPointName<LanguageActivator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.languageActivator");
 
-  Map<String, String> configure(Module module, Collection<VirtualFile> filesToAnalyze);
+  void amendLanguages(Set<org.sonarsource.sonarlint.core.client.api.common.Language> enabledLanguages);
 }
