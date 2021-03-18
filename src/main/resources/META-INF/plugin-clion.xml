@@ -24,4 +24,10 @@
         <analysisConfiguration implementation="org.sonarlint.intellij.clion.CFamilyAnalysisConfigurator"/>
         <languageActivator implementation="org.sonarlint.intellij.clion.CFamilyLanguageActivator"/>
     </extensions>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- BE CAREFUL to not register the annotator twice for the same language (taking into account inheritance) or the annotation will appear multiple times -->
+        <!-- CLion was initially made only for ObjectiveC, then extended to C/C++. I guess this is why the language id is still ObjectiveC -->
+        <externalAnnotator language="ObjectiveC" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
+    </extensions>
 </idea-plugin>
