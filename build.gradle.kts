@@ -125,6 +125,9 @@ tasks.test {
 
 tasks.runIde {
     systemProperty("sonarlint.telemetry.disabled", "true")
+    if (project.hasProperty("runIdeDirectory")) {
+        ideDirectory(project.property("runIdeDirectory"))
+    }
 }
 
 configurations {
