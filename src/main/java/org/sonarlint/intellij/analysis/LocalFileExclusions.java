@@ -35,9 +35,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
-import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
+import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -103,95 +103,68 @@ public class LocalFileExclusions {
   /**
    * Checks if a file is excluded from analysis based on locally configured exclusions.
    */
-  public Result checkExclusions(VirtualFile file, Module module) {
-    Result result = checkFileInSourceFolders(file, module);
-    if (result.isExcluded) {
+  public ExcludeResult checkExclusions(VirtualFile file, Module module) {
+    ExcludeResult result = checkFileInSourceFolders(file, module);
+    if (result.isExcluded()) {
       return result;
     }
 
     String relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file);
     if (relativePath == null) {
-      return Result.excluded("Could not create a relative path");
+      return ExcludeResult.excluded("Could not create a relative path");
     }
     if (globalExclusions.test(relativePath)) {
-      return Result.excluded("file matches exclusions defined in the SonarLint Global Settings");
+      return ExcludeResult.excluded("file matches exclusions defined in the SonarLint Global Settings");
     }
     if (projectExclusions.test(relativePath)) {
-      return Result.excluded("file matches exclusions defined in the SonarLint Project Settings");
+      return ExcludeResult.excluded("file matches exclusions defined in the SonarLint Project Settings");
     }
 
-    return Result.notExcluded();
+    return ExcludeResult.notExcluded();
   }
 
-  private Result checkFileInSourceFolders(VirtualFile file, Module module) {
+  private ExcludeResult checkFileInSourceFolders(VirtualFile file, Module module) {
     ProjectFileIndex fileIndex = projectRootManager.getFileIndex();
 
     if (fileIndex.isExcluded(file)) {
-      return Result.excluded("file is excluded or ignored in IntelliJ's project structure");
+      return ExcludeResult.excluded("file is excluded or ignored in IntelliJ's project structure");
     }
 
     SourceFolder sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
     if (sourceFolder != null) {
       if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
-        return Result.excluded("file is classified as generated in IntelliJ's project structure");
+        return ExcludeResult.excluded("file is classified as generated in IntelliJ's project structure");
       }
       if (SonarLintUtils.isJavaResource(sourceFolder)) {
-        return Result.excluded("file is classified as resource in IntelliJ's project structure");
+        return ExcludeResult.excluded("file is classified as resource in IntelliJ's project structure");
       }
     }
 
     // the fact that the file doesn't explicitly belong to sources doesn't mean it's not sources.
     // In WebStorm, for example, everything is considered to be sources unless it is explicitly marked otherwise.
-    return Result.notExcluded();
+    return ExcludeResult.notExcluded();
   }
 
-  public Result canAnalyze(VirtualFile file, @Nullable Module module) {
+  public ExcludeResult canAnalyze(VirtualFile file, @Nullable Module module) {
     if (powerSaveModeCheck.getAsBoolean()) {
-      return Result.excluded("power save mode is enabled");
+      return ExcludeResult.excluded("power save mode is enabled");
     }
 
     FileType fileType = file.getFileType();
     if (module == null) {
-      return Result.excluded("file is not part of any module in IntelliJ's project structure");
+      return ExcludeResult.excluded("file is not part of any module in IntelliJ's project structure");
     }
 
     if (module.isDisposed() || module.getProject().isDisposed()) {
-      return Result.excluded("module is disposed");
+      return ExcludeResult.excluded("module is disposed");
     }
 
     if (!file.isInLocalFileSystem() || fileType.isBinary() || !file.isValid()
       || ".idea".equals(file.getParent().getName())) {
-      return Result.excluded("file's type or location are not supported");
+      return ExcludeResult.excluded("file's type or location are not supported");
     }
 
-    return Result.notExcluded();
+    return ExcludeResult.notExcluded();
   }
 
-  public static class Result {
-    private final boolean isExcluded;
-    @Nullable
-    private final String excludeReason;
-
-    private Result(boolean isExcluded, @Nullable String excludeReason) {
-      this.isExcluded = isExcluded;
-      this.excludeReason = excludeReason;
-    }
-
-    public boolean isExcluded() {
-      return isExcluded;
-    }
-
-    @CheckForNull
-    public String excludeReason() {
-      return excludeReason;
-    }
-
-    public static Result excluded(@Nullable String excludeReason) {
-      return new Result(true, excludeReason);
-    }
-
-    public static Result notExcluded() {
-      return new Result(false, null);
-    }
-  }
 }
