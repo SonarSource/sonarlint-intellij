@@ -50,6 +50,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -117,7 +118,7 @@ public class AutoTriggerStatusPanel {
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
       Module m = SonarLintAppUtils.findModuleForFile(selectedFile, project);
-      LocalFileExclusions.Result result = localFileExclusions.canAnalyze(selectedFile, m);
+      ExcludeResult result = localFileExclusions.canAnalyze(selectedFile, m);
       if (result.isExcluded()) {
         switchCard(FILE_DISABLED);
         return;

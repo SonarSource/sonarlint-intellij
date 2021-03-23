@@ -34,9 +34,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
+import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
@@ -67,6 +70,7 @@ public class SonarLintSubmitter {
 
   /**
    * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
+   *
    * @deprecated in 4.2 to silence a check in 2019.3
    */
   @Deprecated
@@ -120,10 +124,11 @@ public class SonarLintSubmitter {
   }
 
   public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback, boolean startInBackground) {
-    boolean checkExclusions = trigger != TriggerType.ACTION;
+    // If user explicitly ask to analyze a single file, we should ignore configured user exclusions
+    boolean checkUserExclusions = trigger != TriggerType.ACTION;
     try {
       List<VirtualFile> filesToClearIssues = new ArrayList<>();
-      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, checkExclusions, filesToClearIssues);
+      Map<Module, Collection<VirtualFile>> filesByModule = filterAndGetByModule(files, checkUserExclusions, filesToClearIssues);
 
       if (!files.isEmpty()) {
         SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
@@ -140,65 +145,86 @@ public class SonarLintSubmitter {
     }
   }
 
-  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkExclusions, List<VirtualFile> filesToClearIssues)
+  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkUserExclusions, List<VirtualFile> filesToClearIssues)
     throws InvalidBindingException {
     Map<Module, Collection<VirtualFile>> filesByModule = new LinkedHashMap<>();
 
     for (VirtualFile file : files) {
-      Module m = SonarLintAppUtils.findModuleForFile(file, myProject);
-      LocalFileExclusions localFileExclusions = exclusionsProvider.get();
-      LocalFileExclusions.Result result = localFileExclusions.canAnalyze(file, m);
-      if (result.isExcluded()) {
-        logExclusion(file, "excluded: " + result.excludeReason());
-        filesToClearIssues.add(file);
-        continue;
-      }
-      if (checkExclusions) {
-        // here module is not null or file would have been already excluded by canAnalyze
-        result = localFileExclusions.checkExclusions(file, m);
-        if (result.isExcluded()) {
-          if (result.excludeReason() != null) {
-            logExclusion(file, "excluded: " + result.excludeReason());
-          }
-          filesToClearIssues.add(file);
-          continue;
-        }
-      }
-
-      filesByModule.computeIfAbsent(m, mod -> new LinkedHashSet<>()).add(file);
+      checkExclusionsFileByFile(checkUserExclusions, filesToClearIssues, filesByModule, file);
     }
-    filterWithServerExclusions(checkExclusions, filesToClearIssues, filesByModule);
+    if (checkUserExclusions) {
+      // Apply server file exclusions. This is an expensive operation, so we call the core only once per module.
+      filterWithServerExclusions(filesToClearIssues, filesByModule);
+    }
 
     return filesByModule;
   }
 
-  private void filterWithServerExclusions(boolean checkExclusions, List<VirtualFile> filesToClearIssues, Map<Module, Collection<VirtualFile>> filesByModule)
+  private void checkExclusionsFileByFile(boolean checkUserExclusions, List<VirtualFile> filesToClearIssues, Map<Module, Collection<VirtualFile>> filesByModule, VirtualFile file) {
+    Module m = SonarLintAppUtils.findModuleForFile(file, myProject);
+    LocalFileExclusions localFileExclusions = exclusionsProvider.get();
+    ExcludeResult result = localFileExclusions.canAnalyze(file, m);
+    if (result.isExcluded()) {
+      logExclusionAndAddToClearList(filesToClearIssues, file, result.excludeReason());
+      return;
+    }
+    // here module is not null or file would have been already excluded by canAnalyze
+    ExcludeResult excludeResultFromEp = checkExclusionFromEP(file, m);
+    if (excludeResultFromEp.isExcluded()) {
+      logExclusionAndAddToClearList(filesToClearIssues, file, excludeResultFromEp.excludeReason());
+      return;
+    }
+    if (checkUserExclusions) {
+      result = localFileExclusions.checkExclusions(file, m);
+      if (result.isExcluded()) {
+        logExclusionAndAddToClearList(filesToClearIssues, file, result.excludeReason());
+        return;
+      }
+    }
+
+    filesByModule.computeIfAbsent(m, mod -> new LinkedHashSet<>()).add(file);
+  }
+
+  private void logExclusionAndAddToClearList(List<VirtualFile> filesToClearIssues, VirtualFile file, String s) {
+    logExclusion(file, s);
+    filesToClearIssues.add(file);
+  }
+
+  @NotNull
+  private ExcludeResult checkExclusionFromEP(VirtualFile file, Module m) {
+    ExcludeResult excludeResultFromEp = ExcludeResult.notExcluded();
+    for (FileExclusionContributor fileExclusion : FileExclusionContributor.EP_NAME.getExtensionList()) {
+      excludeResultFromEp = fileExclusion.shouldExclude(m, file);
+      if (excludeResultFromEp.isExcluded()) {
+        break;
+      }
+    }
+    return excludeResultFromEp;
+  }
+
+  private void filterWithServerExclusions(List<VirtualFile> filesToClearIssues, Map<Module, Collection<VirtualFile>> filesByModule)
     throws InvalidBindingException {
     ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
     SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
-    // Apply server file exclusions. This is an expensive operation, so we call the core only once per module.
-    if (checkExclusions) {
-      // Note: iterating over a copy of keys, because removal of last value removes the key,
-      // resulting in ConcurrentModificationException
-      List<Module> modules = new ArrayList<>(filesByModule.keySet());
-      for (Module module : modules) {
-        Collection<VirtualFile> virtualFiles = filesByModule.get(module);
-        Predicate<VirtualFile> testPredicate = f -> TestSourcesFilter.isTestSources(f, module.getProject());
-        Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
-        for (VirtualFile f : excluded) {
-          logExclusion(f, "not automatically analyzed due to exclusions configured in the bound project");
-          filesToClearIssues.add(f);
-        }
-        virtualFiles.removeAll(excluded);
-        if (virtualFiles.isEmpty()) {
-          filesByModule.remove(module);
-        }
+    // Note: iterating over a copy of keys, because removal of last value removes the key,
+    // resulting in ConcurrentModificationException
+    List<Module> modules = new ArrayList<>(filesByModule.keySet());
+    for (Module module : modules) {
+      Collection<VirtualFile> virtualFiles = filesByModule.get(module);
+      Predicate<VirtualFile> testPredicate = f -> TestSourcesFilter.isTestSources(f, module.getProject());
+      Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
+      for (VirtualFile f : excluded) {
+        logExclusionAndAddToClearList(filesToClearIssues, f, "exclusions configured in the bound project");
+      }
+      virtualFiles.removeAll(excluded);
+      if (virtualFiles.isEmpty()) {
+        filesByModule.remove(module);
       }
     }
   }
 
   private void logExclusion(VirtualFile f, String reason) {
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
-    console.debug("File '" + f.getName() + "' " + reason);
+    console.debug("File '" + f.getName() + "' excluded: " + reason);
   }
 }
