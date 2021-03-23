@@ -178,22 +178,22 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     CompilerConfiguration.getInstance(getProject()).setBytecodeTargetLevel(getModule(), null);
 
     IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_1_8);
-    assertThat(underTest.configure(getModule(), Collections.emptyList())).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "8"));
+    assertThat(underTest.configure(getModule(), Collections.emptyList()).extraProperties).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "8"));
 
     IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_1_9);
-    assertThat(underTest.configure(getModule(), Collections.emptyList())).contains(entry("sonar.java.source", "9"), entry("sonar.java.target", "9"));
+    assertThat(underTest.configure(getModule(), Collections.emptyList()).extraProperties).contains(entry("sonar.java.source", "9"), entry("sonar.java.target", "9"));
   }
 
   @Test
   public void testSourceAndTarget_with_different_target() {
     IdeaTestUtil.setModuleLanguageLevel(getModule(), LanguageLevel.JDK_1_8);
     CompilerConfiguration.getInstance(getProject()).setBytecodeTargetLevel(getModule(), "7");
-    assertThat(underTest.configure(getModule(), Collections.emptyList())).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "7"));
+    assertThat(underTest.configure(getModule(), Collections.emptyList()).extraProperties).contains(entry("sonar.java.source", "8"), entry("sonar.java.target", "7"));
   }
 
   @Test
   public void testClasspath() {
-    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList());
+    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
     assertThat(Stream.of(props.get("sonar.java.binaries").split(",")).map(Paths::get))
       .containsExactly(compilerOutputDirFile.toPath());
     assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))
