@@ -44,7 +44,6 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -53,7 +52,6 @@ import javax.annotation.Nullable;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JpsJavaSdkType;
-import org.sonarlint.intellij.analysis.JavaModuleClasspath;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
@@ -72,11 +70,12 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static final char SEPARATOR = ',';
 
   @Override
-  public Map<String, String> configure(@NotNull Module ijModule, Collection<VirtualFile> filesToAnalyze) {
+  public AnalysisConfiguration configure(@NotNull Module ijModule, Collection<VirtualFile> filesToAnalyze) {
+    AnalysisConfiguration config = new AnalysisConfiguration();
     JavaModuleClasspath moduleClasspath = new JavaModuleClasspath();
     moduleClasspath.dependentModules().add(ijModule);
     collectModuleClasspath(moduleClasspath, ijModule, true, false);
-    Map<String, String> properties = new HashMap<>();
+    Map<String, String> properties = config.extraProperties;
     setMultiValuePropertyIfNonEmpty(properties, JAVA_LIBRARIES_PROPERTY, moduleClasspath.libraries());
     setMultiValuePropertyIfNonEmpty(properties, JAVA_TEST_LIBRARIES_PROPERTY, moduleClasspath.testLibraries());
     setMultiValuePropertyIfNonEmpty(properties, JAVA_BINARIES_PROPERTY, moduleClasspath.binaries());
@@ -85,7 +84,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
     if (moduleClasspath.getJdkHome() != null) {
       properties.put(JAVA_JDK_HOME_PROPERTY, moduleClasspath.getJdkHome());
     }
-    return properties;
+    return config;
   }
 
   private static void setMultiValuePropertyIfNonEmpty(Map<String, String> properties, String propKey, Set<String> values) {
