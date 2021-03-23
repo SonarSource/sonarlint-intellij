@@ -54,7 +54,7 @@ public class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLi
 
   @Test
   public void testAddJrtFsToClasspath() {
-    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList());
+    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
     assertThat(props).containsKeys("sonar.java.libraries", "sonar.java.test.libraries");
     assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))
       .containsExactly(FAKE_JDK_ROOT_PATH.resolve("jdk9/lib/jrt-fs.jar"));
