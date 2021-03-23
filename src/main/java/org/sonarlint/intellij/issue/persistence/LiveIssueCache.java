@@ -23,11 +23,10 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import javax.annotation.CheckForNull;
+
+import org.apache.commons.collections.collection.UnmodifiableCollection;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -38,6 +37,10 @@ public class LiveIssueCache {
   private final Map<VirtualFile, Collection<LiveIssue>> cache;
   private final Project myproject;
   private final int maxEntries;
+  private Collection<LiveIssue> snapshot;
+  private Collection<LiveIssue> currentAnalysis = new ArrayList<>();
+  private VirtualFile currentFile;
+  private long snapshotVersion = 0;
 
   public LiveIssueCache(Project project) {
     this(project, DEFAULT_MAX_ENTRIES);
@@ -47,6 +50,20 @@ public class LiveIssueCache {
     this.myproject = project;
     this.maxEntries = maxEntries;
     this.cache = new LimitedSizeLinkedHashMap();
+  }
+
+  public synchronized void add(LiveIssue issue) {
+    currentAnalysis.add(issue);
+  }
+
+  public synchronized void analysisStarted() {
+    // TODO may be this method is redundant
+  }
+
+  public synchronized void analysisFinished() {
+    snapshotVersion++;
+    snapshot = Collections.unmodifiableCollection(currentAnalysis);
+
   }
 
   /**
@@ -85,11 +102,31 @@ public class LiveIssueCache {
    */
   @CheckForNull
   public synchronized Collection<LiveIssue> getLive(VirtualFile virtualFile) {
+    if(currentFile != null && currentFile.equals(virtualFile)) {
+      return snapshot;
+    }
     return cache.get(virtualFile);
   }
 
   public synchronized void save(VirtualFile virtualFile, Collection<LiveIssue> issues) {
-    cache.put(virtualFile, Collections.unmodifiableCollection(issues));
+    issues.forEach(it -> updateCurrent(virtualFile, it));
+    cache.put(virtualFile, new ArrayList<>(issues));
+  }
+
+  public synchronized void save(VirtualFile virtualFile, LiveIssue issue) {
+    updateCurrent(virtualFile, issue);
+    if (!cache.containsKey(virtualFile)) {
+      cache.put(virtualFile, new ArrayList<>());
+    }
+    cache.get(virtualFile).add(issue);
+  }
+
+  private void updateCurrent(VirtualFile virtualFile, LiveIssue issue) {
+    if (!virtualFile.equals(currentFile)) {
+      currentAnalysis.clear();
+    }
+    currentAnalysis.add(issue);
+    currentFile = virtualFile;
   }
 
   /**
@@ -119,6 +156,9 @@ public class LiveIssueCache {
   public synchronized void clear() {
     IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
     store.clear();
+    snapshot = Collections.emptyList();
+    currentFile = null;
+    currentAnalysis = new ArrayList<>();
     cache.clear();
   }
 

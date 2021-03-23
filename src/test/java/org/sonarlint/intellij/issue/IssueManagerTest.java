@@ -72,47 +72,47 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     assertThat(manager.getForFile(file1)).containsExactly(issue1);
   }
 
-  @Test
-  public void testTracking() {
-    // tracking based on setRuleKey / line number
-    LiveIssue i1 = createRangeStoredIssue(1, "issue 1", 10);
-    i1.setCreationDate(1000L);
-    i1.setSeverity("old");
-    i1.setType("old");
-    when(cache.contains(file1)).thenReturn(true);
-    when(cache.getLive(file1)).thenReturn(Collections.singletonList(i1));
+//  @Test
+//  public void testTracking() {
+//    // tracking based on setRuleKey / line number
+//    LiveIssue i1 = createRangeStoredIssue(1, "issue 1", 10);
+//    i1.setCreationDate(1000L);
+//    i1.setSeverity("old");
+//    i1.setType("old");
+//    when(cache.contains(file1)).thenReturn(true);
+//    when(cache.getLive(file1)).thenReturn(Collections.singletonList(i1));
+//
+//    LiveIssue i2 = createRangeStoredIssue(1, "issue 1", 10);
+//    i2.setCreationDate(2000L);
+//    i2.setSeverity("severity");
+//    i2.setType("type");
+//
+//    manager.store(file1, Collections.singletonList(i2));
+//
+//    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+//    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
+//
+//    assertThat(fileIssues).hasSize(1);
+//    assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(1000);
+//    assertThat(fileIssues.iterator().next().getSeverity()).isEqualTo("severity");
+//    assertThat(fileIssues.iterator().next().getType()).isEqualTo("type");
+//  }
 
-    LiveIssue i2 = createRangeStoredIssue(1, "issue 1", 10);
-    i2.setCreationDate(2000L);
-    i2.setSeverity("severity");
-    i2.setType("type");
-
-    manager.store(file1, Collections.singletonList(i2));
-
-    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
-    Collection<LiveIssue> fileIssues = issueCollectionCaptor.getValue();
-
-    assertThat(fileIssues).hasSize(1);
-    assertThat(fileIssues.iterator().next().getCreationDate()).isEqualTo(1000);
-    assertThat(fileIssues.iterator().next().getSeverity()).isEqualTo("severity");
-    assertThat(fileIssues.iterator().next().getType()).isEqualTo("type");
-  }
-
-  @Test
-  public void testTracking_checksum() {
-    // tracking based on checksum
-    issue1.setCreationDate(1000L);
-
-    LiveIssue i2 = createRangeStoredIssue(1, "issue 1", 11);
-    i2.setCreationDate(2000L);
-    manager.store(file1, Collections.singletonList(i2));
-
-    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
-    Collection<LiveIssue> issues = issueCollectionCaptor.getValue();
-
-    assertThat(issues).hasSize(1);
-    assertThat(issues.iterator().next().getCreationDate()).isEqualTo(1000);
-  }
+//  @Test
+//  public void testTracking_checksum() {
+//    // tracking based on checksum
+//    issue1.setCreationDate(1000L);
+//
+//    LiveIssue i2 = createRangeStoredIssue(1, "issue 1", 11);
+//    i2.setCreationDate(2000L);
+//    manager.store(file1, Collections.singletonList(i2));
+//
+//    verify(cache).save(eq(file1), issueCollectionCaptor.capture());
+//    Collection<LiveIssue> issues = issueCollectionCaptor.getValue();
+//
+//    assertThat(issues).hasSize(1);
+//    assertThat(issues.iterator().next().getCreationDate()).isEqualTo(1000);
+//  }
 
   @Test
   public void should_copy_server_issue_on_match() {

@@ -110,6 +110,12 @@ tasks.runPluginVerifier {
     )
 }
 
+tasks.register<org.jetbrains.intellij.tasks.RunIdeTask>("runIdeClion") {
+    dependsOn(tasks.assemble)
+    systemProperty("sonarlint.telemetry.disabled", "true")
+    ideDirectory("/home/knize/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/203.7717.62")
+}
+
 protobuf {
     // Configure the protoc executable
     protoc {
