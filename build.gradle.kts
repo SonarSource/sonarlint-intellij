@@ -125,6 +125,9 @@ tasks.test {
 
 tasks.runIde {
     systemProperty("sonarlint.telemetry.disabled", "true")
+    if (project.hasProperty("runIdeDirectory")) {
+        ideDirectory(project.property("runIdeDirectory"))
+    }
 }
 
 configurations {
@@ -171,6 +174,12 @@ project(":clion") {
     }
     dependencies {
         compile(project(":common"))
+    }
+}
+
+project(":common") {
+    dependencies {
+        compile("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     }
 }
 
