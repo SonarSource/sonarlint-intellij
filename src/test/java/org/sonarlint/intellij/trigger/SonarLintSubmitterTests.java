@@ -28,6 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -70,8 +71,8 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
   public void should_submit_open_files() {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
-    when(exclusions.checkExclusions(f1, getModule())).thenReturn(LocalFileExclusions.Result.notExcluded());
-    when(exclusions.canAnalyze(f1, getModule())).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f1, getModule())).thenReturn(ExcludeResult.notExcluded());
+    when(exclusions.canAnalyze(f1, getModule())).thenReturn(ExcludeResult.notExcluded());
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     verify(sonarLintJobManager).submitBackground(eq(singletonMap(getModule(), singleton(f1))), eq(emptyList()), eq(TriggerType.CONFIG_CHANGE), eq(NO_OP_CALLBACK));
@@ -80,7 +81,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
   @Test
   public void should_submit_manual() {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
-    when(exclusions.canAnalyze(f1, getModule())).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.canAnalyze(f1, getModule())).thenReturn(ExcludeResult.notExcluded());
 
     final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
     submitter.submitFilesModal(singleton(f1), TriggerType.CONFIG_CHANGE, analysisCallback);
@@ -91,8 +92,8 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
   public void should_clear_issues_if_excluded() {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
-    when(exclusions.checkExclusions(f1, getModule())).thenReturn(LocalFileExclusions.Result.excluded(""));
-    when(exclusions.canAnalyze(f1, getModule())).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f1, getModule())).thenReturn(ExcludeResult.excluded(""));
+    when(exclusions.canAnalyze(f1, getModule())).thenReturn(ExcludeResult.notExcluded());
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.CONFIG_CHANGE), eq(NO_OP_CALLBACK));
@@ -102,8 +103,8 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
   public void should_clear_issues_if_excluded_in_server() {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
-    when(exclusions.checkExclusions(f1, getModule())).thenReturn(LocalFileExclusions.Result.notExcluded());
-    when(exclusions.canAnalyze(f1, getModule())).thenReturn(LocalFileExclusions.Result.notExcluded());
+    when(exclusions.checkExclusions(f1, getModule())).thenReturn(ExcludeResult.notExcluded());
+    when(exclusions.canAnalyze(f1, getModule())).thenReturn(ExcludeResult.notExcluded());
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(singleton(f1));
     submitter.submitFiles(singleton(f1), TriggerType.CONFIG_CHANGE, false);
 
@@ -121,7 +122,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
   public void should_clear_issues_if_not_analyzable() {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
-    when(exclusions.canAnalyze(f1, getModule())).thenReturn(LocalFileExclusions.Result.excluded(null));
+    when(exclusions.canAnalyze(f1, getModule())).thenReturn(ExcludeResult.excluded(null));
     submitter.submitFiles(singleton(f1), TriggerType.ACTION, false);
 
     verify(sonarLintJobManager).submitManual(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.ACTION), eq(false), eq(NO_OP_CALLBACK));
@@ -131,8 +132,8 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
   public void should_clear_issues_if_cant_analyze() {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
-    when(exclusions.checkExclusions(f1, getModule())).thenReturn(LocalFileExclusions.Result.notExcluded());
-    when(exclusions.canAnalyze(f1, getModule())).thenReturn(LocalFileExclusions.Result.excluded("Because"));
+    when(exclusions.checkExclusions(f1, getModule())).thenReturn(ExcludeResult.notExcluded());
+    when(exclusions.canAnalyze(f1, getModule())).thenReturn(ExcludeResult.excluded("Because"));
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.CONFIG_CHANGE), eq(NO_OP_CALLBACK));

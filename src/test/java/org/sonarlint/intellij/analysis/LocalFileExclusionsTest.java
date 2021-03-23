@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.function.BooleanSupplier;
 import org.jdom.JDOMException;
 import org.junit.Test;
+import org.sonarlint.intellij.common.analysis.ExcludeResult;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -64,7 +65,7 @@ public class LocalFileExclusionsTest extends HeavyPlatformTestCase {
 
   @Test
   public void test_should_not_analyze_automatically_if_module_is_null() {
-    LocalFileExclusions.Result result = exclusions.canAnalyze(testFile, null);
+    ExcludeResult result = exclusions.canAnalyze(testFile, null);
     assertThat(result.isExcluded()).isTrue();
   }
 
