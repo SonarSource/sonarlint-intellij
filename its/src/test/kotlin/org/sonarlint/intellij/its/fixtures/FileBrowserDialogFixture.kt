@@ -56,14 +56,21 @@ class FileBrowserDialogFixture(
     return find(byXpath("//div[(@accessiblename='Refresh' and @class='ActionButton')]"))
   }
 
-  fun selectProjectFile(projectName: String) {
-    val projectFile = if (remoteRobot.ideMajorVersion() < 201) "$projectName/pom.xml" else projectName
-    val projectPath = Paths.get("projects", projectFile)
+  fun selectProjectFile(projectName: String, isMaven: Boolean) {
+    val projectsDir = Paths.get("build/projects").toAbsolutePath()
+    val projectBaseDir = projectsDir.resolve(projectName)
+    val projectFile = if (isMaven && remoteRobot.ideMajorVersion() < 201) projectBaseDir.resolve("pom.xml") else projectBaseDir
     val button = button("OK")
     waitFor { button.isEnabled() }
-    textField.text = projectPath.toAbsolutePath().normalize().toString()
+
+    // Select parent folder and refresh
+    textField.text = projectsDir.normalize().toString()
     // it helps locating the project
     refreshButton().click()
+    // Give some time for the refresh to work
+    Thread.sleep(2000)
+
+    textField.text = projectFile.normalize().toString()
     // Give some time for the refresh to work
     Thread.sleep(2000)
     button.click()

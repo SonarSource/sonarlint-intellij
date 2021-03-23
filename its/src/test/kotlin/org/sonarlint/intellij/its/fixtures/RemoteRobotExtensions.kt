@@ -21,5 +21,6 @@ package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 
-fun RemoteRobot.ideMajorVersion() =
-  callJs<Int>("com.intellij.openapi.application.ApplicationInfo.getInstance().getBuild().getBaselineVersion()")
+fun RemoteRobot.ideMajorVersion() = callJs<Int>("com.intellij.openapi.application.ApplicationInfo.getInstance().getBuild().getBaselineVersion()")
+
+fun RemoteRobot.isCLion() = callJs<Boolean>("com.intellij.util.PlatformUtils.isCLion()")

@@ -78,10 +78,15 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         return true
       } catch (timeoutException: WaitForConditionTimeoutException) {
         try {
-          // could be between 2 background tasks, wait and retry
-          Thread.sleep(1000)
-        } catch (e: InterruptedException) {
-          e.printStackTrace()
+          ideStatusBar.pauseButton
+          return true
+        } catch (timeoutException: WaitForConditionTimeoutException) {
+          try {
+            // could be between 2 background tasks, wait and retry
+            Thread.sleep(1000)
+          } catch (e: InterruptedException) {
+            e.printStackTrace()
+          }
         }
       }
     }
@@ -89,13 +94,17 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   }
 
   fun waitBackgroundTasksFinished() {
-    waitFor(Duration.ofMinutes(2), Duration.ofSeconds(5), "Some background tasks are still running") {
+    waitFor(Duration.ofMinutes(5), Duration.ofSeconds(5), "Some background tasks are still running") {
       !isBackgroundTaskRunning()
     }
   }
 
   fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
     return findAll<ActionMenuFixture>(byXpath("menu $label", "//div[@class='ActionMenu' and @text='$label']"))[0].apply(function)
+  }
+
+  fun actionHyperLink(accessiblename: String, function: ActionHyperLinkFixture.() -> Unit): ActionHyperLinkFixture {
+    return find<ActionHyperLinkFixture>(byXpath("link $accessiblename", "//div[@accessiblename='$accessiblename' and @class='ActionHyperlinkLabel']")).apply(function)
   }
 
 }

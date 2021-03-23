@@ -150,10 +150,16 @@ stages:
           # remote-robot crashes on 2018.3
           Idea2019:
             IDEA_VERSION: 'IC-2019.3'
+          CLion2019:
+            IDEA_VERSION: 'CL-2019.3'
           Idea2020:
-            IDEA_VERSION: 'IC-2020.1.3'
-          LatestEAP:
-            IDEA_VERSION: 'LATEST-EAP-SNAPSHOT'
+            IDEA_VERSION: 'IC-2020.3.3'
+          CLion2020:
+            IDEA_VERSION: 'CL-2020.3.3'
+          LatestIdeaEAP:
+            IDEA_VERSION: 'IC-LATEST-EAP-SNAPSHOT'
+          LatestCLionEAP:
+            IDEA_VERSION: 'CL-LATEST-EAP-SNAPSHOT'
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:

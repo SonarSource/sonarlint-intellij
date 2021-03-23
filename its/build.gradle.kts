@@ -32,7 +32,7 @@ repositories {
     maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
 }
 
-val remoteRobotVersion = "0.10.0"
+val remoteRobotVersion = "0.10.3"
 val fixturesVersion = "1.1.18"
 
 dependencies {

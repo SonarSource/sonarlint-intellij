@@ -67,4 +67,5 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
   }
 
   private fun stripeButton() = find<JButtonFixture>(byXpath("//div[@accessiblename='$title' and @class='StripeButton' and @text='$title']"))
+
 }

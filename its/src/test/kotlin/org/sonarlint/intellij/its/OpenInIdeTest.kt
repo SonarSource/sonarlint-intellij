@@ -39,6 +39,7 @@ import org.sonarlint.intellij.its.fixtures.jTextField
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ItUtils
 import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
+import org.sonarlint.intellij.its.utils.optionalStep
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
@@ -54,7 +55,7 @@ class OpenInIdeTest : BaseUiTest() {
 
   @Test
   fun opensHotspotAfterConfiguringConnectionAndBinding() = uiTest {
-    importTestProject(this, "sample-java-hotspot")
+    openExistingProject(this, "sample-java-hotspot", true)
 
     triggerOpenHotspotRequest()
 
@@ -97,7 +98,12 @@ class OpenInIdeTest : BaseUiTest() {
           button("Open or import").click()
         }
         fileBrowserDialog(arrayOf("Select Path")) {
-          selectProjectFile("sample-java-hotspot")
+          selectProjectFile("sample-java-hotspot", true)
+        }
+        optionalStep {
+          dialog("Open Project") {
+            button("This Window").click()
+          }
         }
         dialog("Opening Security Hotspot...") {
           button("Yes").click()

@@ -22,18 +22,13 @@ package org.sonarlint.intellij.its
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
 import com.intellij.remoterobot.fixtures.JListFixture
+import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.waitFor
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
-import org.sonarlint.intellij.its.fixtures.IdeaFrame
-import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
-import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.editor
-import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
-import org.sonarlint.intellij.its.fixtures.searchField
-import org.sonarlint.intellij.its.fixtures.settingsTree
-import org.sonarlint.intellij.its.fixtures.welcomeFrame
+import org.sonarlint.intellij.its.fixtures.*
+import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
+import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.VisualTreeDump
 import org.sonarlint.intellij.its.utils.optionalStep
 import java.awt.Point
@@ -46,10 +41,58 @@ const val robotUrl = "http://localhost:8082"
 open class BaseUiTest {
 
   fun uiTest(url: String = robotUrl, test: RemoteRobot.() -> Unit) {
-    RemoteRobot(url).apply(test)
+    val remoteRobot = RemoteRobot(url)
+    try {
+      remoteRobot.apply(test)
+    } finally {
+      optionalStep {
+        sonarlintLogPanel(remoteRobot) {
+          System.out.println("SonarLint log outputs:");
+          findAllText{ true }.forEach{ System.out.println(it.text) }
+          toolBarButton("Clear SonarLint Console").click()
+        }
+      }
+      if (remoteRobot.isCLion()) {
+        optionalStep {
+          cmakePanel(remoteRobot) {
+            System.out.println("CMake log outputs:");
+            findAllText{ true }.forEach{ System.out.println(it.text) }
+            toolBarButton("Clear All").click()
+          }
+        }
+      }
+    }
   }
 
-  fun openFile(remoteRobot: RemoteRobot, className: String) {
+  fun sonarlintLogPanel(remoteRobot: RemoteRobot, function: TabContentFixture.() -> Unit = {}): Unit {
+    with(remoteRobot) {
+      idea {
+        toolWindow("SonarLint") {
+          ensureOpen()
+          tabTitleContains("Log") { select() }
+          content("SonarLintLogPanel") {
+            this.apply(function)
+          }
+        }
+      }
+    }
+  }
+
+  fun cmakePanel(remoteRobot: RemoteRobot, function: TabContentFixture.() -> Unit = {}): Unit {
+    with(remoteRobot) {
+      idea {
+        toolWindow("CMake") {
+          ensureOpen()
+          tabTitleContains("Debug") { select() }
+          content("DataProviderPanel") {
+            this.apply(function)
+          }
+        }
+      }
+    }
+  }
+
+  fun openClass(remoteRobot: RemoteRobot, className: String) {
     with(remoteRobot) {
       idea {
         actionMenu("Navigate") {
@@ -64,6 +107,26 @@ open class BaseUiTest {
         waitFor(Duration.ofSeconds(5)) { fileList.items.isNotEmpty() }
         fileList.selectItem(fileList.items[0], false)
         waitFor(Duration.ofSeconds(10)) { editor("$className.java").isShowing }
+        waitBackgroundTasksFinished()
+      }
+    }
+  }
+
+  fun openFile(remoteRobot: RemoteRobot, fileName: String) {
+    with(remoteRobot) {
+      idea {
+        actionMenu("Navigate") {
+          click()
+          item("File...") {
+            // click at the left of the item to not move focus to another menu at the right
+            click(Point(10, 10))
+          }
+        }
+        searchField().text = fileName
+        val fileList = jList(JListFixture.byType(), Duration.ofSeconds(5))
+        waitFor(Duration.ofSeconds(5)) { fileList.items.isNotEmpty() }
+        fileList.selectItem(fileList.items[0], false)
+        waitFor(Duration.ofSeconds(10)) { editor(fileName).isShowing }
         waitBackgroundTasksFinished()
       }
     }
@@ -86,17 +149,22 @@ open class BaseUiTest {
           }
         }
         dialog("Settings") {
+          textField(byXpath("//div[@class='TextFieldWithProcessing']")).text = "SonarLint"
+          // Wait for the search to complete
+          Thread.sleep(1000);
           settingsTree {
             select("Tools/SonarLint")
           }
+          Thread.sleep(1000);
           // the view can take time to appear the first time
-          val connectionsList = jList(JListFixture.byType(), Duration.ofSeconds(20))
           val removeButton = actionButton(byTooltipText("Remove"))
-          while (connectionsList.items.isNotEmpty()) {
-            removeButton.clickWhenEnabled()
-            optionalStep {
-              dialog("Connection In Use") {
-                button("Yes").click()
+          jList(JListFixture.byType(), Duration.ofSeconds(20)) {
+            while (items.isNotEmpty()) {
+              removeButton.clickWhenEnabled()
+              optionalStep {
+                dialog("Connection In Use") {
+                  button("Yes").click()
+                }
               }
             }
           }
@@ -130,19 +198,28 @@ open class BaseUiTest {
     }
   }
 
-  protected fun importTestProject(robot: RemoteRobot, projectName: String) {
+  protected fun openExistingProject(robot: RemoteRobot, projectName: String, isMaven: Boolean = false) {
+    copyProjectFiles(projectName)
     with(robot) {
       welcomeFrame {
         openProjectButton().click()
       }
       openProjectFileBrowserDialog {
-        deleteIdeaProjectFiles(projectName)
-        selectProjectFile(projectName)
+        selectProjectFile(projectName, isMaven)
       }
-      optionalStep {
-        // from 2021.1+
-        dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
-          button("Trust Project").click()
+      if (isCLion()) {
+        optionalStep {
+          // from 2021.1+
+          dialog("Trust CMake Project?", Duration.ofSeconds(5)) {
+            button("Trust Project").click()
+          }
+        }
+      } else {
+        optionalStep {
+          // from 2021.1+
+          dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
+            button("Trust Project").click()
+          }
         }
       }
       idea {
@@ -152,8 +229,8 @@ open class BaseUiTest {
     }
   }
 
-  private fun deleteIdeaProjectFiles(projectName: String) {
-    File("projects/$projectName", ".idea").deleteRecursively()
-    File("projects/$projectName", "$projectName.iml").delete()
+  private fun copyProjectFiles(projectName: String) {
+    File("build/projects/$projectName").deleteRecursively()
+    File("projects/$projectName").copyRecursively(File("build/projects/$projectName"))
   }
 }
