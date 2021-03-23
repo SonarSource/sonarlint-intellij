@@ -29,17 +29,11 @@ import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.locator.FileLocation
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Ignore
+import org.junit.Assume
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
-import org.sonarlint.intellij.its.fixtures.dialog
-import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.jRadioButtons
-import org.sonarlint.intellij.its.fixtures.jTextField
-import org.sonarlint.intellij.its.fixtures.jbTextField
-import org.sonarlint.intellij.its.fixtures.jbTextFields
+import org.sonarlint.intellij.its.fixtures.*
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ItUtils
 import org.sonarqube.ws.client.HttpConnector
@@ -54,21 +48,26 @@ import java.time.Duration
 const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
 
 class TaintVulnerabilitiesTest : BaseUiTest() {
+
   @Test
   fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
-    importTestProject(this, "sample-java-taint-vulnerability")
+    Assume.assumeFalse(this.isCLion());
 
-    verifyTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
+    openExistingProject(this, "sample-java-taint-vulnerability", true)
+
+    verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
   }
 
   @Test
   fun should_display_sink() = uiTest {
-    importTestProject(this, "sample-java-taint-vulnerability")
+    Assume.assumeFalse(this.isCLion());
+
+    openExistingProject(this, "sample-java-taint-vulnerability", true)
     bindProjectFromPanel(this)
 
-    openFile(this, "FileWithSink")
+    openClass(this, "FileWithSink")
 
-    verifyTabContainsMessages(this,
+    verifyTaintTabContainsMessages(this,
       "Found 1 issue in 1 file",
       "FileWithSink.java",
       "Change this code to not construct SQL queries directly from user-controlled data."
@@ -118,7 +117,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
     }
   }
 
-  private fun verifyTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
+  private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
     with(remoteRobot) {
       idea {
         toolWindow("SonarLint") {

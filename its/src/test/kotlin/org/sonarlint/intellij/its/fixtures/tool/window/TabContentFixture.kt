@@ -23,6 +23,12 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.fixtures.JButtonFixture
+import com.intellij.remoterobot.search.locators.byXpath
 
 @FixtureName(name = "Tool Window Tab Content")
-class TabContentFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent)
+class TabContentFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+
+  fun toolBarButton(accessibleName: String) = find<JButtonFixture>(byXpath("//div[@accessiblename='$accessibleName' and @class='ActionButton']"))
+
+}

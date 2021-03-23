@@ -44,14 +44,19 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
   private val openOrImportLink
     get() = actionLink(ActionLinkFixture.byText("Open or Import"))
 
-  // up to 193
-  private val legacyImportLink
+  // up to 193 in IDEA
+  private val legacyImportLinkIdea
     get() = actionLink(ActionLinkFixture.byText("Import Project"))
+
+  // up to 193 in CLion
+  private val legacyImportLinkCLion
+    get() = actionLink(ActionLinkFixture.byText("Open"))
 
   fun openProjectButton(): ComponentFixture {
     val ideMajorVersion = remoteRobot.ideMajorVersion()
+    val isCLion = remoteRobot.isCLion()
     return when {
-      ideMajorVersion < 201 -> legacyImportLink
+      ideMajorVersion < 201 -> if (isCLion) legacyImportLinkCLion else legacyImportLinkIdea
       ideMajorVersion < 202 -> openOrImportLink
       else -> newOpenButton
     }
