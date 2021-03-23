@@ -32,6 +32,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.CheckForNull;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.LanguageActivator;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -45,7 +47,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneGlobalConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
-public class SonarLintEngineFactory  {
+public class SonarLintEngineFactory {
 
   private static final Set<Language> STANDALONE_LANGUAGES = EnumSet.of(Language.HTML,
     Language.JS,
@@ -69,18 +71,21 @@ public class SonarLintEngineFactory  {
 
     GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
     final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
-    ConnectedGlobalConfiguration config = ConnectedGlobalConfiguration.builder()
+    URL cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
+    ConnectedGlobalConfiguration.Builder config = ConnectedGlobalConfiguration.builder()
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
       .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
       .setExtraProperties(prepareExtraProps())
       .setNodeJs(nodeJsManager.getNodeJsPath(), nodeJsManager.getNodeJsVersion())
       .setWorkDir(getWorkDir())
-      .setServerId(serverId)
-      .build();
+      .setConnectionId(serverId);
+    if (cFamilyPluginUrl != null) {
+      config.useEmbeddedPlugin(Language.CPP.getPluginKey(), cFamilyPluginUrl);
+    }
 
     // it will also start it
-    return new ConnectedSonarLintEngineImpl(config);
+    return new ConnectedSonarLintEngineImpl(config.build());
   }
 
   StandaloneSonarLintEngine createEngine() {
@@ -92,7 +97,7 @@ public class SonarLintEngineFactory  {
     Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
 
     try {
-      URL[] plugins = loadPlugins();
+      URL[] plugins = findEmbeddedPlugins();
 
       Set<Language> enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
 
@@ -123,24 +128,45 @@ public class SonarLintEngineFactory  {
     languageActivator.forEach(l -> l.amendLanguages(enabledLanguages));
   }
 
-  private static URL[] loadPlugins() throws IOException {
+  private static URL[] findEmbeddedPlugins() throws IOException {
+    return getPluginsUrls(getPluginsDir());
+  }
+
+  @NotNull
+  private static Path getPluginsDir() {
     SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    return getPluginsUrls(plugin.getPath().resolve("plugins"));
+    return plugin.getPath().resolve("plugins");
+  }
+
+  @CheckForNull
+  private static URL findEmbeddedCFamilyPlugin(Path pluginsDir) {
+    try {
+      List<URL> pluginsUrls = findFilesInDir(pluginsDir, "sonar-cfamily-plugin-*.jar", "Found CFamily plugin: ");
+      if (pluginsUrls.size() > 1) {
+        throw new IllegalStateException("Multiple plugins found");
+      }
+      return pluginsUrls.size() == 1 ? pluginsUrls.get(0) : null;
+    } catch (Exception e) {
+      throw new IllegalStateException(e);
+    }
   }
 
   private static URL[] getPluginsUrls(Path pluginsDir) throws IOException {
-    List<URL> pluginsUrls = new ArrayList<>();
+    return findFilesInDir(pluginsDir, "*.jar", "Found plugin: ").toArray(new URL[0]);
+  }
 
+  private static List<URL> findFilesInDir(Path pluginsDir, String pattern, String logPrefix) throws IOException {
+    List<URL> pluginsUrls = new ArrayList<>();
     if (Files.isDirectory(pluginsDir)) {
-      try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(pluginsDir, "*.jar")) {
+      try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(pluginsDir, pattern)) {
         GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
         for (Path path : directoryStream) {
-          globalLogOutput.log("Found plugin: " + path.getFileName().toString(), LogOutput.Level.DEBUG);
+          globalLogOutput.log(logPrefix + path.getFileName().toString(), LogOutput.Level.DEBUG);
           pluginsUrls.add(path.toUri().toURL());
         }
       }
     }
-    return pluginsUrls.toArray(new URL[0]);
+    return pluginsUrls;
   }
 
   private static Path getSonarLintHome() {
