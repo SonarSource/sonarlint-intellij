@@ -24,28 +24,37 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.editor.AccumulatorIssueListener;
+import org.sonarlint.intellij.core.ServerIssueUpdater;
+import org.sonarlint.intellij.editor.IssueStreamingIssueListener;
+import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueProcessor;
-import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.messages.IssueStoreListener;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
+
+import static com.intellij.openapi.application.ActionsKt.runInEdt;
+import static java.util.stream.Collectors.toList;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTask.class);
@@ -94,47 +103,71 @@ public class SonarLintTask extends Task.Backgroundable {
 
   @Override
   public void run(ProgressIndicator indicator) {
-    AccumulatorIssueListener listener = new AccumulatorIssueListener();
+    IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
 
-    try {
+    Collection<Issue> issues = new ArrayList<>();
+    IssueStreamingIssueListener issueListener = new IssueStreamingIssueListener((issue -> {
+      issues.add(issue);
+      indicator.setText("Updating SonarLint issue: " + issue.getRuleKey());
       checkCanceled(indicator, myProject);
-
-      List<ClientInputFile> allFailedAnalysisFiles;
-      if (getJob().allFiles().findAny().isPresent()) {
-
-        List<AnalysisResults> results = analyze(myProject, indicator, listener);
-
-        // last chance to cancel (to avoid the possibility of having interrupt flag set)
-        checkCanceled(indicator, myProject);
-
-        LOGGER.info("SonarLint analysis done");
-
-        indicator.setIndeterminate(false);
-        indicator.setFraction(.9);
-
-        allFailedAnalysisFiles = results.stream()
-          .flatMap(r -> r.failedAnalysisFiles().stream())
-          .collect(Collectors.toList());
-      } else {
-        allFailedAnalysisFiles = Collections.emptyList();
-      }
-
-      List<Issue> issues = listener.getIssues();
-      ProgressManager.getInstance().executeNonCancelableSection(() -> {
-        indicator.setText("Updating SonarLint issues: " + issues.size());
-
-        IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
-        processor.process(job, indicator, issues, allFailedAnalysisFiles);
+      runInEdt(ModalityState.any(), () -> {
+        processor.process(issue);
+        myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
+        return null;
       });
-    } catch (CanceledException e1) {
-      SonarLintConsole console = SonarLintConsole.get(job.project());
-      console.info("Analysis canceled");
-    } catch (Throwable e) {
-      handleError(e, indicator);
-    } finally {
-      if (!myProject.isDisposed()) {
-        myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
+      return null;
+    }));
+
+     List<ClientInputFile> allFailedAnalysisFiles;
+     if (getJob().allFiles().findAny().isPresent()) {
+
+      List<AnalysisResults> results = analyze(myProject, indicator, issueListener);
+
+       // last chance to cancel (to avoid the possibility of having interrupt flag set)
+       checkCanceled(indicator, myProject);
+
+       LOGGER.info("SonarLint analysis done");
+
+       indicator.setIndeterminate(false);
+       indicator.setFraction(.9);
+
+       allFailedAnalysisFiles = results.stream()
+         .flatMap(r -> r.failedAnalysisFiles().stream())
+         .collect(Collectors.toList());
+     } else {
+       allFailedAnalysisFiles = Collections.emptyList();
+     }
+
+    Map<VirtualFile, Collection<LiveIssue>> transformedIssues = processor.transformIssues(issues, job.allFiles().collect(Collectors.toList()), allFailedAnalysisFiles);
+    if (shouldUpdateServerIssues(job.trigger())) {
+      Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
+
+      for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
+        Collection<VirtualFile> moduleFilesWithIssues = e.getValue().stream()
+          .filter(f -> !transformedIssues.getOrDefault(f, Collections.emptyList()).isEmpty())
+          .collect(toList());
+        if (!moduleFilesWithIssues.isEmpty()) {
+          filesWithIssuesPerModule.put(e.getKey(), moduleFilesWithIssues);
+        }
       }
+
+      if (!filesWithIssuesPerModule.isEmpty()) {
+        ServerIssueUpdater serverIssueUpdater = SonarLintUtils.getService(myProject, ServerIssueUpdater.class);
+        serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, job.waitForServerIssues());
+      }
+    }
+  }
+
+  public static boolean shouldUpdateServerIssues(TriggerType trigger) {
+    switch (trigger) {
+      case ACTION:
+      case CONFIG_CHANGE:
+      case BINDING_UPDATE:
+      case CHECK_IN:
+      case EDITOR_OPEN:
+        return true;
+      default:
+        return false;
     }
   }
 
@@ -163,7 +196,10 @@ public class SonarLintTask extends Task.Backgroundable {
     }
   }
 
-  private List<AnalysisResults> analyze(Project project, ProgressIndicator indicator, AccumulatorIssueListener listener) {
+  private List<AnalysisResults> analyze(Project project, ProgressIndicator indicator, IssueListener listener) {
+    IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
+    manager.analysisStarted();
+
     SonarLintAnalyzer analyzer = SonarLintUtils.getService(project, SonarLintAnalyzer.class);
 
     indicator.setIndeterminate(true);
@@ -189,6 +225,7 @@ public class SonarLintTask extends Task.Backgroundable {
       results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener, progressMonitor));
       checkCanceled(indicator, myProject);
     }
+    manager.analysisFinished();
     return results;
   }
 

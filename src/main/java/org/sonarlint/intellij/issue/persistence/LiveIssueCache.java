@@ -23,12 +23,14 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -38,6 +40,8 @@ public class LiveIssueCache {
   private final Map<VirtualFile, Collection<LiveIssue>> cache;
   private final Project myproject;
   private final int maxEntries;
+  private CurrentFileAnalysisCache currentAnalysis = new CurrentFileAnalysisCache();
+  private CurrentFileAnalysisCache snapshot = new CurrentFileAnalysisCache();
 
   public LiveIssueCache(Project project) {
     this(project, DEFAULT_MAX_ENTRIES);
@@ -80,16 +84,47 @@ public class LiveIssueCache {
     }
   }
 
+  public void analysisStarted() {
+    currentAnalysis = new CurrentFileAnalysisCache(snapshot.getFile());
+    currentAnalysis.getIssues().addAll(snapshot.getIssues());
+  }
+
+  public void analysisFinished() {
+    snapshot = currentAnalysis;
+  }
+
   /**
    * Read issues from a file that are cached. On cache miss, it won't fallback to the persistent store.
    */
   @CheckForNull
   public synchronized Collection<LiveIssue> getLive(VirtualFile virtualFile) {
+    if(!currentAnalysis.isClean() && virtualFile.equals(currentAnalysis.getFile())) {
+      return currentAnalysis.getIssues();
+    }
     return cache.get(virtualFile);
   }
 
   public synchronized void save(VirtualFile virtualFile, Collection<LiveIssue> issues) {
+    Collection<LiveIssue> issuesFromCache = cache.get(virtualFile) != null ? cache.get(virtualFile) : Collections.emptyList();
+    currentAnalysis.setCurrentIssues(virtualFile, issues);
     cache.put(virtualFile, Collections.unmodifiableCollection(issues));
+  }
+
+  public synchronized void save(VirtualFile virtualFile, LiveIssue issue) {
+    Collection<LiveIssue> issuesFromCache = cache.get(virtualFile) != null ? cache.get(virtualFile) : Collections.emptyList();
+    currentAnalysis.updateCurrentIssues(virtualFile, issue, issuesFromCache);
+    cache.computeIfAbsent(virtualFile, file -> new ArrayList<>()).add(issue);
+    if(newIssue(virtualFile, issue)) {
+      myproject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC)
+        .fileChanged(virtualFile, Collections.singletonList(issue));
+    }
+  }
+
+  private boolean newIssue(VirtualFile file, LiveIssue issue) {
+    if (snapshot.getFile() == null) {
+      return true;
+    }
+    return file.equals(snapshot.getFile()) && snapshot.getIssues().contains(issue);
   }
 
   /**
@@ -126,6 +161,10 @@ public class LiveIssueCache {
     String key = createKey(virtualFile);
     if (key != null) {
       cache.remove(virtualFile);
+      if (!currentAnalysis.isClean() && currentAnalysis.getFile() != null && virtualFile.equals(currentAnalysis.getFile())) {
+        currentAnalysis.clear();
+        snapshot.clear();
+      }
       try {
         IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
         store.clear(key);
@@ -143,3 +182,60 @@ public class LiveIssueCache {
     return SonarLintAppUtils.getRelativePathForAnalysis(this.myproject, virtualFile);
   }
 }
+
+class CurrentFileAnalysisCache {
+  private VirtualFile file;
+  private Collection<LiveIssue> issues = new ArrayList<>();
+
+  public CurrentFileAnalysisCache() {
+  }
+
+  public CurrentFileAnalysisCache(VirtualFile file) {
+    this.file = file;
+  }
+
+  public boolean isClean() {
+    return file == null && issues.isEmpty();
+  }
+
+  public void clear() {
+    issues.clear();
+    file = null;
+  }
+
+  public void updateCurrentIssues(VirtualFile file, LiveIssue issue, Collection<LiveIssue> prevIssues) {
+    clearIfNotClean(file);
+    issues.addAll(prevIssues);
+    issues.add(issue);
+    this.file = file;
+  }
+
+  public void setCurrentIssues(VirtualFile file, Collection<LiveIssue> issues) {
+    clearIfNotClean(file);
+    this.issues.addAll(issues);
+    this.file = file;
+  }
+
+  private void clearIfNotClean(VirtualFile file) {
+    if (!isClean() && !this.file.equals(file)) {
+      clear();
+    }
+  }
+
+  public VirtualFile getFile() {
+    return file;
+  }
+
+  public void setFile(VirtualFile file) {
+    this.file = file;
+  }
+
+  public Collection<LiveIssue> getIssues() {
+    return issues;
+  }
+
+  public void setIssues(Collection<LiveIssue> issues) {
+    this.issues = issues;
+  }
+}
+

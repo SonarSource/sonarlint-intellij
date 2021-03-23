@@ -22,16 +22,13 @@ package org.sonarlint.intellij.issue;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +38,6 @@ import java.util.stream.Collectors;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.core.ServerIssueUpdater;
-import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -62,6 +57,18 @@ public class IssueProcessor {
     this.myProject = project;
   }
 
+  public void process(Issue rawIssue) {
+    IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
+    LiveIssue issue = null;
+    try {
+      issue = transformIssue(rawIssue, rawIssue.getInputFile());
+    } catch (IssueMatcher.NoMatchException e) {
+      e.printStackTrace();
+    }
+    // this might be updated later after tracking with server issues
+    manager.add(issue.psiFile().getVirtualFile(), issue);
+  }
+
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
     long start = System.currentTimeMillis();
     IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
@@ -78,23 +85,7 @@ public class IssueProcessor {
       logFoundIssuesIfAny(rawIssues, start, transformedIssues);
     }
 
-    if (shouldUpdateServerIssues(job.trigger())) {
-      Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
 
-      for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
-        Collection<VirtualFile> moduleFilesWithIssues = e.getValue().stream()
-          .filter(f -> !transformedIssues.getOrDefault(f, Collections.emptyList()).isEmpty())
-          .collect(toList());
-        if (!moduleFilesWithIssues.isEmpty()) {
-          filesWithIssuesPerModule.put(e.getKey(), moduleFilesWithIssues);
-        }
-      }
-
-      if (!filesWithIssuesPerModule.isEmpty()) {
-        ServerIssueUpdater serverIssueUpdater = SonarLintUtils.getService(myProject, ServerIssueUpdater.class);
-        serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, job.waitForServerIssues());
-      }
-    }
 
     AnalysisCallback callback = job.callback();
     callback.onSuccess(failedVirtualFiles);
@@ -117,18 +108,7 @@ public class IssueProcessor {
     console.info("Found " + issuesToShow + " " + end);
   }
 
-  private static boolean shouldUpdateServerIssues(TriggerType trigger) {
-    switch (trigger) {
-      case ACTION:
-      case CONFIG_CHANGE:
-      case BINDING_UPDATE:
-      case CHECK_IN:
-      case EDITOR_OPEN:
-        return true;
-      default:
-        return false;
-    }
-  }
+
 
   private Map<VirtualFile, Collection<LiveIssue>> removeFailedFiles(Collection<VirtualFile> analyzed, Collection<ClientInputFile> failedAnalysisFiles) {
     Map<VirtualFile, Collection<LiveIssue>> map = new HashMap<>();
@@ -148,7 +128,7 @@ public class IssueProcessor {
   /**
    * Transforms issues and organizes them per file
    */
-  private Map<VirtualFile, Collection<LiveIssue>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analyzed,
+  public Map<VirtualFile, Collection<LiveIssue>> transformIssues(Collection<Issue> issues, Collection<VirtualFile> analyzed,
     Collection<ClientInputFile> failedAnalysisFiles) {
 
     Map<VirtualFile, Collection<LiveIssue>> map = removeFailedFiles(analyzed, failedAnalysisFiles);
