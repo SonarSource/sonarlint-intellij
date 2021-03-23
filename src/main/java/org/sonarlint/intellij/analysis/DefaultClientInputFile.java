@@ -28,6 +28,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
 public class DefaultClientInputFile implements ClientInputFile {
@@ -37,20 +38,23 @@ public class DefaultClientInputFile implements ClientInputFile {
   private final Charset charset;
   private final VirtualFile vFile;
   private final Document doc;
+  @Nullable
+  private final Language language;
   private final URI uri;
 
-  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Document doc) {
+  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Document doc, @Nullable Language language) {
     this.path = vFile.getPath();
     this.relativePath = relativePath;
     this.test = isTest;
     this.charset = charset;
     this.vFile = vFile;
     this.doc = doc;
+    this.language = language;
     this.uri = createURI();
   }
 
-  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
-    this(vFile, relativePath, isTest, charset, null);
+  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Language language) {
+    this(vFile, relativePath, isTest, charset, null, language);
   }
 
   @Override public String getPath() {
@@ -101,5 +105,10 @@ public class DefaultClientInputFile implements ClientInputFile {
   @Override
   public URI uri() {
     return uri;
+  }
+
+  @Override
+  public Language language() {
+    return language;
   }
 }

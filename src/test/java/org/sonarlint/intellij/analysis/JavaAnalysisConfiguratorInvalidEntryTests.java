@@ -58,7 +58,7 @@ public class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLint
 
   @Test
   public void testClasspathIgnoreInvalidJdkEntries() {
-    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList());
+    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
     assertThat(props).containsOnlyKeys("sonar.java.source", "sonar.java.target");
   }
 
