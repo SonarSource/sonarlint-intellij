@@ -1,6 +1,7 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.execution.ExecutionException;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.cpp.cmake.model.CMakeConfiguration;
@@ -9,6 +10,7 @@ import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.OCLanguageUtils;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
+import com.jetbrains.cidr.lang.psi.OCParsedLanguageAndConfiguration;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
@@ -36,12 +38,20 @@ public class AnalyzerConfiguration {
    */
   @Nullable
   public Request getCompilerSettings(VirtualFile file) {
-    OCPsiFile psiFile = OCLanguageUtils.asOCPsiFile(project, file);
+    OCPsiFile psiFile = ApplicationManager.getApplication().<OCPsiFile>runReadAction(() -> OCLanguageUtils.asOCPsiFile(project, file));
     if (psiFile == null || !psiFile.isInProjectSources()) {
       console.debug("skip " + file + ": " + psiFile);
       return null;
     }
-    OCResolveConfiguration configuration = OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration();
+    OCResolveConfiguration configuration = null;
+    OCParsedLanguageAndConfiguration languageAndConfiguration = psiFile.getParsedLanguageAndConfiguration();
+    if (languageAndConfiguration != null) {
+      configuration = languageAndConfiguration.getConfiguration();
+    }
+    if (configuration == null) {
+      configuration = ApplicationManager.getApplication().<OCResolveConfiguration>runReadAction(
+        () -> OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration());
+    }
     if (configuration == null) {
       console.debug("configuration not found for: " + file);
       return null;
