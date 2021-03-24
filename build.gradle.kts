@@ -163,7 +163,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.3.0.2534@jar")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.18.0.28883@jar")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.18.0.29194@jar")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
@@ -174,6 +174,12 @@ project(":clion") {
     }
     dependencies {
         compile(project(":common"))
+        testImplementation(platform("org.junit:junit-bom:5.7.1"))
+        testImplementation("org.junit.jupiter:junit-jupiter")
+        testImplementation("org.mockito:mockito-core:2.19.0")
+    }
+    tasks.test {
+        useJUnitPlatform()
     }
 }
 
