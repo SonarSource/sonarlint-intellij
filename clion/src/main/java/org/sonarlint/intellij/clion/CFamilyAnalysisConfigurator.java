@@ -2,9 +2,10 @@ package org.sonarlint.intellij.clion;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
+import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
+
 import java.util.Collection;
 import java.util.Objects;
-import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
 public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
@@ -17,7 +18,12 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
       .map(analyzerConfiguration::getCompilerSettings)
       .filter(Objects::nonNull)
       .filter(request -> "clang".equals(request.compiler))
-      .forEach(buildWrapperJsonGenerator::addRequest);
+      .forEach(configuration -> {
+        buildWrapperJsonGenerator.addRequest(configuration);
+        if (configuration.sonarLanguage != null) {
+          result.forcedLanguages.put(configuration.virtualFile, configuration.sonarLanguage);
+        }
+      });
     result.extraProperties.put("sonar.cfamily.build-wrapper-content", buildWrapperJsonGenerator.build());
     return result;
   }
