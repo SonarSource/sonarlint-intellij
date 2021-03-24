@@ -32,7 +32,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PathUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 
 import static com.intellij.openapi.application.ApplicationManager.getApplication;
@@ -58,13 +60,12 @@ public class SonarLintAppUtils {
     return ProjectLocator.getInstance().guessProjectForFile(file);
   }
 
-  public static boolean isOpenFile(Project project, VirtualFile file) {
-    return getApplication().<Boolean>runReadAction(() -> {
+  public static List<VirtualFile> retainOpenFiles(Project project, List<VirtualFile> files) {
+    return getApplication().<List<VirtualFile>>runReadAction(() -> {
       if (!project.isOpen()) {
-        return false;
+        return Collections.emptyList();
       }
-      VirtualFile[] openFiles = FileEditorManager.getInstance(project).getOpenFiles();
-      return Arrays.asList(openFiles).contains(file);
+      return files.stream().filter(f -> FileEditorManager.getInstance(project).isFileOpen(f)).collect(Collectors.toList());
     });
   }
 
