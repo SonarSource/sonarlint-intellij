@@ -8,6 +8,8 @@ import com.jetbrains.cidr.cpp.cmake.model.CMakeConfiguration;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeProfileInfo;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
+import com.jetbrains.cidr.lang.CLanguageKind;
+import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageUtils;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
 import com.jetbrains.cidr.lang.psi.OCParsedLanguageAndConfiguration;
@@ -19,6 +21,7 @@ import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import javax.annotation.Nullable;
 
@@ -44,9 +47,13 @@ public class AnalyzerConfiguration {
       return null;
     }
     OCResolveConfiguration configuration = null;
+    OCLanguageKind languageKind;
     OCParsedLanguageAndConfiguration languageAndConfiguration = psiFile.getParsedLanguageAndConfiguration();
     if (languageAndConfiguration != null) {
       configuration = languageAndConfiguration.getConfiguration();
+      languageKind = languageAndConfiguration.getLanguageKind();
+    } else {
+      languageKind = psiFile.getKind();
     }
     if (configuration == null) {
       configuration = ApplicationManager.getApplication().<OCResolveConfiguration>runReadAction(
@@ -63,7 +70,20 @@ public class AnalyzerConfiguration {
     OCCompilerSettings compilerSettings = configuration.getCompilerSettings(psiFile.getKind(), file);
     OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
     String compiler = ((compilerKind instanceof GCCCompilerKind) || (compilerKind instanceof ClangCompilerKind)) ? "clang" : "unknown";
-    return new Request(file, compilerSettings, compiler, psiFile.isHeader());
+    return new Request(file, compilerSettings, compiler, getSonarLanguage(languageKind), psiFile.isHeader());
+  }
+
+  @Nullable
+  private static Language getSonarLanguage(OCLanguageKind languageKind) {
+    if (languageKind.equals(CLanguageKind.C)) {
+      return Language.C;
+    } else if (languageKind.equals(CLanguageKind.CPP)) {
+      return Language.CPP;
+    } else if (languageKind.equals(CLanguageKind.OBJ_C)) {
+      return Language.OBJC;
+    } else {
+      return null;
+    }
   }
 
   private boolean usingRemoteToolchain(OCResolveConfiguration configuration) {
@@ -87,11 +107,14 @@ public class AnalyzerConfiguration {
     final OCCompilerSettings compilerSettings;
     final String compiler;
     final boolean isHeaderFile;
+    @Nullable
+    final Language sonarLanguage;
 
-    public Request(VirtualFile virtualFile, OCCompilerSettings compilerSettings, String compiler, boolean isHeaderFile) {
+    public Request(VirtualFile virtualFile, OCCompilerSettings compilerSettings, String compiler, @Nullable Language sonarLanguage, boolean isHeaderFile) {
       this.virtualFile = virtualFile;
       this.compilerSettings = compilerSettings;
       this.compiler = compiler;
+      this.sonarLanguage = sonarLanguage;
       this.isHeaderFile = isHeaderFile;
     }
   }

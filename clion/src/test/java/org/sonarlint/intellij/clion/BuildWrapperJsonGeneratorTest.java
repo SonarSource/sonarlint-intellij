@@ -34,7 +34,7 @@ class BuildWrapperJsonGeneratorTest {
     when(compilerSettings.getCompilerSwitches()).thenReturn(compilerSwitches);
 
     String json = new BuildWrapperJsonGenerator()
-      .addRequest(new AnalyzerConfiguration.Request(virtualFile, compilerSettings, "clang", false))
+      .addRequest(new AnalyzerConfiguration.Request(virtualFile, compilerSettings, "clang", null, false))
       .build();
     assertEquals(
       "{\"version\":0,\"captures\":[" +
@@ -64,8 +64,8 @@ class BuildWrapperJsonGeneratorTest {
     when(compilerSettings2.getCompilerSwitches()).thenReturn(compilerSwitches2);
 
     String json = new BuildWrapperJsonGenerator()
-      .addRequest(new AnalyzerConfiguration.Request(virtualFile, compilerSettings, "clang", false))
-      .addRequest(new AnalyzerConfiguration.Request(virtualFile2, compilerSettings2, "clang", false))
+      .addRequest(new AnalyzerConfiguration.Request(virtualFile, compilerSettings, "clang", null, false))
+      .addRequest(new AnalyzerConfiguration.Request(virtualFile2, compilerSettings2, "clang", null, false))
       .build();
     assertEquals(
       "{\"version\":0,\"captures\":[" +
