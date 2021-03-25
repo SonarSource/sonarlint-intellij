@@ -23,6 +23,7 @@
     <extensions defaultExtensionNs="org.sonarlint.idea">
         <analysisConfiguration implementation="org.sonarlint.intellij.clion.CFamilyAnalysisConfigurator"/>
         <languageActivator implementation="org.sonarlint.intellij.clion.CFamilyLanguageActivator"/>
+        <fileExclusionContributor implementation="org.sonarlint.intellij.clion.CFamilyFileExclusionContributor"/>
     </extensions>
 
     <extensions defaultExtensionNs="com.intellij">
