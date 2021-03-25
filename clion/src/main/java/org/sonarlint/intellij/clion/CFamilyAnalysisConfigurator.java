@@ -5,7 +5,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
 import java.util.Collection;
-import java.util.Objects;
 
 public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
@@ -15,11 +14,11 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
     AnalyzerConfiguration analyzerConfiguration = new AnalyzerConfiguration(module.getProject());
     BuildWrapperJsonGenerator buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
     filesToAnalyze.stream()
-      .map(analyzerConfiguration::getCompilerSettings)
-      .filter(Objects::nonNull)
-      .filter(request -> "clang".equals(request.compiler))
+      .map(analyzerConfiguration::getConfiguration)
+      .filter(AnalyzerConfiguration.ConfigurationResult::hasConfiguration)
+      .map(AnalyzerConfiguration.ConfigurationResult::getConfiguration)
       .forEach(configuration -> {
-        buildWrapperJsonGenerator.addRequest(configuration);
+        buildWrapperJsonGenerator.add(configuration);
         if (configuration.sonarLanguage != null) {
           result.forcedLanguages.put(configuration.virtualFile, configuration.sonarLanguage);
         }
