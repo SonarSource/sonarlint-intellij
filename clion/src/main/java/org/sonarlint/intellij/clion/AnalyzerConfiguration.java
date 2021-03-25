@@ -20,31 +20,26 @@ import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import javax.annotation.Nullable;
 
 public class AnalyzerConfiguration {
   private final Project project;
-  private final SonarLintConsole console;
   private final CMakeWorkspace cMakeWorkspace;
 
   public AnalyzerConfiguration(@NotNull Project project) {
     this.project = project;
-    console = SonarLintConsole.get(project);
     cMakeWorkspace = CMakeWorkspace.getInstance(project);
   }
 
   /**
    * Inspired from ShowCompilerInfoForFile and ClangTidyAnnotator
    */
-  @Nullable
-  public Request getCompilerSettings(VirtualFile file) {
+  public ConfigurationResult getConfiguration(VirtualFile file) {
     OCPsiFile psiFile = ApplicationManager.getApplication().<OCPsiFile>runReadAction(() -> OCLanguageUtils.asOCPsiFile(project, file));
     if (psiFile == null || !psiFile.isInProjectSources()) {
-      console.debug("skip " + file + ": " + psiFile);
-      return null;
+      return new ConfigurationResult(psiFile + " not in project sources");
     }
     OCResolveConfiguration configuration = null;
     OCLanguageKind languageKind;
@@ -60,17 +55,29 @@ public class AnalyzerConfiguration {
         () -> OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration());
     }
     if (configuration == null) {
-      console.debug("configuration not found for: " + file);
-      return null;
+      return ConfigurationResult.skip("configuration not found");
     }
     if (usingRemoteToolchain(configuration)) {
-      console.debug("remote toolchain detected, skip: " + file);
-      return null;
+      return ConfigurationResult.skip("use a remote toolchain");
     }
     OCCompilerSettings compilerSettings = configuration.getCompilerSettings(psiFile.getKind(), file);
     OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
-    String compiler = ((compilerKind instanceof GCCCompilerKind) || (compilerKind instanceof ClangCompilerKind)) ? "clang" : "unknown";
-    return new Request(file, compilerSettings, compiler, getSonarLanguage(languageKind), psiFile.isHeader());
+    if (compilerKind == null) {
+      return ConfigurationResult.skip("compiler kind not found");
+    }
+    String cFamilyCompiler = mapToCFamilyCompiler(compilerKind);
+    if (cFamilyCompiler == null) {
+      return ConfigurationResult.skip("unsupported compiler " + compilerKind.getDisplayName());
+    }
+    return ConfigurationResult.of(new Configuration(file, compilerSettings, "clang", getSonarLanguage(languageKind), psiFile.isHeader()));
+  }
+
+  @Nullable
+  private String mapToCFamilyCompiler(OCCompilerKind compilerKind) {
+    if ((compilerKind instanceof GCCCompilerKind) || (compilerKind instanceof ClangCompilerKind)) {
+      return "clang";
+    }
+    return null;
   }
 
   @Nullable
@@ -102,7 +109,50 @@ public class AnalyzerConfiguration {
     return environment != null && environment.getToolSet().isRemote();
   }
 
-  public static class Request {
+  public static class ConfigurationResult {
+    @Nullable
+    private final Configuration configuration;
+    @Nullable
+    private final String skipReason;
+
+    private ConfigurationResult(Configuration configuration) {
+      this.configuration = configuration;
+      this.skipReason = null;
+    }
+
+    private ConfigurationResult(@Nullable String skipReason) {
+      this.skipReason = skipReason;
+      this.configuration = null;
+    }
+
+    public boolean hasConfiguration() {
+      return configuration != null;
+    }
+
+    public Configuration getConfiguration() {
+      if (!hasConfiguration()) {
+        throw new UnsupportedOperationException();
+      }
+      return configuration;
+    }
+
+    public String getSkipReason() {
+      if (hasConfiguration()) {
+        throw new UnsupportedOperationException();
+      }
+      return skipReason;
+    }
+
+    public static ConfigurationResult of(Configuration configuration) {
+      return new ConfigurationResult(configuration);
+    }
+
+    public static ConfigurationResult skip(String skipReason) {
+      return new ConfigurationResult(skipReason);
+    }
+  }
+
+  public static class Configuration {
     final VirtualFile virtualFile;
     final OCCompilerSettings compilerSettings;
     final String compiler;
@@ -110,7 +160,7 @@ public class AnalyzerConfiguration {
     @Nullable
     final Language sonarLanguage;
 
-    public Request(VirtualFile virtualFile, OCCompilerSettings compilerSettings, String compiler, @Nullable Language sonarLanguage, boolean isHeaderFile) {
+    public Configuration(VirtualFile virtualFile, OCCompilerSettings compilerSettings, String compiler, @Nullable Language sonarLanguage, boolean isHeaderFile) {
       this.virtualFile = virtualFile;
       this.compilerSettings = compilerSettings;
       this.compiler = compiler;
