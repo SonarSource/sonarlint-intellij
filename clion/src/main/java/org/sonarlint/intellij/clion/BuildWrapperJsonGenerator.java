@@ -16,29 +16,29 @@ public class BuildWrapperJsonGenerator {
         + "\"captures\":[");
   }
 
-  public BuildWrapperJsonGenerator addRequest(AnalyzerConfiguration.Request request) {
+  public BuildWrapperJsonGenerator add(AnalyzerConfiguration.Configuration configuration) {
     if (first) {
       first = false;
     } else {
       builder.append(",");
     }
-    appendEntry(request);
+    appendEntry(configuration);
     return this;
   }
 
-  private void appendEntry(AnalyzerConfiguration.Request request) {
-    OCCompilerSettings compilerSettings = request.compilerSettings;
+  private void appendEntry(AnalyzerConfiguration.Configuration entry) {
+    OCCompilerSettings compilerSettings = entry.compilerSettings;
     String quotedCompilerExecutable = quote(compilerSettings.getCompilerExecutable().getAbsolutePath());
     builder.append("{")
       .append("\"compiler\":\"")
-      .append(request.compiler)
+      .append(entry.compiler)
       .append("\",")
       .append("\"cwd\":" + quote(compilerSettings.getCompilerWorkingDir().getAbsolutePath()) + ",")
       .append("\"executable\":")
       .append(quotedCompilerExecutable)
       .append(",\"cmd\":[")
       .append(quotedCompilerExecutable)
-      .append("," + quote(request.virtualFile.getCanonicalPath()));
+      .append("," + quote(entry.virtualFile.getCanonicalPath()));
     compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW).forEach(s -> builder.append(",").append(quote(s)));
     builder.append("]}");
   }
