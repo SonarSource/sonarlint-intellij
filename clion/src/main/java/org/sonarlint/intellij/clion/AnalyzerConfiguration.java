@@ -92,7 +92,7 @@ public class AnalyzerConfiguration {
   }
 
   @Nullable
-  private String mapToCFamilyCompiler(OCCompilerKind compilerKind) {
+  static String mapToCFamilyCompiler(OCCompilerKind compilerKind) {
     if ((compilerKind instanceof GCCCompilerKind) || (compilerKind instanceof ClangCompilerKind)) {
       return "clang";
     }
@@ -100,7 +100,7 @@ public class AnalyzerConfiguration {
   }
 
   @Nullable
-  private static Language getSonarLanguage(OCLanguageKind languageKind) {
+  static Language getSonarLanguage(OCLanguageKind languageKind) {
     if (languageKind.equals(CLanguageKind.C)) {
       return Language.C;
     } else if (languageKind.equals(CLanguageKind.CPP)) {
