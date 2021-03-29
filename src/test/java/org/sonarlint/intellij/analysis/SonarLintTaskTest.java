@@ -43,6 +43,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
+import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,6 +67,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   private SonarLintAnalyzer sonarLintAnalyzer;
   @Mock
   private AnalysisResults analysisResults;
+  private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
 
   @Before
   public void prepare() {
@@ -80,14 +82,14 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
     replaceProjectService(SonarLintStatus.class, new SonarLintStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
-    replaceProjectService(SonarLintConsole.class, mock(SonarLintConsole.class));
+    replaceProjectService(SonarLintConsole.class, sonarLintConsole);
     replaceProjectService(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     replaceProjectService(IssueManager.class, mock(IssueManager.class));
     replaceProjectService(IssueProcessor.class, processor);
 
     task = new SonarLintTask(getProject(), job, false, true);
 
-    //IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
+    // IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     SonarLintStatus.get(getProject()).stopRun();
   }
 
@@ -101,14 +103,13 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     assertThat(task.getJob()).isEqualTo(job);
     task.run(progress);
 
-
     verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
     verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
     assertThat(getExternalAnnotators())
-            .extracting("implementationClass")
-            .contains("org.sonarlint.intellij.editor.SonarExternalAnnotator");
+      .extracting("implementationClass")
+      .contains("org.sonarlint.intellij.editor.SonarExternalAnnotator");
     verifyNoMoreInteractions(sonarLintAnalyzer);
     verifyNoMoreInteractions(processor);
   }
@@ -127,6 +128,31 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     // still called
     verify(listener).ended(job);
     verifyNoMoreInteractions(listener);
+  }
+
+  @Test
+  public void testCallListenerOnCancel() {
+    TaskListener listener = mock(TaskListener.class);
+    getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
+
+    task.cancel();
+    task.run(progress);
+
+    verify(sonarLintConsole).info("Analysis canceled");
+
+    // never called because of cancel
+    verifyZeroInteractions(processor);
+
+    // still called
+    verify(listener).ended(job);
+    verifyNoMoreInteractions(listener);
+  }
+
+  @Test
+  public void testFinishFlag() {
+    assertThat(task.isFinished()).isFalse();
+    task.onFinished();
+    assertThat(task.isFinished()).isTrue();
   }
 
   private SonarLintJob createJob() {
