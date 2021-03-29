@@ -81,7 +81,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: :check
+          tasks: check -x :its:check
           publishJUnitResults: true
           testRunTitle: 'UTs on Windows'
           jdkVersionOption: '1.11'
@@ -114,7 +114,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: :check :jacocoTestReport
+          tasks: check jacocoTestReport -x :its:check
           publishJUnitResults: false
           jdkVersionOption: '1.11'
           sonarQubeRunAnalysis: true
