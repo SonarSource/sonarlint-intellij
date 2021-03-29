@@ -34,8 +34,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.SonarLintTask;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
@@ -119,11 +121,13 @@ public class SonarLintSubmitter {
    * @param startInBackground Whether the analysis was triggered automatically. It affects the filter of files that should be analyzed and also
    *                          if it starts in background or foreground.
    */
-  public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {
-    submitFiles(files, trigger, NO_OP_CALLBACK, startInBackground);
+  @CheckForNull
+  public SonarLintTask submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {
+    return submitFiles(files, trigger, NO_OP_CALLBACK, startInBackground);
   }
 
-  public void submitFiles(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback, boolean startInBackground) {
+  @CheckForNull
+  public SonarLintTask submitFiles(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback, boolean startInBackground) {
     // If user explicitly ask to analyze a single file, we should ignore configured user exclusions
     boolean checkUserExclusions = trigger != TriggerType.ACTION;
     try {
@@ -135,14 +139,15 @@ public class SonarLintSubmitter {
         console.debug("Trigger: " + trigger);
         SonarLintJobManager sonarLintJobManager = SonarLintUtils.getService(myProject, SonarLintJobManager.class);
         if (startInBackground) {
-          sonarLintJobManager.submitBackground(filesByModule, filesToClearIssues, trigger, callback);
+          return sonarLintJobManager.submitBackground(filesByModule, filesToClearIssues, trigger, callback);
         } else {
-          sonarLintJobManager.submitManual(filesByModule, filesToClearIssues, trigger, false, callback);
+          return sonarLintJobManager.submitManual(filesByModule, filesToClearIssues, trigger, false, callback);
         }
       }
     } catch (InvalidBindingException e) {
       // nothing to do, SonarLintEngineManager already showed notification
     }
+    return null;
   }
 
   private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean checkUserExclusions, List<VirtualFile> filesToClearIssues)

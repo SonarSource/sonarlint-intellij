@@ -53,6 +53,8 @@ public class SonarLintTask extends Task.Backgroundable {
   protected final boolean modal;
   private final boolean startInBackground;
   protected final Project myProject;
+  private boolean finished = false;
+  private boolean cancelled;
 
   public SonarLintTask(Project project, SonarLintJob job, boolean background) {
     this(project, job, false, background);
@@ -156,7 +158,7 @@ public class SonarLintTask extends Task.Backgroundable {
   }
 
   private void checkCanceled(ProgressIndicator indicator, Project project) {
-    if (indicator.isCanceled() || project.isDisposed() || Thread.currentThread().isInterrupted()) {
+    if (cancelled || indicator.isCanceled() || project.isDisposed() || Thread.currentThread().isInterrupted()) {
       throw new CanceledException();
     }
   }
@@ -180,7 +182,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
     LOGGER.info(indicator.getText());
 
-    ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator, myProject);
+    ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator, myProject, () -> cancelled);
     List<AnalysisResults> results = new LinkedList<>();
 
     for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
@@ -188,5 +190,18 @@ public class SonarLintTask extends Task.Backgroundable {
       checkCanceled(indicator, myProject);
     }
     return results;
+  }
+
+  @Override
+  public void onFinished() {
+    this.finished = true;
+  }
+
+  public boolean isFinished() {
+    return finished;
+  }
+
+  public void cancel() {
+    this.cancelled = true;
   }
 }
