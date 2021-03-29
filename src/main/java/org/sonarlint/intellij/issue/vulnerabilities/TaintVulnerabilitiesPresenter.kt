@@ -21,6 +21,7 @@ package org.sonarlint.intellij.issue.vulnerabilities
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -118,10 +119,10 @@ class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreLi
   }
 
   override fun filesChanged(map: MutableMap<VirtualFile, MutableCollection<LiveIssue>>) {
-    presentTaintVulnerabilitiesForOpenFiles()
+    ApplicationManager.getApplication().invokeLater { presentTaintVulnerabilitiesForOpenFiles() }
   }
 
   override fun allChanged() {
-    presentTaintVulnerabilitiesForOpenFiles()
+    ApplicationManager.getApplication().invokeLater { presentTaintVulnerabilitiesForOpenFiles() }
   }
 }
