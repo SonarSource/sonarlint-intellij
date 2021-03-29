@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class TaskProgressMonitorTest {
   private ProgressIndicator wrapped = mock(ProgressIndicator.class);
   private ProgressManager progressManager = mock(ProgressManager.class);
-  private TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, null);
+  private TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, null, () -> false);
 
   @Test
   public void should_wrap() {
@@ -56,12 +56,20 @@ public class TaskProgressMonitorTest {
   @Test
   public void cancel_if_project_disposed() {
     Project project = mock(Project.class);
-    TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, project);
+    TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, project, () -> false);
 
     when(project.isDisposed()).thenReturn(false);
     assertThat(monitor.isCanceled()).isFalse();
 
     when(project.isDisposed()).thenReturn(true);
+    assertThat(monitor.isCanceled()).isTrue();
+  }
+
+  @Test
+  public void cancel_if_flag_set() {
+    Project project = mock(Project.class);
+    TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, null, () -> true);
+
     assertThat(monitor.isCanceled()).isTrue();
   }
 }

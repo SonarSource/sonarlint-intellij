@@ -41,6 +41,7 @@ import static org.mockito.Mockito.verify;
 public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4TestCase {
   private SonarLintJobManager manager;
   private final TaskListener taskListener = mock(TaskListener.class);
+  final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
 
   @Before
   public void prepare() {
@@ -50,7 +51,6 @@ public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4Tes
 
   @Test
   public void testUserTask() {
-    final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
     manager.submitManual(mockFiles(), Collections.emptyList(), TriggerType.ACTION, true, analysisCallback);
     ArgumentCaptor<SonarLintJob> jobCaptor = ArgumentCaptor.forClass(SonarLintJob.class);
     // XXX could we make ended have a parameter for the analysis result
@@ -62,12 +62,13 @@ public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4Tes
 
   @Test
   public void testRunBackground() {
-    manager.submitBackground(mockFiles(), Collections.emptyList(), TriggerType.ACTION, null);
+    manager.submitBackground(mockFiles(), Collections.emptyList(), TriggerType.ACTION, analysisCallback);
     ArgumentCaptor<SonarLintJob> jobCaptor = ArgumentCaptor.forClass(SonarLintJob.class);
     // XXX could we make ended have a parameter for the analysis result
     verify(taskListener, timeout(3000)).ended(jobCaptor.capture());
     SonarLintJob job = jobCaptor.getValue();
     assertThat(job.project()).isEqualTo(getProject());
+    verify(analysisCallback).onSuccess(any());
   }
 
   private Map<Module, Collection<VirtualFile>> mockFiles() {
