@@ -35,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
 import org.sonarlint.intellij.analysis.SonarLintJob;
+import org.sonarlint.intellij.analysis.SonarLintTask;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -106,6 +107,8 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
   private class EventWatcher extends Thread {
 
     private boolean stop = false;
+    private SonarLintTask task;
+
     EventWatcher() {
       this.setDaemon(true);
       this.setName("sonarlint-auto-trigger-" + myProject.getName());
@@ -132,8 +135,13 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
       if (getGlobalSettings().isAutoTrigger()) {
         List<VirtualFile> openFilesToAnalyze = SonarLintAppUtils.retainOpenFiles(myProject, files);
         if (!openFilesToAnalyze.isEmpty()) {
+          if (task != null && !task.isFinished()) {
+            task.cancel();
+            return;
+          }
+          files.forEach(eventMap::remove);
           SonarLintSubmitter submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
-          submitter.submitFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE, true);
+          task = submitter.submitFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE, true);
         }
       }
     }
@@ -154,7 +162,6 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
         // use some heuristics based on analysis time or average pauses? Or make it configurable?
         if (e.getValue() + timerMs < t) {
           filesToTrigger.add(e.getKey());
-          it.remove();
         }
       }
       triggerFiles(filesToTrigger);
