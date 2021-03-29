@@ -41,7 +41,12 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.persistence.IssuePersistence;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
-import org.sonarlint.intellij.issue.tracking.*;
+import org.sonarlint.intellij.issue.tracking.Input;
+import org.sonarlint.intellij.issue.tracking.SingleIssueTracker;
+import org.sonarlint.intellij.issue.tracking.SingleIssueTracking;
+import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarlint.intellij.issue.tracking.Tracker;
+import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -85,9 +90,14 @@ public class IssueManager {
     });
   }
 
+  public void clearCurrent() {
+    liveIssueCache.clearCurrent();
+    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
+  }
+
   public void clear() {
     liveIssueCache.clear();
-    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
+
   }
 
   public void clear(Collection<VirtualFile> files) {
@@ -170,32 +180,12 @@ public class IssueManager {
     }
   }
 
-//  void store(VirtualFile file, final Collection<LiveIssue> rawIssues) {
-//    boolean firstAnalysis = !wasAnalyzed(file);
-//
-//    // this will also delete all existing issues in the file
-//    if (firstAnalysis) {
-//      // don't set creation date, as we don't know when the issue was actually created (SLI-86)
-//      liveIssueCache.save(file, rawIssues);
-//    } else {
-//      matchWithPreviousIssues(file, rawIssues);
-//    }
-//  }
-
   private void matchWithPreviousIssues(VirtualFile file, LiveIssue rawIssue) {
     matchingInProgress.lock();
     Input<Trackable> baseInput = () -> getPreviousIssues(file);
     updateTrackedIssues(file, baseInput, rawIssue, false);
     matchingInProgress.unlock();
   }
-
-//  private void matchWithPreviousIssues(VirtualFile file, Collection<LiveIssue> rawIssues) {
-//    matchingInProgress.lock();
-//    Input<Trackable> baseInput = () -> getPreviousIssues(file);
-//    Input<LiveIssue> rawInput = () -> rawIssues;
-//    updateTrackedIssues(file, baseInput, rawInput, false);
-//    matchingInProgress.unlock();
-//  }
 
   public void matchWithServerIssues(VirtualFile file, final Collection<Trackable> serverIssues) {
     matchingInProgress.lock();
@@ -233,7 +223,7 @@ public class IssueManager {
   private <T extends Trackable> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, LiveIssue rawInput, boolean isServerIssueMatching) {
     Collection<LiveIssue> trackedIssues = new ArrayList<>();
     SingleIssueTracking<LiveIssue, T> tracking = new SingleIssueTracker<LiveIssue, T>().track(rawInput, baseInput);
-    if(!tracking.getMatchedRaws().entrySet().isEmpty()) {
+    if (!tracking.getMatchedRaws().entrySet().isEmpty()) {
       Map.Entry<LiveIssue, T> entry = tracking.getMatchedRaws().entrySet().iterator().next();
       LiveIssue rawMatched = entry.getKey();
       Trackable previousMatched = entry.getValue();
@@ -241,7 +231,8 @@ public class IssueManager {
       trackedIssues.add(rawMatched);
     }
     LiveIssue newIssue = tracking.getUnmatchedRaw();
-    if(newIssue == null) return;
+    if (newIssue == null)
+      return;
     if (newIssue.getServerIssueKey() != null) {
       // were matched before with server issues, now not anymore
       wipeServerIssueDetails(newIssue);
@@ -250,7 +241,7 @@ public class IssueManager {
       newIssue.setCreationDate(System.currentTimeMillis());
     }
     trackedIssues.add(newIssue);
-    liveIssueCache.save(file, trackedIssues);
+    liveIssueCache.save(file, newIssue);
   }
 
   /**
@@ -279,11 +270,14 @@ public class IssueManager {
   }
 
   public void analysisStarted() {
-    clear();
+    // clear();
     liveIssueCache.analysisStarted();
+    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
   }
 
   public void analysisFinished() {
     liveIssueCache.analysisFinished();
+    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
+    // myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
   }
 }

@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
@@ -38,15 +37,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import kotlin.Unit;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.TextRange;
@@ -54,7 +49,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
-import static com.intellij.openapi.application.ActionsKt.runInEdt;
 import static java.util.stream.Collectors.toList;
 import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
 
@@ -69,7 +63,6 @@ public class IssueProcessor {
   }
 
   public void process(Issue rawIssue) {
-    long start = System.currentTimeMillis();
     IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
     LiveIssue issue = null;
     try {
@@ -79,10 +72,7 @@ public class IssueProcessor {
     }
     // this might be updated later after tracking with server issues
     manager.add(issue.psiFile().getVirtualFile(), issue);
-
-    SonarLintUtils.getService(myProject, CodeAnalyzerRestarter.class).refreshOpenFiles();
   }
-
 
   public void process(final SonarLintJob job, ProgressIndicator indicator, final Collection<Issue> rawIssues, Collection<ClientInputFile> failedAnalysisFiles) {
     long start = System.currentTimeMillis();

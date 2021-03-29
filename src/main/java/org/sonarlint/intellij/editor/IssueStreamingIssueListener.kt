@@ -25,7 +25,7 @@ import java.util.function.Function
 
 class IssueStreamingIssueListener(private val listenerCallback: Function<Issue, Unit>) : IssueListener {
 
-    override fun handle(issue: Issue) {
-        listenerCallback.apply(issue)
-    }
+  override fun handle(issue: Issue) {
+    listenerCallback.apply(issue)
+  }
 }

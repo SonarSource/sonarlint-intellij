@@ -19,61 +19,61 @@
  */
 package org.sonarlint.intellij.issue.tracking
 
-import java.util.*
+
+import java.util.IdentityHashMap
+import kotlin.collections.ArrayList
+
 
 class SingleIssueTracking<RAW : Trackable?, BASE : Trackable?>(
-    private val raw: RAW, baseInput: Input<BASE>?
+  private val raw: RAW, baseInput: Input<BASE>?
 ) {
-    /**
-     * Matched issues -> a raw issue is associated to a base issue
-     */
-    private val rawToBase = IdentityHashMap<RAW, BASE>()
-    private val baseToRaw = IdentityHashMap<BASE, RAW>()
-    private val bases: Collection<BASE>
+  /**
+   * Matched issues -> a raw issue is associated to a base issue
+   */
+  private val rawToBase = IdentityHashMap<RAW, BASE>()
+  private val baseToRaw = IdentityHashMap<BASE, RAW>()
+  private val bases: Collection<BASE> = baseInput!!.issues
 
-    /**
-     * Returns an Iterable to be traversed when matching issues. That means
-     * that the traversal does not fail if method [.match]
-     * is called.
-     */
-    val unmatchedRaw: RAW?
-        get() {
-            if (!rawToBase.containsKey(raw)) {
-                return raw
-            }
-            return null
+  /**
+   * Returns an Iterable to be traversed when matching issues. That means
+   * that the traversal does not fail if method [.match]
+   * is called.
+   */
+  val unmatchedRaw: RAW?
+    get() {
+      if (!rawToBase.containsKey(raw)) {
+        return raw
+      }
+      return null
+    }
+  val matchedRaws: Map<RAW, BASE>
+    get() = rawToBase
+
+  fun baseFor(raw: RAW): BASE? {
+    return rawToBase[raw]
+  }
+
+  /**
+   * The base issues that are not matched by a raw issue and that need to be closed.
+   */
+  val unmatchedBases: Iterable<BASE>
+    get() {
+      val result: MutableList<BASE> = ArrayList()
+      for (b in bases) {
+        if (!baseToRaw.containsKey(b)) {
+          result.add(b)
         }
-    val matchedRaws: Map<RAW, BASE>
-        get() = rawToBase
-
-    fun baseFor(raw: RAW): BASE? {
-        return rawToBase[raw]
+      }
+      return result
     }
 
-    /**
-     * The base issues that are not matched by a raw issue and that need to be closed.
-     */
-    val unmatchedBases: Iterable<BASE>
-        get() {
-            val result: MutableList<BASE> = ArrayList()
-            for (b in bases) {
-                if (!baseToRaw.containsKey(b)) {
-                    result.add(b)
-                }
-            }
-            return result
-        }
+  fun containsUnmatchedBase(base: BASE): Boolean {
+    return !baseToRaw.containsKey(base)
+  }
 
-    fun containsUnmatchedBase(base: BASE): Boolean {
-        return !baseToRaw.containsKey(base)
-    }
+  fun match(raw: RAW, base: BASE) {
+    rawToBase[raw] = base
+    baseToRaw[base] = raw
+  }
 
-    fun match(raw: RAW, base: BASE) {
-        rawToBase[raw] = base
-        baseToRaw[base] = raw
-    }
-
-    init {
-        bases = baseInput!!.issues
-    }
 }

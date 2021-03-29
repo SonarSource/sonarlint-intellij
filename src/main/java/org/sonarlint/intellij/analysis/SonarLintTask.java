@@ -24,30 +24,24 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-
-import java.util.*;
-import java.util.stream.Collectors;
-
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import kotlin.Unit;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.editor.AccumulatorIssueListener;
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.editor.IssueStreamingIssueListener;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueProcessor;
-import org.sonarlint.intellij.messages.TaskListener;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
@@ -96,70 +90,24 @@ public class SonarLintTask extends Task.Backgroundable {
     return job;
   }
 
-//  @Override
-//  public void run(ProgressIndicator indicator) {
-//    AccumulatorIssueListener listener = new AccumulatorIssueListener();
-//
-//    try {
-//      checkCanceled(indicator, myProject);
-//
-//      List<ClientInputFile> allFailedAnalysisFiles;
-//      if (getJob().allFiles().findAny().isPresent()) {
-//
-//        List<AnalysisResults> results = analyze(myProject, indicator, listener);
-//
-//        // last chance to cancel (to avoid the possibility of having interrupt flag set)
-//        checkCanceled(indicator, myProject);
-//
-//        LOGGER.info("SonarLint analysis done");
-//
-//        indicator.setIndeterminate(false);
-//        indicator.setFraction(.9);
-//
-//        allFailedAnalysisFiles = results.stream()
-//          .flatMap(r -> r.failedAnalysisFiles().stream())
-//          .collect(Collectors.toList());
-//      } else {
-//        allFailedAnalysisFiles = Collections.emptyList();
-//      }
-//
-//      List<Issue> issues = listener.getIssues();
-//      ProgressManager.getInstance().executeNonCancelableSection(() -> {
-//        indicator.setText("Updating SonarLint issues: " + issues.size());
-//
-//        IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
-//        processor.process(job, indicator, issues, allFailedAnalysisFiles);
-//      });
-//    } catch (CanceledException e1) {
-//      SonarLintConsole console = SonarLintConsole.get(job.project());
-//      console.info("Analysis canceled");
-//    } catch (Throwable e) {
-//      handleError(e, indicator);
-//    } finally {
-//      if (!myProject.isDisposed()) {
-//        myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
-//      }
-//    }
-//  }
-
   @Override
   public void run(ProgressIndicator indicator) {
-    IssueStreamingIssueListener newListener = new IssueStreamingIssueListener((issue -> {
+
+    IssueStreamingIssueListener issueListener = new IssueStreamingIssueListener((issue -> {
       IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
       indicator.setText("Updating SonarLint issue: " + issue.getRuleKey());
       checkCanceled(indicator, myProject);
-      runInEdt(ModalityState.any(), ()-> {
+      runInEdt(ModalityState.any(), () -> {
         processor.process(issue);
+        myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
         return Unit.INSTANCE;
       });
-      myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
       return Unit.INSTANCE;
     }));
 
-    analyze(myProject, indicator, newListener);
+    analyze(myProject, indicator, issueListener);
     // TODO create snapshot for IssueManager
   }
-
 
   private void handleError(Throwable e, ProgressIndicator indicator) {
     // if cancelled, ignore any errors since they were most likely caused by the interrupt
