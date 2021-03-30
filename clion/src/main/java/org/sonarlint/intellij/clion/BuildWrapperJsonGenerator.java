@@ -66,7 +66,7 @@ public class BuildWrapperJsonGenerator {
     return builder.append("]}").toString();
   }
 
-  private static String quote(@Nullable String string) {
+  static String quote(@Nullable String string) {
     if (string == null || string.length() == 0) {
       return "\"\"";
     }
