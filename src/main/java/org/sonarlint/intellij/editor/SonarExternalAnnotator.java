@@ -48,6 +48,7 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.util.SonarLintSeverity;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static java.util.Collections.emptyList;
 import static org.sonarlint.intellij.util.SonarLintUtils.getService;
@@ -75,9 +76,11 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         }
       });
 
-    getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
-      .getOrDefault(file.getVirtualFile(), emptyList())
-      .forEach(vulnerability -> addAnnotation(vulnerability, holder));
+    if (SonarLintUtils.enableTaintVulnerabilities()) {
+      getService(project, TaintVulnerabilitiesPresenter.class).getCurrentVulnerabilitiesByFile()
+        .getOrDefault(file.getVirtualFile(), emptyList())
+        .forEach(vulnerability -> addAnnotation(vulnerability, holder));
+    }
   }
 
   private static boolean shouldSkip(@NotNull PsiFile file) {

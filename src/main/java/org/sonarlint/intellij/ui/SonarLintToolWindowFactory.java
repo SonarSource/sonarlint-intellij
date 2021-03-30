@@ -30,6 +30,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildVulnerabilitiesTabName;
 import static org.sonarlint.intellij.util.SonarLintUtils.getService;
@@ -50,7 +51,9 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     ContentManager contentManager = toolWindow.getContentManager();
     addIssuesTab(project, contentManager);
     addAnalysisResultsTab(project, contentManager);
-    addTaintIssuesTab(project, contentManager);
+    if (SonarLintUtils.enableTaintVulnerabilities()) {
+      addTaintIssuesTab(project, contentManager);
+    }
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
     SonarLintToolWindow sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
