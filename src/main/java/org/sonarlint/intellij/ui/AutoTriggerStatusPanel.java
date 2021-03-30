@@ -22,12 +22,16 @@ package org.sonarlint.intellij.ui;
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.ide.PowerSaveMode;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.GuiUtils;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
@@ -99,14 +103,15 @@ public class AutoTriggerStatusPanel {
     });
   }
 
-  private void switchCards() {
-    String card = getCard();
-    layout.show(panel, card);
+  private void switchCard(String cardName) {
+    GuiUtils.invokeLaterIfNeeded(() -> layout.show(panel, cardName), ModalityState.defaultModalityState());
   }
 
-  private String getCard() {
+  private void switchCards() {
+    ApplicationManager.getApplication().assertIsDispatchThread();
     if (!getGlobalSettings().isAutoTrigger()) {
-      return AUTO_TRIGGER_DISABLED;
+      switchCard(AUTO_TRIGGER_DISABLED);
+      return;
     }
 
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
@@ -114,21 +119,28 @@ public class AutoTriggerStatusPanel {
       Module m = SonarLintAppUtils.findModuleForFile(selectedFile, project);
       LocalFileExclusions.Result result = localFileExclusions.canAnalyze(selectedFile, m);
       if (result.isExcluded()) {
-        return FILE_DISABLED;
+        switchCard(FILE_DISABLED);
+        return;
       }
       // here module is not null or file would have been already excluded by canAnalyze
       result = localFileExclusions.checkExclusions(selectedFile, m);
       if (result.isExcluded()) {
-        return FILE_DISABLED;
+        switchCard(FILE_DISABLED);
+        return;
       }
 
-      // Module can't be null here, otherwise it's excluded
-      if (isExcludedInServer(m, selectedFile)) {
-        return FILE_DISABLED;
-      }
+      // Computing server exclusions may take time, so lets move from EDT to pooled thread
+      ApplicationManager.getApplication().executeOnPooledThread(() -> {
+        if (isExcludedInServer(m, selectedFile)) {
+          switchCard(FILE_DISABLED);
+        } else {
+          switchCard(AUTO_TRIGGER_ENABLED);
+        }
+      });
+
+    } else {
+      switchCard(AUTO_TRIGGER_ENABLED);
     }
-
-    return AUTO_TRIGGER_ENABLED;
   }
 
   private boolean isExcludedInServer(Module m, VirtualFile f) {
