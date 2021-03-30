@@ -37,6 +37,7 @@ import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import com.intellij.util.PlatformUtils;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -229,5 +230,10 @@ public class SonarLintUtils {
         SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }
     }
+  }
+
+  public static boolean enableTaintVulnerabilities() {
+    // No Taint Vulnerabilities in C/C++ for the time being
+    return !PlatformUtils.isCLion();
   }
 }
