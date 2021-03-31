@@ -33,14 +33,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintTask;
-import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
+import org.sonarlint.intellij.analysis.SonarLintTask;
+import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -64,21 +63,9 @@ public class SonarLintSubmitter {
     }
   };
   private final Project myProject;
-  private final Supplier<LocalFileExclusions> exclusionsProvider;
 
   public SonarLintSubmitter(Project project) {
-    this(project, () -> new LocalFileExclusions(project));
-  }
-
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   *
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
-  SonarLintSubmitter(Project project, Supplier<LocalFileExclusions> exclusionsProvider) {
     this.myProject = project;
-    this.exclusionsProvider = exclusionsProvider;
   }
 
   public void submitOpenFilesAuto(TriggerType trigger) {
@@ -166,8 +153,8 @@ public class SonarLintSubmitter {
   }
 
   private void checkExclusionsFileByFile(boolean checkUserExclusions, List<VirtualFile> filesToClearIssues, Map<Module, Collection<VirtualFile>> filesByModule, VirtualFile file) {
+    LocalFileExclusions localFileExclusions = SonarLintUtils.getService(myProject, LocalFileExclusions.class);
     Module m = SonarLintAppUtils.findModuleForFile(file, myProject);
-    LocalFileExclusions localFileExclusions = exclusionsProvider.get();
     ExcludeResult result = localFileExclusions.canAnalyze(file, m);
     if (result.isExcluded()) {
       logExclusionAndAddToClearList(filesToClearIssues, file, result.excludeReason());
