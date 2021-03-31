@@ -70,14 +70,12 @@ public class AutoTriggerStatusPanel {
   private static final String TOOLTIP = "Some files are not automatically analyzed. Check the SonarLint debug logs for details.";
 
   private final Project project;
-  private final LocalFileExclusions localFileExclusions;
 
   private JPanel panel;
   private CardLayout layout;
 
   public AutoTriggerStatusPanel(Project project) {
     this.project = project;
-    this.localFileExclusions = new LocalFileExclusions(project);
     createPanel();
     switchCards();
     subscribeToEvents();
@@ -114,6 +112,7 @@ public class AutoTriggerStatusPanel {
       switchCard(AUTO_TRIGGER_DISABLED);
       return;
     }
+    LocalFileExclusions localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
 
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {

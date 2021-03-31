@@ -184,6 +184,7 @@
         <projectService serviceImplementation="org.sonarlint.intellij.core.UpdateChecker"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.analysis.LocalFileExclusions"/>
 
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
