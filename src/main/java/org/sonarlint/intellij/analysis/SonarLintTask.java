@@ -118,25 +118,25 @@ public class SonarLintTask extends Task.Backgroundable {
       return null;
     }));
 
-     List<ClientInputFile> allFailedAnalysisFiles;
-     if (getJob().allFiles().findAny().isPresent()) {
+      List<ClientInputFile> allFailedAnalysisFiles;
+      if (getJob().allFiles().findAny().isPresent()) {
 
       List<AnalysisResults> results = analyze(myProject, indicator, issueListener);
 
-       // last chance to cancel (to avoid the possibility of having interrupt flag set)
-       checkCanceled(indicator, myProject);
+        // last chance to cancel (to avoid the possibility of having interrupt flag set)
+        checkCanceled(indicator, myProject);
 
-       LOGGER.info("SonarLint analysis done");
+        LOGGER.info("SonarLint analysis done");
 
-       indicator.setIndeterminate(false);
-       indicator.setFraction(.9);
+        indicator.setIndeterminate(false);
+        indicator.setFraction(.9);
 
-       allFailedAnalysisFiles = results.stream()
-         .flatMap(r -> r.failedAnalysisFiles().stream())
-         .collect(Collectors.toList());
-     } else {
-       allFailedAnalysisFiles = Collections.emptyList();
-     }
+        allFailedAnalysisFiles = results.stream()
+          .flatMap(r -> r.failedAnalysisFiles().stream())
+          .collect(Collectors.toList());
+      } else {
+        allFailedAnalysisFiles = Collections.emptyList();
+      }
 
     Map<VirtualFile, Collection<LiveIssue>> transformedIssues = processor.transformIssues(issues, job.allFiles().collect(Collectors.toList()), allFailedAnalysisFiles);
     if (shouldUpdateServerIssues(job.trigger())) {
