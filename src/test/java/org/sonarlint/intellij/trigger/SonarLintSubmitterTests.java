@@ -62,7 +62,8 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
     when(bindingManager.getFacade()).thenReturn(facade);
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     getGlobalSettings().setAutoTrigger(true);
-    submitter = new SonarLintSubmitter(getProject(), () -> exclusions);
+    submitter = new SonarLintSubmitter(getProject());
+    replaceProjectService(LocalFileExclusions.class, exclusions);
     replaceProjectService(SonarLintJobManager.class, sonarLintJobManager);
     replaceProjectService(ProjectBindingManager.class, bindingManager);
   }
