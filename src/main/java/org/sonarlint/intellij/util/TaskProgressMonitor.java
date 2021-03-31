@@ -22,6 +22,7 @@ package org.sonarlint.intellij.util;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 
@@ -29,15 +30,21 @@ public class TaskProgressMonitor extends ProgressMonitor {
   private final ProgressIndicator indicator;
   private final ProgressManager progressManager;
   private final Project project;
+  private final Supplier<Boolean> cancelledFlag;
 
   public TaskProgressMonitor(ProgressIndicator indicator, @Nullable Project project) {
-    this(indicator, ProgressManager.getInstance(), project);
+    this(indicator, ProgressManager.getInstance(), project, () -> false);
   }
 
-  public TaskProgressMonitor(ProgressIndicator indicator, ProgressManager progressManager, @Nullable Project project) {
+  public TaskProgressMonitor(ProgressIndicator indicator, @Nullable Project project, Supplier<Boolean> cancelledFlag) {
+    this(indicator, ProgressManager.getInstance(), project, cancelledFlag);
+  }
+
+  public TaskProgressMonitor(ProgressIndicator indicator, ProgressManager progressManager, @Nullable Project project, Supplier<Boolean> cancelledFlag) {
     this.indicator = indicator;
     this.progressManager = progressManager;
     this.project = project;
+    this.cancelledFlag = cancelledFlag;
   }
 
   /**
@@ -45,7 +52,7 @@ public class TaskProgressMonitor extends ProgressMonitor {
    */
   @Override
   public boolean isCanceled() {
-    return indicator.isCanceled() || (project != null && project.isDisposed()) || Thread.currentThread().isInterrupted();
+    return cancelledFlag.get() || indicator.isCanceled() || (project != null && project.isDisposed()) || Thread.currentThread().isInterrupted();
   }
 
   /**

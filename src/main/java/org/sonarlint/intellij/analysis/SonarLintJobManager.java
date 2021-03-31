@@ -19,40 +19,25 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
-import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import org.jetbrains.annotations.NotNull;
+import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintJobManager implements Disposable {
-  private final ExecutorService executor = Executors.newSingleThreadExecutor(new AnalysisThreadFactory());
+public class SonarLintJobManager {
   private final MessageBus messageBus;
   private final Project myProject;
 
   public SonarLintJobManager(Project project) {
     this.messageBus = project.getMessageBus();
     myProject = project;
-    project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
-      @Override
-      public void projectOpened(@NotNull Project project) {
-        if (myProject == project) {
-          executor.shutdownNow();
-        }
-      }
-    });
   }
 
   /**
@@ -62,15 +47,16 @@ public class SonarLintJobManager implements Disposable {
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
    *
    * @see #submitManual(Map, Collection, TriggerType, boolean, AnalysisCallback)
+   * @return
    */
-  public void submitBackground(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, AnalysisCallback callback) {
+  public SonarLintTask submitBackground(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, AnalysisCallback callback) {
     SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, false, callback);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
     SonarLintTask task = new SonarLintTask(myProject, newJob, true);
     notifyStart(task.getJob());
-    ProgressManager progressManager = ProgressManager.getInstance();
-    executor.submit(() -> progressManager.run(task));
+    task.queue();
+    return task;
   }
 
   /**
@@ -80,33 +66,26 @@ public class SonarLintJobManager implements Disposable {
    *
    * @see #submitBackground(Map, Collection, TriggerType, AnalysisCallback)
    */
-  public void submitManual(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean modal,
+  @CheckForNull
+  public SonarLintTask submitManual(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean modal,
     AnalysisCallback callback) {
     SonarLintStatus status = SonarLintUtils.getService(myProject, SonarLintStatus.class);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (myProject.isDisposed() || !status.tryRun()) {
       console.info("Canceling analysis triggered by the user because another one is already running or because the project is disposed");
-      return;
+      return null;
     }
 
     SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, true, callback);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
     SonarLintUserTask task = new SonarLintUserTask(myProject, newJob, modal);
     notifyStart(task.getJob());
-    ProgressManager progressManager = ProgressManager.getInstance();
-    if (modal) {
-      progressManager.run(task);
-    } else {
-      executor.submit(() -> progressManager.run(task));
-    }
+    task.queue();
+    return task;
   }
 
   private void notifyStart(SonarLintJob job) {
     messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).started(job);
   }
 
-  @Override
-  public void dispose() {
-    executor.shutdownNow();
-  }
 }

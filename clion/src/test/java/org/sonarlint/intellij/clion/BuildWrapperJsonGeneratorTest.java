@@ -46,8 +46,10 @@ class BuildWrapperJsonGeneratorTest {
 
     VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
     OCCompilerSettings compilerSettings = mock(OCCompilerSettings.class);
-    when(compilerSettings.getCompilerExecutable()).thenReturn(new File("/path/to/compiler"));
-    when(compilerSettings.getCompilerWorkingDir()).thenReturn(new File("/path/to/compiler/working/dir"));
+    File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
+    when(compilerSettings.getCompilerExecutable()).thenReturn(compilerExecutable);
+    File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
+    when(compilerSettings.getCompilerWorkingDir()).thenReturn(compilerWorkingDir);
     CidrCompilerSwitches compilerSwitches = mock(CidrCompilerSwitches.class);
     when(compilerSwitches.getList(CidrCompilerSwitches.Format.RAW)).thenReturn(Arrays.asList("a1", "a2"));
     when(compilerSettings.getCompilerSwitches()).thenReturn(compilerSwitches);
@@ -57,7 +59,12 @@ class BuildWrapperJsonGeneratorTest {
       .build();
     assertEquals(
       "{\"version\":0,\"captures\":[" +
-        "{\"compiler\":\"clang\",\"cwd\":\"/path/to/compiler/working/dir\",\"executable\":\"/path/to/compiler\",\"cmd\":[\"/path/to/compiler\",\"/test.cpp\",\"a1\",\"a2\"]}" +
+        "{\"compiler\":\"clang\",\"cwd\":"
+        + quote(compilerWorkingDir)
+        + ",\"executable\":"
+        + quote(compilerExecutable)
+        + ",\"cmd\":["
+        + quote(compilerExecutable) + ",\"/test.cpp\",\"a1\",\"a2\"]}" +
         "]}",
       json);
   }
@@ -68,16 +75,20 @@ class BuildWrapperJsonGeneratorTest {
 
     VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
     OCCompilerSettings compilerSettings = mock(OCCompilerSettings.class);
-    when(compilerSettings.getCompilerExecutable()).thenReturn(new File("/path/to/compiler"));
-    when(compilerSettings.getCompilerWorkingDir()).thenReturn(new File("/path/to/compiler/working/dir"));
+    File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
+    when(compilerSettings.getCompilerExecutable()).thenReturn(compilerExecutable);
+    File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
+    when(compilerSettings.getCompilerWorkingDir()).thenReturn(compilerWorkingDir);
     CidrCompilerSwitches compilerSwitches = mock(CidrCompilerSwitches.class);
     when(compilerSwitches.getList(CidrCompilerSwitches.Format.RAW)).thenReturn(Arrays.asList("a1", "a2"));
     when(compilerSettings.getCompilerSwitches()).thenReturn(compilerSwitches);
 
     VirtualFile virtualFile2 = fileSystem.findFileByIoFile(new File("test2.cpp"));
     OCCompilerSettings compilerSettings2 = mock(OCCompilerSettings.class);
-    when(compilerSettings2.getCompilerExecutable()).thenReturn(new File("/path/to/compiler2"));
-    when(compilerSettings2.getCompilerWorkingDir()).thenReturn(new File("/path/to/compiler/working/dir2"));
+    File compilerExecutable2 = new File("/path/to/compiler2").getAbsoluteFile();
+    when(compilerSettings2.getCompilerExecutable()).thenReturn(compilerExecutable2);
+    File compilerWorkingDir2 = new File("/path/to/compiler/working/dir2").getAbsoluteFile();
+    when(compilerSettings2.getCompilerWorkingDir()).thenReturn(compilerWorkingDir2);
     CidrCompilerSwitches compilerSwitches2 = mock(CidrCompilerSwitches.class);
     when(compilerSwitches2.getList(CidrCompilerSwitches.Format.RAW)).thenReturn(Arrays.asList("b1", "b2"));
     when(compilerSettings2.getCompilerSwitches()).thenReturn(compilerSwitches2);
@@ -88,9 +99,24 @@ class BuildWrapperJsonGeneratorTest {
       .build();
     assertEquals(
       "{\"version\":0,\"captures\":[" +
-        "{\"compiler\":\"clang\",\"cwd\":\"/path/to/compiler/working/dir\",\"executable\":\"/path/to/compiler\",\"cmd\":[\"/path/to/compiler\",\"/test.cpp\",\"a1\",\"a2\"]}," +
-        "{\"compiler\":\"clang\",\"cwd\":\"/path/to/compiler/working/dir2\",\"executable\":\"/path/to/compiler2\",\"cmd\":[\"/path/to/compiler2\",\"/test2.cpp\",\"b1\",\"b2\"]}" +
-        "]}",
+        "{\"compiler\":\"clang\",\"cwd\":"
+        + quote(compilerWorkingDir)
+        + ",\"executable\":"
+        + quote(compilerExecutable)
+        + ",\"cmd\":["
+        + quote(compilerExecutable) + ",\"/test.cpp\",\"a1\",\"a2\"]}"
+        + ","
+        + "{\"compiler\":\"clang\",\"cwd\":"
+        + quote(compilerWorkingDir2)
+        + ",\"executable\":"
+        + quote(compilerExecutable2)
+        + ",\"cmd\":["
+        + quote(compilerExecutable2) + ",\"/test2.cpp\",\"b1\",\"b2\"]}"
+        + "]}",
       json);
+  }
+
+  private static String quote(File file) {
+    return BuildWrapperJsonGenerator.quote(file.getAbsoluteFile().toString());
   }
 }
