@@ -19,9 +19,6 @@
  */
 package org.sonarlint.intellij.clion;
 
-import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
-import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
-
 import javax.annotation.Nullable;
 
 public class BuildWrapperJsonGenerator {
@@ -46,19 +43,18 @@ public class BuildWrapperJsonGenerator {
   }
 
   private void appendEntry(AnalyzerConfiguration.Configuration entry) {
-    OCCompilerSettings compilerSettings = entry.compilerSettings;
-    String quotedCompilerExecutable = quote(compilerSettings.getCompilerExecutable().getAbsolutePath());
+    String quotedCompilerExecutable = quote(entry.compilerExecutable);
     builder.append("{")
       .append("\"compiler\":\"")
-      .append(entry.compiler)
+      .append(entry.compilerKind)
       .append("\",")
-      .append("\"cwd\":" + quote(compilerSettings.getCompilerWorkingDir().getAbsolutePath()) + ",")
+      .append("\"cwd\":" + quote(entry.compilerWorkingDir) + ",")
       .append("\"executable\":")
       .append(quotedCompilerExecutable)
       .append(",\"cmd\":[")
       .append(quotedCompilerExecutable)
       .append("," + quote(entry.virtualFile.getCanonicalPath()));
-    compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW).forEach(s -> builder.append(",").append(quote(s)));
+    entry.compilerSwitches.forEach(s -> builder.append(",").append(quote(s)));
     builder.append("]}");
   }
 
