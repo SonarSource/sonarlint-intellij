@@ -43,7 +43,7 @@ import static org.sonarlint.intellij.util.SonarLintUtils.equalsIgnoringTrailingS
 public final class SonarLintGlobalSettings {
 
   private boolean autoTrigger = true;
-  private String nodejsPath;
+  private String nodejsPath = "";
   private List<ServerConnection> servers = new LinkedList<>();
   private List<String> fileExclusions = new LinkedList<>();
   @Deprecated
