@@ -27,6 +27,8 @@ import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -57,18 +59,34 @@ class AnalyzerConfigurationTest {
   void configuration() {
     VirtualFile file = mock(VirtualFile.class);
     OCCompilerSettings compilerSettings = mock(OCCompilerSettings.class);
-    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(file, compilerSettings, "compiler", Language.CPP, true);
+    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+      file,
+      "compilerExecutable",
+      "compilerWorkingDir",
+      Arrays.asList("s1", "s2"),
+      "compilerKind",
+      Language.CPP,
+      true);
 
     assertEquals(file, configuration.virtualFile);
-    assertEquals(compilerSettings, configuration.compilerSettings);
-    assertEquals("compiler", configuration.compiler);
+    assertEquals("compilerExecutable", configuration.compilerExecutable);
+    assertEquals("compilerWorkingDir", configuration.compilerWorkingDir);
+    assertEquals(Arrays.asList("s1", "s2"), configuration.compilerSwitches);
+    assertEquals("compilerKind", configuration.compilerKind);
     assertEquals(Language.CPP, configuration.sonarLanguage);
     assertTrue(configuration.isHeaderFile);
   }
 
   @Test
   void configuration_result() {
-    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(null, null, null, null, false);
+    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      false);
     AnalyzerConfiguration.ConfigurationResult result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
     assertTrue(result.hasConfiguration());
     assertEquals(configuration, result.getConfiguration());
