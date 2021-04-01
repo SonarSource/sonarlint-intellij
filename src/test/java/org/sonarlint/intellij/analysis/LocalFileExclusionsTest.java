@@ -19,84 +19,140 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.project.ProjectManager;
+import com.intellij.ide.PowerSaveMode;
+import com.intellij.lang.Language;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.WriteAction;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.testFramework.HeavyPlatformTestCase;
-import com.intellij.testFramework.PlatformTestUtil;
-import java.io.IOException;
-import java.util.function.BooleanSupplier;
-import org.jdom.JDOMException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.entry;
 
-// Heavy because of the need to close the project
-public class LocalFileExclusionsTest extends HeavyPlatformTestCase {
-  private FileType type = mock(FileType.class);
-  private VirtualFile testFile = mock(VirtualFile.class);
-  private BooleanSupplier powerModeCheck = mock(BooleanSupplier.class);
-  private LocalFileExclusions exclusions;
-  private String projectFilePath;
+public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-    projectFilePath = myProject.getProjectFilePath();
-    exclusions = new LocalFileExclusions(getProject());
-    when(powerModeCheck.getAsBoolean()).thenReturn(false);
-    when(type.isBinary()).thenReturn(false);
-    when(testFile.getParent()).thenReturn(mock(VirtualFile.class));
-    when(testFile.getFileType()).thenReturn(type);
-    when(testFile.isInLocalFileSystem()).thenReturn(true);
-    when(testFile.isValid()).thenReturn(true);
+  @Rule
+  public TemporaryFolder temp = new TemporaryFolder();
+
+  private LocalFileExclusions underTest;
+
+  Map<VirtualFile, ExcludeResult> excludeReasons = new HashMap<>();
+
+  @Before
+  public void prepare() {
+    underTest = new LocalFileExclusions(getProject());
   }
 
-  @Override
-  protected void tearDown() throws Exception {
-    if (!myProject.isOpen()) {
-      myProject = ProjectManager.getInstance().loadAndOpenProject(projectFilePath);
+  @Test
+  public void should_not_exclude_source_file() throws InvalidBindingException {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    assertIsNotExcluded(file, nonExcludedFilesByModule);
+  }
+
+  @Test
+  public void should_exclude_if_file_not_part_of_a_module() throws Exception {
+    VirtualFile tempFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(temp.newFile());
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(tempFile), false, excludeReasons::put);
+    assertIsExcluded(tempFile, nonExcludedFilesByModule, "file is not part of any module in IntelliJ's project structure");
+  }
+
+  @Test
+  public void should_exclude_if_file_is_binary() throws InvalidBindingException {
+    VirtualFile file = myFixture.copyFileToProject("foo.bin", "foo.bin");
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    assertIsExcluded(file, nonExcludedFilesByModule, "file's type or location are not supported");
+  }
+
+  @Test
+  public void should_exclude_if_file_is_deleted() throws Exception {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    WriteAction.runAndWait(() -> file.delete(null));
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    assertIsExcluded(file, nonExcludedFilesByModule, "file is not part of any module in IntelliJ's project structure");
+  }
+
+  @Test
+  public void should_exclude_if_file_excluded_in_project_config() throws Exception {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    setProjectLevelExclusions(singletonList("GLOB:foo.php"));
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarLint Project Settings");
+  }
+
+  @Test
+  public void should_not_exclude_if_file_excluded_in_project_config_when_forced_analysis() throws Exception {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    setProjectLevelExclusions(singletonList("GLOB:foo.php"));
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
+    assertIsNotExcluded(file, nonExcludedFilesByModule);
+  }
+
+  @Test
+  public void should_exclude_if_file_excluded_in_global_config() throws Exception {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    setGlobalLevelExclusions(singletonList("foo.php"));
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarLint Global Settings");
+  }
+
+  @Test
+  public void should_not_exclude_if_file_excluded_in_global_config_when_forced_analysis() throws Exception {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    setGlobalLevelExclusions(singletonList("GLOB:foo.php"));
+
+    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
+    assertIsNotExcluded(file, nonExcludedFilesByModule);
+  }
+
+  @Test
+  public void should_exclude_if_power_save_mode() throws Exception {
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+
+    try {
+      PowerSaveMode.setEnabled(true);
+
+      Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
+      assertIsExcluded(file, nonExcludedFilesByModule, "power save mode is enabled");
+    } finally {
+      PowerSaveMode.setEnabled(false);
     }
-    super.tearDown();
   }
 
-  @Test
-  public void test_should_not_analyze_automatically_if_module_is_null() {
-    ExcludeResult result = exclusions.canAnalyze(testFile, null);
-    assertThat(result.isExcluded()).isTrue();
+  private void assertIsNotExcluded(VirtualFile file, Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule) {
+    assertThat(excludeReasons).isEmpty();
+    assertThat(nonExcludedFilesByModule.get(getModule())).containsExactly(file);
   }
 
-  @Test
-  public void test_should_analyze_file() {
-    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isFalse();
+  private void assertIsExcluded(VirtualFile file, Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule, String s) {
+    assertThat(excludeReasons).containsOnlyKeys(file);
+    assertThat(excludeReasons.get(file).isExcluded()).isTrue();
+    assertThat(excludeReasons.get(file).excludeReason()).isEqualTo(s);
+    assertThat(nonExcludedFilesByModule).isEmpty();
   }
 
-  @Test
-  public void test_should_not_analyze_if_file_is_binary() {
-    when(type.isBinary()).thenReturn(true);
-    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isTrue();
-  }
-
-  @Test
-  public void test_should_not_analyze_if_module_is_null() {
-    assertThat(exclusions.canAnalyze(testFile, null).isExcluded()).isTrue();
-  }
-
-  @Test
-  public void test_should_not_analyze_if_project_is_disposed() throws IOException, JDOMException {
-    PlatformTestUtil.forceCloseProjectWithoutSaving(myProject);
-
-    assertThat(exclusions.canAnalyze(testFile, getModule()).isExcluded()).isTrue();
-  }
-
-  @Test
-  public void test_should_not_analyze_if_file_is_invalid() {
-    VirtualFile f = mock(VirtualFile.class);
-    when(f.isValid()).thenReturn(false);
-
-    assertThat(exclusions.canAnalyze(f, getModule()).isExcluded()).isTrue();
-  }
 }
