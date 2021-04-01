@@ -24,12 +24,10 @@ import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.GuiUtils;
 import com.intellij.ui.HyperlinkAdapter;
@@ -43,21 +41,18 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.function.Predicate;
+import java.util.Map;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -88,7 +83,8 @@ public class AutoTriggerStatusPanel {
   private void subscribeToEvents() {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void applied(SonarLintGlobalSettings settings) {
+      @Override
+      public void applied(SonarLintGlobalSettings settings) {
         switchCards();
       }
     });
@@ -112,45 +108,26 @@ public class AutoTriggerStatusPanel {
       switchCard(AUTO_TRIGGER_DISABLED);
       return;
     }
-    LocalFileExclusions localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
 
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
-      Module m = SonarLintAppUtils.findModuleForFile(selectedFile, project);
-      ExcludeResult result = localFileExclusions.canAnalyze(selectedFile, m);
-      if (result.isExcluded()) {
-        switchCard(FILE_DISABLED);
-        return;
-      }
-      // here module is not null or file would have been already excluded by canAnalyze
-      result = localFileExclusions.checkExclusions(selectedFile, m);
-      if (result.isExcluded()) {
-        switchCard(FILE_DISABLED);
-        return;
-      }
-
       // Computing server exclusions may take time, so lets move from EDT to pooled thread
       ApplicationManager.getApplication().executeOnPooledThread(() -> {
-        if (isExcludedInServer(m, selectedFile)) {
-          switchCard(FILE_DISABLED);
-        } else {
+        LocalFileExclusions localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
+        try {
+          Map<Module, Collection<VirtualFile>> nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> {
+            switchCard(FILE_DISABLED);
+          });
+          if (!nonExcluded.isEmpty()) {
+            switchCard(AUTO_TRIGGER_ENABLED);
+          }
+        } catch (InvalidBindingException e) {
+          // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager
           switchCard(AUTO_TRIGGER_ENABLED);
         }
       });
-
     } else {
       switchCard(AUTO_TRIGGER_ENABLED);
-    }
-  }
-
-  private boolean isExcludedInServer(Module m, VirtualFile f) {
-    Predicate<VirtualFile> testPredicate = file -> TestSourcesFilter.isTestSources(file, m.getProject());
-    try {
-      Collection<VirtualFile> afterExclusion = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade().getExcluded(m, Collections.singleton(f), testPredicate);
-      return !afterExclusion.isEmpty();
-    } catch (InvalidBindingException e) {
-      // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager
-      return false;
     }
   }
 
