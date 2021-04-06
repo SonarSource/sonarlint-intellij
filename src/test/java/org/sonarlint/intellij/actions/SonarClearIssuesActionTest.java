@@ -48,7 +48,7 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
     when(event.getProject()).thenReturn(getProject());
     file = myFixture.copyFileToProject("foo.php", "foo.php");
     issueManager = SonarLintUtils.getService(getProject(), IssueManager.class);
-    issueManager.store(Collections.singletonMap(file, Collections.singletonList(mock(LiveIssue.class))));
+    issueManager.insertNewIssue(file, mock(LiveIssue.class));
   }
 
   @Test

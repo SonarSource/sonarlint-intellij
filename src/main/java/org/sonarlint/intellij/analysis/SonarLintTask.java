@@ -21,31 +21,46 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.editor.AccumulatorIssueListener;
-import org.sonarlint.intellij.issue.IssueProcessor;
+import org.sonarlint.intellij.core.ServerIssueUpdater;
+import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.IssueMatcher;
+import org.sonarlint.intellij.issue.LiveIssueBuilder;
+import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
+
+import static java.util.stream.Collectors.toList;
+import static org.sonarlint.intellij.util.SonarLintUtils.pluralize;
 
 public class SonarLintTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(SonarLintTask.class);
@@ -94,38 +109,49 @@ public class SonarLintTask extends Task.Backgroundable {
 
   @Override
   public void run(ProgressIndicator indicator) {
-    AccumulatorIssueListener listener = new AccumulatorIssueListener();
+    LiveIssueBuilder processor = SonarLintUtils.getService(myProject, LiveIssueBuilder.class);
+    IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
+
+    Map<VirtualFile, Boolean> firstAnalyzedFiles = new ConcurrentHashMap<>();
+    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
+
+    List<VirtualFile> allFilesToAnalyze = job.allFiles().collect(toList());
+    Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile = collectPreviousIssuesPerFile(manager, allFilesToAnalyze);
+
+    AtomicInteger rawIssueCounter = new AtomicInteger();
 
     try {
       checkCanceled(indicator, myProject);
 
-      List<ClientInputFile> allFailedAnalysisFiles;
-      if (getJob().allFiles().findAny().isPresent()) {
+      ReadAction.run(() -> manager.clearAllIssuesForFiles(job.filesToClearIssues()));
 
-        List<AnalysisResults> results = analyze(myProject, indicator, listener);
-
-        // last chance to cancel (to avoid the possibility of having interrupt flag set)
-        checkCanceled(indicator, myProject);
-
-        LOGGER.info("SonarLint analysis done");
-
-        indicator.setIndeterminate(false);
-        indicator.setFraction(.9);
-
-        allFailedAnalysisFiles = results.stream()
-          .flatMap(r -> r.failedAnalysisFiles().stream())
-          .collect(Collectors.toList());
-      } else {
-        allFailedAnalysisFiles = Collections.emptyList();
+      if (allFilesToAnalyze.isEmpty()) {
+        job.callback().onSuccess(Collections.emptySet());
+        return;
       }
 
-      List<Issue> issues = listener.getIssues();
-      ProgressManager.getInstance().executeNonCancelableSection(() -> {
-        indicator.setText("Updating SonarLint issues: " + issues.size());
+      List<AnalysisResults> results = analyzePerModule(myProject, indicator,
+        rawIssue -> processRawIssue(processor, manager, firstAnalyzedFiles, issuesPerFile, previousIssuesPerFile, rawIssueCounter, rawIssue));
 
-        IssueProcessor processor = SonarLintUtils.getService(myProject, IssueProcessor.class);
-        processor.process(job, indicator, issues, allFailedAnalysisFiles);
-      });
+      LOGGER.info("SonarLint analysis done");
+
+      indicator.setIndeterminate(false);
+      indicator.setFraction(.9);
+
+      List<ClientInputFile> allFailedAnalysisFiles = results.stream()
+        .flatMap(r -> r.failedAnalysisFiles().stream())
+        .collect(toList());
+
+      Set<VirtualFile> failedVirtualFiles = asVirtualFiles(allFailedAnalysisFiles);
+      if (!failedVirtualFiles.containsAll(allFilesToAnalyze)) {
+        logFoundIssuesIfAny(rawIssueCounter.get(), issuesPerFile);
+      }
+
+      finalizeIssueStore(manager, previousIssuesPerFile, allFilesToAnalyze, failedVirtualFiles);
+
+      matchWithServerIssuesIfNeeded(indicator, issuesPerFile);
+
+      job.callback().onSuccess(failedVirtualFiles);
     } catch (CanceledException e1) {
       SonarLintConsole console = SonarLintConsole.get(job.project());
       console.info("Analysis canceled");
@@ -136,6 +162,125 @@ public class SonarLintTask extends Task.Backgroundable {
         myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
       }
     }
+  }
+
+  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
+    if (shouldUpdateServerIssues(job.trigger())) {
+      Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
+
+      for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
+        Collection<VirtualFile> moduleFilesWithIssues = e.getValue().stream()
+          .filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty())
+          .collect(toList());
+        if (!moduleFilesWithIssues.isEmpty()) {
+          filesWithIssuesPerModule.put(e.getKey(), moduleFilesWithIssues);
+        }
+      }
+
+      if (!filesWithIssuesPerModule.isEmpty()) {
+        ServerIssueUpdater serverIssueUpdater = SonarLintUtils.getService(myProject, ServerIssueUpdater.class);
+        serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, job.waitForServerIssues());
+      }
+    }
+  }
+
+  private void finalizeIssueStore(IssueManager manager, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile, List<VirtualFile> allFilesToAnalyze,
+    Set<VirtualFile> failedVirtualFiles) {
+    allFilesToAnalyze.forEach(vFile -> {
+      if (failedVirtualFiles.contains(vFile)) {
+        SonarLintConsole.get(myProject).debug("Analysis of file '" + vFile.getPath() + "' might not be accurate because there were errors during analysis");
+      } else {
+        // Remove previous issues that are unmatched, they are probably resolved
+        List<LiveIssue> nonMatchedPreviousIssues = previousIssuesPerFile.get(vFile)
+          .stream()
+          .filter(LiveIssue.class::isInstance)
+          .map(LiveIssue.class::cast)
+          .collect(toList());
+        // Even if there are no previous issues, call the method to mark the file as analyzed
+        manager.removeResolvedIssues(vFile, nonMatchedPreviousIssues);
+      }
+    });
+  }
+
+  @NotNull
+  private static Map<VirtualFile, Collection<Trackable>> collectPreviousIssuesPerFile(IssueManager manager, List<VirtualFile> allFilesToAnalyze) {
+    Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile = new HashMap<>();
+    allFilesToAnalyze.forEach(vFile -> previousIssuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>(manager.getPreviousIssues(f))));
+    return previousIssuesPerFile;
+  }
+
+  private void processRawIssue(LiveIssueBuilder processor, IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
+    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile, AtomicInteger rawIssueCounter,
+    org.sonarsource.sonarlint.core.client.api.common.analysis.Issue rawIssue) {
+    rawIssueCounter.incrementAndGet();
+
+    // Do issue tracking for the single issue
+    ClientInputFile inputFile = rawIssue.getInputFile();
+    if (inputFile == null || inputFile.getPath() == null) {
+      // ignore project level issues
+      return;
+    }
+    VirtualFile vFile = inputFile.getClientObject();
+    if (!vFile.isValid()) {
+      // file is no longer valid (might have been deleted meanwhile) or there has been an error matching an issue in it
+      return;
+    }
+    LiveIssue liveIssue;
+    try {
+      liveIssue = processor.buildLiveIssue(rawIssue, inputFile);
+    } catch (IssueMatcher.NoMatchException e) {
+      // File content is likely to have changed during the analysis, should be fixed in next analysis
+      SonarLintConsole.get(myProject).debug("Failed to find location of issue for file: '" + vFile.getName() + "'." + e.getMessage());
+      return;
+    } catch (Exception e) {
+      LOGGER.error("Error finding location for issue", e);
+      return;
+    }
+
+    if (lazyComputeFirstAnalyzedFile(manager, firstAnalyzedFiles, vFile)) {
+      // don't set creation date, as we don't know when the issue was actually created (SLI-86)
+      issuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(liveIssue);
+      manager.insertNewIssue(vFile, liveIssue);
+    } else {
+      Collection<Trackable> previousIssues = previousIssuesPerFile.get(vFile);
+      LiveIssue locallyTrackedIssue = manager.trackSingleIssue(vFile, previousIssues, liveIssue);
+      issuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(locallyTrackedIssue);
+    }
+  }
+
+  private void logFoundIssuesIfAny(int rawIssueCount, Map<VirtualFile, Collection<LiveIssue>> transformedIssues) {
+    String issueStr = pluralize("issue", rawIssueCount);
+    SonarLintConsole console = SonarLintConsole.get(myProject);
+    console.debug(String.format("Processed %d %s", rawIssueCount, issueStr));
+
+    long issuesToShow = transformedIssues.values().stream()
+      .mapToLong(Collection::size)
+      .sum();
+
+    String end = pluralize("issue", issuesToShow);
+    console.info("Found " + issuesToShow + " " + end);
+  }
+
+  private static boolean shouldUpdateServerIssues(TriggerType trigger) {
+    switch (trigger) {
+      case ACTION:
+      case CONFIG_CHANGE:
+      case BINDING_UPDATE:
+      case CHECK_IN:
+      case EDITOR_OPEN:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  private static Set<VirtualFile> asVirtualFiles(Collection<ClientInputFile> failedAnalysisFiles) {
+    return failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
+  }
+
+  @NotNull
+  private Boolean lazyComputeFirstAnalyzedFile(IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles, VirtualFile vFile) {
+    return firstAnalyzedFiles.computeIfAbsent(vFile, f -> !manager.wasAnalyzed(f));
   }
 
   private void handleError(Throwable e, ProgressIndicator indicator) {
@@ -163,7 +308,7 @@ public class SonarLintTask extends Task.Backgroundable {
     }
   }
 
-  private List<AnalysisResults> analyze(Project project, ProgressIndicator indicator, AccumulatorIssueListener listener) {
+  private List<AnalysisResults> analyzePerModule(Project project, ProgressIndicator indicator, IssueListener listener) {
     SonarLintAnalyzer analyzer = SonarLintUtils.getService(project, SonarLintAnalyzer.class);
 
     indicator.setIndeterminate(true);

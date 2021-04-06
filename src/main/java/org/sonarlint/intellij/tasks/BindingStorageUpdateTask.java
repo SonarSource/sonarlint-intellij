@@ -203,7 +203,7 @@ public class BindingStorageUpdateTask {
       console.info("Clearing all issues because binding was updated");
 
       IssueManager store = SonarLintUtils.getService(project, IssueManager.class);
-      store.clear();
+      store.clearAllIssuesForAllFiles();
 
       SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
