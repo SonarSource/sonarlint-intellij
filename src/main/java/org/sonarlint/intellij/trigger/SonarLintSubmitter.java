@@ -130,9 +130,7 @@ public class SonarLintSubmitter {
   private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean forcedAnalysis, List<VirtualFile> filesToClearIssues)
     throws InvalidBindingException {
     LocalFileExclusions localFileExclusions = SonarLintUtils.getService(myProject, LocalFileExclusions.class);
-    return localFileExclusions.retainNonExcludedFilesByModules(files, forcedAnalysis, (f, r) -> {
-      logExclusionAndAddToClearList(filesToClearIssues, f, r.excludeReason());
-    });
+    return localFileExclusions.retainNonExcludedFilesByModules(files, forcedAnalysis, (f, r) -> logExclusionAndAddToClearList(filesToClearIssues, f, r.excludeReason()));
   }
 
   private void logExclusionAndAddToClearList(List<VirtualFile> filesToClearIssues, VirtualFile file, String s) {

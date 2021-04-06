@@ -176,7 +176,7 @@
         <projectService serviceImplementation="org.sonarlint.intellij.issue.persistence.IssuePersistence"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueManager"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueProcessor"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.issue.LiveIssueBuilder"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintStatus"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.EditorChangeTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintAnalyzer"/>
