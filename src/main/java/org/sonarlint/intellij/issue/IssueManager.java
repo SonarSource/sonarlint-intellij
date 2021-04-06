@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
@@ -32,9 +33,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -49,6 +50,8 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
+import static java.util.Collections.emptyList;
+
 /**
  * Stores issues associated to a {@link PsiElement}, {@link RangeMarker} or  {@link PsiFile}.
  * Issues can then be displayed as annotations at any time.
@@ -58,8 +61,6 @@ public class IssueManager {
   private static final Logger LOGGER = Logger.getInstance(IssueManager.class);
   private final Project myProject;
   private final LiveIssueCache liveIssueCache;
-
-  private final Lock matchingInProgress = new ReentrantLock();
 
   public IssueManager(Project project) {
     this(project, new LiveIssueCache(project));
@@ -88,19 +89,23 @@ public class IssueManager {
     });
   }
 
-  public void clear() {
+  public void clearAllIssuesForAllFiles() {
     liveIssueCache.clear();
     myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).allChanged();
   }
 
-  public void clear(Collection<VirtualFile> files) {
+  public void clearAllIssuesForFiles(Collection<VirtualFile> files) {
     Map<VirtualFile, Collection<LiveIssue>> mapToNotify = new HashMap<>();
-    LiveIssueCache cache = liveIssueCache;
     for (VirtualFile f : files) {
-      cache.clear(f);
-      mapToNotify.put(f, Collections.emptyList());
+      liveIssueCache.clear(f);
+      mapToNotify.put(f, emptyList());
     }
     myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(mapToNotify);
+  }
+
+  public void removeResolvedIssues(VirtualFile file, List<LiveIssue> issues) {
+    liveIssueCache.removeIssues(file, issues);
+    notifyAboutIssueChangeForFile(file);
   }
 
   /**
@@ -114,30 +119,30 @@ public class IssueManager {
 
   public Collection<LiveIssue> getForFile(VirtualFile file) {
     Collection<LiveIssue> issues = liveIssueCache.getLive(file);
-    return issues != null ? issues : Collections.emptyList();
+    return issues != null ? issues : emptyList();
   }
 
-  private Collection<Trackable> getPreviousIssues(VirtualFile file) {
+  public Collection<Trackable> getPreviousIssues(VirtualFile file) {
     Collection<LiveIssue> liveIssues = liveIssueCache.getLive(file);
     if (liveIssues != null) {
-      return liveIssues.stream().filter(LiveIssue::isValid).collect(Collectors.toList());
+      return ReadAction.compute(() -> liveIssues.stream().filter(LiveIssue::isValid).collect(Collectors.toList()));
     }
 
     String storeKey = SonarLintAppUtils.getRelativePathForAnalysis(myProject, file);
     if (storeKey == null) {
-      return Collections.emptyList();
+      return emptyList();
     }
     try {
       IssuePersistence store = SonarLintUtils.getService(myProject, IssuePersistence.class);
       Collection<LocalIssueTrackable> storeIssues = store.read(storeKey);
-      return storeIssues != null ? Collections.unmodifiableCollection(storeIssues) : Collections.emptyList();
+      return storeIssues != null ? Collections.unmodifiableCollection(storeIssues) : emptyList();
     } catch (IOException e) {
       LOGGER.error(String.format("Failed to read issues from store for file %s", file.getPath()), e);
-      return Collections.emptyList();
+      return emptyList();
     }
   }
 
-  private boolean wasAnalyzed(VirtualFile file) {
+  public boolean wasAnalyzed(VirtualFile file) {
     if (liveIssueCache.contains(file)) {
       return true;
     }
@@ -149,52 +154,49 @@ public class IssueManager {
     return store.contains(storeKey);
   }
 
-  public void store(Map<VirtualFile, Collection<LiveIssue>> map) {
-    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
-      store(e.getKey(), e.getValue());
-    }
-    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(map);
-  }
-
-  void store(VirtualFile file, final Collection<LiveIssue> rawIssues) {
-    boolean firstAnalysis = !wasAnalyzed(file);
-
-    // this will also delete all existing issues in the file
-    if (firstAnalysis) {
-      // don't set creation date, as we don't know when the issue was actually created (SLI-86)
-      liveIssueCache.save(file, rawIssues);
-    } else {
-      matchWithPreviousIssues(file, rawIssues);
-    }
-  }
-
-  private void matchWithPreviousIssues(VirtualFile file, Collection<LiveIssue> rawIssues) {
-    matchingInProgress.lock();
-    Input<Trackable> baseInput = () -> getPreviousIssues(file);
-    Input<LiveIssue> rawInput = () -> rawIssues;
-    updateTrackedIssues(file, baseInput, rawInput, false);
-    matchingInProgress.unlock();
-  }
-
   public void matchWithServerIssues(VirtualFile file, final Collection<Trackable> serverIssues) {
-    matchingInProgress.lock();
     Collection<LiveIssue> previousIssues = getForFile(file);
     Input<Trackable> baseInput = () -> serverIssues;
     Input<LiveIssue> rawInput = () -> previousIssues;
 
-    updateTrackedIssues(file, baseInput, rawInput, true);
-    matchingInProgress.unlock();
-    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).fileChanged(file, liveIssueCache.getLive(file));
+    trackServerIssues(baseInput, rawInput);
+    notifyAboutIssueChangeForFile(file);
   }
 
-  private <T extends Trackable> void updateTrackedIssues(VirtualFile file, Input<T> baseInput, Input<LiveIssue> rawInput, boolean isServerIssueMatching) {
-    Collection<LiveIssue> trackedIssues = new ArrayList<>();
+  private static <T extends Trackable> void trackServerIssues(Input<T> baseInput, Input<LiveIssue> rawInput) {
     Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(rawInput, baseInput);
     for (Map.Entry<LiveIssue, ? extends Trackable> entry : tracking.getMatchedRaws().entrySet()) {
+      LiveIssue liveMatched = entry.getKey();
+      Trackable serverMatched = entry.getValue();
+      copyAttributesFromServer(liveMatched, serverMatched);
+    }
+    for (LiveIssue liveUnmatched : tracking.getUnmatchedRaws()) {
+      if (liveUnmatched.getServerIssueKey() != null) {
+        // were matched before with server issues, now not anymore
+        wipeServerIssueDetails(liveUnmatched);
+      } else if (liveUnmatched.getCreationDate() == null) {
+        // first time seen, even locally
+        liveUnmatched.setCreationDate(System.currentTimeMillis());
+      }
+    }
+  }
+
+  public <T extends Trackable> LiveIssue trackSingleIssue(VirtualFile file, Collection<T> baseInput, LiveIssue rawInput) {
+    Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(() -> Collections.singletonList(rawInput), () -> baseInput);
+    for (Map.Entry<LiveIssue, T> entry : tracking.getMatchedRaws().entrySet()) {
       LiveIssue rawMatched = entry.getKey();
-      Trackable previousMatched = entry.getValue();
-      copyFromPrevious(rawMatched, previousMatched, isServerIssueMatching);
-      trackedIssues.add(rawMatched);
+      T previousMatched = entry.getValue();
+      baseInput.remove(previousMatched);
+      copyFromPrevious(rawMatched, previousMatched);
+      if (previousMatched instanceof LiveIssue) {
+        liveIssueCache.updateSingleIssue(file, (LiveIssue) previousMatched, rawMatched);
+      } else if (previousMatched instanceof LocalIssueTrackable) {
+        liveIssueCache.insertNewIssue(file, rawMatched);
+      } else {
+        throw new IllegalStateException("Should never occurs");
+      }
+      notifyAboutIssueChangeForFile(file);
+      return rawMatched;
     }
     for (LiveIssue newIssue : tracking.getUnmatchedRaws()) {
       if (newIssue.getServerIssueKey() != null) {
@@ -204,26 +206,34 @@ public class IssueManager {
         // first time seen, even locally
         newIssue.setCreationDate(System.currentTimeMillis());
       }
-      trackedIssues.add(newIssue);
+      liveIssueCache.insertNewIssue(file, newIssue);
+      notifyAboutIssueChangeForFile(file);
+      return newIssue;
     }
-    liveIssueCache.save(file, trackedIssues);
+    // Should never be reachable
+    return rawInput;
   }
 
   /**
    * Previous matched will be either server issue or preexisting local issue.
    */
-  private static void copyFromPrevious(LiveIssue rawMatched, Trackable previousMatched, boolean isServerIssueMatching) {
+  private static void copyFromPrevious(LiveIssue rawMatched, Trackable previousMatched) {
     rawMatched.setCreationDate(previousMatched.getCreationDate());
+    // FIXME should we not reset those fields when unbinding a project?
     rawMatched.setServerIssueKey(previousMatched.getServerIssueKey());
     rawMatched.setResolved(previousMatched.isResolved());
     rawMatched.setAssignee(previousMatched.getAssignee());
+  }
 
-    if (isServerIssueMatching) {
-      rawMatched.setSeverity(previousMatched.getSeverity());
-      if (previousMatched.getType() != null) {
-        // old SQ servers won't return this field
-        rawMatched.setType(previousMatched.getType());
-      }
+  private static void copyAttributesFromServer(LiveIssue liveIssue, Trackable serverIssue) {
+    liveIssue.setCreationDate(serverIssue.getCreationDate());
+    liveIssue.setServerIssueKey(serverIssue.getServerIssueKey());
+    liveIssue.setResolved(serverIssue.isResolved());
+    liveIssue.setAssignee(serverIssue.getAssignee());
+    liveIssue.setSeverity(serverIssue.getSeverity());
+    if (serverIssue.getType() != null) {
+      // old SQ servers won't return this field
+      liveIssue.setType(serverIssue.getType());
     }
   }
 
@@ -232,6 +242,19 @@ public class IssueManager {
     issue.setServerIssueKey(null);
     issue.setResolved(false);
     issue.setAssignee("");
+  }
+
+  public void insertNewIssue(VirtualFile file, LiveIssue liveIssue) {
+    liveIssueCache.insertNewIssue(file, liveIssue);
+    notifyAboutIssueChangeForFile(file);
+  }
+
+  private void notifyAboutIssueChangeForFile(VirtualFile file) {
+    Collection<LiveIssue> issues = liveIssueCache.getLive(file);
+    if (issues == null) {
+      issues = Collections.emptyList();
+    }
+    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).fileChanged(file, issues);
   }
 
 }

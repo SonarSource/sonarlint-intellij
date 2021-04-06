@@ -54,7 +54,7 @@ public class SonarClearIssuesAction extends AnAction {
       DaemonCodeAnalyzer codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
 
       ApplicationManager.getApplication().runReadAction(() -> {
-        issueManager.clear();
+        issueManager.clearAllIssuesForAllFiles();
 
         // run annotator to remove highlighting of issues
         FileEditorManager editorManager = FileEditorManager.getInstance(project);
