@@ -43,6 +43,8 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import javax.swing.Box;
 import javax.swing.Icon;
@@ -70,14 +72,12 @@ public class AutoTriggerStatusPanel {
   private static final String TOOLTIP = "Some files are not automatically analyzed. Check the SonarLint debug logs for details.";
 
   private final Project project;
-  private final LocalFileExclusions localFileExclusions;
 
   private JPanel panel;
   private CardLayout layout;
 
   public AutoTriggerStatusPanel(Project project) {
     this.project = project;
-    this.localFileExclusions = new LocalFileExclusions(project);
     createPanel();
     switchCards();
     subscribeToEvents();
@@ -90,7 +90,8 @@ public class AutoTriggerStatusPanel {
   private void subscribeToEvents() {
     MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void applied(SonarLintGlobalSettings settings) {
+      @Override
+      public void applied(SonarLintGlobalSettings settings) {
         switchCards();
       }
     });
@@ -117,41 +118,23 @@ public class AutoTriggerStatusPanel {
 
     VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
-      Module m = SonarLintAppUtils.findModuleForFile(selectedFile, project);
-      ExcludeResult result = localFileExclusions.canAnalyze(selectedFile, m);
-      if (result.isExcluded()) {
-        switchCard(FILE_DISABLED);
-        return;
-      }
-      // here module is not null or file would have been already excluded by canAnalyze
-      result = localFileExclusions.checkExclusions(selectedFile, m);
-      if (result.isExcluded()) {
-        switchCard(FILE_DISABLED);
-        return;
-      }
-
       // Computing server exclusions may take time, so lets move from EDT to pooled thread
       ApplicationManager.getApplication().executeOnPooledThread(() -> {
-        if (isExcludedInServer(m, selectedFile)) {
-          switchCard(FILE_DISABLED);
-        } else {
+        LocalFileExclusions localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
+        try {
+          Map<Module, Collection<VirtualFile>> nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> {
+            switchCard(FILE_DISABLED);
+          });
+          if (!nonExcluded.isEmpty()) {
+            switchCard(AUTO_TRIGGER_ENABLED);
+          }
+        } catch (InvalidBindingException e) {
+          // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager
           switchCard(AUTO_TRIGGER_ENABLED);
         }
       });
-
     } else {
       switchCard(AUTO_TRIGGER_ENABLED);
-    }
-  }
-
-  private boolean isExcludedInServer(Module m, VirtualFile f) {
-    Predicate<VirtualFile> testPredicate = file -> TestSourcesFilter.isTestSources(file, m.getProject());
-    try {
-      Collection<VirtualFile> afterExclusion = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade().getExcluded(m, Collections.singleton(f), testPredicate);
-      return !afterExclusion.isEmpty();
-    } catch (InvalidBindingException e) {
-      // not much we can do, analysis won't run anyway. Notification about it was shown by SonarLintEngineManager
-      return false;
     }
   }
 

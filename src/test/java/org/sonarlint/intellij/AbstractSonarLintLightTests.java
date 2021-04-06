@@ -23,6 +23,7 @@ import com.intellij.lang.Language;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -43,6 +44,8 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.fixtures.SonarLintToolWindowFixture;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
@@ -50,9 +53,6 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
 
-  private SonarLintGlobalSettings globalSettings;
-  private SonarLintProjectSettings projectSettings;
-  private SonarLintModuleSettings moduleSettings;
   private Disposable disposable;
   private SonarLintToolWindowFixture toolWindowFixture;
 
@@ -63,20 +63,18 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   @Before
   public final void init() {
-    globalSettings = Settings.getGlobalSettings();
-    projectSettings = getSettingsFor(getProject());
-    moduleSettings = getSettingsFor(getModule());
     disposable = Disposer.newDisposable();
   }
 
   @After
   public final void restore() {
-    globalSettings.setRules(Collections.emptyList());
-    projectSettings.setProjectKey(null);
-    projectSettings.setBindingEnabled(false);
-    projectSettings.setFileExclusions(Collections.emptyList());
-    moduleSettings.setIdePathPrefix("");
-    moduleSettings.setSqPathPrefix("");
+    getGlobalSettings().setRules(Collections.emptyList());
+    setGlobalLevelExclusions(Collections.emptyList());
+    getProjectSettings().setProjectKey(null);
+    getProjectSettings().setBindingEnabled(false);
+    setProjectLevelExclusions(Collections.emptyList());
+    getModuleSettings().setIdePathPrefix("");
+    getModuleSettings().setSqPathPrefix("");
     if (toolWindowFixture != null) {
       toolWindowFixture.cleanUp();
     }
@@ -101,11 +99,15 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   public SonarLintGlobalSettings getGlobalSettings() {
-    return globalSettings;
+    return Settings.getGlobalSettings();
   }
 
   public SonarLintProjectSettings getProjectSettings() {
-    return projectSettings;
+    return getSettingsFor(getProject());
+  }
+
+  public SonarLintModuleSettings getModuleSettings() {
+    return getSettingsFor(getModule());
   }
 
   public VirtualFile createTestFile(String fileName, Language language, String text) {
@@ -135,12 +137,27 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   protected void connectProjectTo(String hostUrl, String connectionName, String projectKey) {
     ServerConnection connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
-    globalSettings.addServerConnection(connection);
-    projectSettings.bindTo(connection, projectKey);
+    getGlobalSettings().addServerConnection(connection);
+    getProjectSettings().bindTo(connection, projectKey);
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {
-    globalSettings.addServerConnection(connection);
-    projectSettings.bindTo(connection, projectKey);
+    getGlobalSettings().addServerConnection(connection);
+    getProjectSettings().bindTo(connection, projectKey);
+  }
+
+  protected void setProjectLevelExclusions(List<String> exclusions) {
+    SonarLintProjectSettings projectSettings = getProjectSettings();
+    projectSettings.setFileExclusions(exclusions);
+    ProjectConfigurationListener projectListener = getProject().getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
+    projectListener.changed(projectSettings);
+  }
+
+  protected void setGlobalLevelExclusions(List<String> exclusions) {
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
+    globalSettings.setFileExclusions(exclusions);
+    GlobalConfigurationListener globalConfigurationListener = ApplicationManager.getApplication()
+      .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
+    globalConfigurationListener.applied(globalSettings);
   }
 }

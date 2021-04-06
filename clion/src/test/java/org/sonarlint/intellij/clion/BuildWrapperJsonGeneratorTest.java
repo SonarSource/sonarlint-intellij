@@ -21,16 +21,12 @@ package org.sonarlint.intellij.clion;
 
 import com.intellij.mock.MockLocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
-import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class BuildWrapperJsonGeneratorTest {
 
@@ -45,17 +41,19 @@ class BuildWrapperJsonGeneratorTest {
     MockLocalFileSystem fileSystem = new MockLocalFileSystem();
 
     VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
-    OCCompilerSettings compilerSettings = mock(OCCompilerSettings.class);
     File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
-    when(compilerSettings.getCompilerExecutable()).thenReturn(compilerExecutable);
     File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
-    when(compilerSettings.getCompilerWorkingDir()).thenReturn(compilerWorkingDir);
-    CidrCompilerSwitches compilerSwitches = mock(CidrCompilerSwitches.class);
-    when(compilerSwitches.getList(CidrCompilerSwitches.Format.RAW)).thenReturn(Arrays.asList("a1", "a2"));
-    when(compilerSettings.getCompilerSwitches()).thenReturn(compilerSwitches);
 
+    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+      virtualFile,
+      compilerExecutable.toString(),
+      compilerWorkingDir.toString(),
+      Arrays.asList("a1", "a2"),
+      "clang",
+      null,
+      false);
     String json = new BuildWrapperJsonGenerator()
-      .add(new AnalyzerConfiguration.Configuration(virtualFile, compilerSettings, "clang", null, false))
+      .add(configuration)
       .build();
     assertEquals(
       "{\"version\":0,\"captures\":[" +
@@ -74,28 +72,32 @@ class BuildWrapperJsonGeneratorTest {
     MockLocalFileSystem fileSystem = new MockLocalFileSystem();
 
     VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
-    OCCompilerSettings compilerSettings = mock(OCCompilerSettings.class);
     File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
-    when(compilerSettings.getCompilerExecutable()).thenReturn(compilerExecutable);
     File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
-    when(compilerSettings.getCompilerWorkingDir()).thenReturn(compilerWorkingDir);
-    CidrCompilerSwitches compilerSwitches = mock(CidrCompilerSwitches.class);
-    when(compilerSwitches.getList(CidrCompilerSwitches.Format.RAW)).thenReturn(Arrays.asList("a1", "a2"));
-    when(compilerSettings.getCompilerSwitches()).thenReturn(compilerSwitches);
 
     VirtualFile virtualFile2 = fileSystem.findFileByIoFile(new File("test2.cpp"));
-    OCCompilerSettings compilerSettings2 = mock(OCCompilerSettings.class);
     File compilerExecutable2 = new File("/path/to/compiler2").getAbsoluteFile();
-    when(compilerSettings2.getCompilerExecutable()).thenReturn(compilerExecutable2);
     File compilerWorkingDir2 = new File("/path/to/compiler/working/dir2").getAbsoluteFile();
-    when(compilerSettings2.getCompilerWorkingDir()).thenReturn(compilerWorkingDir2);
-    CidrCompilerSwitches compilerSwitches2 = mock(CidrCompilerSwitches.class);
-    when(compilerSwitches2.getList(CidrCompilerSwitches.Format.RAW)).thenReturn(Arrays.asList("b1", "b2"));
-    when(compilerSettings2.getCompilerSwitches()).thenReturn(compilerSwitches2);
 
+    AnalyzerConfiguration.Configuration configuration1 = new AnalyzerConfiguration.Configuration(
+      virtualFile,
+      compilerExecutable.toString(),
+      compilerWorkingDir.toString(),
+      Arrays.asList("a1", "a2"),
+      "clang",
+      null,
+      false);
+    AnalyzerConfiguration.Configuration configuration2 = new AnalyzerConfiguration.Configuration(
+      virtualFile2,
+      compilerExecutable2.toString(),
+      compilerWorkingDir2.toString(),
+      Arrays.asList("b1", "b2"),
+      "clang",
+      null,
+      false);
     String json = new BuildWrapperJsonGenerator()
-      .add(new AnalyzerConfiguration.Configuration(virtualFile, compilerSettings, "clang", null, false))
-      .add(new AnalyzerConfiguration.Configuration(virtualFile2, compilerSettings2, "clang", null, false))
+      .add(configuration1)
+      .add(configuration2)
       .build();
     assertEquals(
       "{\"version\":0,\"captures\":[" +

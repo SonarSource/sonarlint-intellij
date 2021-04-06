@@ -23,16 +23,18 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.jetbrains.cidr.cpp.cmake.model.CMakeConfiguration;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeProfileInfo;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
-import com.jetbrains.cidr.lang.OCLanguageUtils;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
 import com.jetbrains.cidr.lang.psi.OCParsedLanguageAndConfiguration;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
+import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
@@ -42,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import javax.annotation.Nullable;
+import java.util.List;
 
 public class AnalyzerConfiguration {
   private final Project project;
@@ -52,26 +55,30 @@ public class AnalyzerConfiguration {
     cMakeWorkspace = CMakeWorkspace.getInstance(project);
   }
 
+  public ConfigurationResult getConfiguration(VirtualFile file) {
+    return ApplicationManager.getApplication().<ConfigurationResult>runReadAction(() -> getConfigurationAction(file));
+  }
+
   /**
    * Inspired from ShowCompilerInfoForFile and ClangTidyAnnotator
    */
-  public ConfigurationResult getConfiguration(VirtualFile file) {
-    OCPsiFile psiFile = ApplicationManager.getApplication().<OCPsiFile>runReadAction(() -> OCLanguageUtils.asOCPsiFile(project, file));
-    if (psiFile == null || !psiFile.isInProjectSources()) {
-      return new ConfigurationResult(psiFile + " not in project sources");
+  public ConfigurationResult getConfigurationAction(VirtualFile file) {
+    PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+    OCPsiFile ocPsiFile = (psiFile instanceof OCPsiFile) ? ((OCPsiFile) psiFile) : null;
+    if (ocPsiFile == null || !ocPsiFile.isInProjectSources()) {
+      return new ConfigurationResult(ocPsiFile + " not in project sources");
     }
     OCResolveConfiguration configuration = null;
     OCLanguageKind languageKind;
-    OCParsedLanguageAndConfiguration languageAndConfiguration = psiFile.getParsedLanguageAndConfiguration();
+    OCParsedLanguageAndConfiguration languageAndConfiguration = ocPsiFile.getParsedLanguageAndConfiguration();
     if (languageAndConfiguration != null) {
       configuration = languageAndConfiguration.getConfiguration();
       languageKind = languageAndConfiguration.getLanguageKind();
     } else {
-      languageKind = psiFile.getKind();
+      languageKind = ocPsiFile.getKind();
     }
     if (configuration == null) {
-      configuration = ApplicationManager.getApplication().<OCResolveConfiguration>runReadAction(
-        () -> OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration());
+      configuration = OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration();
     }
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
@@ -79,7 +86,7 @@ public class AnalyzerConfiguration {
     if (usingRemoteToolchain(configuration)) {
       return ConfigurationResult.skip("use a remote toolchain");
     }
-    OCCompilerSettings compilerSettings = configuration.getCompilerSettings(psiFile.getKind(), file);
+    OCCompilerSettings compilerSettings = configuration.getCompilerSettings(ocPsiFile.getKind(), file);
     OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
     if (compilerKind == null) {
       return ConfigurationResult.skip("compiler kind not found");
@@ -88,7 +95,14 @@ public class AnalyzerConfiguration {
     if (cFamilyCompiler == null) {
       return ConfigurationResult.skip("unsupported compiler " + compilerKind.getDisplayName());
     }
-    return ConfigurationResult.of(new Configuration(file, compilerSettings, "clang", getSonarLanguage(languageKind), psiFile.isHeader()));
+    return ConfigurationResult.of(new Configuration(
+      file,
+      compilerSettings.getCompilerExecutable().getAbsolutePath(),
+      compilerSettings.getCompilerWorkingDir().getAbsolutePath(),
+      compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW),
+      "clang",
+      getSonarLanguage(languageKind),
+      ocPsiFile.isHeader()));
   }
 
   @Nullable
@@ -173,16 +187,27 @@ public class AnalyzerConfiguration {
 
   public static class Configuration {
     final VirtualFile virtualFile;
-    final OCCompilerSettings compilerSettings;
-    final String compiler;
+    final String compilerExecutable;
+    final String compilerWorkingDir;
+    final List<String> compilerSwitches;
+    final String compilerKind;
     final boolean isHeaderFile;
     @Nullable
     final Language sonarLanguage;
 
-    public Configuration(VirtualFile virtualFile, OCCompilerSettings compilerSettings, String compiler, @Nullable Language sonarLanguage, boolean isHeaderFile) {
+    public Configuration(
+      VirtualFile virtualFile,
+      String compilerExecutable,
+      String compilerWorkingDir,
+      List<String> compilerSwitches,
+      String compilerKind,
+      @Nullable Language sonarLanguage,
+      boolean isHeaderFile) {
       this.virtualFile = virtualFile;
-      this.compilerSettings = compilerSettings;
-      this.compiler = compiler;
+      this.compilerExecutable = compilerExecutable;
+      this.compilerWorkingDir = compilerWorkingDir;
+      this.compilerSwitches = compilerSwitches;
+      this.compilerKind = compilerKind;
       this.sonarLanguage = sonarLanguage;
       this.isHeaderFile = isHeaderFile;
     }
