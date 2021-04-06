@@ -32,6 +32,7 @@ import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
+import com.jetbrains.cidr.lang.psi.OCFile;
 import com.jetbrains.cidr.lang.psi.OCParsedLanguageAndConfiguration;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
@@ -64,18 +65,21 @@ public class AnalyzerConfiguration {
    */
   public ConfigurationResult getConfigurationAction(VirtualFile file) {
     PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
-    OCPsiFile ocPsiFile = (psiFile instanceof OCPsiFile) ? ((OCPsiFile) psiFile) : null;
-    if (ocPsiFile == null || !ocPsiFile.isInProjectSources()) {
-      return new ConfigurationResult(ocPsiFile + " not in project sources");
+    if (!(psiFile instanceof OCPsiFile)) {
+      return new ConfigurationResult(psiFile + " not an OCPsiFile");
+    }
+    OCFile ocFile = ((OCPsiFile) psiFile).getOCFile();
+    if (!ocFile.isInProjectSources()) {
+      return new ConfigurationResult(ocFile + " not in project sources");
     }
     OCResolveConfiguration configuration = null;
     OCLanguageKind languageKind;
-    OCParsedLanguageAndConfiguration languageAndConfiguration = ocPsiFile.getParsedLanguageAndConfiguration();
+    OCParsedLanguageAndConfiguration languageAndConfiguration = ocFile.getParsedLanguageAndConfiguration();
     if (languageAndConfiguration != null) {
       configuration = languageAndConfiguration.getConfiguration();
       languageKind = languageAndConfiguration.getLanguageKind();
     } else {
-      languageKind = ocPsiFile.getKind();
+      languageKind = ocFile.getKind();
     }
     if (configuration == null) {
       configuration = OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration();
@@ -86,7 +90,7 @@ public class AnalyzerConfiguration {
     if (usingRemoteToolchain(configuration)) {
       return ConfigurationResult.skip("use a remote toolchain");
     }
-    OCCompilerSettings compilerSettings = configuration.getCompilerSettings(ocPsiFile.getKind(), file);
+    OCCompilerSettings compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
     OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
     if (compilerKind == null) {
       return ConfigurationResult.skip("compiler kind not found");
@@ -102,7 +106,7 @@ public class AnalyzerConfiguration {
       compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW),
       "clang",
       getSonarLanguage(languageKind),
-      ocPsiFile.isHeader()));
+      ocFile.isHeader()));
   }
 
   @Nullable
