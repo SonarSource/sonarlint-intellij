@@ -24,7 +24,6 @@ import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -37,13 +36,12 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.IssueProcessor;
+import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,7 +56,7 @@ import static org.mockito.Mockito.when;
 public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   private SonarLintTask task;
   @Mock
-  private IssueProcessor processor;
+  private LiveIssueBuilder processor;
   private HashSet<VirtualFile> files;
   @Mock
   private ProgressIndicator progress;
@@ -85,7 +83,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
     replaceProjectService(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     replaceProjectService(IssueManager.class, mock(IssueManager.class));
-    replaceProjectService(IssueProcessor.class, processor);
+    replaceProjectService(LiveIssueBuilder.class, processor);
 
     task = new SonarLintTask(getProject(), job, false, true);
 
@@ -104,7 +102,6 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     task.run(progress);
 
     verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(files), any(IssueListener.class), any(ProgressMonitor.class));
-    verify(processor).process(job, progress, new ArrayList<>(), new ArrayList<>());
     verify(listener).ended(job);
 
     assertThat(getExternalAnnotators())

@@ -23,8 +23,8 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
@@ -85,11 +85,26 @@ public class LiveIssueCache {
    */
   @CheckForNull
   public synchronized Collection<LiveIssue> getLive(VirtualFile virtualFile) {
-    return cache.get(virtualFile);
+    Collection<LiveIssue> liveIssues = cache.get(virtualFile);
+    if (liveIssues != null) {
+      // Create a copy to avoid concurrent modification issues
+      return new ArrayList<>(liveIssues);
+    }
+    return null;
   }
 
-  public synchronized void save(VirtualFile virtualFile, Collection<LiveIssue> issues) {
-    cache.put(virtualFile, Collections.unmodifiableCollection(issues));
+  public synchronized void insertNewIssue(VirtualFile virtualFile, LiveIssue issue) {
+    cache.computeIfAbsent(virtualFile, f -> new ArrayList<>()).add(issue);
+  }
+
+  public synchronized void updateSingleIssue(VirtualFile virtualFile, LiveIssue previous, LiveIssue fresh) {
+    Collection<LiveIssue> fileIssues = cache.computeIfAbsent(virtualFile, f -> new ArrayList<>());
+    fileIssues.remove(previous);
+    fileIssues.add(fresh);
+  }
+
+  public synchronized void removeIssues(VirtualFile virtualFile, Collection<LiveIssue> issues) {
+    cache.computeIfAbsent(virtualFile, f -> new ArrayList<>()).removeAll(issues);
   }
 
   /**
