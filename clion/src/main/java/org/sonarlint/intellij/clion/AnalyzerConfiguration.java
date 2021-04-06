@@ -23,13 +23,14 @@ import com.intellij.execution.ExecutionException;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import com.jetbrains.cidr.cpp.cmake.model.CMakeConfiguration;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeProfileInfo;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
-import com.jetbrains.cidr.lang.OCLanguageUtils;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
 import com.jetbrains.cidr.lang.psi.OCParsedLanguageAndConfiguration;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
@@ -62,18 +63,19 @@ public class AnalyzerConfiguration {
    * Inspired from ShowCompilerInfoForFile and ClangTidyAnnotator
    */
   public ConfigurationResult getConfigurationAction(VirtualFile file) {
-    OCPsiFile psiFile = OCLanguageUtils.asOCPsiFile(project, file);
-    if (psiFile == null || !psiFile.isInProjectSources()) {
-      return new ConfigurationResult(psiFile + " not in project sources");
+    PsiFile psiFile = PsiManager.getInstance(project).findFile(file);
+    OCPsiFile ocPsiFile = (psiFile instanceof OCPsiFile) ? ((OCPsiFile) psiFile) : null;
+    if (ocPsiFile == null || !ocPsiFile.isInProjectSources()) {
+      return new ConfigurationResult(ocPsiFile + " not in project sources");
     }
     OCResolveConfiguration configuration = null;
     OCLanguageKind languageKind;
-    OCParsedLanguageAndConfiguration languageAndConfiguration = psiFile.getParsedLanguageAndConfiguration();
+    OCParsedLanguageAndConfiguration languageAndConfiguration = ocPsiFile.getParsedLanguageAndConfiguration();
     if (languageAndConfiguration != null) {
       configuration = languageAndConfiguration.getConfiguration();
       languageKind = languageAndConfiguration.getLanguageKind();
     } else {
-      languageKind = psiFile.getKind();
+      languageKind = ocPsiFile.getKind();
     }
     if (configuration == null) {
       configuration = OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration();
@@ -84,7 +86,7 @@ public class AnalyzerConfiguration {
     if (usingRemoteToolchain(configuration)) {
       return ConfigurationResult.skip("use a remote toolchain");
     }
-    OCCompilerSettings compilerSettings = configuration.getCompilerSettings(psiFile.getKind(), file);
+    OCCompilerSettings compilerSettings = configuration.getCompilerSettings(ocPsiFile.getKind(), file);
     OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
     if (compilerKind == null) {
       return ConfigurationResult.skip("compiler kind not found");
@@ -100,7 +102,7 @@ public class AnalyzerConfiguration {
       compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW),
       "clang",
       getSonarLanguage(languageKind),
-      psiFile.isHeader()));
+      ocPsiFile.isHeader()));
   }
 
   @Nullable
