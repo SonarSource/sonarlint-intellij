@@ -17,129 +17,130 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.issue.persistence;
+package org.sonarlint.intellij.issue.persistence
 
-import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.issue.LiveIssue
+import org.sonarlint.intellij.util.SonarLintAppUtils
+import org.sonarlint.intellij.util.SonarLintUtils
+import java.io.IOException
+import java.util.*
 
-public class LiveIssueCache {
-  private static final Logger LOGGER = Logger.getInstance(LiveIssueCache.class);
-  static final int DEFAULT_MAX_ENTRIES = 10_000;
-  private final Map<VirtualFile, Collection<LiveIssue>> cache;
-  private final Project myproject;
-  private final int maxEntries;
+open class LiveIssueCache internal constructor(private val myProject: Project, private val maxEntries: Int) {
 
-  public LiveIssueCache(Project project) {
-    this(project, DEFAULT_MAX_ENTRIES);
-  }
+    private val cache: MutableMap<VirtualFile, Collection<LiveIssue>> = LimitedSizeLinkedHashMap()
+    constructor(project: Project) : this(project, DEFAULT_MAX_ENTRIES)
 
-  LiveIssueCache(Project project, int maxEntries) {
-    this.myproject = project;
-    this.maxEntries = maxEntries;
-    this.cache = new LimitedSizeLinkedHashMap();
-  }
+    /**
+     * Keeps a maximum number of entries in the map. On insertion, if the limit is passed, the entry accessed the longest time ago
+     * is flushed into cache and removed from the map.
+     */
+    private inner class LimitedSizeLinkedHashMap : LinkedHashMap<VirtualFile, Collection<LiveIssue>>(
+        maxEntries, 0.75f, true
+    ) {
 
-  /**
-   * Keeps a maximum number of entries in the map. On insertion, if the limit is passed, the entry accessed the longest time ago
-   * is flushed into cache and removed from the map.
-   */
-  private class LimitedSizeLinkedHashMap extends LinkedHashMap<VirtualFile, Collection<LiveIssue>> {
-    LimitedSizeLinkedHashMap() {
-      super(maxEntries, 0.75f, true);
-    }
-
-    @Override
-    protected boolean removeEldestEntry(Map.Entry<VirtualFile, Collection<LiveIssue>> eldest) {
-      if (size() <= maxEntries) {
-        return false;
-      }
-
-      if (eldest.getKey().isValid()) {
-        String key = createKey(eldest.getKey());
-        if (key != null) {
-          try {
-            LOGGER.debug("Persisting issues for " + key);
-            IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
-            store.save(key, eldest.getValue());
-          } catch (IOException e) {
-            throw new IllegalStateException(String.format("Error persisting issues for %s", key), e);
-          }
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<VirtualFile, Collection<LiveIssue>>): Boolean {
+            if (size <= maxEntries) {
+                return false
+            }
+            if (eldest.key.isValid) {
+                val key = createKey(eldest.key)
+                if (key != null) {
+                    try {
+                        LOGGER.debug("Persisting issues for $key")
+                        val store = SonarLintUtils.getService(
+                            myProject, IssuePersistence::class.java
+                        )
+                        store.save(key, eldest.value)
+                    } catch (e: IOException) {
+                        throw IllegalStateException(String.format("Error persisting issues for %s", key), e)
+                    }
+                }
+            }
+            return true
         }
-      }
-      return true;
     }
-  }
 
-  /**
-   * Read issues from a file that are cached. On cache miss, it won't fallback to the persistent store.
-   */
-  @CheckForNull
-  public synchronized Collection<LiveIssue> getLive(VirtualFile virtualFile) {
-    return cache.get(virtualFile);
-  }
+    /**
+     * Read issues from a file that are cached. On cache miss, it won't fallback to the persistent store.
+     */
+    @Synchronized
+    open fun getLive(virtualFile: VirtualFile): Collection<LiveIssue>? {
+        return cache[virtualFile]
+    }
 
-  public synchronized void save(VirtualFile virtualFile, Collection<LiveIssue> issues) {
-    cache.put(virtualFile, Collections.unmodifiableCollection(issues));
-  }
+    @Synchronized
+    open fun save(virtualFile: VirtualFile, issues: Collection<LiveIssue>) {
+        cache[virtualFile] = issues
+    }
 
-  /**
-   * Flushes all cached entries to disk.
-   * It does not clear the cache.
-   */
-  public synchronized void flushAll() {
-    LOGGER.debug("Persisting all issues");
-    cache.forEach((virtualFile, trackableIssues) -> {
-      if (virtualFile.isValid()) {
-        String key = createKey(virtualFile);
-        if (key != null) {
-          try {
-            IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
-            store.save(key, trackableIssues);
-          } catch (IOException e) {
-            throw new IllegalStateException("Failed to flush cache", e);
-          }
+    /**
+     * Flushes all cached entries to disk.
+     * It does not clear the cache.
+     */
+    @Synchronized
+    open fun flushAll() {
+        LOGGER.debug("Persisting all issues")
+        cache.forEach { (virtualFile: VirtualFile, trackableIssues: Collection<LiveIssue>?) ->
+            if (virtualFile.isValid) {
+                val key = createKey(virtualFile)
+                if (key != null) {
+                    try {
+                        val store = SonarLintUtils.getService(
+                            myProject, IssuePersistence::class.java
+                        )
+                        store.save(key, trackableIssues)
+                    } catch (e: IOException) {
+                        throw IllegalStateException("Failed to flush cache", e)
+                    }
+                }
+            }
         }
-      }
-    });
-  }
-
-  /**
-   * Clear cache and underlying persistent store
-   */
-  public synchronized void clear() {
-    IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
-    store.clear();
-    cache.clear();
-  }
-
-  public synchronized void clear(VirtualFile virtualFile) {
-    String key = createKey(virtualFile);
-    if (key != null) {
-      cache.remove(virtualFile);
-      try {
-        IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
-        store.clear(key);
-      } catch (IOException e) {
-        throw new IllegalStateException("Failed to clear cache", e);
-      }
     }
-  }
 
-  public synchronized boolean contains(VirtualFile virtualFile) {
-    return getLive(virtualFile) != null;
-  }
+    /**
+     * Clear cache and underlying persistent store
+     */
+    @Synchronized
+    open fun clear() {
+        val store = SonarLintUtils.getService(myProject, IssuePersistence::class.java)
+        store.clear()
+        cache.clear()
+    }
 
-  private String createKey(VirtualFile virtualFile) {
-    return SonarLintAppUtils.getRelativePathForAnalysis(this.myproject, virtualFile);
-  }
+    @Synchronized
+    open fun clear(virtualFile: VirtualFile) {
+        val key = createKey(virtualFile)
+        if (key != null) {
+            cache.remove(virtualFile)
+            try {
+                val store = SonarLintUtils.getService(
+                    myProject, IssuePersistence::class.java
+                )
+                store.clear(key)
+            } catch (e: IOException) {
+                throw IllegalStateException("Failed to clear cache", e)
+            }
+        }
+    }
+
+    @Synchronized
+    open operator fun contains(virtualFile: VirtualFile): Boolean {
+        return getLive(virtualFile) != null
+    }
+
+    private fun createKey(virtualFile: VirtualFile): String? {
+        return SonarLintAppUtils.getRelativePathForAnalysis(myProject, virtualFile)
+    }
+
+    companion object {
+
+        private val LOGGER = Logger.getInstance(
+            LiveIssueCache::class.java
+        )
+        const val DEFAULT_MAX_ENTRIES = 10000
+    }
+
 }
