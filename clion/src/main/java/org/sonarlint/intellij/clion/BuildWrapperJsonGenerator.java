@@ -51,7 +51,11 @@ public class BuildWrapperJsonGenerator {
       .append("\"cwd\":" + quote(entry.compilerWorkingDir) + ",")
       .append("\"executable\":")
       .append(quotedCompilerExecutable)
-      .append(",\"cmd\":[")
+      .append(",");
+    if (entry.isHeaderFile) {
+      builder.append("\"properties\":{\"isHeaderFile\":\"true\"},");
+    }
+    builder.append("\"cmd\":[")
       .append(quotedCompilerExecutable)
       .append("," + quote(entry.virtualFile.getCanonicalPath()));
     entry.compilerSwitches.forEach(s -> builder.append(",").append(quote(s)));
