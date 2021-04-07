@@ -79,6 +79,10 @@ class BuildWrapperJsonGeneratorTest {
     File compilerExecutable2 = new File("/path/to/compiler2").getAbsoluteFile();
     File compilerWorkingDir2 = new File("/path/to/compiler/working/dir2").getAbsoluteFile();
 
+    VirtualFile virtualFile3 = fileSystem.findFileByIoFile(new File("test3.h"));
+    File compilerExecutable3 = new File("/path/to/compiler3").getAbsoluteFile();
+    File compilerWorkingDir3 = new File("/path/to/compiler/working/dir3").getAbsoluteFile();
+
     AnalyzerConfiguration.Configuration configuration1 = new AnalyzerConfiguration.Configuration(
       virtualFile,
       compilerExecutable.toString(),
@@ -95,9 +99,18 @@ class BuildWrapperJsonGeneratorTest {
       "clang",
       null,
       false);
+    AnalyzerConfiguration.Configuration configuration3 = new AnalyzerConfiguration.Configuration(
+      virtualFile3,
+      compilerExecutable3.toString(),
+      compilerWorkingDir3.toString(),
+      Arrays.asList("c1", "c2"),
+      "clang",
+      null,
+      true);
     String json = new BuildWrapperJsonGenerator()
       .add(configuration1)
       .add(configuration2)
+      .add(configuration3)
       .build();
     assertEquals(
       "{\"version\":0,\"captures\":[" +
@@ -114,6 +127,14 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerExecutable2)
         + ",\"cmd\":["
         + quote(compilerExecutable2) + ",\"/test2.cpp\",\"b1\",\"b2\"]}"
+        + ","
+        + "{\"compiler\":\"clang\",\"cwd\":"
+        + quote(compilerWorkingDir3)
+        + ",\"executable\":"
+        + quote(compilerExecutable3)
+        + ",\"properties\":{\"isHeaderFile\":\"true\"}"
+        + ",\"cmd\":["
+        + quote(compilerExecutable3) + ",\"/test3.h\",\"c1\",\"c2\"]}"
         + "]}",
       json);
   }
