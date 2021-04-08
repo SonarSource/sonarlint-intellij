@@ -29,13 +29,11 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -51,6 +49,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  * Stores issues associated to a {@link PsiElement}, {@link RangeMarker} or  {@link PsiFile}.
@@ -182,33 +181,24 @@ public class IssueManager {
   }
 
   public <T extends Trackable> LiveIssue trackSingleIssue(VirtualFile file, Collection<T> baseInput, LiveIssue rawInput) {
-    Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(() -> Collections.singletonList(rawInput), () -> baseInput);
-    for (Map.Entry<LiveIssue, T> entry : tracking.getMatchedRaws().entrySet()) {
-      LiveIssue rawMatched = entry.getKey();
-      T previousMatched = entry.getValue();
+    Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(() -> singletonList(rawInput), () -> baseInput);
+    if (!tracking.getMatchedRaws().isEmpty()) {
+      T previousMatched = tracking.getMatchedRaws().get(rawInput);
       baseInput.remove(previousMatched);
-      copyFromPrevious(rawMatched, previousMatched);
+      copyFromPrevious(rawInput, previousMatched);
       if (previousMatched instanceof LiveIssue) {
-        liveIssueCache.updateSingleIssue(file, (LiveIssue) previousMatched, rawMatched);
+        liveIssueCache.updateSingleIssue(file, (LiveIssue) previousMatched, rawInput);
       } else if (previousMatched instanceof LocalIssueTrackable) {
-        liveIssueCache.insertNewIssue(file, rawMatched);
+        liveIssueCache.insertNewIssue(file, rawInput);
       } else {
         throw new IllegalStateException("Should never occurs");
       }
       notifyAboutIssueChangeForFile(file);
-      return rawMatched;
-    }
-    for (LiveIssue newIssue : tracking.getUnmatchedRaws()) {
-      if (newIssue.getServerIssueKey() != null) {
-        // were matched before with server issues, now not anymore
-        wipeServerIssueDetails(newIssue);
-      } else if (newIssue.getCreationDate() == null) {
-        // first time seen, even locally
-        newIssue.setCreationDate(System.currentTimeMillis());
-      }
-      liveIssueCache.insertNewIssue(file, newIssue);
+    } else {
+      // first time seen, even locally
+      rawInput.setCreationDate(System.currentTimeMillis());
+      liveIssueCache.insertNewIssue(file, rawInput);
       notifyAboutIssueChangeForFile(file);
-      return newIssue;
     }
     // Should never be reachable
     return rawInput;
