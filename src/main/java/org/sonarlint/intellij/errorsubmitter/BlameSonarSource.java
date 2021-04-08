@@ -62,7 +62,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
     description.append("* Java vendor=").append(System.getProperty("java.vendor")).append("\n");
     description.append("* OS name=").append(System.getProperty("os.name")).append("\n");
     description.append("* OS architecture=").append(System.getProperty("os.arch")).append("\n");
-    description.append("* IDE=").append(getFullApplicationName()).append("\n");
+    description.append("* IDE=").append(ApplicationInfo.getInstance().getFullApplicationName()).append("\n");
     description.append("* SonarLint version=").append(SonarLintUtils.getService(SonarLintPlugin.class).getVersion()).append("\n");
     description.append("\n");
     if (additionalInfo != null) {
@@ -89,11 +89,6 @@ public class BlameSonarSource extends ErrorReportSubmitter {
       consumer.consume(new SubmittedReportInfo(COMMUNITY_FAULT_CATEGORY_URL, "community support thread", SubmittedReportInfo.SubmissionStatus.NEW_ISSUE));
     }
     return somethingToReport;
-  }
-
-  protected String getFullApplicationName() {
-    // TODO Replace by getFullApplicationName() when minimal version is 192.4787.16
-    return ApplicationInfo.getInstance().getVersionName() + " " + ApplicationInfo.getInstance().getFullVersion();
   }
 
   String getReportWithBodyUrl(String description) {

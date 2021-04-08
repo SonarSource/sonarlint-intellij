@@ -26,6 +26,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.intellij.serviceContainer.NonInjectable;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import java.util.Arrays;
@@ -46,11 +47,7 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
   }
 
 
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
+  @NonInjectable
   CodeAnalyzerRestarter(Project project, DaemonCodeAnalyzer codeAnalyzer) {
     myProject = project;
     this.messageBus = project.getMessageBus();

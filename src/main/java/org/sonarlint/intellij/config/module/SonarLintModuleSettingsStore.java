@@ -23,6 +23,7 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.components.StoragePathMacros;
+import com.intellij.serviceContainer.NonInjectable;
 import org.jetbrains.annotations.NotNull;
 
 @State(name = "SonarLintModuleSettings", storages = @Storage(StoragePathMacros.MODULE_FILE))
@@ -33,11 +34,7 @@ public final class SonarLintModuleSettingsStore implements PersistentStateCompon
   public SonarLintModuleSettingsStore() {
   }
 
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
+  @NonInjectable
   public SonarLintModuleSettingsStore(SonarLintModuleSettings toCopy) {
     loadState(toCopy);
   }

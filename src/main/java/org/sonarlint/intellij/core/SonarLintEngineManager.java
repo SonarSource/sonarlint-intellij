@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.google.common.base.Preconditions;
 import com.intellij.openapi.Disposable;
+import com.intellij.serviceContainer.NonInjectable;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -44,11 +45,7 @@ public class SonarLintEngineManager implements Disposable {
     this(new SonarLintEngineFactory());
   }
 
-  /**
-   * Replace by @NonInjectable when supported
-   * @deprecated
-   */
-  @Deprecated
+  @NonInjectable
   SonarLintEngineManager(SonarLintEngineFactory factory) {
     this.factory = factory;
   }
