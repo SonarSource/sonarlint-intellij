@@ -24,6 +24,7 @@ import com.intellij.concurrency.JobScheduler;
 import com.intellij.ide.AppLifecycleListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.serviceContainer.NonInjectable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -44,11 +45,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
     this(new TelemetryManagerProvider());
   }
 
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
+  @NonInjectable
   SonarLintTelemetryImpl(TelemetryManagerProvider telemetryManagerProvider) {
     if ("true".equals(System.getProperty(DISABLE_PROPERTY_KEY))) {
       // can't log with GlobalLogOutput to the tool window since at this point no project is open yet
