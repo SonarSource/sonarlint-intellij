@@ -94,7 +94,8 @@ intellij {
 }
 
 tasks.runPluginVerifier {
-    setIdeVersions(listOf("IC-2018.3.6", intellij.version))
+    // Test oldest supported, and latest
+    setIdeVersions(listOf("IC-2019.3.5", "IC-2021.1"))
     setFailureLevel(
         EnumSet.complementOf(
             EnumSet.of(
@@ -103,6 +104,8 @@ tasks.runPluginVerifier {
                 RunPluginVerifierTask.FailureLevel.EXPERIMENTAL_API_USAGES,
                 RunPluginVerifierTask.FailureLevel.NOT_DYNAMIC,
                 RunPluginVerifierTask.FailureLevel.OVERRIDE_ONLY_API_USAGES,
+                // Workaround for Module.getModuleFilePath() in 2019.3
+                RunPluginVerifierTask.FailureLevel.INTERNAL_API_USAGES,
                 // TODO Workaround for CLion
                 RunPluginVerifierTask.FailureLevel.MISSING_DEPENDENCIES
             )
