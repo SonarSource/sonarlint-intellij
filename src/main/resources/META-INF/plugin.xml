@@ -50,6 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.15 - Minimal supported version is 2019.3.</li>
         <li>4.14.2 - Fix exceptions thrown during analysis and work around an issue with latest EAP.</li>
         <li>4.14.1 - Fix an error occurring after each analysis. Fix the regression on UI responsiveness.</li>
         <li>4.14 - New rules for regexp in Java, Java 15 support. All JS rules now based on the TypeScript parser. Rules improvements for PHP and Python. Support for Ruby 3.0.0. Support of Python 3.9. Investigate taint vulnerabilities detected by SonarQube 8.6+ or SonarCloud.</li>
@@ -112,7 +113,7 @@
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
     // we need listeners registration
-    <idea-version since-build="183.4588.3"/>
+    <idea-version since-build="193.5233.102"/>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
@@ -133,7 +134,6 @@
         <additionalTextAttributes scheme="Darcula" file="colorSchemes/SonarLintDarcula.xml"/>
         <editorActionHandler action="EditorEscape" implementationClass="org.sonarlint.intellij.editor.EscapeHandler"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.EditorDecorator"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.ui.BalloonNotifier"/>
         <projectService serviceImplementation="org.sonarlint.intellij.actions.SonarLintToolWindow"/>
         <errorHandler implementation="org.sonarlint.intellij.errorsubmitter.BlameSonarSource"/>
 

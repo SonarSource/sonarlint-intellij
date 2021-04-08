@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.server
 
 import com.intellij.openapi.Disposable
+import com.intellij.serviceContainer.NonInjectable
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
 import io.netty.channel.ChannelHandlerContext
@@ -42,11 +43,7 @@ import java.net.InetAddress
 const val STARTING_PORT = 64120
 const val ENDING_PORT = 64130
 
-/**
- * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
- * @deprecated in 4.2 to silence a check in 2019.3
- */
-class SonarLintHttpServer @java.lang.Deprecated constructor(private var nettyServer: NettyServer) : Disposable {
+class SonarLintHttpServer @NonInjectable constructor(private var nettyServer: NettyServer) : Disposable {
 
     constructor() : this(NettyServer())
 

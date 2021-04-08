@@ -27,6 +27,7 @@ import com.intellij.openapi.project.ProjectManagerListener;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
+import com.intellij.serviceContainer.NonInjectable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,11 +66,7 @@ public class IssueManager {
     this(project, new LiveIssueCache(project));
   }
 
-  /**
-   * For testing, replace by @NonInjectable when possible
-   * @deprecated
-   */
-  @Deprecated
+  @NonInjectable
   IssueManager(Project project, LiveIssueCache liveIssueCache) {
     myProject = project;
     this.liveIssueCache = liveIssueCache;

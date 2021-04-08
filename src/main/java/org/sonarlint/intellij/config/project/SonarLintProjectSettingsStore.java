@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.intellij.serviceContainer.NonInjectable;
 
 @State(name = "SonarLintProjectSettings", storages = {@Storage("sonarlint.xml")})
 public final class SonarLintProjectSettingsStore implements PersistentStateComponent<SonarLintProjectSettings> {
@@ -35,11 +36,7 @@ public final class SonarLintProjectSettingsStore implements PersistentStateCompo
   public SonarLintProjectSettingsStore() {
   }
 
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
+  @NonInjectable
   public SonarLintProjectSettingsStore(SonarLintProjectSettings toCopy) {
     loadState(toCopy);
   }

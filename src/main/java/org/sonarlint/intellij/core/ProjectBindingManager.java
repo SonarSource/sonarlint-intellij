@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.serviceContainer.NonInjectable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,11 +48,7 @@ public class ProjectBindingManager {
     this(project, () -> SonarLintUtils.getService(SonarLintEngineManager.class));
   }
 
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
+  @NonInjectable
   ProjectBindingManager(Project project, Supplier<SonarLintEngineManager> engineManagerSupplier) {
     this.myProject = project;
     this.engineManagerSupplier = engineManagerSupplier;

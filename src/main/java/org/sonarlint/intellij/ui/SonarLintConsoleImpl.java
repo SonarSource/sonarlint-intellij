@@ -25,6 +25,7 @@ import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.serviceContainer.NonInjectable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -41,11 +42,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
     this.myProject = project;
   }
 
-  /**
-   * TODO Replace @Deprecated with @NonInjectable when switching to 2019.3 API level
-   * @deprecated in 4.2 to silence a check in 2019.3
-   */
-  @Deprecated
+  @NonInjectable
   SonarLintConsoleImpl(Project project, ConsoleView consoleView) {
     this.consoleView = consoleView;
     this.myProject = project;
