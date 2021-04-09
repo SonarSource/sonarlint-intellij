@@ -50,7 +50,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>4.15 - Support TypeScript 4.1 and 4.2.</li>
+        <li>4.15 - Support TypeScript 4.1 and 4.2. Rules improvements for Java.</li>
         <li>4.14.2 - Fix exceptions thrown during analysis and work around an issue with latest EAP.</li>
         <li>4.14.1 - Fix an error occurring after each analysis. Fix the regression on UI responsiveness.</li>
         <li>4.14 - New rules for regexp in Java, Java 15 support. All JS rules now based on the TypeScript parser. Rules improvements for PHP and Python. Support for Ruby 3.0.0. Support of Python 3.9. Investigate taint vulnerabilities detected by SonarQube 8.6+ or SonarCloud.</li>
