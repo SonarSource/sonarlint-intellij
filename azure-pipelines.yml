@@ -25,8 +25,6 @@ stages:
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
         fixedBranch: $[replace(variables['Build.SourceBranch'], 'refs/heads/', '')]
-        ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
-        ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
       steps:
       - checkout: self
         fetchDepth: 1
@@ -44,6 +42,8 @@ stages:
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         env:
+          ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
+          ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
           ARTIFACTORY_DEPLOY_USERNAME: $(ARTIFACTORY_DEPLOY_USERNAME)
           ARTIFACTORY_DEPLOY_PASSWORD: $(ARTIFACTORY_DEPLOY_PASSWORD)
           GIT_SHA1: $(Build.SourceVersion)
@@ -85,12 +85,18 @@ stages:
           publishJUnitResults: true
           testRunTitle: 'UTs on Windows'
           jdkVersionOption: '1.11'
+        env:
+          ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
+          ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
         displayName: 'Run UTs'
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
           tasks: :runPluginVerifier
           jdkVersionOption: '1.11'
+        env:
+          ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
+          ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
         displayName: 'Run plugin verifier'
       - task: Gradle@2
         inputs:
@@ -119,6 +125,9 @@ stages:
           jdkVersionOption: '1.11'
           sonarQubeRunAnalysis: true
           sqGradlePluginVersionChoice: 'build'
+        env:
+          ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
+          ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
       - task: Gradle@2
         inputs:
           options: --stop
