@@ -29,7 +29,7 @@ repositories {
     mavenLocal()
     mavenCentral()
     maven("https://repox.jfrog.io/repox/sonarsource")
-    maven("https://jetbrains.bintray.com/intellij-third-party-dependencies")
+    maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
 }
 
 val remoteRobotVersion = "0.10.0"
