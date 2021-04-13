@@ -25,6 +25,7 @@ import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.ui.UIUtil
@@ -69,16 +70,20 @@ class ProjectServerNotificationsSubscriber : Disposable {
       // always reset notification date, whether bound or not
       val projectState = getService(project, SonarLintProjectState::class.java)
       projectState.lastEventPolling = ZonedDateTime.now()
-      register()
+      ApplicationManager.getApplication().executeOnPooledThread {
+        register()
+      }
     })
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
       override fun applied(settings: SonarLintGlobalSettings) {
-        register()
+        ApplicationManager.getApplication().executeOnPooledThread {
+          register()
+        }
       }
     })
   }
 
-  private fun register() {
+  @Synchronized private fun register() {
     unregister()
     getService(project, ProjectBindingManager::class.java).tryGetServerConnection()
       .filter { !it.isDisableNotifications }
@@ -90,9 +95,10 @@ class ProjectServerNotificationsSubscriber : Disposable {
             notificationsService.register(config)
           }
         } catch (e: Exception) {
-          SonarLintConsole.get(project).error("Cannot register for server notifications. The server might be unreachable", e)
+          SonarLintConsole.get(project)
+            .error("Cannot register for server notifications. The server might be unreachable", e)
         }
-      }
+    }
   }
 
   override fun dispose() {
