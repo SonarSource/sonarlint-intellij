@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -148,7 +149,9 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
         Issue issue = mock(Issue.class);
         ClientInputFile clientInputFile = mock(ClientInputFile.class);
         when(issue.getInputFile()).thenReturn(clientInputFile);
-        when(clientInputFile.getClientObject()).thenReturn(mock(VirtualFile.class));
+        VirtualFile vFile = mock(VirtualFile.class);
+        when(vFile.isValid()).thenReturn(false);
+        when(clientInputFile.getClientObject()).thenReturn(vFile);
         when(clientInputFile.getPath()).thenReturn("path");
         issueListener.handle(issue);
         return analysisResults;
@@ -191,13 +194,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldSkipIfFailedToFindIssueLocation() throws Exception {
-    Issue issue = mock(Issue.class);
-    ClientInputFile clientInputFile = mock(ClientInputFile.class);
-    when(issue.getInputFile()).thenReturn(clientInputFile);
-    VirtualFile virtualFile = mock(VirtualFile.class);
-    when(virtualFile.isValid()).thenReturn(true);
-    when(clientInputFile.getClientObject()).thenReturn(virtualFile);
-    when(clientInputFile.getPath()).thenReturn("path");
+    Issue issue = buildValidIssue();
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenThrow(new IssueMatcher.NoMatchException(""));
 
     TaskListener listener = mock(TaskListener.class);
@@ -219,13 +216,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldSkipIfException() throws Exception {
-    Issue issue = mock(Issue.class);
-    ClientInputFile clientInputFile = mock(ClientInputFile.class);
-    when(issue.getInputFile()).thenReturn(clientInputFile);
-    VirtualFile virtualFile = mock(VirtualFile.class);
-    when(virtualFile.isValid()).thenReturn(true);
-    when(clientInputFile.getClientObject()).thenReturn(virtualFile);
-    when(clientInputFile.getPath()).thenReturn("path");
+    Issue issue = buildValidIssue();
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenThrow(new RuntimeException(""));
 
     TaskListener listener = mock(TaskListener.class);
@@ -293,5 +284,17 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
     ExtensionPoint<LanguageExtensionPoint<?>> extensionPoint = Extensions.getRootArea().getExtensionPoint("com.intellij.externalAnnotator");
     return extensionPoint.extensions().collect(Collectors.toList());
+  }
+
+  @NotNull
+  private Issue buildValidIssue() {
+    Issue issue = mock(Issue.class);
+    ClientInputFile clientInputFile = mock(ClientInputFile.class);
+    when(issue.getInputFile()).thenReturn(clientInputFile);
+    VirtualFile virtualFile = mock(VirtualFile.class);
+    when(virtualFile.isValid()).thenReturn(true);
+    when(clientInputFile.getClientObject()).thenReturn(virtualFile);
+    when(clientInputFile.getPath()).thenReturn("path");
+    return issue;
   }
 }
