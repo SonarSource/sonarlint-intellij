@@ -1,0 +1,38 @@
+name: sonar-release
+# This workflow is triggered when publishing a new github release
+on:
+  release:
+    types:
+      - published
+
+env:
+  PYTHONUNBUFFERED: 1
+
+jobs:
+  sonar_release:
+    runs-on: ubuntu-latest
+    name: Start release process
+    steps:
+      - name: SL release
+        id: sl_release
+        with:
+          distribute: false
+          publish_to_binaries: false
+          attach_artifacts_to_github_release: false
+          run_rules_cov: false
+          slack_channel: sonarlint-java
+        env:
+          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
+          BURGRX_USER: ${{ secrets.BURGRX_USER }}
+          BURGRX_PASSWORD: ${{ secrets.BURGRX_PASSWORD }}
+          PATH_PREFIX: ${{ secrets.BINARIES_PATH_PREFIX }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          SLACK_API_TOKEN: ${{secrets.SLACK_API_TOKEN }}
+        # Put your action repo here
+        uses: SonarSource/gh-action_LT_release@v2
+
+      - name: Check outputs
+        if: always()
+        run: |
+          echo "${{ steps.sl_release.outputs.releasability }}"
+          echo "${{ steps.sl_release.outputs.release }}"
