@@ -109,7 +109,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
   @Override
   public void run(ProgressIndicator indicator) {
-    LiveIssueBuilder processor = SonarLintUtils.getService(myProject, LiveIssueBuilder.class);
+    LiveIssueBuilder liveIssueBuilder = SonarLintUtils.getService(myProject, LiveIssueBuilder.class);
     IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
 
     Map<VirtualFile, Boolean> firstAnalyzedFiles = new ConcurrentHashMap<>();
@@ -131,7 +131,7 @@ public class SonarLintTask extends Task.Backgroundable {
       }
 
       List<AnalysisResults> results = analyzePerModule(myProject, indicator,
-        rawIssue -> processRawIssue(processor, manager, firstAnalyzedFiles, issuesPerFile, previousIssuesPerFile, rawIssueCounter, rawIssue));
+        rawIssue -> processRawIssue(liveIssueBuilder, manager, firstAnalyzedFiles, issuesPerFile, previousIssuesPerFile, rawIssueCounter, rawIssue));
 
       LOGGER.info("SonarLint analysis done");
 
@@ -209,7 +209,7 @@ public class SonarLintTask extends Task.Backgroundable {
     return previousIssuesPerFile;
   }
 
-  private void processRawIssue(LiveIssueBuilder processor, IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
+  private void processRawIssue(LiveIssueBuilder issueBuilder, IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile, AtomicInteger rawIssueCounter,
     org.sonarsource.sonarlint.core.client.api.common.analysis.Issue rawIssue) {
     rawIssueCounter.incrementAndGet();
@@ -227,7 +227,7 @@ public class SonarLintTask extends Task.Backgroundable {
     }
     LiveIssue liveIssue;
     try {
-      liveIssue = processor.buildLiveIssue(rawIssue, inputFile);
+      liveIssue = issueBuilder.buildLiveIssue(rawIssue, inputFile);
     } catch (IssueMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
       SonarLintConsole.get(myProject).debug("Failed to find location of issue for file: '" + vFile.getName() + "'." + e.getMessage());
