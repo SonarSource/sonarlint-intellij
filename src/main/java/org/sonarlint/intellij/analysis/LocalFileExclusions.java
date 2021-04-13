@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -251,7 +252,7 @@ public class LocalFileExclusions {
     List<Module> modules = new ArrayList<>(filesByModule.keySet());
     for (Module module : modules) {
       Collection<VirtualFile> virtualFiles = filesByModule.get(module);
-      Predicate<VirtualFile> testPredicate = f -> TestSourcesFilter.isTestSources(f, module.getProject());
+      Predicate<VirtualFile> testPredicate = f -> ReadAction.compute(() -> TestSourcesFilter.isTestSources(f, module.getProject()));
       Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
       for (VirtualFile f : excluded) {
         excludedFileHandler.accept(f, ExcludeResult.excluded("exclusions configured in the bound project"));
