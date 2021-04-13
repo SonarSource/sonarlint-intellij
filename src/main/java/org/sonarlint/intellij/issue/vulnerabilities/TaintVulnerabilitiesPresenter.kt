@@ -58,13 +58,8 @@ data class FoundTaintVulnerabilities(val byFile: Map<VirtualFile, Collection<Loc
 
 const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint vulnerabilities"
 
-class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreListener {
+class TaintVulnerabilitiesPresenter(private val project: Project) {
   var currentVulnerabilitiesByFile : Map<VirtualFile, Collection<LocalTaintVulnerability>> = emptyMap()
-
-  init {
-    val busConnection: MessageBusConnection = project.messageBus.connect()
-    busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this)
-  }
 
   fun refreshTaintVulnerabilitiesForOpenFiles(project: Project) {
     try {
@@ -118,11 +113,4 @@ class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreLi
     notification.notify(project)
   }
 
-  override fun filesChanged(changedFiles: Set<VirtualFile>) {
-    ApplicationManager.getApplication().invokeLater { presentTaintVulnerabilitiesForOpenFiles() }
-  }
-
-  override fun allChanged() {
-    ApplicationManager.getApplication().invokeLater { presentTaintVulnerabilitiesForOpenFiles() }
-  }
 }
