@@ -49,6 +49,7 @@ import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -150,6 +151,8 @@ public class SonarLintTask extends Task.Backgroundable {
       finalizeIssueStore(manager, previousIssuesPerFile, allFilesToAnalyze, failedVirtualFiles);
 
       matchWithServerIssuesIfNeeded(indicator, issuesPerFile);
+
+      SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
 
       job.callback().onSuccess(failedVirtualFiles);
     } catch (CanceledException e1) {
