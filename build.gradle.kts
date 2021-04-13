@@ -166,7 +166,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.2.1946@jar")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.3.0.2534@jar")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.19.0.29931@jar")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.19.0.30153@jar")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
