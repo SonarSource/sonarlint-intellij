@@ -31,7 +31,6 @@ import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.DocumentAdapter;
@@ -140,6 +139,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   @Override
   public void dispose() {
+    // Only used as a parent disposable
   }
 
   @Override
@@ -242,10 +242,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   @NotNull
   private RulesTreeNode.Language getOrCreateLanguageNode(String languageName) {
-    if (!languageNodesByName.containsKey(languageName)) {
-      languageNodesByName.put(languageName, new RulesTreeNode.Language(languageName));
-    }
-    return languageNodesByName.get(languageName);
+    return languageNodesByName.computeIfAbsent(languageName, RulesTreeNode.Language::new);
   }
 
   private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
