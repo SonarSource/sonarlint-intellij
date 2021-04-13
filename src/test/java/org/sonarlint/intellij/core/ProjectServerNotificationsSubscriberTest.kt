@@ -107,7 +107,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(globalSettings)
 
-    verify(serverNotificationsService).register(capture(notificationConfigurationCaptor))
+    verify(serverNotificationsService, timeout(5000)).register(capture(notificationConfigurationCaptor))
     val notificationConfiguration = notificationConfigurationCaptor.value
     assertThat(notificationConfiguration.projectKey()).isEqualTo("projectKey")
   }
@@ -119,7 +119,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     project.messageBus.syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings)
 
-    verify(serverNotificationsService).register(capture(notificationConfigurationCaptor))
+    verify(serverNotificationsService, timeout(5000)).register(capture(notificationConfigurationCaptor))
     val notificationConfiguration = notificationConfigurationCaptor.value
     assertThat(notificationConfiguration.projectKey()).isEqualTo("projectKey")
   }
@@ -131,7 +131,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(globalSettings)
 
-    verify(serverNotificationsService).unregister(any())
+    verify(serverNotificationsService, timeout(5000)).unregister(any())
   }
 
   @Test
