@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
@@ -129,11 +130,14 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       rootPanel = null;
     }
     if (connectionsPanel != null) {
-      connectionsPanel.dispose();
+      Disposer.dispose(connectionsPanel);
       connectionsPanel = null;
     }
     about = null;
-    rules = null;
+    if (rules != null) {
+      Disposer.dispose(rules);
+      rules = null;
+    }
     SonarLintUtils.getService(SonarLintEngineManager.class).stopAllDeletedConnectedEngines();
   }
 
