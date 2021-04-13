@@ -230,7 +230,7 @@ stages:
         displayName: 'Stop video recording'
         condition: always()
       - publish: /tmp/recording_$(IDEA_VERSION).mp4
-        artifact: ITCaptureScreen_$(IDEA_VERSION)
+        artifact: ITCaptureScreen_$(IDEA_VERSION)_$(System.JobAttempt)
         condition: always()
       - bash: |
           cat its/build/idea-sandbox/system/log/idea.log
