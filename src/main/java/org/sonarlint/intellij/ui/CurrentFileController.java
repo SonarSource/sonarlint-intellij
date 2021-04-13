@@ -28,6 +28,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -72,11 +73,11 @@ public class CurrentFileController {
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> ApplicationManager.getApplication().invokeLater(panel::refreshToolbar));
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
-      @Override public void filesChanged(final Map<VirtualFile, Collection<LiveIssue>> map) {
+      @Override public void filesChanged(final Set<VirtualFile> changedFiles) {
         ApplicationManager.getApplication().invokeLater(() -> {
           VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
-          if (selectedFile != null && map.containsKey(selectedFile)) {
-            panel.update(selectedFile, map.get(selectedFile), getEmptyText(selectedFile));
+          if (selectedFile != null && changedFiles.contains(selectedFile)) {
+            panel.update(selectedFile, store.getForFile(selectedFile), getEmptyText(selectedFile));
           }
         });
       }

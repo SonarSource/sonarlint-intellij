@@ -23,8 +23,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.sonarlint.intellij.issue.LiveIssue;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Called when issue store is updated. Should be used by UI that displays issues.
@@ -32,10 +36,10 @@ import org.sonarlint.intellij.issue.LiveIssue;
 public interface IssueStoreListener {
   Topic<IssueStoreListener> SONARLINT_ISSUE_STORE_TOPIC = Topic.create("Issue store changed", IssueStoreListener.class);
 
-  void filesChanged(Map<VirtualFile, Collection<LiveIssue>> map);
+  void filesChanged(Set<VirtualFile> changedFiles);
 
-  default void fileChanged(VirtualFile virtualFile, Collection<LiveIssue> issues) {
-    filesChanged(Collections.singletonMap(virtualFile, issues));
+  default void fileChanged(VirtualFile virtualFile) {
+    filesChanged(new HashSet<>(singletonList(virtualFile)));
   }
 
   void allChanged();
