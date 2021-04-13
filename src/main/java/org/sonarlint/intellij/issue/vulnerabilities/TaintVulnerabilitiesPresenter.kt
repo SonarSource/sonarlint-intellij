@@ -118,7 +118,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) : IssueStoreLi
     notification.notify(project)
   }
 
-  override fun filesChanged(map: MutableMap<VirtualFile, MutableCollection<LiveIssue>>) {
+  override fun filesChanged(changedFiles: Set<VirtualFile>) {
     ApplicationManager.getApplication().invokeLater { presentTaintVulnerabilitiesForOpenFiles() }
   }
 

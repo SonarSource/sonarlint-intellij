@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -91,12 +92,8 @@ public class IssueManager {
   }
 
   public void clearAllIssuesForFiles(Collection<VirtualFile> files) {
-    Map<VirtualFile, Collection<LiveIssue>> mapToNotify = new HashMap<>();
-    for (VirtualFile f : files) {
-      liveIssueCache.clear(f);
-      mapToNotify.put(f, emptyList());
-    }
-    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(mapToNotify);
+    files.stream().forEach(liveIssueCache::clear);
+    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(new HashSet<>(files));
   }
 
   public void removeResolvedIssues(VirtualFile file, List<LiveIssue> issues) {
@@ -237,11 +234,7 @@ public class IssueManager {
   }
 
   private void notifyAboutIssueChangeForFile(VirtualFile file) {
-    Collection<LiveIssue> issues = liveIssueCache.getLive(file);
-    if (issues == null) {
-      issues = Collections.emptyList();
-    }
-    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).fileChanged(file, issues);
+    myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).fileChanged(file);
   }
 
 }

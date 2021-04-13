@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
@@ -93,8 +94,8 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
     return PsiManager.getInstance(myProject).findFile(virtualFile);
   }
 
-  @Override public void filesChanged(final Map<VirtualFile, Collection<LiveIssue>> map) {
-    ApplicationManager.getApplication().invokeLater(() -> refreshFiles(map.keySet()));
+  @Override public void filesChanged(final Set<VirtualFile> changedFiles) {
+    ApplicationManager.getApplication().invokeLater(() -> refreshFiles(changedFiles));
   }
 
   @Override public void allChanged() {
