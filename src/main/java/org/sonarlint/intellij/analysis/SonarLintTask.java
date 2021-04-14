@@ -152,7 +152,9 @@ public class SonarLintTask extends Task.Backgroundable {
 
       matchWithServerIssuesIfNeeded(indicator, issuesPerFile);
 
-      SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
+      if (SonarLintUtils.enableTaintVulnerabilities()) {
+        SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
+      }
 
       job.callback().onSuccess(failedVirtualFiles);
     } catch (CanceledException e1) {
