@@ -114,10 +114,11 @@ public class SonarLintTask extends Task.Backgroundable {
     LiveIssueBuilder liveIssueBuilder = SonarLintUtils.getService(myProject, LiveIssueBuilder.class);
     IssueManager manager = SonarLintUtils.getService(myProject, IssueManager.class);
 
-    Map<VirtualFile, Boolean> firstAnalyzedFiles = new ConcurrentHashMap<>();
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
 
     List<VirtualFile> allFilesToAnalyze = job.allFiles().collect(toList());
+    // Cache everything that rely on issue store before clearing issues
+    Map<VirtualFile, Boolean> firstAnalyzedFiles = cacheFirstAnalyzedFiles(manager, allFilesToAnalyze);
     Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile = collectPreviousIssuesPerFile(manager, allFilesToAnalyze);
 
     AtomicInteger rawIssueCounter = new AtomicInteger();
@@ -219,6 +220,12 @@ public class SonarLintTask extends Task.Backgroundable {
     return previousIssuesPerFile;
   }
 
+  private static Map<VirtualFile, Boolean> cacheFirstAnalyzedFiles(IssueManager manager, List<VirtualFile> allFilesToAnalyze) {
+    Map<VirtualFile, Boolean> firstAnalyzedFiles = new HashMap<>();
+    allFilesToAnalyze.forEach(vFile -> firstAnalyzedFiles.computeIfAbsent(vFile, f -> !manager.wasAnalyzed(f)));
+    return firstAnalyzedFiles;
+  }
+
   private void processRawIssue(LiveIssueBuilder issueBuilder, IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile, AtomicInteger rawIssueCounter,
     org.sonarsource.sonarlint.core.client.api.common.analysis.Issue rawIssue) {
@@ -247,7 +254,7 @@ public class SonarLintTask extends Task.Backgroundable {
       return;
     }
 
-    if (lazyComputeFirstAnalyzedFile(manager, firstAnalyzedFiles, vFile)) {
+    if (firstAnalyzedFiles.get(vFile).booleanValue()) {
       // don't set creation date, as we don't know when the issue was actually created (SLI-86)
       issuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(liveIssue);
       manager.insertNewIssue(vFile, liveIssue);
@@ -286,11 +293,6 @@ public class SonarLintTask extends Task.Backgroundable {
 
   private static Set<VirtualFile> asVirtualFiles(Collection<ClientInputFile> failedAnalysisFiles) {
     return failedAnalysisFiles.stream().map(f -> (VirtualFile) f.getClientObject()).collect(Collectors.toSet());
-  }
-
-  @NotNull
-  private static Boolean lazyComputeFirstAnalyzedFile(IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles, VirtualFile vFile) {
-    return firstAnalyzedFiles.computeIfAbsent(vFile, f -> !manager.wasAnalyzed(f));
   }
 
   private void handleError(Throwable e, ProgressIndicator indicator) {

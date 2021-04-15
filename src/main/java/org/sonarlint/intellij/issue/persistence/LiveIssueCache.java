@@ -93,14 +93,8 @@ public class LiveIssueCache {
     return null;
   }
 
-  public synchronized void insertNewIssue(VirtualFile virtualFile, LiveIssue issue) {
+  public synchronized void insertIssue(VirtualFile virtualFile, LiveIssue issue) {
     cache.computeIfAbsent(virtualFile, f -> new ArrayList<>()).add(issue);
-  }
-
-  public synchronized void updateSingleIssue(VirtualFile virtualFile, LiveIssue previous, LiveIssue fresh) {
-    Collection<LiveIssue> fileIssues = cache.computeIfAbsent(virtualFile, f -> new ArrayList<>());
-    fileIssues.remove(previous);
-    fileIssues.add(fresh);
   }
 
   public synchronized void removeIssues(VirtualFile virtualFile, Collection<LiveIssue> issues) {
