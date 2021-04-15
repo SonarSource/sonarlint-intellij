@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -124,7 +125,11 @@ public class SonarLintTask extends Task.Backgroundable {
     try {
       checkCanceled(indicator, myProject);
 
-      ReadAction.run(() -> manager.clearAllIssuesForFiles(job.filesToClearIssues()));
+      ReadAction.run(() -> {
+        Set<VirtualFile> filesToClear = new HashSet<>(job.filesToClearIssues());
+        filesToClear.addAll(allFilesToAnalyze);
+        manager.clearAllIssuesForFiles(filesToClear);
+      });
 
       if (allFilesToAnalyze.isEmpty()) {
         job.callback().onSuccess(Collections.emptySet());
