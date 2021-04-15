@@ -32,7 +32,6 @@ import com.intellij.serviceContainer.NonInjectable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -180,18 +179,12 @@ public class IssueManager {
       T previousMatched = tracking.getMatchedRaws().get(rawInput);
       baseInput.remove(previousMatched);
       copyFromPrevious(rawInput, previousMatched);
-      if (previousMatched instanceof LiveIssue) {
-        liveIssueCache.updateSingleIssue(file, (LiveIssue) previousMatched, rawInput);
-      } else if (previousMatched instanceof LocalIssueTrackable) {
-        liveIssueCache.insertNewIssue(file, rawInput);
-      } else {
-        throw new IllegalStateException("Should never occurs");
-      }
+      liveIssueCache.insertIssue(file, rawInput);
       notifyAboutIssueChangeForFile(file);
     } else {
       // first time seen, even locally
       rawInput.setCreationDate(System.currentTimeMillis());
-      liveIssueCache.insertNewIssue(file, rawInput);
+      liveIssueCache.insertIssue(file, rawInput);
       notifyAboutIssueChangeForFile(file);
     }
     // Should never be reachable
@@ -229,7 +222,7 @@ public class IssueManager {
   }
 
   public void insertNewIssue(VirtualFile file, LiveIssue liveIssue) {
-    liveIssueCache.insertNewIssue(file, liveIssue);
+    liveIssueCache.insertIssue(file, liveIssue);
     notifyAboutIssueChangeForFile(file);
   }
 
