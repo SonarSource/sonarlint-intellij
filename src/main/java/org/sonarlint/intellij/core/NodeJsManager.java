@@ -37,11 +37,12 @@ public class NodeJsManager {
   private boolean nodeInit = false;
   private Path nodeJsPath = null;
   private Version nodeJsVersion = null;
+  private String previousSettingValue = "";
 
   public NodeJsManager() {
     ApplicationManager.getApplication().getMessageBus().connect().subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override public void applied(SonarLintGlobalSettings settings) {
-        if (!Objects.equals(Paths.get(settings.getNodejsPath()), nodeJsPath)) {
+        if (!Objects.equals(settings.getNodejsPath(), previousSettingValue)) {
           clear();
           // Node.js path is passed at engine startup, so we have to restart them all to ensure the new value is taken into account
           SonarLintUtils.getService(SonarLintEngineManager.class).stopAllEngines();
@@ -77,8 +78,9 @@ public class NodeJsManager {
   }
 
   @CheckForNull
-  private static Path getNodeJsPathFromConfig() {
+  private Path getNodeJsPathFromConfig() {
     final String nodejsPathStr = Settings.getGlobalSettings().getNodejsPath();
+    this.previousSettingValue = nodejsPathStr;
     if (StringUtils.isNotBlank(nodejsPathStr)) {
       try {
         return Paths.get(nodejsPathStr);
