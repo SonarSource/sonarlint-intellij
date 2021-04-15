@@ -51,10 +51,19 @@ public class SonarLintEngineManager implements Disposable {
   }
 
   private static void stopInThread(final ConnectedSonarLintEngine engine) {
-    new Thread("stop-sonarlint-engine") {
+    new Thread("stop-connected-sonarlint-engine") {
       @Override
       public void run() {
         engine.stop(false);
+      }
+    }.start();
+  }
+
+  private static void stopInThread(final StandaloneSonarLintEngine engine) {
+    new Thread("stop-standalone-sonarlint-engine") {
+      @Override
+      public void run() {
+        engine.stop();
       }
     }.start();
   }
@@ -103,11 +112,11 @@ public class SonarLintEngineManager implements Disposable {
   public synchronized void stopAllEngines() {
     AnalysisRequirementNotifications.resetCachedMessages();
     for (ConnectedSonarLintEngine e : engines.values()) {
-      e.stop(false);
+      stopInThread(e);
     }
     engines.clear();
     if (standalone != null) {
-      standalone.stop();
+      stopInThread(standalone);
       standalone = null;
     }
   }
