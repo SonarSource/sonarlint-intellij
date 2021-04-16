@@ -19,37 +19,43 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class CurrentFileController {
+public class CurrentFileController implements Disposable {
+  private static final int DEFAULT_DELAY_MS = 300;
   private final Project project;
   private final IssueManager store;
   private SonarLintIssuesPanel panel;
+  private AtomicLong refreshTimestamp = new AtomicLong(Long.MAX_VALUE);
+  private final EventWatcher watcher;
+  private final int delayMs = DEFAULT_DELAY_MS;
+  private VirtualFile selectedFile = null;
 
   public CurrentFileController(Project project, IssueManager store) {
     this.project = project;
     this.store = store;
+    this.watcher = new EventWatcher();
   }
 
   public void setPanel(SonarLintIssuesPanel panel) {
     this.panel = panel;
     initEventHandling();
+    this.selectedFile = SonarLintUtils.getSelectedFile(project);
     update();
   }
 
@@ -63,6 +69,11 @@ public class CurrentFileController {
     }
   }
 
+  @Override
+  public void dispose() {
+    watcher.stopWatcher();
+  }
+
   private void initEventHandling() {
     EditorChangeListener editorChangeListener = new EditorChangeListener();
     project.getMessageBus()
@@ -73,35 +84,70 @@ public class CurrentFileController {
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> ApplicationManager.getApplication().invokeLater(panel::refreshToolbar));
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
-      @Override public void filesChanged(final Set<VirtualFile> changedFiles) {
-        ApplicationManager.getApplication().invokeLater(() -> {
-          VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
-          if (selectedFile != null && changedFiles.contains(selectedFile)) {
-            panel.update(selectedFile, store.getForFile(selectedFile), getEmptyText(selectedFile));
-          }
-        });
+      @Override
+      public void filesChanged(final Set<VirtualFile> changedFiles) {
+        if (selectedFile != null && changedFiles.contains(selectedFile)) {
+          refreshTimestamp.set(System.currentTimeMillis() + delayMs);
+        }
       }
 
-      @Override public void allChanged() {
-        ApplicationManager.getApplication().invokeLater(() -> {
-          VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
-          if (selectedFile != null) {
-            panel.update(selectedFile, store.getForFile(selectedFile), getEmptyText(selectedFile));
-          }
-        });
+      @Override
+      public void allChanged() {
+        if (selectedFile != null) {
+          refreshTimestamp.set(System.currentTimeMillis() + delayMs);
+        }
       }
     });
+    watcher.start();
+  }
+
+  private class EventWatcher extends Thread {
+
+    private boolean stop = false;
+
+    EventWatcher() {
+      this.setDaemon(true);
+      this.setName("sonarlint-issue-panel-refresh");
+    }
+
+    public void stopWatcher() {
+      stop = true;
+      this.interrupt();
+    }
+
+    @Override
+    public void run() {
+      while (!stop) {
+        checkRefresh();
+        try {
+          Thread.sleep(200);
+        } catch (InterruptedException e) {
+          // continue until stop flag is set
+        }
+      }
+    }
+
+    private void checkRefresh() {
+      long t = System.currentTimeMillis();
+      if (t > refreshTimestamp.get()) {
+        refreshTimestamp.set(Long.MAX_VALUE);
+        ApplicationManager.getApplication().invokeLater(() -> {
+          update();
+        });
+      }
+    }
+
   }
 
   private class EditorChangeListener implements FileEditorManagerListener {
     @Override
     public void selectionChanged(@NotNull FileEditorManagerEvent event) {
+      selectedFile = event.getNewFile();
       update();
     }
   }
 
   private void update() {
-    VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     String emptyText = getEmptyText(selectedFile);
     if (selectedFile == null) {
       panel.update(null, Collections.emptyList(), emptyText);
