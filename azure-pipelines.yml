@@ -156,7 +156,7 @@ stages:
           LatestIdeaEAP:
             IDEA_VERSION: 'IC-LATEST-EAP-SNAPSHOT'
           LatestCLionEAP:
-            IDEA_VERSION: 'CL-LATEST-EAP-SNAPSHOT'
+            IDEA_VERSION: 'CL-2021.1'
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
