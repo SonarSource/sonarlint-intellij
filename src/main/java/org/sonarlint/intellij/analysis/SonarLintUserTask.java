@@ -29,8 +29,8 @@ import org.sonarlint.intellij.util.SonarLintUtils;
  */
 class SonarLintUserTask extends SonarLintTask {
 
-  SonarLintUserTask(Project project, SonarLintJob job, boolean modal) {
-    super(project, job, modal, false);
+  SonarLintUserTask(SonarLintJob job, boolean modal) {
+    super(job, modal, false);
   }
 
   @Override public void run(@NotNull ProgressIndicator indicator) {
