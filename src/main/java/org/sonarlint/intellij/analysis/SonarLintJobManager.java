@@ -53,7 +53,7 @@ public class SonarLintJobManager {
     SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, false, callback);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
-    SonarLintTask task = new SonarLintTask(myProject, newJob, true);
+    SonarLintTask task = new SonarLintTask(newJob, true);
     notifyStart(task.getJob());
     task.queue();
     return task;
@@ -78,7 +78,7 @@ public class SonarLintJobManager {
 
     SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, true, callback);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
-    SonarLintUserTask task = new SonarLintUserTask(myProject, newJob, modal);
+    SonarLintUserTask task = new SonarLintUserTask(newJob, modal);
     notifyStart(task.getJob());
     task.queue();
     return task;
