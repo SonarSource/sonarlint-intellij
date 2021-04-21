@@ -38,6 +38,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
 import java.util.Collection;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
@@ -69,10 +70,10 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     issues.stream()
       .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
-        // reject non-null ranges that are no longer valid. It probably means that they were deleted from the file.
-        RangeMarker range = issue.getRange();
-        if (range == null || range.isValid()) {
-          addAnnotation(issue, holder);
+        // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
+        TextRange validTextRange = getValidTextRange(issue);
+        if (validTextRange != null) {
+          addAnnotation(issue, validTextRange, holder);
         }
       });
 
@@ -81,6 +82,17 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         .getOrDefault(file.getVirtualFile(), emptyList())
         .forEach(vulnerability -> addAnnotation(vulnerability, holder));
     }
+  }
+
+  @CheckForNull
+  private static TextRange getValidTextRange(LiveIssue issue) {
+    RangeMarker rangeMarker = issue.getRange();
+    if (rangeMarker == null && issue.psiFile().isValid()) {
+      return issue.psiFile().getTextRange();
+    } else if (rangeMarker != null && rangeMarker.isValid()) {
+      return createTextRange(rangeMarker);
+    }
+    return null;
   }
 
   private static boolean shouldSkip(@NotNull PsiFile file) {
@@ -104,19 +116,11 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private void addAnnotation(LiveIssue issue, AnnotationHolder annotationHolder) {
-    TextRange textRange;
-
-    if (issue.getRange() != null) {
-      textRange = createTextRange(issue.getRange());
-    } else {
-      textRange = issue.psiFile().getTextRange();
-    }
-
+  private void addAnnotation(LiveIssue issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
     String htmlMsg = getHtmlMessage(issue);
 
     Annotation annotation = annotationHolder
-      .createAnnotation(getSeverity(issue.getSeverity()), textRange, issue.getMessage(), htmlMsg);
+      .createAnnotation(getSeverity(issue.getSeverity()), validTextRange, issue.getMessage(), htmlMsg);
     annotation.registerFix(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
     annotation.registerFix(new DisableRuleIntentionAction(issue.getRuleKey()));
 
