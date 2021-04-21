@@ -90,6 +90,7 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testFileLevelIssues() {
+    when(psiFile.isValid()).thenReturn(true);
     createFileIssues(5);
     annotator.apply(psiFile, ctx, holder);
 
