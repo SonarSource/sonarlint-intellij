@@ -24,6 +24,7 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
@@ -161,7 +162,7 @@ public class SonarLintTask extends Task.Backgroundable {
       }
 
       job.callback().onSuccess(failedVirtualFiles);
-    } catch (CanceledException e1) {
+    } catch (CanceledException | ProcessCanceledException e1) {
       SonarLintConsole console = SonarLintConsole.get(job.project());
       console.info("Analysis canceled");
     } catch (Throwable e) {
@@ -247,6 +248,8 @@ public class SonarLintTask extends Task.Backgroundable {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
       SonarLintConsole.get(myProject).debug("Failed to find location of issue for file: '" + vFile.getName() + "'." + e.getMessage());
       return;
+    } catch (ProcessCanceledException e) {
+      throw e;
     } catch (Exception e) {
       LOGGER.error("Error finding location for issue", e);
       return;
