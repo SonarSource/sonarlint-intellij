@@ -79,14 +79,14 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
   }
 
   @Override
-  public void clear() {
+  public synchronized void clear() {
     if (consoleView != null) {
-      getConsoleView().clear();
+      consoleView.clear();
     }
   }
 
   @Override
-  public ConsoleView getConsoleView() {
+  public synchronized ConsoleView getConsoleView() {
     if (consoleView == null) {
       consoleView = TextConsoleBuilderFactory.getInstance().createBuilder(myProject).getConsole();
     }
@@ -95,7 +95,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   @Override
   public void dispose() {
-    if(consoleView != null){
+    if (consoleView != null){
       Disposer.dispose(consoleView);
     }
   }
