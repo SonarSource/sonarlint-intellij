@@ -276,7 +276,7 @@ artifactory {
     clientConfig.info.setBuildName("sonarlint-intellij")
     clientConfig.info.setBuildNumber(System.getenv("BUILD_BUILDID"))
     clientConfig.setIncludeEnvVars(true)
-    clientConfig.setEnvVarsExcludePatterns("*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*")
+    clientConfig.setEnvVarsExcludePatterns("*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*")
     clientConfig.info.addEnvironmentProperty(
         "ARTIFACTS_TO_DOWNLOAD",
         "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip"
