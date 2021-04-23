@@ -149,6 +149,8 @@ open class BaseUiTest {
           }
         }
         dialog("Settings") {
+          // Wait for the tree to be populated
+          Thread.sleep(1000);
           textField(byXpath("//div[@class='TextFieldWithProcessing']")).text = "SonarLint"
           // Wait for the search to complete
           Thread.sleep(1000);
