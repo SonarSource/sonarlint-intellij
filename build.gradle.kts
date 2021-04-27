@@ -14,7 +14,7 @@ import java.util.zip.ZipEntry
 
 plugins {
     kotlin("jvm") version "1.4.30"
-    id("org.jetbrains.intellij") version "0.7.2"
+    id("org.jetbrains.intellij") version "0.7.3"
     id("org.sonarqube") version "3.0"
     java
     jacoco
@@ -50,7 +50,6 @@ allprojects {
     }
 
     repositories {
-        mavenLocal()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             content { excludeGroup("typescript") }
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
