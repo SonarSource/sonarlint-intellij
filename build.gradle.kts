@@ -36,6 +36,10 @@ buildscript {
 group = "org.sonarsource.sonarlint.intellij"
 description = "SonarLint for IntelliJ IDEA"
 
+val sonarlintCoreVersion: String by project
+val protobufVersion: String by project
+val typescriptVersion: String by project
+val jettyVersion: String by project
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
@@ -116,7 +120,20 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories. Must be the same as the one used in sonarlint-core
-        artifact = "com.google.protobuf:protoc:3.13.0"
+        artifact = "com.google.protobuf:protoc:$protobufVersion"
+    }
+}
+
+// The protobuf version embedded into the IntelliJ distribution is conflicting with the one we use in our plugin, so we have to exclude it
+// Note that the version (3.5.1) may change when updating the traget IDE we use for compilation, so this will have to be kept up to date.
+project.afterEvaluate {
+    sourceSets {
+        main {
+            compileClasspath -= files(File(intellij.ideaDependency.classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
+        }
+        test {
+            runtimeClasspath -= files(File(intellij.ideaDependency.classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
+        }
     }
 }
 
@@ -137,20 +154,15 @@ configurations {
     create("typescript") { isCanBeConsumed = false }
 }
 
-val sonarlintCoreVersion: String by project
-val typescriptVersion: String by project
-val jettyVersion: String by project
-
 dependencies {
-    // Don't change to implementation until https://github.com/JetBrains/gradle-intellij-plugin/issues/239 is fixed
-    compile("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
-    compile("commons-lang:commons-lang:2.6")
+    implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    implementation("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
-    compile ("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
+    implementation ("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
         exclude(module = "slf4j-api")
     }
-    compile(project(":clion"))
-    compile(project(":common"))
+    implementation(project(":clion"))
+    implementation(project(":common"))
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.16.1")
     testImplementation("org.mockito:mockito-core:2.19.0")
@@ -175,7 +187,8 @@ project(":clion") {
         version = "CL-2020.1.3"
     }
     dependencies {
-        compile(project(":common"))
+        implementation(project(":common"))
+        implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
         testImplementation(platform("org.junit:junit-bom:5.7.1"))
         testImplementation("org.junit.jupiter:junit-jupiter")
         testImplementation("org.mockito:mockito-core:2.19.0")
@@ -187,7 +200,7 @@ project(":clion") {
 
 project(":common") {
     dependencies {
-        compile("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+        implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     }
 }
 
