@@ -15,12 +15,12 @@ import java.util.zip.ZipEntry
 plugins {
     kotlin("jvm") version "1.4.30"
     id("org.jetbrains.intellij") version "0.7.3"
-    id("org.sonarqube") version "3.0"
+    id("org.sonarqube") version "3.1.1"
     java
     jacoco
     id("com.github.hierynomus.license") version "0.15.0"
-    id("com.jfrog.artifactory") version "4.11.0"
-    id("com.google.protobuf") version "0.8.10"
+    id("com.jfrog.artifactory") version "4.21.0"
+    id("com.google.protobuf") version "0.8.16"
     idea
 }
 
@@ -29,7 +29,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.2")
+        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.5")
     }
 }
 
