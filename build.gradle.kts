@@ -54,6 +54,7 @@ allprojects {
     }
 
     repositories {
+        mavenCentral()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             content { excludeGroup("typescript") }
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
