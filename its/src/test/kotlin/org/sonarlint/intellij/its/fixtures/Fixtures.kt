@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.its.fixtures
 
+import com.intellij.remoterobot.data.componentAs
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
@@ -26,7 +27,10 @@ import com.intellij.remoterobot.fixtures.JRadioButtonFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.waitFor
+import org.assertj.swing.fixture.JTextComponentFixture
 import java.time.Duration
+import javax.annotation.Nonnull
+import javax.swing.JTextField
 
 fun ContainerFixture.jbTextFields() = findAll<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
 
@@ -37,6 +41,10 @@ fun ContainerFixture.jbTextField() = find<JTextFieldFixture>(byXpath("//div[@cla
 fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JTextField']"))
 
 fun CommonContainerFixture.searchField() = textField(byXpath("//div[@class='SearchField']"))
+
+fun JTextFieldFixture.enterText(text: String) {
+  execute { JTextComponentFixture(robot, componentAs<JTextField>()).enterText(text) }
+}
 
 fun ActionButtonFixture.clickWhenEnabled() {
   waitFor(Duration.ofSeconds(5)) {
