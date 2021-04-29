@@ -58,17 +58,17 @@ license {
 }
 
 tasks.downloadRobotServerPlugin {
-    version = remoteRobotVersion
+    version.set(remoteRobotVersion)
 }
 
 val ijVersion: String by project
 
 intellij {
-    version = if (project.hasProperty("ijVersion")) ijVersion else rootProject.intellij.version
-    pluginName = "sonarlint-intellij-its"
-    updateSinceUntilBuild = false
+    version.set(if (project.hasProperty("ijVersion")) ijVersion else rootProject.intellij.version.get())
+    pluginName.set("sonarlint-intellij-its")
+    updateSinceUntilBuild.set(false)
     if (!project.hasProperty("slPluginDirectory")) {
-        setPlugins(rootProject)
+        plugins.set(listOf(rootProject))
     }
 }
 
@@ -96,7 +96,7 @@ val runIdeForUiTestsAsync by tasks.register<RunIdeForUiTestAsyncTask>("runIdeFor
         if (project.hasProperty("slPluginDirectory")) {
             copy {
                 from(project.property("slPluginDirectory"))
-                into(tasks.runIdeForUiTests.get().pluginsDirectory)
+                into(tasks.runIdeForUiTests.get().pluginsDir.get())
             }
         }
     }

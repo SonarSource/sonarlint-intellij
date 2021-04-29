@@ -2,7 +2,7 @@ val sonarlintCoreVersion: String by project
 val clionBuildVersion: String by project
 
 intellij {
-    version = clionBuildVersion
+    version.set(clionBuildVersion)
 }
 
 dependencies {
