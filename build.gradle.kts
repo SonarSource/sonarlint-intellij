@@ -14,7 +14,7 @@ import java.util.zip.ZipEntry
 
 plugins {
     kotlin("jvm") version "1.4.30"
-    id("org.jetbrains.intellij") version "0.7.3"
+    id("org.jetbrains.intellij") version "1.1.2"
     id("org.sonarqube") version "3.1.1"
     java
     jacoco
@@ -90,16 +90,16 @@ allprojects {
 }
 
 intellij {
-    version = intellijBuildVersion
-    pluginName = "sonarlint-intellij"
-    updateSinceUntilBuild = false
-    setPlugins("java")
+    version.set(intellijBuildVersion)
+    pluginName.set("sonarlint-intellij")
+    updateSinceUntilBuild.set(false)
+    plugins.set(listOf("java"))
 }
 
 tasks.runPluginVerifier {
     // Test oldest supported, and latest
-    setIdeVersions(listOf("IC-2019.3.5", "IC-2021.1"))
-    setFailureLevel(
+    ideVersions.set(listOf("IC-2019.3.5", "IC-2021.1"))
+    failureLevel.set(
         EnumSet.complementOf(
             EnumSet.of(
                 // these are the only issues we tolerate
@@ -129,10 +129,10 @@ protobuf {
 project.afterEvaluate {
     sourceSets {
         main {
-            compileClasspath -= files(File(intellij.ideaDependency.classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
+            compileClasspath -= files(File(intellij.getIdeaDependency(project).classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
         }
         test {
-            runtimeClasspath -= files(File(intellij.ideaDependency.classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
+            runtimeClasspath -= files(File(intellij.getIdeaDependency(project).classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
         }
     }
 }
@@ -142,10 +142,12 @@ tasks.test {
     systemProperty("sonarlint.telemetry.disabled", "true")
 }
 
+val runIdeDirectory: String by project
+
 tasks.runIde {
     systemProperty("sonarlint.telemetry.disabled", "true")
     if (project.hasProperty("runIdeDirectory")) {
-        ideDirectory(project.property("runIdeDirectory"))
+        ideDir.set(File(runIdeDirectory))
     }
 }
 
@@ -182,7 +184,7 @@ dependencies {
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
 
-fun copyPlugins(destinationDir: File, pluginName: String) {
+fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
     val tsBundlePath = project.configurations.get("typescript").iterator().next()
     copy {
         from(tarTree(tsBundlePath))
@@ -190,12 +192,12 @@ fun copyPlugins(destinationDir: File, pluginName: String) {
             "**/loc/**",
             "**/lib/*/diagnosticMessages.generated.json"
         )
-        into(file("$destinationDir/$pluginName"))
+        into(file("$destinationDir/${pluginName.get()}"))
     }
-    file("$destinationDir/$pluginName/package").renameTo(file("$destinationDir/$pluginName/typescript"))
+    file("$destinationDir/${pluginName.get()}/package").renameTo(file("$destinationDir/${pluginName.get()}/typescript"))
     copy {
         from(project.configurations.get("sqplugins"))
-        into(file("$destinationDir/$pluginName/plugins"))
+        into(file("$destinationDir/${pluginName.get()}/plugins"))
     }
 }
 
