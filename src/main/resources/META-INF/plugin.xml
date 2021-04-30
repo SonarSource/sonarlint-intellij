@@ -28,22 +28,29 @@
     <description><![CDATA[
         <html>
             <p>
-                SonarLint is a free IDE extension that lets you fix bugs and vulnerabilities as you write code!
-                Like a spell checker, SonarLint highlights coding issues on the fly, with clear remediation
-                guidance so you can fix them before the code is even committed. Across popular IDEs (Eclipse,
-                IntelliJ, Visual Studio, VS Code) and popular programming languages, SonarLint helps all developers
-                write better and safer code!
+                SonarLint is a free IDE extension to find and fix bugs, vulnerabilities and code smells as you write code!
+                Like a spell checker, SonarLint highlights issues on the fly, with clear remediation guidance so you can fix
+                them before the code is even committed. With support for several popular and classic languages,
+                SonarLint helps developers of all experience and skill levels write efficient, safe code.
             </p>
             <br/>
             <p>
-                SonarLint supports most JetBrains IDEs, including IntelliJ IDEA, WebStorm, PhpStorm, PyCharm, CLion and RubyMine.
-                It can analyze code written in Java, JavaScript, TypeScript, Python, PHP, C++, C, Kotlin, Ruby, HTML, ...
+                SonarLint integrates with most JetBrains IDEs including
+                IntelliJ IDEA, CLion, WebStorm, PHPStorm, PyCharm, Android Studio & RubyMine. Supported languages include
+                C, C++, Java, JavaScript, TypeScript, Python, Kotlin, Ruby, HTML & PHP.
             </p>
             <br/>
             <p>
-                If your project is analyzed on SonarQube or on SonarCloud, SonarLint can connect to 
-                the server to retrieve the appropriate quality profiles and settings for that project. Java 8 
-                is required to run SonarLint; analysis of JavaScript and TypeScript requires Node.js >= 10.12.
+                SonarLint isn't just about your code, it's also an opportunity to bring your passion for quality code to the whole team.
+                When paired with <a href="https://www.sonarqube.org/">SonarQube</a> or <a href="https://sonarcloud.io/">SonarCloud</a>,
+                your team can share common language rulesets, project analysis settings
+                and <a href="https://www.sonarlint.org/bring-your-team-on-board/">more</a>.
+                The combination forms a continuous analysis solution that keeps code quality and security issues out of your branches.
+            </p>
+            <br/>
+            <p>
+                SonarLint requires your IDE to be run with a JVM 8+ (this is the case for all recent JetBrains IDE);
+                the analysis of JavaScript and TypeScript requires Node.js >= 10.12 to be installed on your computer.
             </p>
         </html>
       ]]></description>
