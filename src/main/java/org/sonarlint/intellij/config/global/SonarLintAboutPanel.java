@@ -124,7 +124,11 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "    },\n"
           + "    \"show_hotspot\": {\n"
           + "      \"requests_count\": 3\n"
-          + "    }\n"
+          + "    },\n" +
+          "      \"taint_vulnerabilities\": {\n" +
+          "        \"investigated_remotely_count\": 1,\n" +
+          "        \"investigated_locally_count\": 4\n" +
+          "      }\n"
           + "}</pre></html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.getInformationColor());
