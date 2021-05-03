@@ -22,6 +22,7 @@ plugins {
     id("com.jfrog.artifactory") version "4.21.0"
     id("com.google.protobuf") version "0.8.16"
     idea
+    signing
 }
 
 buildscript {
@@ -316,6 +317,13 @@ artifactory {
             setProperty("publishIvy", false) // Publish generated Ivy descriptor files to Artifactory (true by default)
         })
     })
+}
+
+signing {
+    setRequired({
+        gradle.taskGraph.hasTask(":artifactoryPublish") && System.getenv("SYSTEM_PULLREQUEST_TARGETBRANCH") == null;
+    })
+    sign(configurations.archives.get())
 }
 
 
