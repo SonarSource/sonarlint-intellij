@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
+import com.intellij.openapi.diagnostic.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -30,6 +31,7 @@ import java.util.Map;
 import org.sonarlint.intellij.proto.Sonarlint;
 
 class StringStoreIndex implements StoreIndex<String> {
+  private static final Logger LOG = Logger.getInstance(StringStoreIndex.class);
   public static final String INDEX_FILENAME = "index.pb";
   private final Path storeBasePath;
   private final Path indexFilePath;
@@ -40,7 +42,7 @@ class StringStoreIndex implements StoreIndex<String> {
   }
 
   @Override
-  public Collection<String> keys() {
+  public synchronized Collection<String> keys() {
     return load().keySet();
   }
 
@@ -51,12 +53,13 @@ class StringStoreIndex implements StoreIndex<String> {
     try (InputStream stream = Files.newInputStream(indexFilePath)) {
       return Sonarlint.StorageIndex.parseFrom(stream).getMappedPathByKeyMap();
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to read local issue store index", e);
+      LOG.warn("Unable to read SonarLint issue store.", e);
+      return Collections.emptyMap();
     }
   }
 
   @Override
-  public void save(String storageKey, Path path) {
+  public synchronized void save(String storageKey, Path path) {
     String relativeMappedPath = storeBasePath.relativize(path).toString();
     Sonarlint.StorageIndex.Builder builder = Sonarlint.StorageIndex.newBuilder();
     builder.putAllMappedPathByKey(load());
@@ -65,7 +68,7 @@ class StringStoreIndex implements StoreIndex<String> {
   }
 
   @Override
-  public void delete(String storageKey) {
+  public synchronized void delete(String storageKey) {
     Sonarlint.StorageIndex.Builder builder = Sonarlint.StorageIndex.newBuilder();
     builder.putAllMappedPathByKey(load());
     builder.removeMappedPathByKey(storageKey);
@@ -76,7 +79,8 @@ class StringStoreIndex implements StoreIndex<String> {
     try (OutputStream stream = Files.newOutputStream(indexFilePath)) {
       index.writeTo(stream);
     } catch (IOException e) {
-      throw new IllegalStateException("Failed to write local issue store index", e);
+      // Don't log in the SonarLint console as the problem can occurs when stopping the IDE
+      LOG.warn("Unable to write SonarLint issue store.", e);
     }
   }
 }

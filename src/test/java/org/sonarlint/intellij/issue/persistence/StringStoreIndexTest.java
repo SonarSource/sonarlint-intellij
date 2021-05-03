@@ -20,8 +20,10 @@
 package org.sonarlint.intellij.issue.persistence;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -67,15 +69,12 @@ public class StringStoreIndexTest {
   }
 
   @Test
-  public void testErrorSave() throws IOException {
-    // Try to make file readonly on supported platform to prevent file creation
-    Path test1 = baseDir.resolve("p1").resolve("file1");
-    if (!baseDir.toFile().setReadOnly()) {
-      // Fallback: get a directory at the target location to prevent file creation
-      Files.createDirectory(temp.getRoot().toPath().resolve(StringStoreIndex.INDEX_FILENAME));
-    }
+  public void deleteShouldRecoverFromCorruptedIndex() throws IOException {
+    Path indexFile = baseDir.resolve(StringStoreIndex.INDEX_FILENAME);
+    FileUtils.write(indexFile.toFile(), "not valid protobuf", StandardCharsets.UTF_8);
 
-    exception.expect(IllegalStateException.class);
-    index.save("key1", test1);
+    index.delete("key1");
+
+    assertThat(index.keys()).isEmpty();
   }
 }
