@@ -69,7 +69,7 @@ val ijVersion: String by project
 
 intellij {
     version = if (project.hasProperty("ijVersion")) ijVersion else rootProject.intellij.version
-    pluginName = "sonarlint-intellij"
+    pluginName = "sonarlint-intellij-its"
     updateSinceUntilBuild = false
     if (!project.hasProperty("slPluginDirectory")) {
         setPlugins(rootProject)
