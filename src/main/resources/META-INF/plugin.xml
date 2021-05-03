@@ -57,6 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>4.16 - 3 new rules for C++20</li>
         <li>4.15 - Support analysis of C/C++ in CLion. Support TypeScript 4.1 and 4.2. Rules improvements for Java and Python. Minimal supported version is 2019.3.</li>
         <li>4.14.2 - Fix exceptions thrown during analysis and work around an issue with latest EAP.</li>
         <li>4.14.1 - Fix an error occurring after each analysis. Fix the regression on UI responsiveness.</li>
