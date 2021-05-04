@@ -153,8 +153,9 @@ open class BaseUiTest {
           Thread.sleep(1000);
           textField(byXpath("//div[@class='TextFieldWithProcessing']")).enterText("SonarLint")
           // Wait for the search to complete
-          Thread.sleep(1000);
+          Thread.sleep(3000);
           settingsTree {
+            select("Tools")
             select("Tools/SonarLint")
           }
           Thread.sleep(1000);
