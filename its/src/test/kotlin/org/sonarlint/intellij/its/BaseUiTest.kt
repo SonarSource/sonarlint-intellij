@@ -20,15 +20,21 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
+import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
+import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipTextContains
+import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.stepsProcessing.StepLogger
+import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.utils.waitFor
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.sonarlint.intellij.its.fixtures.*
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.utils.StepsLogger
 import org.sonarlint.intellij.its.utils.VisualTreeDump
 import org.sonarlint.intellij.its.utils.optionalStep
 import java.awt.Point
@@ -40,11 +46,20 @@ const val robotUrl = "http://localhost:8082"
 @ExtendWith(VisualTreeDump::class)
 open class BaseUiTest {
 
-  fun uiTest(url: String = robotUrl, test: RemoteRobot.() -> Unit) {
-    val remoteRobot = RemoteRobot(url)
+  companion object {
+    lateinit var remoteRobot: RemoteRobot
+
+    init {
+      StepsLogger.init()
+      remoteRobot = RemoteRobot(robotUrl)
+    }
+  }
+
+  fun uiTest(test: RemoteRobot.() -> Unit) {
     try {
       remoteRobot.apply(test)
     } finally {
+      closeAllDialogs()
       optionalStep {
         sonarlintLogPanel(remoteRobot) {
           System.out.println("SonarLint log outputs:");
@@ -112,7 +127,7 @@ open class BaseUiTest {
     }
   }
 
-  fun openFile(remoteRobot: RemoteRobot, fileName: String) {
+  fun openFile(fileName: String) {
     with(remoteRobot) {
       idea {
         actionMenu("Navigate") {
@@ -133,34 +148,31 @@ open class BaseUiTest {
   }
 
   @BeforeEach
-  fun cleanProject() = uiTest {
-    clearConnections(this)
-    goBackToWelcomeScreen(this)
+  fun cleanProject() {
+    closeAllDialogs()
+    goBackToWelcomeScreen()
+    clearConnections()
   }
 
-  private fun clearConnections(remoteRobot: RemoteRobot) {
+  private fun closeAllDialogs() {
+    remoteRobot.findAll<DialogFixture>(DialogFixture.all()).forEach{
+      it.close()
+    }
+  }
+
+  private fun clearConnections() {
     with(remoteRobot) {
-      optionalIdeaFrame(this)?.apply {
-        actionMenu("File") {
-          click()
-          // does not exist if no tool window is active
-          item("Settings...") {
-            click()
-          }
-        }
-        dialog("Settings") {
-          // Wait for the tree to be populated
-          Thread.sleep(1000);
-          textField(byXpath("//div[@class='TextFieldWithProcessing']")).enterText("SonarLint")
-          // Wait for the search to complete
-          Thread.sleep(3000);
-          settingsTree {
-            select("Tools")
-            select("Tools/SonarLint")
-          }
-          Thread.sleep(1000);
-          // the view can take time to appear the first time
-          val removeButton = actionButton(byTooltipText("Remove"))
+      welcomeFrame() {
+        openPreferences()
+        preferencesDialog {
+          // Search for SonarLint because sometimes it is off the screen
+          search("SonarLint")
+
+          selectPreferencePage("Tools", "SonarLint")
+
+          // Doesn't work
+          // val removeButton = actionButton(byTooltipText("Remove"))
+          val removeButton = find(ActionButtonFixture::class.java, byXpath("//div[@tooltiptext='Remove' and @class='ActionButton']"), Duration.ofSeconds(20))
           jList(JListFixture.byType(), Duration.ofSeconds(20)) {
             while (items.isNotEmpty()) {
               removeButton.clickWhenEnabled()
@@ -171,7 +183,7 @@ open class BaseUiTest {
               }
             }
           }
-          button("OK").click()
+          pressOk()
         }
       }
     }
@@ -182,13 +194,13 @@ open class BaseUiTest {
     with(remoteRobot) {
       optionalStep {
         // we might be on the welcome screen
-        ideaFrame = idea(Duration.ofSeconds(5))
+        ideaFrame = idea(Duration.ofSeconds(1))
       }
     }
     return ideaFrame
   }
 
-  private fun goBackToWelcomeScreen(remoteRobot: RemoteRobot) {
+  private fun goBackToWelcomeScreen() {
     with(remoteRobot) {
       optionalIdeaFrame(this)?.apply {
         actionMenu("File") {
@@ -201,9 +213,9 @@ open class BaseUiTest {
     }
   }
 
-  protected fun openExistingProject(robot: RemoteRobot, projectName: String, isMaven: Boolean = false) {
+  protected fun openExistingProject(projectName: String, isMaven: Boolean = false) {
     copyProjectFiles(projectName)
-    with(robot) {
+    with(remoteRobot) {
       welcomeFrame {
         openProjectButton().click()
       }

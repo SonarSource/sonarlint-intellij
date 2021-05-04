@@ -45,12 +45,12 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   @JvmOverloads
   fun dumbAware(timeout: Duration = Duration.ofMinutes(5), function: () -> Unit) {
     step("Wait for smart mode") {
-      waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
+      waitFor(duration = timeout, interval = Duration.ofSeconds(1)) {
         runCatching { isDumbMode().not() }.getOrDefault(false)
       }
       function()
       step("..wait for smart mode again") {
-        waitFor(duration = timeout, interval = Duration.ofSeconds(5)) {
+        waitFor(duration = timeout, interval = Duration.ofSeconds(1)) {
           isDumbMode().not()
         }
       }
@@ -64,7 +64,7 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   fun closeTipOfTheDay() {
     dumbAware {
       optionalStep {
-        dialog("Tip of the Day") {
+        dialog("Tip of the Day", Duration.ofSeconds(1)) {
           button("Close").click()
         }
       }
@@ -72,13 +72,15 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
   }
 
   private fun isBackgroundTaskRunning(): Boolean {
-    for (i in 0..4) {
+    for (i in 0..1) {
       try {
         ideStatusBar.backgroundTaskPendingIcon
+        println("Task running")
         return true
       } catch (timeoutException: WaitForConditionTimeoutException) {
         try {
           ideStatusBar.pauseButton
+          println("Task running")
           return true
         } catch (timeoutException: WaitForConditionTimeoutException) {
           try {
@@ -90,13 +92,16 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
         }
       }
     }
+    println("No tasks running")
     return false
   }
 
   fun waitBackgroundTasksFinished() {
+    println("Check background tasks")
     waitFor(Duration.ofMinutes(5), Duration.ofSeconds(1), "Some background tasks are still running") {
       !isBackgroundTaskRunning()
     }
+    println("Check background tasks - done")
   }
 
   fun actionMenu(label: String, function: ActionMenuFixture.() -> Unit): ActionMenuFixture {
@@ -105,6 +110,16 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
   fun actionHyperLink(accessiblename: String, function: ActionHyperLinkFixture.() -> Unit): ActionHyperLinkFixture {
     return find<ActionHyperLinkFixture>(byXpath("link $accessiblename", "//div[@accessiblename='$accessiblename' and @class='ActionHyperlinkLabel']")).apply(function)
+  }
+
+  fun openPreferences() {
+    actionMenu("File") {
+      click()
+      // does not exist if no tool window is active
+      item("Settings...") {
+        click()
+      }
+    }
   }
 
 }

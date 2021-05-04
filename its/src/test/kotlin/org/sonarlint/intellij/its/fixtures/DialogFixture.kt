@@ -32,33 +32,65 @@ import java.time.Duration
 fun ContainerFixture.dialog(
   title: String,
   timeout: Duration = Duration.ofSeconds(20),
-  function: DialogFixture.() -> Unit = {}): DialogFixture = step("Search for dialog with title $title") {
+  function: DialogFixture.() -> Unit = {}
+): DialogFixture = step("Search for dialog with title $title") {
   find<DialogFixture>(DialogFixture.byTitle(title), timeout).apply(function)
 }
 
 fun RemoteRobot.dialog(
   title: String,
   timeout: Duration = Duration.ofSeconds(20),
-  function: DialogFixture.() -> Unit = {}): DialogFixture = step("Search for dialog with title $title") {
-  find<DialogFixture>(DialogFixture.byTitle(title), timeout).apply(function)
+  function: DialogFixture.() -> Unit = {}
+): DialogFixture = step("Search for dialog with title $title") {
+  val dialog = find<DialogFixture>(DialogFixture.byTitle(title), timeout)
+
+  dialog.apply(function)
+
+  if (dialog.isShowing) {
+    dialog.close()
+  }
+
+  dialog
 }
 
 @FixtureName("Dialog")
 open class DialogFixture(
   remoteRobot: RemoteRobot,
-  remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
+  remoteComponent: RemoteComponent
+) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
   companion object {
-    @JvmStatic
+    fun all() = byXpath("all dialog", "//div[@class='MyDialog']")
     fun byTitle(title: String) = byXpath("title $title", "//div[@title='$title' and @class='MyDialog']")
-
-    @JvmStatic
+    fun byTitleContains(partial: String) = byXpath("partial title '$partial'", "//div[contains(@accessiblename, '$partial') and @class='MyDialog']")
     fun byPossibleTitles(possibleTitles: Array<String>): Locator {
       val titles = possibleTitles.joinToString(" or ")
-      return byXpath("title part $titles",
-        "//div[@class='MyDialog' and (${or("title", possibleTitles)})]")
+      return byXpath(
+        "title part $titles",
+        "//div[@class='MyDialog' and (${or("title", possibleTitles)})]"
+      )
     }
 
     fun or(attribute: String, values: Array<String>) = values.joinToString(" or ") { "@$attribute='$it'" }
   }
+
+  val title: String
+    get() = callJs("component.getTitle();")
+
+  fun close() {
+    runJs("robot.close(component)")
+  }
+
+  open fun pressOk() {
+    pressButton("OK")
+  }
+
+  fun pressCancel() {
+    pressButton("Cancel")
+  }
+
+  fun pressButton(text: String) {
+    button(text).click()
+  }
+
 }
