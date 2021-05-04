@@ -22,5 +22,11 @@ package org.sonarlint.intellij.its.fixtures
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.search.locators.byXpath
 
-fun RemoteRobot.settingsTree(function: JTreeFixture.() -> Unit) =
-  find<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)
+fun RemoteRobot.settingsTree(function: JTreeFixture.() -> Unit) = {
+  val ideMajorVersion = ideMajorVersion()
+  when {
+    ideMajorVersion > 200 -> find<JTreeFixture>(byXpath("//div[@accessiblename='Settings categories' and @class='MyTree']")).apply(function)
+    else -> find<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)
+  }
+}
+
