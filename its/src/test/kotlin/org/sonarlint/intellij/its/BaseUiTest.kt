@@ -29,6 +29,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.StepLogger
 import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.utils.waitFor
+import org.assertj.swing.timing.Pause
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.sonarlint.intellij.its.fixtures.*
@@ -167,6 +168,9 @@ open class BaseUiTest {
         preferencesDialog {
           // Search for SonarLint because sometimes it is off the screen
           search("SonarLint")
+
+          // The search sometimes take time to filter the tree
+          Pause.pause(1000)
 
           selectPreferencePage("Tools", "SonarLint")
 
