@@ -20,7 +20,9 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
+import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
+import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
@@ -53,7 +55,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
   fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
     Assume.assumeFalse(this.isCLion());
 
-    openExistingProject(this, "sample-java-taint-vulnerability", true)
+    openExistingProject("sample-java-taint-vulnerability", true)
 
     verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
   }
@@ -62,19 +64,20 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
   fun should_display_sink() = uiTest {
     Assume.assumeFalse(this.isCLion());
 
-    openExistingProject(this, "sample-java-taint-vulnerability", true)
-    bindProjectFromPanel(this)
+    openExistingProject("sample-java-taint-vulnerability", true)
+    bindProjectFromPanel()
 
     openClass(this, "FileWithSink")
 
-    verifyTaintTabContainsMessages(this,
+    verifyTaintTabContainsMessages(
+      this,
       "Found 1 issue in 1 file",
       "FileWithSink.java",
       "Change this code to not construct SQL queries directly from user-controlled data."
     )
   }
 
-  private fun bindProjectFromPanel(remoteRobot: RemoteRobot) {
+  private fun bindProjectFromPanel() {
     with(remoteRobot) {
       idea {
         toolWindow("SonarLint") {
@@ -88,7 +91,10 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
           checkBox("Bind project to SonarQube / SonarCloud").select()
           button("Configure the connection...").click()
           dialog("SonarLint") {
-            actionButton(byTooltipText("Add")).clickWhenEnabled()
+            // Doesn't work
+            // actionButton(byTooltipText("Add")).clickWhenEnabled()
+            find(
+              ActionButtonFixture::class.java, byXpath("//div[@tooltiptext='Add' and @class='ActionButton']")).clickWhenEnabled()
             dialog("New Connection: Server Details") {
               keyboard { enterText("Orchestrator") }
               jRadioButtons()[1].select()
@@ -153,17 +159,23 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
       ORCHESTRATOR.start()
 
       val adminWsClient = newAdminWsClient()
-      adminWsClient.users().create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
+      adminWsClient.users()
+        .create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
 
       ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
-      ORCHESTRATOR.server.associateProjectToQualityProfile(TAINT_VULNERABILITY_PROJECT_KEY, "java", "SonarLint IT Java Taint Vulnerability")
+      ORCHESTRATOR.server.associateProjectToQualityProfile(
+        TAINT_VULNERABILITY_PROJECT_KEY,
+        "java",
+        "SonarLint IT Java Taint Vulnerability"
+      )
 
       // Build and analyze project to raise hotspot
       val file = File("projects/sample-java-taint-vulnerability/pom.xml")
-      ORCHESTRATOR.executeBuild(MavenBuild.create(file)
-        .setCleanPackageSonarGoals()
-        .setProperty("sonar.login", SONARLINT_USER)
-        .setProperty("sonar.password", SONARLINT_PWD)
+      ORCHESTRATOR.executeBuild(
+        MavenBuild.create(file)
+          .setCleanPackageSonarGoals()
+          .setProperty("sonar.login", SONARLINT_USER)
+          .setProperty("sonar.password", SONARLINT_PWD)
       )
 
       val generateRequest = GenerateRequest()
@@ -173,10 +185,12 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
 
     private fun newAdminWsClient(): WsClient {
       val server = ORCHESTRATOR.server
-      return WsClientFactories.getDefault().newClient(HttpConnector.newBuilder()
-        .url(server.url)
-        .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-        .build())
+      return WsClientFactories.getDefault().newClient(
+        HttpConnector.newBuilder()
+          .url(server.url)
+          .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
+          .build()
+      )
     }
 
     @AfterAll

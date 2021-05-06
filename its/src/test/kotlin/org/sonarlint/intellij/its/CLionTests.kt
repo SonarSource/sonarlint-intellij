@@ -36,15 +36,15 @@ import java.time.Duration
 class CLionTests : BaseUiTest() {
 
   @BeforeEach
-  fun requirements() = uiTest {
-    Assume.assumeTrue(this.isCLion())
+  fun requirements() {
+    Assume.assumeTrue(remoteRobot.isCLion())
   }
 
   @Test
   fun should_analyze_cpp() = uiTest {
-    openExistingProject(this, "sample-cpp")
+    openExistingProject("sample-cpp")
 
-    openFile(this, "CMakeLists.txt")
+    openFile("CMakeLists.txt")
 
     optionalStep {
       idea {
@@ -65,7 +65,7 @@ class CLionTests : BaseUiTest() {
       waitBackgroundTasksFinished()
     }
 
-    openFile(this, "main.cpp")
+    openFile("main.cpp")
 
     verifyCurrentFileTabContainsMessages(
       this,

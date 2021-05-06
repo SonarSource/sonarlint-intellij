@@ -17,10 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.fixtures
+package org.sonarlint.intellij.its.utils
 
-import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.stepsProcessing.StepLogger
+import com.intellij.remoterobot.stepsProcessing.StepWorker
 
-fun RemoteRobot.settingsTree(function: JTreeFixture.() -> Unit) =
-  find<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)
+object StepsLogger {
+  private var initializaed = false
+
+  @JvmStatic
+  fun init() = synchronized(initializaed) {
+    if (initializaed.not()) {
+      StepWorker.registerProcessor(StepLogger())
+      initializaed = true
+    }
+  }
+}

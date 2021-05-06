@@ -28,10 +28,10 @@ compileTestKotlin.kotlinOptions.jvmTarget = "1.8"
 repositories {
     mavenCentral()
     maven("https://repox.jfrog.io/repox/sonarsource")
-    maven("https://cache-redirector.jetbrains.com/intellij-dependencies")
+    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
 }
 
-val remoteRobotVersion = "0.10.3"
+val remoteRobotVersion = "0.11.2"
 val fixturesVersion = "1.1.18"
 
 dependencies {

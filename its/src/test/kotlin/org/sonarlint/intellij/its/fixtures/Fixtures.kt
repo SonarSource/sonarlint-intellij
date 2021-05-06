@@ -42,10 +42,6 @@ fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JText
 
 fun CommonContainerFixture.searchField() = textField(byXpath("//div[@class='SearchField']"))
 
-fun JTextFieldFixture.enterText(text: String) {
-  execute { JTextComponentFixture(robot, componentAs<JTextField>()).enterText(text) }
-}
-
 fun ActionButtonFixture.clickWhenEnabled() {
   waitFor(Duration.ofSeconds(5)) {
     isEnabled()

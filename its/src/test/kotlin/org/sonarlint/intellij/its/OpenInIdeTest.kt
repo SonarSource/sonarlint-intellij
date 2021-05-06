@@ -55,7 +55,7 @@ class OpenInIdeTest : BaseUiTest() {
 
   @Test
   fun opensHotspotAfterConfiguringConnectionAndBinding() = uiTest {
-    openExistingProject(this, "sample-java-hotspot", true)
+    openExistingProject("sample-java-hotspot", true)
 
     triggerOpenHotspotRequest()
 

@@ -27,6 +27,8 @@ import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.stepsProcessing.log
+import com.intellij.remoterobot.stepsProcessing.step
 import java.time.Duration
 
 fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
@@ -36,9 +38,6 @@ fun RemoteRobot.welcomeFrame(function: WelcomeFrame.() -> Unit) {
 @FixtureName("Welcome Frame")
 @DefaultXpath("type", "//div[@class='FlatWelcomeFrame']")
 class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
-  // from 203+
-  private val newOpenButton
-    get() = button(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]"))
 
   // from 201 up to 202
   private val openOrImportLink
@@ -57,8 +56,45 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     val isCLion = remoteRobot.isCLion()
     return when {
       ideMajorVersion < 201 -> if (isCLion) legacyImportLinkCLion else legacyImportLinkIdea
-      ideMajorVersion < 202 -> openOrImportLink
-      else -> newOpenButton
+      ideMajorVersion <= 202 -> openOrImportLink
+      else -> {
+        selectTab("Projects")
+        // This can match two things: If no previous projects, its a SVG icon, else a jbutton
+        findAll<ComponentFixture>(byXpath("//div[contains(@accessiblename, 'Open') and (@class='MainButton' or @class='JButton')]")).first()
+      }
     }
+  }
+
+  fun openPreferences() = step("Opening preferences dialog") {
+    // TODO: Remove FIX_WHEN_MIN_IS_203
+    if (remoteRobot.ideMajorVersion() <= 202) {
+      actionLink("Configure").click()
+
+      // MyList finds both the list of actions and the most recently used file list, so get all candidates
+      val found = findAll(ComponentFixture::class.java, byXpath("//div[@class='MyList']"))
+        .any {
+          try {
+            it.findText(remoteRobot.preferencesTitle()).click()
+            true
+          } catch (e: NoSuchElementException) {
+            false
+          }
+        }
+
+      if (!found) {
+        throw IllegalStateException("Unable to find ${remoteRobot.preferencesTitle()} in the configure menu")
+      }
+    } else {
+      selectTab("Customize")
+      find<ComponentFixture>(byXpath("//div[@accessiblename='All settings…']"), Duration.ofSeconds(5)).click()
+    }
+
+    log.info("Successfully opened the preferences dialog")
+  }
+
+  fun selectTab(tabName: String) {
+    // TODO: Remove FIX_WHEN_MIN_IS_203
+    if (remoteRobot.ideMajorVersion() <= 202) return
+    jList(byXpath("//div[@accessiblename='Welcome screen categories']")).selectItem(tabName)
   }
 }
