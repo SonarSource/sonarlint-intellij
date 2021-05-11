@@ -21,6 +21,8 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.TestDialog;
+import com.intellij.openapi.ui.TestDialogManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
@@ -75,7 +77,7 @@ public class SonarAnalyzeAllFilesActionTest extends AbstractSonarLintLightTests 
   public void testRun() {
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(getProject());
-    Messages.setTestDialog(x -> Messages.OK);
+    TestDialogManager.setTestDialog(TestDialog.OK);
     action.actionPerformed(event);
 
     verify(submitter).submitFiles(eq(Collections.singleton(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));

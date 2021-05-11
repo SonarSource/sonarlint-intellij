@@ -36,17 +36,14 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 
-@RunWith(MockitoJUnitRunner::class)
 class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
-  private lateinit var serverNotificationsService: ServerNotificationsService
+  private var serverNotificationsService: ServerNotificationsService = mock(ServerNotificationsService::class.java)
   private lateinit var projectServerNotificationsSubscriber: ProjectServerNotificationsSubscriber
 
-  @Captor
-  private lateinit var notificationConfigurationCaptor: ArgumentCaptor<NotificationConfiguration>
+  private var notificationConfigurationCaptor: ArgumentCaptor<NotificationConfiguration> = ArgumentCaptor.forClass(NotificationConfiguration::class.java)
 
   @Before
   fun setup() {
-    serverNotificationsService = mock(ServerNotificationsService::class.java)
     projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService)
     projectSettings.unbind()
     globalSettings.serverConnections = emptyList()

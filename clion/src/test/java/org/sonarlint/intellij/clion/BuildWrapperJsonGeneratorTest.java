@@ -40,7 +40,7 @@ class BuildWrapperJsonGeneratorTest {
   void single() {
     MockLocalFileSystem fileSystem = new MockLocalFileSystem();
 
-    VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
+    VirtualFile virtualFile = fileSystem.findFileByPath(new File("test.cpp").getPath());
     File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
     File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
 
@@ -71,15 +71,15 @@ class BuildWrapperJsonGeneratorTest {
   void multiple() {
     MockLocalFileSystem fileSystem = new MockLocalFileSystem();
 
-    VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
+    VirtualFile virtualFile = fileSystem.findFileByPath(new File("test.cpp").getPath());
     File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
     File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
 
-    VirtualFile virtualFile2 = fileSystem.findFileByIoFile(new File("test2.cpp"));
+    VirtualFile virtualFile2 = fileSystem.findFileByPath(new File("test2.cpp").getPath());
     File compilerExecutable2 = new File("/path/to/compiler2").getAbsoluteFile();
     File compilerWorkingDir2 = new File("/path/to/compiler/working/dir2").getAbsoluteFile();
 
-    VirtualFile virtualFile3 = fileSystem.findFileByIoFile(new File("test3.h"));
+    VirtualFile virtualFile3 = fileSystem.findFileByPath(new File("test3.h").getPath());
     File compilerExecutable3 = new File("/path/to/compiler3").getAbsoluteFile();
     File compilerWorkingDir3 = new File("/path/to/compiler/working/dir3").getAbsoluteFile();
 

@@ -66,9 +66,10 @@ tasks.downloadRobotServerPlugin {
 }
 
 val ijVersion: String by project
+val intellijBuildVersion: String by project
 
 intellij {
-    version = if (project.hasProperty("ijVersion")) ijVersion else rootProject.intellij.version
+    version = if (project.hasProperty("ijVersion")) ijVersion else intellijBuildVersion
     pluginName = "sonarlint-intellij-its"
     updateSinceUntilBuild = false
     if (!project.hasProperty("slPluginDirectory")) {

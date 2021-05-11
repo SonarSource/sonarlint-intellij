@@ -52,9 +52,9 @@ public class PrimaryLocationNodeTest {
     TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
-    verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);
+    verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES);
     verify(renderer).append("3:", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
-    verify(renderer).append("msg");
+    verify(renderer).append("msg", SimpleTextAttributes.REGULAR_ATTRIBUTES);
 
   }
 
@@ -64,7 +64,7 @@ public class PrimaryLocationNodeTest {
     TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
-    verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);
+    verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES);
     verify(renderer).append("3:", SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES);
   }
 }

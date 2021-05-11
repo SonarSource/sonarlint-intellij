@@ -77,14 +77,14 @@ allprojects {
 
     java {
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(8))
+            languageVersion.set(JavaLanguageVersion.of(11))
         }
     }
 
     tasks.withType<KotlinCompile> {
         kotlinOptions {
-            jvmTarget = "1.8"
-            apiVersion = "1.3"
+            jvmTarget = "11"
+            apiVersion = "1.4"
         }
     }
 }
@@ -163,9 +163,9 @@ dependencies {
     }
     implementation(project(":clion"))
     implementation(project(":common"))
-    testImplementation("junit:junit:4.12")
+    testImplementation("junit:junit:4.13.2")
     testImplementation("org.assertj:assertj-core:3.16.1")
-    testImplementation("org.mockito:mockito-core:2.19.0")
+    testImplementation("org.mockito:mockito-core:3.10.0")
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")

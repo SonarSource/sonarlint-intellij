@@ -28,6 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
 import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.Mockito.*
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -64,19 +65,11 @@ private fun aRemoteHotspot(textRange: TextRange): ServerHotspot {
   )
 }
 
-@RunWith(MockitoJUnitRunner::class)
 class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
-  @Mock
-  lateinit var projectBindingAssistant: ProjectBindingAssistant
-
-  @Mock
-  lateinit var toolWindow: SonarLintToolWindow
-
-  @Mock
-  lateinit var highlighter: EditorDecorator
-
-  @Mock
-  private lateinit var telemetry: SonarLintTelemetry
+  private var projectBindingAssistant: ProjectBindingAssistant = mock(ProjectBindingAssistant::class.java)
+  private var toolWindow: SonarLintToolWindow = mock(SonarLintToolWindow::class.java)
+  private var highlighter: EditorDecorator = mock(EditorDecorator::class.java)
+  private var telemetry: SonarLintTelemetry = mock(SonarLintTelemetry::class.java)
 
   private lateinit var requestHandler: SecurityHotspotShowRequestHandler
 

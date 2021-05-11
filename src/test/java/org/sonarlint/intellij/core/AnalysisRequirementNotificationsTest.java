@@ -24,7 +24,9 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.Notifications;
 import com.intellij.notification.NotificationsAdapter;
 import com.intellij.notification.NotificationsManager;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -52,15 +54,17 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   final Map<ClientInputFile, Language> detectedLang = new HashMap<>();
 
   private List<Notification> notifications;
+  private Disposable disposable;
 
   @Before
   public void before() {
+    disposable = Disposer.newDisposable();
     AnalysisRequirementNotifications.resetCachedMessages();
 
     // register a listener to catch all notifications
     notifications = Lists.newCopyOnWriteArrayList();
     Project project = getProject();
-    project.getMessageBus().connect(project).subscribe(Notifications.TOPIC, new NotificationsAdapter() {
+    project.getMessageBus().connect(disposable).subscribe(Notifications.TOPIC, new NotificationsAdapter() {
       @Override
       public void notify(@NotNull Notification notification) {
         notifications.add(notification);
@@ -80,6 +84,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
     for (Notification notification : notifications) {
       mgr.expire(notification);
     }
+    Disposer.dispose(disposable);
   }
 
   @Test
