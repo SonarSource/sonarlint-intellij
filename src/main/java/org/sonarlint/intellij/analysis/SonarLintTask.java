@@ -45,11 +45,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.config.Settings;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueMatcher;
-import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.LiveIssueBuilder;
+import org.sonarlint.intellij.issue.secrets.SecretsNotifications;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -263,6 +266,11 @@ public class SonarLintTask extends Task.Backgroundable {
       Collection<Trackable> previousIssues = previousIssuesPerFile.get(vFile);
       LiveIssue locallyTrackedIssue = manager.trackSingleIssue(vFile, previousIssues, liveIssue);
       issuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(locallyTrackedIssue);
+    }
+    SonarLintGlobalSettings sonarLintGlobalSettings = Settings.getGlobalSettings();
+    if(sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains("secrets")) {
+      SecretsNotifications.sendNotification(myProject);
+      sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
     }
   }
 
