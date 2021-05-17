@@ -91,10 +91,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
           checkBox("Bind project to SonarQube / SonarCloud").select()
           button("Configure the connection...").click()
           dialog("SonarLint") {
-            // Doesn't work
-            // actionButton(byTooltipText("Add")).clickWhenEnabled()
-            find(
-              ActionButtonFixture::class.java, byXpath("//div[@tooltiptext='Add' and @class='ActionButton']")).clickWhenEnabled()
+            actionButton(byTooltipText("Add")).clickWhenEnabled()
             dialog("New Connection: Server Details") {
               keyboard { enterText("Orchestrator") }
               jRadioButtons()[1].select()

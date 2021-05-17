@@ -120,8 +120,8 @@ open class BaseUiTest {
         }
         searchField().text = className
         val fileList = jList(JListFixture.byType(), Duration.ofSeconds(5))
-        waitFor(Duration.ofSeconds(5)) { fileList.items.isNotEmpty() }
-        fileList.selectItem(fileList.items[0], false)
+        waitFor(Duration.ofSeconds(5)) { fileList.collectItems().isNotEmpty() }
+        fileList.clickItemAtIndex(0)
         waitFor(Duration.ofSeconds(10)) { editor("$className.java").isShowing }
         waitBackgroundTasksFinished()
       }
@@ -140,8 +140,8 @@ open class BaseUiTest {
         }
         searchField().text = fileName
         val fileList = jList(JListFixture.byType(), Duration.ofSeconds(5))
-        waitFor(Duration.ofSeconds(5)) { fileList.items.isNotEmpty() }
-        fileList.selectItem(fileList.items[0], false)
+        waitFor(Duration.ofSeconds(5)) { fileList.collectItems().isNotEmpty() }
+        fileList.clickItemAtIndex(0)
         waitFor(Duration.ofSeconds(10)) { editor(fileName).isShowing }
         waitBackgroundTasksFinished()
       }
@@ -175,10 +175,9 @@ open class BaseUiTest {
           selectPreferencePage("Tools", "SonarLint")
 
           // Doesn't work
-          // val removeButton = actionButton(byTooltipText("Remove"))
-          val removeButton = find(ActionButtonFixture::class.java, byXpath("//div[@tooltiptext='Remove' and @class='ActionButton']"), Duration.ofSeconds(20))
+          val removeButton = actionButton(byTooltipText("Remove"))
           jList(JListFixture.byType(), Duration.ofSeconds(20)) {
-            while (items.isNotEmpty()) {
+            while (collectItems().isNotEmpty()) {
               removeButton.clickWhenEnabled()
               optionalStep {
                 dialog("Connection In Use") {

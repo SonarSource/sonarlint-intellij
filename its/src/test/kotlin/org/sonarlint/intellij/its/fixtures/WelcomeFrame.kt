@@ -95,6 +95,6 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
   fun selectTab(tabName: String) {
     // TODO: Remove FIX_WHEN_MIN_IS_203
     if (remoteRobot.ideMajorVersion() <= 202) return
-    jList(byXpath("//div[@accessiblename='Welcome screen categories']")).selectItem(tabName)
+    jList(byXpath("//div[@accessiblename='Welcome screen categories']")).clickItem(tabName)
   }
 }
