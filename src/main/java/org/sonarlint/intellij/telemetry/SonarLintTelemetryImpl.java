@@ -79,10 +79,10 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
     return telemetry != null && telemetry.isEnabled();
   }
 
-  @Override public boolean canBeEnabled() {
+  @Override
+  public boolean canBeEnabled() {
     return telemetry != null;
   }
-
 
   public void init() {
     try {

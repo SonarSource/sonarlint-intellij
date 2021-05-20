@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.equalsIgnoringTrailingSlash;
@@ -55,6 +56,19 @@ public final class SonarLintGlobalSettings {
   @Transient
   Map<String, Rule> rulesByKey = new HashMap<>();
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
+  private boolean secretsNeverBeenAnalysed = true;
+
+  public void rememberNotificationOnSecretsBeenSent() {
+    setSecretsNeverBeenAnalysed(false);
+  }
+
+  public boolean isSecretsNeverBeenAnalysed() {
+    return secretsNeverBeenAnalysed;
+  }
+
+  public void setSecretsNeverBeenAnalysed(boolean secretsNeverBeenAnalysed) {
+    this.secretsNeverBeenAnalysed = secretsNeverBeenAnalysed;
+  }
 
   public boolean isTaintVulnerabilitiesTabDisclaimerDismissed() {
     return taintVulnerabilitiesTabDisclaimerDismissed;
@@ -81,10 +95,12 @@ public final class SonarLintGlobalSettings {
   }
 
   public void enableRule(String ruleKey) {
+    SonarLintUtils.getService(SonarLintTelemetry.class).addEnabledRule(ruleKey);
     setRuleActive(ruleKey, true);
   }
 
   public void disableRule(String ruleKey) {
+    SonarLintUtils.getService(SonarLintTelemetry.class).addDisabledRule(ruleKey);
     setRuleActive(ruleKey, false);
   }
 
@@ -120,6 +136,7 @@ public final class SonarLintGlobalSettings {
       excludedRules.forEach(it -> rulesByKey.put(it, new Rule(it, false)));
     }
     excludedRules = null;
+
   }
 
   public Collection<Rule> getRules() {

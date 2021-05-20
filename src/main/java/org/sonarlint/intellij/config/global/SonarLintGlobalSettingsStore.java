@@ -25,6 +25,8 @@ import com.intellij.openapi.components.Storage;
 import java.util.HashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 @State(name = "SonarLintGlobalSettings",
   storages = {@Storage("sonarlint.xml")},
@@ -49,5 +51,13 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
 
   private void initializeRulesByKey() {
     settings.rulesByKey = new HashMap<>(settings.rules.stream().collect(Collectors.toMap(SonarLintGlobalSettings.Rule::getKey, Function.identity())));
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+    settings.rulesByKey.values().forEach(rule -> {
+      if(rule.isActive){
+        telemetry.addEnabledRule(rule.key);
+      } else {
+        telemetry.addDisabledRule(rule.key);
+      }
+    });
   }
 }

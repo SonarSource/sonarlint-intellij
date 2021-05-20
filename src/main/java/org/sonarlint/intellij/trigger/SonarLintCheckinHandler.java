@@ -33,16 +33,15 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.NonFocusableCheckBox;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
-import java.awt.BorderLayout;
+import java.awt.*;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
+import javax.swing.*;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -138,7 +137,9 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     long numFiles = map.keySet().size();
 
-    String msg = createMessage(numFiles, numIssues, numBlockerIssues);
+    List<LiveIssue> issues = map.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+    long numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().contains("secrets")).count();
+    String msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
     if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
       LOGGER.info(msg);
       return ReturnResult.CANCEL;
@@ -147,17 +148,26 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     return showYesNoCancel(msg);
   }
 
-  private static String createMessage(long filesAnalyzed, long numIssues, long numBlockerIssues) {
+  private static String createMessage(long filesAnalyzed, long numIssues, long numBlockerIssues, long numSecretsIssues) {
     String files = filesAnalyzed == 1 ? "file" : "files";
     String issues = numIssues == 1 ? "issue" : "issues";
 
+    String warningAboutLeakedSecrets = "";
+    if (numSecretsIssues > 0) {
+      String secretWord = numSecretsIssues == 1 ? "secret" : "secrets";
+      warningAboutLeakedSecrets = String.format("\n\nSonarLint analysis found %d %s. " +
+        "Committed secrets may lead to unauthorized system access.\n", numSecretsIssues, secretWord);
+    }
+    StringBuilder message = new StringBuilder();
     if (numBlockerIssues > 0) {
       String blocker = numBlockerIssues == 1 ? "issue" : "issues";
-      return String.format("SonarLint analysis on %d %s found %d %s (including %d blocker %s)", filesAnalyzed, files,
-        numIssues, issues, numBlockerIssues, blocker);
+      message.append(String.format("SonarLint analysis on %d %s found %d %s (including %d blocker %s)", filesAnalyzed, files,
+        numIssues, issues, numBlockerIssues, blocker));
     } else {
-      return String.format("SonarLint analysis on %d %s found %d %s", filesAnalyzed, files, numIssues, issues);
+      message.append(String.format("SonarLint analysis on %d %s found %d %s", filesAnalyzed, files, numIssues, issues));
     }
+    message.append(warningAboutLeakedSecrets);
+    return message.toString();
   }
 
   private ReturnResult showYesNoCancel(String resultStr) {

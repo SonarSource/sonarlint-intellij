@@ -29,6 +29,8 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,14 +47,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.config.Settings;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
+import org.sonarlint.intellij.issue.secrets.SecretsNotifications;
+import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
+import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -117,6 +125,9 @@ public class AnalysisTask extends Task.Backgroundable {
 
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
 
+    FileStatusManager fileStatusManager = FileStatusManager.getInstance(myProject);
+    List<VirtualFile> allFilesToAnalyze = job.allFiles()
+      .filter(file -> fileStatusManager.getStatus(file) != FileStatus.IGNORED).collect(toList());
     List<VirtualFile> filesToClearIssues = new ArrayList<>();
     Map<Module, Collection<VirtualFile>> filesByModule;
     try {
@@ -290,8 +301,14 @@ public class AnalysisTask extends Task.Backgroundable {
       LiveIssue locallyTrackedIssue = manager.trackSingleIssue(vFile, previousIssues, liveIssue);
       issuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(locallyTrackedIssue);
     }
-    reportedRules.add(liveIssue.getRuleKey());
 
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+    telemetry.addReportedRule(liveIssue.getRuleKey());
+    SonarLintGlobalSettings sonarLintGlobalSettings = Settings.getGlobalSettings();
+    if(sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains("secrets")) {
+      SecretsNotifications.sendNotification(myProject);
+      sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
+    }
   }
 
   private void logFoundIssuesIfAny(int rawIssueCount, Map<VirtualFile, Collection<LiveIssue>> transformedIssues) {
