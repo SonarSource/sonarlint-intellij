@@ -178,6 +178,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-kotlin-plugin:1.8.3.2219@jar")
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.3.2219@jar")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.4.0.2754@jar")
+    "sqplugins"("org.sonarsource.secrets:sonar-secrets-plugin:1.0.0.32360@jar")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.20.0.31240@jar")
     }

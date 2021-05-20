@@ -55,6 +55,7 @@ public class SonarLintEngineFactory {
     Language.PHP,
     Language.PYTHON,
     Language.RUBY,
+    Language.SECRETS,
     Language.TS);
 
   private static final Set<Language> CONNECTED_ADDITIONAL_LANGUAGES = EnumSet.of(
