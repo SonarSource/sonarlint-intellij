@@ -364,11 +364,11 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     if (selectedConnection != null) {
       ServerConnectionWizard serverEditor = ServerConnectionWizard.forConnectionEdition(selectedConnection);
       if (serverEditor.showAndGet()) {
-        ServerConnection newConnection = serverEditor.getConnection();
-        ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(newConnection, selectedIndex);
-        connections.set(connections.indexOf(selectedConnection), newConnection);
+        ServerConnection editedConnection = serverEditor.getConnection();
+        ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, selectedIndex);
+        connections.set(connections.indexOf(selectedConnection), editedConnection);
         connectionChangeListener.changed(connections);
-        updateConnectionStorage(selectedConnection);
+        updateConnectionStorage(editedConnection);
       }
     }
   }
@@ -398,9 +398,9 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     }
   }
 
-  private void updateConnectionStorage(ServerConnection created) {
+  private static void updateConnectionStorage(ServerConnection toUpdate) {
     SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
-    BindingStorageUpdateTask task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(created.getName()), created, Collections.emptyMap(), false);
+    BindingStorageUpdateTask task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(toUpdate.getName()), toUpdate, Collections.emptyMap(), false);
     ProgressManager.getInstance().run(task.asBackground());
   }
 
