@@ -21,15 +21,9 @@ package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
-import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
-import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipTextContains
-import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.stepsProcessing.StepLogger
-import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.utils.waitFor
-import org.assertj.swing.timing.Pause
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.sonarlint.intellij.its.fixtures.*
@@ -166,13 +160,8 @@ open class BaseUiTest {
       welcomeFrame() {
         openPreferences()
         preferencesDialog {
-          // Search for SonarLint because sometimes it is off the screen
-          search("SonarLint")
-
-          // The search sometimes take time to filter the tree
-          Pause.pause(1000)
-
-          selectPreferencePage("Tools", "SonarLint")
+          select("Tools")
+          actionLink(byXpath("//div[@text='SonarLint']")).click(Point(50, 10))
 
           // Doesn't work
           // val removeButton = actionButton(byTooltipText("Remove"))

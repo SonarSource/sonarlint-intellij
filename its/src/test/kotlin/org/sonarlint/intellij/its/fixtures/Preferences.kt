@@ -47,14 +47,10 @@ open class PreferencesDialog(
     remoteRobot: RemoteRobot,
     remoteComponent: RemoteComponent
 ) : DialogFixture(remoteRobot, remoteComponent) {
-    fun search(query: String) = step("Search $query") {
-        textField(byXpath("//div[@class='SettingsSearch']//div[@class='TextFieldWithProcessing']")).text = query
-    }
-
-    fun selectPreferencePage(vararg crumbs: String) {
+    fun select(firstLevelEntry: String) {
         val preferencesTree = find<JTreeFixture>(byXpath("//div[@class='MyTree']"))
         preferencesTree.waitUntilLoaded()
-        preferencesTree.clickPath(*crumbs)
+        preferencesTree.clickPath(firstLevelEntry)
     }
 
     override fun pressOk() {
@@ -63,7 +59,7 @@ open class PreferencesDialog(
         assertValidSettings()
     }
 
-    fun assertValidSettings() {
+    private fun assertValidSettings() {
         val invalidSettingsLabel = jLabels(JLabelFixture.byContainsText("Cannot Save Settings"))
         if (invalidSettingsLabel.isNotEmpty()) {
             throw IllegalStateException("Could not save settings: ${invalidSettingsLabel.first().value}")
