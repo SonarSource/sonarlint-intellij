@@ -48,7 +48,7 @@ const val robotUrl = "http://localhost:8082"
 open class BaseUiTest {
 
   companion object {
-    lateinit var remoteRobot: RemoteRobot
+    var remoteRobot: RemoteRobot
 
     init {
       StepsLogger.init()
