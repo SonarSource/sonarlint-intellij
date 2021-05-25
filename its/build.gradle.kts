@@ -31,8 +31,7 @@ repositories {
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
 }
 
-val remoteRobotVersion = "0.11.2"
-val fixturesVersion = "1.1.18"
+val remoteRobotVersion = "0.11.4"
 
 dependencies {
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator:3.34.0.2692") {
@@ -40,7 +39,7 @@ dependencies {
     }
     testImplementation("org.sonarsource.sonarqube:sonar-ws:8.5.1.38104")
     testImplementation("com.intellij.remoterobot:remote-robot:$remoteRobotVersion")
-    testImplementation("com.intellij.remoterobot:remote-fixtures:$fixturesVersion")
+    testImplementation("com.intellij.remoterobot:remote-fixtures:$remoteRobotVersion")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
 }

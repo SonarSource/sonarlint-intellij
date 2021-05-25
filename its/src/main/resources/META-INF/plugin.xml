@@ -27,4 +27,6 @@
   <description>Fake Plugin To Run SonarLint UI tests with multiple flavors</description>
 
   <idea-version since-build="181.3007.14"/>
+
+  <depends>com.intellij.modules.lang</depends>
 </idea-plugin>
