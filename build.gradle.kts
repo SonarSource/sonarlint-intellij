@@ -41,6 +41,7 @@ val sonarlintCoreVersion: String by project
 val protobufVersion: String by project
 val typescriptVersion: String by project
 val jettyVersion: String by project
+val intellijBuildVersion: String by project
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
@@ -86,15 +87,12 @@ allprojects {
             apiVersion = "1.3"
         }
     }
-
-    intellij {
-        version = "IC-2020.1.3"
-        pluginName = "sonarlint-intellij"
-        updateSinceUntilBuild = false
-    }
 }
 
 intellij {
+    version = intellijBuildVersion
+    pluginName = "sonarlint-intellij"
+    updateSinceUntilBuild = false
     setPlugins("java")
 }
 
@@ -182,28 +180,6 @@ dependencies {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.20.0.31240@jar")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
-}
-
-project(":clion") {
-    intellij {
-        version = "CL-2020.1.3"
-    }
-    dependencies {
-        implementation(project(":common"))
-        implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
-        testImplementation(platform("org.junit:junit-bom:5.7.1"))
-        testImplementation("org.junit.jupiter:junit-jupiter")
-        testImplementation("org.mockito:mockito-core:2.19.0")
-    }
-    tasks.test {
-        useJUnitPlatform()
-    }
-}
-
-project(":common") {
-    dependencies {
-        implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
-    }
 }
 
 tasks.prepareSandbox {
