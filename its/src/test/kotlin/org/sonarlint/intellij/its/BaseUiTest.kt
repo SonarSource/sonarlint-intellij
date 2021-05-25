@@ -220,7 +220,8 @@ open class BaseUiTest {
     copyProjectFiles(projectName)
     with(remoteRobot) {
       welcomeFrame {
-        openProjectButton().click()
+        // Force the click on the left: https://github.com/JetBrains/intellij-ui-test-robot/issues/19
+        openProjectButton().click(Point(10, 10))
       }
       openProjectFileBrowserDialog {
         selectProjectFile(projectName, isMaven)
