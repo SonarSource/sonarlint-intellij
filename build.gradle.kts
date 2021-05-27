@@ -45,8 +45,10 @@ val intellijBuildVersion: String by project
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
-val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_READER_USERNAME") ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
-val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_READER_PASSWORD") ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
+val artifactoryUsername = System.getenv("ARTIFACTORY_PRIVATE_READER_USERNAME")
+    ?: (if (project.hasProperty("artifactoryUsername")) project.property("artifactoryUsername").toString() else "")
+val artifactoryPassword = System.getenv("ARTIFACTORY_PRIVATE_READER_PASSWORD")
+    ?: (if (project.hasProperty("artifactoryPassword")) project.property("artifactoryPassword").toString() else "")
 
 allprojects {
     apply {
@@ -158,7 +160,7 @@ dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
-    implementation ("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
         exclude(module = "slf4j-api")
     }
     implementation(project(":clion"))
@@ -291,12 +293,12 @@ artifactory {
         defaults(delegateClosureOf<GroovyObject> {
             setProperty(
                 "properties", mapOf(
-                    "vcs.revision" to System.getenv("BUILD_SOURCEVERSION"),
-                    "vcs.branch" to (System.getenv("SYSTEM_PULLREQUEST_TARGETBRANCH")
-                        ?: System.getenv("BUILD_SOURCEBRANCHNAME")),
-                    "build.name" to "sonarlint-intellij",
-                    "build.number" to System.getenv("BUILD_BUILDID")
-                )
+                "vcs.revision" to System.getenv("BUILD_SOURCEVERSION"),
+                "vcs.branch" to (System.getenv("SYSTEM_PULLREQUEST_TARGETBRANCH")
+                    ?: System.getenv("BUILD_SOURCEBRANCHNAME")),
+                "build.name" to "sonarlint-intellij",
+                "build.number" to System.getenv("BUILD_BUILDID")
+            )
             )
             invokeMethod("publishConfigs", "archives")
             setProperty("publishPom", true) // Publish generated POM files to Artifactory (true by default)
