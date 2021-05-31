@@ -47,20 +47,22 @@ public abstract class SonarLintFacade {
     this.project = project;
   }
 
-  protected abstract AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
+  protected abstract AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor);
 
   @CheckForNull
   public abstract RuleDetails getActiveRuleDetails(String ruleKey);
 
-  public synchronized AnalysisResults startAnalysis(List<ClientInputFile> inputFiles, IssueListener issueListener,
+  public abstract SonarLintEngine getEngine();
+
+  public synchronized AnalysisResults startAnalysis(Module module, List<ClientInputFile> inputFiles, IssueListener issueListener,
     Map<String, String> additionalProps, ProgressMonitor progressMonitor) {
     Path baseDir = Paths.get(project.getBasePath());
     Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
     Map<String, String> props = new HashMap<>();
     props.putAll(additionalProps);
     props.putAll(getSettingsFor(project).getAdditionalProperties());
-    return analyze(baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
+    return analyze(module, baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
   }
 
   public abstract Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
@@ -69,8 +71,6 @@ public abstract class SonarLintFacade {
   public abstract String getDescription(String ruleKey);
 
   public abstract Collection<PluginDetails> getPluginDetails();
-
-  public abstract SonarLintEngine getEngine();
 
   @CheckForNull
   public String getRuleName(String ruleKey) {
