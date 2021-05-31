@@ -67,9 +67,11 @@ public class LiveIssueBuilder {
       for (IssueLocation loc : f.locations()) {
         try {
           TextRange textRange = loc.getTextRange();
-          if (textRange != null) {
-            RangeMarker range = matcher.match(psiFile, textRange);
-            matchedLocations.add(resolvedLocation(psiFile.getVirtualFile(), range, loc.getMessage(), null));
+          ClientInputFile locInputFile = loc.getInputFile();
+          if (textRange != null && locInputFile != null) {
+            PsiFile locPsiFile = matcher.findFile(locInputFile.getClientObject());
+            RangeMarker range = matcher.match(locPsiFile, textRange);
+            matchedLocations.add(resolvedLocation(locPsiFile.getVirtualFile(), range, loc.getMessage(), null));
           }
         } catch (IssueMatcher.NoMatchException e) {
           // File content is likely to have changed during the analysis, should be fixed in next analysis
