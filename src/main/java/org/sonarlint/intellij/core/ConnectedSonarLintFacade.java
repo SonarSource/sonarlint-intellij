@@ -59,13 +59,14 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
+  protected AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
     ConnectedAnalysisConfiguration config = ConnectedAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
       .setProjectKey(getSettingsFor(project).getProjectKey())
       .putAllExtraProperties(props)
+      .setModuleKey(module)
       .build();
     SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
@@ -115,5 +116,4 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     }
     return details.getHtmlDescription() + "<br/><br/>" + extendedDescription;
   }
-
 }

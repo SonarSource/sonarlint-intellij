@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
@@ -50,7 +51,7 @@ public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
     replaceProjectService(ProjectBindingManager.class, projectBindingManager);
     analyzer = new SonarLintAnalyzer(getProject());
     when(projectBindingManager.getFacade(true)).thenReturn(facade);
-    when(facade.startAnalysis(anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
+    when(facade.startAnalysis(any(Module.class), anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
   }
 
   @Test
@@ -60,6 +61,6 @@ public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
 
     analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ProgressMonitor.class));
 
-    verify(facade).startAnalysis(anyList(), eq(listener), anyMap(), any(ProgressMonitor.class));
+    verify(facade).startAnalysis(eq(getModule()), anyList(), eq(listener), anyMap(), any(ProgressMonitor.class));
   }
 }
