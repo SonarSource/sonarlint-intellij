@@ -86,7 +86,7 @@ public class SonarLintAnalyzer {
       }
 
       console.info("Analysing " + what + "...");
-      AnalysisResults result = facade.startAnalysis(inputFiles, listener, contributedProperties, progressMonitor);
+      AnalysisResults result = facade.startAnalysis(module, inputFiles, listener, contributedProperties, progressMonitor);
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
       SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
@@ -151,7 +151,7 @@ public class SonarLintAnalyzer {
   }
 
   @CheckForNull
-  private ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, @Nullable Language language) {
+  public ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, @Nullable Language language) {
     boolean test = TestSourcesFilter.isTestSources(virtualFile, module.getProject());
     Charset charset = getEncoding(virtualFile);
     String relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);

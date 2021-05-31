@@ -130,6 +130,7 @@
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
 
     <projectListeners>
+        <listener class="org.sonarlint.intellij.module.ModuleChangeListener" topic="com.intellij.openapi.project.ModuleListener"/>
         <!-- BulkFileListener doesn't consider changes in the editor, need to monitor separately -->
         <listener class="org.sonarlint.intellij.fs.EditorFileChangeListener" topic="com.intellij.openapi.editor.event.BulkAwareDocumentListener" activeInTestMode="false" />
     </projectListeners>
@@ -200,7 +201,7 @@
 
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
-        
+
         <postStartupActivity implementation="org.sonarlint.intellij.BootstrapStartupActivity"/>
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.SonarLintSubmitter"/>
