@@ -208,6 +208,10 @@
         <extensionPoint name="fileExclusionContributor" interface="org.sonarlint.intellij.common.analysis.FileExclusionContributor" dynamic="true"/>
     </extensionPoints>
 
+    <applicationListeners>
+        <listener class="org.sonarlint.intellij.fs.VirtualFileSystemListener" topic="com.intellij.openapi.vfs.newvfs.BulkFileListener" activeInTestMode="false"/>
+    </applicationListeners>
+
     <actions>
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
         <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="false" icon="/images/ico-sonarlint-13.png">

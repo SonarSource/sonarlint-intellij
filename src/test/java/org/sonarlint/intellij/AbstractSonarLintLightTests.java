@@ -27,7 +27,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
@@ -39,6 +38,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -46,7 +46,8 @@ import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.ui.fixtures.SonarLintToolWindowFixture;
+import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
+import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -54,7 +55,6 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
 
   private Disposable disposable;
-  private SonarLintToolWindowFixture toolWindowFixture;
 
   @Override
   protected final String getTestDataPath() {
@@ -75,9 +75,6 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
-    if (toolWindowFixture != null) {
-      toolWindowFixture.cleanUp();
-    }
     if (!getProject().isDisposed()) {
       SonarLintStatus.get(getProject()).stopRun();
     }
@@ -110,6 +107,10 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     return getSettingsFor(getModule());
   }
 
+  protected SonarLintConsoleTestImpl getConsole() {
+    return (SonarLintConsoleTestImpl) SonarLintUtils.getService(getProject(), SonarLintConsole.class);
+  }
+
   public VirtualFile createTestFile(String fileName, Language language, String text) {
     return createTestPsiFile(fileName, language, text).getVirtualFile();
   }
@@ -128,11 +129,6 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   public PsiFile createTestPsiFile(String fileName, Language language, String text) {
     return PsiFileFactory.getInstance(getProject()).createFileFromText(fileName, language, text, true, true);
-  }
-
-  public void loadToolWindow() {
-    toolWindowFixture = SonarLintToolWindowFixture.createFor(getProject());
-    replaceProjectService(ToolWindowManager.class, toolWindowFixture.getManager());
   }
 
   protected void connectProjectTo(String hostUrl, String connectionName, String projectKey) {
