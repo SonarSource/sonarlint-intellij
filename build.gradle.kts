@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.util.EnumSet
 import com.google.protobuf.gradle.*
 import com.jetbrains.plugin.blockmap.core.BlockMap
+import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.util.zip.ZipOutputStream
@@ -23,6 +24,7 @@ plugins {
     id("com.google.protobuf") version "0.8.16"
     idea
     signing
+    id("de.undercouch.download") version "4.1.1"
 }
 
 buildscript {
@@ -42,6 +44,7 @@ val protobufVersion: String by project
 val typescriptVersion: String by project
 val jettyVersion: String by project
 val intellijBuildVersion: String by project
+val omnisharpVersion: String by project
 
 // The environment variables ARTIFACTORY_PRIVATE_USERNAME and ARTIFACTORY_PRIVATE_PASSWORD are used on CI env (Azure)
 // On local box, please add artifactoryUsername and artifactoryPassword to ~/.gradle/gradle.properties
@@ -184,72 +187,127 @@ dependencies {
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
 
-fun copyPlugins(destinationDir: File, pluginName: String) {
-    val tsBundlePath = project.configurations.get("typescript").iterator().next()
-    copy {
-        from(tarTree(tsBundlePath))
-        exclude(
-            "**/loc/**",
-            "**/lib/*/diagnosticMessages.generated.json"
-        )
-        into(file("$destinationDir/$pluginName"))
-    }
-    file("$destinationDir/$pluginName/package").renameTo(file("$destinationDir/$pluginName/typescript"))
-    copy {
-        from(project.configurations.get("sqplugins"))
-        into(file("$destinationDir/$pluginName/plugins"))
-    }
-}
+tasks {
 
-tasks.prepareTestingSandbox {
-    doLast {
-        copyPlugins(destinationDir, pluginName)
+    val downloadOmnisharpLinuxZipFile by registering(Download::class) {
+        src("https://github.com/OmniSharp/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-linux-x64.zip")
+        dest(File(buildDir, "omnisharp-$omnisharpVersion-linux-x64.zip"))
+        overwrite(false)
     }
-}
 
-tasks.prepareSandbox {
-    doLast {
-        copyPlugins(destinationDir, pluginName)
+    val downloadOmnisharpOsxZipFile by registering(Download::class) {
+        src("https://github.com/OmniSharp/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-osx.zip")
+        dest(File(buildDir, "omnisharp-$omnisharpVersion-osx.zip"))
+        overwrite(false)
     }
-}
 
-val buildPluginBlockmap by tasks.registering {
-    inputs.file(tasks.buildPlugin.get().archiveFile)
-    doLast {
-        val distribZip = tasks.buildPlugin.get().archiveFile.get().asFile
-        val blockMapBytes = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
-        val blockMapFile = File(distribZip.parentFile, "blockmap.json")
-        blockMapFile.writeBytes(blockMapBytes)
-        val blockMapFileZipFile = file(distribZip.absolutePath + ".blockmap.zip")
-        val blockMapFileZip = ZipOutputStream(BufferedOutputStream(FileOutputStream(blockMapFileZipFile)))
-        val fi = FileInputStream(blockMapFile)
-        val origin = BufferedInputStream(fi)
-        val entry = ZipEntry(blockMapFile.name)
-        blockMapFileZip.putNextEntry(entry)
-        origin.copyTo(blockMapFileZip, 1024)
-        origin.close()
-        blockMapFileZip.close()
-        artifacts.add("archives", blockMapFileZipFile) {
-            name = project.name
-            extension = "zip.blockmap.zip"
-            type = "zip"
-            builtBy("buildPluginBlockmap")
+    val downloadOmnisharpWindowsZipFile by registering(Download::class) {
+        src("https://github.com/OmniSharp/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-win-x64.zip")
+        dest(File(buildDir, "omnisharp-$omnisharpVersion-win-x64.zip"))
+        overwrite(false)
+    }
+
+    fun copyTypeScript(destinationDir: File, pluginName: String) {
+        val tsBundlePath = project.configurations.get("typescript").iterator().next()
+        copy {
+            from(tarTree(tsBundlePath))
+            exclude(
+                "**/loc/**",
+                "**/lib/*/diagnosticMessages.generated.json"
+            )
+            into(file("$destinationDir/$pluginName"))
         }
-        val fileHash = com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
-        val fileHashJsonFile = file(distribZip.absolutePath + ".hash.json")
-        fileHashJsonFile.writeText(fileHash)
-        artifacts.add("archives", fileHashJsonFile) {
-            name = project.name
-            extension = "zip.hash.json"
-            type = "json"
-            builtBy("buildPluginBlockmap")
+        file("$destinationDir/$pluginName/package").renameTo(file("$destinationDir/$pluginName/typescript"))
+    }
+
+    fun copyPlugins(destinationDir: File, pluginName: String) {
+        copy {
+            from(project.configurations.get("sqplugins"))
+            into(file("$destinationDir/$pluginName/plugins"))
         }
     }
+
+    fun copyOmnisharp(destinationDir: File, pluginName: String) {
+        copy {
+            from(zipTree(downloadOmnisharpLinuxZipFile.get().dest))
+            into(file("$destinationDir/$pluginName/omnisharp/linux"))
+        }
+        copy {
+            from(zipTree(downloadOmnisharpOsxZipFile.get().dest))
+            into(file("$destinationDir/$pluginName/omnisharp/osx"))
+        }
+        copy {
+            from(zipTree(downloadOmnisharpWindowsZipFile.get().dest))
+            into(file("$destinationDir/$pluginName/omnisharp/win"))
+        }
+    }
+
+    prepareSandbox {
+        dependsOn(downloadOmnisharpLinuxZipFile, downloadOmnisharpOsxZipFile, downloadOmnisharpWindowsZipFile)
+        doLast {
+            copyPlugins(destinationDir, pluginName)
+            copyTypeScript(destinationDir, pluginName)
+            copyOmnisharp(destinationDir, pluginName)
+        }
+    }
+
+    prepareTestingSandbox {
+        dependsOn(downloadOmnisharpLinuxZipFile, downloadOmnisharpOsxZipFile, downloadOmnisharpWindowsZipFile)
+        doLast {
+            copyPlugins(destinationDir, pluginName)
+            copyTypeScript(destinationDir, pluginName)
+            copyOmnisharp(destinationDir, pluginName)
+        }
+    }
+    
+    val buildPluginBlockmap by registering {
+        inputs.file(buildPlugin.get().archiveFile)
+        doLast {
+            val distribZip = buildPlugin.get().archiveFile.get().asFile
+            val blockMapBytes =
+                com.fasterxml.jackson.databind.ObjectMapper().writeValueAsBytes(BlockMap(distribZip.inputStream()))
+            val blockMapFile = File(distribZip.parentFile, "blockmap.json")
+            blockMapFile.writeBytes(blockMapBytes)
+            val blockMapFileZipFile = file(distribZip.absolutePath + ".blockmap.zip")
+            val blockMapFileZip = ZipOutputStream(BufferedOutputStream(FileOutputStream(blockMapFileZipFile)))
+            val fi = FileInputStream(blockMapFile)
+            val origin = BufferedInputStream(fi)
+            val entry = ZipEntry(blockMapFile.name)
+            blockMapFileZip.putNextEntry(entry)
+            origin.copyTo(blockMapFileZip, 1024)
+            origin.close()
+            blockMapFileZip.close()
+            artifacts.add("archives", blockMapFileZipFile) {
+                name = project.name
+                extension = "zip.blockmap.zip"
+                type = "zip"
+                builtBy("buildPluginBlockmap")
+            }
+            val fileHash = com.fasterxml.jackson.databind.ObjectMapper()
+                .writeValueAsString(com.jetbrains.plugin.blockmap.core.FileHash(distribZip.inputStream()))
+            val fileHashJsonFile = file(distribZip.absolutePath + ".hash.json")
+            fileHashJsonFile.writeText(fileHash)
+            artifacts.add("archives", fileHashJsonFile) {
+                name = project.name
+                extension = "zip.hash.json"
+                type = "json"
+                builtBy("buildPluginBlockmap")
+            }
+        }
+    }
+
+    buildPlugin {
+        finalizedBy(buildPluginBlockmap)
+    }
+
+    jacocoTestReport {
+        classDirectories.setFrom(files("build/classes/java/main-instrumented"))
+        reports {
+            xml.setEnabled(true)
+        }
+    }
 }
 
-tasks.buildPlugin {
-    finalizedBy(buildPluginBlockmap)
-}
 
 sonarqube {
     properties {
@@ -265,13 +323,6 @@ license {
         )
     )
     strictCheck = true
-}
-
-tasks.jacocoTestReport {
-    classDirectories.setFrom(files("build/classes/java/main-instrumented"))
-    reports {
-        xml.setEnabled(true)
-    }
 }
 
 artifactory {
@@ -313,5 +364,6 @@ signing {
     })
     sign(configurations.archives.get())
 }
+
 
 
