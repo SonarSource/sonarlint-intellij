@@ -33,6 +33,7 @@ import javax.annotation.CheckForNull;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -68,6 +69,8 @@ public abstract class SonarLintFacade {
   public abstract String getDescription(String ruleKey);
 
   public abstract Collection<PluginDetails> getPluginDetails();
+
+  public abstract SonarLintEngine getEngine();
 
   @CheckForNull
   public String getRuleName(String ruleKey) {

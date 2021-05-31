@@ -57,6 +57,10 @@ public class DefaultClientInputFile implements ClientInputFile {
     this(vFile, relativePath, isTest, charset, null, language);
   }
 
+  public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
+    this(vFile, relativePath, isTest, charset, null, null);
+  }
+
   @Override public String getPath() {
     return path;
   }

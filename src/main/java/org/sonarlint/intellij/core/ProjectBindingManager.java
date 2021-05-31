@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -35,8 +36,10 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
+import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -100,6 +103,17 @@ public class ProjectBindingManager {
 
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
     return engineManager.getConnectedEngine(notifications, connectionName, projectKey);
+  }
+
+  @CheckForNull
+  public SonarLintEngine getEngineIfStarted() {
+    SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
+    SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
+    if (projectSettings.isBound()) {
+      String connectionId = projectSettings.getConnectionName();
+      return engineManager.getConnectedEngineIfStarted(requireNonNull(connectionId));
+    }
+    return engineManager.getStandaloneEngineIfStarted();
   }
 
   public synchronized boolean isBindingValid() {
