@@ -30,11 +30,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -43,7 +44,7 @@ import static com.intellij.openapi.progress.PerformInBackgroundOption.ALWAYS_BAC
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class SonarLintEngineManager implements Disposable {
-  private final Map<String, ConnectedSonarLintEngine> engines = new HashMap<>();
+  private final Map<String, ConnectedSonarLintEngine> connectedEngines = new HashMap<>();
   private final SonarLintEngineFactory factory;
   private StandaloneSonarLintEngine standalone;
 
@@ -97,7 +98,7 @@ public class SonarLintEngineManager implements Disposable {
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
   public synchronized void stopAllDeletedConnectedEnginesAsync() {
-    Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = engines.entrySet().iterator();
+    Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = connectedEngines.entrySet().iterator();
     Set<String> configuredStorageIds = getServerNames();
     while (it.hasNext()) {
       Map.Entry<String, ConnectedSonarLintEngine> e = it.next();
@@ -110,7 +111,7 @@ public class SonarLintEngineManager implements Disposable {
 
   public synchronized void stopAllEngines(boolean async) {
     AnalysisRequirementNotifications.resetCachedMessages();
-    for (Map.Entry<String, ConnectedSonarLintEngine> e : engines.entrySet()) {
+    for (Map.Entry<String, ConnectedSonarLintEngine> e : connectedEngines.entrySet()) {
       if (async) {
         String key = e.getKey();
         ConnectedSonarLintEngine engine = e.getValue();
@@ -119,7 +120,7 @@ public class SonarLintEngineManager implements Disposable {
         e.getValue().stop(false);
       }
     }
-    engines.clear();
+    connectedEngines.clear();
     if (standalone != null) {
       if (async) {
         StandaloneSonarLintEngine standaloneCopy = this.standalone;
@@ -131,8 +132,8 @@ public class SonarLintEngineManager implements Disposable {
     }
   }
 
-  public synchronized ConnectedSonarLintEngine getConnectedEngine(String serverId) {
-    return engines.computeIfAbsent(serverId, factory::createEngine);
+  public synchronized ConnectedSonarLintEngine getConnectedEngine(String connectionId) {
+    return connectedEngines.computeIfAbsent(connectionId, factory::createEngine);
   }
 
   public synchronized StandaloneSonarLintEngine getStandaloneEngine() {
@@ -168,5 +169,15 @@ public class SonarLintEngineManager implements Disposable {
   public void dispose() {
     stopAllEngines(false);
     Loggers.setTarget(null);
+  }
+
+  @Nullable
+  public ConnectedSonarLintEngine getConnectedEngineIfStarted(String connectionId) {
+    return connectedEngines.get(connectionId);
+  }
+
+  @Nullable
+  public SonarLintEngine getStandaloneEngineIfStarted() {
+    return standalone;
   }
 }
