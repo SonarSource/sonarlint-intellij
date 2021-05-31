@@ -59,7 +59,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  protected AnalysisResults analyze(Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
+  protected AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
     List<RuleKey> excluded = new ArrayList<>();
     List<RuleKey> included = new ArrayList<>();
@@ -81,6 +81,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       .addExcludedRules(excluded)
       .addIncludedRules(included)
       .addRuleParameters(params)
+      .setModuleKey(module)
       .build();
 
     SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
@@ -118,5 +119,4 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     }
     return details.getHtmlDescription();
   }
-
 }

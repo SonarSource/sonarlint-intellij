@@ -75,6 +75,6 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
   public void should_start_analysis() {
     AnalysisResults results = mock(AnalysisResults.class);
     when(engine.analyze(any(StandaloneAnalysisConfiguration.class), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
-    assertThat(facade.startAnalysis(Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
+    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
   }
 }

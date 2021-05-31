@@ -81,7 +81,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
     AnalysisResults results = mock(AnalysisResults.class);
     ArgumentCaptor<ConnectedAnalysisConfiguration> configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
     when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
-    assertThat(facade.startAnalysis(Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
+    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
     ConnectedAnalysisConfiguration config = configCaptor.getValue();
     assertThat(config.projectKey()).isEqualTo(projectKey);
   }
