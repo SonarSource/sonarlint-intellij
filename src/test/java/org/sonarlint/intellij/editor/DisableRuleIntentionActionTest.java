@@ -29,9 +29,6 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -77,7 +74,6 @@ public class DisableRuleIntentionActionTest extends AbstractSonarLintLightTests 
 
   @Test
   public void should_exclude() {
-    SonarLintConsole console = SonarLintUtils.getService(getProject(), SonarLintConsole.class);
     getGlobalSettings().setAutoTrigger(true);
 
     PsiFile file = PsiFileFactory.getInstance(getProject())
@@ -86,6 +82,6 @@ public class DisableRuleIntentionActionTest extends AbstractSonarLintLightTests 
     quickFix.invoke(getProject(), mock(Editor.class), file);
 
     assertThat(getGlobalSettings().isRuleExplicitlyDisabled("rule")).isTrue();
-    assertThat(((SonarLintConsoleTestImpl) console).getLastMessage()).isEqualTo("[Binding update] 0 file(s) submitted");
+    assertThat(getConsole().getLastMessage()).isEqualTo("[Binding update] 0 file(s) submitted");
   }
 }

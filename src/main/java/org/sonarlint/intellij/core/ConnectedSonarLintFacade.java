@@ -94,6 +94,11 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
+  public ConnectedSonarLintEngine getEngine() {
+    return engine;
+  }
+
+  @Override
   public ConnectedRuleDetails getActiveRuleDetails(String ruleKey) {
     return engine.getActiveRuleDetails(ruleKey, getSettingsFor(project).getProjectKey());
   }

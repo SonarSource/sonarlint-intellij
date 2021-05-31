@@ -28,6 +28,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -131,5 +132,49 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
     assertThat(projectBindingManager.getFacade()).isNotNull();
+  }
+
+  @Test
+  public void should_return_connected_engine_if_started() {
+    getProjectSettings().setBindingEnabled(true);
+    getProjectSettings().setConnectionName("server1");
+    getProjectSettings().setProjectKey("key");
+    when(engineManager.getConnectedEngineIfStarted(anyString())).thenReturn(connectedEngine);
+
+    SonarLintEngine engine = projectBindingManager.getEngineIfStarted();
+
+    assertThat(engine).isEqualTo(connectedEngine);
+  }
+
+  @Test
+  public void should_return_standalone_engine_if_started() {
+    getProjectSettings().setBindingEnabled(false);
+    when(engineManager.getStandaloneEngineIfStarted()).thenReturn(standaloneEngine);
+
+    SonarLintEngine engine = projectBindingManager.getEngineIfStarted();
+
+    assertThat(engine).isEqualTo(standaloneEngine);
+  }
+
+  @Test
+  public void should_not_return_connected_engine_if_not_started() {
+    getProjectSettings().setBindingEnabled(true);
+    getProjectSettings().setConnectionName("server1");
+    getProjectSettings().setProjectKey(null);
+    when(engineManager.getConnectedEngineIfStarted("server1")).thenReturn(null);
+
+    SonarLintEngine engine = projectBindingManager.getEngineIfStarted();
+
+    assertThat(engine).isNull();
+  }
+
+  @Test
+  public void should_not_return_standalone_engine_if_not_started() {
+    getProjectSettings().setBindingEnabled(false);
+    when(engineManager.getStandaloneEngineIfStarted()).thenReturn(null);
+
+    SonarLintEngine engine = projectBindingManager.getEngineIfStarted();
+
+    assertThat(engine).isNull();
   }
 }
