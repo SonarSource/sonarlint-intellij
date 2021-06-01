@@ -25,9 +25,12 @@ import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.Fixture
 import com.intellij.remoterobot.fixtures.JRadioButtonFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
+import com.intellij.remoterobot.fixtures.JTreeFixture
 import com.intellij.remoterobot.search.locators.Locator
 import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.waitFor
+import org.assertj.swing.timing.Pause
 import java.time.Duration
 
 inline fun <reified T : Fixture> ContainerFixture.findElement(locator: Locator): T {
@@ -50,4 +53,15 @@ fun ActionButtonFixture.clickWhenEnabled() {
     isEnabled()
   }
   click()
+}
+
+fun JTreeFixture.waitUntilLoaded() {
+    step("waiting for loading text to go away...") {
+        Pause.pause(100)
+        waitFor(duration = Duration.ofMinutes(1)) {
+            // Do not use hasText(String) https://github.com/JetBrains/intellij-ui-test-robot/issues/10
+            !hasText { txt -> txt.text == "loading..." }
+        }
+        Pause.pause(100)
+    }
 }

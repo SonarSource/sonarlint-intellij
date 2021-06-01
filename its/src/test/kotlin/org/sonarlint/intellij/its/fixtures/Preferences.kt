@@ -23,8 +23,11 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JLabelFixture
+import com.intellij.remoterobot.fixtures.JTreeFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import com.intellij.remoterobot.utils.waitFor
+import org.assertj.swing.timing.Pause
 import java.time.Duration
 
 fun RemoteRobot.preferencesDialog(
@@ -51,10 +54,8 @@ open class PreferencesDialog(
         textField(byXpath("//div[@class='SettingsSearch']//div[@class='TextFieldWithProcessing']")).text = query
     }
 
-    fun selectPreferencePage(vararg crumbs: String) {
-        val preferencesTree = findElement<JTreeFixture>(byXpath("//div[@class='MyTree']"))
-        preferencesTree.waitUntilLoaded()
-        preferencesTree.clickPath(*crumbs)
+    fun tree(function: JTreeFixture.() -> Unit) {
+        findElement<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)
     }
 
     override fun pressOk() {
