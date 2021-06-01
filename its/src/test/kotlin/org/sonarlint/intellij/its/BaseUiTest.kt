@@ -20,14 +20,8 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
-import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipTextContains
-import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.JListFixture
-import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.stepsProcessing.StepLogger
-import com.intellij.remoterobot.stepsProcessing.StepWorker
 import com.intellij.remoterobot.utils.waitFor
 import org.assertj.swing.timing.Pause
 import org.junit.jupiter.api.BeforeEach
@@ -166,13 +160,18 @@ open class BaseUiTest {
       welcomeFrame() {
         openPreferences()
         preferencesDialog {
+          // let the dialog settle (if we type the search query too soon it might be cleared for no reason)
+          Pause.pause(2000)
+
           // Search for SonarLint because sometimes it is off the screen
           search("SonarLint")
 
-          // The search sometimes take time to filter the tree
-          Pause.pause(1000)
-
-          selectPreferencePage("Tools", "SonarLint")
+          tree {
+              waitUntilLoaded()
+              // little trick to check if the search has been applied
+              waitFor(Duration.ofSeconds(10), Duration.ofSeconds(1)) { collectRows().size in 1..7 }
+              clickPath("Tools", "SonarLint")
+          }
 
           val removeButton = actionButton(byTooltipText("Remove"))
           jList(JListFixture.byType(), Duration.ofSeconds(20)) {
