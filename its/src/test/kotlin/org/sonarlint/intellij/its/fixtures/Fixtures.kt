@@ -19,24 +19,27 @@
  */
 package org.sonarlint.intellij.its.fixtures
 
-import com.intellij.remoterobot.data.componentAs
 import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.fixtures.Fixture
 import com.intellij.remoterobot.fixtures.JRadioButtonFixture
 import com.intellij.remoterobot.fixtures.JTextFieldFixture
+import com.intellij.remoterobot.search.locators.Locator
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.waitFor
-import org.assertj.swing.fixture.JTextComponentFixture
 import java.time.Duration
-import javax.annotation.Nonnull
-import javax.swing.JTextField
+
+inline fun <reified T : Fixture> ContainerFixture.findElement(locator: Locator): T {
+    // the find has a 2s timeout and 2s interval by default, which sometimes allows only one search
+    return find(locator, Duration.ofSeconds(5))
+}
 
 fun ContainerFixture.jbTextFields() = findAll<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
 
 fun ContainerFixture.jRadioButtons() = findAll<JRadioButtonFixture>(byXpath("//div[@class='JRadioButton']"))
 
-fun ContainerFixture.jbTextField() = find<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
+fun ContainerFixture.jbTextField() = findElement<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
 
 fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JTextField']"))
 

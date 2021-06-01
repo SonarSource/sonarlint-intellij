@@ -53,7 +53,7 @@ class FileBrowserDialogFixture(
     get() = textField(byXpath("//div[(@class='BorderlessTextField' or @class='JTextField')]"))
 
   private fun refreshButton(): ComponentFixture {
-    return find(byXpath("//div[(@accessiblename='Refresh' and @class='ActionButton')]"))
+    return findElement(byXpath("//div[(@accessiblename='Refresh' and @class='ActionButton')]"))
   }
 
   fun selectProjectFile(projectName: String, isMaven: Boolean) {
