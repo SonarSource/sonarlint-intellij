@@ -174,7 +174,6 @@ open class BaseUiTest {
 
           selectPreferencePage("Tools", "SonarLint")
 
-          // Doesn't work
           val removeButton = actionButton(byTooltipText("Remove"))
           jList(JListFixture.byType(), Duration.ofSeconds(20)) {
             while (collectItems().isNotEmpty()) {
