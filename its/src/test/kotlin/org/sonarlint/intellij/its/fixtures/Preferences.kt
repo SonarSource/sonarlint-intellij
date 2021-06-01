@@ -52,7 +52,7 @@ open class PreferencesDialog(
     }
 
     fun selectPreferencePage(vararg crumbs: String) {
-        val preferencesTree = find<JTreeFixture>(byXpath("//div[@class='MyTree']"))
+        val preferencesTree = findElement<JTreeFixture>(byXpath("//div[@class='MyTree']"))
         preferencesTree.waitUntilLoaded()
         preferencesTree.clickPath(*crumbs)
     }

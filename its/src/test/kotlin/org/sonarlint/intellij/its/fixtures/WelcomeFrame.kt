@@ -86,7 +86,7 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
       }
     } else {
       selectTab("Customize")
-      find<ComponentFixture>(byXpath("//div[@accessiblename='All settings…']"), Duration.ofSeconds(5)).click()
+      findElement<ComponentFixture>(byXpath("//div[@accessiblename='All settings…']")).click()
     }
 
     log.info("Successfully opened the preferences dialog")
