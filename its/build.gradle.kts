@@ -1,7 +1,4 @@
-import java.util.concurrent.Callable
-import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.net.URL
 
 plugins {
@@ -84,22 +81,11 @@ tasks.runIdeForUiTests {
 }
 
 open class RunIdeForUiTestAsyncTask : DefaultTask() {
-
-    @org.gradle.api.tasks.Internal
-    var execTaskFuture: Future<*>? = null
-
     @TaskAction
     fun startAsync() {
         val es = Executors.newSingleThreadExecutor()
-        execTaskFuture = es.submit {
+        es.submit {
             project.tasks.runIdeForUiTests.get().exec()
-        }
-    }
-
-    fun stop() {
-        if (execTaskFuture != null) {
-            println("Closing IDE")
-            execTaskFuture?.cancel(true)
         }
     }
 }
@@ -154,13 +140,3 @@ val runIts by tasks.register("runIts") {
 tasks.check {
     dependsOn(runIts)
 }
-
-val closeIde by tasks.register("closeIde") {
-    doLast {
-        runIdeForUiTestsAsync.stop()
-    }
-}
-
-runIts.finalizedBy(closeIde)
-
-
