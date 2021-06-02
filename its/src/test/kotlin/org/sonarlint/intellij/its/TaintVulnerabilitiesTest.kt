@@ -67,7 +67,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
     openExistingProject("sample-java-taint-vulnerability", true)
     bindProjectFromPanel()
 
-    openClass(this, "FileWithSink")
+    openFile("src/main/java/foo/FileWithSink.java", "FileWithSink.java")
 
     verifyTaintTabContainsMessages(
       this,

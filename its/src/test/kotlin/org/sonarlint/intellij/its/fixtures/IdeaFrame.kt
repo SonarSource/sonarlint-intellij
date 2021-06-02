@@ -112,14 +112,4 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     return findElement<ActionHyperLinkFixture>(byXpath("link $accessiblename", "//div[@accessiblename='$accessiblename' and @class='ActionHyperlinkLabel']")).apply(function)
   }
 
-  fun openPreferences() {
-    actionMenu("File") {
-      click()
-      // does not exist if no tool window is active
-      item("Settings...") {
-        click()
-      }
-    }
-  }
-
 }

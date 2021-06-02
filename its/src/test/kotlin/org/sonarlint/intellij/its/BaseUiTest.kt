@@ -102,40 +102,19 @@ open class BaseUiTest {
     }
   }
 
-  fun openClass(remoteRobot: RemoteRobot, className: String) {
+  fun openFile(filePath: String, fileName: String = filePath) {
     with(remoteRobot) {
       idea {
-        actionMenu("Navigate") {
-          click()
-          item("Class...") {
-            // click at the left of the item to not move focus to another menu at the right
-            click(Point(10, 10))
+        runJs("""
+          const contentRoots = com.intellij.openapi.roots.ProjectRootManager.getInstance(component.project).getContentRoots();
+          for (let i = 0; i < contentRoots.length; i++) {
+            const file = contentRoots[i].findFileByRelativePath("$filePath");
+            if (file) {
+              new com.intellij.openapi.fileEditor.OpenFileDescriptor(component.project, file, 0).navigate(true);
+              break;
+            }
           }
-        }
-        searchField().text = className
-        val fileList = jList(JListFixture.byType(), Duration.ofSeconds(5))
-        waitFor(Duration.ofSeconds(5)) { fileList.collectItems().isNotEmpty() }
-        fileList.clickItemAtIndex(0)
-        waitFor(Duration.ofSeconds(10)) { editor("$className.java").isShowing }
-        waitBackgroundTasksFinished()
-      }
-    }
-  }
-
-  fun openFile(fileName: String) {
-    with(remoteRobot) {
-      idea {
-        actionMenu("Navigate") {
-          click()
-          item("File...") {
-            // click at the left of the item to not move focus to another menu at the right
-            click(Point(10, 10))
-          }
-        }
-        searchField().text = fileName
-        val fileList = jList(JListFixture.byType(), Duration.ofSeconds(5))
-        waitFor(Duration.ofSeconds(5)) { fileList.collectItems().isNotEmpty() }
-        fileList.clickItemAtIndex(0)
+        """, true)
         waitFor(Duration.ofSeconds(10)) { editor(fileName).isShowing }
         waitBackgroundTasksFinished()
       }
@@ -205,7 +184,7 @@ open class BaseUiTest {
     with(remoteRobot) {
       optionalIdeaFrame(this)?.apply {
         actionMenu("File") {
-          click()
+          open()
           item("Close Project") {
             click()
           }
