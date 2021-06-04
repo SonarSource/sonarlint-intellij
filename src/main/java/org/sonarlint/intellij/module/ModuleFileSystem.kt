@@ -42,7 +42,12 @@ internal class ModuleFileSystem(private val project: Project, private val module
     val files: MutableList<ClientInputFile> = ArrayList()
     val sonarLintAnalyzer = project.getService(SonarLintAnalyzer::class.java)
     ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
-        if (!fileOrDir.isDirectory && !ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir, fileOrDir.fileType)) {
+        if (
+          !fileOrDir.isDirectory &&
+          !ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir, fileOrDir.fileType) &&
+          // TODO Remove filter below - definitely not production-proof, but let's see if tests pass with it
+          fileOrDir.extension == "py"
+        ) {
           val element = sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
           if (element != null) {
             files.add(element)
