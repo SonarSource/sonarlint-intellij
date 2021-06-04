@@ -43,7 +43,10 @@ internal class ModuleFileSystem(private val project: Project, private val module
     val sonarLintAnalyzer = project.getService(SonarLintAnalyzer::class.java)
     ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
         if (!fileOrDir.isDirectory && !ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir, fileOrDir.fileType)) {
-          files.add(sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)!!)
+          val element = sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
+          if (element != null) {
+            files.add(element)
+          }
         }
         true
       }
