@@ -31,16 +31,16 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
-import org.mockito.Mockito.doThrow
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyZeroInteractions
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.eq
 import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
@@ -54,7 +54,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         `when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
-        virtualFileSystemListener = VirtualFileSystemListener()
+        virtualFileSystemListener = VirtualFileSystemListener(fileEventsNotifier)
     }
 
     @Test
@@ -63,14 +63,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verify(fakeEngine).fireModuleFileEvent(ArgumentMatchers.eq(module), eventCaptor.capture())
-        val event = eventCaptor.value
-        assertThat(event.type()).isEqualTo(ModuleFileEvent.Type.DELETED)
-        val inputFile = event.target()
-        assertThat(inputFile.contents()).contains("content")
-        assertThat(inputFile.relativePath()).isEqualTo(FILE_NAME)
-        assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-        assertThat(inputFile.path).isEqualTo("/src/main.py")
+        assertEventNotified(ModuleFileEvent.Type.DELETED, FILE_NAME)
     }
 
     @Test
@@ -79,14 +72,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verify(fakeEngine).fireModuleFileEvent(ArgumentMatchers.eq(module), eventCaptor.capture())
-        val event = eventCaptor.value
-        assertThat(event.type()).isEqualTo(ModuleFileEvent.Type.MODIFIED)
-        val inputFile = event.target()
-        assertThat(inputFile.contents()).contains("content")
-        assertThat(inputFile.relativePath()).isEqualTo(FILE_NAME)
-        assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-        assertThat(inputFile.path).isEqualTo("/src/main.py")
+        assertEventNotified(ModuleFileEvent.Type.MODIFIED, FILE_NAME)
     }
 
     @Test
@@ -95,14 +81,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verify(fakeEngine).fireModuleFileEvent(ArgumentMatchers.eq(module), eventCaptor.capture())
-        val event = eventCaptor.value
-        assertThat(event.type()).isEqualTo(ModuleFileEvent.Type.CREATED)
-        val inputFile = event.target()
-        assertThat(inputFile.contents()).contains("content")
-        assertThat(inputFile.relativePath()).isEqualTo(FILE_NAME)
-        assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-        assertThat(inputFile.path).isEqualTo("/src/main.py")
+        assertEventNotified(ModuleFileEvent.Type.CREATED, FILE_NAME)
     }
 
     @Test
@@ -112,14 +91,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verify(fakeEngine).fireModuleFileEvent(ArgumentMatchers.eq(module), eventCaptor.capture())
-        val event = eventCaptor.value
-        assertThat(event.type()).isEqualTo(ModuleFileEvent.Type.CREATED)
-        val inputFile = event.target()
-        assertThat(inputFile.contents()).contains("content")
-        assertThat(inputFile.relativePath()).isEqualTo("$FILE_NAME.cp")
-        assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(copiedFile)
-        assertThat(inputFile.path).isEqualTo("/src/main.py.cp")
+        assertEventNotified(ModuleFileEvent.Type.CREATED, "$FILE_NAME.cp", copiedFile)
     }
 
     @Test
@@ -128,14 +100,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.before(listOf(vFileEvent))
 
-        verify(fakeEngine).fireModuleFileEvent(ArgumentMatchers.eq(module), eventCaptor.capture())
-        val deletionEvent = eventCaptor.value
-        assertThat(deletionEvent.type()).isEqualTo(ModuleFileEvent.Type.DELETED)
-        val deletedInputFile = deletionEvent.target()
-        assertThat(deletedInputFile.contents()).contains("content")
-        assertThat(deletedInputFile.relativePath()).isEqualTo(FILE_NAME)
-        assertThat(deletedInputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-        assertThat(deletedInputFile.path).isEqualTo("/src/main.py")
+        assertEventNotified(ModuleFileEvent.Type.DELETED, FILE_NAME)
     }
 
     @Test
@@ -144,14 +109,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verify(fakeEngine).fireModuleFileEvent(ArgumentMatchers.eq(module), eventCaptor.capture())
-        val creationEvent = eventCaptor.value
-        assertThat(creationEvent.type()).isEqualTo(ModuleFileEvent.Type.CREATED)
-        val createdInputFile = creationEvent.target()
-        assertThat(createdInputFile.contents()).contains("content")
-        assertThat(createdInputFile.relativePath()).isEqualTo(FILE_NAME)
-        assertThat(createdInputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-        assertThat(createdInputFile.path).isEqualTo("/src/main.py")
+        assertEventNotified(ModuleFileEvent.Type.CREATED, FILE_NAME)
     }
 
     @Test
@@ -160,7 +118,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verifyZeroInteractions(fakeEngine)
+        verifyZeroInteractions(fileEventsNotifier)
     }
 
     @Test
@@ -170,28 +128,30 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verifyZeroInteractions(fakeEngine)
+        verifyZeroInteractions(fileEventsNotifier)
     }
 
-    @Test
-    fun should_log_in_the_console_when_an_error_occurs_handling_the_event() {
-        val vFileEvent = VFileDeleteEvent(null, file, false)
-        doThrow(RuntimeException("Boom!")).`when`(fakeEngine)
-            .fireModuleFileEvent(ArgumentMatchers.any(), ArgumentMatchers.any())
-
-        virtualFileSystemListener.after(listOf(vFileEvent))
-
-        assertThat(console.lastMessage).isEqualTo("Error notifying analyzer of a file event")
+    private fun assertEventNotified(type: ModuleFileEvent.Type, fileName: String, file: VirtualFile = this.file) {
+        verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
+        val events = eventsCaptor.value
+        assertThat(events).hasSize(1)
+        val event = events[0]
+        assertThat(event.type()).isEqualTo(type)
+        val inputFile = event.target()
+        assertThat(inputFile.contents()).contains("content")
+        assertThat(inputFile.relativePath()).isEqualTo(fileName)
+        assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
+        assertThat(inputFile.path).isEqualTo("/src/$fileName")
     }
 
     @Captor
-    private lateinit var eventCaptor: ArgumentCaptor<ClientModuleFileEvent>
-
+    private lateinit var eventsCaptor: ArgumentCaptor<List<ClientModuleFileEvent>>
     @Mock
     private lateinit var projectBindingManager: ProjectBindingManager
-
     @Mock
     private lateinit var fakeEngine: SonarLintEngine
+    @Mock
+    private lateinit var fileEventsNotifier: ModuleFileEventsNotifier
     private lateinit var file: VirtualFile
     private lateinit var virtualFileSystemListener: VirtualFileSystemListener
 }
