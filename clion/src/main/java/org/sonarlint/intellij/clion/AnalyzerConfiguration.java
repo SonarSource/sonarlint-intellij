@@ -41,16 +41,23 @@ import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
 import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
+import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
+import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
 import org.jetbrains.annotations.NotNull;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import javax.annotation.Nullable;
+import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AnalyzerConfiguration {
   private final Project project;
   private final CMakeWorkspace cMakeWorkspace;
+  private static Method preprocessorDefinesMethod;
 
   public AnalyzerConfiguration(@NotNull Project project) {
     this.project = project;
@@ -101,20 +108,59 @@ public class AnalyzerConfiguration {
     if (cFamilyCompiler == null) {
       return ConfigurationResult.skip("unsupported compiler " + compilerKind.getDisplayName());
     }
+    Map<String, String> properties = new HashMap<>();
+    if (ocFile.isHeader()) {
+      properties.put("isHeaderFile", "true");
+    }
+    if (compilerKind instanceof MSVCCompilerKind) {
+      collectMSVCProperties(compilerSettings, properties);
+    }
     return ConfigurationResult.of(new Configuration(
       file,
       compilerSettings.getCompilerExecutable().getAbsolutePath(),
       compilerSettings.getCompilerWorkingDir().getAbsolutePath(),
       compilerSettings.getCompilerSwitches().getList(CidrCompilerSwitches.Format.RAW),
-      "clang",
+      cFamilyCompiler,
       getSonarLanguage(languageKind),
-      ocFile.isHeader()));
+      properties));
+  }
+
+  private static void collectMSVCProperties(OCCompilerSettings compilerSettings, Map<String, String> properties) {
+    properties.put(
+      "preprocessorDefines",
+      getPreprocessorDefines(compilerSettings));
+    properties.put(
+      "builtinHeaders",
+      compilerSettings.getHeadersSearchPaths().stream()
+        .filter(HeadersSearchPath::isBuiltInHeaders)
+        .map(HeadersSearchPath::getPath)
+        .collect(Collectors.joining("\n")));
+  }
+
+
+  @NotNull
+  private static String getPreprocessorDefines(OCCompilerSettings compilerSettings) {
+    Object result;
+    try {
+      result = getPreprocessorDefinesMethod().invoke(compilerSettings);
+    } catch (ReflectiveOperationException e) {
+      throw new IllegalStateException(e);
+    }
+    if (result instanceof List) {
+      return String.join("\n", (List<String>) result);
+    } else if (result instanceof String) {
+      return (String) result;
+    } else {
+      throw new IllegalStateException(result.toString());
+    }
   }
 
   @Nullable
   static String mapToCFamilyCompiler(OCCompilerKind compilerKind) {
     if ((compilerKind instanceof GCCCompilerKind) || (compilerKind instanceof ClangCompilerKind)) {
       return "clang";
+    } else if (compilerKind instanceof MSVCCompilerKind) {
+      return "msvc-cl";
     }
     return null;
   }
@@ -155,6 +201,17 @@ public class AnalyzerConfiguration {
       }
     }
     return null;
+  }
+
+  private static Method getPreprocessorDefinesMethod() {
+    if (preprocessorDefinesMethod == null) {
+      try {
+        preprocessorDefinesMethod = OCCompilerSettings.class.getMethod("getPreprocessorDefines");
+      } catch (NoSuchMethodException e) {
+        throw new IllegalStateException(e);
+      }
+    }
+    return preprocessorDefinesMethod;
   }
 
   public static class ConfigurationResult {
@@ -206,9 +263,9 @@ public class AnalyzerConfiguration {
     final String compilerWorkingDir;
     final List<String> compilerSwitches;
     final String compilerKind;
-    final boolean isHeaderFile;
     @Nullable
     final Language sonarLanguage;
+    final Map<String, String> properties;
 
     public Configuration(
       VirtualFile virtualFile,
@@ -217,14 +274,14 @@ public class AnalyzerConfiguration {
       List<String> compilerSwitches,
       String compilerKind,
       @Nullable Language sonarLanguage,
-      boolean isHeaderFile) {
+      Map<String, String> properties) {
       this.virtualFile = virtualFile;
       this.compilerExecutable = compilerExecutable;
       this.compilerWorkingDir = compilerWorkingDir;
       this.compilerSwitches = compilerSwitches;
       this.compilerKind = compilerKind;
       this.sonarLanguage = sonarLanguage;
-      this.isHeaderFile = isHeaderFile;
+      this.properties = properties;
     }
   }
 }
