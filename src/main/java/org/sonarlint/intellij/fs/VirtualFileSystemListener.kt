@@ -23,9 +23,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.roots.TestSourcesFilter
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.encoding.EncodingProjectManager
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
 import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileCopyEvent
@@ -34,22 +32,22 @@ import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileEvent
 import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent
 import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
-import org.sonarlint.intellij.analysis.DefaultClientInputFile
-import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarlint.intellij.util.SonarLintAppUtils.getRelativePathForAnalysis
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
-import java.nio.charset.Charset
 
 /**
  * The BulkFileListener is not tied to a specific project but global to the IDE instance
  */
-class VirtualFileSystemListener : BulkFileListener {
+class VirtualFileSystemListener(
+    private val fileEventsNotifier: ModuleFileEventsNotifier = getService(
+        ModuleFileEventsNotifier::class.java
+    )
+) : BulkFileListener {
     override fun before(events: List<VFileEvent>) {
         forwardEvents(events.filterIsInstance(VFileMoveEvent::class.java)) { ModuleFileEvent.Type.DELETED }
     }
@@ -75,14 +73,8 @@ class VirtualFileSystemListener : BulkFileListener {
         val startedEnginesByProject = openProjects.associateWith { getEngineIfStarted(it) }
         val filesByModule = fileEventsByModules(events, openProjects, eventTypeConverter)
         filesByModule.forEach { (module, fileEvents) ->
-            startedEnginesByProject[module.project]?.let { engine ->
-                fileEvents.forEach {
-                    try {
-                        engine.fireModuleFileEvent(module, it)
-                    } catch (e: Exception) {
-                        SonarLintConsole.get(module.project).error("Error notifying analyzer of a file event", e)
-                    }
-                }
+            startedEnginesByProject[module.project]?.let {
+                fileEventsNotifier.notifyAsync(it, module, fileEvents)
             }
         }
     }
@@ -100,40 +92,15 @@ class VirtualFileSystemListener : BulkFileListener {
             // call event.file only once as it can be hurting performance
             val file = event.file ?: continue
             val fileModule = findModule(file, openProjects) ?: continue
-            convertEvent(event, fileModule, file, eventTypeConverter)?.let {
+            val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
+            fileInvolved ?: continue
+            val type = eventTypeConverter(event) ?: continue
+            buildModuleFileEvent(fileModule, fileInvolved, type)?.let {
                 val moduleEvents = map[fileModule] ?: emptyList()
                 map[fileModule] = moduleEvents + it
             }
         }
         return map
-    }
-
-    private fun getEncoding(project: Project, f: VirtualFile): Charset {
-        val encodingProjectManager = EncodingProjectManager.getInstance(project)
-        val encoding = encodingProjectManager.getEncoding(f, true)
-        return encoding ?: Charset.defaultCharset()
-    }
-
-    private fun convertEvent(
-        event: VFileEvent,
-        module: Module,
-        file: VirtualFile,
-        eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?
-    ): ClientModuleFileEvent? {
-        val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
-        fileInvolved ?: return null
-        val relativePath = getRelativePathForAnalysis(module, fileInvolved) ?: return null
-        val eventType = eventTypeConverter(event)
-        return if (eventType == null) null else
-            ClientModuleFileEvent.of(
-                DefaultClientInputFile(
-                    fileInvolved,
-                    relativePath,
-                    TestSourcesFilter.isTestSources(fileInvolved, module.project),
-                    getEncoding(module.project, fileInvolved)
-                ),
-                eventType
-            )
     }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {

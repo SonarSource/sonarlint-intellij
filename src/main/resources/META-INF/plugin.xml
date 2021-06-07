@@ -130,6 +130,10 @@
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
 
+    <projectListeners>
+        <!-- BulkFileListener doesn't consider changes in the editor, need to monitor separately -->
+        <listener class="org.sonarlint.intellij.fs.EditorFileChangeListener" topic="com.intellij.openapi.editor.event.BulkAwareDocumentListener" activeInTestMode="false" />
+    </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
@@ -170,6 +174,7 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotificationsService"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.fs.ModuleFileEventsNotifier"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
