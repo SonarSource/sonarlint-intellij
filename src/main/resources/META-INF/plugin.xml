@@ -36,8 +36,8 @@
             <br/>
             <p>
                 SonarLint integrates with most JetBrains IDEs including
-                IntelliJ IDEA, CLion, WebStorm, PHPStorm, PyCharm, Android Studio & RubyMine. Supported languages include
-                C, C++, Java, JavaScript, TypeScript, Python, Kotlin, Ruby, HTML & PHP.
+                IntelliJ IDEA, CLion, WebStorm, PHPStorm, PyCharm, Rider, Android Studio & RubyMine. Supported languages include
+                C, C++, Java, JavaScript, TypeScript, Python, C#, Kotlin, Ruby, HTML & PHP.
             </p>
             <br/>
             <p>

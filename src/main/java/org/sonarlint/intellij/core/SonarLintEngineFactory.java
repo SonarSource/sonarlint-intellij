@@ -21,6 +21,9 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.util.SystemInfo;
+import com.intellij.util.PlatformUtils;
+
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
@@ -28,8 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,13 +77,13 @@ public class SonarLintEngineFactory {
 
     ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
 
-    URL cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
     ConnectedGlobalConfiguration.Builder configBuilder = ConnectedGlobalConfiguration.builder()
       .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
       .setConnectionId(connectionId)
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
     configureCommonEngine(configBuilder);
 
+    URL cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
     if (cFamilyPluginUrl != null) {
       configBuilder.useEmbeddedPlugin(Language.CPP.getPluginKey(), cFamilyPluginUrl);
     }
@@ -88,7 +91,10 @@ public class SonarLintEngineFactory {
     if (secretsPluginUrl != null) {
       configBuilder.addExtraPlugin(Language.SECRETS.getPluginKey(), secretsPluginUrl);
     }
-    // it will also start it
+    URL csPluginUrl = findEmbeddedOmnisharpPlugin(getPluginsDir());
+    if (csPluginUrl != null) {
+      configBuilder.useEmbeddedPlugin(Language.CS.getPluginKey(), csPluginUrl);
+    }
     return new ConnectedSonarLintEngineImpl(configBuilder.build());
   }
 
@@ -169,6 +175,11 @@ public class SonarLintEngineFactory {
   }
 
   @CheckForNull
+  private static URL findEmbeddedOmnisharpPlugin(Path pluginsDir) {
+    return findEmbeddedPlugin(pluginsDir, "sonarlint-omnisharp-plugin-*.jar", "Found CSharp plugin: ");
+  }
+
+  @CheckForNull
   private static URL findEmbeddedSecretsPlugin(Path pluginsDir) {
     return findEmbeddedPlugin(pluginsDir, "sonar-secrets-plugin-*.jar", "Found Secrets detection plugin: ");
   }
@@ -201,6 +212,26 @@ public class SonarLintEngineFactory {
 
   private static Map<String, String> prepareExtraProps() {
     SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    return Collections.singletonMap("sonar.typescript.internal.typescriptLocation", plugin.getPath().toString());
+    Map<String, String> extraProps = new HashMap<>();
+    extraProps.put("sonar.typescript.internal.typescriptLocation", plugin.getPath().toString());
+    if (PlatformUtils.isRider()) {
+      addOmnisharpServerPath(plugin, extraProps);
+    }
+    return extraProps;
+  }
+
+  private static void addOmnisharpServerPath(SonarLintPlugin plugin, Map<String, String> extraProps) {
+    String osDir;
+    if (SystemInfo.isWindows) {
+      osDir = "win";
+    } else if (SystemInfo.isMac) {
+      osDir = "osx";
+    } else if (SystemInfo.isLinux) {
+      osDir = "linux";
+    } else {
+      GlobalLogOutput.get().log("Unsupported platform for Omnisharp", LogOutput.Level.WARN);
+      return;
+    }
+    extraProps.put("sonar.cs.internal.omnisharpLocation", plugin.getPath().resolve("omnisharp").resolve(osDir).toString());
   }
 }
