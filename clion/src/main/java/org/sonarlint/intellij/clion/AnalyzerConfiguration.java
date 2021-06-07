@@ -29,6 +29,7 @@ import com.jetbrains.cidr.cpp.cmake.model.CMakeConfiguration;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeProfileInfo;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
+import com.jetbrains.cidr.cpp.toolchains.CPPToolSet;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
@@ -87,8 +88,9 @@ public class AnalyzerConfiguration {
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
     }
-    if (usingRemoteToolchain(configuration)) {
-      return ConfigurationResult.skip("use a remote toolchain");
+    String remoteOrWslToolchain = usingRemoteOrWslToolchain(configuration);
+    if (remoteOrWslToolchain != null) {
+      return ConfigurationResult.skip(remoteOrWslToolchain + " toolchains are not supported");
     }
     OCCompilerSettings compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
     OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
@@ -130,11 +132,12 @@ public class AnalyzerConfiguration {
     }
   }
 
-  private boolean usingRemoteToolchain(OCResolveConfiguration configuration) {
+  @Nullable
+  private String usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
     CMakeConfiguration cMakeConfiguration = cMakeWorkspace.getCMakeConfigurationFor(configuration);
     if (cMakeConfiguration == null) {
       // remote toolchains are supported only for CMake projects
-      return false;
+      return null;
     }
     CMakeProfileInfo profileInfo;
     try {
@@ -143,7 +146,15 @@ public class AnalyzerConfiguration {
       throw new IllegalStateException(e);
     }
     CPPEnvironment environment = profileInfo.getEnvironment();
-    return environment != null && environment.getToolSet().isRemote();
+    if (environment != null) {
+      CPPToolSet toolSet = environment.getToolSet();
+      if (toolSet.isRemote()) {
+        return "remote";
+      } else if (toolSet.isWSL()) {
+        return "WSL";
+      }
+    }
+    return null;
   }
 
   public static class ConfigurationResult {
