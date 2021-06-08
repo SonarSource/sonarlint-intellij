@@ -61,7 +61,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
     fun should_notify_engine_of_a_file_deleted_event() {
         val vFileEvent = VFileDeleteEvent(null, file, false)
 
-        virtualFileSystemListener.after(listOf(vFileEvent))
+        virtualFileSystemListener.before(listOf(vFileEvent))
 
         assertEventNotified(ModuleFileEvent.Type.DELETED, FILE_NAME)
     }
@@ -131,7 +131,29 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
         verifyZeroInteractions(fileEventsNotifier)
     }
 
-    private fun assertEventNotified(type: ModuleFileEvent.Type, fileName: String, file: VirtualFile = this.file) {
+    @Test
+    fun should_not_notify_engine_when_event_happens_on_an_empty_directory() {
+        val directory = myFixture.tempDirFixture.findOrCreateDir("emptyDir")
+        val vFileEvent = VFileDeleteEvent(null, directory, false)
+
+        virtualFileSystemListener.after(listOf(vFileEvent))
+
+        verifyZeroInteractions(fileEventsNotifier)
+    }
+
+    @Test
+    fun should_notify_engine_about_subfiles_when_event_happens_on_a_directory() {
+        val directory = myFixture.copyDirectoryToProject("sub/folder", "sub/folder")
+        val subfileName = "subfile.txt"
+        val childFile = directory.findChild(subfileName)!!
+        val vFileEvent = VFileDeleteEvent(null, directory, false)
+
+        virtualFileSystemListener.before(listOf(vFileEvent))
+
+        assertEventNotified(ModuleFileEvent.Type.DELETED, subfileName, childFile, "sub/folder/$subfileName")
+    }
+
+    private fun assertEventNotified(type: ModuleFileEvent.Type, fileName: String, file: VirtualFile = this.file, relativePath: String = fileName) {
         verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
         val events = eventsCaptor.value
         assertThat(events).hasSize(1)
@@ -139,9 +161,9 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
         assertThat(event.type()).isEqualTo(type)
         val inputFile = event.target()
         assertThat(inputFile.contents()).contains("content")
-        assertThat(inputFile.relativePath()).isEqualTo(fileName)
+        assertThat(inputFile.relativePath()).isEqualTo(relativePath)
         assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-        assertThat(inputFile.path).isEqualTo("/src/$fileName")
+        assertThat(inputFile.path).isEqualTo("/src/$relativePath")
     }
 
     @Captor

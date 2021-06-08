@@ -32,13 +32,14 @@ import java.util.concurrent.Executors
 open class ModuleFileEventsNotifier : Disposable {
 
     open fun notifyAsync(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
+        if (events.isEmpty()) return
         executor.submit {
             notify(engine, module, events)
         }
     }
 
     fun notify(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
-        GlobalLogOutput.get().log("Notifying $events", LogOutput.Level.INFO)
+        GlobalLogOutput.get().log("Processing ${events.size} file system events", LogOutput.Level.INFO)
         events.forEach {
             try {
                 engine.fireModuleFileEvent(module, it)

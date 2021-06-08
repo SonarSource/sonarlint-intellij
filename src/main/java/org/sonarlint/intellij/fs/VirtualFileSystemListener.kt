@@ -49,13 +49,17 @@ class VirtualFileSystemListener(
     )
 ) : BulkFileListener {
     override fun before(events: List<VFileEvent>) {
+        val startTime = System.currentTimeMillis()
         forwardEvents(events.filterIsInstance(VFileMoveEvent::class.java)) { ModuleFileEvent.Type.DELETED }
+        forwardEvents(events.filterIsInstance(VFileDeleteEvent::class.java)) { ModuleFileEvent.Type.DELETED }
+        GlobalLogOutput.get().log("File system before events filtered in ${System.currentTimeMillis() - startTime}ms", LogOutput.Level.ERROR)
     }
 
     override fun after(events: List<VFileEvent>) {
+        val startTime = System.currentTimeMillis()
         forwardEvents(events) {
             when (it) {
-                is VFileDeleteEvent -> ModuleFileEvent.Type.DELETED
+                is VFileDeleteEvent -> null
                 is VFileMoveEvent -> ModuleFileEvent.Type.CREATED
                 is VFileCopyEvent, is VFileCreateEvent -> ModuleFileEvent.Type.CREATED
                 is VFileContentChangeEvent -> ModuleFileEvent.Type.MODIFIED
@@ -66,6 +70,7 @@ class VirtualFileSystemListener(
                 }
             }
         }
+        GlobalLogOutput.get().log("File system after events filtered in ${System.currentTimeMillis() - startTime}ms", LogOutput.Level.ERROR)
     }
 
     private fun forwardEvents(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?) {
@@ -95,12 +100,19 @@ class VirtualFileSystemListener(
             val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
             fileInvolved ?: continue
             val type = eventTypeConverter(event) ?: continue
-            buildModuleFileEvent(fileModule, fileInvolved, type)?.let {
-                val moduleEvents = map[fileModule] ?: emptyList()
-                map[fileModule] = moduleEvents + it
-            }
+            val moduleEvents = map[fileModule] ?: emptyList()
+            map[fileModule] = moduleEvents + allEventsFor(fileInvolved, fileModule, type)
         }
         return map
+    }
+
+    private fun allEventsFor(file: VirtualFile, fileModule: Module, type: ModuleFileEvent.Type): List<ClientModuleFileEvent> {
+        return if (file.isDirectory) {
+            file.children.flatMap { allEventsFor(it, fileModule, type) }
+        }
+        else {
+            listOfNotNull(buildModuleFileEvent(fileModule, file, type))
+        }
     }
 
     private fun findModule(file: VirtualFile?, openProjects: List<Project>): Module? {
