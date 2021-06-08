@@ -25,9 +25,9 @@ import javax.swing.JComponent;
 import org.jetbrains.annotations.Nullable;
 
 public class CodeAnalyzersDialog extends DialogWrapper {
-  @Nullable private final Project project;
+  private final Project project;
 
-  public CodeAnalyzersDialog(@Nullable Project project) {
+  public CodeAnalyzersDialog(Project project) {
     super(project);
     super.setTitle("SonarLint Additional Information");
     this.project = project;

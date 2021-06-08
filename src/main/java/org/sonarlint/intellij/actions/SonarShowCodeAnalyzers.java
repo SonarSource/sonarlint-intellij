@@ -31,8 +31,9 @@ public class SonarShowCodeAnalyzers extends AbstractSonarAction {
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
-    if (e.getProject() != null) {
-      new CodeAnalyzersDialog(e.getProject()).showAndGet();
+    Project project = e.getProject();
+    if (project != null) {
+      new CodeAnalyzersDialog(project).showAndGet();
     }
   }
 }
