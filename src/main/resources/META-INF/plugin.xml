@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>4.17 - Fixed false-positives and false-negatives in C/C++ analysis.</li>
+        <li>5.0 - Improve precision of Python analyses thanks to cross-module resolution of symbols. Drop support of SonarQube < 7.9 for connected mode. Fixed false-positives and false-negatives in C/C++ analysis. Bug fixes and improvements.</li>
         <li>4.16 - 3 new rules for C++20. Improved JS/TS rules. Fixed false positive in HTML analysis. Improved PHP rules.</li>
         <li>4.15 - Support analysis of C/C++ in CLion. Support TypeScript 4.1 and 4.2. Rules improvements for Java and Python. Minimal supported version is 2019.3.</li>
         <li>4.14.2 - Fix exceptions thrown during analysis and work around an issue with latest EAP.</li>
