@@ -20,29 +20,25 @@
 package org.sonarlint.intellij.module
 
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.ModuleListener
-import com.intellij.openapi.project.Project
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
-import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
+import org.sonarsource.sonarlint.core.client.api.common.ModulesProvider
+import java.util.Collections
+import kotlin.collections.ArrayList
+import kotlin.collections.LinkedHashMap
 
-class ModuleChangeListener : ModuleListener {
+class ModuleProvider : ModulesProvider {
 
-  override fun moduleAdded(project: Project, module: Module) {
-    val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
-    SonarLintUtils.getService(ModuleProvider::class.java).add(module, moduleInfo)
-    getEngine(project)?.declareModule(moduleInfo)
+  private val modules: MutableMap<Module, ModuleInfo> = LinkedHashMap()
+
+  override fun getModules(): MutableList<ModuleInfo> {
+    return Collections.unmodifiableList(ArrayList(modules.values))
   }
 
-  override fun moduleRemoved(project: Project, module: Module) {
-    getEngine(project)?.stopModule(module)
-    SonarLintUtils.getService(ModuleProvider::class.java).remove(module)
+  fun add(module: Module, moduleInfo: ModuleInfo) {
+    modules[module] = moduleInfo
   }
 
-  companion object {
-    private fun getEngine(project: Project): SonarLintEngine? {
-      return SonarLintUtils.getService(project, ProjectBindingManager::class.java).engineIfStarted
-    }
+  fun remove(module: Module) {
+    modules.remove(module)
   }
 }
