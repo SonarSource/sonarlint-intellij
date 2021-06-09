@@ -19,30 +19,49 @@
  */
 package org.sonarlint.intellij.module
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import com.intellij.openapi.project.ProjectManager
+import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.util.SonarLintUtils
+import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 
 class ModuleChangeListener : ModuleListener {
 
-  override fun moduleAdded(project: Project, module: Module) {
-    val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
-    SonarLintUtils.getService(ModuleProvider::class.java).add(module, moduleInfo)
-    getEngine(project)?.declareModule(moduleInfo)
-  }
-
-  override fun moduleRemoved(project: Project, module: Module) {
-    getEngine(project)?.stopModule(module)
-    SonarLintUtils.getService(ModuleProvider::class.java).remove(module)
-  }
-
-  companion object {
-    private fun getEngine(project: Project): SonarLintEngine? {
-      return SonarLintUtils.getService(project, ProjectBindingManager::class.java).engineIfStarted
+    override fun moduleAdded(project: Project, module: Module) {
+        declareModule(project, module)
     }
-  }
+
+    override fun moduleRemoved(project: Project, module: Module) {
+        removeModule(project, module)
+    }
+
+    companion object {
+        init {
+            ApplicationManager.getApplication().messageBus.connect()
+                .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
+                    override fun projectClosed(project: Project) {
+                        ModuleManager.getInstance(project).modules.forEach { removeModule(project, it) }
+                    }
+                })
+        }
+
+        fun declareModule(project: Project, module: Module) {
+            val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
+            getService(ModulesRegistry::class.java).add(module, moduleInfo)
+            getEngine(project)?.declareModule(moduleInfo)
+        }
+
+        fun removeModule(project: Project, module: Module) {
+            getEngine(project)?.stopModule(module)
+            getService(ModulesRegistry::class.java).remove(module)
+        }
+
+        private fun getEngine(project: Project) =
+            getService(project, ProjectBindingManager::class.java).engineIfStarted
+    }
 }

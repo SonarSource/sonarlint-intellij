@@ -36,7 +36,7 @@ import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.LanguageActivator;
-import org.sonarlint.intellij.module.ModuleProvider;
+import org.sonarlint.intellij.module.ModulesRegistry;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
@@ -64,14 +64,14 @@ public class SonarLintEngineFactory {
     Language.XML
   );
 
-  ConnectedSonarLintEngine createEngine(String serverId) {
+  ConnectedSonarLintEngine createEngine(String connectionId) {
     Set<Language> enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
     enabledLanguages.addAll(CONNECTED_ADDITIONAL_LANGUAGES);
 
     amendEnabledLanguages(enabledLanguages);
 
     GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
-    ModuleProvider moduleChangeListener = SonarLintUtils.getService(ModuleProvider.class);
+    ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
     final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
     URL cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
     ConnectedGlobalConfiguration.Builder config = ConnectedGlobalConfiguration.builder()
@@ -81,8 +81,8 @@ public class SonarLintEngineFactory {
       .setExtraProperties(prepareExtraProps())
       .setNodeJs(nodeJsManager.getNodeJsPath(), nodeJsManager.getNodeJsVersion())
       .setWorkDir(getWorkDir())
-      .setModulesProvider(moduleChangeListener)
-      .setConnectionId(serverId);
+      .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId))
+      .setConnectionId(connectionId);
     if (cFamilyPluginUrl != null) {
       config.useEmbeddedPlugin(Language.CPP.getPluginKey(), cFamilyPluginUrl);
     }
@@ -107,7 +107,7 @@ public class SonarLintEngineFactory {
       amendEnabledLanguages(enabledLanguages);
 
       GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
-      ModuleProvider moduleChangeListener = SonarLintUtils.getService(ModuleProvider.class);
+      ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
       final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
       StandaloneGlobalConfiguration globalConfiguration = StandaloneGlobalConfiguration.builder()
         .setLogOutput(globalLogOutput)
@@ -117,7 +117,7 @@ public class SonarLintEngineFactory {
         .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
         .setExtraProperties(prepareExtraProps())
         .setNodeJs(nodeJsManager.getNodeJsPath(), nodeJsManager.getNodeJsVersion())
-        .setModulesProvider(moduleChangeListener)
+        .setModulesProvider(modulesRegistry::getStandaloneModules)
         .build();
 
       return new StandaloneSonarLintEngineImpl(globalConfiguration);
