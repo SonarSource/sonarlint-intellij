@@ -233,10 +233,30 @@ tasks {
         copy {
             from(zipTree(downloadOmnisharpLinuxZipFile.get().dest))
             into(file("$destinationDir/$pluginName/omnisharp/linux"))
+            exclude("run")
+        }
+        // Workaround for https://github.com/OmniSharp/omnisharp-roslyn/pull/1979
+        copy {
+            from(zipTree(downloadOmnisharpLinuxZipFile.get().dest))
+            into(file("$destinationDir/$pluginName/omnisharp/linux"))
+            include("run")
+            filter {
+                it.replace("export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \${config_file}\"", "export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \\\"\${config_file}\\\"\"")
+            }
         }
         copy {
             from(zipTree(downloadOmnisharpOsxZipFile.get().dest))
             into(file("$destinationDir/$pluginName/omnisharp/osx"))
+            exclude("run")
+        }
+        // Workaround for https://github.com/OmniSharp/omnisharp-roslyn/pull/1979
+        copy {
+            from(zipTree(downloadOmnisharpOsxZipFile.get().dest))
+            into(file("$destinationDir/$pluginName/omnisharp/osx"))
+            include("run")
+            filter {
+                it.replace("export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \${config_file}\"", "export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \\\"\${config_file}\\\"\"")
+            }
         }
         copy {
             from(zipTree(downloadOmnisharpWindowsZipFile.get().dest))
@@ -310,7 +330,6 @@ tasks {
     }
 }
 
-
 sonarqube {
     properties {
         property("sonar.projectName", "SonarLint for IntelliJ IDEA")
@@ -366,3 +385,4 @@ signing {
     })
     sign(configurations.archives.get())
 }
+
