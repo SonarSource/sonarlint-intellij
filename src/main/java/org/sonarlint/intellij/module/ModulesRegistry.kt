@@ -20,25 +20,32 @@
 package org.sonarlint.intellij.module
 
 import com.intellij.openapi.module.Module
+import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
-import org.sonarsource.sonarlint.core.client.api.common.ModulesProvider
-import java.util.Collections
-import kotlin.collections.ArrayList
-import kotlin.collections.LinkedHashMap
 
-class ModuleProvider : ModulesProvider {
+class ModulesRegistry {
+    private val modules: MutableMap<Module, ModuleInfo> = LinkedHashMap()
 
-  private val modules: MutableMap<Module, ModuleInfo> = LinkedHashMap()
+    fun getStandaloneModules(): List<ModuleInfo> {
+        return modules.filterKeys { connectionIdFor(it) == null }
+            .values.toList()
+    }
 
-  override fun getModules(): MutableList<ModuleInfo> {
-    return Collections.unmodifiableList(ArrayList(modules.values))
-  }
+    fun getModulesForEngine(connectionId: String): List<ModuleInfo> {
+        return modules.filterKeys { connectionIdFor(it) == connectionId }
+            .values.toList()
+    }
 
-  fun add(module: Module, moduleInfo: ModuleInfo) {
-    modules[module] = moduleInfo
-  }
+    fun add(module: Module, moduleInfo: ModuleInfo) {
+        modules[module] = moduleInfo
+    }
 
-  fun remove(module: Module) {
-    modules.remove(module)
-  }
+    fun remove(module: Module) {
+        modules.remove(module)
+    }
+
+    private fun connectionIdFor(module: Module) =
+        getService(module.project, ProjectBindingManager::class.java).tryGetServerConnection().map { it.name }
+            .orElse(null)
 }

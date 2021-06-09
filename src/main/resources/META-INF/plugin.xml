@@ -176,7 +176,7 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.fs.ModuleFileEventsNotifier"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.module.ModuleProvider"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.module.ModulesRegistry"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
