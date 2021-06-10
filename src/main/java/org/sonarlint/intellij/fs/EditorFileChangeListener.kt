@@ -19,26 +19,41 @@
  */
 package org.sonarlint.intellij.fs
 
+import com.google.common.annotations.VisibleForTesting
+import com.intellij.openapi.editor.Document
+import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
-import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.startup.StartupActivity
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
-class EditorFileChangeListener(
-    private val project: Project,
-    private val fileEventsNotifier: ModuleFileEventsNotifier = getService(
-        ModuleFileEventsNotifier::class.java
-    )
-) : BulkAwareDocumentListener {
-    override fun documentChanged(event: DocumentEvent) {
-        val engine = getService(project, ProjectBindingManager::class.java).engineIfStarted ?: return
-        val file = FileDocumentManager.getInstance().getFile(event.document) ?: return
+class EditorFileChangeListener : BulkAwareDocumentListener.Simple, StartupActivity {
+
+    private var fileEventsNotifier: ModuleFileEventsNotifier? = null
+    private lateinit var project: Project
+
+    @VisibleForTesting
+    fun setFileEventsNotifier(fileEventsNotifier: ModuleFileEventsNotifier) {
+        this.fileEventsNotifier = fileEventsNotifier
+    }
+
+    override fun runActivity(project: Project) {
+        this.project = project
+        EditorFactory.getInstance().eventMulticaster.addDocumentListener(this, project)
+        if (fileEventsNotifier == null) {
+            setFileEventsNotifier(getService(ModuleFileEventsNotifier::class.java))
+        }
+    }
+
+    override fun afterDocumentChange(document: Document) {
+        val file = FileDocumentManager.getInstance().getFile(document) ?: return
         val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return
-        val fileEvent = buildModuleFileEvent(module, file, ModuleFileEvent.Type.MODIFIED) ?: return
-        fileEventsNotifier.notifyAsync(engine, module, listOf(fileEvent))
+        val fileEvent = buildModuleFileEvent(module, file, document, ModuleFileEvent.Type.MODIFIED) ?: return
+        val engine = getService(project, ProjectBindingManager::class.java).engineIfStarted ?: return
+        fileEventsNotifier?.notifyAsync(engine, module, listOf(fileEvent))
     }
 }
