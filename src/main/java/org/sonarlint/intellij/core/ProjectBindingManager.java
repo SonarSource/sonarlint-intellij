@@ -34,6 +34,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.messages.ProjectEngineListener;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
@@ -126,8 +127,7 @@ public class ProjectBindingManager {
 
   public synchronized ServerConnection getServerConnection() throws InvalidBindingException {
     return tryGetServerConnection().orElseThrow(
-      () -> new InvalidBindingException("Unable to find a connection with name: " + getSettingsFor(myProject).getConnectionName())
-    );
+      () -> new InvalidBindingException("Unable to find a connection with name: " + getSettingsFor(myProject).getConnectionName()));
   }
 
   public synchronized Optional<ServerConnection> tryGetServerConnection() {
@@ -151,20 +151,30 @@ public class ProjectBindingManager {
   }
 
   public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey) {
+    SonarLintEngine previousEngine = getEngineIfStarted();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     projectSettings.bindTo(connection, projectKey);
     SonarLintProjectNotifications.get(myProject).reset();
-    BindingStorageUpdateTask task = new BindingStorageUpdateTask(getConnectedEngineSkipChecks(), connection,
+    ConnectedSonarLintEngine newEngine = getConnectedEngineSkipChecks();
+    if (previousEngine != newEngine) {
+      myProject.getMessageBus().syncPublisher(ProjectEngineListener.TOPIC).engineChanged(previousEngine, newEngine);
+    }
+    BindingStorageUpdateTask task = new BindingStorageUpdateTask(newEngine, connection,
       Collections.singletonMap(projectKey, Collections.singletonList(myProject)), true);
     ProgressManager.getInstance().run(task.asModal());
     myProject.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
   }
 
   public void unbind() {
+    SonarLintEngine previousEngine = getEngineIfStarted();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     projectSettings.unbind();
     SonarLintProjectNotifications.get(myProject).reset();
     ProjectConfigurationListener projectListener = myProject.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
     projectListener.changed(projectSettings);
+    SonarLintEngine standaloneEngine = getEngineIfStarted();
+    if (previousEngine != standaloneEngine) {
+      myProject.getMessageBus().syncPublisher(ProjectEngineListener.TOPIC).engineChanged(previousEngine, standaloneEngine);
+    }
   }
 }
