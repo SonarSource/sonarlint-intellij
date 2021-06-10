@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.module
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
@@ -26,18 +27,35 @@ import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
+import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
+import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
-class ModuleChangeListener : ModuleListener {
+class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
+    private val connection: MessageBusConnection = project.messageBus.connect()
+
+    init {
+        connection.subscribe(
+            ProjectEngineListener.TOPIC,
+            ProjectEngineListener { previousEngine, newEngine ->
+                removeAllModules(project, previousEngine)
+                declareAllModules(project, newEngine)
+            })
+    }
 
     override fun moduleAdded(project: Project, module: Module) {
-        declareModule(project, module)
+        declareModule(project, getEngine(project), module)
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
-        removeModule(project, module)
+        removeModule(getEngine(project), module)
+    }
+
+    override fun dispose() {
+        connection.disconnect()
     }
 
     companion object {
@@ -45,20 +63,28 @@ class ModuleChangeListener : ModuleListener {
             ApplicationManager.getApplication().messageBus.connect()
                 .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
                     override fun projectClosed(project: Project) {
-                        ModuleManager.getInstance(project).modules.forEach { removeModule(project, it) }
+                        removeAllModules(project, getEngine(project))
                     }
                 })
         }
 
-        fun declareModule(project: Project, module: Module) {
-            val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
-            getService(ModulesRegistry::class.java).add(module, moduleInfo)
-            getEngine(project)?.declareModule(moduleInfo)
+        fun declareAllModules(project: Project, engine: SonarLintEngine?) {
+            ModuleManager.getInstance(project).modules.forEach { declareModule(project, engine, it) }
         }
 
-        fun removeModule(project: Project, module: Module) {
-            getEngine(project)?.stopModule(module)
+        fun declareModule(project: Project, engine: SonarLintEngine?, module: Module) {
+            val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
+            getService(ModulesRegistry::class.java).add(module, moduleInfo)
+            engine?.declareModule(moduleInfo)
+        }
+
+        fun removeModule(engine: SonarLintEngine?, module: Module) {
+            engine?.stopModule(module)
             getService(ModulesRegistry::class.java).remove(module)
+        }
+
+        fun removeAllModules(project: Project, engine: SonarLintEngine?) {
+            ModuleManager.getInstance(project).modules.forEach { removeModule(engine, it) }
         }
 
         private fun getEngine(project: Project) =

@@ -73,6 +73,7 @@ import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
@@ -83,6 +84,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 
 public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String LABEL_NO_SERVERS = "Add a connection to SonarQube or SonarCloud";
@@ -219,7 +221,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     for (Project openProject : openProjects) {
       SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
       if (projectSettings.getConnectionName() != null && deletedServerIds.contains(projectSettings.getConnectionName())) {
-        projectSettings.unbind();
+        getService(openProject, ProjectBindingManager.class).unbind();
       }
     }
   }
@@ -282,7 +284,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     }
 
     if (server != null) {
-      SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
+      SonarLintEngineManager serverManager = getService(SonarLintEngineManager.class);
       engine = serverManager.getConnectedEngine(server.getName());
       engineListener = newState -> ApplicationManager.getApplication().invokeLater(() -> {
         // re-fetch state, as some time might have passed until it was assigned to the EDT and things might have changed
@@ -399,7 +401,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   }
 
   private static void updateConnectionStorage(ServerConnection toUpdate) {
-    SonarLintEngineManager serverManager = SonarLintUtils.getService(SonarLintEngineManager.class);
+    SonarLintEngineManager serverManager = getService(SonarLintEngineManager.class);
     BindingStorageUpdateTask task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(toUpdate.getName()), toUpdate, Collections.emptyMap(), false);
     ProgressManager.getInstance().run(task.asBackground());
   }
