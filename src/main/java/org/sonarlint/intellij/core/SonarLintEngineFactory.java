@@ -83,11 +83,11 @@ public class SonarLintEngineFactory {
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
     configureCommonEngine(configBuilder);
 
-    URL cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
+    URL cFamilyPluginUrl = findEmbeddedPlugin(getPluginsDir(), "sonar-cfamily-plugin-*.jar", "Found CFamily plugin: ");
     if (cFamilyPluginUrl != null) {
       configBuilder.useEmbeddedPlugin(Language.CPP.getPluginKey(), cFamilyPluginUrl);
     }
-    URL csPluginUrl = findEmbeddedCsharpPlugin(getPluginsDir());
+    URL csPluginUrl = findEmbeddedPlugin(getPluginsDir(), "sonarlint-omnisharp-plugin-*.jar", "Found CSharp plugin: ");
     if (csPluginUrl != null) {
       configBuilder.useEmbeddedPlugin(Language.CS.getPluginKey(), csPluginUrl);
     }
@@ -154,22 +154,9 @@ public class SonarLintEngineFactory {
   }
 
   @CheckForNull
-  private static URL findEmbeddedCFamilyPlugin(Path pluginsDir) {
+  private static URL findEmbeddedPlugin(Path pluginsDir, String pattern, String foundMsgPrefix) {
     try {
-      List<URL> pluginsUrls = findFilesInDir(pluginsDir, "sonar-cfamily-plugin-*.jar", "Found CFamily plugin: ");
-      if (pluginsUrls.size() > 1) {
-        throw new IllegalStateException("Multiple plugins found");
-      }
-      return pluginsUrls.size() == 1 ? pluginsUrls.get(0) : null;
-    } catch (Exception e) {
-      throw new IllegalStateException(e);
-    }
-  }
-
-  @CheckForNull
-  private static URL findEmbeddedCsharpPlugin(Path pluginsDir) {
-    try {
-      List<URL> pluginsUrls = findFilesInDir(pluginsDir, "sonarlint-omnisharp-plugin-*.jar", "Found CSharp plugin: ");
+      List<URL> pluginsUrls = findFilesInDir(pluginsDir, pattern, foundMsgPrefix);
       if (pluginsUrls.size() > 1) {
         throw new IllegalStateException("Multiple plugins found");
       }
