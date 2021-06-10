@@ -22,16 +22,21 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
+
+import org.apache.commons.io.IOUtils;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
 public class DefaultClientInputFile implements ClientInputFile {
+  private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;
+
   private final String path;
   private final String relativePath;
   private final boolean test;
@@ -93,7 +98,7 @@ public class DefaultClientInputFile implements ClientInputFile {
 
   @Override public String contents() throws IOException {
     if (doc == null) {
-      return new String(vFile.contentsToByteArray(), charset);
+      return IOUtils.toString(inputStream(), charset);
     }
     return doc.getText();
   }
