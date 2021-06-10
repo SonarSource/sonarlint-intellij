@@ -20,8 +20,9 @@
 package org.sonarlint.intellij.ui.vulnerabilities
 
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.labels.ActionLink
+import com.intellij.util.ui.JBUI
 import java.awt.FlowLayout
 import javax.swing.Icon
 import javax.swing.JLabel
@@ -29,12 +30,12 @@ import javax.swing.JPanel
 import javax.swing.SwingConstants
 
 class StripePanel(text: String, icon: Icon) : JPanel(FlowLayout(FlowLayout.CENTER)) {
-  init {
-    border = BottomLineBorder()
-    add(JLabel(text, icon, SwingConstants.LEADING))
-  }
+    init {
+        border = JBUI.Borders.customLine(JBColor.border(), 0, 0, 1, 0)
+        add(JLabel(text, icon, SwingConstants.LEADING))
+    }
 
-  fun addAction(linkText: String, action: AnAction) {
-    add(ActionLink(linkText, action))
-  }
+    fun addAction(linkText: String, action: AnAction) {
+        add(ActionLink(linkText, action))
+    }
 }
