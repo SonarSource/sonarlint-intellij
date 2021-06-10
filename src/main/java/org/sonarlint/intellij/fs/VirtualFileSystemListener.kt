@@ -22,6 +22,7 @@ package org.sonarlint.intellij.fs
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.newvfs.BulkFileListener
@@ -96,6 +97,7 @@ class VirtualFileSystemListener(
         for (event in events) {
             // call event.file only once as it can be hurting performance
             val file = event.file ?: continue
+            if(ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.fileType)) continue;
             val fileModule = findModule(file, openProjects) ?: continue
             val fileInvolved = if (event is VFileCopyEvent) event.findCreatedFile() else file
             fileInvolved ?: continue

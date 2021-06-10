@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.fs
 
+import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.editor.event.MockDocumentEvent
 import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
@@ -44,7 +45,9 @@ class EditorFileChangeListenerTest : AbstractSonarLintLightTests() {
     @Test
     fun should_notify_of_file_system_event_when_a_change_occurs_in_editor() {
         val fileName = "file.txt"
-        val listener = EditorFileChangeListener(project, fileEventsNotifier)
+        val listener = EditorFileChangeListener()
+        listener.setFileEventsNotifier(fileEventsNotifier)
+        listener.runActivity(project)
         `when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         val file = myFixture.copyFileToProject(fileName, fileName)

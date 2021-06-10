@@ -42,7 +42,7 @@ public class DefaultClientInputFile implements ClientInputFile {
   private final Language language;
   private final URI uri;
 
-  DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Document doc, @Nullable Language language) {
+  public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Document doc, @Nullable Language language) {
     this.path = vFile.getPath();
     this.relativePath = relativePath;
     this.test = isTest;
