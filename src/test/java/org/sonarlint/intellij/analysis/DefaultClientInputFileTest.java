@@ -69,8 +69,7 @@ public class DefaultClientInputFileTest {
 
   @Test
   public void testNoDoc() throws IOException, URISyntaxException {
-    when(vFile.contentsToByteArray()).thenReturn("test string".getBytes(StandardCharsets.UTF_8));
-    when(vFile.getInputStream()).thenReturn(new ByteArrayInputStream("test string".getBytes(StandardCharsets.UTF_8)));
+    when(vFile.getInputStream()).thenAnswer(i -> new ByteArrayInputStream("test string".getBytes(StandardCharsets.UTF_8)));
 
     inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, Language.JAVA);
 
