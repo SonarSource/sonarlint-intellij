@@ -79,7 +79,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     Set<VirtualFile> fileSet = new LinkedHashSet<>();
     ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
     fileIndex.iterateContent(vFile -> {
-      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile, vFile.getFileType())) {
+      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
         fileSet.add(vFile);
       }
       return true;

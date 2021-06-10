@@ -114,7 +114,12 @@ public class SonarLintAppUtils {
    */
   @CheckForNull
   public static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
-    Path baseDir = Paths.get(module.getModuleFilePath()).getParent();
+    String moduleFilePath = module.getModuleFilePath();
+    if ("".equals(moduleFilePath)) {
+      // Non persistent module
+      return null;
+    }
+    Path baseDir = Paths.get(moduleFilePath).getParent();
     Path filePath = Paths.get(file.getPath());
     if (!filePath.startsWith(baseDir)) {
       return null;
