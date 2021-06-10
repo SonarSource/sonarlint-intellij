@@ -259,13 +259,15 @@ open class SonarLintRecentProjectPanel(private val onProjectSelected: (Project) 
         title.background = Colors.CAPTION_BACKGROUND
         return title
     }
+
+    companion object Colors {
+        // This is for border around recent projects, action cards and also lines separating header and footer from main contents.
+        val BORDER_COLOR: Color = JBColor.namedColor("WelcomeScreen.borderColor", JBColor(Gray._190, Gray._85))
+
+        // There two are for caption of Recent Project and Action Cards
+        val CAPTION_BACKGROUND: Color = JBColor.namedColor("WelcomeScreen.captionBackground", JBColor(Gray._210, Gray._75))
+        val CAPTION_FOREGROUND: Color = JBColor.namedColor("WelcomeScreen.captionForeground", JBColor(Gray._0, Gray._197))
+    }
 }
 
-object Colors {
-    // This is for border around recent projects, action cards and also lines separating header and footer from main contents.
-    val BORDER_COLOR: Color = JBColor.namedColor("WelcomeScreen.borderColor", JBColor(Gray._190, Gray._85))
 
-    // There two are for caption of Recent Project and Action Cards
-    val CAPTION_BACKGROUND: Color = JBColor.namedColor("WelcomeScreen.captionBackground", JBColor(Gray._210, Gray._75))
-    val CAPTION_FOREGROUND: Color = JBColor.namedColor("WelcomeScreen.captionForeground", JBColor(Gray._0, Gray._197))
-}
