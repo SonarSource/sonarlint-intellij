@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.fs
 
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.TestSourcesFilter
@@ -44,6 +45,26 @@ fun buildModuleFileEvent(
             getEncoding(module.project, file)
         ),
         type
+    )
+}
+
+fun buildModuleFileEvent(
+  module: Module,
+  file: VirtualFile,
+  document: Document,
+  type: ModuleFileEvent.Type
+): ClientModuleFileEvent? {
+    val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file) ?: return null
+    return ClientModuleFileEvent.of(
+      DefaultClientInputFile(
+        file,
+        relativePath,
+        TestSourcesFilter.isTestSources(file, module.project),
+        getEncoding(module.project, file),
+        document,
+        null
+      ),
+      type
     )
 }
 
