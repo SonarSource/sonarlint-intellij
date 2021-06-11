@@ -20,21 +20,30 @@
 package org.sonarlint.intellij.fs
 
 import com.google.common.annotations.VisibleForTesting
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.BulkAwareDocumentListener
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.StartupActivity
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
+import java.util.Timer
+import java.util.TimerTask
 
-class EditorFileChangeListener : BulkAwareDocumentListener.Simple, StartupActivity {
+const val DEBOUNCE_DELAY_MS = 1000L
+
+class EditorFileChangeListener : BulkAwareDocumentListener.Simple, StartupActivity, Disposable {
 
     private var fileEventsNotifier: ModuleFileEventsNotifier? = null
     private lateinit var project: Project
+    private var eventsToSend = LinkedHashMap<Module, MutableMap<String, ClientModuleFileEvent>>()
+    private var triggerTimer = initTimer()
 
     @VisibleForTesting
     fun setFileEventsNotifier(fileEventsNotifier: ModuleFileEventsNotifier) {
@@ -53,7 +62,31 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, StartupActivi
         val file = FileDocumentManager.getInstance().getFile(document) ?: return
         val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return
         val fileEvent = buildModuleFileEvent(module, file, document, ModuleFileEvent.Type.MODIFIED) ?: return
-        val engine = getService(project, ProjectBindingManager::class.java).engineIfStarted ?: return
-        fileEventsNotifier?.notifyAsync(engine, module, listOf(fileEvent))
+        synchronized(eventsToSend) {
+            eventsToSend.computeIfAbsent(module) { LinkedHashMap() }[file.path] = fileEvent
+            triggerTimer.cancel()
+            triggerTimer = initTimer()
+            triggerTimer.schedule(SendEventsTask(this), DEBOUNCE_DELAY_MS)
+        }
+    }
+
+    private fun initTimer() = Timer("File Events Trigger Timer", true)
+
+    class SendEventsTask(private val parent: EditorFileChangeListener) : TimerTask() {
+
+        override fun run() {
+            val eventsToSend = parent.eventsToSend
+            synchronized(eventsToSend) {
+                val engine = getService(parent.project, ProjectBindingManager::class.java).engineIfStarted ?: return
+                eventsToSend.forEach {
+                    parent.fileEventsNotifier?.notifyAsync(engine, it.key, it.value.values.toList())
+                }
+                eventsToSend.clear()
+            }
+        }
+    }
+
+    override fun dispose() {
+        triggerTimer.cancel()
     }
 }
