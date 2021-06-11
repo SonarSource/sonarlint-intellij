@@ -1,8 +1,12 @@
 val sonarlintCoreVersion: String by project
-val intellijBuildVersion: String by project
+val riderBuildVersion: String by project
+
+plugins {
+    kotlin("jvm")
+}
 
 intellij {
-    version.set(intellijBuildVersion)
+    version.set(riderBuildVersion)
 }
 
 dependencies {
