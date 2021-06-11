@@ -31,6 +31,7 @@ import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarlint.intellij.util.ThreadPoolExecutor
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
@@ -59,6 +60,8 @@ class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
     }
 
     companion object {
+        private val executor = getService(ThreadPoolExecutor::class.java)
+
         init {
             ApplicationManager.getApplication().messageBus.connect()
                 .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
@@ -75,11 +78,11 @@ class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
         fun declareModule(project: Project, engine: SonarLintEngine?, module: Module) {
             val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
             getService(ModulesRegistry::class.java).add(module, moduleInfo)
-            engine?.declareModule(moduleInfo)
+            engine?.let { executor.execute { it.declareModule(moduleInfo) } }
         }
 
         fun removeModule(engine: SonarLintEngine?, module: Module) {
-            engine?.stopModule(module)
+            engine?.let { executor.execute { it.stopModule(module) } }
             getService(ModulesRegistry::class.java).remove(module)
         }
 

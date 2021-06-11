@@ -177,6 +177,9 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.fs.ModuleFileEventsNotifier"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.module.ModulesRegistry"/>
+        <applicationService serviceInterface="org.sonarlint.intellij.util.ThreadPoolExecutor"
+                            serviceImplementation="org.sonarlint.intellij.util.ApplicationThreadPoolExecutor"
+                            testServiceImplementation="org.sonarlint.intellij.util.SynchronousThreadPoolExecutor"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
