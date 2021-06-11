@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.fs
 
-import com.intellij.openapi.components.ServiceManager
 import com.intellij.openapi.editor.event.MockDocumentEvent
 import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
@@ -29,6 +28,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -54,8 +54,11 @@ class EditorFileChangeListenerTest : AbstractSonarLintLightTests() {
         val documentEvent = MockDocumentEvent(file.getDocument()!!, 0)
 
         listener.documentChanged(documentEvent)
+        listener.documentChanged(documentEvent)
+        listener.documentChanged(documentEvent)
 
-        verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
+        Thread.sleep(2000)
+        verify(fileEventsNotifier, times(1)).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
 
         val events = eventsCaptor.value
         assertThat(events).hasSize(1)
