@@ -90,7 +90,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings);
 
-    SonarLintUtils.getService(SonarLintEngineManager.class).stopAllDeletedConnectedEngines();
+    SonarLintUtils.getService(SonarLintEngineManager.class).stopAllDeletedConnectedEnginesAsync();
 
     // Force reload of the node version and rules in case the nodejs path has been changed
     reset();
@@ -138,7 +138,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       Disposer.dispose(rules);
       rules = null;
     }
-    SonarLintUtils.getService(SonarLintEngineManager.class).stopAllDeletedConnectedEngines();
+    SonarLintUtils.getService(SonarLintEngineManager.class).stopAllDeletedConnectedEnginesAsync();
   }
 
   private JPanel getPanel() {
