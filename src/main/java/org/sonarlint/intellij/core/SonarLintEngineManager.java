@@ -31,6 +31,8 @@ import javax.annotation.CheckForNull;
 import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
@@ -56,6 +58,7 @@ public class SonarLintEngineManager implements Disposable {
     new Thread("stop-connected-sonarlint-engine") {
       @Override
       public void run() {
+        GlobalLogOutput.get().log("Stopping engine " + engine, LogOutput.Level.INFO);
         engine.stop(false);
       }
     }.start();
@@ -65,6 +68,7 @@ public class SonarLintEngineManager implements Disposable {
     new Thread("stop-standalone-sonarlint-engine") {
       @Override
       public void run() {
+        GlobalLogOutput.get().log("Stopping engine " + engine, LogOutput.Level.INFO);
         engine.stop();
       }
     }.start();
