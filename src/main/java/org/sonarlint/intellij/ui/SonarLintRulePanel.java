@@ -25,6 +25,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
+import com.intellij.ui.components.JBLabel;
 import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
@@ -155,7 +156,7 @@ public class SonarLintRulePanel {
       txt = "Select an issue to see extended rule description";
     }
 
-    JComponent titleComp = new JLabel(txt, SwingConstants.CENTER);
+    JComponent titleComp = new JBLabel(txt, SwingConstants.CENTER);
     panel.add(titleComp, BorderLayout.CENTER);
     panel.revalidate();
   }

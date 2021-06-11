@@ -118,7 +118,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   // Default proportion is: 85% on top for rule description + 15% on the bottom for parameters
   private static final float DIVIDER_PROPORTION_RULE_DEFAULT = 0.85f;
   @NonNls
-  private static final String EMPTY_HTML = "<html><body>Select a rule to see the description</body></html>";
+  private static final String EMPTY_HTML = "Select a rule to see the description";
 
   private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
   private RulesTreeTable table;
@@ -331,7 +331,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void initOptionsAndDescriptionPanel() {
     myParamsPanel.removeAll();
-    readHTML(descriptionBrowser, EMPTY_HTML);
+    readHTML(descriptionBrowser, toHTML(descriptionBrowser, EMPTY_HTML, false));
     myParamsPanel.validate();
     myParamsPanel.repaint();
   }
