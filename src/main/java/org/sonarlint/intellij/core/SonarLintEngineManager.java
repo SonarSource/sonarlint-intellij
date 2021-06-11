@@ -63,6 +63,7 @@ public class SonarLintEngineManager implements Disposable {
 
         @Override
         public void run(@NotNull ProgressIndicator indicator) {
+          indicator.setText2(title);
           r.run();
         }
       });
