@@ -31,11 +31,6 @@ stages:
       steps:
       - checkout: self
         fetchDepth: 1
-      - task: Cache@2
-        inputs:
-          key: 'build | gradle | "$(Agent.OS)" | **/build.gradle.kts'
-          path: $(GRADLE_USER_HOME)
-        displayName: Gradle build cache
       - template: update-gradle-version-steps.yml
       - task: DownloadSecureFile@1
         displayName: 'Download the sign key'
