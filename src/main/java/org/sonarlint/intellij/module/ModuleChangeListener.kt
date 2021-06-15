@@ -20,12 +20,10 @@
 package org.sonarlint.intellij.module
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -35,6 +33,9 @@ import org.sonarlint.intellij.util.ThreadPoolExecutor
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
+private fun getEngineIfStarted(project: Project) =
+    getService(project, ProjectBindingManager::class.java).engineIfStarted
+
 class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
     private val connection: MessageBusConnection = project.messageBus.connect()
 
@@ -42,55 +43,49 @@ class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
         connection.subscribe(
             ProjectEngineListener.TOPIC,
             ProjectEngineListener { previousEngine, newEngine ->
-                removeAllModules(project, previousEngine)
-                declareAllModules(project, newEngine)
+                Modules.removeAllModules(project, previousEngine)
+                Modules.declareAllModules(project, newEngine)
             })
     }
 
     override fun moduleAdded(project: Project, module: Module) {
-        declareModule(project, getEngine(project), module)
+        Modules.declareModule(project, getEngineIfStarted(project), module)
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
-        removeModule(getEngine(project), module)
+        Modules.removeModule(getEngineIfStarted(project), module)
     }
 
     override fun dispose() {
         connection.disconnect()
     }
+}
 
-    companion object {
-        private val executor = getService(ThreadPoolExecutor::class.java)
+ object Modules {
+    private val executor = getService(ThreadPoolExecutor::class.java)
 
-        init {
-            ApplicationManager.getApplication().messageBus.connect()
-                .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
-                    override fun projectClosed(project: Project) {
-                        removeAllModules(project, getEngine(project))
-                    }
-                })
-        }
+    fun declareAllModules(project: Project, engine: SonarLintEngine?) {
+        ModuleManager.getInstance(project).modules.forEach { declareModule(project, engine, it) }
+    }
 
-        fun declareAllModules(project: Project, engine: SonarLintEngine?) {
-            ModuleManager.getInstance(project).modules.forEach { declareModule(project, engine, it) }
-        }
+    fun declareModule(project: Project, engine: SonarLintEngine?, module: Module) {
+        val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
+        getService(ModulesRegistry::class.java).add(module, moduleInfo)
+        engine?.let { executor.execute { it.declareModule(moduleInfo) } }
+    }
 
-        fun declareModule(project: Project, engine: SonarLintEngine?, module: Module) {
-            val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
-            getService(ModulesRegistry::class.java).add(module, moduleInfo)
-            engine?.let { executor.execute { it.declareModule(moduleInfo) } }
-        }
+    fun removeModule(engine: SonarLintEngine?, module: Module) {
+        engine?.let { executor.execute { it.stopModule(module) } }
+        getService(ModulesRegistry::class.java).remove(module)
+    }
 
-        fun removeModule(engine: SonarLintEngine?, module: Module) {
-            engine?.let { executor.execute { it.stopModule(module) } }
-            getService(ModulesRegistry::class.java).remove(module)
-        }
+    fun removeAllModules(project: Project, engine: SonarLintEngine?) {
+        ModuleManager.getInstance(project).modules.forEach { removeModule(engine, it) }
+    }
+}
 
-        fun removeAllModules(project: Project, engine: SonarLintEngine?) {
-            ModuleManager.getInstance(project).modules.forEach { removeModule(engine, it) }
-        }
-
-        private fun getEngine(project: Project) =
-            getService(project, ProjectBindingManager::class.java).engineIfStarted
+class ProjectClosedListener : ProjectManagerListener {
+    override fun projectClosing(project: Project) {
+        Modules.removeAllModules(project, getEngineIfStarted(project))
     }
 }

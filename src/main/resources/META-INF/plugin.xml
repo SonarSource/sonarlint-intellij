@@ -218,6 +218,7 @@
 
     <applicationListeners>
         <listener class="org.sonarlint.intellij.fs.VirtualFileSystemListener" topic="com.intellij.openapi.vfs.newvfs.BulkFileListener" activeInTestMode="false"/>
+        <listener class="org.sonarlint.intellij.module.ProjectClosedListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
 
     <actions>
