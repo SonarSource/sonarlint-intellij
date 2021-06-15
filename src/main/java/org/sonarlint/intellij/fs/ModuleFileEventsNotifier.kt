@@ -21,6 +21,7 @@ package org.sonarlint.intellij.fs
 
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
@@ -54,4 +55,10 @@ open class ModuleFileEventsNotifier : Disposable {
     }
 
     private val executor: ExecutorService = Executors.newSingleThreadExecutor()
+
+    companion object {
+        fun isPython(file: VirtualFile): Boolean {
+            return file.path.endsWith(".py")
+        }
+    }
 }
