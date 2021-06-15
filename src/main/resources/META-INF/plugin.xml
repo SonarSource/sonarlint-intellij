@@ -130,7 +130,7 @@
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
 
     <projectListeners>
-        <listener class="org.sonarlint.intellij.module.ModuleChangeListener" topic="com.intellij.openapi.project.ModuleListener" activeInTestMode="false"/>
+        <listener class="org.sonarlint.intellij.module.ModuleChangeListener" topic="com.intellij.openapi.project.ModuleListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -217,7 +217,7 @@
     </extensionPoints>
 
     <applicationListeners>
-        <listener class="org.sonarlint.intellij.fs.VirtualFileSystemListener" topic="com.intellij.openapi.vfs.newvfs.BulkFileListener" activeInTestMode="false"/>
+        <listener class="org.sonarlint.intellij.fs.VirtualFileSystemListener" topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
         <listener class="org.sonarlint.intellij.module.ProjectClosedListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
     </applicationListeners>
 

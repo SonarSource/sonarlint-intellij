@@ -182,22 +182,32 @@ dependencies {
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
 
+fun copyPlugins(destinationDir: File, pluginName: String) {
+    val tsBundlePath = project.configurations.get("typescript").iterator().next()
+    copy {
+        from(tarTree(tsBundlePath))
+        exclude(
+            "**/loc/**",
+            "**/lib/*/diagnosticMessages.generated.json"
+        )
+        into(file("$destinationDir/$pluginName"))
+    }
+    file("$destinationDir/$pluginName/package").renameTo(file("$destinationDir/$pluginName/typescript"))
+    copy {
+        from(project.configurations.get("sqplugins"))
+        into(file("$destinationDir/$pluginName/plugins"))
+    }
+}
+
+tasks.prepareTestingSandbox {
+    doLast {
+        copyPlugins(destinationDir, pluginName)
+    }
+}
+
 tasks.prepareSandbox {
     doLast {
-        val tsBundlePath = project.configurations.get("typescript").iterator().next()
-        copy {
-            from(tarTree(tsBundlePath))
-            exclude(
-                "**/loc/**",
-                "**/lib/*/diagnosticMessages.generated.json"
-            )
-            into(file("$destinationDir/$pluginName"))
-        }
-        file("$destinationDir/$pluginName/package").renameTo(file("$destinationDir/$pluginName/typescript"))
-        copy {
-            from(project.configurations.get("sqplugins"))
-            into(file("$destinationDir/$pluginName/plugins"))
-        }
+        copyPlugins(destinationDir, pluginName)
     }
 }
 
