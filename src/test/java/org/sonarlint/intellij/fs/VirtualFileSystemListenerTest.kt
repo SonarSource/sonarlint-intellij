@@ -34,6 +34,9 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.any
+import org.mockito.Mockito.never
+import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyZeroInteractions
 import org.mockito.junit.MockitoJUnitRunner
@@ -54,6 +57,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         `when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
+        reset(fileEventsNotifier)
         virtualFileSystemListener = VirtualFileSystemListener(fileEventsNotifier)
     }
 
@@ -64,6 +68,16 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
         virtualFileSystemListener.before(listOf(vFileEvent))
 
         assertEventNotified(ModuleFileEvent.Type.DELETED, FILE_NAME)
+    }
+
+    @Test
+    fun should_not_notify_engine_of_a_non_py_file() {
+        val nonPyFile = myFixture.copyFileToProject("file.txt", "file.txt")
+        val vFileEvent = VFileDeleteEvent(null, nonPyFile, false)
+
+        virtualFileSystemListener.before(listOf(vFileEvent))
+
+        verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), eq(emptyList()))
     }
 
     @Test
@@ -86,12 +100,12 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
     @Test
     fun should_notify_engine_of_a_file_copied_event() {
-        val copiedFile = myFixture.copyFileToProject(FILE_NAME, "$FILE_NAME.cp")
-        val vFileEvent = VFileCopyEvent(null, file, file.parent, "$FILE_NAME.cp")
+        val copiedFile = myFixture.copyFileToProject(FILE_NAME, "$FILE_NAME.cp.py")
+        val vFileEvent = VFileCopyEvent(null, file, file.parent, "$FILE_NAME.cp.py")
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        assertEventNotified(ModuleFileEvent.Type.CREATED, "$FILE_NAME.cp", copiedFile)
+        assertEventNotified(ModuleFileEvent.Type.CREATED, "$FILE_NAME.cp.py", copiedFile)
     }
 
     @Test
@@ -144,7 +158,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
     @Test
     fun should_notify_engine_about_subfiles_when_event_happens_on_a_directory() {
         val directory = myFixture.copyDirectoryToProject("sub/folder", "sub/folder")
-        val subfileName = "subfile.txt"
+        val subfileName = "subfile.py"
         val childFile = directory.findChild(subfileName)!!
         val vFileEvent = VFileDeleteEvent(null, directory, false)
 

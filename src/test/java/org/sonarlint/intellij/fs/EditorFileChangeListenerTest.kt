@@ -44,7 +44,7 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 class EditorFileChangeListenerTest : AbstractSonarLintLightTests() {
     @Test
     fun should_notify_of_file_system_event_when_a_change_occurs_in_editor() {
-        val fileName = "file.txt"
+        val fileName = "file.py"
         val listener = EditorFileChangeListener()
         listener.setFileEventsNotifier(fileEventsNotifier)
         listener.runActivity(project)
