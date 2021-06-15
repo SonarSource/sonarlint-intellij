@@ -60,6 +60,8 @@ class EditorFileChangeListener : BulkAwareDocumentListener.Simple, StartupActivi
 
     override fun afterDocumentChange(document: Document) {
         val file = FileDocumentManager.getInstance().getFile(document) ?: return
+        // SLI-551 Only send events on .py files (avoid parse errors)
+        if(!ModuleFileEventsNotifier.isPython(file)) return;
         val module = SonarLintAppUtils.findModuleForFile(file, project) ?: return
         val fileEvent = buildModuleFileEvent(module, file, document, ModuleFileEvent.Type.MODIFIED) ?: return
         synchronized(eventsToSend) {

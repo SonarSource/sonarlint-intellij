@@ -109,11 +109,11 @@ class VirtualFileSystemListener(
     }
 
     private fun allEventsFor(file: VirtualFile, fileModule: Module, type: ModuleFileEvent.Type): List<ClientModuleFileEvent> {
-        return if (file.isDirectory) {
-            file.children.flatMap { allEventsFor(it, fileModule, type) }
-        }
-        else {
-            listOfNotNull(buildModuleFileEvent(fileModule, file, type))
+        return when {
+            file.isDirectory -> file.children.flatMap { allEventsFor(it, fileModule, type) }
+            // SLI-551 Only send events on .py files (avoid parse errors)
+            ModuleFileEventsNotifier.isPython(file) -> listOfNotNull(buildModuleFileEvent(fileModule, file, type))
+            else -> emptyList()
         }
     }
 
