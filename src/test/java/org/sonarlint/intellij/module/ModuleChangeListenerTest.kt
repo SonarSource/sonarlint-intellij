@@ -30,6 +30,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -82,8 +83,9 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
         moduleChangeListener.moduleAdded(project, module)
         project.messageBus.syncPublisher(ProjectEngineListener.TOPIC).engineChanged(fakeEngine, otherFakeEngine)
 
-        verify(fakeEngine).stopModule(eq(module))
-        verify(otherFakeEngine).declareModule(capture(moduleInfoCaptor))
+        // might be called several times by the real implementation, not the one under test
+        verify(fakeEngine, atLeastOnce()).stopModule(eq(module))
+        verify(otherFakeEngine, atLeastOnce()).declareModule(capture(moduleInfoCaptor))
         val moduleInfo = moduleInfoCaptor.value
         assertThat(moduleInfo.key()).isEqualTo(module)
     }
