@@ -72,7 +72,7 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
 
     @Test
     fun should_stop_modules_on_engine_when_project_is_closed() {
-        ApplicationManager.getApplication().messageBus.syncPublisher(ProjectManager.TOPIC).projectClosed(project)
+        ApplicationManager.getApplication().messageBus.syncPublisher(ProjectManager.TOPIC).projectClosing(project)
 
         verify(fakeEngine).stopModule(eq(module))
     }
