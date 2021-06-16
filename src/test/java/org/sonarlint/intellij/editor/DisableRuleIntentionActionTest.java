@@ -73,15 +73,14 @@ public class DisableRuleIntentionActionTest extends AbstractSonarLintLightTests 
   }
 
   @Test
-  public void should_exclude() {
+  public void should_disable_rule_in_settings_when_invoked() {
     getGlobalSettings().setAutoTrigger(true);
-
     PsiFile file = PsiFileFactory.getInstance(getProject())
       .createFileFromText("MyClass.java", Language.findLanguageByID("JAVA"), "public class MyClass {}", true, false);
     FileEditorManager.getInstance(getProject()).openFile(file.getVirtualFile(),false);
+
     quickFix.invoke(getProject(), mock(Editor.class), file);
 
     assertThat(getGlobalSettings().isRuleExplicitlyDisabled("rule")).isTrue();
-    assertThat(getConsole().getLastMessage()).isEqualTo("[Binding update] 0 file(s) submitted");
   }
 }

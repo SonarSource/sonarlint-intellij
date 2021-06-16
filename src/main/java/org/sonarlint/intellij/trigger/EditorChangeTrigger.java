@@ -27,6 +27,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -47,7 +48,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
   private static final int DEFAULT_TIMER_MS = 2000;
 
   // entries in this map mean that the file is "dirty"
-  private final Map<VirtualFile, Long> eventMap = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<VirtualFile, Long> eventMap = new ConcurrentHashMap<>();
   private final EventWatcher watcher;
   private final int timerMs = DEFAULT_TIMER_MS;
   private final Project myProject;
@@ -63,7 +64,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
       .subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
         @Override
         public void started(SonarLintJob job) {
-          removeFiles(job.allFiles());
+          removeFiles(job.files());
         }
       });
     watcher.start();
@@ -96,7 +97,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
   /**
    * Marks a file as launched, resetting its state to unchanged
    */
-  public void removeFiles(Stream<VirtualFile> files) {
+  private void removeFiles(Collection<VirtualFile> files) {
     files.forEach(eventMap::remove);
   }
 

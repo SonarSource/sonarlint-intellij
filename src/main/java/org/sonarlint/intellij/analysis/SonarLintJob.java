@@ -20,34 +20,28 @@
 package org.sonarlint.intellij.analysis;
 
 import com.google.common.base.Preconditions;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Stream;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 public class SonarLintJob {
-  private final Map<Module, Collection<VirtualFile>> files;
+  private final Project project;
+  private final Collection<VirtualFile> files;
   private final TriggerType trigger;
   private final boolean waitForServerIssues;
-  private final Project project;
-  private final Collection<VirtualFile> filesToClearIssues;
   private final AnalysisCallback callback;
 
-  SonarLintJob(Project project, Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean waitForServerIssues,
-    AnalysisCallback callback) {
+  SonarLintJob(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerIssues, AnalysisCallback callback) {
     this.project = project;
-    this.filesToClearIssues = Collections.unmodifiableCollection(filesToClearIssues);
     this.callback = callback;
     this.waitForServerIssues = waitForServerIssues;
     Preconditions.checkNotNull(files);
     Preconditions.checkNotNull(trigger);
 
-    this.files = Collections.unmodifiableMap(new HashMap<>(files));
+    this.files = Collections.unmodifiableCollection(files);
     this.trigger = trigger;
   }
 
@@ -59,13 +53,8 @@ public class SonarLintJob {
     return callback;
   }
 
-  public Map<Module, Collection<VirtualFile>> filesPerModule() {
+  public Collection<VirtualFile> files() {
     return files;
-  }
-
-  public Stream<VirtualFile> allFiles() {
-    return files.entrySet().stream()
-      .flatMap(e -> e.getValue().stream());
   }
 
   public boolean waitForServerIssues() {
@@ -76,7 +65,7 @@ public class SonarLintJob {
     return trigger;
   }
 
-  public Collection<VirtualFile> filesToClearIssues() {
-    return filesToClearIssues;
+  public boolean isForced() {
+    return trigger == TriggerType.ACTION;
   }
 }

@@ -20,10 +20,13 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.lang.LanguageExtensionPoint;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -80,8 +83,8 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
-    VirtualFile testFile = mock(VirtualFile.class);
-    filesInAnalyzeJob.add(testFile);
+    PsiFile testFile = myFixture.configureByText("MyClass.java", "public class MyClass {]");
+    filesInAnalyzeJob.add(testFile.getVirtualFile());
     job = createJob();
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
@@ -137,27 +140,22 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldIgnoreInvalidFiles() {
+    VirtualFile vFile = filesInAnalyzeJob.iterator().next();
+    WriteCommandAction.runWriteCommandAction(getProject(), () -> {
+      try {
+        vFile.delete(null);
+      } catch (IOException e) {
+        fail("Cannot delete file");
+      }
+    });
     TaskListener listener = mock(TaskListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class)))
-      .thenAnswer((Answer<AnalysisResults>) invocation -> {
-        IssueListener issueListener = invocation.getArgument(2);
-        Issue issue = mock(Issue.class);
-        ClientInputFile clientInputFile = mock(ClientInputFile.class);
-        when(issue.getInputFile()).thenReturn(clientInputFile);
-        VirtualFile vFile = filesInAnalyzeJob.iterator().next();
-        when(vFile.isValid()).thenReturn(false);
-        when(clientInputFile.getClientObject()).thenReturn(vFile);
-        when(clientInputFile.getPath()).thenReturn("path");
-        issueListener.handle(issue);
-        return analysisResults;
-      });
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class));
+    verifyZeroInteractions(sonarLintAnalyzer);
     verify(issueManagerMock, never()).insertNewIssue(any(), any());
-    verifyNoMoreInteractions(liveIssueBuilder);
+    verifyZeroInteractions(liveIssueBuilder);
   }
 
   @Test
@@ -167,7 +165,6 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     when(issue.getInputFile()).thenReturn(clientInputFile);
     VirtualFile virtualFile = filesInAnalyzeJob.iterator().next();
     LiveIssue liveIssue = mock(LiveIssue.class);
-    when(virtualFile.isValid()).thenReturn(true);
     when(clientInputFile.getClientObject()).thenReturn(virtualFile);
     when(clientInputFile.getPath()).thenReturn("path");
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenReturn(liveIssue);
@@ -260,7 +257,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   }
 
   private SonarLintJob createJob() {
-    return new SonarLintJob(getProject(), Collections.singletonMap(getModule(), filesInAnalyzeJob), Collections.emptyList(), TriggerType.ACTION, false, mock(AnalysisCallback.class));
+    return new SonarLintJob(getProject(), filesInAnalyzeJob, TriggerType.ACTION, false, mock(AnalysisCallback.class));
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
@@ -274,7 +271,6 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     ClientInputFile clientInputFile = mock(ClientInputFile.class);
     when(issue.getInputFile()).thenReturn(clientInputFile);
     VirtualFile virtualFile = filesInAnalyzeJob.iterator().next();
-    when(virtualFile.isValid()).thenReturn(true);
     when(clientInputFile.getClientObject()).thenReturn(virtualFile);
     when(clientInputFile.getPath()).thenReturn("path");
     return issue;

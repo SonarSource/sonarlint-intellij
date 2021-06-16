@@ -46,6 +46,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
+import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
@@ -114,7 +115,15 @@ public class SonarLintTask extends Task.Backgroundable {
 
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
 
-    List<VirtualFile> allFilesToAnalyze = job.allFiles().collect(toList());
+    List<VirtualFile> filesToClearIssues = new ArrayList<>();
+    Map<Module, Collection<VirtualFile>> filesByModule;
+    try {
+      filesByModule = filterAndGetByModule(job.files(), job.isForced(), filesToClearIssues);
+    } catch (InvalidBindingException e) {
+      // nothing to do, SonarLintEngineManager already showed notification
+      return;
+    }
+    List<VirtualFile> allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toList());
     // Cache everything that rely on issue store before clearing issues
     Map<VirtualFile, Boolean> firstAnalyzedFiles = cacheFirstAnalyzedFiles(manager, allFilesToAnalyze);
     Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile = collectPreviousIssuesPerFile(manager, allFilesToAnalyze);
@@ -125,7 +134,7 @@ public class SonarLintTask extends Task.Backgroundable {
       checkCanceled(indicator);
 
       ReadAction.run(() -> {
-        Set<VirtualFile> filesToClear = new HashSet<>(job.filesToClearIssues());
+        Set<VirtualFile> filesToClear = new HashSet<>(filesToClearIssues);
         filesToClear.addAll(allFilesToAnalyze);
         manager.clearAllIssuesForFiles(filesToClear);
       });
@@ -135,7 +144,7 @@ public class SonarLintTask extends Task.Backgroundable {
         return;
       }
 
-      List<AnalysisResults> results = analyzePerModule(myProject, indicator,
+      List<AnalysisResults> results = analyzePerModule(myProject, indicator, filesByModule,
         rawIssue -> processRawIssue(liveIssueBuilder, manager, firstAnalyzedFiles, issuesPerFile, previousIssuesPerFile, rawIssueCounter, rawIssue));
 
       LOGGER.info("SonarLint analysis done");
@@ -154,7 +163,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
       finalizeIssueStore(manager, previousIssuesPerFile, allFilesToAnalyze, failedVirtualFiles);
 
-      matchWithServerIssuesIfNeeded(indicator, issuesPerFile);
+      matchWithServerIssuesIfNeeded(indicator, filesByModule, issuesPerFile);
 
       if (SonarLintUtils.enableTaintVulnerabilities()) {
         SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
@@ -169,11 +178,27 @@ public class SonarLintTask extends Task.Backgroundable {
     }
   }
 
-  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
+  private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean forcedAnalysis, List<VirtualFile> filesToClearIssues)
+    throws InvalidBindingException {
+    LocalFileExclusions localFileExclusions = SonarLintUtils.getService(myProject, LocalFileExclusions.class);
+    return localFileExclusions.retainNonExcludedFilesByModules(files, forcedAnalysis, (f, r) -> logExclusionAndAddToClearList(filesToClearIssues, f, r.excludeReason()));
+  }
+
+  private void logExclusionAndAddToClearList(List<VirtualFile> filesToClearIssues, VirtualFile file, String s) {
+    logExclusion(file, s);
+    filesToClearIssues.add(file);
+  }
+
+  private void logExclusion(VirtualFile f, String reason) {
+    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+    console.debug("File '" + f.getName() + "' excluded: " + reason);
+  }
+
+  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule, Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
     if (shouldUpdateServerIssues(job.trigger())) {
       Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
 
-      for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
+      for (Map.Entry<Module, Collection<VirtualFile>> e : filesByModule.entrySet()) {
         Collection<VirtualFile> moduleFilesWithIssues = e.getValue().stream()
           .filter(f -> !issuesPerFile.getOrDefault(f, Collections.emptyList()).isEmpty())
           .collect(toList());
@@ -320,21 +345,22 @@ public class SonarLintTask extends Task.Backgroundable {
     return cancelled || indicator.isCanceled() || myProject.isDisposed() || Thread.currentThread().isInterrupted() || SonarLintStatus.get(myProject).isCanceled();
   }
 
-  private List<AnalysisResults> analyzePerModule(Project project, ProgressIndicator indicator, IssueListener listener) {
+  private List<AnalysisResults> analyzePerModule(Project project, ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule, IssueListener listener) {
     SonarLintAnalyzer analyzer = SonarLintUtils.getService(project, SonarLintAnalyzer.class);
 
     indicator.setIndeterminate(true);
-    int numModules = job.filesPerModule().keySet().size();
+    int numModules = filesByModule.keySet().size();
     String suffix = "";
     if (numModules > 1) {
       suffix = String.format(" in %d modules", numModules);
     }
 
-    long numFiles = job.allFiles().count();
+    List<VirtualFile> allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toList());
+    long numFiles = allFilesToAnalyze.size();
     if (numFiles > 1) {
       indicator.setText("Running SonarLint Analysis for " + numFiles + " files" + suffix);
     } else {
-      indicator.setText("Running SonarLint Analysis for '" + getFileName(job.allFiles().findFirst().get()) + "'");
+      indicator.setText("Running SonarLint Analysis for '" + getFileName(allFilesToAnalyze.get(0)) + "'");
     }
 
     LOGGER.info(indicator.getText());
@@ -342,7 +368,7 @@ public class SonarLintTask extends Task.Backgroundable {
     ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator, myProject, () -> cancelled);
     List<AnalysisResults> results = new LinkedList<>();
 
-    for (Map.Entry<Module, Collection<VirtualFile>> e : job.filesPerModule().entrySet()) {
+    for (Map.Entry<Module, Collection<VirtualFile>> e : filesByModule.entrySet()) {
       results.add(analyzer.analyzeModule(e.getKey(), e.getValue(), listener, progressMonitor));
       checkCanceled(indicator);
     }

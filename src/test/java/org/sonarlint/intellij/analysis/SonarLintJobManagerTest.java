@@ -19,18 +19,14 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 
-import static org.codehaus.groovy.runtime.InvokerHelper.asList;
+import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -48,19 +44,15 @@ public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4Tes
 
   @Test
   public void testUserTask() {
-    manager.submitManual(mockFiles(), Collections.emptyList(), TriggerType.ACTION, true, analysisCallback);
+    manager.submitManual(singletonList(mock(VirtualFile.class)), TriggerType.ACTION, true, analysisCallback);
 
     verify(analysisCallback).onSuccess(any());
   }
 
   @Test
   public void testRunBackground() {
-    manager.submitBackground(mockFiles(), Collections.emptyList(), TriggerType.ACTION, analysisCallback);
+    manager.submitBackground(singletonList(mock(VirtualFile.class)), TriggerType.ACTION, analysisCallback);
 
     verify(analysisCallback).onSuccess(any());
-  }
-
-  private Map<Module, Collection<VirtualFile>> mockFiles() {
-    return Collections.singletonMap(getModule(), asList(myFixture.getFile()));
   }
 }
