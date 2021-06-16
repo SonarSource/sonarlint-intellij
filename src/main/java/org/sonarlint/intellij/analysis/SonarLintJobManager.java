@@ -19,12 +19,10 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
 import java.util.Collection;
-import java.util.Map;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.messages.TaskListener;
@@ -46,13 +44,13 @@ public class SonarLintJobManager {
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
    *
-   * @see #submitManual(Map, Collection, TriggerType, boolean, AnalysisCallback)
+   * @see #submitManual(Collection, TriggerType, boolean, AnalysisCallback)
    * @return
    */
-  public SonarLintTask submitBackground(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, AnalysisCallback callback) {
-    SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, false, callback);
+  public SonarLintTask submitBackground(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
+    SonarLintJob newJob = new SonarLintJob(myProject, files, trigger, false, callback);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
-    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.files().size()));
     SonarLintTask task = new SonarLintTask(newJob, true);
     notifyStart(task.getJob());
     task.queue();
@@ -64,11 +62,10 @@ public class SonarLintJobManager {
    * If a foreground analysis is already on going, this method simply returns an empty AnalysisResult.
    * Once it starts, it will display a ProgressWindow with the EDT and run the analysis in a pooled thread.
    *
-   * @see #submitBackground(Map, Collection, TriggerType, AnalysisCallback)
+   * @see #submitBackground(Collection, TriggerType, AnalysisCallback)
    */
   @CheckForNull
-  public SonarLintTask submitManual(Map<Module, Collection<VirtualFile>> files, Collection<VirtualFile> filesToClearIssues, TriggerType trigger, boolean modal,
-    AnalysisCallback callback) {
+  public SonarLintTask submitManual(Collection<VirtualFile> files, TriggerType trigger, boolean modal, AnalysisCallback callback) {
     SonarLintStatus status = SonarLintUtils.getService(myProject, SonarLintStatus.class);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (myProject.isDisposed() || !status.tryRun()) {
@@ -76,8 +73,8 @@ public class SonarLintJobManager {
       return null;
     }
 
-    SonarLintJob newJob = new SonarLintJob(myProject, files, filesToClearIssues, trigger, true, callback);
-    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.allFiles().count()));
+    SonarLintJob newJob = new SonarLintJob(myProject, files, trigger, true, callback);
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.files().size()));
     SonarLintUserTask task = new SonarLintUserTask(newJob, modal);
     notifyStart(task.getJob());
     task.queue();

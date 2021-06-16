@@ -23,36 +23,24 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
-import java.util.List;
 import java.util.function.Predicate;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.common.analysis.ExcludeResult;
-import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.analysis.SonarLintJobManager;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
-import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.trigger.SonarLintSubmitter.NO_OP_CALLBACK;
 
 public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
@@ -78,7 +66,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(sonarLintJobManager).submitBackground(eq(singletonMap(getModule(), singleton(f1))), eq(emptyList()), eq(TriggerType.CONFIG_CHANGE), eq(NO_OP_CALLBACK));
+    verify(sonarLintJobManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test
@@ -87,18 +75,18 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
     final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
     submitter.submitFilesModal(singleton(f1), TriggerType.CONFIG_CHANGE, analysisCallback);
-    verify(sonarLintJobManager).submitManual(eq(singletonMap(getModule(), singleton(f1))), eq(emptyList()), eq(TriggerType.CONFIG_CHANGE), eq(true), eq(analysisCallback));
+    verify(sonarLintJobManager).submitManual(singleton(f1), TriggerType.CONFIG_CHANGE, true, analysisCallback);
   }
 
   @Test
-  public void should_clear_issues_if_excluded() {
+  public void should_submit_open_files_auto() {
     VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
     setProjectLevelExclusions(singletonList("GLOB:foo.php"));
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(sonarLintJobManager).submitBackground(eq(emptyMap()), eq(singletonList(f1)), eq(TriggerType.CONFIG_CHANGE), eq(NO_OP_CALLBACK));
+    verify(sonarLintJobManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test
