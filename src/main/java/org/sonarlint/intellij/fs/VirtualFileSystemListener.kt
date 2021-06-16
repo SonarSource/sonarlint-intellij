@@ -50,14 +50,11 @@ class VirtualFileSystemListener(
     )
 ) : BulkFileListener {
     override fun before(events: List<VFileEvent>) {
-        val startTime = System.currentTimeMillis()
         forwardEvents(events.filterIsInstance(VFileMoveEvent::class.java)) { ModuleFileEvent.Type.DELETED }
         forwardEvents(events.filterIsInstance(VFileDeleteEvent::class.java)) { ModuleFileEvent.Type.DELETED }
-        GlobalLogOutput.get().log("File system before events filtered in ${System.currentTimeMillis() - startTime}ms", LogOutput.Level.ERROR)
     }
 
     override fun after(events: List<VFileEvent>) {
-        val startTime = System.currentTimeMillis()
         forwardEvents(events) {
             when (it) {
                 is VFileDeleteEvent -> null
@@ -66,12 +63,11 @@ class VirtualFileSystemListener(
                 is VFileContentChangeEvent -> ModuleFileEvent.Type.MODIFIED
                 is VFilePropertyChangeEvent -> null
                 else -> {
-                    GlobalLogOutput.get().log("Unknown file event type: $it", LogOutput.Level.ERROR)
+                    GlobalLogOutput.get().log("Unknown file event type: $it", LogOutput.Level.DEBUG)
                     null
                 }
             }
         }
-        GlobalLogOutput.get().log("File system after events filtered in ${System.currentTimeMillis() - startTime}ms", LogOutput.Level.ERROR)
     }
 
     private fun forwardEvents(events: List<VFileEvent>, eventTypeConverter: (VFileEvent) -> ModuleFileEvent.Type?) {
