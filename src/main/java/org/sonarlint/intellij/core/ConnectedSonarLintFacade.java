@@ -47,11 +47,9 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine engine;
-  private final String connectionId;
 
-  ConnectedSonarLintFacade(String connectionId, ConnectedSonarLintEngine engine, Project project) {
+  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, Project project) {
     super(project);
-    this.connectionId = connectionId;
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
@@ -92,11 +90,6 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   @Override
   public Collection<PluginDetails> getPluginDetails() {
     return engine.getPluginDetails();
-  }
-
-  @Override
-  public ConnectedSonarLintEngine getEngine() {
-    return engine;
   }
 
   @Override

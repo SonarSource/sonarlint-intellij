@@ -45,7 +45,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   @Before
   public void before() {
     getProjectSettings().setProjectKey("projectKey");
-    facade = new ConnectedSonarLintFacade("mySqServer", engine, getProject());
+    facade = new ConnectedSonarLintFacade(engine, getProject());
   }
 
   @Test

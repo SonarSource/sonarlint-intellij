@@ -37,7 +37,6 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleKey;
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -99,11 +98,6 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   @Override
   public Collection<PluginDetails> getPluginDetails() {
     return sonarlint.getPluginDetails();
-  }
-
-  @Override
-  public SonarLintEngine getEngine() {
-    return sonarlint;
   }
 
   @Override
