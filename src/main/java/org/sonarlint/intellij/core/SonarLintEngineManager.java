@@ -144,7 +144,7 @@ public class SonarLintEngineManager implements Disposable {
     return standalone;
   }
 
-  public synchronized ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId, String projectKey) throws InvalidBindingException {
+  public ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId, String projectKey) throws InvalidBindingException {
     Preconditions.checkNotNull(notifications, "notifications");
     Preconditions.checkNotNull(serverId, "serverId");
     Preconditions.checkNotNull(projectKey, "projectKey");

@@ -64,11 +64,11 @@ public class ProjectBindingManager {
    *
    * @throws InvalidBindingException If current project binding is invalid
    */
-  public synchronized SonarLintFacade getFacade() throws InvalidBindingException {
+  public SonarLintFacade getFacade() throws InvalidBindingException {
     return getFacade(false);
   }
 
-  public synchronized SonarLintFacade getFacade(boolean logDetails) throws InvalidBindingException {
+  public SonarLintFacade getFacade(boolean logDetails) throws InvalidBindingException {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
@@ -87,12 +87,12 @@ public class ProjectBindingManager {
     return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());
   }
 
-  private synchronized ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
+  private ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
     return engineManager.getConnectedEngine(getSettingsFor(myProject).getConnectionName());
   }
 
-  public synchronized ConnectedSonarLintEngine getConnectedEngine() throws InvalidBindingException {
+  public ConnectedSonarLintEngine getConnectedEngine() throws InvalidBindingException {
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     if (!projectSettings.isBindingEnabled()) {
       throw new IllegalStateException("Project is not bound to a SonarQube project");
@@ -117,20 +117,20 @@ public class ProjectBindingManager {
     return engineManager.getStandaloneEngineIfStarted();
   }
 
-  public synchronized boolean isBindingValid() {
+  public boolean isBindingValid() {
     return getSettingsFor(myProject).isBound() && tryGetServerConnection().isPresent();
   }
 
-  public synchronized @Nullable ConnectedSonarLintEngine getValidConnectedEngine() {
+  public @Nullable ConnectedSonarLintEngine getValidConnectedEngine() {
     return isBindingValid() ? getConnectedEngineSkipChecks() : null;
   }
 
-  public synchronized ServerConnection getServerConnection() throws InvalidBindingException {
+  public ServerConnection getServerConnection() throws InvalidBindingException {
     return tryGetServerConnection().orElseThrow(
       () -> new InvalidBindingException("Unable to find a connection with name: " + getSettingsFor(myProject).getConnectionName()));
   }
 
-  public synchronized Optional<ServerConnection> tryGetServerConnection() {
+  public Optional<ServerConnection> tryGetServerConnection() {
     if (!getSettingsFor(myProject).isBindingEnabled()) {
       return Optional.empty();
     }
