@@ -52,7 +52,6 @@ import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
-import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
@@ -167,10 +166,6 @@ public class SonarLintTask extends Task.Backgroundable {
       console.info("Analysis canceled");
     } catch (Throwable e) {
       handleError(e, indicator);
-    } finally {
-      if (!myProject.isDisposed()) {
-        myProject.getMessageBus().syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).ended(job);
-      }
     }
   }
 

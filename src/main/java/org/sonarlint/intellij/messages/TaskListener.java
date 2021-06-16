@@ -23,23 +23,16 @@ import com.intellij.util.messages.Topic;
 import org.sonarlint.intellij.analysis.SonarLintJob;
 
 /**
- * Notifies about analysis tasks starting and ending. It will be called for any analysis task, regardless of the trigger, if it is brackground or not, etc.
+ * Notifies about analysis tasks starting. It will be called for any analysis task, regardless of the trigger, if it is background or not, etc.
  */
 public interface TaskListener {
-  Topic<TaskListener> SONARLINT_TASK_TOPIC = Topic.create("SonarLint task start and finish", TaskListener.class);
+  Topic<TaskListener> SONARLINT_TASK_TOPIC = Topic.create("SonarLint task start", TaskListener.class);
 
   void started(SonarLintJob job);
-
-  void ended(SonarLintJob job);
 
   abstract class Adapter implements TaskListener {
     @Override
     public void started(SonarLintJob job) {
-      // can be optionally implemented
-    }
-
-    @Override
-    public void ended(SonarLintJob job) {
       // can be optionally implemented
     }
   }

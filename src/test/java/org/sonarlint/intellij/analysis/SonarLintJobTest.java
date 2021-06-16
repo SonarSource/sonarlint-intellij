@@ -44,7 +44,6 @@ public class SonarLintJobTest {
     assertThat(job.filesToClearIssues()).containsOnly(toClear);
     assertThat(job.filesPerModule().keySet()).containsOnly(m);
     assertThat(job.trigger()).isEqualTo(TriggerType.COMPILATION);
-    assertThat(job.creationTime()).isBetween(System.currentTimeMillis() - 5000, System.currentTimeMillis());
   }
 
 }

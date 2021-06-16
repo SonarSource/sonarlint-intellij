@@ -27,15 +27,12 @@ import java.util.Collections;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 
 public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4TestCase {
@@ -52,22 +49,14 @@ public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4Tes
   @Test
   public void testUserTask() {
     manager.submitManual(mockFiles(), Collections.emptyList(), TriggerType.ACTION, true, analysisCallback);
-    ArgumentCaptor<SonarLintJob> jobCaptor = ArgumentCaptor.forClass(SonarLintJob.class);
-    // XXX could we make ended have a parameter for the analysis result
-    verify(taskListener).ended(jobCaptor.capture());
-    SonarLintJob job = jobCaptor.getValue();
-    assertThat(job.project()).isEqualTo(getProject());
+
     verify(analysisCallback).onSuccess(any());
   }
 
   @Test
   public void testRunBackground() {
     manager.submitBackground(mockFiles(), Collections.emptyList(), TriggerType.ACTION, analysisCallback);
-    ArgumentCaptor<SonarLintJob> jobCaptor = ArgumentCaptor.forClass(SonarLintJob.class);
-    // XXX could we make ended have a parameter for the analysis result
-    verify(taskListener, timeout(3000)).ended(jobCaptor.capture());
-    SonarLintJob job = jobCaptor.getValue();
-    assertThat(job.project()).isEqualTo(getProject());
+
     verify(analysisCallback).onSuccess(any());
   }
 

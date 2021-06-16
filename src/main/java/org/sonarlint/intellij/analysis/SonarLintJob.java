@@ -33,7 +33,6 @@ import org.sonarlint.intellij.trigger.TriggerType;
 public class SonarLintJob {
   private final Map<Module, Collection<VirtualFile>> files;
   private final TriggerType trigger;
-  private final long creationTime;
   private final boolean waitForServerIssues;
   private final Project project;
   private final Collection<VirtualFile> filesToClearIssues;
@@ -50,7 +49,6 @@ public class SonarLintJob {
 
     this.files = Collections.unmodifiableMap(new HashMap<>(files));
     this.trigger = trigger;
-    this.creationTime = System.currentTimeMillis();
   }
 
   public Project project() {
@@ -59,10 +57,6 @@ public class SonarLintJob {
 
   public AnalysisCallback callback() {
     return callback;
-  }
-
-  public long creationTime() {
-    return creationTime;
   }
 
   public Map<Module, Collection<VirtualFile>> filesPerModule() {

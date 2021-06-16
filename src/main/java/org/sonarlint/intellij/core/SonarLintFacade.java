@@ -53,8 +53,6 @@ public abstract class SonarLintFacade {
   @CheckForNull
   public abstract RuleDetails getActiveRuleDetails(String ruleKey);
 
-  public abstract SonarLintEngine getEngine();
-
   public synchronized AnalysisResults startAnalysis(Module module, List<ClientInputFile> inputFiles, IssueListener issueListener,
     Map<String, String> additionalProps, ProgressMonitor progressMonitor) {
     Path baseDir = Paths.get(project.getBasePath());
