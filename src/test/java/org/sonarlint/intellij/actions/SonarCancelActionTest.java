@@ -31,7 +31,7 @@ import java.io.IOException;
 import org.jdom.JDOMException;
 import org.junit.Test;
 import org.sonarlint.intellij.SonarLintTestUtils;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -52,7 +52,7 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
 
   @Test
   public void testCancel() {
-    SonarLintStatus status = SonarLintStatus.get(getProject());
+    AnalysisStatus status = AnalysisStatus.get(getProject());
 
     status.stopRun();
     status.tryRun();
@@ -71,7 +71,7 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
     assertThat(presentation.isVisible()).isTrue();
     assertThat(presentation.isEnabled()).isFalse();
 
-    SonarLintStatus status = SonarLintStatus.get(getProject());
+    AnalysisStatus status = AnalysisStatus.get(getProject());
     status.tryRun();
     sonarCancelAction.update(event);
     assertThat(presentation.isEnabled()).isTrue();
@@ -94,20 +94,20 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
     event = SonarLintTestUtils.createAnActionEvent(null);
     sonarCancelAction.actionPerformed(event);
 
-    assertThat(SonarLintStatus.get(getProject()).isRunning()).isFalse();
-    assertThat(SonarLintStatus.get(getProject()).isCanceled()).isFalse();
+    assertThat(AnalysisStatus.get(getProject()).isRunning()).isFalse();
+    assertThat(AnalysisStatus.get(getProject()).isCanceled()).isFalse();
   }
 
   @Test
   public void testDisableIfNotRunning() {
-    SonarLintStatus status = mock(SonarLintStatus.class);
+    AnalysisStatus status = mock(AnalysisStatus.class);
     when(status.isRunning()).thenReturn(false);
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
   }
 
   @Test
   public void testDisableIfCanceled() {
-    SonarLintStatus status = mock(SonarLintStatus.class);
+    AnalysisStatus status = mock(AnalysisStatus.class);
     when(status.isRunning()).thenReturn(true);
     when(status.isCanceled()).thenReturn(true);
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
@@ -115,7 +115,7 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
 
   @Test
   public void testEnableIfRunning() {
-    SonarLintStatus status = mock(SonarLintStatus.class);
+    AnalysisStatus status = mock(AnalysisStatus.class);
     when(status.isRunning()).thenReturn(true);
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isTrue();
   }

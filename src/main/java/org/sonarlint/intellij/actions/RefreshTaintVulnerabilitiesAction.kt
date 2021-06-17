@@ -25,13 +25,13 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.analysis.SonarLintStatus
+import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 
 class RefreshTaintVulnerabilitiesAction(text: String = "Refresh") : AbstractSonarAction(text, "Refresh taint vulnerabilities for open files", AllIcons.Actions.Refresh) {
-  override fun isEnabled(e: AnActionEvent, project: Project, status: SonarLintStatus) = getService(project, ProjectBindingManager::class.java).isBindingValid
+  override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus) = getService(project, ProjectBindingManager::class.java).isBindingValid
 
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return

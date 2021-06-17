@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 public abstract class AbstractSonarAction extends AnAction {
   public AbstractSonarAction() {
@@ -50,7 +50,7 @@ public abstract class AbstractSonarAction extends AnAction {
     if (p == null || !p.isInitialized() || p.isDisposed()) {
       e.getPresentation().setEnabled(false);
     } else {
-      SonarLintStatus status = SonarLintStatus.get(p);
+      AnalysisStatus status = AnalysisStatus.get(p);
       e.getPresentation().setEnabled(isEnabled(e, p, status));
     }
   }
@@ -65,5 +65,5 @@ public abstract class AbstractSonarAction extends AnAction {
     return true;
   }
 
-  protected abstract boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status);
+  protected abstract boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status);
 }

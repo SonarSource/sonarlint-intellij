@@ -28,7 +28,7 @@ import java.util.List;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -42,7 +42,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     super(text, description, icon);
   }
 
-  @Override protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
+  @Override protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
     if (status.isRunning()) {
       return false;
     }

@@ -27,8 +27,8 @@ import java.util.Collection;
 import java.util.Set;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
-import org.sonarlint.intellij.analysis.SonarLintTask;
+import org.sonarlint.intellij.analysis.AnalysisManager;
+import org.sonarlint.intellij.analysis.AnalysisTask;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -73,8 +73,8 @@ public class SonarLintSubmitter {
     if (!files.isEmpty()) {
       SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
       console.debug("Trigger: " + trigger);
-      SonarLintJobManager sonarLintJobManager = SonarLintUtils.getService(myProject, SonarLintJobManager.class);
-      sonarLintJobManager.submitManual(files, trigger, true, callback);
+      AnalysisManager analysisManager = SonarLintUtils.getService(myProject, AnalysisManager.class);
+      analysisManager.submitManual(files, trigger, true, callback);
     }
   }
 
@@ -87,22 +87,22 @@ public class SonarLintSubmitter {
    *                          if it starts in background or foreground.
    */
   @CheckForNull
-  public SonarLintTask submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {
+  public AnalysisTask submitFiles(Collection<VirtualFile> files, TriggerType trigger, boolean startInBackground) {
     return submitFiles(files, trigger, NO_OP_CALLBACK, startInBackground);
   }
 
   @CheckForNull
-  public SonarLintTask submitFiles(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback, boolean startInBackground) {
+  public AnalysisTask submitFiles(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback, boolean startInBackground) {
     // If user explicitly ask to analyze a single file, we should ignore certains exclusions
 
     if (!files.isEmpty()) {
       SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
       console.debug("Trigger: " + trigger);
-      SonarLintJobManager sonarLintJobManager = SonarLintUtils.getService(myProject, SonarLintJobManager.class);
+      AnalysisManager analysisManager = SonarLintUtils.getService(myProject, AnalysisManager.class);
       if (startInBackground) {
-        return sonarLintJobManager.submitBackground(files, trigger, callback);
+        return analysisManager.submitBackground(files, trigger, callback);
       } else {
-        return sonarLintJobManager.submitManual(files, trigger, false, callback);
+        return analysisManager.submitManual(files, trigger, false, callback);
       }
     }
     return null;

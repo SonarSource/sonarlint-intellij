@@ -25,12 +25,12 @@ import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class SonarLintStatusTest extends AbstractSonarLintMockedTests {
-  private SonarLintStatus status;
+public class AnalysisStatusTest extends AbstractSonarLintMockedTests {
+  private AnalysisStatus status;
 
   @Before
   public void prepare() {
-    status = new SonarLintStatus(getProject());
+    status = new AnalysisStatus(getProject());
   }
 
   @Test

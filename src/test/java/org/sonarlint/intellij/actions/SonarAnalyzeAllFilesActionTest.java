@@ -27,7 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
@@ -43,13 +43,13 @@ public class SonarAnalyzeAllFilesActionTest extends AbstractSonarLintLightTests 
   private AnActionEvent event = mock(AnActionEvent.class);
 
   private SonarAnalyzeAllFilesAction action = new SonarAnalyzeAllFilesAction();
-  private SonarLintStatus status;
+  private AnalysisStatus status;
   private VirtualFile file;
 
   @Before
   public void before() {
     replaceProjectService(SonarLintSubmitter.class, submitter);
-    status = SonarLintStatus.get(getProject());
+    status = AnalysisStatus.get(getProject());
     file = myFixture.copyFileToProject("foo/foo.php", "foo/foo.php");
   }
 

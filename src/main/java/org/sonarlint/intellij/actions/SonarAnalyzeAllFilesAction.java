@@ -37,7 +37,7 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
@@ -53,7 +53,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     super(text, description, icon);
   }
 
-  @Override protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
+  @Override protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
     return !status.isRunning() && !getAllFiles(project).isEmpty();
   }
 

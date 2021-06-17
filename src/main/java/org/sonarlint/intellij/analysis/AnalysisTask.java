@@ -65,16 +65,16 @@ import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 import static java.util.stream.Collectors.toList;
 import static org.sonarlint.intellij.util.SonarLintUtils.pluralize;
 
-public class SonarLintTask extends Task.Backgroundable {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintTask.class);
-  protected final SonarLintJob job;
+public class AnalysisTask extends Task.Backgroundable {
+  private static final Logger LOGGER = Logger.getInstance(AnalysisTask.class);
+  protected final AnalysisRequest request;
   protected final boolean modal;
   private final boolean startInBackground;
   private boolean finished = false;
   private boolean cancelled;
 
-  public SonarLintTask(SonarLintJob job, boolean background) {
-    this(job, false, background);
+  public AnalysisTask(AnalysisRequest request, boolean background) {
+    this(request, false, background);
   }
 
   /**
@@ -83,9 +83,9 @@ public class SonarLintTask extends Task.Backgroundable {
    * @param modal      If true and background is false, it will be a blocking task, without the possibility to send it to background.
    * @param background Whether it should start in the foreground or background.
    */
-  public SonarLintTask(SonarLintJob job, boolean modal, boolean background) {
-    super(job.project(), "SonarLint Analysis", true);
-    this.job = job;
+  public AnalysisTask(AnalysisRequest request, boolean modal, boolean background) {
+    super(request.project(), "SonarLint Analysis", true);
+    this.request = request;
     this.modal = modal;
     this.startInBackground = background;
   }
@@ -104,8 +104,8 @@ public class SonarLintTask extends Task.Backgroundable {
     return file.getName();
   }
 
-  public SonarLintJob getJob() {
-    return job;
+  public AnalysisRequest getRequest() {
+    return request;
   }
 
   @Override
@@ -118,7 +118,7 @@ public class SonarLintTask extends Task.Backgroundable {
     List<VirtualFile> filesToClearIssues = new ArrayList<>();
     Map<Module, Collection<VirtualFile>> filesByModule;
     try {
-      filesByModule = filterAndGetByModule(job.files(), job.isForced(), filesToClearIssues);
+      filesByModule = filterAndGetByModule(request.files(), request.isForced(), filesToClearIssues);
     } catch (InvalidBindingException e) {
       // nothing to do, SonarLintEngineManager already showed notification
       return;
@@ -140,7 +140,7 @@ public class SonarLintTask extends Task.Backgroundable {
       });
 
       if (allFilesToAnalyze.isEmpty()) {
-        job.callback().onSuccess(Collections.emptySet());
+        request.callback().onSuccess(Collections.emptySet());
         return;
       }
 
@@ -169,9 +169,9 @@ public class SonarLintTask extends Task.Backgroundable {
         SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
       }
 
-      job.callback().onSuccess(failedVirtualFiles);
+      request.callback().onSuccess(failedVirtualFiles);
     } catch (CanceledException | ProcessCanceledException e1) {
-      SonarLintConsole console = SonarLintConsole.get(job.project());
+      SonarLintConsole console = SonarLintConsole.get(request.project());
       console.info("Analysis canceled");
     } catch (Throwable e) {
       handleError(e, indicator);
@@ -195,7 +195,7 @@ public class SonarLintTask extends Task.Backgroundable {
   }
 
   private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule, Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
-    if (shouldUpdateServerIssues(job.trigger())) {
+    if (shouldUpdateServerIssues(request.trigger())) {
       Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
 
       for (Map.Entry<Module, Collection<VirtualFile>> e : filesByModule.entrySet()) {
@@ -209,7 +209,7 @@ public class SonarLintTask extends Task.Backgroundable {
 
       if (!filesWithIssuesPerModule.isEmpty()) {
         ServerIssueUpdater serverIssueUpdater = SonarLintUtils.getService(myProject, ServerIssueUpdater.class);
-        serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, job.waitForServerIssues());
+        serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, request.waitForServerIssues());
       }
     }
   }
@@ -320,7 +320,7 @@ public class SonarLintTask extends Task.Backgroundable {
     // if cancelled, ignore any errors since they were most likely caused by the interrupt
     if (!isCancelled(indicator)) {
       String msg = "Error running SonarLint analysis";
-      SonarLintConsole console = SonarLintConsole.get(job.project());
+      SonarLintConsole console = SonarLintConsole.get(request.project());
       console.error(msg, e);
       LOGGER.warn(msg, e);
 
@@ -330,7 +330,7 @@ public class SonarLintTask extends Task.Backgroundable {
           () -> Messages.showErrorDialog(dialogMsg, "Error Running SonarLint Analysis"), ModalityState.defaultModalityState());
       }
 
-      AnalysisCallback callback = job.callback();
+      AnalysisCallback callback = request.callback();
       callback.onError(e);
     }
   }
@@ -342,7 +342,7 @@ public class SonarLintTask extends Task.Backgroundable {
   }
 
   private boolean isCancelled(ProgressIndicator indicator) {
-    return cancelled || indicator.isCanceled() || myProject.isDisposed() || Thread.currentThread().isInterrupted() || SonarLintStatus.get(myProject).isCanceled();
+    return cancelled || indicator.isCanceled() || myProject.isDisposed() || Thread.currentThread().isInterrupted() || AnalysisStatus.get(myProject).isCanceled();
   }
 
   private List<AnalysisResults> analyzePerModule(Project project, ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule, IssueListener listener) {

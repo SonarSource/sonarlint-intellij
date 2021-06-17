@@ -23,7 +23,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static java.util.Collections.singletonList;
@@ -31,15 +31,15 @@ import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class SonarLintJobManagerTest extends LightPlatformCodeInsightFixture4TestCase {
-  private SonarLintJobManager manager;
-  private final TaskListener taskListener = mock(TaskListener.class);
+public class AnalysisManagerTest extends LightPlatformCodeInsightFixture4TestCase {
+  private AnalysisManager manager;
+  private final AnalysisListener analysisListener = mock(AnalysisListener.class);
   final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
 
   @Before
   public void prepare() {
-    getProject().getMessageBus().connect().subscribe(TaskListener.SONARLINT_TASK_TOPIC, taskListener);
-    manager = new SonarLintJobManager(getProject());
+    getProject().getMessageBus().connect().subscribe(AnalysisListener.TOPIC, analysisListener);
+    manager = new AnalysisManager(getProject());
   }
 
   @Test

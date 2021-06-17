@@ -26,10 +26,10 @@ import org.sonarlint.intellij.util.SonarLintUtils;
 /**
  * A modal task (blocking) initiated explicitly by the user.
  */
-class SonarLintUserTask extends SonarLintTask {
+class UserTriggeredAnalysisTask extends AnalysisTask {
 
-  SonarLintUserTask(SonarLintJob job, boolean modal) {
-    super(job, modal, false);
+  UserTriggeredAnalysisTask(AnalysisRequest request, boolean modal) {
+    super(request, modal, false);
   }
 
   @Override public void run(@NotNull ProgressIndicator indicator) {
@@ -37,7 +37,7 @@ class SonarLintUserTask extends SonarLintTask {
       super.run(indicator);
     } finally {
       if (!myProject.isDisposed()) {
-        SonarLintUtils.getService(myProject, SonarLintStatus.class).stopRun();
+        SonarLintUtils.getService(myProject, AnalysisStatus.class).stopRun();
       }
     }
   }
