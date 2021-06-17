@@ -37,7 +37,7 @@ import java.util.Collections;
 import java.util.List;
 import org.junit.After;
 import org.junit.Before;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -76,7 +76,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
     if (!getProject().isDisposed()) {
-      SonarLintStatus.get(getProject()).stopRun();
+      AnalysisStatus.get(getProject()).stopRun();
     }
     Disposer.dispose(disposable);
   }

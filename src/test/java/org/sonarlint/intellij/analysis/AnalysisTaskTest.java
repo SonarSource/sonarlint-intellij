@@ -46,7 +46,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
-import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -65,14 +65,14 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
-public class SonarLintTaskTest extends AbstractSonarLintLightTests {
-  private SonarLintTask task;
+public class AnalysisTaskTest extends AbstractSonarLintLightTests {
+  private AnalysisTask task;
   @Mock
   private final LiveIssueBuilder liveIssueBuilder = mock(LiveIssueBuilder.class);
-  private Set<VirtualFile> filesInAnalyzeJob = new HashSet<>();
+  private Set<VirtualFile> filesToAnalyze = new HashSet<>();
   @Mock
   private ProgressIndicator progress;
-  private SonarLintJob job;
+  private AnalysisRequest analysisRequest;
   @Mock
   private SonarLintAnalyzer sonarLintAnalyzer;
   @Mock
@@ -84,33 +84,33 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
   public void prepare() {
     MockitoAnnotations.initMocks(this);
     PsiFile testFile = myFixture.configureByText("MyClass.java", "public class MyClass {]");
-    filesInAnalyzeJob.add(testFile.getVirtualFile());
-    job = createJob();
+    filesToAnalyze.add(testFile.getVirtualFile());
+    analysisRequest = createAnalysisRequest();
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class))).thenReturn(analysisResults);
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class))).thenReturn(analysisResults);
 
-    replaceProjectService(SonarLintStatus.class, new SonarLintStatus(getProject()));
+    replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
     replaceProjectService(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
     replaceProjectService(IssueManager.class, issueManagerMock);
     replaceProjectService(LiveIssueBuilder.class, liveIssueBuilder);
 
-    task = new SonarLintTask(job, false, true);
+    task = new AnalysisTask(analysisRequest, false, true);
 
     // IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
-    SonarLintStatus.get(getProject()).stopRun();
+    AnalysisStatus.get(getProject()).stopRun();
   }
 
   @Test
   public void testTask() {
     assertThat(task.shouldStartInBackground()).isTrue();
     assertThat(task.isConditionalModal()).isFalse();
-    assertThat(task.getJob()).isEqualTo(job);
+    assertThat(task.getRequest()).isEqualTo(analysisRequest);
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class));
 
     assertThat(getExternalAnnotators())
       .extracting("implementationClass")
@@ -121,9 +121,9 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldIgnoreProjectLevelIssues() {
-    TaskListener listener = mock(TaskListener.class);
-    getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class)))
+    AnalysisListener listener = mock(AnalysisListener.class);
+    getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         IssueListener issueListener = invocation.getArgument(2);
         Issue issue = SonarLintTestUtils.createIssue(1);
@@ -133,14 +133,14 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class));
     verify(issueManagerMock, never()).insertNewIssue(any(), any());
     verifyNoMoreInteractions(liveIssueBuilder);
   }
 
   @Test
   public void shouldIgnoreInvalidFiles() {
-    VirtualFile vFile = filesInAnalyzeJob.iterator().next();
+    VirtualFile vFile = filesToAnalyze.iterator().next();
     WriteCommandAction.runWriteCommandAction(getProject(), () -> {
       try {
         vFile.delete(null);
@@ -148,8 +148,8 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
         fail("Cannot delete file");
       }
     });
-    TaskListener listener = mock(TaskListener.class);
-    getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
+    AnalysisListener listener = mock(AnalysisListener.class);
+    getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
 
     task.run(progress);
 
@@ -163,15 +163,15 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     Issue issue = mock(Issue.class);
     ClientInputFile clientInputFile = mock(ClientInputFile.class);
     when(issue.getInputFile()).thenReturn(clientInputFile);
-    VirtualFile virtualFile = filesInAnalyzeJob.iterator().next();
+    VirtualFile virtualFile = filesToAnalyze.iterator().next();
     LiveIssue liveIssue = mock(LiveIssue.class);
     when(clientInputFile.getClientObject()).thenReturn(virtualFile);
     when(clientInputFile.getPath()).thenReturn("path");
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenReturn(liveIssue);
 
-    TaskListener listener = mock(TaskListener.class);
-    getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class)))
+    AnalysisListener listener = mock(AnalysisListener.class);
+    getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         IssueListener issueListener = invocation.getArgument(2);
         issueListener.handle(issue);
@@ -180,7 +180,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class));
     verify(liveIssueBuilder).buildLiveIssue(any(), any());
     verify(issueManagerMock).insertNewIssue(virtualFile, liveIssue);
   }
@@ -190,9 +190,9 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     Issue issue = buildValidIssue();
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenThrow(new IssueMatcher.NoMatchException(""));
 
-    TaskListener listener = mock(TaskListener.class);
-    getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class)))
+    AnalysisListener listener = mock(AnalysisListener.class);
+    getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         IssueListener issueListener = invocation.getArgument(2);
         issueListener.handle(issue);
@@ -201,7 +201,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class));
     verify(issueManagerMock, never()).insertNewIssue(any(), any());
     verify(liveIssueBuilder).buildLiveIssue(any(), any());
     verifyNoMoreInteractions(liveIssueBuilder);
@@ -212,9 +212,9 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     Issue issue = buildValidIssue();
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenThrow(new RuntimeException(""));
 
-    TaskListener listener = mock(TaskListener.class);
-    getProject().getMessageBus().connect(getProject()).subscribe(TaskListener.SONARLINT_TASK_TOPIC, listener);
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class)))
+    AnalysisListener listener = mock(AnalysisListener.class);
+    getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
         IssueListener issueListener = invocation.getArgument(2);
         issueListener.handle(issue);
@@ -223,7 +223,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class));
     verify(issueManagerMock, never()).insertNewIssue(any(), any());
     verify(liveIssueBuilder).buildLiveIssue(any(), any());
     verifyNoMoreInteractions(liveIssueBuilder);
@@ -231,7 +231,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testAnalysisError() {
-    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesInAnalyzeJob), any(IssueListener.class), any(ProgressMonitor.class));
+    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class));
     task.run(progress);
 
     // never called because of error
@@ -256,8 +256,8 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     assertThat(task.isFinished()).isTrue();
   }
 
-  private SonarLintJob createJob() {
-    return new SonarLintJob(getProject(), filesInAnalyzeJob, TriggerType.ACTION, false, mock(AnalysisCallback.class));
+  private AnalysisRequest createAnalysisRequest() {
+    return new AnalysisRequest(getProject(), filesToAnalyze, TriggerType.ACTION, false, mock(AnalysisCallback.class));
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {
@@ -270,7 +270,7 @@ public class SonarLintTaskTest extends AbstractSonarLintLightTests {
     Issue issue = mock(Issue.class);
     ClientInputFile clientInputFile = mock(ClientInputFile.class);
     when(issue.getInputFile()).thenReturn(clientInputFile);
-    VirtualFile virtualFile = filesInAnalyzeJob.iterator().next();
+    VirtualFile virtualFile = filesToAnalyze.iterator().next();
     when(clientInputFile.getClientObject()).thenReturn(virtualFile);
     when(clientInputFile.getPath()).thenReturn("path");
     return issue;

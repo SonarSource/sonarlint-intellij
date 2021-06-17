@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.messages;
 
 import com.intellij.util.messages.Topic;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 @FunctionalInterface
 public interface StatusListener {
@@ -29,5 +29,5 @@ public interface StatusListener {
   /**
    * Called when the status of the user-initiated analysis changes.
    */
-  void changed(SonarLintStatus.Status newStatus);
+  void changed(AnalysisStatus.Status newStatus);
 }

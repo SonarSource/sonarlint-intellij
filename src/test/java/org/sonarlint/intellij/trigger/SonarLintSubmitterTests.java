@@ -28,7 +28,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintJobManager;
+import org.sonarlint.intellij.analysis.AnalysisManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -44,7 +44,7 @@ import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.trigger.SonarLintSubmitter.NO_OP_CALLBACK;
 
 public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
-  private SonarLintJobManager sonarLintJobManager = mock(SonarLintJobManager.class);
+  private AnalysisManager analysisManager = mock(AnalysisManager.class);
   private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
   private SonarLintFacade facade = mock(SonarLintFacade.class);
 
@@ -56,7 +56,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     getGlobalSettings().setAutoTrigger(true);
     submitter = new SonarLintSubmitter(getProject());
-    replaceProjectService(SonarLintJobManager.class, sonarLintJobManager);
+    replaceProjectService(AnalysisManager.class, analysisManager);
     replaceProjectService(ProjectBindingManager.class, bindingManager);
   }
 
@@ -66,7 +66,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(sonarLintJobManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
+    verify(analysisManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test
@@ -75,7 +75,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
     final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
     submitter.submitFilesModal(singleton(f1), TriggerType.CONFIG_CHANGE, analysisCallback);
-    verify(sonarLintJobManager).submitManual(singleton(f1), TriggerType.CONFIG_CHANGE, true, analysisCallback);
+    verify(analysisManager).submitManual(singleton(f1), TriggerType.CONFIG_CHANGE, true, analysisCallback);
   }
 
   @Test
@@ -86,14 +86,14 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
     setProjectLevelExclusions(singletonList("GLOB:foo.php"));
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(sonarLintJobManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
+    verify(analysisManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test
   public void should_not_submit_if_auto_disable() {
     getGlobalSettings().setAutoTrigger(false);
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verifyZeroInteractions(sonarLintJobManager);
+    verifyZeroInteractions(analysisManager);
   }
 
 }

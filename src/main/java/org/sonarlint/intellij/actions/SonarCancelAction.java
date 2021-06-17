@@ -21,18 +21,18 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 public class SonarCancelAction extends AbstractSonarAction {
   @Override
-  protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
+  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
     return status.isRunning() && !status.isCanceled();
   }
 
   @Override
   public void actionPerformed(AnActionEvent e) {
     if (e.getProject() != null) {
-      SonarLintStatus.get(e.getProject()).cancel();
+      AnalysisStatus.get(e.getProject()).cancel();
     }
   }
 }

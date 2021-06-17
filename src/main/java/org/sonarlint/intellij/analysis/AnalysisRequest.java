@@ -24,17 +24,16 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.stream.Stream;
 import org.sonarlint.intellij.trigger.TriggerType;
 
-public class SonarLintJob {
+public class AnalysisRequest {
   private final Project project;
   private final Collection<VirtualFile> files;
   private final TriggerType trigger;
   private final boolean waitForServerIssues;
   private final AnalysisCallback callback;
 
-  SonarLintJob(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerIssues, AnalysisCallback callback) {
+  AnalysisRequest(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerIssues, AnalysisCallback callback) {
     this.project = project;
     this.callback = callback;
     this.waitForServerIssues = waitForServerIssues;

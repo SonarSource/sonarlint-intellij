@@ -17,26 +17,23 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis;
+package org.sonarlint.intellij.messages;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import org.junit.Test;
-import org.sonarlint.intellij.trigger.TriggerType;
+import com.intellij.util.messages.Topic;
+import org.sonarlint.intellij.analysis.AnalysisRequest;
 
-import static java.util.Collections.singletonList;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
+/**
+ * Notifies about analysis tasks starting. It will be called for any analysis task, regardless of the trigger, if it is background or not, etc.
+ */
+public interface AnalysisListener {
+  Topic<AnalysisListener> TOPIC = Topic.create("SonarLint analysis start", AnalysisListener.class);
 
-public class SonarLintJobTest {
-  @Test
-  public void testRoundTrip() {
-    Project p = mock(Project.class);
-    VirtualFile f = mock(VirtualFile.class);
-    SonarLintJob job = new SonarLintJob(p, singletonList(f), TriggerType.COMPILATION, false, mock(AnalysisCallback.class));
+  void started(AnalysisRequest analysisRequest);
 
-    assertThat(job.files()).containsOnly(f);
-    assertThat(job.trigger()).isEqualTo(TriggerType.COMPILATION);
+  abstract class Adapter implements AnalysisListener {
+    @Override
+    public void started(AnalysisRequest analysisRequest) {
+      // can be optionally implemented
+    }
   }
-
 }

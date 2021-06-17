@@ -23,7 +23,7 @@ import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.analysis.SonarLintStatus
+import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -58,7 +58,7 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
     getService(SonarLintTelemetry::class.java).taintVulnerabilitiesInvestigatedRemotely()
   }
 
-  override fun isEnabled(e: AnActionEvent, project: Project, status: SonarLintStatus): Boolean {
+  override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
     return e.getData(TAINT_VULNERABILITY_DATA_KEY) != null
   }
 

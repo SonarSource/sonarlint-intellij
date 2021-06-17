@@ -38,7 +38,7 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
@@ -75,7 +75,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       return;
     }
 
-    SonarLintStatus status = SonarLintUtils.getService(project, SonarLintStatus.class);
+    AnalysisStatus status = SonarLintUtils.getService(project, AnalysisStatus.class);
     if (status.isRunning()) {
       e.getPresentation().setEnabled(false);
       return;

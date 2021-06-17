@@ -25,34 +25,34 @@ import com.intellij.util.messages.MessageBus;
 import java.util.Collection;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
-public class SonarLintJobManager {
+public class AnalysisManager {
   private final MessageBus messageBus;
   private final Project myProject;
 
-  public SonarLintJobManager(Project project) {
+  public AnalysisManager(Project project) {
     this.messageBus = project.getMessageBus();
     myProject = project;
   }
 
   /**
    * Runs SonarLint analysis asynchronously, as a background task, in the application's thread pool.
-   * It might queue the submission of the job in the thread pool.
+   * It might queue the submission of the task in the thread pool.
    * It won't block the current thread (in most cases, the event dispatch thread), but the contents of the file being analyzed
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
    *
    * @see #submitManual(Collection, TriggerType, boolean, AnalysisCallback)
    * @return
    */
-  public SonarLintTask submitBackground(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
-    SonarLintJob newJob = new SonarLintJob(myProject, files, trigger, false, callback);
+  public AnalysisTask submitBackground(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
+    AnalysisRequest analysisRequest = new AnalysisRequest(myProject, files, trigger, false, callback);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
-    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.files().size()));
-    SonarLintTask task = new SonarLintTask(newJob, true);
-    notifyStart(task.getJob());
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), analysisRequest.files().size()));
+    AnalysisTask task = new AnalysisTask(analysisRequest, true);
+    notifyStart(task.getRequest());
     task.queue();
     return task;
   }
@@ -65,24 +65,24 @@ public class SonarLintJobManager {
    * @see #submitBackground(Collection, TriggerType, AnalysisCallback)
    */
   @CheckForNull
-  public SonarLintTask submitManual(Collection<VirtualFile> files, TriggerType trigger, boolean modal, AnalysisCallback callback) {
-    SonarLintStatus status = SonarLintUtils.getService(myProject, SonarLintStatus.class);
+  public AnalysisTask submitManual(Collection<VirtualFile> files, TriggerType trigger, boolean modal, AnalysisCallback callback) {
+    AnalysisStatus status = SonarLintUtils.getService(myProject, AnalysisStatus.class);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (myProject.isDisposed() || !status.tryRun()) {
       console.info("Canceling analysis triggered by the user because another one is already running or because the project is disposed");
       return null;
     }
 
-    SonarLintJob newJob = new SonarLintJob(myProject, files, trigger, true, callback);
-    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), newJob.files().size()));
-    SonarLintUserTask task = new SonarLintUserTask(newJob, modal);
-    notifyStart(task.getJob());
+    AnalysisRequest analysisRequest = new AnalysisRequest(myProject, files, trigger, true, callback);
+    console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), analysisRequest.files().size()));
+    UserTriggeredAnalysisTask task = new UserTriggeredAnalysisTask(analysisRequest, modal);
+    notifyStart(task.getRequest());
     task.queue();
     return task;
   }
 
-  private void notifyStart(SonarLintJob job) {
-    messageBus.syncPublisher(TaskListener.SONARLINT_TASK_TOPIC).started(job);
+  private void notifyStart(AnalysisRequest request) {
+    messageBus.syncPublisher(AnalysisListener.TOPIC).started(request);
   }
 
 }

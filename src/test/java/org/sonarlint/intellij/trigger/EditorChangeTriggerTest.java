@@ -32,7 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.analysis.SonarLintTask;
+import org.sonarlint.intellij.analysis.AnalysisTask;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -92,9 +92,9 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
   public void should_cancel_previous_task() {
     VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
-    SonarLintTask sonarLintTask = mock(SonarLintTask.class);
-    when(submitter.submitFiles(any(), any(), anyBoolean())).thenReturn(sonarLintTask);
-    when(sonarLintTask.isFinished()).thenReturn(false);
+    AnalysisTask analysisTask = mock(AnalysisTask.class);
+    when(submitter.submitFiles(any(), any(), anyBoolean())).thenReturn(analysisTask);
+    when(analysisTask.isFinished()).thenReturn(false);
 
     underTest.documentChanged(createEvent(file));
     // Two rapid changes should only lead to a single trigger
@@ -106,8 +106,8 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     // Schedule again
     underTest.documentChanged(createEvent(file));
 
-    verify(sonarLintTask, timeout(3000)).cancel();
-    when(sonarLintTask.isFinished()).thenReturn(true);
+    verify(analysisTask, timeout(3000)).cancel();
+    when(analysisTask.isFinished()).thenReturn(true);
     verify(submitter, timeout(1000)).submitFiles(new ArrayList<>(Collections.singleton(file)), TriggerType.EDITOR_CHANGE, true);
 
     verifyNoMoreInteractions(submitter);

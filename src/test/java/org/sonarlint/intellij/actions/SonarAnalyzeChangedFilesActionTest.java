@@ -27,7 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
@@ -44,12 +44,12 @@ public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTe
   private AnActionEvent event = mock(AnActionEvent.class);
 
   private SonarAnalyzeChangedFilesAction action;
-  private SonarLintStatus status;
+  private AnalysisStatus status;
 
   @Before
   public void before() {
     action = new SonarAnalyzeChangedFilesAction();
-    status = SonarLintStatus.get(getProject());
+    status = AnalysisStatus.get(getProject());
     replaceProjectService(SonarLintSubmitter.class, submitter);
     replaceProjectService(ChangeListManager.class, changeListManager);
   }

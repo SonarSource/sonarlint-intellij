@@ -185,7 +185,7 @@
         <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintJobManager"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectServerNotificationsSubscriber"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
@@ -193,7 +193,7 @@
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.LiveIssueBuilder"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintStatus"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisStatus"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.EditorChangeTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintAnalyzer"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.ServerIssueUpdater"/>

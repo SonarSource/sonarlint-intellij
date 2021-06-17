@@ -35,9 +35,9 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
-import org.sonarlint.intellij.analysis.SonarLintJob;
-import org.sonarlint.intellij.analysis.SonarLintTask;
-import org.sonarlint.intellij.messages.TaskListener;
+import org.sonarlint.intellij.analysis.AnalysisRequest;
+import org.sonarlint.intellij.analysis.AnalysisTask;
+import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
@@ -61,10 +61,10 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
   public void onProjectOpened() {
     myProject.getMessageBus()
       .connect(myProject)
-      .subscribe(TaskListener.SONARLINT_TASK_TOPIC, new TaskListener.Adapter() {
+      .subscribe(AnalysisListener.TOPIC, new AnalysisListener.Adapter() {
         @Override
-        public void started(SonarLintJob job) {
-          removeFiles(job.files());
+        public void started(AnalysisRequest analysisRequest) {
+          removeFiles(analysisRequest.files());
         }
       });
     watcher.start();
@@ -108,7 +108,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
   private class EventWatcher extends Thread {
 
     private boolean stop = false;
-    private SonarLintTask task;
+    private AnalysisTask task;
 
     EventWatcher() {
       this.setDaemon(true);

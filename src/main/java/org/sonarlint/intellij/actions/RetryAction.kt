@@ -21,11 +21,11 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.analysis.SonarLintStatus
+import org.sonarlint.intellij.analysis.AnalysisStatus
 
 class RetryAction(private val callback: () -> Unit) : AbstractSonarAction("Retry", null, null) {
 
-    override fun isEnabled(e: AnActionEvent, project: Project, status: SonarLintStatus) = true
+    override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus) = true
 
     override fun actionPerformed(e: AnActionEvent) {
         callback()

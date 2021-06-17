@@ -21,12 +21,12 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.analysis.SonarLintStatus;
+import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.ui.CodeAnalyzersDialog;
 
 public class SonarShowCodeAnalyzers extends AbstractSonarAction {
 
-  @Override protected boolean isEnabled(AnActionEvent e, Project project, SonarLintStatus status) {
+  @Override protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
     return e.getProject() != null;
   }
 

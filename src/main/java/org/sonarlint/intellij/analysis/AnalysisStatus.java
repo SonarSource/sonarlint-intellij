@@ -25,18 +25,18 @@ import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 @ThreadSafe
-public class SonarLintStatus {
+public class AnalysisStatus {
   private final StatusListener statusListener;
   private Status status = Status.STOPPED;
 
-  public SonarLintStatus(Project project) {
+  public AnalysisStatus(Project project) {
     this.statusListener = project.getMessageBus().syncPublisher(StatusListener.SONARLINT_STATUS_TOPIC);
   }
 
   public enum Status {RUNNING, STOPPED, CANCELLING}
 
-  public static SonarLintStatus get(Project p) {
-    return SonarLintUtils.getService(p, SonarLintStatus.class);
+  public static AnalysisStatus get(Project p) {
+    return SonarLintUtils.getService(p, AnalysisStatus.class);
   }
 
   /**
