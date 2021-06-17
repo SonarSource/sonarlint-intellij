@@ -111,20 +111,6 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
   }
 
   @Test
-  public void testDisableRule() {
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    settings.disableRule(RULE);
-    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isTrue();
-  }
-
-  @Test
-  public void testEnableRule() {
-    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
-    settings.enableRule(RULE);
-    assertThat(settings.isRuleExplicitlyDisabled(RULE)).isFalse();
-  }
-
-  @Test
   public void testResetRuleParam() {
     SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.setRuleParam(RULE, PARAM, VALUE);

@@ -36,7 +36,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.util.SonarLintUtils.equalsIgnoringTrailingSlash;
@@ -95,12 +94,10 @@ public final class SonarLintGlobalSettings {
   }
 
   public void enableRule(String ruleKey) {
-    SonarLintUtils.getService(SonarLintTelemetry.class).addEnabledRule(ruleKey);
     setRuleActive(ruleKey, true);
   }
 
   public void disableRule(String ruleKey) {
-    SonarLintUtils.getService(SonarLintTelemetry.class).addDisabledRule(ruleKey);
     setRuleActive(ruleKey, false);
   }
 
