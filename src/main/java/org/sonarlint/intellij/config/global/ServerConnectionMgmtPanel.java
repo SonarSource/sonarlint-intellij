@@ -77,7 +77,6 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
@@ -286,15 +285,8 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     if (server != null) {
       SonarLintEngineManager serverManager = getService(SonarLintEngineManager.class);
       engine = serverManager.getConnectedEngine(server.getName());
-      engineListener = newState -> ApplicationManager.getApplication().invokeLater(() -> {
-        // re-fetch state, as some time might have passed until it was assigned to the EDT and things might have changed
-        if (engine == null) {
-          return;
-        }
-        setStatus(engine.getState());
-      });
-      ConnectedSonarLintEngine.State state = engine.getState();
-      setStatus(state);
+      engineListener = newState -> updateBindingStatusLabelAsync();
+      updateBindingStatusLabelAsync();
       engine.addStateListener(engineListener);
     } else {
       serverStatus.setText("[ no connection selected ]");
@@ -302,35 +294,40 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     }
   }
 
-  private void setStatus(ConnectedSonarLintEngine.State state) {
-    ConnectedSonarLintEngine.State currentState = engine.getState();
-    StringBuilder builder = new StringBuilder();
+  private void updateBindingStatusLabelAsync() {
+    serverStatus.setText("checking...");
+    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+      if (engine == null) {
+        // label will already be updated from switchTo
+        return;
+      }
+      ConnectedSonarLintEngine.State state = engine.getState();
+      String statusText = getStatusText(state);
+      ApplicationManager.getApplication().invokeLater(() -> {
+        serverStatus.setText(statusText);
+        updateServerButton.setEnabled(state != ConnectedSonarLintEngine.State.UPDATING);
+      });
+    });
+  }
 
-    switch (currentState) {
+  private String getStatusText(ConnectedSonarLintEngine.State state) {
+    switch (state) {
       case NEVER_UPDATED:
-        builder.append("never updated");
-        break;
+        return "never updated";
       case UPDATED:
         GlobalStorageStatus storageStatus = engine.getGlobalStorageStatus();
         if (storageStatus != null) {
-          builder.append(DateUtils.toAge(storageStatus.getLastUpdateDate().getTime()));
-        } else {
-          builder.append("up to date");
+          return DateUtils.toAge(storageStatus.getLastUpdateDate().getTime());
         }
-        break;
+        return "up to date";
       case UPDATING:
-        builder.append("updating..");
-        break;
+        return "updating..";
       case NEED_UPDATE:
-        builder.append("needs update");
-        break;
+        return "needs update";
       case UNKNOWN:
       default:
-        builder.append("unknown");
-        break;
+        return "unknown";
     }
-    serverStatus.setText(builder.toString());
-    updateServerButton.setEnabled(state != ConnectedSonarLintEngine.State.UPDATING);
   }
 
   private void actionUpdateServerTask() {
