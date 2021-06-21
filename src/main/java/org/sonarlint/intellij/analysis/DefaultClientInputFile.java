@@ -30,7 +30,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
 
-import org.apache.commons.io.IOUtils;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
@@ -102,7 +101,15 @@ public class DefaultClientInputFile implements ClientInputFile {
 
   @Override public String contents() throws IOException {
     if (doc == null) {
-      return IOUtils.toString(inputStream(), charset);
+      ByteArrayOutputStream result = new ByteArrayOutputStream();
+      try (InputStream inputStream = inputStream()) {
+        byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+        int length;
+        while ((length = inputStream.read(buffer)) != -1) {
+          result.write(buffer, 0, length);
+        }
+      }
+      return result.toString(charset.name());
     }
     return doc.getText();
   }
