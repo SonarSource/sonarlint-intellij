@@ -88,11 +88,9 @@ public class SonarLintEngineFactory {
     }
     URL secretsPluginUrl = findEmbeddedSecretsPlugin(getPluginsDir());
     if(secretsPluginUrl != null) {
-      config.addExtraPlugin(Language.SECRETS.getPluginKey(), secretsPluginUrl);
+      configBuilder.addExtraPlugin(Language.SECRETS.getPluginKey(), secretsPluginUrl);
     }
     // it will also start it
-    return new ConnectedSonarLintEngineImpl(config.build());
-
     return new ConnectedSonarLintEngineImpl(configBuilder.build());
   }
 

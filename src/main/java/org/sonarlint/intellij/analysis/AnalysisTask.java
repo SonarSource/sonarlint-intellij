@@ -59,7 +59,6 @@ import org.sonarlint.intellij.issue.secrets.SecretsNotifications;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
-import org.sonarlint.intellij.messages.TaskListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -125,9 +124,6 @@ public class AnalysisTask extends Task.Backgroundable {
 
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
 
-    FileStatusManager fileStatusManager = FileStatusManager.getInstance(myProject);
-    List<VirtualFile> allFilesToAnalyze = job.allFiles()
-      .filter(file -> fileStatusManager.getStatus(file) != FileStatus.IGNORED).collect(toList());
     List<VirtualFile> filesToClearIssues = new ArrayList<>();
     Map<Module, Collection<VirtualFile>> filesByModule;
     try {
@@ -136,7 +132,20 @@ public class AnalysisTask extends Task.Backgroundable {
       // nothing to do, SonarLintEngineManager already showed notification
       return;
     }
-    List<VirtualFile> allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toList());
+    List<VirtualFile> allFiles = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toList());
+
+    FileStatusManager fileStatusManager = FileStatusManager.getInstance(myProject);
+    List<VirtualFile> ignoredFiles = new ArrayList<>();
+    List<VirtualFile> allFilesToAnalyze = new ArrayList<>();
+    allFiles.forEach(file -> {
+      if(fileStatusManager.getStatus(file) == FileStatus.IGNORED) {
+        ignoredFiles.add(file);
+        LOGGER.info("File " + file.getPath() + " is ignored in VCS and will no be analyzed.");
+      } else {
+        allFilesToAnalyze.add(file);
+      }
+    });
+
     // Cache everything that rely on issue store before clearing issues
     Map<VirtualFile, Boolean> firstAnalyzedFiles = cacheFirstAnalyzedFiles(manager, allFilesToAnalyze);
     Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile = collectPreviousIssuesPerFile(manager, allFilesToAnalyze);
@@ -148,6 +157,7 @@ public class AnalysisTask extends Task.Backgroundable {
 
       ReadAction.run(() -> {
         Set<VirtualFile> filesToClear = new HashSet<>(filesToClearIssues);
+        filesToClear.addAll(ignoredFiles);
         filesToClear.addAll(allFilesToAnalyze);
         manager.clearAllIssuesForFiles(filesToClear);
       });
