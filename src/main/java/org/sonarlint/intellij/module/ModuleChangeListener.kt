@@ -19,13 +19,11 @@
  */
 package org.sonarlint.intellij.module
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
-import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarlint.intellij.util.SonarLintUtils.getService
@@ -36,18 +34,7 @@ import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 private fun getEngineIfStarted(project: Project) =
     getService(project, ProjectBindingManager::class.java).engineIfStarted
 
-class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
-    private val connection: MessageBusConnection = project.messageBus.connect()
-
-    init {
-        connection.subscribe(
-            ProjectEngineListener.TOPIC,
-            ProjectEngineListener { previousEngine, newEngine ->
-                Modules.removeAllModules(project, previousEngine)
-                Modules.declareAllModules(project, newEngine)
-            })
-    }
-
+class ModuleChangeListener(val project: Project) : ModuleListener {
     override fun moduleAdded(project: Project, module: Module) {
         Modules.declareModule(project, getEngineIfStarted(project), module)
     }
@@ -55,13 +42,9 @@ class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
     override fun moduleRemoved(project: Project, module: Module) {
         Modules.removeModule(getEngineIfStarted(project), module)
     }
-
-    override fun dispose() {
-        connection.disconnect()
-    }
 }
 
- object Modules {
+object Modules {
     private val executor = getService(ThreadPoolExecutor::class.java)
 
     fun declareAllModules(project: Project, engine: SonarLintEngine?) {
@@ -87,5 +70,12 @@ class ModuleChangeListener(val project: Project) : ModuleListener, Disposable {
 class ProjectClosedListener : ProjectManagerListener {
     override fun projectClosing(project: Project) {
         Modules.removeAllModules(project, getEngineIfStarted(project))
+    }
+}
+
+class ModuleEngineChangeListener(private val project: Project) : ProjectEngineListener {
+    override fun engineChanged(previousEngine: SonarLintEngine?, newEngine: SonarLintEngine?) {
+        Modules.removeAllModules(project, previousEngine)
+        Modules.declareAllModules(project, newEngine)
     }
 }

@@ -50,11 +50,6 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
         moduleChangeListener = ModuleChangeListener(project)
     }
 
-    @After
-    fun finish() {
-        moduleChangeListener.dispose()
-    }
-
     @Test
     fun should_declare_module_on_engine_when_module_added_to_project() {
         moduleChangeListener.moduleAdded(project, module)
