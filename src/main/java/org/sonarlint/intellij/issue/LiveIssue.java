@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.issue;
 
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
@@ -100,8 +100,8 @@ public class LiveIssue implements Trackable {
 
   @Override
   public Integer getLine() {
-    if (range != null && isValid()) {
-      return ApplicationManager.getApplication().<Integer>runReadAction(() -> range.getDocument().getLineNumber(range.getStartOffset()) + 1);
+    if (range != null) {
+      return ReadAction.compute(() -> isValid() ? range.getDocument().getLineNumber(range.getStartOffset()) + 1 : null);
     }
 
     return null;

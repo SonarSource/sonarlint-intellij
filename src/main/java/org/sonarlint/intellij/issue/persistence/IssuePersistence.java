@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
+import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
@@ -27,8 +28,8 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LocalIssueTrackable;
-import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.proto.Sonarlint;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.HashingPathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
@@ -71,7 +72,7 @@ public class IssuePersistence {
     return store.contains(key);
   }
 
-  public synchronized void save(String key, Collection<? extends Trackable> issues) throws IOException {
+  public synchronized void save(String key, Collection<LiveIssue> issues) throws IOException {
     FileUtils.mkdirs(storeBasePath);
     store.write(key, transform(issues));
   }
@@ -106,11 +107,12 @@ public class IssuePersistence {
       .collect(Collectors.toList());
   }
 
-  private static Sonarlint.Issues transform(Collection<? extends Trackable> localIssues) {
+  private static Sonarlint.Issues transform(Collection<LiveIssue> localIssues) {
     Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
-    localIssues.stream()
+    ReadAction.run(() -> localIssues.stream()
+      .filter(LiveIssue::isValid)
       .map(IssuePersistence::transform)
-      .forEach(builder::addIssue);
+      .forEach(builder::addIssue));
 
     return builder.build();
   }
@@ -119,27 +121,26 @@ public class IssuePersistence {
     return new LocalIssueTrackable(issue);
   }
 
-  @CheckForNull
-  private static Sonarlint.Issues.Issue transform(Trackable localIssue) {
+  private static Sonarlint.Issues.Issue transform(LiveIssue liveIssue) {
     Sonarlint.Issues.Issue.Builder builder = Sonarlint.Issues.Issue.newBuilder()
-      .setRuleKey(localIssue.getRuleKey())
-      .setMessage(localIssue.getMessage())
-      .setResolved(localIssue.isResolved());
+      .setRuleKey(liveIssue.getRuleKey())
+      .setMessage(liveIssue.getMessage())
+      .setResolved(liveIssue.isResolved());
 
-    if (localIssue.getAssignee() != null) {
-      builder.setAssignee(localIssue.getAssignee());
+    if (liveIssue.getAssignee() != null) {
+      builder.setAssignee(liveIssue.getAssignee());
     }
-    if (localIssue.getCreationDate() != null) {
-      builder.setCreationDate(localIssue.getCreationDate());
+    if (liveIssue.getCreationDate() != null) {
+      builder.setCreationDate(liveIssue.getCreationDate());
     }
-    if (localIssue.getLineHash() != null) {
-      builder.setChecksum(localIssue.getLineHash());
+    if (liveIssue.getLineHash() != null) {
+      builder.setChecksum(liveIssue.getLineHash());
     }
-    if (localIssue.getServerIssueKey() != null) {
-      builder.setServerIssueKey(localIssue.getServerIssueKey());
+    if (liveIssue.getServerIssueKey() != null) {
+      builder.setServerIssueKey(liveIssue.getServerIssueKey());
     }
-    if (localIssue.getLine() != null) {
-      builder.setLine(localIssue.getLine());
+    if (liveIssue.getLine() != null) {
+      builder.setLine(liveIssue.getLine());
     }
     return builder.build();
   }
