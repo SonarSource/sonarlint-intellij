@@ -215,7 +215,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
     };
     ExecutorService executor = Executors.newFixedThreadPool(10);
     List<Future<?>> tasks = new ArrayList<>();
-    IntStream.range(1, 100).forEach(i ->  tasks.add(executor.submit(r)));
+    IntStream.range(1, 100).forEach(i -> tasks.add(executor.submit(r)));
     for (Future<?> task : tasks) {
       task.get(1, TimeUnit.MINUTES);
     }

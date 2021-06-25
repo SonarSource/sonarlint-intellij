@@ -107,13 +107,13 @@ public class LiveIssueCache {
    */
   public synchronized void flushAll() {
     LOGGER.debug("Persisting all issues");
-    cache.forEach((virtualFile, trackableIssues) -> {
+    cache.forEach((virtualFile, liveIssues) -> {
       if (virtualFile.isValid()) {
         String key = createKey(virtualFile);
         if (key != null) {
           try {
             IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
-            store.save(key, trackableIssues);
+            store.save(key, liveIssues);
           } catch (IOException e) {
             throw new IllegalStateException("Failed to flush cache", e);
           }
