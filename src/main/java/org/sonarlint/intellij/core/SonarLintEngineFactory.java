@@ -73,10 +73,13 @@ public class SonarLintEngineFactory {
 
     amendEnabledLanguages(enabledLanguages);
 
+    ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
+
     URL cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
     ConnectedGlobalConfiguration.Builder configBuilder = ConnectedGlobalConfiguration.builder()
       .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
-      .setConnectionId(connectionId);
+      .setConnectionId(connectionId)
+      .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
     configureCommonEngine(configBuilder);
 
     if (cFamilyPluginUrl != null) {
@@ -101,9 +104,12 @@ public class SonarLintEngineFactory {
 
       amendEnabledLanguages(enabledLanguages);
 
+      ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
+
       StandaloneGlobalConfiguration.Builder configBuilder = StandaloneGlobalConfiguration.builder()
         .addPlugins(plugins)
-        .addEnabledLanguages(enabledLanguages.toArray(new Language[0]));
+        .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
+        .setModulesProvider(modulesRegistry::getStandaloneModules);
       configureCommonEngine(configBuilder);
 
       return new StandaloneSonarLintEngineImpl(configBuilder.build());
@@ -114,9 +120,8 @@ public class SonarLintEngineFactory {
     }
   }
 
-  private void configureCommonEngine(AbstractGlobalConfiguration.AbstractBuilder<?> builder) {
+  private static void configureCommonEngine(AbstractGlobalConfiguration.AbstractBuilder<?> builder) {
     GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
-    ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
     final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
     builder
       .setLogOutput(globalLogOutput)
@@ -124,7 +129,6 @@ public class SonarLintEngineFactory {
       .setWorkDir(getWorkDir())
       .setExtraProperties(prepareExtraProps())
       .setNodeJs(nodeJsManager.getNodeJsPath(), nodeJsManager.getNodeJsVersion())
-      .setModulesProvider(modulesRegistry::getStandaloneModules)
       .setClientPid(OSProcessUtil.getCurrentProcessId());
   }
 
