@@ -152,6 +152,13 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
     }
   }
 
+  @Override
+  public void addReportedRule(String ruleKey) {
+    if (enabled()) {
+      telemetry.addReportedRule(ruleKey);
+    }
+  }
+
   @VisibleForTesting
   void stop() {
     if (enabled()) {

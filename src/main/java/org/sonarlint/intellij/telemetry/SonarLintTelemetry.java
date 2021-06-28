@@ -44,4 +44,6 @@ public interface SonarLintTelemetry {
   void taintVulnerabilitiesInvestigatedRemotely();
 
   void taintVulnerabilitiesInvestigatedLocally();
+
+  void addReportedRule(String reportedRule);
 }

@@ -26,11 +26,15 @@ import com.intellij.openapi.project.ProjectManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.SonarLintPlugin;
+import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.NodeJsManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.http.ApacheHttpClient;
@@ -73,6 +77,23 @@ public class TelemetryManagerProvider {
       public boolean devNotificationsDisabled() {
         return isDevNotificationsDisabled();
       }
+
+      @Override
+      public Collection<String> getNonDefaultEnabledRules() {
+        return Settings.getGlobalSettings().getRules().stream()
+          .filter(SonarLintGlobalSettings.Rule::isActive)
+          .map(SonarLintGlobalSettings.Rule::getKey)
+          .collect(Collectors.toList());
+      }
+
+      @Override
+      public Collection<String> getDefaultDisabledRules() {
+        return Settings.getGlobalSettings().getRules().stream()
+          .filter(rule -> !rule.isActive())
+          .map(SonarLintGlobalSettings.Rule::getKey)
+          .collect(Collectors.toList());
+      }
+
     });
   }
 
