@@ -60,6 +60,7 @@ import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
@@ -145,9 +146,13 @@ public class AnalysisTask extends Task.Backgroundable {
         return;
       }
 
+      Collection<String> reportedRules = new HashSet<>();
       List<AnalysisResults> results = analyzePerModule(myProject, indicator, filesByModule,
-        rawIssue -> processRawIssue(liveIssueBuilder, manager, firstAnalyzedFiles, issuesPerFile, previousIssuesPerFile, rawIssueCounter, rawIssue));
+        rawIssue -> processRawIssue(liveIssueBuilder, manager, firstAnalyzedFiles, issuesPerFile,
+          previousIssuesPerFile, rawIssueCounter, rawIssue, reportedRules));
 
+      SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+      telemetry.addReportedRules(reportedRules);
       LOGGER.info("SonarLint analysis done");
 
       indicator.setIndeterminate(false);
@@ -247,8 +252,8 @@ public class AnalysisTask extends Task.Backgroundable {
   }
 
   private void processRawIssue(LiveIssueBuilder issueBuilder, IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
-    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile, AtomicInteger rawIssueCounter,
-    org.sonarsource.sonarlint.core.client.api.common.analysis.Issue rawIssue) {
+    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile,
+    AtomicInteger rawIssueCounter, Issue rawIssue, Collection<String> reportedRules) {
     rawIssueCounter.incrementAndGet();
 
     // Do issue tracking for the single issue
@@ -285,9 +290,8 @@ public class AnalysisTask extends Task.Backgroundable {
       LiveIssue locallyTrackedIssue = manager.trackSingleIssue(vFile, previousIssues, liveIssue);
       issuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(locallyTrackedIssue);
     }
+    reportedRules.add(liveIssue.getRuleKey());
 
-    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-    telemetry.addReportedRule(liveIssue.getRuleKey());
   }
 
   private void logFoundIssuesIfAny(int rawIssueCount, Map<VirtualFile, Collection<LiveIssue>> transformedIssues) {

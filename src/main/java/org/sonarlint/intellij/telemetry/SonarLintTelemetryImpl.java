@@ -25,6 +25,7 @@ import com.intellij.ide.AppLifecycleListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.serviceContainer.NonInjectable;
+import java.util.Collection;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -153,9 +154,9 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
   }
 
   @Override
-  public void addReportedRule(String ruleKey) {
+  public void addReportedRules(Collection<String> ruleKeys) {
     if (enabled()) {
-      telemetry.addReportedRule(ruleKey);
+      telemetry.addReportedRules(ruleKeys);
     }
   }
 
