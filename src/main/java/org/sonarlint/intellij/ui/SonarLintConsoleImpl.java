@@ -25,6 +25,7 @@ import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.serviceContainer.AlreadyDisposedException;
 import com.intellij.serviceContainer.NonInjectable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -36,7 +37,6 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   private ConsoleView consoleView;
   private final Project myProject;
-
 
   public SonarLintConsoleImpl(Project project) {
     this.myProject = project;
@@ -95,7 +95,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
 
   @Override
   public void dispose() {
-    if (consoleView != null){
+    if (consoleView != null) {
       Disposer.dispose(consoleView);
     }
   }
