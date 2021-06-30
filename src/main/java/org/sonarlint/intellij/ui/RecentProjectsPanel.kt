@@ -21,8 +21,11 @@ package org.sonarlint.intellij.ui
 
 import com.intellij.ide.DataManager
 import com.intellij.ide.ProjectGroupActionGroup
+import com.intellij.ide.RecentProjectListActionProvider
 import com.intellij.ide.RecentProjectsManager
+import com.intellij.ide.RecentProjectsManagerBase
 import com.intellij.ide.ReopenProjectAction
+import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -65,11 +68,12 @@ open class SonarLintRecentProjectPanel(private val onProjectSelected: (Project) 
 
     private fun performSelectedAction(event: InputEvent, selection: AnAction): AnAction {
         val actionEvent = AnActionEvent
-                .createFromInputEvent(event, ActionPlaces.POPUP, selection.templatePresentation,
-                        DataManager.getInstance().getDataContext(projectsList), false, false)
+            .createFromInputEvent(event, ActionPlaces.POPUP, selection.templatePresentation,
+                DataManager.getInstance().getDataContext(projectsList), false, false)
         ActionUtil.performActionDumbAwareWithCallbacks(selection, actionEvent, actionEvent.dataContext)
 
-        val openedProject = ProjectManager.getInstance().openProjects.firstOrNull { it.basePath == (selection as ReopenProjectAction).projectPath }
+        val recentProjectManager = RecentProjectsManager.getInstance() as RecentProjectsManagerBase
+        val openedProject = ProjectUtil.getOpenProjects().firstOrNull { recentProjectManager.getProjectPath(it) == (selection as ReopenProjectAction).projectPath }
         openedProject?.let { onProjectSelected(it) }
         return selection
     }
