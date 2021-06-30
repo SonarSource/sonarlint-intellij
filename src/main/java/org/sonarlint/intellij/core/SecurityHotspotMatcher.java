@@ -48,11 +48,17 @@ public class SecurityHotspotMatcher {
   }
 
   public Location matchLocation(ServerHotspot serverHotspot) {
-    for (VirtualFile contentRoot : ProjectRootManager.getInstance(project)
-      .getContentRoots()) {
-      VirtualFile matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
-      if (matchedFile != null) {
-        return matchTextRange(matchedFile, serverHotspot.textRange, serverHotspot.message);
+    for (VirtualFile contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
+      if (contentRoot.isDirectory()) {
+        VirtualFile matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
+        if (matchedFile != null) {
+          return matchTextRange(matchedFile, serverHotspot.textRange, serverHotspot.message);
+        }
+      } else {
+        // On Rider, all source files are returned as individual content roots, so simply check for equality
+        if (contentRoot.getPath().endsWith(serverHotspot.filePath)) {
+          return matchTextRange(contentRoot, serverHotspot.textRange, serverHotspot.message);
+        }
       }
     }
     return unknownLocation(serverHotspot.message, serverHotspot.filePath);
