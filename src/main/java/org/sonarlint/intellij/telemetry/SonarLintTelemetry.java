@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.telemetry;
 
-import java.util.Collection;
+import java.util.Set;
 import javax.annotation.Nullable;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 
@@ -46,5 +46,5 @@ public interface SonarLintTelemetry {
 
   void taintVulnerabilitiesInvestigatedLocally();
 
-  void addReportedRules(Collection<String> reportedRules);
+  void addReportedRules(Set<String> reportedRules);
 }

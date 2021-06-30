@@ -146,7 +146,7 @@ public class AnalysisTask extends Task.Backgroundable {
         return;
       }
 
-      Collection<String> reportedRules = new HashSet<>();
+      Set<String> reportedRules = new HashSet<>();
       List<AnalysisResults> results = analyzePerModule(myProject, indicator, filesByModule,
         rawIssue -> processRawIssue(liveIssueBuilder, manager, firstAnalyzedFiles, issuesPerFile,
           previousIssuesPerFile, rawIssueCounter, rawIssue, reportedRules));
@@ -253,7 +253,7 @@ public class AnalysisTask extends Task.Backgroundable {
 
   private void processRawIssue(LiveIssueBuilder issueBuilder, IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
     Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile,
-    AtomicInteger rawIssueCounter, Issue rawIssue, Collection<String> reportedRules) {
+    AtomicInteger rawIssueCounter, Issue rawIssue, Set<String> reportedRules) {
     rawIssueCounter.incrementAndGet();
 
     // Do issue tracking for the single issue
