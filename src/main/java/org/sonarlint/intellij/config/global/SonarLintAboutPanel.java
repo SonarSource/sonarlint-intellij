@@ -124,11 +124,24 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "    },\n"
           + "    \"show_hotspot\": {\n"
           + "      \"requests_count\": 3\n"
-          + "    },\n" +
-          "      \"taint_vulnerabilities\": {\n" +
-          "        \"investigated_remotely_count\": 1,\n" +
-          "        \"investigated_locally_count\": 4\n" +
-          "      }\n"
+          + "    },\n"
+          + "      \"taint_vulnerabilities\": {\n"
+          + "        \"investigated_remotely_count\": 1,\n"
+          + "        \"investigated_locally_count\": 4\n"
+          + "      }\n"
+          + "     \"rules\": {\n"
+          + "      \"raised_issues\": [\n"
+          + "        \"secrets:S6290\",\n"
+          + "        \"javascript:S3353\",\n"
+          + "        \"javascript:S1441\"\n"
+          + "      ],\n"
+          + "      \"non_default_enabled\": [\n"
+          + "        \"javascript:S3513\"\n"
+          + "      ],\n"
+          + "      \"default_disabled\":  [\n"
+          + "        \"javascript:S1994\"\n"
+          + "      ],\n"
+          + "    }"
           + "}</pre></html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.getInformationColor());

@@ -25,6 +25,7 @@ import com.intellij.ide.AppLifecycleListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.serviceContainer.NonInjectable;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
@@ -149,6 +150,13 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
   public void taintVulnerabilitiesInvestigatedLocally() {
     if (enabled()) {
       telemetry.taintVulnerabilitiesInvestigatedLocally();
+    }
+  }
+
+  @Override
+  public void addReportedRules(Set<String> ruleKeys) {
+    if (enabled()) {
+      telemetry.addReportedRules(ruleKeys);
     }
   }
 
