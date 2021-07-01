@@ -144,7 +144,11 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
-    TextRange textRange = createTextRange(vulnerability.rangeMarker());
+    RangeMarker rangeMarker = vulnerability.rangeMarker();
+    if (rangeMarker == null) {
+      return;
+    }
+    TextRange textRange = createTextRange(rangeMarker);
     if (textRange.isEmpty()) {
       return;
     }
