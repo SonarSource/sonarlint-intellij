@@ -58,7 +58,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
     super.update(e);
 
     VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
-    if (files == null || files.length == 0) {
+    if (files == null || files.length == 0 || AbstractSonarAction.isRiderSlnOrCsproj(files)) {
       e.getPresentation().setEnabled(false);
       e.getPresentation().setVisible(false);
       return;

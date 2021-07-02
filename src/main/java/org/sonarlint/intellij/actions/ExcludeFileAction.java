@@ -64,7 +64,7 @@ public class ExcludeFileAction extends DumbAwareAction {
     }
 
     VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
-    if (!ActionPlaces.isPopupPlace(e.getPlace()) || files == null || files.length == 0) {
+    if (!ActionPlaces.isPopupPlace(e.getPlace()) || files == null || files.length == 0 || AbstractSonarAction.isRiderSlnOrCsproj(files)) {
       e.getPresentation().setEnabled(false);
       e.getPresentation().setVisible(false);
       return;
