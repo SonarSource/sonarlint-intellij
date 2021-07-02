@@ -56,14 +56,13 @@ import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.issue.secrets.SecretsNotifications;
-import org.sonarlint.intellij.issue.LiveIssueBuilder;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
-import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -312,10 +311,9 @@ public class AnalysisTask extends Task.Backgroundable {
       issuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(locallyTrackedIssue);
     }
 
-    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-    telemetry.addReportedRule(liveIssue.getRuleKey());
+    reportedRules.add(liveIssue.getRuleKey());
     SonarLintGlobalSettings sonarLintGlobalSettings = Settings.getGlobalSettings();
-    if(sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains("secrets")) {
+    if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains(Language.SECRETS.getPluginKey())) {
       SecretsNotifications.sendNotification(myProject);
       sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
     }
