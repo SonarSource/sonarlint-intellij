@@ -23,8 +23,12 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import javax.swing.Icon;
+
+import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+
+import java.util.Arrays;
 
 public abstract class AbstractSonarAction extends AnAction {
   public AbstractSonarAction() {
@@ -53,6 +57,11 @@ public abstract class AbstractSonarAction extends AnAction {
       AnalysisStatus status = AnalysisStatus.get(p);
       e.getPresentation().setEnabled(isEnabled(e, p, status));
     }
+  }
+
+  static boolean isRiderSlnOrCsproj(VirtualFile[] files) {
+    return Arrays.stream(files)
+      .allMatch(f -> f.getName().endsWith(".sln") || f.getName().endsWith(".csproj"));
   }
 
   /**
