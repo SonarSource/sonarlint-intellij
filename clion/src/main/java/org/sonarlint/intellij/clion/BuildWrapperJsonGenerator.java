@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.clion;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 
 public class BuildWrapperJsonGenerator {
   private final StringBuilder builder;
@@ -52,9 +53,17 @@ public class BuildWrapperJsonGenerator {
       .append("\"executable\":")
       .append(quotedCompilerExecutable)
       .append(",");
-    if (entry.isHeaderFile) {
-      builder.append("\"properties\":{\"isHeaderFile\":\"true\"},");
+    builder.append("\"properties\":{");
+    boolean firstProp = true;
+    for (Map.Entry<String, String> prop : entry.properties.entrySet()) {
+      if (!firstProp) {
+        builder.append(",");
+      } else {
+        firstProp = false;
+      }
+      builder.append("\"").append(prop.getKey()).append("\":").append(quote(prop.getValue()));
     }
+    builder.append("},");
     builder.append("\"cmd\":[")
       .append(quotedCompilerExecutable)
       .append("," + quote(entry.virtualFile.getCanonicalPath()));

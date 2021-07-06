@@ -25,6 +25,9 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Map;
+import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -44,6 +47,11 @@ class BuildWrapperJsonGeneratorTest {
     File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
     File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
 
+    Map<String, String> properties = new TreeMap<>();
+    properties.put("prop1", "val1");
+    properties.put("prop2", "\"val2\"");
+    properties.put("propn", "valn");
+
     AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
       virtualFile,
       compilerExecutable.toString(),
@@ -51,7 +59,7 @@ class BuildWrapperJsonGeneratorTest {
       Arrays.asList("a1", "a2"),
       "clang",
       null,
-      false);
+      properties);
     String json = new BuildWrapperJsonGenerator()
       .add(configuration)
       .build();
@@ -61,6 +69,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerWorkingDir)
         + ",\"executable\":"
         + quote(compilerExecutable)
+        + ",\"properties\":{\"prop1\":\"val1\",\"prop2\":\"\\\"val2\\\"\",\"propn\":\"valn\"}"
         + ",\"cmd\":["
         + quote(compilerExecutable) + ",\"/test.cpp\",\"a1\",\"a2\"]}" +
         "]}",
@@ -90,7 +99,11 @@ class BuildWrapperJsonGeneratorTest {
       Arrays.asList("a1", "a2"),
       "clang",
       null,
-      false);
+      Collections.singletonMap("isHeaderFile", "false"));
+    Map<String, String> properties2 = new TreeMap<>();
+    properties2.put("prop1", "val1");
+    properties2.put("prop2", "\"val2\"");
+    properties2.put("propn", "valn");
     AnalyzerConfiguration.Configuration configuration2 = new AnalyzerConfiguration.Configuration(
       virtualFile2,
       compilerExecutable2.toString(),
@@ -98,7 +111,7 @@ class BuildWrapperJsonGeneratorTest {
       Arrays.asList("b1", "b2"),
       "clang",
       null,
-      false);
+      properties2);
     AnalyzerConfiguration.Configuration configuration3 = new AnalyzerConfiguration.Configuration(
       virtualFile3,
       compilerExecutable3.toString(),
@@ -106,7 +119,7 @@ class BuildWrapperJsonGeneratorTest {
       Arrays.asList("c1", "c2"),
       "clang",
       null,
-      true);
+      Collections.emptyMap());
     String json = new BuildWrapperJsonGenerator()
       .add(configuration1)
       .add(configuration2)
@@ -118,6 +131,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerWorkingDir)
         + ",\"executable\":"
         + quote(compilerExecutable)
+        + ",\"properties\":{\"isHeaderFile\":\"false\"}"
         + ",\"cmd\":["
         + quote(compilerExecutable) + ",\"/test.cpp\",\"a1\",\"a2\"]}"
         + ","
@@ -125,6 +139,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerWorkingDir2)
         + ",\"executable\":"
         + quote(compilerExecutable2)
+        + ",\"properties\":{\"prop1\":\"val1\",\"prop2\":\"\\\"val2\\\"\",\"propn\":\"valn\"}"
         + ",\"cmd\":["
         + quote(compilerExecutable2) + ",\"/test2.cpp\",\"b1\",\"b2\"]}"
         + ","
@@ -132,7 +147,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerWorkingDir3)
         + ",\"executable\":"
         + quote(compilerExecutable3)
-        + ",\"properties\":{\"isHeaderFile\":\"true\"}"
+        + ",\"properties\":{}"
         + ",\"cmd\":["
         + quote(compilerExecutable3) + ",\"/test3.h\",\"c1\",\"c2\"]}"
         + "]}",

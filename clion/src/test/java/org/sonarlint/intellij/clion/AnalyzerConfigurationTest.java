@@ -22,12 +22,12 @@ package org.sonarlint.intellij.clion;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.CUDALanguageKind;
-import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,13 +52,12 @@ class AnalyzerConfigurationTest {
     assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG));
     assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.GCC));
     assertNull(AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG_CL));
-    assertNull(AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.MSVC));
+    assertEquals("msvc-cl", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.MSVC));
   }
 
   @Test
   void configuration() {
     VirtualFile file = mock(VirtualFile.class);
-    OCCompilerSettings compilerSettings = mock(OCCompilerSettings.class);
     AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
       file,
       "compilerExecutable",
@@ -66,7 +65,7 @@ class AnalyzerConfigurationTest {
       Arrays.asList("s1", "s2"),
       "compilerKind",
       Language.CPP,
-      true);
+      Collections.singletonMap("isHeaderFile", "true"));
 
     assertEquals(file, configuration.virtualFile);
     assertEquals("compilerExecutable", configuration.compilerExecutable);
@@ -74,7 +73,7 @@ class AnalyzerConfigurationTest {
     assertEquals(Arrays.asList("s1", "s2"), configuration.compilerSwitches);
     assertEquals("compilerKind", configuration.compilerKind);
     assertEquals(Language.CPP, configuration.sonarLanguage);
-    assertTrue(configuration.isHeaderFile);
+    assertEquals("true", configuration.properties.get("isHeaderFile"));
   }
 
   @Test
@@ -86,7 +85,7 @@ class AnalyzerConfigurationTest {
       null,
       null,
       null,
-      false);
+      Collections.singletonMap("isHeaderFile", "false"));
     AnalyzerConfiguration.ConfigurationResult result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
     assertTrue(result.hasConfiguration());
     assertEquals(configuration, result.getConfiguration());
