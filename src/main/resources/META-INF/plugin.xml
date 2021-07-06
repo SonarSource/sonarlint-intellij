@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>5.2 - 2 new rules for Java. Support TS 4.3 and now .vue files analysis possible. Rules improvements for Java and JS/TS.</li>
+        <li>5.2 - 2 new rules for Java. Support TS 4.3 and now .vue files analysis possible. MSVC support for CLion. Rules improvements for Java, CFamily and JS/TS.</li>
         <li>5.1 - Fixed false-positives and false-negatives in Kotlin analysis.</li>
         <li>5.0.1 - Fix exceptions in registration of application listeners and during analysis on older versions of the IntelliJ platform. Fix UI freezes.</li>
         <li>5.0 - Improve precision of Python analyses thanks to cross-module resolution of symbols. Drop support of SonarQube < 7.9 for connected mode. Fixed false-positives and false-negatives in C/C++ analysis. Bug fixes and improvements.</li>
