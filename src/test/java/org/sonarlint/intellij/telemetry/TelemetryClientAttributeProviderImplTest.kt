@@ -36,8 +36,7 @@ class TelemetryClientAttributeProviderImplTest : AbstractSonarLintLightTests() {
         Settings.getGlobalSettings().disableRule("ruleKey1")
         Settings.getGlobalSettings().disableRule("ruleKey2")
 
-        assertThat(underTest.defaultDisabledRules).hasSize(2)
-        assertThat(underTest.defaultDisabledRules).containsOnly("ruleKey1", "ruleKey2")
+        assertThat(underTest.defaultDisabledRules).containsExactly("ruleKey2", "ruleKey1")
     }
 
     @Test
@@ -49,8 +48,7 @@ class TelemetryClientAttributeProviderImplTest : AbstractSonarLintLightTests() {
         Settings.getGlobalSettings().enableRule("ruleKey2")
         Settings.getGlobalSettings().setRuleParam("java:S107", "max", "10")
 
-        assertThat(underTest.nonDefaultEnabledRules).hasSize(2)
-        assertThat(underTest.nonDefaultEnabledRules).containsOnly("ruleKey1", "ruleKey2")
+        assertThat(underTest.nonDefaultEnabledRules).containsExactly("ruleKey2", "ruleKey1")
     }
 
 }
