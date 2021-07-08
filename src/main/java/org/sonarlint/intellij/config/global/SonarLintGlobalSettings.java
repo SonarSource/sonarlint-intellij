@@ -133,7 +133,6 @@ public final class SonarLintGlobalSettings {
       excludedRules.forEach(it -> rulesByKey.put(it, new Rule(it, false)));
     }
     excludedRules = null;
-
   }
 
   public Collection<Rule> getRules() {

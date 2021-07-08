@@ -51,6 +51,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
@@ -140,7 +141,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     long numFiles = map.keySet().size();
 
     List<LiveIssue> issues = map.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-    long numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().contains("secrets")).count();
+    long numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().contains(Language.SECRETS.getPluginKey())).count();
     String msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
     if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
       LOGGER.info(msg);
