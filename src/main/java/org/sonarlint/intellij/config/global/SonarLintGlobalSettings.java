@@ -55,6 +55,19 @@ public final class SonarLintGlobalSettings {
   @Transient
   Map<String, Rule> rulesByKey = new HashMap<>();
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
+  private boolean secretsNeverBeenAnalysed = true;
+
+  public void rememberNotificationOnSecretsBeenSent() {
+    setSecretsNeverBeenAnalysed(false);
+  }
+
+  public boolean isSecretsNeverBeenAnalysed() {
+    return secretsNeverBeenAnalysed;
+  }
+
+  public void setSecretsNeverBeenAnalysed(boolean secretsNeverBeenAnalysed) {
+    this.secretsNeverBeenAnalysed = secretsNeverBeenAnalysed;
+  }
 
   public boolean isTaintVulnerabilitiesTabDisclaimerDismissed() {
     return taintVulnerabilitiesTabDisclaimerDismissed;

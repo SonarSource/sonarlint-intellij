@@ -19,10 +19,13 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,13 +82,44 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
   public void testIssues() {
     future.complete(null);
     LiveIssue issue = mock(LiveIssue.class);
+    when(issue.getRuleKey()).thenReturn("java:S123");
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
+    List<String> messages = new ArrayList<>();
+    Messages.setTestDialog(msg -> {
+      messages.add(msg);
+      return Messages.OK;
+    });
     CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
 
-    assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CANCEL);
+    assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
+    assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue");
+    verify(issueStore).set(anyMap(), eq("SCM changed files"));
+    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
+  }
+
+  @Test
+  public void testSecretsIssues() {
+    future.complete(null);
+    LiveIssue issue = mock(LiveIssue.class);
+    when(issue.getRuleKey()).thenReturn("secrets:S123");
+
+    when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
+
+    handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
+    List<String> messages = new ArrayList<>();
+    Messages.setTestDialog(msg -> {
+      messages.add(msg);
+      return Messages.OK;
+    });
+    CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
+
+    assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
+    assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue\n" +
+      "\n" +
+      "SonarLint analysis found 1 secret. Committed secrets may lead to unauthorized system access.");
     verify(issueStore).set(anyMap(), eq("SCM changed files"));
     verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
