@@ -21,7 +21,6 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.PathManager;
-
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
@@ -35,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckForNull;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.LanguageActivator;
@@ -87,7 +85,7 @@ public class SonarLintEngineFactory {
       configBuilder.useEmbeddedPlugin(Language.CPP.getPluginKey(), cFamilyPluginUrl);
     }
     URL secretsPluginUrl = findEmbeddedSecretsPlugin(getPluginsDir());
-    if(secretsPluginUrl != null) {
+    if (secretsPluginUrl != null) {
       configBuilder.addExtraPlugin(Language.SECRETS.getPluginKey(), secretsPluginUrl);
     }
     // it will also start it

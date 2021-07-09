@@ -137,7 +137,7 @@ public class AnalysisTask extends Task.Backgroundable {
     List<VirtualFile> ignoredFiles = new ArrayList<>();
     List<VirtualFile> allFilesToAnalyze = new ArrayList<>();
     allFiles.forEach(file -> {
-      if(fileStatusManager.getStatus(file) == FileStatus.IGNORED) {
+      if (fileStatusManager.getStatus(file) == FileStatus.IGNORED) {
         ignoredFiles.add(file);
         LOGGER.info("File " + file.getPath() + " is ignored in VCS and will no be analyzed.");
       } else {
