@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.ide.util.PropertiesComponent;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -141,12 +140,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     long numFiles = map.keySet().size();
 
     List<LiveIssue> issues = map.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-    long numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().contains(Language.SECRETS.getPluginKey())).count();
+    long numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().startsWith(Language.SECRETS.getPluginKey())).count();
     String msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
-    if (ApplicationManager.getApplication().isHeadlessEnvironment()) {
-      LOGGER.info(msg);
-      return ReturnResult.CANCEL;
-    }
 
     return showYesNoCancel(msg);
   }
@@ -159,7 +154,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     if (numSecretsIssues > 0) {
       String secretWord = numSecretsIssues == 1 ? "secret" : "secrets";
       warningAboutLeakedSecrets = String.format("\n\nSonarLint analysis found %d %s. " +
-        "Committed secrets may lead to unauthorized system access.\n", numSecretsIssues, secretWord);
+        "Committed secrets may lead to unauthorized system access.", numSecretsIssues, secretWord);
     }
     StringBuilder message = new StringBuilder();
     if (numBlockerIssues > 0) {
