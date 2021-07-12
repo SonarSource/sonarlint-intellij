@@ -57,6 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>5.3 - Remote and WSL toolchains support for CLion. Rules improvements for C++.</li>
         <li>5.2 - New Java 16 specific rules. Rules improvements for PHP. Performance improvement for Python analysis. Many bug fixes and small improvements.</li>
         <li>5.1 - Support TS 4.3 and Vue.js. MSVC support for CLion. Rules improvements for Java, Kotlin, C/C++ and JS/TS.</li>
         <li>5.0.1 - Fix exceptions in registration of application listeners and during analysis on older versions of the IntelliJ platform. Fix UI freezes.</li>

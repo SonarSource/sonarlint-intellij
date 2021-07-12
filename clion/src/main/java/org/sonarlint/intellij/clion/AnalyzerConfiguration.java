@@ -29,7 +29,6 @@ import com.jetbrains.cidr.cpp.cmake.model.CMakeConfiguration;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeProfileInfo;
 import com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspace;
 import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
-import com.jetbrains.cidr.cpp.toolchains.CPPToolSet;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
@@ -96,10 +95,6 @@ public class AnalyzerConfiguration {
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
     }
-    String remoteOrWslToolchain = usingRemoteOrWslToolchain(configuration);
-    if (remoteOrWslToolchain != null) {
-      return ConfigurationResult.skip(remoteOrWslToolchain + " toolchains are not supported");
-    }
     OCCompilerSettings compilerSettings = configuration.getCompilerSettings(ocFile.getKind(), file);
     OCCompilerKind compilerKind = compilerSettings.getCompilerKind();
     if (compilerKind == null) {
@@ -113,9 +108,13 @@ public class AnalyzerConfiguration {
     if (ocFile.isHeader()) {
       properties.put("isHeaderFile", "true");
     }
-    if (compilerKind instanceof MSVCCompilerKind) {
+
+    if (usingRemoteOrWslToolchain(configuration)) {
+      collectPropertiesForRemoteToolchain(compilerSettings, properties);
+    } else if (compilerKind instanceof MSVCCompilerKind) {
       collectMSVCProperties(compilerSettings, properties);
     }
+
     return ConfigurationResult.of(new Configuration(
       file,
       compilerSettings.getCompilerExecutable().getAbsolutePath(),
@@ -124,6 +123,22 @@ public class AnalyzerConfiguration {
       cFamilyCompiler,
       getSonarLanguage(languageKind),
       properties));
+  }
+
+  private static void collectPropertiesForRemoteToolchain(OCCompilerSettings compilerSettings, Map<String, String> properties) {
+    properties.put("preprocessorDefines", getPreprocessorDefines(compilerSettings));
+
+    String includeDirs = compilerSettings.getHeadersSearchPaths().stream()
+      .filter(h -> !h.isFrameworksSearchPath())
+      .map(HeadersSearchPath::getPath)
+      .collect(Collectors.joining("\n"));
+    properties.put("includeDirs", includeDirs);
+
+    String frameworkDirs = compilerSettings.getHeadersSearchPaths().stream()
+      .filter(HeadersSearchPath::isFrameworksSearchPath)
+      .map(HeadersSearchPath::getPath)
+      .collect(Collectors.joining("\n"));
+    properties.put("frameworkDirs", frameworkDirs);
   }
 
   private static void collectMSVCProperties(OCCompilerSettings compilerSettings, Map<String, String> properties) {
@@ -179,12 +194,11 @@ public class AnalyzerConfiguration {
     }
   }
 
-  @Nullable
-  private String usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
+  private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
     CMakeConfiguration cMakeConfiguration = cMakeWorkspace.getCMakeConfigurationFor(configuration);
     if (cMakeConfiguration == null) {
       // remote toolchains are supported only for CMake projects
-      return null;
+      return false;
     }
     CMakeProfileInfo profileInfo;
     try {
@@ -193,15 +207,7 @@ public class AnalyzerConfiguration {
       throw new IllegalStateException(e);
     }
     CPPEnvironment environment = profileInfo.getEnvironment();
-    if (environment != null) {
-      CPPToolSet toolSet = environment.getToolSet();
-      if (toolSet.isRemote()) {
-        return "remote";
-      } else if (toolSet.isWSL()) {
-        return "WSL";
-      }
-    }
-    return null;
+    return environment != null && (environment.getToolSet().isRemote() || environment.getToolSet().isWSL());
   }
 
   private static Method getPreprocessorDefinesMethod() {
