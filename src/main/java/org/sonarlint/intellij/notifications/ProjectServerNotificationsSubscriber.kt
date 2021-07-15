@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core
+package org.sonarlint.intellij.notifications
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.Notification
@@ -37,7 +37,9 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectState
-import org.sonarlint.intellij.core.SonarLintProjectNotifications.SERVER_NOTIFICATIONS_GROUP
+import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ServerNotificationsService
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.SERVER_NOTIFICATIONS_GROUP
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry

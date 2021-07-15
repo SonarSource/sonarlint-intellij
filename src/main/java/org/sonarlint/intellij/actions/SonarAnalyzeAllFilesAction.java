@@ -43,6 +43,7 @@ import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
+
   private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";
 
   public SonarAnalyzeAllFilesAction() {

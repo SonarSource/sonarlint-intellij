@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core;
+package org.sonarlint.intellij.notifications;
 
 import com.google.common.collect.Lists;
 import com.intellij.notification.Notification;
@@ -36,6 +36,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.SkipReason;
@@ -113,7 +114,9 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
     List<PluginDetails> plugins = Collections.singletonList(new FakePluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
-    assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the <a href=\"#edit-settings\">SonarLint settings</a>.");
+    assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the SonarLint settings.");
+    assertThat(notifications.get(0).getActions()).hasSize(1);
+    assertThat(notifications.get(0).getActions().get(0).getTemplatePresentation().getText()).isEqualTo("Open SonarLint Settings");
   }
 
   private static class FakePluginDetails implements PluginDetails {

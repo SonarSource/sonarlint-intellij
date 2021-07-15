@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core
+package org.sonarlint.intellij.notifications
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
@@ -32,6 +32,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.ServerNotificationsService
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
