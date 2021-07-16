@@ -19,9 +19,21 @@
  */
 package org.sonarlint.intellij.mediumtests
 
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.vcs.FileStatus
+import com.intellij.openapi.vcs.ProjectLevelVcsManager
+import com.intellij.openapi.vcs.changes.ChangeListManagerGate
+import com.intellij.openapi.vcs.changes.ChangeListManagerImpl
+import com.intellij.openapi.vcs.changes.ChangeProvider
+import com.intellij.openapi.vcs.changes.ChangelistBuilder
+import com.intellij.openapi.vcs.changes.VcsDirtyScope
+import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
+import com.intellij.openapi.vcs.changes.committed.MockAbstractVcs
+import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.openapi.vfs.VirtualFile
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.jetbrains.annotations.NotNull
 import org.junit.Before
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -95,10 +107,82 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
             )
     }
 
-    private fun analyze(fileToAnalyze: VirtualFile): List<LiveIssue> {
+    @Test
+    fun should_find_secrets_excluding_vcs_ignored_files() {
+        val fileToAnalyze = myFixture.configureByFile("src/devenv.js").virtualFile
+        val fileToAnalyze_ignored = myFixture.configureByFile("src/devenv_ignored.js").virtualFile
+        val fileToAnalyze_unversionned = myFixture.configureByFile("src/devenv_unversionned.js").virtualFile
+
+        val myVcsManager = ProjectLevelVcsManager.getInstance(project) as ProjectLevelVcsManagerImpl
+        val myVcs = MockAbstractVcs(project)
+        try {
+            myVcs.setChangeProvider(MyMockChangeProvider())
+            myVcsManager.registerVcs(myVcs)
+            myVcsManager.setDirectoryMapping("", myVcs.getName())
+            myVcsManager.waitForInitialized()
+
+
+            val myChangeListManager = ChangeListManagerImpl.getInstanceImpl(project)
+            val dirtyScopeManager = VcsDirtyScopeManager.getInstance(project)
+            // Wait for the initial refresh status job to complete on the root directory
+            myChangeListManager.waitEverythingDoneInTestMode()
+
+            // Now force a specific status update for some files. It will ask the MyMockChangeProvider
+            dirtyScopeManager.fileDirty(fileToAnalyze_ignored)
+            dirtyScopeManager.fileDirty(fileToAnalyze_unversionned)
+            myChangeListManager.waitEverythingDoneInTestMode()
+
+            // Ensure previous code worked as expected
+            assertThat(myChangeListManager.isIgnoredFile(fileToAnalyze_ignored)).isTrue()
+            assertThat(myChangeListManager.isUnversioned(fileToAnalyze_unversionned)).isTrue()
+
+            val issues = analyze(fileToAnalyze, fileToAnalyze_ignored, fileToAnalyze_unversionned, triggerType = TriggerType.ALL)
+
+            assertThat(issues)
+                .extracting(
+                    { it.psiFile().name },
+                    { it.ruleKey },
+                    { it.ruleName },
+                    { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+                .containsExactlyInAnyOrder(
+                    tuple("devenv.js", "secrets:S6290", "AWS Access Key ID", Pair(286, 306)),
+                    tuple("devenv.js", "javascript:S2703", "Variables should be declared explicitly", Pair(62, 72)),
+                    tuple("devenv_unversionned.js", "secrets:S6290", "AWS Access Key ID", Pair(286, 306)),
+                    tuple("devenv_unversionned.js", "javascript:S2703", "Variables should be declared explicitly", Pair(62, 72))
+                )
+        } finally {
+            myVcsManager.unregisterVcs(myVcs)
+        }
+    }
+
+    /**
+     * A mock ChangeProvider that will compute file status based on file name
+     */
+    private class MyMockChangeProvider : ChangeProvider {
+        override fun getChanges(
+            @NotNull dirtyScope: VcsDirtyScope,
+            @NotNull builder: ChangelistBuilder,
+            @NotNull progress: ProgressIndicator,
+            @NotNull addGate: ChangeListManagerGate,
+        ) {
+            for (path in dirtyScope.getDirtyFiles()) {
+                if (path.name.contains("_ignored"))
+                    builder.processIgnoredFile(path)
+                else if (path.name.contains("_unversionned"))
+                    builder.processUnversionedFile(path)
+            }
+        }
+
+        override fun isModifiedDocumentTrackingRequired(): Boolean {
+            return false
+        }
+
+    }
+
+    private fun analyze(vararg fileToAnalyzes: VirtualFile, triggerType: TriggerType = TriggerType.ACTION): List<LiveIssue> {
         val submitter = getService(project, SonarLintSubmitter::class.java)
-        submitter.submitFiles(setOf(fileToAnalyze), TriggerType.ACTION, EmptyAnalysisCallback(), false)
-        return getService(project, IssueManager::class.java).getForFile(fileToAnalyze).toList()
+        submitter.submitFiles(fileToAnalyzes.toList(), triggerType, EmptyAnalysisCallback(), false)
+        return fileToAnalyzes.flatMap { getService(project, IssueManager::class.java).getForFile(it) }
     }
 
     class EmptyAnalysisCallback : AnalysisCallback {
