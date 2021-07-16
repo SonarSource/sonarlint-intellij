@@ -28,6 +28,8 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.roots.TestSourcesFilter;
+import com.intellij.openapi.vcs.FileStatus;
+import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
 import java.util.ArrayList;
@@ -127,6 +129,14 @@ public class LocalFileExclusions {
     return ExcludeResult.notExcluded();
   }
 
+  private ExcludeResult checkVcsIgnored(VirtualFile file) {
+    FileStatusManager fileStatusManager = FileStatusManager.getInstance(myProject);
+    if (fileStatusManager.getStatus(file) == FileStatus.IGNORED) {
+      return ExcludeResult.excluded("file is ignored in VCS");
+    }
+    return ExcludeResult.notExcluded();
+  }
+
   private ExcludeResult checkFileInSourceFolders(VirtualFile file, Module module) {
     ProjectFileIndex fileIndex = ProjectRootManager.getInstance(myProject).getFileIndex();
     SourceFolder sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
@@ -178,9 +188,9 @@ public class LocalFileExclusions {
 
     if (!forcedAnalysis) {
       exclusionCheckers.addAll(Arrays.asList(
+        () -> checkVcsIgnored(file),
         () -> checkFileInSourceFolders(file, m),
-        () -> checkExclusionsFromSonarLintSettings(file, m)
-      ));
+        () -> checkExclusionsFromSonarLintSettings(file, m)));
     }
 
     for (Supplier<ExcludeResult> exclusionChecker : exclusionCheckers) {
