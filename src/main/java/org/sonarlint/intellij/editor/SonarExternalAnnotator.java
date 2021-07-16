@@ -52,6 +52,7 @@ import org.sonarlint.intellij.util.SonarLintSeverity;
 import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static java.util.Collections.emptyList;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 import static org.sonarlint.intellij.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFile;
 import static org.sonarlint.intellij.util.SonarLintUtils.isPhpLanguageRegistered;
@@ -73,7 +74,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
         TextRange validTextRange = getValidTextRange(issue);
         if (validTextRange != null) {
-          addAnnotation(issue, validTextRange, holder);
+          addAnnotation(project, issue, validTextRange, holder);
         }
       });
 
@@ -116,13 +117,15 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     return collectedInfo;
   }
 
-  private void addAnnotation(LiveIssue issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
+  private static void addAnnotation(Project project, LiveIssue issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
     String htmlMsg = getHtmlMessage(issue);
 
     Annotation annotation = annotationHolder
       .createAnnotation(getSeverity(issue.getSeverity()), validTextRange, issue.getMessage(), htmlMsg);
     annotation.registerFix(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
-    annotation.registerFix(new DisableRuleIntentionAction(issue.getRuleKey()));
+    if (!getSettingsFor(project).isBindingEnabled()) {
+      annotation.registerFix(new DisableRuleIntentionAction(issue.getRuleKey()));
+    }
 
     issue.context().ifPresent(c -> annotation.registerFix(new ShowLocationsIntentionAction(issue, c)));
 
@@ -195,7 +198,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    * {@link com.intellij.codeInsight.daemon.impl.LocalInspectionsPass}
    * {@link com.intellij.openapi.editor.colors.CodeInsightColors}
    */
-  private String getHtmlMessage(LiveIssue issue) {
+  private static String getHtmlMessage(LiveIssue issue) {
     String shortcut = "";
     final KeymapManager keymapManager = KeymapManager.getInstance();
     if (keymapManager != null && keymapManager.getActiveKeymap() != null) {
@@ -210,6 +213,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       + ">more...</a> " + shortcut;
     return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.context().map(IssueContext::getSummaryDescription).orElse("") + link);
   }
+
   private static String getHtmlMessage(LocalTaintVulnerability vulnerability) {
     String shortcut = "";
     final KeymapManager keymapManager = KeymapManager.getInstance();
