@@ -41,18 +41,19 @@ public class DefaultClientInputFile implements ClientInputFile {
   private final boolean test;
   private final Charset charset;
   private final VirtualFile vFile;
-  private final Document doc;
+  @Nullable
+  private final String documentBuffer;
   @Nullable
   private final Language language;
   private final URI uri;
 
-  public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Document doc, @Nullable Language language) {
+  public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable String documentBuffer, @Nullable Language language) {
     this.path = vFile.getPath();
     this.relativePath = relativePath;
     this.test = isTest;
     this.charset = charset;
     this.vFile = vFile;
-    this.doc = doc;
+    this.documentBuffer = documentBuffer;
     this.language = language;
     this.uri = createURI();
   }
@@ -83,11 +84,11 @@ public class DefaultClientInputFile implements ClientInputFile {
   }
 
   @Override public InputStream inputStream() throws IOException {
-    if (doc == null) {
+    if (documentBuffer == null) {
       return vFile.getInputStream();
     }
 
-    return new ByteArrayInputStream(doc.getText().getBytes(charset));
+    return new ByteArrayInputStream(documentBuffer.getBytes(charset));
   }
 
   private URI createURI() {
@@ -100,7 +101,7 @@ public class DefaultClientInputFile implements ClientInputFile {
   }
 
   @Override public String contents() throws IOException {
-    if (doc == null) {
+    if (documentBuffer == null) {
       ByteArrayOutputStream result = new ByteArrayOutputStream();
       try (InputStream inputStream = inputStream()) {
         byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
@@ -111,7 +112,7 @@ public class DefaultClientInputFile implements ClientInputFile {
       }
       return result.toString(charset.name());
     }
-    return doc.getText();
+    return documentBuffer;
   }
 
   @Override public VirtualFile getClientObject() {

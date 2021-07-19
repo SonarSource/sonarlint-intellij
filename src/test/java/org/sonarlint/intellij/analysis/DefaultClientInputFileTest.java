@@ -68,7 +68,7 @@ public class DefaultClientInputFileTest {
   }
 
   @Test
-  public void testNoDoc() throws IOException, URISyntaxException {
+  public void testNoBuffer() throws IOException, URISyntaxException {
     when(vFile.getInputStream()).thenAnswer(i -> new ByteArrayInputStream("test string".getBytes(StandardCharsets.UTF_8)));
 
     inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, Language.JAVA);
@@ -88,10 +88,8 @@ public class DefaultClientInputFileTest {
   }
 
   @Test
-  public void testDoc() throws IOException {
-    Document doc = mock(Document.class);
-    when(doc.getText()).thenReturn("test string");
-    inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, doc, null);
+  public void testContentFromBuffer() throws IOException {
+    inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, "test string", null);
 
     assertThat(inputFile.contents()).isEqualTo("test string");
     assertThat(inputFile.language()).isNull();

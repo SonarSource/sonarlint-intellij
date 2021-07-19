@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -158,12 +160,20 @@ public class SonarLintAnalyzer {
     if (relativePath != null) {
       FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
       if (fileDocumentManager.isFileModified(virtualFile)) {
-        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, fileDocumentManager.getDocument(virtualFile), language);
+        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, readTextFromDocument(virtualFile), language);
       } else {
         return new DefaultClientInputFile(virtualFile, relativePath, test, charset, language);
       }
     }
     return null;
+  }
+
+  @CheckForNull
+  private static String readTextFromDocument(VirtualFile virtualFile) {
+    return ReadAction.compute(() -> {
+      Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
+      return document != null ? document.getText() : null;
+    });
   }
 
   private Charset getEncoding(VirtualFile f) {
