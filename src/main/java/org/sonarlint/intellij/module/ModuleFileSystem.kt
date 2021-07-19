@@ -20,6 +20,8 @@
 package org.sonarlint.intellij.module
 
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.util.BackgroundTaskUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectCoreUtil
 import com.intellij.openapi.roots.ModuleRootManager
@@ -32,24 +34,27 @@ import java.util.ArrayList
 import java.util.stream.Stream
 
 internal class ModuleFileSystem(private val project: Project, private val module: Module) : ClientFileSystem {
-  override fun files(language: String, type: InputFile.Type): Stream<ClientInputFile> {
-    return files()
-      .filter { f -> f.relativePath().endsWith(language) }
-      .filter { f -> f.isTest == (type == InputFile.Type.TEST) }
-  }
+    override fun files(language: String, type: InputFile.Type): Stream<ClientInputFile> {
+        return files()
+            .filter { f -> f.relativePath().endsWith(language) }
+            .filter { f -> f.isTest == (type == InputFile.Type.TEST) }
+    }
 
-  override fun files(): Stream<ClientInputFile> {
-    val files: MutableList<ClientInputFile> = ArrayList()
-    val sonarLintAnalyzer = project.getService(SonarLintAnalyzer::class.java)
-    ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
-        if (!fileOrDir.isDirectory && !ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir, fileOrDir.fileType)) {
-          val element = sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
-          if (element != null) {
-            files.add(element)
-          }
-        }
-        true
-      }
-    return files.stream()
-  }
+    override fun files(): Stream<ClientInputFile> {
+        val files: MutableList<ClientInputFile> = ArrayList()
+        val sonarLintAnalyzer = project.getService(SonarLintAnalyzer::class.java)
+        BackgroundTaskUtil.runUnderDisposeAwareIndicator(project, {
+            ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
+                ProgressManager.checkCanceled()
+                if (!fileOrDir.isDirectory && !ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir, fileOrDir.fileType)) {
+                    val element = sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
+                    if (element != null) {
+                        files.add(element)
+                    }
+                }
+                true
+            }
+        })
+        return files.stream()
+    }
 }
