@@ -19,13 +19,30 @@
  */
 package org.sonarlint.intellij.notifications;
 
+import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
+import org.jetbrains.annotations.NotNull;
 
-class OpenProjectSettingsAction extends OpenConfigurableAction {
+class OpenConfigurableAction extends NotificationAction {
+  private final Project project;
+  private final Configurable configurable;
 
-  OpenProjectSettingsAction(Project project) {
-    super(project, "Open SonarLint Project Configuration", new SonarLintProjectConfigurable(project));
+  OpenConfigurableAction(Project project, String text, Configurable configurable) {
+    super(text);
+    this.project = project;
+    this.configurable = configurable;
   }
 
+  @Override
+  public final void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+    if (!project.isDisposed()) {
+      ShowSettingsUtil.getInstance().editConfigurable(project, configurable);
+    } else {
+      notification.expire();
+    }
+  }
 }
