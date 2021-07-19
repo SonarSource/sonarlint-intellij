@@ -154,6 +154,7 @@ tasks.runIde {
     if (project.hasProperty("runIdeDirectory")) {
         ideDir.set(File(runIdeDirectory))
     }
+    maxHeapSize = "2g"
 }
 
 configurations {

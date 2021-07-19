@@ -17,29 +17,32 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.issue.secrets;
+package org.sonarlint.intellij.notifications;
 
 import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationGroup;
-import com.intellij.notification.NotificationType;
+import com.intellij.notification.NotificationAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
+import org.jetbrains.annotations.NotNull;
 
-public class SecretsNotifications {
+class OpenConfigurableAction extends NotificationAction {
+  private final Project project;
+  private final Configurable configurable;
 
-  public static final NotificationGroup GROUP = NotificationGroup.balloonGroup("SonarLint: Secrets detection");
-
-  private SecretsNotifications() {
-    // utility class
+  OpenConfigurableAction(Project project, String text, Configurable configurable) {
+    super(text);
+    this.project = project;
+    this.configurable = configurable;
   }
 
-  public static void sendNotification(Project project) {
-    Notification notification = GROUP.createNotification(
-      "SonarLint: secret(s) detected",
-      "SonarLint detected some secrets in one of the open files. " +
-        "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
-        "Please refer to the SonarLint tool window for more information.",
-      NotificationType.WARNING, null);
-    notification.setImportant(true);
-    notification.notify(project);
+  @Override
+  public final void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+    if (!project.isDisposed()) {
+      ShowSettingsUtil.getInstance().editConfigurable(project, configurable);
+    } else {
+      notification.expire();
+    }
   }
 }

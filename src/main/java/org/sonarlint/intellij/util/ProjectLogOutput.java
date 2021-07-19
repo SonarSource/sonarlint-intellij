@@ -21,7 +21,7 @@ package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.core.AnalysisRequirementNotifications;
+import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;

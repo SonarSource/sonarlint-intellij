@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core
+package org.sonarlint.intellij.notifications
 
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
 import java.time.ZonedDateTime

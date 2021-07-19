@@ -55,7 +55,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
-import org.sonarlint.intellij.issue.secrets.SecretsNotifications;
+import org.sonarlint.intellij.notifications.SecretsNotifications;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;

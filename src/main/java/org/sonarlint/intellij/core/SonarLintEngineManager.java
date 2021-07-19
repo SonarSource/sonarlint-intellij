@@ -35,6 +35,8 @@ import org.jetbrains.annotations.Nullable;
 import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
