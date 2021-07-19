@@ -61,7 +61,7 @@ fun buildModuleFileEvent(
         relativePath,
         TestSourcesFilter.isTestSources(file, module.project),
         getEncoding(module.project, file),
-        document,
+        document.text,
         null
       ),
       type
