@@ -19,19 +19,22 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.ide.util.PropertiesComponent;
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
+
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
-public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
+import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
+
+public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_HOTSPOTS_SPLIT_PROPORTION";
   private static final float DEFAULT_SPLIT_PROPORTION = 0.5f;
 
@@ -58,30 +61,15 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
     hotspotDetailsTab.addTab("Details", null, scrollable(detailsPanel.getPanel()), "Details about the hotspot");
     hotspotDetailsTab.setVisible(false);
 
-    super.setContent(createSplitter(hotspotsListPanel.getPanel(), hotspotDetailsTab, SPLIT_PROPORTION_PROPERTY, project));
+    super.setContent(createSplitter(project, this, this, hotspotsListPanel.getPanel(), hotspotDetailsTab, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION));
   }
 
   private static JScrollPane scrollable(JComponent component) {
-    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
-      component,
-      ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(component, true);
+    scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
     return scrollableRulePanel;
-  }
-
-  protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, Project project) {
-    float savedProportion = PropertiesComponent.getInstance(project).getFloat(proportionProperty, DEFAULT_SPLIT_PROPORTION);
-
-    final Splitter splitter = new Splitter(false);
-    splitter.setFirstComponent(c1);
-    splitter.setSecondComponent(c2);
-    splitter.setProportion(savedProportion);
-    splitter.setHonorComponentsMinimumSize(true);
-    splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION,
-      evt -> PropertiesComponent.getInstance(project).setValue(proportionProperty, Float.toString(splitter.getProportion())));
-
-    return splitter;
   }
 
   public void setHotspot(LocalHotspot hotspot) {
@@ -94,4 +82,8 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel {
     detailsPanel.setDetails(hotspot);
   }
 
+  @Override
+  public void dispose() {
+    // Nothing to do
+  }
 }
