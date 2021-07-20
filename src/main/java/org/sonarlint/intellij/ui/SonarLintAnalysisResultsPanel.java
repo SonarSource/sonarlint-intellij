@@ -32,6 +32,8 @@ import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 
+import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
+
 public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
@@ -50,7 +52,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     setToolbar(createActionGroup());
 
     // Put everything together
-    super.setContent(createSplitter(issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, false, 0.65f));
+    super.setContent(createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
     // Subscribe to events
     subscribeToEvents();

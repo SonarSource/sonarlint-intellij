@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ide.OccurenceNavigator;
-import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -29,12 +28,12 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.openapi.ui.Splitter;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
+
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
@@ -43,7 +42,6 @@ import java.util.Collection;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
-import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -51,6 +49,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
@@ -89,34 +88,20 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void createTabs() {
     // Flows panel with tree
-    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree);
+    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
     flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
 
     // Rule panel
     rulePanel = new SonarLintRulePanel(project);
-    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(
-      rulePanel.getPanel(),
-      ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-      ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(rulePanel.getPanel(), true);
+
+    scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+    scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
     detailsTab = new JBTabbedPane();
     detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", RULE_TAB_INDEX);
     detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", LOCATIONS_TAB_INDEX);
-  }
-
-  protected JComponent createSplitter(JComponent c1, JComponent c2, String proportionProperty, boolean vertical, float defaultSplit) {
-    float savedProportion = PropertiesComponent.getInstance(project).getFloat(proportionProperty, defaultSplit);
-
-    final Splitter splitter = new Splitter(vertical);
-    splitter.setFirstComponent(c1);
-    splitter.setSecondComponent(c2);
-    splitter.setProportion(savedProportion);
-    splitter.setHonorComponentsMinimumSize(true);
-    splitter.addPropertyChangeListener(Splitter.PROP_PROPORTION,
-      evt -> PropertiesComponent.getInstance(project).setValue(proportionProperty, Float.toString(splitter.getProportion())));
-
-    return splitter;
   }
 
   protected void issueTreeSelectionChanged() {
@@ -184,7 +169,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       }
     });
     tree.addFocusListener(new FocusAdapter() {
-      @Override public void focusGained(FocusEvent e) {
+      @Override
+      public void focusGained(FocusEvent e) {
         if (!e.isTemporary()) {
           issueTreeSelectionChanged();
         }
@@ -211,7 +197,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       -1);
   }
 
-  @Override public boolean hasNextOccurence() {
+  @Override
+  public boolean hasNextOccurence() {
     // relies on the assumption that a TreeNodes will always be the last row in the table view of the tree
     TreePath path = tree.getSelectionPath();
     if (path == null) {
@@ -225,7 +212,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     }
   }
 
-  @Override public boolean hasPreviousOccurence() {
+  @Override
+  public boolean hasPreviousOccurence() {
     TreePath path = tree.getSelectionPath();
     if (path == null) {
       return false;
@@ -259,18 +247,20 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     return occurrence(treeBuilder.getPreviousIssue((AbstractNode) path.getLastPathComponent()));
   }
 
-  @Override public String getNextOccurenceActionName() {
+  @Override
+  public String getNextOccurenceActionName() {
     return "Next Issue";
   }
 
-  @Override public String getPreviousOccurenceActionName() {
+  @Override
+  public String getPreviousOccurenceActionName() {
     return "Previous Issue";
   }
 
   public void setSelectedIssue(LiveIssue issue) {
     DefaultMutableTreeNode issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()),
       (node) -> node instanceof IssueNode && ((IssueNode) node).issue().equals(issue));
-    if(issueNode == null) {
+    if (issueNode == null) {
       return;
     }
     tree.setSelectionPath(null);

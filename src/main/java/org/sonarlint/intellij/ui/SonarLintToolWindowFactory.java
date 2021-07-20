@@ -19,13 +19,22 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowAnchor;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.openapi.wm.ToolWindowType;
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
+import com.intellij.ui.JBSplitter;
+import com.intellij.ui.OnePixelSplitter;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
+
+import javax.swing.JComponent;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -65,6 +74,40 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     }
   }
 
+  public static JBSplitter createSplitter(Project project, JComponent parentComponent, Disposable parentDisposable, JComponent c1, JComponent c2, String proportionProperty,
+    float defaultSplit) {
+    JBSplitter splitter = new OnePixelSplitter(splitVertically(project), proportionProperty, defaultSplit);
+    splitter.setFirstComponent(c1);
+    splitter.setSecondComponent(c2);
+    splitter.setHonorComponentsMinimumSize(true);
+
+    final ToolWindowManagerListener listener = new ToolWindowManagerListener() {
+      @Override
+      public void stateChanged(@NotNull ToolWindowManager toolWindowManager) {
+        splitter.setOrientation(splitVertically(project));
+        parentComponent.revalidate();
+        parentComponent.repaint();
+      }
+    };
+    project.getMessageBus().connect(parentDisposable).subscribe(ToolWindowManagerListener.TOPIC, listener);
+    Disposer.register(parentDisposable, () -> {
+      parentComponent.remove(splitter);
+      splitter.dispose();
+    });
+
+    return splitter;
+  }
+
+  public static boolean splitVertically(Project project) {
+    final ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
+    boolean splitVertically = false;
+    if (toolWindow != null) {
+      final ToolWindowAnchor anchor = toolWindow.getAnchor();
+      splitVertically = anchor == ToolWindowAnchor.LEFT || anchor == ToolWindowAnchor.RIGHT;
+    }
+    return splitVertically;
+  }
+
   private static void addIssuesTab(Project project, @NotNull ContentManager contentManager) {
     IssueManager issueManager = getService(project, IssueManager.class);
     CurrentFileController scope = new CurrentFileController(project, issueManager);
@@ -95,15 +138,14 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   private static void addTaintIssuesTab(Project project, @NotNull ContentManager contentManager) {
     TaintVulnerabilitiesPanel vulnerabilitiesPanel = new TaintVulnerabilitiesPanel(project);
     Content analysisResultsContent = contentManager.getFactory()
-            .createContent(
-                    vulnerabilitiesPanel,
-                    buildVulnerabilitiesTabName(0),
-                    false);
+      .createContent(
+        vulnerabilitiesPanel,
+        buildVulnerabilitiesTabName(0),
+        false);
     analysisResultsContent.setCloseable(false);
     contentManager.addDataProvider(vulnerabilitiesPanel);
     contentManager.addContent(analysisResultsContent);
   }
-
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
     Content logContent = toolWindow.getContentManager().getFactory()

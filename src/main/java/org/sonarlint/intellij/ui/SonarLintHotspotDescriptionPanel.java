@@ -58,7 +58,6 @@ public class SonarLintHotspotDescriptionPanel {
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
 
     panel = new JPanel(new BorderLayout());
-    panel.setBorder(IdeBorderFactory.createBorder(SideBorder.LEFT));
 
     JComponent titleComp = new JLabel("Select a hotspot to see more details", SwingConstants.CENTER);
     panel.add(titleComp, BorderLayout.CENTER);

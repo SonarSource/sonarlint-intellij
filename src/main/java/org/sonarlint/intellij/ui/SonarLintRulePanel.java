@@ -67,7 +67,6 @@ public class SonarLintRulePanel {
   public SonarLintRulePanel(Project project) {
     this.project = project;
     panel = new JPanel(new BorderLayout());
-    panel.setBorder(IdeBorderFactory.createBorder(SideBorder.LEFT));
     setRuleKey(null);
     show();
   }
