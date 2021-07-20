@@ -52,6 +52,7 @@ import com.intellij.ui.components.fields.ExpandableTextField;
 import com.intellij.ui.components.labels.LinkLabel;
 import com.intellij.util.containers.Queue;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
@@ -62,8 +63,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Point;
-import java.io.IOException;
-import java.io.StringReader;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -101,6 +100,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
+import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
 import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -108,6 +108,7 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetail
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
+import static org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit.appendRuleAttributesHtmlTable;
 
 public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final Logger LOG = Logger.getInstance(RuleConfigurationPanel.class);
@@ -203,7 +204,6 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
   }
 
-
   private void restoreDefaults() {
     allRulesStateByKey.values().forEach(r -> {
       r.setIsActivated(r.getDefaultActivation());
@@ -278,6 +278,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private JPanel createUIComponents() {
 
     descriptionBrowser = new JEditorPane(UIUtil.HTML_MIME, EMPTY_HTML);
+    descriptionBrowser.setEditorKit(new RuleDescriptionHTMLEditorKit());
     descriptionBrowser.setEditable(false);
     descriptionBrowser.setBorder(JBUI.Borders.empty(5));
     descriptionBrowser.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
@@ -331,18 +332,14 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void initOptionsAndDescriptionPanel() {
     myParamsPanel.removeAll();
-    readHTML(descriptionBrowser, toHTML(descriptionBrowser, EMPTY_HTML, false));
+    setHTML(descriptionBrowser, EMPTY_HTML);
     myParamsPanel.validate();
     myParamsPanel.repaint();
   }
 
-  public static void readHTML(JEditorPane browser, String text) {
-    try {
-      browser.read(new StringReader(text), null);
-      browser.setCaretPosition(0);
-    } catch (IOException e) {
-      throw new IllegalStateException("Unable to set rule description", e);
-    }
+  public static void setHTML(JEditorPane browser, String text) {
+    SwingHelper.setHtml(browser, text, UIUtil.getLabelForeground());
+    browser.setCaretPosition(0);
   }
 
   private JScrollPane initTreeScrollPane() {
@@ -402,7 +399,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       if (singleNode != null) {
         updateParamsAndDescriptionPanel(singleNode);
       } else {
-        readHTML(descriptionBrowser, toHTML(descriptionBrowser, "Multiple rules are selected.", false));
+        setHTML(descriptionBrowser, "Multiple rules are selected.");
         myParamsPanel.removeAll();
 
       }
@@ -415,16 +412,14 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
-    String attributes = singleNode.severity() + " " + singleNode.type();
-    attributes = attributes.toLowerCase(Locale.US).replace('_', ' ');
-    final String description = "<b>" + singleNode.getKey() + "</b> | " + attributes + "<br/>" + singleNode.getHtmlDescription();
+    String htmlDescription = singleNode.getHtmlDescription();
+    StringBuilder builder = new StringBuilder(htmlDescription.length() + 64);
+    appendRuleAttributesHtmlTable(singleNode.getKey(), singleNode.severity(), singleNode.type(), builder);
+    builder.append(htmlDescription);
     try {
-      readHTML(descriptionBrowser, SearchUtil.markup(toHTML(descriptionBrowser, description, false), myRuleFilter.getFilter()));
+      setHTML(descriptionBrowser, SearchUtil.markup(builder.toString(), myRuleFilter.getFilter()));
     } catch (Throwable t) {
-      LOG.error("Failed to load description for: " +
-        singleNode.getKey() +
-        "; description: " +
-        description, t);
+      LOG.error("Failed to load description for: " + singleNode.getKey() + "; description: " + builder, t);
     }
 
     myParamsPanel.removeAll();
@@ -691,12 +686,6 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     } catch (NumberFormatException e) {
       return 0;
     }
-  }
-
-  public static String toHTML(JEditorPane browser, @Nls String text, boolean miniFontSize) {
-    final HintHint hintHint = new HintHint(browser, new Point(0, 0));
-    hintHint.setFont(miniFontSize ? UIUtil.getLabelFont(UIUtil.FontSize.SMALL) : UIUtil.getLabelFont());
-    return HintUtil.prepareHintText(text, hintHint);
   }
 
   private RulesTreeNode.Rule getStrictlySelectedToolNode() {

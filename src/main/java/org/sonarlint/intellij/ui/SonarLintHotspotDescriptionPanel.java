@@ -21,6 +21,7 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SideBorder;
 import com.intellij.util.ui.JBUI;
@@ -86,29 +87,9 @@ public class SonarLintHotspotDescriptionPanel {
     newEditor.setEditorKit(kit);
     newEditor.setBorder(JBUI.Borders.empty(BORDER));
     newEditor.setEditable(false);
-    newEditor.setContentType("text/html");
-    newEditor.addHyperlinkListener(new RuleDescriptionHyperLinkListener(project));
+    newEditor.setContentType(UIUtil.HTML_MIME);
+    newEditor.addHyperlinkListener(new BrowserHyperlinkListener());
     return newEditor;
-  }
-
-  private static class RuleDescriptionHyperLinkListener implements HyperlinkListener {
-    private final Project project;
-
-    public RuleDescriptionHyperLinkListener(Project project) {
-      this.project = project;
-    }
-
-    @Override
-    public void hyperlinkUpdate(HyperlinkEvent e) {
-      if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-        Desktop desktop = Desktop.getDesktop();
-        try {
-          desktop.browse(e.getURL().toURI());
-        } catch (Exception ex) {
-          SonarLintConsole.get(project).error("Error opening browser: " + e.getURL(), ex);
-        }
-      }
-    }
   }
 
   public JComponent getPanel() {
