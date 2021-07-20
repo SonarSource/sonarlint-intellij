@@ -33,6 +33,7 @@ import com.intellij.util.ui.UIUtil;
 
 import java.awt.BorderLayout;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
@@ -61,6 +62,7 @@ public class SonarLintRulePanel {
   private final JPanel panel;
   private JEditorPane editor;
   private RuleDescriptionHyperLinkListener ruleDescriptionHyperLinkListener;
+  private String currentRuleKey;
 
   public SonarLintRulePanel(Project project) {
     this.project = project;
@@ -71,6 +73,10 @@ public class SonarLintRulePanel {
   }
 
   public void setRuleKey(@Nullable String ruleKey) {
+    if (Objects.equals(currentRuleKey, ruleKey)) {
+      return;
+    }
+    this.currentRuleKey = ruleKey;
     if (ruleKey == null) {
       nothingToDisplay(false);
       return;
