@@ -93,7 +93,7 @@ public class ServerConnectionWizard {
 
     @Override
     protected void helpAction() {
-      BrowserUtil.browse("https://github.com/SonarSource/sonarlint-intellij/wiki/Connected-Mode");
+      BrowserUtil.browse("https://github.com/SonarSource/sonarlint-intellij/wiki/Bind-to-SonarQube-or-SonarCloud");
     }
 
     @Override
