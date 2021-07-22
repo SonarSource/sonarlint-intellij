@@ -36,12 +36,14 @@ const val SERVER_URL = "server"
 
 data class Status(val ideName: String, val description: String)
 
-class RequestProcessor(private val appInfo: ApplicationInfo = ApplicationInfo.getInstance(),
-                       private val showRequestHandler: SecurityHotspotShowRequestHandler = SecurityHotspotShowRequestHandler()) {
+class RequestProcessor(
+    private val appInfo: ApplicationInfo = ApplicationInfo.getInstance(),
+    private val showRequestHandler: SecurityHotspotShowRequestHandler = SecurityHotspotShowRequestHandler(),
+) {
 
     fun processRequest(request: Request): Response {
         if (request.path == STATUS_ENDPOINT && request.method == HttpMethod.GET) {
-            return getStatusData()
+            return getStatusData(request.isTrustedOrigin)
         }
         if (request.path == SHOW_HOTSPOT_ENDPOINT && request.method == HttpMethod.GET) {
             return processOpenInIdeRequest(request)
@@ -49,17 +51,22 @@ class RequestProcessor(private val appInfo: ApplicationInfo = ApplicationInfo.ge
         return BadRequest("Invalid path or method.")
     }
 
-    private fun getStatusData(): Response {
-        var description = appInfo.fullVersion
-        val edition = ApplicationNamesInfo.getInstance().editionName
-        if (edition != null) {
-            description += " ($edition)"
-        }
-        val openProjects = ProjectManager.getInstance().openProjects
-        if (openProjects.isNotEmpty()) {
-            description += " - " + openProjects.joinToString(", ") { it.name }
-        }
-        val status = Status(appInfo.versionName, description)
+    private fun getStatusData(isTrustedOrigin: Boolean): Response {
+        val status =
+            if (isTrustedOrigin) {
+                var description = appInfo.fullVersion
+                val edition = ApplicationNamesInfo.getInstance().editionName
+                if (edition != null) {
+                    description += " ($edition)"
+                }
+                val openProjects = ProjectManager.getInstance().openProjects
+                if (openProjects.isNotEmpty()) {
+                    description += " - " + openProjects.joinToString(", ") { it.name }
+                }
+                Status(appInfo.versionName, description)
+            } else {
+                Status(appInfo.versionName, "")
+            }
         return Success(ObjectMapper().writeValueAsString(status))
     }
 
@@ -85,7 +92,7 @@ data class Success(val body: String? = null) : Response()
 
 data class BadRequest(val message: String) : Response()
 
-data class Request(val uri: String, val method: HttpMethod) {
+data class Request(val uri: String, val method: HttpMethod, val isTrustedOrigin: Boolean) {
     val path = uri.substringBefore('?')
     private val parameters = QueryStringDecoder(uri).parameters()
 
