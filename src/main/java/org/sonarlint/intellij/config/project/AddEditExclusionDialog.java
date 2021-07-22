@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.openapi.util.io.FileUtil;
@@ -70,13 +71,13 @@ public class AddEditExclusionDialog extends DialogWrapper {
 
     FileChooserDescriptor fileChooser = new FileChooserDescriptor(true, false, false,
       true, false, false);
-    fileChooser.setRoots(project.getBaseDir());
+    fileChooser.setRoots(ProjectRootManager.getInstance(project).getContentRoots());
     fileTextField.addBrowseFolderListener("Select File to Exclude",
       "Select the file which will be excluded from SonarLint analysis",
       project, fileChooser);
 
     FileChooserDescriptor directoryChooser = FileChooserDescriptorFactory.createSingleFolderDescriptor();
-    directoryChooser.setRoots(project.getBaseDir());
+    directoryChooser.setRoots(ProjectRootManager.getInstance(project).getContentRoots());
     directoryTextField.addBrowseFolderListener("Select Directory to Exclude",
       "Select the directory which will be excluded from SonarLint analysis",
       project, directoryChooser);
