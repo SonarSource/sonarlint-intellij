@@ -31,5 +31,6 @@ public class CFamilyLanguageActivator implements LanguageActivator {
     enabledLanguages.clear();
     enabledLanguages.add(Language.C);
     enabledLanguages.add(Language.CPP);
+    enabledLanguages.add(Language.SECRETS);
   }
 }
