@@ -26,8 +26,8 @@ import org.sonarsource.sonarlint.core.client.api.common.Language;
 public class CsharpLanguageActivator implements LanguageActivator {
   @Override
   public void amendLanguages(Set<Language> enabledLanguages) {
-    // Only C# for now in Rider
     enabledLanguages.clear();
     enabledLanguages.add(Language.CS);
+    enabledLanguages.add(Language.SECRETS);
   }
 }
