@@ -19,16 +19,18 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import com.intellij.ui.scale.JBUIScale;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
-import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
+
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.util.CompoundIcon;
 
@@ -43,7 +45,8 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     super(root);
   }
 
-  @Override public int getColumnCount() {
+  @Override
+  public int getColumnCount() {
     return 3;
   }
 
@@ -77,13 +80,13 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     if (column == ICONS_COLUMN) {
       if (node instanceof RulesTreeNode.Rule) {
         RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
-        int gap = JBUI.isUsrHiDPI() ? 8 : 4;
+        int gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
         return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(rule.type()), SonarLintIcons.severity12(rule.severity()));
       }
       return null;
     }
     if (column == IS_ENABLED_COLUMN) {
-      RulesTreeNode treeNode = (RulesTreeNode) node;
+      RulesTreeNode<?> treeNode = (RulesTreeNode) node;
       return treeNode.isActivated();
     }
 
@@ -95,7 +98,8 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     return column == IS_ENABLED_COLUMN;
   }
 
-  @Override public void setValueAt(Object aValue, Object node, int column) {
+  @Override
+  public void setValueAt(Object aValue, Object node, int column) {
     if (column == IS_ENABLED_COLUMN) {
       boolean value = (boolean) aValue;
       if (node instanceof RulesTreeNode.Rule) {
@@ -125,7 +129,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
       if (rule.isNonDefault()) {
         isChanged = true;
       }
-      if (rule.isActivated()) {
+      if (Boolean.TRUE.equals(rule.isActivated())) {
         seenActive = true;
       } else {
         seenInactive = true;
@@ -163,7 +167,8 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
     ((AbstractTableModel) treeTable.getModel()).fireTableDataChanged();
   }
 
-  @Override public void setTree(JTree tree) {
+  @Override
+  public void setTree(JTree tree) {
     treeTable = ((TreeTableTree) tree).getTreeTable();
   }
 }
