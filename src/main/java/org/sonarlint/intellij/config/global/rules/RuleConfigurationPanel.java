@@ -270,7 +270,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     CommonActionsManager actionManager = CommonActionsManager.getInstance();
     actions.add(actionManager.createExpandAllAction(myTreeExpander, table));
     actions.add(actionManager.createCollapseAllAction(myTreeExpander, table));
-    ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar(ActionPlaces.UNKNOWN, actions, true);
+    ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("SonarLintRulesTreeToolbar", actions, true);
     actionToolbar.setTargetComponent(panel);
     return actionToolbar;
   }
