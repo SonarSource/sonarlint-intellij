@@ -34,7 +34,9 @@ import io.netty.handler.codec.http.*
 import io.netty.handler.logging.LogLevel
 import io.netty.handler.logging.LoggingHandler
 import io.netty.util.CharsetUtil
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput
 import java.net.BindException
@@ -81,9 +83,9 @@ open class NettyServer {
         workerGroup = NioEventLoopGroup()
         val b = ServerBootstrap()
         b.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel::class.java)
-                .handler(LoggingHandler(LogLevel.INFO))
-                .childHandler(ServerInitializer())
+            .channel(NioServerSocketChannel::class.java)
+            .handler(LoggingHandler(LogLevel.INFO))
+            .childHandler(ServerInitializer())
         try {
             b.bind(InetAddress.getLoopbackAddress(), port).sync().channel()
         } catch (e: BindException) {
@@ -119,7 +121,7 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
     override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
         if (msg is HttpRequest) {
             origin = msg.headers()[HttpHeaderNames.ORIGIN]
-            response = RequestProcessor().processRequest(Request(msg.uri(), msg.method()))
+            response = RequestProcessor().processRequest(Request(msg.uri(), msg.method(), isTrustedOrigin(origin)))
         }
         if (msg is LastHttpContent) {
             ctx.writeAndFlush(createResponse(response, origin))
@@ -128,16 +130,16 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
 
     private fun createResponse(res: Response?, origin: String?): FullHttpResponse {
         val response: FullHttpResponse = DefaultFullHttpResponse(
-                HttpVersion.HTTP_1_1,
-                when (res) {
-                    is BadRequest -> HttpResponseStatus.BAD_REQUEST
-                    else -> HttpResponseStatus.OK
-                },
-                Unpooled.copiedBuffer(when (res) {
-                    is Success -> res.body ?: ""
-                    is BadRequest -> res.message
-                    else -> ""
-                }, CharsetUtil.UTF_8))
+            HttpVersion.HTTP_1_1,
+            when (res) {
+                is BadRequest -> HttpResponseStatus.BAD_REQUEST
+                else -> HttpResponseStatus.OK
+            },
+            Unpooled.copiedBuffer(when (res) {
+                is Success -> res.body ?: ""
+                is BadRequest -> res.message
+                else -> ""
+            }, CharsetUtil.UTF_8))
         response.headers()[HttpHeaderNames.CONTENT_TYPE] = "application/json; charset=UTF-8"
         origin?.let { response.headers()[HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN] = origin }
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
@@ -147,6 +149,12 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
         getService(GlobalLogOutput::class.java).logError("Error processing request", cause)
         ctx.close()
+    }
+
+    companion object {
+        fun isTrustedOrigin(origin: String?): Boolean {
+            return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || Settings.getGlobalSettings().serverConnections.any { it.hostUrl.startsWith(origin)})
+        }
     }
 
 }

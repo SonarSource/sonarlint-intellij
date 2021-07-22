@@ -46,7 +46,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_fail_if_method_is_not_get() {
-        val request = Request("", HttpMethod.POST)
+        val request = Request("", HttpMethod.POST, false)
 
         val result = underTest.processRequest(request)
 
@@ -55,7 +55,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_fail_if_endpoint_is_not_expected() {
-        val request = Request("/unexpected/endpoint", HttpMethod.GET)
+        val request = Request("/unexpected/endpoint", HttpMethod.GET, false)
 
         val result = underTest.processRequest(request)
 
@@ -63,10 +63,24 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun it_should_return_status_for_status_endpoint() {
+    fun it_should_not_return_description_if_untrusted_origin() {
         val ideName = "Version name"
         val fullVersion = "Full version"
-        val request = Request(STATUS_ENDPOINT, HttpMethod.GET)
+        val request = Request(STATUS_ENDPOINT, HttpMethod.GET, false)
+        `when`(appInfoMock.versionName).thenReturn(ideName)
+        `when`(appInfoMock.fullVersion).thenReturn(fullVersion)
+
+        val result = underTest.processRequest(request)
+
+        assertThat(result).isInstanceOf(Success::class.java)
+        assertThat((result as Success).body).isEqualTo("{\"ideName\":\"Version name\",\"description\":\"\"}")
+    }
+
+    @Test
+    fun it_should_return_status_for_status_endpoint_if_trusted_origin() {
+        val ideName = "Version name"
+        val fullVersion = "Full version"
+        val request = Request(STATUS_ENDPOINT, HttpMethod.GET, true)
         `when`(appInfoMock.versionName).thenReturn(ideName)
         `when`(appInfoMock.fullVersion).thenReturn(fullVersion)
 
@@ -78,7 +92,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_open_the_hotspot_for_well_formed_request() {
-        val request = Request("$SHOW_HOTSPOT_ENDPOINT?project=p&hotspot=h&server=s", HttpMethod.GET)
+        val request = Request("$SHOW_HOTSPOT_ENDPOINT?project=p&hotspot=h&server=s", HttpMethod.GET, false)
 
         val result = underTest.processRequest(request)
         dispatchAllInvocationEventsInIdeEventQueue()
@@ -90,7 +104,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_answer_with_bad_request_if_project_is_missing() {
-        val request = Request("$SHOW_HOTSPOT_ENDPOINT?hotspot=h&server=s", HttpMethod.GET)
+        val request = Request("$SHOW_HOTSPOT_ENDPOINT?hotspot=h&server=s", HttpMethod.GET, false)
 
         val result = underTest.processRequest(request)
 
@@ -99,7 +113,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_answer_with_bad_request_if_hotspot_is_missing() {
-        val request = Request("$SHOW_HOTSPOT_ENDPOINT?project=p&server=s", HttpMethod.GET)
+        val request = Request("$SHOW_HOTSPOT_ENDPOINT?project=p&server=s", HttpMethod.GET, false)
 
         val result = underTest.processRequest(request)
 
@@ -108,7 +122,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
 
     @Test
     fun it_should_answer_with_bad_request_if_server_is_missing() {
-        val request = Request("$SHOW_HOTSPOT_ENDPOINT?project=p&hotspot=h", HttpMethod.GET)
+        val request = Request("$SHOW_HOTSPOT_ENDPOINT?project=p&hotspot=h", HttpMethod.GET, false)
 
         val result = underTest.processRequest(request)
 
