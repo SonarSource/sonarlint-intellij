@@ -36,12 +36,13 @@ import com.intellij.ui.PopupHandler;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
-import com.intellij.util.ui.UIUtil;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
+
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
@@ -62,7 +63,6 @@ public class IssueTree extends Tree implements DataProvider {
   }
 
   private void init() {
-    UIUtil.setLineStyleAngled(this);
     this.setShowsRootHandles(false);
     this.setCellRenderer(new TreeCellRenderer());
     this.expandRow(0);
@@ -83,7 +83,9 @@ public class IssueTree extends Tree implements DataProvider {
     EditSourceOnEnterKeyHandler.install(this);
   }
 
-  @Nullable @Override public Object getData(@NonNls String dataId) {
+  @Nullable
+  @Override
+  public Object getData(@NonNls String dataId) {
     if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
       return navigate();
     } else if (PlatformDataKeys.TREE_EXPANDER.is(dataId)) {

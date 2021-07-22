@@ -68,7 +68,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
         }
       });
     watcher.start();
-    EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this);
+    EditorFactory.getInstance().getEventMulticaster().addDocumentListener(this, this);
   }
 
   @Override
@@ -172,7 +172,6 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
 
   @Override
   public void dispose() {
-    EditorFactory.getInstance().getEventMulticaster().removeDocumentListener(this);
     eventMap.clear();
     watcher.stopWatcher();
   }
