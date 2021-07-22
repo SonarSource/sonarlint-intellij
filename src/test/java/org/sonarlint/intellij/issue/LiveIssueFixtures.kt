@@ -23,6 +23,7 @@ import com.intellij.openapi.editor.RangeMarker
 import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.getDocument
+import org.sonarsource.sonarlint.core.client.api.common.QuickFix
 import org.sonarsource.sonarlint.core.client.api.common.TextRange
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
 
@@ -31,7 +32,7 @@ fun aLiveIssue(
     rangeMarker: RangeMarker? = file.virtualFile.getDocument()!!.createRangeMarker(0, 1),
     coreIssue: Issue = aCoreIssue(file, toTextRange(rangeMarker))
 ): LiveIssue {
-    val liveIssue = LiveIssue(coreIssue, file, rangeMarker, null)
+    val liveIssue = LiveIssue(coreIssue, file, rangeMarker, null, emptyList())
     liveIssue.serverIssueKey = "serverIssueKey"
     return liveIssue
 }
@@ -47,6 +48,7 @@ fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = o
     override fun getRuleKey() = "ruleKey"
     override fun getRuleName() = "ruleName"
     override fun flows() = mutableListOf<Issue.Flow>()
+    override fun quickFixes() = mutableListOf<QuickFix>()
 }
 
 private fun toTextRange(rangeMarker: RangeMarker?): TextRange? {

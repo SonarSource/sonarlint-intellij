@@ -25,6 +25,7 @@ import com.intellij.psi.PsiFile;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -126,7 +127,7 @@ public class IssueTreeModelBuilderTest {
     when(issue.getSeverity()).thenReturn(severity);
     RangeMarker marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
-    LiveIssue ip = new LiveIssue(issue, psiFile);
+    LiveIssue ip = new LiveIssue(issue, psiFile, Collections.emptyList());
     ip.setCreationDate(creationDate);
     return ip;
   }

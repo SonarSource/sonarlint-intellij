@@ -37,11 +37,9 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
-
 import java.util.Collection;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -130,6 +128,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     issue.context().ifPresent(c -> annotation.registerFix(new ShowLocationsIntentionAction(issue, c)));
+    issue.quickFixes().forEach(f -> annotation.registerFix(new ApplyQuickFixIntentionAction(f)));
 
     if (issue.getRange() == null) {
       annotation.setFileLevelAnnotation(true);

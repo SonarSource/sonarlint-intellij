@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.mediumtests
 
+import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate
@@ -152,6 +153,74 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         } finally {
             myVcsManager.unregisterVcs(myVcs)
         }
+    }
+
+    @Test
+    fun should_apply_quick_fix_on_original_range_when_no_code_is_modified() {
+        val file = myFixture.configureByFile("src/quick_fixes/single_quick_fix.input.java")
+        analyze(file.virtualFile)
+
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+
+        myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
+    }
+
+    @Test
+    fun should_apply_quick_fix_on_adapted_range_when_code_is_modified_within_the_range() {
+        val file = myFixture.configureByFile("src/quick_fixes/single_quick_fix.input.java")
+        analyze(file.virtualFile)
+        myFixture.performEditorAction(IdeActions.ACTION_EDITOR_BACKSPACE)
+
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+
+        myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
+    }
+
+    @Test
+    fun should_apply_multiple_quick_fixes_on_different_lines() {
+        val file = myFixture.configureByFile("src/quick_fixes/multiple_quick_fixes_on_different_lines.input.java")
+        analyze(file.virtualFile)
+
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.editor.caretModel.currentCaret.moveToOffset(140)
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+
+        myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_different_lines.expected.java")
+    }
+
+    @Test
+    fun should_apply_overlapping_quick_fixes_on_same_line() {
+        val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
+        analyze(file.virtualFile)
+
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.editor.caretModel.currentCaret.moveToOffset(58)
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove \"strings\"."))
+
+        myFixture.checkResultByFile("src/quick_fixes/overlapping_quick_fixes.expected.java")
+    }
+
+    @Test
+    fun should_apply_multiple_quick_fixes_on_same_line() {
+        val file = myFixture.configureByFile("src/quick_fixes/multiple_quick_fixes_on_same_line.input.java")
+        analyze(file.virtualFile)
+
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.editor.caretModel.currentCaret.moveToOffset(120)
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+
+        myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_same_line.expected.java")
+    }
+
+    @Test
+    fun should_make_the_quick_fix_not_available_after_applying_it() {
+        val file = myFixture.configureByFile("src/quick_fixes/single_quick_fix.input.java")
+        analyze(file.virtualFile)
+        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+
+        val availableIntention = myFixture.filterAvailableIntentions("SonarLint: Remove type argument(s)")
+
+        assertThat(availableIntention).isEmpty()
     }
 
     /**

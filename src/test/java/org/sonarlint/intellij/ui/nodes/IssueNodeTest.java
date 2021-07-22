@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.psi.PsiFile;
+import java.util.Collections;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
@@ -45,7 +46,7 @@ public class IssueNodeTest {
     Issue issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn("MAJOR");
-    LiveIssue issuePointer = new LiveIssue(issue, file);
+    LiveIssue issuePointer = new LiveIssue(issue, file, Collections.emptyList());
     issuePointer.setCreationDate(date);
     return issuePointer;
   }

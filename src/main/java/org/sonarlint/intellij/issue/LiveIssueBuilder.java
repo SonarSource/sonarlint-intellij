@@ -23,13 +23,12 @@ import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
-
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -37,6 +36,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
+import static org.sonarlint.intellij.issue.QuickFixKt.convert;
 
 public class LiveIssueBuilder {
   private final IssueMatcher matcher;
@@ -51,12 +51,16 @@ public class LiveIssueBuilder {
     return ReadAction.compute(() -> {
       PsiFile psiFile = matcher.findFile(inputFile.getClientObject());
       TextRange textRange = issue.getTextRange();
+      List<QuickFix> quickFixes = issue.quickFixes()
+        .stream().map(fix -> convert(myProject, fix))
+        .filter(Objects::nonNull)
+        .collect(Collectors.toList());
       if (textRange != null) {
         RangeMarker rangeMarker = matcher.match(psiFile, textRange);
         Optional<IssueContext> context = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
-        return new LiveIssue(issue, psiFile, rangeMarker, context.orElse(null));
+        return new LiveIssue(issue, psiFile, rangeMarker, context.orElse(null), quickFixes);
       } else {
-        return new LiveIssue(issue, psiFile);
+        return new LiveIssue(issue, psiFile, quickFixes);
       }
     });
   }

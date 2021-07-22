@@ -24,6 +24,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.CheckForNull;
@@ -47,6 +48,7 @@ public class LiveIssue implements Trackable {
   private final String message;
   private final String ruleKey;
   private final IssueContext context;
+  private final List<QuickFix> quickFixes;
 
   // tracked fields (mutable)
   private String severity;
@@ -56,11 +58,11 @@ public class LiveIssue implements Trackable {
   private boolean resolved;
   private String assignee;
 
-  public LiveIssue(Issue issue, PsiFile psiFile) {
-    this(issue, psiFile, null, null);
+  public LiveIssue(Issue issue, PsiFile psiFile, List<QuickFix> quickFixes) {
+    this(issue, psiFile, null, null, quickFixes);
   }
 
-  public LiveIssue(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable IssueContext context) {
+  public LiveIssue(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable IssueContext context, List<QuickFix> quickFixes) {
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
@@ -71,6 +73,7 @@ public class LiveIssue implements Trackable {
     this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;
+    this.quickFixes = quickFixes;
 
     if (range != null) {
       Document document = range.getDocument();
@@ -201,5 +204,9 @@ public class LiveIssue implements Trackable {
 
   public Optional<IssueContext> context() {
     return Optional.ofNullable(context);
+  }
+
+  public List<QuickFix> quickFixes() {
+    return quickFixes;
   }
 }
