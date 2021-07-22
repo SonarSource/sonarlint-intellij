@@ -23,12 +23,14 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.SimpleTextAttributes;
-import com.intellij.util.ui.JBUI;
+import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
+
 import java.util.Locale;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
+
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
@@ -47,14 +49,15 @@ public class IssueNode extends AbstractNode {
     this.issue = ((LiveIssue) issue);
   }
 
-  @Override public void render(TreeCellRenderer renderer) {
+  @Override
+  public void render(TreeCellRenderer renderer) {
     String severity = StringUtil.capitalize(issue.getSeverity().toLowerCase(Locale.ENGLISH));
     String type = issue.getType();
 
     if (type != null) {
       String typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
       renderer.setIconToolTip(severity + " " + typeStr);
-      int gap = JBUI.isUsrHiDPI() ? 8 : 4;
+      int gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
     } else {
       renderer.setIconToolTip(severity);
@@ -88,7 +91,8 @@ public class IssueNode extends AbstractNode {
     }
   }
 
-  @Override public int getIssueCount() {
+  @Override
+  public int getIssueCount() {
     return 1;
   }
 

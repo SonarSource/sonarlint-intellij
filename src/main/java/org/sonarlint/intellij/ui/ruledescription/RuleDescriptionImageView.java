@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.ui.ruledescription;
 
+import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.IconUtil;
-import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 
 import java.awt.Image;
@@ -61,7 +61,7 @@ public class RuleDescriptionImageView extends ImageView {
     }
 
     // in presentation mode we don't want huge icons
-    if (JBUI.isUsrHiDPI()) {
+    if (JBUIScale.isUsrHiDPI()) {
       icon = IconUtil.scale(icon, null, 0.5f);
     }
     Dictionary<URL, Image> cache = (Dictionary<URL, Image>) getDocument().getProperty("imageCache");
