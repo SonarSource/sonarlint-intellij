@@ -20,15 +20,18 @@
 package org.sonarlint.intellij.server
 
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito.*
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.eq
 
 class SonarLintHttpServerTest : AbstractSonarLintLightTests() {
 
-    lateinit var underTest:SonarLintHttpServer
+    lateinit var underTest: SonarLintHttpServer
     private lateinit var nettyServerMock: NettyServer
 
     @Before
@@ -37,8 +40,13 @@ class SonarLintHttpServerTest : AbstractSonarLintLightTests() {
         underTest = SonarLintHttpServer(nettyServerMock)
     }
 
+    @After
+    fun cleanup() {
+        Settings.getGlobalSettings().serverConnections = emptyList()
+    }
+
     @Test
-    fun it_should_bind_to_64120_port(){
+    fun it_should_bind_to_64120_port() {
         `when`(nettyServerMock.bindTo(64120)).thenReturn(true)
 
         underTest.startOnce()
@@ -48,7 +56,7 @@ class SonarLintHttpServerTest : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun it_should_bind_to_64121_port_if_64120_is_not_available(){
+    fun it_should_bind_to_64121_port_if_64120_is_not_available() {
         `when`(nettyServerMock.bindTo(64120)).thenReturn(false)
         `when`(nettyServerMock.bindTo(64121)).thenReturn(true)
 
@@ -59,7 +67,7 @@ class SonarLintHttpServerTest : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun it_should_try_consecutive_ports_and_give_up_after_64130(){
+    fun it_should_try_consecutive_ports_and_give_up_after_64130() {
         `when`(nettyServerMock.bindTo(anyInt())).thenReturn(false)
 
         underTest.startOnce()
@@ -67,6 +75,16 @@ class SonarLintHttpServerTest : AbstractSonarLintLightTests() {
         assertThat(underTest.isStarted).isFalse()
         verify(nettyServerMock).bindTo(eq(64130))
         verify(nettyServerMock, times(0)).bindTo(eq(64131))
+    }
+
+    @Test
+    fun trusted_origin_test() {
+        Settings.getGlobalSettings().addServerConnection(ServerConnection.newBuilder().setHostUrl("https://my.sonar.com/sonar").build())
+        assertThat(ServerHandler.isTrustedOrigin("http://foo")).isFalse()
+        assertThat(ServerHandler.isTrustedOrigin("https://sonarcloud.io")).isTrue()
+        assertThat(ServerHandler.isTrustedOrigin("https://my.sonar.com")).isTrue()
+        assertThat(ServerHandler.isTrustedOrigin("http://my.sonar.com")).isFalse()
+        assertThat(ServerHandler.isTrustedOrigin("https://sonar.com")).isFalse()
     }
 
 }

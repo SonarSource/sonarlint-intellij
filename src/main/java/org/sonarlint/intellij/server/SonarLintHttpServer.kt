@@ -128,10 +128,6 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
         }
     }
 
-    private fun isTrustedOrigin(origin: String?): Boolean {
-        return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || !Settings.getGlobalSettings().getConnectionsTo(origin).isEmpty())
-    }
-
     private fun createResponse(res: Response?, origin: String?): FullHttpResponse {
         val response: FullHttpResponse = DefaultFullHttpResponse(
             HttpVersion.HTTP_1_1,
@@ -153,6 +149,12 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
     override fun exceptionCaught(ctx: ChannelHandlerContext, cause: Throwable) {
         getService(GlobalLogOutput::class.java).logError("Error processing request", cause)
         ctx.close()
+    }
+
+    companion object {
+        fun isTrustedOrigin(origin: String?): Boolean {
+            return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || Settings.getGlobalSettings().serverConnections.any { it.hostUrl.startsWith(origin)})
+        }
     }
 
 }
