@@ -30,6 +30,8 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PathUtil;
+import org.jetbrains.annotations.Nullable;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -97,7 +99,25 @@ public class SonarLintAppUtils {
       return relativePathToModule;
     }
 
-    return getPathRelativeToContentRoot(module, virtualFile);
+    String strictRelativePathToContentRoot = getPathRelativeToContentRoot(module, virtualFile);
+    if (strictRelativePathToContentRoot != null) {
+      return strictRelativePathToContentRoot;
+    }
+
+    return getPathRelativeToCommonAncestorWithProjectBaseDir(module.getProject(), virtualFile);
+  }
+
+  @Nullable
+  private static String getPathRelativeToCommonAncestorWithProjectBaseDir(Project project, VirtualFile virtualFile) {
+    final VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
+    if (projectDir == null) {
+      return null;
+    }
+    VirtualFile commonAncestor = VfsUtilCore.getCommonAncestor(projectDir, virtualFile);
+    if (commonAncestor != null) {
+      return VfsUtilCore.getRelativePath(virtualFile, commonAncestor);
+    }
+    return null;
   }
 
   @CheckForNull
