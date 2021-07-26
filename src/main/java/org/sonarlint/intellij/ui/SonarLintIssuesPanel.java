@@ -39,9 +39,9 @@ import javax.annotation.Nullable;
 import javax.swing.JPanel;
 
 import org.jetbrains.annotations.NonNls;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintActions;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 

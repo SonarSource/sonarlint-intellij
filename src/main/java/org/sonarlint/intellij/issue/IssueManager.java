@@ -38,7 +38,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
+
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.persistence.IssuePersistence;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
 import org.sonarlint.intellij.issue.tracking.Input;
@@ -47,7 +49,6 @@ import org.sonarlint.intellij.issue.tracking.Tracker;
 import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;

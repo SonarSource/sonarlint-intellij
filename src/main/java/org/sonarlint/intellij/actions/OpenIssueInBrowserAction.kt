@@ -24,12 +24,12 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.util.StringUtils
 
 class OpenIssueInBrowserAction : AbstractSonarAction(

@@ -24,14 +24,16 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.List;
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
   public SonarAnalyzeChangedFilesAction() {

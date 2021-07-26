@@ -39,10 +39,11 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
+
 import org.sonarlint.intellij.SonarLintPlugin;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetry> {
   private final JPanel panel;

@@ -29,14 +29,14 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
 import org.sonarlint.intellij.http.ApacheHttpClient;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 import org.sonarsource.sonarlint.core.serverapi.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 
 import static icons.SonarLintIcons.ICON_SONARCLOUD_16;
 import static icons.SonarLintIcons.ICON_SONARQUBE_16;
-import static org.sonarlint.intellij.util.SonarLintUtils.isBlank;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 
 /**
  * This class is serialized in XML when SonarLintGlobalSettings is saved by IntelliJ.

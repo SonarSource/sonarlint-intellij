@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.issue;
 
 import java.util.List;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class IssueContext {
   private final String summaryDescription;

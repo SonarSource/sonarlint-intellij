@@ -21,13 +21,13 @@ package org.sonarlint.intellij.core
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.ui.ModalPresenter
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
-import org.sonarlint.intellij.util.SonarLintUtils.getService
 
 data class BoundProject(val project: Project, val connection: ServerConnection)
 

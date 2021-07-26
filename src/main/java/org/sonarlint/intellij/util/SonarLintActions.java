@@ -29,6 +29,7 @@ import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
 import org.sonarlint.intellij.actions.SonarClearAnalysisResultsAction;
 import org.sonarlint.intellij.actions.SonarClearIssuesAction;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 /**
  * Creates and keeps a single instance of actions used by SonarLint.

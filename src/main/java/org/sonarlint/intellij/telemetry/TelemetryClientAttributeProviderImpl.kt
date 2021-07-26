@@ -21,13 +21,13 @@ package org.sonarlint.intellij.telemetry
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.NodeJsManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.SonarLintEngineManager
-import org.sonarlint.intellij.util.SonarLintUtils
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails
 import org.sonarsource.sonarlint.core.telemetry.TelemetryClientAttributesProvider
 import java.util.Arrays

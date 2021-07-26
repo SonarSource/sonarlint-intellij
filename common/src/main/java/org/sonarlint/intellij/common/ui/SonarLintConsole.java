@@ -20,21 +20,14 @@
 package org.sonarlint.intellij.common.ui;
 
 import com.intellij.execution.ui.ConsoleView;
-import com.intellij.openapi.components.ServiceManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public interface SonarLintConsole {
 
   static SonarLintConsole get(@NotNull Project p) {
-    SonarLintConsole t = ServiceManager.getService(p, SonarLintConsole.class);
-    if (t == null) {
-      Logger.getInstance(SonarLintConsole.class).error("Could not find service: " + SonarLintConsole.class.getName());
-      throw new IllegalArgumentException("Class not found: " + SonarLintConsole.class.getName());
-    }
-
-    return t;
+    return SonarLintUtils.getService(p, SonarLintConsole.class);
   }
 
   void debug(String msg);

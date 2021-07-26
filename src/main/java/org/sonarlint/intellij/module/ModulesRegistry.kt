@@ -21,7 +21,7 @@ package org.sonarlint.intellij.module
 
 import com.intellij.openapi.module.Module
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 
 class ModulesRegistry {

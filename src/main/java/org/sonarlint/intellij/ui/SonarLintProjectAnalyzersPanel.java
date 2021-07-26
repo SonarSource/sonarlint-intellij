@@ -37,7 +37,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 
 public class SonarLintProjectAnalyzersPanel {

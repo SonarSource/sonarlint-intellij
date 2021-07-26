@@ -50,6 +50,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
@@ -58,7 +59,6 @@ import org.sonarlint.intellij.ui.tree.FlowsTree;
 import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
 import org.sonarlint.intellij.ui.tree.IssueTree;
 import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implements OccurenceNavigator {
   private static final String ID = "SonarLint";

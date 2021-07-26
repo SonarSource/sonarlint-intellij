@@ -40,6 +40,7 @@ import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
 import org.sonarlint.intellij.actions.OpenTaintVulnerabilityDocumentationAction
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarConfigureProject
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.EditorDecorator
@@ -55,7 +56,6 @@ import org.sonarlint.intellij.ui.nodes.IssueNode
 import org.sonarlint.intellij.ui.nodes.LocalTaintVulnerabilityNode
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTreeModelBuilder
-import org.sonarlint.intellij.util.SonarLintUtils.getService
 import java.awt.BorderLayout
 import java.awt.event.FocusAdapter
 import java.awt.event.FocusEvent

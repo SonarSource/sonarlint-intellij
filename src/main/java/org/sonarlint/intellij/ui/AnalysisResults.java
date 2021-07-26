@@ -21,13 +21,15 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AnalysisResults {
   private static final String LABEL = "Trigger an analysis to find issues in the project sources";

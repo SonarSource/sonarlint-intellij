@@ -31,13 +31,15 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
+
 import javax.swing.Box;
+
 import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintLogPanel extends SimpleToolWindowPanel {
   private static final String ID = "SonarLint";

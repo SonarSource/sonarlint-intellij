@@ -21,23 +21,29 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBTabbedPane;
+
 import java.awt.BorderLayout;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+
 import org.jetbrains.annotations.Nls;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.trigger.SonarLintSubmitter;
+import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
-import static org.sonarlint.intellij.util.SonarLintUtils.analyzeOpenFiles;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarLintGlobalConfigurable implements Configurable, Configurable.NoScroll {
   private static final int SETTINGS_TAB_INDEX = 0;
@@ -99,6 +105,16 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       analyzeOpenFiles(false);
     } else if (rulesModified) {
       analyzeOpenFiles(true);
+    }
+  }
+
+  public static void analyzeOpenFiles(boolean unboundOnly) {
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+
+    for (Project project : openProjects) {
+      if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
+        SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+      }
     }
   }
 

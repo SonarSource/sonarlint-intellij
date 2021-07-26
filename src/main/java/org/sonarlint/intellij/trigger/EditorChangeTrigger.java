@@ -33,13 +33,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Stream;
 import javax.annotation.concurrent.ThreadSafe;
+
 import org.sonarlint.intellij.analysis.AnalysisRequest;
 import org.sonarlint.intellij.analysis.AnalysisTask;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 

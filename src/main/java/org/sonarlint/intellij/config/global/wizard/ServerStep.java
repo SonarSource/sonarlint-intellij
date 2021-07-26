@@ -44,7 +44,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MouseInputAdapter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class ServerStep extends AbstractWizardStepEx {
   private static final int NAME_MAX_LENGTH = 50;

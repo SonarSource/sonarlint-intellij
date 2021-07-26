@@ -31,14 +31,17 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
+
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -47,7 +50,6 @@ import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
