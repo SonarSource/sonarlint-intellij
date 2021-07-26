@@ -19,10 +19,10 @@
  */
 package org.sonarlint.intellij.tasks;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ServerNotificationsService;
 
@@ -30,7 +30,6 @@ import org.sonarlint.intellij.core.ServerNotificationsService;
  * Only useful for SonarQube, since we know notifications are available in SonarCloud
  */
 public class CheckNotificationsSupportedTask extends Task.Modal {
-  private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final ServerConnection connection;
   private Exception exception;
   private boolean notificationsSupported = false;
@@ -53,7 +52,7 @@ public class CheckNotificationsSupportedTask extends Task.Modal {
         notificationsSupported = ServerNotificationsService.get().isSupported(connection);
       }
     } catch (Exception e) {
-      LOGGER.info("Failed to check notifications", e);
+      SonarLintConsole.get(myProject).error("Failed to check notifications", e);
       exception = e;
     }
   }

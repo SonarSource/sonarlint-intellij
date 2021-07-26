@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import com.intellij.openapi.diagnostic.Logger;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
+
+import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.ObjectStore;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
@@ -40,7 +42,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
  * @param <V> type of the value to store
  */
 class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
-  private static final Logger LOGGER = Logger.getInstance(IndexedObjectStore.class);
   private final StoreIndex<K> index;
   private final PathMapper<K> pathMapper;
   private final Reader<V> reader;
@@ -80,7 +81,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
     try {
       keys = index.keys();
     } catch (Exception e) {
-      LOGGER.warn("Failed to read the store", e);
+      GlobalLogOutput.get().logError("Failed to read the store", e);
       return;
     }
 
@@ -90,11 +91,11 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
           counter++;
           delete(k);
         } catch (IOException e) {
-          LOGGER.warn("Failed to delete file in the store", e);
+          GlobalLogOutput.get().logError("Failed to delete file in the store", e);
         }
       }
     }
-    LOGGER.debug(String.format("%d entries removed from the store", counter));
+    GlobalLogOutput.get().log(String.format("%d entries removed from the store", counter), LogOutput.Level.DEBUG);
   }
 
   @Override

@@ -19,12 +19,14 @@
  */
 package org.sonarlint.intellij.tasks;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+
 import java.util.Map;
+
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -32,7 +34,6 @@ import org.sonarsource.sonarlint.core.serverapi.project.ServerProject;
 
 // we can't use Task.WithResult because it was only introduced recently
 public class ServerDownloadProjectTask extends Task.Modal {
-  private static final Logger LOGGER = Logger.getInstance(ServerDownloadProjectTask.class);
   private final ConnectedSonarLintEngine engine;
   private final ServerConnection server;
 
@@ -45,12 +46,13 @@ public class ServerDownloadProjectTask extends Task.Modal {
     this.server = server;
   }
 
-  @Override public void run(@NotNull ProgressIndicator indicator) {
+  @Override
+  public void run(@NotNull ProgressIndicator indicator) {
     try {
       TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, myProject);
       this.result = engine.downloadAllProjects(server.getEndpointParams(), server.getHttpClient(), monitor);
     } catch (Exception e) {
-      LOGGER.info("Failed to download list of projects", e);
+      SonarLintConsole.get(myProject).error("Failed to download list of projects", e);
       this.exception = e;
     }
   }

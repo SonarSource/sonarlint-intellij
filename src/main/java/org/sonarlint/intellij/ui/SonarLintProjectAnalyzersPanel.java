@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
@@ -38,12 +37,12 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
 import org.apache.commons.lang.StringUtils;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 
 public class SonarLintProjectAnalyzersPanel {
-  private static final Logger LOGGER = Logger.getInstance(SonarLintProjectAnalyzersPanel.class);
   private final Project project;
   private JBTable analyzerTable;
   private JPanel panel;
@@ -68,7 +67,7 @@ public class SonarLintProjectAnalyzersPanel {
         .collect(Collectors.toList());
       tableModel.set(loadedAnalyzers);
     } catch (Exception e) {
-      LOGGER.error(e);
+      SonarLintConsole.get(project).error("Unable to get plugin details", e);
       tableModel.set(Collections.emptyList());
     }
   }
@@ -105,11 +104,13 @@ public class SonarLintProjectAnalyzersPanel {
   private static class Model extends AbstractTableModel {
     private List<PluginDetails> rows = new ArrayList<>();
 
-    @Override public int getRowCount() {
+    @Override
+    public int getRowCount() {
       return rows.size();
     }
 
-    @Override public int getColumnCount() {
+    @Override
+    public int getColumnCount() {
       return 2;
     }
 
@@ -137,7 +138,8 @@ public class SonarLintProjectAnalyzersPanel {
       return rows;
     }
 
-    @Override public Object getValueAt(int rowIndex, int columnIndex) {
+    @Override
+    public Object getValueAt(int rowIndex, int columnIndex) {
       PluginDetails item = rows.get(rowIndex);
       if (columnIndex == 0) {
         return StringUtils.capitalize(item.name());
@@ -146,5 +148,3 @@ public class SonarLintProjectAnalyzersPanel {
     }
   }
 }
-
-

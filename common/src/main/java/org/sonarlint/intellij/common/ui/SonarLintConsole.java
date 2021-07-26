@@ -22,6 +22,7 @@ package org.sonarlint.intellij.common.ui;
 import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public interface SonarLintConsole {
@@ -38,7 +39,7 @@ public interface SonarLintConsole {
 
   void error(String msg);
 
-  void error(String msg, Throwable t);
+  void error(String msg, @Nullable Throwable t);
 
   void clear();
 

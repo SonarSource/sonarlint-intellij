@@ -23,6 +23,7 @@ import com.intellij.openapi.project.ProjectManager;
 import java.util.Arrays;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -46,7 +47,7 @@ public class GlobalLogOutputImpl implements GlobalLogOutput {
   }
 
   @Override
-  public void logError(String msg, Throwable t) {
+  public void logError(String msg, @Nullable Throwable t) {
     getConsolesOfOpenedProjects()
       .forEach(sonarLintConsole -> sonarLintConsole.error(msg, t));
   }

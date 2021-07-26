@@ -19,11 +19,13 @@
  */
 package org.sonarlint.intellij.tasks;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+
 import java.util.List;
+
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
@@ -32,7 +34,6 @@ import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
  * Only useful for SonarCloud
  */
 public class GetOrganizationsTask extends Task.Modal {
-  private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final ServerConnection connection;
   private Exception exception;
   private List<ServerOrganization> organizations;
@@ -50,7 +51,7 @@ public class GetOrganizationsTask extends Task.Modal {
     try {
       organizations = connection.api().organization().listUserOrganizations(new TaskProgressMonitor(indicator, myProject));
     } catch (Exception e) {
-      LOGGER.info("Failed to fetch organizations", e);
+      SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
       exception = e;
     }
   }

@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.tasks;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import org.jetbrains.annotations.NotNull;
@@ -30,7 +29,6 @@ import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 import org.sonarsource.sonarlint.core.serverapi.ServerApiHelper;
 
 public class ConnectionTestTask extends Task.Modal {
-  private static final Logger LOGGER = Logger.getInstance(ConnectionTestTask.class);
   private final ServerConnection server;
   private Exception exception;
   private ValidationResult result;
@@ -49,9 +47,7 @@ public class ConnectionTestTask extends Task.Modal {
       ConnectionValidator connectionValidator = new ConnectionValidator(new ServerApiHelper(server.getEndpointParams(), server.getHttpClient()));
       result = connectionValidator.validateConnection();
     } catch (Exception e) {
-      String msg = "Connection test failed";
-      LOGGER.info(msg, e);
-      GlobalLogOutput.get().logError(msg, e);
+      GlobalLogOutput.get().logError("Connection test failed", e);
       exception = e;
     }
   }

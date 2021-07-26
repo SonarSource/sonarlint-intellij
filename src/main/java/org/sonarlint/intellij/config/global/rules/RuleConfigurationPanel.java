@@ -28,7 +28,6 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.DocumentAdapter;
@@ -98,7 +97,9 @@ import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
@@ -107,8 +108,6 @@ import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit.appendRuleAttributesHtmlTable;
 
 public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final Logger LOG = Logger.getInstance(RuleConfigurationPanel.class);
-
   private static final String MAIN_SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
   private static final String RIGHT_SPLITTER_KEY = "sonarlint_rule_configuration_splitter_right";
   private static final float DIVIDER_PROPORTION_DEFAULT = 0.5f;
@@ -415,7 +414,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     try {
       setHTML(descriptionBrowser, SearchUtil.markup(builder.toString(), myRuleFilter.getFilter()));
     } catch (Throwable t) {
-      LOG.error("Failed to load description for: " + singleNode.getKey() + "; description: " + builder, t);
+      GlobalLogOutput.get().logError("Failed to load description for: " + singleNode.getKey() + "; description: " + builder, t);
     }
 
     myParamsPanel.removeAll();
@@ -478,7 +477,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
               if (newValue) {
                 myEnableRequiredComponent.add(current);
               } else {
-                LOG.assertTrue(myEnableRequiredComponent.remove(current), rule != null ? (" rule = #" + rule.getKey()) : null);
+                myEnableRequiredComponent.remove(current);
               }
             }
           });
@@ -546,7 +545,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
           createBooleanParam(rule, panel, constraints, param);
           break;
         default:
-          LOG.error("Unknown rule parameter type: " + param.type + " for rule " + rule.getKey());
+          GlobalLogOutput.get().log("Unknown rule parameter type: " + param.type + " for rule " + rule.getKey(), LogOutput.Level.ERROR);
       }
       constraints.gridy++;
     }

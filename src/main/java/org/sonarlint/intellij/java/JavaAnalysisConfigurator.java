@@ -21,7 +21,6 @@ package org.sonarlint.intellij.java;
 
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.EffectiveLanguageLevelUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.JdkUtil;
@@ -40,6 +39,7 @@ import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.jrt.JrtFileSystem;
 import com.intellij.pom.java.LanguageLevel;
+
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
@@ -49,15 +49,16 @@ import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JpsJavaSdkType;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isEmpty;
 
 public class JavaAnalysisConfigurator implements AnalysisConfigurator {
-  private static final Logger LOGGER = Logger.getInstance(JavaAnalysisConfigurator.class);
 
   private static final String JAVA_LIBRARIES_PROPERTY = "sonar.java.libraries";
   private static final String JAVA_BINARIES_PROPERTY = "sonar.java.binaries";
@@ -203,7 +204,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static void processJdkOrderEntry(final Module module, JavaModuleClasspath moduleClasspath, Sdk jdk) {
     String jdkHomePath = jdk.getHomePath();
     if (moduleClasspath.getJdkHome() != null) {
-      LOGGER.warn("Multiple Jdk configured for module: " + module.getName());
+      SonarLintConsole.get(module.getProject()).info("Multiple Jdk configured for module: " + module.getName());
     } else {
       moduleClasspath.setJdkHome(jdkHomePath);
     }
@@ -214,7 +215,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
         moduleClasspath.libraries().add(jrtFsPath);
         moduleClasspath.testLibraries().add(jrtFsPath);
       } else {
-        LOGGER.warn("Unable to locate jrt-fs.jar");
+        SonarLintConsole.get(module.getProject()).info("Unable to locate jrt-fs.jar");
       }
     }
     Stream.of(jdk.getRootProvider().getFiles(OrderRootType.CLASSES))

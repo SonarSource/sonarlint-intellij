@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import com.intellij.openapi.diagnostic.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -28,10 +27,11 @@ import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+
 import org.sonarlint.intellij.proto.Sonarlint;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 
 class StringStoreIndex implements StoreIndex<String> {
-  private static final Logger LOG = Logger.getInstance(StringStoreIndex.class);
   public static final String INDEX_FILENAME = "index.pb";
   private final Path storeBasePath;
   private final Path indexFilePath;
@@ -53,7 +53,7 @@ class StringStoreIndex implements StoreIndex<String> {
     try (InputStream stream = Files.newInputStream(indexFilePath)) {
       return Sonarlint.StorageIndex.parseFrom(stream).getMappedPathByKeyMap();
     } catch (IOException e) {
-      LOG.warn("Unable to read SonarLint issue store.", e);
+      GlobalLogOutput.get().logError("Unable to read SonarLint issue store.", e);
       return Collections.emptyMap();
     }
   }
@@ -80,7 +80,7 @@ class StringStoreIndex implements StoreIndex<String> {
       index.writeTo(stream);
     } catch (IOException e) {
       // Don't log in the SonarLint console as the problem can occurs when stopping the IDE
-      LOG.warn("Unable to write SonarLint issue store.", e);
+      GlobalLogOutput.get().logError("Unable to write SonarLint issue store.", e);
     }
   }
 }

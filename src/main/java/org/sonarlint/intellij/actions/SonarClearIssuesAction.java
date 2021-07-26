@@ -23,7 +23,6 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -36,11 +35,11 @@ import java.util.List;
 import javax.swing.Icon;
 
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
 
 public class SonarClearIssuesAction extends AnAction {
-  private static final Logger LOGGER = Logger.getInstance(SonarClearIssuesAction.class);
 
   public SonarClearIssuesAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);
@@ -79,7 +78,7 @@ public class SonarClearIssuesAction extends AnAction {
       if (psiFile != null) {
         psiFiles.add(psiFile);
       } else {
-        LOGGER.warn("Couldn't find PSI for file: " + vFile.getPath());
+        SonarLintConsole.get(project).error("Couldn't find PSI for file: " + vFile.getPath());
       }
     }
     return psiFiles;

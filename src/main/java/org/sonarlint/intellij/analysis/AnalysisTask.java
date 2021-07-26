@@ -22,7 +22,6 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -74,7 +73,6 @@ import static java.util.stream.Collectors.toList;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 
 public class AnalysisTask extends Task.Backgroundable {
-  private static final Logger LOGGER = Logger.getInstance(AnalysisTask.class);
   protected final AnalysisRequest request;
   protected final boolean modal;
   private final boolean startInBackground;
@@ -160,7 +158,6 @@ public class AnalysisTask extends Task.Backgroundable {
 
       SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       telemetry.addReportedRules(reportedRules);
-      LOGGER.info("SonarLint analysis done");
 
       indicator.setIndeterminate(false);
       indicator.setFraction(.9);
@@ -207,7 +204,8 @@ public class AnalysisTask extends Task.Backgroundable {
     console.debug("File '" + f.getName() + "' excluded: " + reason);
   }
 
-  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule, Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
+  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule,
+    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
     if (shouldUpdateServerIssues(request.trigger())) {
       Map<Module, Collection<VirtualFile>> filesWithIssuesPerModule = new LinkedHashMap<>();
 
@@ -284,7 +282,7 @@ public class AnalysisTask extends Task.Backgroundable {
     } catch (ProcessCanceledException e) {
       throw e;
     } catch (Exception e) {
-      LOGGER.error("Error finding location for issue", e);
+      SonarLintConsole.get(myProject).error("Error finding location for issue", e);
       return;
     }
 
@@ -342,7 +340,6 @@ public class AnalysisTask extends Task.Backgroundable {
       String msg = "Error running SonarLint analysis";
       SonarLintConsole console = SonarLintConsole.get(request.project());
       console.error(msg, e);
-      LOGGER.warn(msg, e);
 
       if (indicator.isShowing()) {
         String dialogMsg = "SonarLint analysis failed: " + e.getMessage();
@@ -382,8 +379,6 @@ public class AnalysisTask extends Task.Backgroundable {
     } else {
       indicator.setText("Running SonarLint Analysis for '" + getFileName(allFilesToAnalyze.get(0)) + "'");
     }
-
-    LOGGER.info(indicator.getText());
 
     ProgressMonitor progressMonitor = new TaskProgressMonitor(indicator, myProject, () -> cancelled);
     List<AnalysisResults> results = new LinkedList<>();

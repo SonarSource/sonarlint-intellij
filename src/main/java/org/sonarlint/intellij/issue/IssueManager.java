@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -41,6 +40,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.persistence.IssuePersistence;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
@@ -60,7 +60,6 @@ import static java.util.Collections.singletonList;
  */
 @ThreadSafe
 public class IssueManager {
-  private static final Logger LOGGER = Logger.getInstance(IssueManager.class);
   private final Project myProject;
   private final LiveIssueCache liveIssueCache;
 
@@ -81,7 +80,7 @@ public class IssueManager {
             liveIssueCache.flushAll();
           }
         } catch (Exception e) {
-          LOGGER.error("Cannot flush issues", e);
+          SonarLintConsole.get(myProject).error("Cannot flush issues", e);
         }
       }
     });
@@ -131,7 +130,7 @@ public class IssueManager {
       Collection<LocalIssueTrackable> storeIssues = store.read(storeKey);
       return storeIssues != null ? Collections.unmodifiableCollection(storeIssues) : emptyList();
     } catch (IOException e) {
-      LOGGER.error(String.format("Failed to read issues from store for file %s", file.getPath()), e);
+      SonarLintConsole.get(myProject).error(String.format("Failed to read issues from store for file %s", file.getPath()), e);
       return emptyList();
     }
   }

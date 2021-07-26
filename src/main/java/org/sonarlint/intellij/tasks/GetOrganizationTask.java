@@ -19,17 +19,18 @@
  */
 package org.sonarlint.intellij.tasks;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
+
 import java.util.Optional;
+
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 
 public class GetOrganizationTask extends Task.Modal {
-  private static final Logger LOGGER = Logger.getInstance(GetOrganizationTask.class);
   private final ServerConnection server;
   private final String organizationKey;
 
@@ -51,7 +52,7 @@ public class GetOrganizationTask extends Task.Modal {
       indicator.setText("Searching organization");
       organization = server.api().organization().getOrganization(organizationKey, new TaskProgressMonitor(indicator, myProject));
     } catch (Exception e) {
-      LOGGER.info("Failed to fetch information", e);
+      SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
       exception = e;
     }
   }
