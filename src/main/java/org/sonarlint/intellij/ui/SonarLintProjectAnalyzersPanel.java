@@ -20,19 +20,20 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.ui.ToolbarDecorator;
-import com.intellij.ui.table.JBTable;
+import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.components.JBPanel;
+import com.intellij.ui.table.TableView;
+import com.intellij.util.ui.ColumnInfo;
+import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.ListTableModel;
 
+import java.awt.BorderLayout;
 import java.awt.Component;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.swing.JPanel;
 import javax.swing.JTable;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
@@ -42,50 +43,46 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 
-public class SonarLintProjectAnalyzersPanel {
-  private final Project project;
-  private JBTable analyzerTable;
-  private JPanel panel;
-  private JPanel tablePanel;
-  private Model tableModel;
+public class SonarLintProjectAnalyzersPanel extends JBPanel<SonarLintProjectAnalyzersPanel> {
+
+  private static final ColumnInfo<PluginDetails, String> PLUGIN_NAME = new ColumnInfo<PluginDetails, String>("Code Analyzer") {
+    @Override
+    public String valueOf(PluginDetails plugin) {
+      return StringUtils.capitalize(plugin.name());
+    }
+  };
+
+  private static final ColumnInfo<PluginDetails, String> PLUGIN_VERSION = new ColumnInfo<PluginDetails, String>("Version") {
+    @Override
+    public String valueOf(PluginDetails plugin) {
+      return plugin.version();
+    }
+  };
 
   public SonarLintProjectAnalyzersPanel(Project project) {
-    this.project = project;
-    reload();
-  }
-
-  public JPanel getPanel() {
-    return panel;
-  }
-
-  public void reload() {
+    super(new BorderLayout());
     ProjectBindingManager bindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
+    List<PluginDetails> loadedAnalyzers;
     try {
-      Collection<PluginDetails> loadedAnalyzers = bindingManager.getFacade().getPluginDetails()
+      loadedAnalyzers = bindingManager.getFacade().getPluginDetails()
         .stream()
         .filter(pluginDetails -> !pluginDetails.skipReason().isPresent())
         .collect(Collectors.toList());
-      tableModel.set(loadedAnalyzers);
     } catch (Exception e) {
       SonarLintConsole.get(project).error("Unable to get plugin details", e);
-      tableModel.set(Collections.emptyList());
+      loadedAnalyzers = Collections.emptyList();
     }
-  }
-
-  private void createUIComponents() {
-    tableModel = new Model();
-    analyzerTable = new JBTable(tableModel);
-    analyzerTable.setShowGrid(false);
-    analyzerTable.setIntercellSpacing(JBUI.emptySize());
-    analyzerTable.getEmptyText().setText("No information");
-    analyzerTable.setDragEnabled(false);
-    analyzerTable.setShowVerticalLines(false);
-    analyzerTable.getTableHeader().setReorderingAllowed(false);
-    analyzerTable.enableInputMethods(false);
-    analyzerTable.setDefaultRenderer(String.class, new NoFocusCellRenderer(new DefaultTableCellRenderer()));
-
-    final ToolbarDecorator decorator = ToolbarDecorator.createDecorator(analyzerTable);
-    tablePanel = decorator.createPanel();
+    TableView<PluginDetails> tableView = new TableView<>(new ListTableModel<>(new ColumnInfo[] {PLUGIN_NAME, PLUGIN_VERSION}, loadedAnalyzers));
+    tableView.setShowGrid(false);
+    tableView.setIntercellSpacing(JBUI.emptySize());
+    tableView.setDragEnabled(false);
+    tableView.setShowVerticalLines(false);
+    tableView.getTableHeader().setReorderingAllowed(false);
+    tableView.enableInputMethods(false);
+    tableView.setDefaultRenderer(String.class, new NoFocusCellRenderer(new DefaultTableCellRenderer()));
+    this.add(ScrollPaneFactory.createScrollPane(tableView), BorderLayout.CENTER);
+    this.setMinimumSize(new JBDimension(300, 50));
+    this.setPreferredSize(new JBDimension(600, 200));
   }
 
   private static class NoFocusCellRenderer extends DefaultTableCellRenderer {
@@ -101,50 +98,4 @@ public class SonarLintProjectAnalyzersPanel {
     }
   }
 
-  private static class Model extends AbstractTableModel {
-    private List<PluginDetails> rows = new ArrayList<>();
-
-    @Override
-    public int getRowCount() {
-      return rows.size();
-    }
-
-    @Override
-    public int getColumnCount() {
-      return 2;
-    }
-
-    @Override
-    public boolean isCellEditable(int row, int column) {
-      return false;
-    }
-
-    @Override
-    public Class<?> getColumnClass(int columnIndex) {
-      return String.class;
-    }
-
-    @Override
-    public String getColumnName(int column) {
-      return (column == 0) ? "Code Analyzer" : "Version";
-    }
-
-    public void set(Collection<PluginDetails> rows) {
-      this.rows = new ArrayList<>(rows);
-      fireTableDataChanged();
-    }
-
-    public List<PluginDetails> items() {
-      return rows;
-    }
-
-    @Override
-    public Object getValueAt(int rowIndex, int columnIndex) {
-      PluginDetails item = rows.get(rowIndex);
-      if (columnIndex == 0) {
-        return StringUtils.capitalize(item.name());
-      }
-      return item.version();
-    }
-  }
 }

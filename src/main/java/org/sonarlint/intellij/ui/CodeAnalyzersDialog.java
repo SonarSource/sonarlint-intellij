@@ -21,7 +21,11 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+
+import javax.swing.Action;
 import javax.swing.JComponent;
+
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class CodeAnalyzersDialog extends DialogWrapper {
@@ -34,7 +38,14 @@ public class CodeAnalyzersDialog extends DialogWrapper {
     super.init();
   }
 
-  @Nullable @Override protected JComponent createCenterPanel() {
-    return new SonarLintProjectAnalyzersPanel(project).getPanel();
+  @Nullable
+  @Override
+  protected JComponent createCenterPanel() {
+    return new SonarLintProjectAnalyzersPanel(project);
+  }
+
+  @Override
+  protected Action @NotNull [] createActions() {
+    return new Action[] {getOKAction()};
   }
 }
