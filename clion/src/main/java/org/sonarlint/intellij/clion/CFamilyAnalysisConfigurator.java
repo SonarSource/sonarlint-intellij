@@ -21,9 +21,10 @@ package org.sonarlint.intellij.clion;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
 import java.util.Collection;
+
+import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
 public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 

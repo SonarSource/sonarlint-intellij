@@ -19,10 +19,10 @@
  */
 package org.sonarlint.intellij.clion;
 
+import java.util.Set;
+
 import org.sonarlint.intellij.common.LanguageActivator;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
-
-import java.util.Set;
 
 public class CFamilyLanguageActivator implements LanguageActivator {
   @Override

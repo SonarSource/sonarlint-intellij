@@ -29,6 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.serviceContainer.NonInjectable;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;

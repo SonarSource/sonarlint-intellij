@@ -21,13 +21,14 @@ package org.sonarlint.intellij.clion;
 
 import com.intellij.mock.MockLocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

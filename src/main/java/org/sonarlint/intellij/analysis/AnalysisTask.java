@@ -30,6 +30,7 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;

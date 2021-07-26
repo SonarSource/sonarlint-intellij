@@ -1,17 +1,18 @@
-import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.util.EnumSet
-import com.google.protobuf.gradle.*
+import com.google.protobuf.gradle.protobuf
+import com.google.protobuf.gradle.protoc
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
+import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
-import java.util.zip.ZipOutputStream
-import java.io.BufferedOutputStream
-import java.io.FileOutputStream
-import java.io.FileInputStream
 import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.EnumSet
 import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 plugins {
     kotlin("jvm") version "1.4.30"

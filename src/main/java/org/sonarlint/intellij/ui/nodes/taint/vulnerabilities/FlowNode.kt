@@ -25,7 +25,7 @@ import org.sonarlint.intellij.issue.Flow
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.nodes.AbstractNode
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
-import java.util.*
+import java.util.Objects
 
 class FlowNode(val flow: Flow, private val label: String, val issue: LocalTaintVulnerability) : AbstractNode() {
 

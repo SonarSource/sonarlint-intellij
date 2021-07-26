@@ -23,11 +23,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.CUDALanguageKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
-import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import java.util.Arrays;
 import java.util.Collections;
+
+import org.junit.jupiter.api.Test;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

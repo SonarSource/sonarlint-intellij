@@ -20,15 +20,15 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
-import com.intellij.lang.Language;
-import com.intellij.openapi.application.Application;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,7 +39,6 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.entry;
 
 public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
 

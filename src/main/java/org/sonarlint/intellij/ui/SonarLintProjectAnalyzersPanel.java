@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.table.JBTable;
 import com.intellij.util.ui.JBUI;
+
 import java.awt.Component;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -35,9 +36,10 @@ import javax.swing.JTable;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
+
 import org.apache.commons.lang.StringUtils;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 
 public class SonarLintProjectAnalyzersPanel {

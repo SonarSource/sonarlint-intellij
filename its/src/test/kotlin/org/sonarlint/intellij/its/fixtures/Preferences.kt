@@ -26,8 +26,6 @@ import com.intellij.remoterobot.fixtures.JLabelFixture
 import com.intellij.remoterobot.fixtures.JTreeFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import com.intellij.remoterobot.utils.waitFor
-import org.assertj.swing.timing.Pause
 import java.time.Duration
 
 fun RemoteRobot.preferencesDialog(

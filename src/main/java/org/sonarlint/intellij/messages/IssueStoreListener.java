@@ -21,12 +21,9 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
-import java.util.Collection;
-import java.util.Collections;
+
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
-import org.sonarlint.intellij.issue.LiveIssue;
 
 import static java.util.Collections.singletonList;
 
