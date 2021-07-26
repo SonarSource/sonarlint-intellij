@@ -29,13 +29,15 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.issue.IssueManager;
 
 public class SonarClearIssuesAction extends AnAction {
   private static final Logger LOGGER = Logger.getInstance(SonarClearIssuesAction.class);

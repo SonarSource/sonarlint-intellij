@@ -25,7 +25,9 @@ import io.netty.handler.codec.http.HttpMethod
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.*
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.issue.hotspot.SecurityHotspotShowRequestHandler

@@ -35,6 +35,7 @@ import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
+
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;

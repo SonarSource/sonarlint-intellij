@@ -52,6 +52,7 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;

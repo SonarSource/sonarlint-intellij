@@ -27,6 +27,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.event.TreeExpansionEvent;

@@ -20,9 +20,11 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.project.Project;
+
 import javax.annotation.concurrent.ThreadSafe;
-import org.sonarlint.intellij.messages.StatusListener;
+
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.messages.StatusListener;
 
 @ThreadSafe
 public class AnalysisStatus {

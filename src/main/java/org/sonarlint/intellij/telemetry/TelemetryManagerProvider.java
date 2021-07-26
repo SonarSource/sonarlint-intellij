@@ -21,11 +21,13 @@ package org.sonarlint.intellij.telemetry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.application.PathManager;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import org.sonarlint.intellij.SonarLintPlugin;
-import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryHttpClient;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryPathManager;

@@ -44,15 +44,16 @@ import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
-import org.jetbrains.annotations.NotNull;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
 
-import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.NotNull;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 public class AnalyzerConfiguration {
   private final Project project;

@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.clion;
 
-import javax.annotation.Nullable;
 import java.util.Map;
+import javax.annotation.Nullable;
 
 public class BuildWrapperJsonGenerator {
   private final StringBuilder builder;

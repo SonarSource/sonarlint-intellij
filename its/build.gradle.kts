@@ -1,5 +1,5 @@
-import java.util.concurrent.Executors
 import java.net.URL
+import java.util.concurrent.Executors
 
 plugins {
     id("org.jetbrains.intellij")

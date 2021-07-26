@@ -32,6 +32,7 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

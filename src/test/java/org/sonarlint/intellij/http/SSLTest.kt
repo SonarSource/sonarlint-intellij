@@ -22,7 +22,11 @@ package org.sonarlint.intellij.http
 import com.intellij.util.net.ssl.CertificateManager
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jetty.http.HttpVersion
-import org.eclipse.jetty.server.*
+import org.eclipse.jetty.server.HttpConfiguration
+import org.eclipse.jetty.server.HttpConnectionFactory
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.server.ServerConnector
+import org.eclipse.jetty.server.SslConnectionFactory
 import org.eclipse.jetty.server.handler.DefaultHandler
 import org.eclipse.jetty.server.handler.HandlerCollection
 import org.eclipse.jetty.servlet.ServletContextHandler

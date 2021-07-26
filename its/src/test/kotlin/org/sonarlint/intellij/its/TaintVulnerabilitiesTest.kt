@@ -20,9 +20,7 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.fixtures.ActionButtonFixture
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
-import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
@@ -35,7 +33,14 @@ import org.junit.Assume
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import org.sonarlint.intellij.its.fixtures.*
+import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
+import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isCLion
+import org.sonarlint.intellij.its.fixtures.jRadioButtons
+import org.sonarlint.intellij.its.fixtures.jTextField
+import org.sonarlint.intellij.its.fixtures.jbTextField
+import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ItUtils
 import org.sonarqube.ws.client.HttpConnector

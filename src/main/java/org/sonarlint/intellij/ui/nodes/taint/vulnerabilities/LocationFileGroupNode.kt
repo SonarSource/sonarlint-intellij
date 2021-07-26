@@ -25,7 +25,7 @@ import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.nodes.AbstractNode
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
-import java.util.*
+import java.util.Objects
 
 class LocationFileGroupNode(private val position: Int, private val location: Location, val issue: LocalTaintVulnerability) : AbstractNode() {
   fun file() = location.file

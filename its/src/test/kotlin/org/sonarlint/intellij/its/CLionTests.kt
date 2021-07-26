@@ -20,16 +20,15 @@
 package org.sonarlint.intellij.its
 
 import com.intellij.remoterobot.RemoteRobot
-import com.intellij.remoterobot.fixtures.JListFixture
-import com.intellij.remoterobot.utils.waitFor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.sonarlint.intellij.its.fixtures.*
+import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.idea
+import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.optionalStep
-import java.awt.Point
 import java.time.Duration
 
 
