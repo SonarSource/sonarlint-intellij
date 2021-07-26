@@ -33,13 +33,14 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
+
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 

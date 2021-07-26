@@ -29,8 +29,6 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vcs.FileStatus;
-import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,8 +43,10 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
@@ -55,12 +55,11 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LiveIssueBuilder;
-import org.sonarlint.intellij.notifications.SecretsNotifications;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
+import org.sonarlint.intellij.notifications.SecretsNotifications;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
@@ -71,7 +70,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 
 import static java.util.stream.Collectors.toList;
-import static org.sonarlint.intellij.util.SonarLintUtils.pluralize;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 
 public class AnalysisTask extends Task.Backgroundable {
   private static final Logger LOGGER = Logger.getInstance(AnalysisTask.class);

@@ -22,15 +22,17 @@ package org.sonarlint.intellij.issue.persistence;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
+
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class LiveIssueCache {
   private static final Logger LOGGER = Logger.getInstance(LiveIssueCache.class);

@@ -54,7 +54,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JpsJavaSdkType;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 
-import static org.sonarlint.intellij.util.SonarLintUtils.isEmpty;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isEmpty;
 
 public class JavaAnalysisConfigurator implements AnalysisConfigurator {
   private static final Logger LOGGER = Logger.getInstance(JavaAnalysisConfigurator.class);

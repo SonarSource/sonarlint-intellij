@@ -27,13 +27,15 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
+
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class ShowLocationsIntentionAction implements IntentionAction, PriorityAction, Iconable {
   private final LiveIssue issue;

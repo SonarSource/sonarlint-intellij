@@ -22,12 +22,14 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
+
 import java.util.Collection;
 import javax.annotation.CheckForNull;
+
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class AnalysisManager {
   private final MessageBus messageBus;

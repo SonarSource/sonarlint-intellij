@@ -29,7 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Arrays;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 

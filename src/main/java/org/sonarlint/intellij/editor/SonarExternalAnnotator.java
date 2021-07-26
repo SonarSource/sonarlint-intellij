@@ -37,11 +37,14 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
+
 import java.util.Collection;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -49,13 +52,12 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.util.SonarLintSeverity;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static java.util.Collections.emptyList;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpFile;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isPhpLanguageRegistered;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
-import static org.sonarlint.intellij.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.util.SonarLintUtils.isPhpFile;
-import static org.sonarlint.intellij.util.SonarLintUtils.isPhpLanguageRegistered;
 
 public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnotator.AnnotationContext, SonarExternalAnnotator.AnnotationContext> {
 

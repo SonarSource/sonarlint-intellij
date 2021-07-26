@@ -30,7 +30,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
 import static java.util.Optional.ofNullable;
-import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
   private final SonarLintProjectPropertiesPanel propsPanel;

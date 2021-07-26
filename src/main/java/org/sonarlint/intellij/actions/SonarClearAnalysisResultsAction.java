@@ -25,7 +25,7 @@ import com.intellij.openapi.project.Project;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.issue.IssueStore;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class SonarClearAnalysisResultsAction extends AnAction {
   public SonarClearAnalysisResultsAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {

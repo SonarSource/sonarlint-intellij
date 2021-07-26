@@ -26,15 +26,17 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBusConnection;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
+
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class CurrentFileController implements Disposable {
   private static final int DEFAULT_DELAY_MS = 300;

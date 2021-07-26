@@ -37,7 +37,7 @@ import org.apache.hc.core5.http.ContentType
 import org.apache.hc.core5.http.io.entity.StringEntity
 import org.apache.hc.core5.util.Timeout
 import org.sonarlint.intellij.SonarLintPlugin
-import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
 import java.io.IOException
 import java.nio.charset.StandardCharsets

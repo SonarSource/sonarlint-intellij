@@ -21,12 +21,12 @@ package org.sonarlint.intellij.config.global.wizard
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressManager
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask
-import org.sonarlint.intellij.util.SonarLintUtils
 import java.util.Collections.emptyMap
 
 open class ServerConnectionCreator {

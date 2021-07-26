@@ -37,13 +37,13 @@ import javax.swing.JComponent;
 
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildVulnerabilitiesTabName;
-import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 /**
  * Factory of SonarLint tool window.

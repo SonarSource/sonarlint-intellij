@@ -45,7 +45,7 @@ import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
-import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   private static final String TAB_HOTSPOTS = "Security Hotspots";

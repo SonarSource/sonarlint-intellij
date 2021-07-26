@@ -25,13 +25,13 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.RetryAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingAssistant
 import org.sonarlint.intellij.core.SecurityHotspotMatcher
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.serverapi.hotspot.GetSecurityHotspotRequestParams
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
 

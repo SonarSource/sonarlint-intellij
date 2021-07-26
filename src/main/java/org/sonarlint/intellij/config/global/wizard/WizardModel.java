@@ -20,16 +20,18 @@
 package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.openapi.progress.ProgressManager;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.CheckNotificationsSupportedTask;
 import org.sonarlint.intellij.tasks.GetOrganizationTask;
 import org.sonarlint.intellij.tasks.GetOrganizationsTask;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 
 public class WizardModel {

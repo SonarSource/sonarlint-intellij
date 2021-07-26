@@ -32,7 +32,7 @@ import javax.swing.text.Element;
 import javax.swing.text.html.ImageView;
 
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class RuleDescriptionImageView extends ImageView {
   public RuleDescriptionImageView(Element elem) {

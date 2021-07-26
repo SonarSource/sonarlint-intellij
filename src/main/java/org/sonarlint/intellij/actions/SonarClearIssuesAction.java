@@ -35,7 +35,7 @@ import java.util.List;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class SonarClearIssuesAction extends AnAction {
   private static final Logger LOGGER = Logger.getInstance(SonarClearIssuesAction.class);

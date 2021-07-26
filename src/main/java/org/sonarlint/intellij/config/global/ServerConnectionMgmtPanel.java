@@ -83,7 +83,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
-import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String LABEL_NO_SERVERS = "Add a connection to SonarQube or SonarCloud";

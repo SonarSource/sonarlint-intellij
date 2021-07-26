@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 public interface GlobalLogOutput extends LogOutput {

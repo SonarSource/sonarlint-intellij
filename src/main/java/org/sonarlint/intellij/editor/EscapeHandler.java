@@ -25,7 +25,7 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class EscapeHandler extends EditorActionHandler {
 

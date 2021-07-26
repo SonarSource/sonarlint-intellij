@@ -20,15 +20,17 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.ApplicationManager;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
+
 import org.apache.commons.lang.StringUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.NodeJsHelper;
 import org.sonarsource.sonarlint.core.client.api.common.Version;
 

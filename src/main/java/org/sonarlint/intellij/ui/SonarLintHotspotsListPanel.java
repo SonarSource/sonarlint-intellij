@@ -27,14 +27,16 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
+
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.tree.DefaultTreeModel;
+
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.nodes.HotspotNode;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarLintHotspotsListPanel {
   private final JPanel mainPanel;

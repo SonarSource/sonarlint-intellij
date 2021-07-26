@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.mediumtests
 
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.vcs.FileStatus
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate
 import com.intellij.openapi.vcs.changes.ChangeListManagerImpl
@@ -38,12 +37,12 @@ import org.junit.Before
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisCallback
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.issue.IssueManager
 import org.sonarlint.intellij.issue.LiveIssue
 import org.sonarlint.intellij.trigger.SonarLintSubmitter
 import org.sonarlint.intellij.trigger.TriggerType
-import org.sonarlint.intellij.util.SonarLintUtils.getService
 
 class StandaloneModeTest : AbstractSonarLintLightTests() {
 

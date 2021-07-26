@@ -37,12 +37,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckForNull;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.LanguageActivator;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.module.ModulesRegistry;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarlint.intellij.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.ConnectedSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.StandaloneSonarLintEngineImpl;
 import org.sonarsource.sonarlint.core.client.api.common.AbstractGlobalConfiguration;

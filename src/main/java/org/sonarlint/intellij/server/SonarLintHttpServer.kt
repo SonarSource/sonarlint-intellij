@@ -36,8 +36,8 @@ import io.netty.handler.logging.LoggingHandler
 import io.netty.util.CharsetUtil
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarlint.intellij.util.SonarLintUtils
-import org.sonarlint.intellij.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput
 import java.net.BindException
 import java.net.InetAddress

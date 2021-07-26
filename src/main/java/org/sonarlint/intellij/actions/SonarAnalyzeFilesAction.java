@@ -29,20 +29,22 @@ import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import icons.SonarLintIcons;
+
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeFilesAction extends DumbAwareAction {
   public SonarAnalyzeFilesAction() {

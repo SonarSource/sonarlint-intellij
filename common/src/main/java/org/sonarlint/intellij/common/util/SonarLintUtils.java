@@ -17,7 +17,7 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.util;
+package org.sonarlint.intellij.common.util;
 
 import com.intellij.lang.Language;
 import com.intellij.openapi.application.ApplicationInfo;
@@ -31,13 +31,13 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleServiceManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.PlatformUtils;
+
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -50,14 +50,11 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
 import org.jetbrains.jps.model.java.JavaResourceRootProperties;
 import org.jetbrains.jps.model.java.JavaSourceRootProperties;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
-
-import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class SonarLintUtils {
 
@@ -220,16 +217,6 @@ public class SonarLintUtils {
 
   private static ApplicationInfo getAppInfo() {
     return ApplicationInfo.getInstance();
-  }
-
-  public static void analyzeOpenFiles(boolean unboundOnly) {
-    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-
-    for (Project project : openProjects) {
-      if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
-        SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-      }
-    }
   }
 
   public static boolean enableTaintVulnerabilities() {

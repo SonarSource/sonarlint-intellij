@@ -30,17 +30,19 @@ import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";

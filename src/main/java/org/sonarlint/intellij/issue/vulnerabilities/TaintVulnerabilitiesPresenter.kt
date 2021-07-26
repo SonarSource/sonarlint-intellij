@@ -21,7 +21,6 @@ package org.sonarlint.intellij.issue.vulnerabilities
 
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -29,16 +28,13 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.GuiUtils
-import com.intellij.util.messages.MessageBusConnection
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
-import org.sonarlint.intellij.issue.LiveIssue
-import org.sonarlint.intellij.messages.IssueStoreListener
-import org.sonarlint.intellij.util.SonarLintUtils.getService
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
 import org.sonarlint.intellij.util.getRelativePathOf

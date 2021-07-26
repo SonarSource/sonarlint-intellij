@@ -24,11 +24,11 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask
-import org.sonarlint.intellij.util.SonarLintUtils.getService
 
 class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
 

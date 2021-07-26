@@ -30,7 +30,7 @@ import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisManager;
 import org.sonarlint.intellij.analysis.AnalysisTask;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 

@@ -47,13 +47,14 @@ import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
-import org.sonarlint.intellij.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 

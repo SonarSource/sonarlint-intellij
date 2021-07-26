@@ -28,7 +28,7 @@ import org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore;
 
-import static org.sonarlint.intellij.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class Settings {
   public static SonarLintModuleSettings getSettingsFor(Module module) {

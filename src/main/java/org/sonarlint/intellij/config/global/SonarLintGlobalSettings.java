@@ -36,9 +36,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.sonarlint.intellij.util.SonarLintUtils;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 
-import static org.sonarlint.intellij.util.SonarLintUtils.equalsIgnoringTrailingSlash;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.equalsIgnoringTrailingSlash;
 
 public final class SonarLintGlobalSettings {
 
