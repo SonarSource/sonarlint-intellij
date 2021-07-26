@@ -22,7 +22,6 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.history.utils.RunnableAdapter;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
@@ -58,7 +57,6 @@ import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 public class BindingStorageUpdateTask {
-  private static final Logger LOGGER = Logger.getInstance(BindingStorageUpdateTask.class);
   private final ConnectedSonarLintEngine engine;
   private final ServerConnection connection;
   private final Map<String, List<Project>> projectsPerProjectKey;
@@ -73,7 +71,8 @@ public class BindingStorageUpdateTask {
 
   public Task.Modal asModal() {
     return new Task.Modal(null, "Updating storage for connection '" + connection.getName() + "'", true) {
-      @Override public void run(@NotNull ProgressIndicator indicator) {
+      @Override
+      public void run(@NotNull ProgressIndicator indicator) {
         BindingStorageUpdateTask.this.run(indicator);
       }
     };
@@ -81,7 +80,8 @@ public class BindingStorageUpdateTask {
 
   public Task.Backgroundable asBackground() {
     return new Task.Backgroundable(null, "Updating storage for connection '" + connection.getName() + "'", true, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
-      @Override public void run(@NotNull ProgressIndicator indicator) {
+      @Override
+      public void run(@NotNull ProgressIndicator indicator) {
         BindingStorageUpdateTask.this.run(indicator);
       }
     };
@@ -102,8 +102,7 @@ public class BindingStorageUpdateTask {
           .filter(BindingStorageUpdateTask::tooOld)
           .collect(Collectors.toList());
         if (!tooOld.isEmpty()) {
-          ApplicationManager.getApplication().invokeAndWait(() ->
-            Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
+          ApplicationManager.getApplication().invokeAndWait(() -> Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
         }
         GlobalLogOutput.get().log("Server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
       }
@@ -111,13 +110,13 @@ public class BindingStorageUpdateTask {
       updateProjects(connection, monitor);
 
     } catch (CanceledException e) {
-      LOGGER.info("Update of server '" + connection.getName() + "' was cancelled");
       GlobalLogOutput.get().log("Update of server '" + connection.getName() + "' was cancelled", LogOutput.Level.INFO);
     } catch (Exception e) {
-      LOGGER.info("Error updating from server '" + connection.getName() + "'", e);
+      GlobalLogOutput.get().logError("Error updating from server '" + connection.getName() + "'", e);
       final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server connection '" + connection.getName() + "'");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
-        @Override public void doRun() {
+        @Override
+        public void doRun() {
           Messages.showErrorDialog((Project) null, msg, "Update Failed");
         }
       }, ModalityState.any());
@@ -158,7 +157,7 @@ public class BindingStorageUpdateTask {
         updateProject(connection, entry.getKey(), entry.getValue(), monitor);
       } catch (Throwable e) {
         // in case of error, save project key and keep updating other projects
-        LOGGER.info(e.getMessage(), e);
+        GlobalLogOutput.get().logError(e.getMessage(), e);
         failedProjects.add(entry.getKey());
       }
     }
@@ -170,7 +169,8 @@ public class BindingStorageUpdateTask {
       GlobalLogOutput.get().log(errorMsg, LogOutput.Level.WARN);
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
-        @Override public void doRun() {
+        @Override
+        public void doRun() {
           Messages.showWarningDialog((Project) null, errorMsg, "Projects Not Updated");
         }
       }, ModalityState.any());

@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
@@ -29,6 +30,6 @@ public interface GlobalLogOutput extends LogOutput {
 
   void log(String msg, LogOutput.Level level);
 
-  void logError(String msg, Throwable t);
+  void logError(String msg, @Nullable Throwable t);
 
 }

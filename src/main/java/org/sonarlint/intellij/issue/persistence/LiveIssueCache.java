@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
@@ -30,12 +29,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
 
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 public class LiveIssueCache {
-  private static final Logger LOGGER = Logger.getInstance(LiveIssueCache.class);
   static final int DEFAULT_MAX_ENTRIES = 10_000;
   private final Map<VirtualFile, Collection<LiveIssue>> cache;
   private final Project myproject;
@@ -70,7 +69,7 @@ public class LiveIssueCache {
         String key = createKey(eldest.getKey());
         if (key != null) {
           try {
-            LOGGER.debug("Persisting issues for " + key);
+            SonarLintConsole.get(myproject).debug("Persisting issues for " + key);
             IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
             store.save(key, eldest.getValue());
           } catch (IOException e) {
@@ -108,7 +107,7 @@ public class LiveIssueCache {
    * It does not clear the cache.
    */
   public synchronized void flushAll() {
-    LOGGER.debug("Persisting all issues");
+    SonarLintConsole.get(myproject).debug("Persisting all issues");
     cache.forEach((virtualFile, liveIssues) -> {
       if (virtualFile.isValid()) {
         String key = createKey(virtualFile);

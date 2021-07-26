@@ -161,7 +161,7 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
 
     companion object {
         fun isTrustedOrigin(origin: String?): Boolean {
-            return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || Settings.getGlobalSettings().serverConnections.any { it.hostUrl.startsWith(origin)})
+            return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || Settings.getGlobalSettings().serverConnections.any { it.hostUrl.startsWith(origin) })
         }
     }
 

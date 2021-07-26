@@ -40,7 +40,7 @@ open class ModuleFileEventsNotifier : Disposable {
     }
 
     fun notify(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
-        GlobalLogOutput.get().log("Processing ${events.size} file system events", LogOutput.Level.INFO)
+        SonarLintConsole.get(module.project).info("Processing ${events.size} file system events");
         events.forEach {
             try {
                 engine.fireModuleFileEvent(module, it)

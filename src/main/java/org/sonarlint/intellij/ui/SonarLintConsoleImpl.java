@@ -30,6 +30,7 @@ import com.intellij.serviceContainer.NonInjectable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -72,11 +73,13 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
   }
 
   @Override
-  public void error(String msg, Throwable t) {
+  public void error(String msg, @Nullable Throwable t) {
     error(msg);
-    StringWriter errors = new StringWriter();
-    t.printStackTrace(new PrintWriter(errors));
-    error(errors.toString());
+    if (t != null) {
+      StringWriter errors = new StringWriter();
+      t.printStackTrace(new PrintWriter(errors));
+      error(errors.toString());
+    }
   }
 
   @Override

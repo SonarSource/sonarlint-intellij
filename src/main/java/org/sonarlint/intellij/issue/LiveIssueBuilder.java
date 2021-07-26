@@ -20,13 +20,16 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
@@ -36,7 +39,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
 
 public class LiveIssueBuilder {
-  private static final Logger LOGGER = Logger.getInstance(LiveIssueBuilder.class);
   private final IssueMatcher matcher;
   private final Project myProject;
 
@@ -78,8 +80,10 @@ public class LiveIssueBuilder {
           SonarLintConsole.get(myProject)
             .debug("Failed to find secondary location of issue for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
         } catch (Exception e) {
-          LOGGER.error("Error finding secondary location for issue", e, rule,
-            String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()));
+          String detailString = Stream.of(rule,
+            String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()))
+            .collect(Collectors.joining(","));
+          SonarLintConsole.get(myProject).error("Error finding secondary location for issue: " + detailString, e);
           return Optional.empty();
         }
       }

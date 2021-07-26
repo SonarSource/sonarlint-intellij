@@ -19,16 +19,17 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.SimpleTextAttributes;
+
 import java.util.Objects;
 import javax.swing.Icon;
+
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
-public class FileNode extends AbstractNode {
-  private static final Logger LOGGER = Logger.getInstance(FileNode.class);
+import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 
+public class FileNode extends AbstractNode {
   private final VirtualFile file;
 
   public FileNode(VirtualFile file) {
@@ -48,19 +49,11 @@ public class FileNode extends AbstractNode {
     return file.getFileType().getIcon();
   }
 
-  @Override public void render(TreeCellRenderer renderer) {
+  @Override
+  public void render(TreeCellRenderer renderer) {
     renderer.setIcon(getIcon());
     renderer.append(file.getName());
-
-    LOGGER.assertTrue(getIssueCount() > 0);
-    String issues;
-
-    if (getIssueCount() > 1) {
-      issues = " issues)";
-    } else {
-      issues = " issue)";
-    }
-    renderer.append(spaceAndThinSpace() + "(" + getIssueCount() + issues, SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
+    renderer.append(spaceAndThinSpace() + "(" + getIssueCount() + pluralize(" issue", getIssueCount()) + ")", SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
   }
 
   @Override
@@ -68,7 +61,7 @@ public class FileNode extends AbstractNode {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()){
+    if (o == null || getClass() != o.getClass()) {
       return false;
     }
     FileNode fileNode = (FileNode) o;
