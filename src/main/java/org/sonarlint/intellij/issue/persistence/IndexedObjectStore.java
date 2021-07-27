@@ -57,13 +57,16 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   }
 
   @Override
-  public Optional<V> read(K key) throws IOException {
+  public Optional<V> read(K key) {
     Path path = pathMapper.apply(key);
     if (!path.toFile().exists()) {
       return Optional.empty();
     }
     try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
       return Optional.of(reader.apply(is));
+    } catch (Exception e) {
+      GlobalLogOutput.get().logError("Failed to read the issue store at: " + path, e);
+      return Optional.empty();
     }
   }
 

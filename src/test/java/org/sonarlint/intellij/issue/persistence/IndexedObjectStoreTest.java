@@ -29,6 +29,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
@@ -40,7 +41,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class IndexedObjectStoreTest {
+public class IndexedObjectStoreTest extends AbstractSonarLintLightTests {
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
 
@@ -48,13 +49,16 @@ public class IndexedObjectStoreTest {
   private StoreIndex<String> index = mock(StoreIndex.class);
   private Path root;
   private StoreKeyValidator<String> validator = mock(StoreKeyValidator.class);
+  private Reader<String> reader;
+  private PathMapper<String> mapper;
+  private Writer<String> writer;
 
   @Before
-  public void setUp() {
+  public void before() {
     root = temp.getRoot().toPath();
-    PathMapper<String> mapper = str -> root.resolve("a").resolve(str);
-    Reader<String> reader = (stream) -> new Scanner(stream).next();
-    Writer<String> writer = (stream, str) -> {
+    reader = (stream) -> new Scanner(stream).next();
+    mapper = str -> root.resolve("a").resolve(str);
+    writer = (stream, str) -> {
       try {
         stream.write(str.getBytes());
       } catch (IOException e) {
@@ -75,7 +79,7 @@ public class IndexedObjectStoreTest {
     assertThat(getPath("mykey")).hasContent("myvalue");
     verify(index).save("mykey", getPath("mykey"));
 
-    assertThat(store.read("mykey").get()).isEqualTo("myvalue");
+    assertThat(store.read("mykey")).contains("myvalue");
   }
 
   @Test
@@ -92,7 +96,7 @@ public class IndexedObjectStoreTest {
     assertThat(getPath("mykey")).hasContent("myvalue");
 
     store.delete("mykey");
-    assertThat(store.read("mykey").isPresent()).isFalse();
+    assertThat(store.read("mykey")).isNotPresent();
     assertThat(getPath("mykey")).doesNotExist();
     verify(index).delete("mykey");
   }
@@ -118,7 +122,7 @@ public class IndexedObjectStoreTest {
   }
 
   @Test
-  public void testErrorOnDeleteInvalid() {
+  public void testErrorOnDeleteInvalidIsCatched() {
     when(index.keys()).thenThrow(new IllegalStateException("error"));
     store.deleteInvalid();
   }
@@ -136,5 +140,18 @@ public class IndexedObjectStoreTest {
     assertThat(getPath("mykey")).doesNotExist();
     assertThat(getPath("mykey2")).exists();
     verify(index).delete("mykey");
+  }
+
+  @Test
+  public void catchErrorsOnReadAndReturnEmpty() throws IOException {
+    store.write("mykey", "myvalue");
+    assertThat(store.read("mykey")).contains("myvalue");
+
+    reader = (stream) -> {
+      throw new IllegalStateException("Unable to read");
+    };
+    store = new IndexedObjectStore<>(index, mapper, reader, writer, validator);
+
+    assertThat(store.read("mykey")).isEmpty();
   }
 }
