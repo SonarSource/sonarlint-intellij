@@ -34,6 +34,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import javax.swing.Icon;
 
 import org.jetbrains.annotations.NotNull;
@@ -56,7 +59,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   @Override protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
-    return !status.isRunning() && !getAllFiles(project).isEmpty();
+    return !status.isRunning() && hasFiles(project);
   }
 
   @Override
@@ -79,14 +82,33 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
   private static Collection<VirtualFile> getAllFiles(Project project) {
     Set<VirtualFile> fileSet = new LinkedHashSet<>();
-    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
-    fileIndex.iterateContent(vFile -> {
-      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
-        fileSet.add(vFile);
-      }
+    iterateFilesToAnalyze(project, vFile -> {
+      fileSet.add(vFile);
+      // Continue collecting other files
       return true;
     });
     return fileSet;
+  }
+
+  private static boolean hasFiles(Project project) {
+    AtomicBoolean result = new AtomicBoolean(false);
+    iterateFilesToAnalyze(project, vFile -> {
+      result.set(true);
+      // No need to iterate other files/folders
+      return false;
+    });
+    return result.get();
+  }
+
+  private static void iterateFilesToAnalyze(Project project, Predicate<VirtualFile> fileProcessor) {
+    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+    fileIndex.iterateContent(vFile -> {
+      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
+        return fileProcessor.test(vFile);
+      }
+      // Continue iteration
+      return true;
+    });
   }
 
   static boolean showWarning() {
