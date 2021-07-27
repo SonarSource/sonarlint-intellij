@@ -141,7 +141,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
-        <toolWindow id="SonarLint" anchor="bottom" icon="/images/ico-sonarlint-13.png" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
+        <toolWindow id="SonarLint" anchor="bottom" icon="SonarLintIcons.SONARLINT_TOOLWINDOW" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
         <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarLint" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
         <projectConfigurable parentId="sonarlint" displayName="Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>
         <moduleConfigurable id="SonarLint" displayName="SonarLint" instance="org.sonarlint.intellij.config.module.SonarLintModuleConfigurable"/>
@@ -229,7 +229,7 @@
 
     <actions>
         <!-- Some actions are defined in SonarLintActions so that they aren't registered in ActionManager -->
-        <group id="SonarLint.AnalyzeMenu" text="SonarLint" popup="false" icon="/images/ico-sonarlint-13.png">
+        <group id="SonarLint.AnalyzeMenu" searchable="false" text="SonarLint" popup="false" icon="SonarLintIcons.SONARLINT_ACTION">
             <separator/>
             <!-- This group is programmatically added to AnalyzeMenu if it exists -->
         </group>
@@ -238,19 +238,19 @@
                 class="org.sonarlint.intellij.actions.SonarAnalyzeFilesAction"
                 text="Analyze with SonarLint"
                 description="Run SonarLint analysis on selected file(s)"
-                icon="SonarLintIcons.SONARLINT">
+                icon="SonarLintIcons.SONARLINT_ACTION">
             <keyboard-shortcut first-keystroke="shift ctrl S" keymap="$default"/>
             <add-to-group group-id="EditorPopupMenu" anchor="last"/>
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
-        <group id="SonarLint.ProjectViewPopupMenu" text="SonarLint" popup="true" icon="/images/ico-sonarlint-13.png">
+        <group id="SonarLint.ProjectViewPopupMenu" searchable="false" text="SonarLint" popup="true" icon="SonarLintIcons.SONARLINT_ACTION">
             <reference ref="SonarLint.AnalyzeFiles"/>
             <action id="SonarLint.Exclude"
                     class="org.sonarlint.intellij.actions.ExcludeFileAction"
                     text="Exclude from SonarLint analysis"
                     description="Adds resources to the list exclusions in the SonarLint project settings"
-                    icon="SonarLintIcons.SONARLINT">
+                    icon="SonarLintIcons.SONARLINT_ACTION">
             </action>
             <add-to-group group-id="ProjectViewPopupMenu"/>
         </group>
@@ -259,7 +259,7 @@
                 class="org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction"
                 text="Analyze VCS Changed Files with SonarLint"
                 description="Run a SonarLint analysis on VCS changed files"
-                icon="SonarLintIcons.SONARLINT">
+                icon="SonarLintIcons.SONARLINT_ACTION">
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 
@@ -267,7 +267,7 @@
                 class="org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction"
                 text="Analyze All Files with SonarLint"
                 description="Run a SonarLint analysis on all files in the project"
-                icon="SonarLintIcons.SONARLINT">
+                icon="SonarLintIcons.SONARLINT_ACTION">
             <add-to-group group-id="SonarLint.AnalyzeMenu"/>
         </action>
 

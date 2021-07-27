@@ -53,7 +53,6 @@ public class SonarLintIconsTest {
   @Test
   public void testIcons() {
     assertThat(SonarLintIcons.CLEAN).isNotNull();
-    assertThat(SonarLintIcons.ICON_SONARLINT_13).isNotNull();
     assertThat(SonarLintIcons.ICON_SONARQUBE_16).isNotNull();
     assertThat(SonarLintIcons.INFO).isNotNull();
     assertThat(SonarLintIcons.PLAY).isNotNull();

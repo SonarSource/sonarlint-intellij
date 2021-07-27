@@ -31,7 +31,9 @@ public class SonarLintIcons {
 
   public static final Icon ICON_SONARQUBE_16 = IconLoader.getIcon("/images/onde-sonar-16.png");
   public static final Icon ICON_SONARCLOUD_16 = IconLoader.getIcon("/images/sonarcloud-16.png");
-  public static final Icon ICON_SONARLINT_13 = IconLoader.getIcon("/images/ico-sonarlint-13.png");
+
+  public static final Icon SONARLINT_TOOLWINDOW = IconLoader.getIcon("/images/sonarlintToolWindow.svg");
+  public static final Icon SONARLINT_ACTION = IconLoader.getIcon("/images/sonarlintAction.svg");
 
   public static final Icon SONARLINT = IconLoader.getIcon("/images/sonarlint.png");
   public static final Icon SONARLINT_32 = IconLoader.getIcon("/images/sonarlint@2x.png");
