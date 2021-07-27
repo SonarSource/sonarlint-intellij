@@ -26,8 +26,17 @@ import com.intellij.openapi.diagnostic.IdeaLoggingEvent;
 import com.intellij.openapi.diagnostic.SubmittedReportInfo;
 import com.intellij.util.Consumer;
 import java.awt.Component;
+import java.io.BufferedReader;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.stream.Collectors;
+
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,15 +45,26 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 // Inspired from https://github.com/openclover/clover/blob/master/clover-idea/src/com/atlassian/clover/idea/util/BlameClover.java
 public class BlameSonarSource extends ErrorReportSubmitter {
-  private static final int MAX_URI_LENGTH = 4096;
+  static final int MAX_URI_LENGTH = 2000;
   private static final int BUG_FAULT_CATEGORY_ID = 6;
   private static final String INTELLIJ_TAG = "intellij";
   private static final String COMMUNITY_ROOT_URL = "https://community.sonarsource.com/";
   private static final String COMMUNITY_FAULT_CATEGORY_URL = COMMUNITY_ROOT_URL + "tags/c/" + BUG_FAULT_CATEGORY_ID + "/" + INTELLIJ_TAG;
   private static final String COMMUNITY_NEW_TOPIC_URL = COMMUNITY_ROOT_URL + "new-topic"
-    + "?title=Error in SonarLint for IntelliJ"
+    + "?title=Error+in+SonarLint+for+IntelliJ"
     + "&category_id=" + BUG_FAULT_CATEGORY_ID
     + "&tags=sonarlint," + INTELLIJ_TAG;
+
+  private static final Map<String, String> packageAbbreviation;
+  static {
+    Map<String, String> aMap = new LinkedHashMap<>();
+    aMap.put("com.intellij.openapi.", "c.ij.oa.");
+    aMap.put("com.intellij.", "c.ij.");
+    aMap.put("org.sonarlint.intellij.", "o.sl.ij.");
+    aMap.put("org.sonarsource.sonarlint.", "o.ss.sl.");
+    aMap.put("org.sonar.plugins.", "o.s.pl.");
+    packageAbbreviation = Collections.unmodifiableMap(aMap);
+  }
 
   @Override
   public String getReportActionText() {
@@ -56,39 +76,50 @@ public class BlameSonarSource extends ErrorReportSubmitter {
     @Nullable String additionalInfo,
     @NotNull Component parentComponent,
     @NotNull Consumer<SubmittedReportInfo> consumer) {
-    StringBuilder description = new StringBuilder();
-    description.append("Environment:\n");
-    description.append("* Java version=").append(System.getProperty("java.version")).append("\n");
-    description.append("* Java vendor=").append(System.getProperty("java.vendor")).append("\n");
-    description.append("* OS name=").append(System.getProperty("os.name")).append("\n");
-    description.append("* OS architecture=").append(System.getProperty("os.arch")).append("\n");
-    description.append("* IDE=").append(ApplicationInfo.getInstance().getFullApplicationName()).append("\n");
-    description.append("* SonarLint version=").append(SonarLintUtils.getService(SonarLintPlugin.class).getVersion()).append("\n");
-    description.append("\n");
+    String body = buildBody(events, additionalInfo);
+    BrowserUtil.browse(getReportWithBodyUrl(body));
+    consumer.consume(new SubmittedReportInfo(COMMUNITY_FAULT_CATEGORY_URL, "community support thread", SubmittedReportInfo.SubmissionStatus.NEW_ISSUE));
+    return true;
+  }
+
+  @NotNull
+  static String buildBody(@NotNull IdeaLoggingEvent @NotNull [] events, @Nullable String additionalInfo) {
+    StringBuilder body = new StringBuilder();
+    body.append("Environment:\n");
+    body.append("* Java: ").append(System.getProperty("java.vendor")).append(" ").append(System.getProperty("java.version")).append("\n");
+    body.append("* OS: ").append(System.getProperty("os.name")).append(" ").append(System.getProperty("os.arch")).append("\n");
+    body.append("* IDE: ").append(ApplicationInfo.getInstance().getFullApplicationName()).append("\n");
+    body.append("* SonarLint: ").append(SonarLintUtils.getService(SonarLintPlugin.class).getVersion()).append("\n");
+    body.append("\n");
     if (additionalInfo != null) {
-      description.append(additionalInfo);
-      description.append("\n");
+      body.append(additionalInfo);
+      body.append("\n");
     }
-    boolean somethingToReport = false;
     for (IdeaLoggingEvent ideaLoggingEvent : events) {
       final String message = ideaLoggingEvent.getMessage();
       if (StringUtils.isNotBlank(message)) {
-        description.append(message).append("\n");
-        somethingToReport = true;
+        body.append(message).append("\n");
       }
       final String throwableText = ideaLoggingEvent.getThrowableText();
       if (StringUtils.isNotBlank(throwableText)) {
-        description.append("\n```\n");
-        description.append(throwableText);
-        description.append("\n```\n\n");
-        somethingToReport = true;
+        body.append("\n```\n");
+        body.append(abbreviate(throwableText));
+        body.append("\n```\n\n");
       }
     }
-    BrowserUtil.browse(getReportWithBodyUrl(description.toString()));
-    if (somethingToReport) {
-      consumer.consume(new SubmittedReportInfo(COMMUNITY_FAULT_CATEGORY_URL, "community support thread", SubmittedReportInfo.SubmissionStatus.NEW_ISSUE));
-    }
-    return somethingToReport;
+    return body.toString();
+  }
+
+  static String abbreviate(String throwableText) {
+    return new BufferedReader(new StringReader(throwableText)).lines()
+      .map(l -> {
+        String abbreviated = l;
+        for (Map.Entry<String, String> entry : packageAbbreviation.entrySet()) {
+          abbreviated = StringUtils.replace(abbreviated, entry.getKey(), entry.getValue());
+        }
+        return abbreviated;
+      }).collect(Collectors.joining("\n"));
+
   }
 
   String getReportWithBodyUrl(String description) {
