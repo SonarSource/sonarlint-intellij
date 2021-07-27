@@ -59,9 +59,9 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   private JComponent createSonarLintPanel() {
     JBLabel sonarlintIcon = new JBLabel(SonarLintIcons.SONARLINT_32);
     SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    JBLabel title = new JBLabel("<html><b>SonarLint IntelliJ " + plugin.getVersion() + "</b></html>");
-    HyperlinkLabel linkLabel = new HyperlinkLabel("intellij.sonarlint.org");
-    linkLabel.addHyperlinkListener(e -> BrowserUtil.browse("http://intellij.sonarlint.org"));
+    JBLabel title = new JBLabel("<html><b>SonarLint " + plugin.getVersion() + "</b></html>");
+    HyperlinkLabel linkLabel = new HyperlinkLabel("https://www.sonarlint.org");
+    linkLabel.addHyperlinkListener(e -> BrowserUtil.browse("https://www.sonarlint.org/intellij"));
     JBLabel copyrightLabel = new JBLabel("<html>&copy; " + LocalDate.now().getYear() + " SonarSource</html>");
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
