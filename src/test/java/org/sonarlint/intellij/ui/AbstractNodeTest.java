@@ -49,10 +49,10 @@ public class AbstractNodeTest {
   @Test
   public void testInsertion() {
     SummaryNode summaryNode = new SummaryNode();
-    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("name")), nameComparator)).isZero();
-    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("file")), nameComparator)).isZero();
-    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
-    assertThat(summaryNode.getInsertIdx(new FileNode(mockFile("abc")), nameComparator)).isZero();
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("name")), nameComparator)).isZero();
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("file")), nameComparator)).isZero();
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("abc")), nameComparator)).isZero();
 
     assertThat(summaryNode.getChildCount()).isEqualTo(4);
     assertThat(((FileNode) summaryNode.getChildAt(0)).file().getName()).isEqualTo("abc");

@@ -168,14 +168,6 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
         }
       }
     });
-    tree.addFocusListener(new FocusAdapter() {
-      @Override
-      public void focusGained(FocusEvent e) {
-        if (!e.isTemporary()) {
-          issueTreeSelectionChanged();
-        }
-      }
-    });
     tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
   }
 
