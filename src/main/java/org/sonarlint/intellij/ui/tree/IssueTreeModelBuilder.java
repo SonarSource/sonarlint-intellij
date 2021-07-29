@@ -120,7 +120,7 @@ public class IssueTreeModelBuilder {
 
     if (newFile) {
       SummaryNode parent = getFilesParent();
-      int idx = parent.getInsertIdx(fNode, new FileNodeComparator());
+      int idx = parent.insertFileNode(fNode, new FileNodeComparator());
       int[] newIdx = {idx};
       model.nodesWereInserted(parent, newIdx);
       model.nodeChanged(parent);

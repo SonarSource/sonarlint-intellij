@@ -50,7 +50,7 @@ public class SummaryNode extends AbstractNode {
     return String.format("Found %d %s in %d %s", issues, issues == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
   }
 
-  public int getInsertIdx(FileNode newChild, Comparator<FileNode> comparator) {
+  public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {
     if (children == null) {
       insert(newChild, 0);
       return 0;
