@@ -35,6 +35,7 @@ import com.intellij.util.ui.UIUtil;
 
 import java.awt.BorderLayout;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,7 +83,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       return ReturnResult.COMMIT;
     }
 
-    Collection<VirtualFile> affectedFiles = checkinPanel.getVirtualFiles();
+    // de-duplicate as the same file can be present several times in the panel (e.g. in several changelists)
+    Set<VirtualFile> affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
     SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     // this will block EDT (modal)
     try {
@@ -116,7 +118,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     Messages.showErrorDialog(project, msg, "Error Analysing Files");
   }
 
-  private ReturnResult processResult(Collection<VirtualFile> affectedFiles) {
+  private ReturnResult processResult(Set<VirtualFile> affectedFiles) {
     IssueStore issueStore = SonarLintUtils.getService(project, IssueStore.class);
     IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
 
