@@ -19,47 +19,23 @@
  */
 package org.sonarlint.intellij.http
 
-import org.apache.hc.core5.http.ClassicHttpResponse
-import org.apache.hc.core5.http.ParseException
-import org.apache.hc.core5.http.io.entity.EntityUtils
-import org.sonarlint.intellij.util.GlobalLogOutput
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.sonarsource.sonarlint.core.serverapi.HttpClient
-import java.io.IOException
-import java.io.InputStream
-
-private const val BODY_ERROR_MESSAGE = "Error reading body content"
+import java.io.ByteArrayInputStream
 
 internal class ApacheHttpResponse(
-  private val requestUrl: String, private val response: ClassicHttpResponse
+  private val requestUrl: String, private val response: SimpleHttpResponse
 ) : HttpClient.Response {
   override fun code(): Int {
     return response.code
   }
 
-  override fun bodyAsString(): String {
-    try {
-      return EntityUtils.toString(response.entity)
-    } catch (e: IOException) {
-      throw RuntimeException(BODY_ERROR_MESSAGE, e)
-    } catch (e: ParseException) {
-      throw RuntimeException(BODY_ERROR_MESSAGE, e)
-    }
-  }
+  override fun bodyAsString(): String = response.bodyText
 
-  override fun bodyAsStream(): InputStream {
-    return try {
-      response.entity.content
-    } catch (e: IOException) {
-      throw RuntimeException(BODY_ERROR_MESSAGE, e)
-    }
-  }
+  override fun bodyAsStream() = ByteArrayInputStream(response.bodyBytes)
 
   override fun close() {
-    try {
-      response.close()
-    } catch (e: IOException) {
-      GlobalLogOutput.get().logError("Cannot close HttpClient", e)
-    }
+    // nothing to do
   }
 
   override fun url(): String {

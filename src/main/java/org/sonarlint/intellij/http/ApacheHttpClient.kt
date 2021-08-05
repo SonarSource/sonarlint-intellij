@@ -21,30 +21,31 @@ package org.sonarlint.intellij.http
 
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
-import org.apache.hc.client5.http.classic.methods.HttpDelete
-import org.apache.hc.client5.http.classic.methods.HttpGet
-import org.apache.hc.client5.http.classic.methods.HttpPost
-import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase
+import org.apache.hc.client5.http.async.methods.SimpleHttpRequest
+import org.apache.hc.client5.http.async.methods.SimpleHttpRequests
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
 import org.apache.hc.client5.http.config.RequestConfig
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient
+import org.apache.hc.client5.http.impl.async.HttpAsyncClients
 import org.apache.hc.client5.http.impl.auth.SystemDefaultCredentialsProvider
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient
-import org.apache.hc.client5.http.impl.classic.HttpClients
-import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder
 import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner
-import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder
-import org.apache.hc.core5.http.ClassicHttpResponse
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder
+import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.http.ContentType
-import org.apache.hc.core5.http.io.entity.StringEntity
+import org.apache.hc.core5.reactor.ssl.TlsDetails
 import org.apache.hc.core5.util.Timeout
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
-import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.Base64
+import java.util.concurrent.CancellationException
+import java.util.concurrent.CompletableFuture
+
 
 class ApacheHttpClient private constructor(
-  private val client: CloseableHttpClient,
+  private val client: CloseableHttpAsyncClient,
   private val login: String? = null,
   private val password: String? = null
 ) : org.sonarsource.sonarlint.core.serverapi.HttpClient {
@@ -54,28 +55,43 @@ class ApacheHttpClient private constructor(
   }
 
   override fun get(url: String): Response {
-    return execute(HttpGet(url))
+    return getAsync(url).get()
   }
 
+  override fun getAsync(url: String) = executeAsync(SimpleHttpRequests.get(url))
+
   override fun post(url: String, contentType: String, body: String): Response {
-    val httpPost = HttpPost(url)
-    httpPost.entity = StringEntity(body, ContentType.parse(contentType))
-    return execute(httpPost)
+    val httpRequest = SimpleHttpRequests.post(url)
+    httpRequest.setBody(body, ContentType.parse(contentType))
+    return executeAsync(httpRequest).get()
   }
 
   override fun delete(url: String, contentType: String, body: String): Response {
-    val httpDelete = HttpDelete(url)
-    httpDelete.entity = StringEntity(body, ContentType.parse(contentType))
-    return execute(httpDelete)
+    val httpRequest = SimpleHttpRequests.delete(url)
+    httpRequest.setBody(body, ContentType.parse(contentType))
+    return executeAsync(httpRequest).get()
   }
 
-  private fun execute(httpRequest: HttpUriRequestBase): Response {
-    try {
-      login?.let { httpRequest.setHeader("Authorization", basic(login, password ?: "")) }
-      val httpResponse = client.execute(httpRequest)
-      return ApacheHttpResponse(httpRequest.requestUri, httpResponse as ClassicHttpResponse)
-    } catch (e: IOException) {
-      throw RuntimeException("Error processing HTTP request", e)
+  private fun executeAsync(httpRequest: SimpleHttpRequest): CompletableFuture<Response> {
+    login?.let { httpRequest.setHeader("Authorization", basic(login, password ?: "")) }
+    val futureResponse = CompletableFuture<Response>()
+    val httpFuture = client.execute(httpRequest, object : FutureCallback<SimpleHttpResponse> {
+      override fun completed(result: SimpleHttpResponse) {
+        futureResponse.complete(ApacheHttpResponse(httpRequest.requestUri, result))
+      }
+
+      override fun failed(ex: Exception) {
+        futureResponse.completeExceptionally(ex)
+      }
+
+      override fun cancelled() {
+        // nothing to do, the completable future is already canceled
+      }
+    })
+    return futureResponse.whenComplete { _, error ->
+      if (error is CancellationException) {
+        httpFuture.cancel(false)
+      }
     }
   }
 
@@ -95,14 +111,14 @@ class ApacheHttpClient private constructor(
 
     @JvmStatic
     val default: ApacheHttpClient = ApacheHttpClient(
-      HttpClients.custom()
+      HttpAsyncClients.custom()
         .setConnectionManager(
-          PoolingHttpClientConnectionManagerBuilder.create()
-            .setSSLSocketFactory(
-              SSLConnectionSocketFactoryBuilder.create()
+          PoolingAsyncClientConnectionManagerBuilder.create()
+            .setTlsStrategy(
+              ClientTlsStrategyBuilder.create()
                 .setSslContext(CertificateManager.getInstance().sslContext)
-                .build()
-            )
+                .setTlsDetailsFactory { TlsDetails(it.session, it.applicationProtocol) }
+                .build())
             .build()
         )
         .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
@@ -120,5 +136,8 @@ class ApacheHttpClient private constructor(
         .build()
     )
 
+    init {
+      default.client.start()
+    }
   }
 }
