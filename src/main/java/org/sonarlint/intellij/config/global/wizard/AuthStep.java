@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global.wizard;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
+import com.intellij.ide.wizard.CommitStepCancelledException;
 import com.intellij.ide.wizard.CommitStepException;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.ComboBox;
@@ -41,6 +42,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult;
 
 public class AuthStep extends AbstractWizardStepEx {
@@ -213,16 +215,21 @@ public class AuthStep extends AbstractWizardStepEx {
   private void checkConnection() throws CommitStepException {
     ServerConnection tmpServer = model.createConnectionWithoutOrganization();
     ConnectionTestTask test = new ConnectionTestTask(tmpServer);
-    ProgressManager.getInstance().run(test);
-    ValidationResult r = test.result();
     String msg = "Failed to connect to the server. Please check the configuration.";
-    if (test.getException() != null) {
-      if (test.getException().getMessage() != null) {
-        msg = msg + " Error: " + test.getException().getMessage();
+    ValidationResult result;
+    try {
+      result = ProgressManager.getInstance().run(test);
+    } catch (Exception e) {
+      GlobalLogOutput.get().logError("Connection test failed", e);
+      if (e.getMessage() != null) {
+        msg = msg + " Error: " + e.getMessage();
       }
       throw new CommitStepException(msg);
-    } else if (!r.success()) {
-      throw new CommitStepException(msg + " Cause: " + r.message());
+    }
+    if (result == null) {
+      throw new CommitStepCancelledException();
+    } else if (!result.success()) {
+      throw new CommitStepException(msg + " Cause: " + result.message());
     }
   }
 
