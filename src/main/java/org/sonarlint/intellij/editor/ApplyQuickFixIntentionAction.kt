@@ -25,28 +25,27 @@ import com.intellij.icons.AllIcons
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
+import com.intellij.psi.codeStyle.CodeStyleManager
 import org.sonarlint.intellij.issue.QuickFix
-import java.util.function.Consumer
 
 class ApplyQuickFixIntentionAction(private val fix: QuickFix) : IntentionAction, PriorityAction, Iconable {
     override fun getText() = "SonarLint: " + fix.message
     override fun getFamilyName() = "SonarLint quick fix"
     override fun startInWriteAction() = true
-    override fun getIcon(flags: Int) = AllIcons.Actions.QuickfixBulb
+    override fun getIcon(flags: Int) = AllIcons.Actions.IntentionBulb
     override fun getPriority() = PriorityAction.Priority.NORMAL
     override fun isAvailable(project: Project, editor: Editor, file: PsiFile) = fix.isApplicable()
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
         fix.applied = true
-        fix.virtualFileEdits.forEach(Consumer { (target, edits) ->
-            if (target == file.virtualFile) {
-                edits.forEach(Consumer { (rangeMarker, newText) ->
-                    editor.document.replaceString(rangeMarker.startOffset, rangeMarker.endOffset, newText)
-                })
-            } else {
-                // TODO Handle edits in other files!
-            }
-        })
+        // TODO Handle edits in other files!
+        val currentFileEdits = fix.virtualFileEdits.filter { it.target == file.virtualFile }.flatMap { it.edits }
+        currentFileEdits.forEach { (rangeMarker, newText) ->
+            editor.document.replaceString(rangeMarker.startOffset, rangeMarker.endOffset, newText)
+        }
+        // formatting might be useful for multi-line edits
+        CodeStyleManager.getInstance(project).reformatText(file, currentFileEdits.map { TextRange.create(it.rangeMarker) })
     }
 }
