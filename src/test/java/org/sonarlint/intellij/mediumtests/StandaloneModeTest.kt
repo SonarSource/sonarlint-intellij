@@ -35,6 +35,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.jetbrains.annotations.NotNull
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisCallback
@@ -46,6 +47,8 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter
 import org.sonarlint.intellij.trigger.TriggerType
 
 class StandaloneModeTest : AbstractSonarLintLightTests() {
+
+    private val diamondQuickFix = "SonarLint: Replace with <>"
 
     @Before
     fun prepare() {
@@ -160,7 +163,7 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         val file = myFixture.configureByFile("src/quick_fixes/single_quick_fix.input.java")
         analyze(file.virtualFile)
 
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
 
         myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
     }
@@ -171,7 +174,7 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         analyze(file.virtualFile)
         myFixture.performEditorAction(IdeActions.ACTION_EDITOR_BACKSPACE)
 
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
 
         myFixture.checkResultByFile("src/quick_fixes/single_quick_fix.expected.java")
     }
@@ -181,19 +184,20 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         val file = myFixture.configureByFile("src/quick_fixes/multiple_quick_fixes_on_different_lines.input.java")
         analyze(file.virtualFile)
 
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
         myFixture.editor.caretModel.currentCaret.moveToOffset(140)
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
 
         myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_different_lines.expected.java")
     }
 
     @Test
+    @Ignore("Quick fix for unused variable not implemented yet")
     fun should_apply_overlapping_quick_fixes_on_same_line() {
         val file = myFixture.configureByFile("src/quick_fixes/overlapping_quick_fixes.input.java")
         analyze(file.virtualFile)
 
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
         myFixture.editor.caretModel.currentCaret.moveToOffset(58)
         myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove \"strings\"."))
 
@@ -205,9 +209,9 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         val file = myFixture.configureByFile("src/quick_fixes/multiple_quick_fixes_on_same_line.input.java")
         analyze(file.virtualFile)
 
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
         myFixture.editor.caretModel.currentCaret.moveToOffset(120)
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
 
         myFixture.checkResultByFile("src/quick_fixes/multiple_quick_fixes_on_same_line.expected.java")
     }
@@ -216,9 +220,9 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
     fun should_make_the_quick_fix_not_available_after_applying_it() {
         val file = myFixture.configureByFile("src/quick_fixes/single_quick_fix.input.java")
         analyze(file.virtualFile)
-        myFixture.launchAction(myFixture.findSingleIntention("SonarLint: Remove type argument(s)"))
+        myFixture.launchAction(myFixture.findSingleIntention(diamondQuickFix))
 
-        val availableIntention = myFixture.filterAvailableIntentions("SonarLint: Remove type argument(s)")
+        val availableIntention = myFixture.filterAvailableIntentions(diamondQuickFix)
 
         assertThat(availableIntention).isEmpty()
     }
