@@ -160,6 +160,13 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
     }
   }
 
+  @Override
+  public void addQuickFixAppliedForRule(String ruleKey) {
+    if (enabled()) {
+      telemetry.addQuickFixAppliedForRule(ruleKey);
+    }
+  }
+
   @VisibleForTesting
   void stop() {
     if (enabled()) {

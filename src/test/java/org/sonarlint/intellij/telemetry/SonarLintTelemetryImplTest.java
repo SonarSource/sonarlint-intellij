@@ -136,4 +136,21 @@ public class SonarLintTelemetryImplTest extends AbstractSonarLintLightTests {
     verify(telemetryManager).isEnabled();
     verifyNoMoreInteractions(telemetryManager);
   }
+
+  @Test
+  public void addQuickFixAppliedForRule_should_trigger_addQuickFixAppliedForRule_when_enabled() {
+    when(telemetryManager.isEnabled()).thenReturn(true);
+    String ruleKey = "repo:key";
+    telemetry.addQuickFixAppliedForRule(ruleKey);
+    verify(telemetryManager).isEnabled();
+    verify(telemetryManager).addQuickFixAppliedForRule(ruleKey);
+  }
+
+  @Test
+  public void addQuickFixAppliedForRule_should_not_trigger_addQuickFixAppliedForRule_when_disabled() {
+    when(telemetryManager.isEnabled()).thenReturn(false);
+    telemetry.addQuickFixAppliedForRule("repo:key");
+    verify(telemetryManager).isEnabled();
+    verifyNoMoreInteractions(telemetryManager);
+  }
 }

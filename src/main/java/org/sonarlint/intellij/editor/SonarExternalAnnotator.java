@@ -128,7 +128,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     issue.context().ifPresent(c -> annotation.registerFix(new ShowLocationsIntentionAction(issue, c)));
-    issue.quickFixes().forEach(f -> annotation.registerFix(new ApplyQuickFixIntentionAction(f)));
+    issue.quickFixes().forEach(f -> annotation.registerFix(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
 
     if (issue.getRange() == null) {
       annotation.setFileLevelAnnotation(true);

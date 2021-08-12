@@ -28,9 +28,11 @@ import com.intellij.openapi.util.Iconable
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.issue.QuickFix
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
-class ApplyQuickFixIntentionAction(private val fix: QuickFix) : IntentionAction, PriorityAction, Iconable {
+class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKey: String) : IntentionAction, PriorityAction, Iconable {
     override fun getText() = "SonarLint: " + fix.message
     override fun getFamilyName() = "SonarLint quick fix"
     override fun startInWriteAction() = true
@@ -40,6 +42,7 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix) : IntentionAction,
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
         fix.applied = true
+        SonarLintUtils.getService(SonarLintTelemetry::class.java).addQuickFixAppliedForRule(ruleKey)
         // TODO Handle edits in other files!
         val currentFileEdits = fix.virtualFileEdits.filter { it.target == file.virtualFile }.flatMap { it.edits }
         currentFileEdits.forEach { (rangeMarker, newText) ->
