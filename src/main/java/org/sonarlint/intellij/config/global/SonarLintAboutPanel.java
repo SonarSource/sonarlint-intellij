@@ -143,6 +143,10 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "      \"default_disabled\":  [\n"
           + "        \"javascript:S1994\"\n"
           + "      ],\n"
+          + "      \"quick_fix_applied\": [\n"
+          + "        \"java:S1656\",\n"
+          + "        \"java:S1872\"\n"
+          + "      ],\n"
           + "    }"
           + "}</pre></html>");
         label.setBorder(HintUtil.createHintBorder());
