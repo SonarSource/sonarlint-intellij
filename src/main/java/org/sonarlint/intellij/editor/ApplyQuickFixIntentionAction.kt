@@ -37,7 +37,7 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
     override fun getFamilyName() = "SonarLint quick fix"
     override fun startInWriteAction() = true
     override fun getIcon(flags: Int) = AllIcons.Actions.IntentionBulb
-    override fun getPriority() = PriorityAction.Priority.NORMAL
+    override fun getPriority() = PriorityAction.Priority.TOP
     override fun isAvailable(project: Project, editor: Editor, file: PsiFile) = fix.isApplicable()
 
     override fun invoke(project: Project, editor: Editor, file: PsiFile) {
