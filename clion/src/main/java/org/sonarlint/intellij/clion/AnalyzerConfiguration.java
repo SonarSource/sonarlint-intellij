@@ -43,25 +43,24 @@ import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
+import com.jetbrains.cidr.project.workspace.CidrWorkspace;
+import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 
+import javax.annotation.Nullable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.annotation.Nullable;
-
-import org.jetbrains.annotations.NotNull;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 public class AnalyzerConfiguration {
   private final Project project;
-  private final CMakeWorkspace cMakeWorkspace;
   private static Method preprocessorDefinesMethod;
 
   public AnalyzerConfiguration(@NotNull Project project) {
     this.project = project;
-    cMakeWorkspace = CMakeWorkspace.getInstance(project);
   }
 
   public ConfigurationResult getConfiguration(VirtualFile file) {
@@ -195,10 +194,48 @@ public class AnalyzerConfiguration {
   }
 
   private boolean usingRemoteOrWslToolchain(OCResolveConfiguration configuration) {
+    final List<CidrWorkspace> initializedWorkspaces = CidrWorkspace.getInitializedWorkspaces(project);
+    CPPEnvironment cppEnvironment = null;
+    for (CidrWorkspace initializedWorkspace : initializedWorkspaces) {
+      if (initializedWorkspace instanceof CMakeWorkspace) {
+        cppEnvironment = getCMakeCppEnvironment((CMakeWorkspace) initializedWorkspace, configuration);
+      } else {
+        // Use reflection to check if workspace is instanceof com.jetbrains.cidr.project.workspace.WorkspaceWithEnvironment
+        // WorkspaceWithEnvironment interface has getEnvironment() method
+        final Method classMethod;
+        try {
+          classMethod = initializedWorkspace.getClass().getMethod("getEnvironment");
+        } catch (NoSuchMethodException e) {
+          SonarLintConsole.get(project).debug(initializedWorkspace.getClass().getName() + " has no getEnvironment() method");
+          continue;
+        }
+        Object result;
+        try {
+          result = classMethod.invoke(initializedWorkspace);
+        } catch (ReflectiveOperationException e) {
+          SonarLintConsole.get(project).debug(e.getMessage());
+          continue;
+        }
+        if (result instanceof List) {
+          // getEnvironment returns a singleton list
+          result = ((List<?>) result).get(0);
+        }
+        if (result instanceof CPPEnvironment) {
+          cppEnvironment = (CPPEnvironment) result;
+          // stop at the first CPPEnvironment found
+          break;
+        }
+      }
+    }
+    return cppEnvironment != null && (cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL());
+  }
+
+  @Nullable
+  private CPPEnvironment getCMakeCppEnvironment(CMakeWorkspace cMakeWorkspace, OCResolveConfiguration configuration) {
     CMakeConfiguration cMakeConfiguration = cMakeWorkspace.getCMakeConfigurationFor(configuration);
     if (cMakeConfiguration == null) {
-      // remote toolchains are supported only for CMake projects
-      return false;
+      SonarLintConsole.get(project).debug("cMakeConfiguration is null");
+      return null;
     }
     CMakeProfileInfo profileInfo;
     try {
@@ -206,8 +243,7 @@ public class AnalyzerConfiguration {
     } catch (ExecutionException e) {
       throw new IllegalStateException(e);
     }
-    CPPEnvironment environment = profileInfo.getEnvironment();
-    return environment != null && (environment.getToolSet().isRemote() || environment.getToolSet().isWSL());
+    return profileInfo.getEnvironment();
   }
 
   private static Method getPreprocessorDefinesMethod() {
