@@ -21,9 +21,12 @@ package org.sonarlint.intellij.issue
 
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.psi.PsiFile
+import org.sonar.api.batch.fs.TextPointer
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.getDocument
+import org.sonarsource.sonarlint.core.client.api.common.ClientInputFileEdit
 import org.sonarsource.sonarlint.core.client.api.common.QuickFix
+import org.sonarsource.sonarlint.core.client.api.common.TextEdit
 import org.sonarsource.sonarlint.core.client.api.common.TextRange
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
 
@@ -40,8 +43,7 @@ fun aLiveIssue(
 fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = object : Issue {
     override fun getTextRange() = textRange
     override fun getMessage() = "message"
-    override fun getInputFile() =
-        DefaultClientInputFile(file.virtualFile, file.name, false, file.virtualFile.charset)
+    override fun getInputFile() = aClientInputFile(file)
 
     override fun getSeverity() = "MAJOR"
     override fun getType() = "BUG"
@@ -55,4 +57,39 @@ private fun toTextRange(rangeMarker: RangeMarker?): TextRange? {
     return rangeMarker?.let {
         TextRange(1, 2, 3, 4)
     }
+}
+
+fun aClientInputFile(file: PsiFile) =
+    DefaultClientInputFile(file.virtualFile, file.name, false, file.virtualFile.charset)
+
+fun aQuickFix(message: String, fileEdits: List<ClientInputFileEdit>) = object : QuickFix {
+    override fun inputFileEdits() = fileEdits
+    override fun message() = message
+}
+
+fun aFileEdit(file: PsiFile, textEdits: List<TextEdit>) = object : ClientInputFileEdit {
+    override fun target() = aClientInputFile(file)
+    override fun textEdits() = textEdits
+}
+
+fun aTextEdit(range: org.sonar.api.batch.fs.TextRange, newText: String) = object : TextEdit {
+    override fun range() = range
+    override fun newText() = newText
+}
+
+fun aTextRange(
+    startLine: Int,
+    startLineOffset: Int,
+    endLine: Int,
+    endLineOffset: Int
+) = object : org.sonar.api.batch.fs.TextRange {
+    override fun start() = aTextPointer(startLine, startLineOffset)
+    override fun end() = aTextPointer(endLine, endLineOffset)
+    override fun overlap(p0: org.sonar.api.batch.fs.TextRange) = false
+}
+
+fun aTextPointer(line: Int, lineOffset: Int) = object : TextPointer {
+    override fun compareTo(other: TextPointer?) = 0
+    override fun line() = line
+    override fun lineOffset() = lineOffset
 }
