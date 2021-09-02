@@ -32,7 +32,7 @@ import org.sonarsource.sonarlint.core.client.api.common.QuickFix as CoreQuickFix
 fun convert(project: Project, coreQuickFix: CoreQuickFix): QuickFix? {
     val virtualFileEdits = coreQuickFix.inputFileEdits().map { convert(it) }
     if (virtualFileEdits.contains(null)) {
-        log(project, "Quick fix won't be proposed because some documents cannot be found")
+        log(project, "Quick fix won't be proposed as it is invalid")
         return null
     }
     if (virtualFileEdits.distinctBy { it!!.target }.size > 1) {
@@ -49,13 +49,28 @@ private fun log(project: Project, message: String) {
 private fun convert(fileEdit: ClientInputFileEdit): VirtualFileEdit? {
     val targetVirtualFile = fileEdit.target().getClientObject<VirtualFile>()
     val document = targetVirtualFile.getDocument() ?: return null
-    return VirtualFileEdit(targetVirtualFile, fileEdit.textEdits().map { convert(document, it) })
+    val virtualFileEdits = fileEdit.textEdits().map { convert(document, it) }
+    if (virtualFileEdits.contains(null)) {
+        return null
+    }
+    return VirtualFileEdit(targetVirtualFile, virtualFileEdits.mapNotNull { it })
 }
 
-private fun convert(document: Document, textEdit: TextEdit): RangeMarkerEdit {
+private fun convert(document: Document, textEdit: TextEdit): RangeMarkerEdit? {
     val range = textEdit.range()
-    val startOffset = document.getLineStartOffset(range.start().line() - 1) + range.start().lineOffset()
-    val endOffset = document.getLineStartOffset(range.end().line() - 1) + range.end().lineOffset()
+    val lineCount = document.lineCount
+    val beginLine = range.start().line() - 1
+    val endLine = range.end().line() - 1
+    if (beginLine < 0 || beginLine >= lineCount || endLine < 0 || endLine >= lineCount) {
+        // range lines don't exist
+        return null
+    }
+    val startOffset = document.getLineStartOffset(beginLine) + range.start().lineOffset()
+    val endOffset = document.getLineStartOffset(endLine) + range.end().lineOffset()
+    if (startOffset > document.getLineEndOffset(beginLine) || endOffset > document.getLineEndOffset(endLine)) {
+        // offset is greater than line length
+        return null
+    }
     // XXX should we dispose them at some point ?
     val rangeMarker = document.createRangeMarker(startOffset, endOffset)
     return RangeMarkerEdit(rangeMarker, textEdit.newText())
