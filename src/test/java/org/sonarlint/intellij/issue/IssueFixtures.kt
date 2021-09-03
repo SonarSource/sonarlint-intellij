@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.issue
 
+import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.psi.PsiFile
 import org.sonar.api.batch.fs.TextPointer
@@ -28,6 +29,7 @@ import org.sonarsource.sonarlint.core.client.api.common.ClientInputFileEdit
 import org.sonarsource.sonarlint.core.client.api.common.QuickFix
 import org.sonarsource.sonarlint.core.client.api.common.TextEdit
 import org.sonarsource.sonarlint.core.client.api.common.TextRange
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
 
 fun aLiveIssue(
@@ -62,13 +64,16 @@ private fun toTextRange(rangeMarker: RangeMarker?): TextRange? {
 fun aClientInputFile(file: PsiFile) =
     DefaultClientInputFile(file.virtualFile, file.name, false, file.virtualFile.charset)
 
+fun aClientInputFile(file: PsiFile, document: Document) =
+    DefaultClientInputFile(file.virtualFile, file.name, false, file.virtualFile.charset, document.text, document.modificationStamp, null)
+
 fun aQuickFix(message: String, fileEdits: List<ClientInputFileEdit>) = object : QuickFix {
     override fun inputFileEdits() = fileEdits
     override fun message() = message
 }
 
-fun aFileEdit(file: PsiFile, textEdits: List<TextEdit>) = object : ClientInputFileEdit {
-    override fun target() = aClientInputFile(file)
+fun aFileEdit(file: ClientInputFile, textEdits: List<TextEdit>) = object : ClientInputFileEdit {
+    override fun target() = file
     override fun textEdits() = textEdits
 }
 

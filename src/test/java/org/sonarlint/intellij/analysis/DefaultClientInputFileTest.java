@@ -90,7 +90,7 @@ public class DefaultClientInputFileTest {
 
   @Test
   public void testContentFromBuffer() throws IOException {
-    inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, "test string", null);
+    inputFile = new DefaultClientInputFile(vFile, "unused", true, StandardCharsets.UTF_8, "test string", 0, null);
 
     assertThat(inputFile.contents()).isEqualTo("test string");
     assertThat(inputFile.language()).isNull();
