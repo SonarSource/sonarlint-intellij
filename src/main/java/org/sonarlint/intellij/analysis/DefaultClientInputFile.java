@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.analysis;
 
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.VirtualFile;
 
 import java.io.ByteArrayInputStream;
@@ -46,24 +47,31 @@ public class DefaultClientInputFile implements ClientInputFile {
   @Nullable
   private final Language language;
   private final URI uri;
+  private final long documentModificationStamp;
 
-  public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable String documentBuffer, @Nullable Language language) {
+  public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable String documentBuffer, long documentModificationStamp,
+    @Nullable Language language) {
     this.path = vFile.getPath();
     this.relativePath = relativePath;
     this.test = isTest;
     this.charset = charset;
     this.vFile = vFile;
     this.documentBuffer = documentBuffer;
+    this.documentModificationStamp = documentModificationStamp;
     this.language = language;
     this.uri = createURI();
   }
 
   DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset, @Nullable Language language) {
-    this(vFile, relativePath, isTest, charset, null, language);
+    this(vFile, relativePath, isTest, charset, null, 0, language);
   }
 
   public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
-    this(vFile, relativePath, isTest, charset, null, null);
+    this(vFile, relativePath, isTest, charset, null, 0, null);
+  }
+
+  public boolean isOlderThan(Document document) {
+    return documentModificationStamp < document.getModificationStamp();
   }
 
   @Override public String getPath() {

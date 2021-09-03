@@ -162,19 +162,28 @@ public class SonarLintAnalyzer {
     if (relativePath != null) {
       FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
       if (fileDocumentManager.isFileModified(virtualFile)) {
-        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, readTextFromDocument(virtualFile), language);
+        return createInputFileFromDocument(virtualFile, language, test, charset, relativePath);
       } else {
-        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, language);
+        return new DefaultClientInputFile(virtualFile, relativePath, test, charset, null, readDocumentModificationStamp(virtualFile), language);
       }
     }
     return null;
   }
 
-  @CheckForNull
-  private static String readTextFromDocument(VirtualFile virtualFile) {
+  private static DefaultClientInputFile createInputFileFromDocument(VirtualFile virtualFile, @org.jetbrains.annotations.Nullable Language language, boolean test, Charset charset,
+    String relativePath) {
     return ReadAction.compute(() -> {
       Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
-      return document != null ? document.getText() : null;
+      String textInDocument = document != null ? document.getText() : null;
+      long documentModificationStamp = document != null ? document.getModificationStamp() : 0;
+      return new DefaultClientInputFile(virtualFile, relativePath, test, charset, textInDocument, documentModificationStamp, language);
+    });
+  }
+
+  private static long readDocumentModificationStamp(VirtualFile virtualFile) {
+    return ReadAction.compute(() -> {
+      Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
+      return document != null ? document.getModificationStamp() : 0;
     });
   }
 

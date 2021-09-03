@@ -30,7 +30,12 @@ class QuickFixTest : AbstractSonarLintLightTests() {
         val file = myFixture.configureByText("file.ext", "Text")
         val fix = aQuickFix(
             "Fix message",
-            listOf(aFileEdit(file, listOf(aTextEdit(aTextRange(1, 0, 1, 4), "newText"))))
+            listOf(
+                aFileEdit(
+                    aClientInputFile(file, myFixture.getDocument(file)),
+                    listOf(aTextEdit(aTextRange(1, 0, 1, 4), "newText"))
+                )
+            )
         )
 
         val convertedFix = convert(project, fix)
@@ -53,7 +58,12 @@ class QuickFixTest : AbstractSonarLintLightTests() {
         val file = myFixture.configureByText("file.ext", "Text")
         val fix = aQuickFix(
             "Fix message",
-            listOf(aFileEdit(file, listOf(aTextEdit(aTextRange(2, 0, 2, 1), "newText"))))
+            listOf(
+                aFileEdit(
+                    aClientInputFile(file, myFixture.getDocument(file)),
+                    listOf(aTextEdit(aTextRange(2, 0, 2, 1), "newText"))
+                )
+            )
         )
 
         val convertedFix = convert(project, fix)
@@ -68,8 +78,14 @@ class QuickFixTest : AbstractSonarLintLightTests() {
         val fix = aQuickFix(
             "Fix message",
             listOf(
-                aFileEdit(file, listOf(aTextEdit(aTextRange(1, 0, 1, 0), "newText"))),
-                aFileEdit(file2, listOf(aTextEdit(aTextRange(1, 0, 1, 0), "newText")))
+                aFileEdit(
+                    aClientInputFile(file, myFixture.getDocument(file)),
+                    listOf(aTextEdit(aTextRange(1, 0, 1, 0), "newText"))
+                ),
+                aFileEdit(
+                    aClientInputFile(file2, myFixture.getDocument(file2)),
+                    listOf(aTextEdit(aTextRange(1, 0, 1, 0), "newText"))
+                )
             )
         )
 
@@ -83,8 +99,28 @@ class QuickFixTest : AbstractSonarLintLightTests() {
         val file = myFixture.configureByText("file.ext", "Text")
         val fix = aQuickFix(
             "Fix message",
-            listOf(aFileEdit(file, listOf(aTextEdit(aTextRange(1, 0, 1, 5), "newText"))))
+            listOf(
+                aFileEdit(
+                    aClientInputFile(file, myFixture.getDocument(file)),
+                    listOf(aTextEdit(aTextRange(1, 0, 1, 5), "newText"))
+                )
+            )
         )
+
+        val convertedFix = convert(project, fix)
+
+        assertThat(convertedFix).isNull()
+    }
+
+    @Test
+    fun should_not_convert_quick_fix_if_document_has_changed() {
+        val file = myFixture.configureByText("file.ext", "Text")
+        val document = myFixture.getDocument(file)
+        val fix = aQuickFix(
+            "Fix message",
+            listOf(aFileEdit(aClientInputFile(file, document), listOf(aTextEdit(aTextRange(1, 0, 1, 4), "newText"))))
+        )
+        myFixture.type("new content")
 
         val convertedFix = convert(project, fix)
 

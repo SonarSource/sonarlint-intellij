@@ -62,6 +62,7 @@ fun buildModuleFileEvent(
         TestSourcesFilter.isTestSources(file, module.project),
         getEncoding(module.project, file),
         document.text,
+        document.modificationStamp,
         null
       ),
       type
