@@ -162,9 +162,9 @@ public class AnalyzerConfiguration {
       throw new IllegalStateException(e);
     }
     if (result instanceof List) {
-      return String.join("\n", (List<String>) result);
+      return String.join("\n", (List<String>) result) + "\n";
     } else if (result instanceof String) {
-      return (String) result;
+      return result + "\n";
     } else {
       throw new IllegalStateException(result.toString());
     }
