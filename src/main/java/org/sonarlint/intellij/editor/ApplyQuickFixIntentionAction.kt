@@ -26,6 +26,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Iconable
 import com.intellij.openapi.util.TextRange
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import org.sonarlint.intellij.common.util.SonarLintUtils
@@ -46,9 +47,11 @@ class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKe
         // TODO Handle edits in other files!
         val currentFileEdits = fix.virtualFileEdits.filter { it.target == file.virtualFile }.flatMap { it.edits }
         currentFileEdits.forEach { (rangeMarker, newText) ->
-            editor.document.replaceString(rangeMarker.startOffset, rangeMarker.endOffset, newText)
+            editor.document.replaceString(rangeMarker.startOffset, rangeMarker.endOffset, normalizeLineEndingsToLineFeeds(newText))
         }
         // formatting might be useful for multi-line edits
         CodeStyleManager.getInstance(project).reformatText(file, currentFileEdits.map { TextRange.create(it.rangeMarker) })
     }
+
+    private fun normalizeLineEndingsToLineFeeds(text: String) = StringUtil.convertLineSeparators(text)
 }
