@@ -29,8 +29,8 @@
         <html>
             <p>
                 SonarLint is a free IDE extension to find and fix bugs, vulnerabilities and code smells as you write code!
-                Like a spell checker, SonarLint highlights issues on the fly, with clear remediation guidance so you can fix
-                them before the code is even committed. With support for several popular and classic languages,
+                Like a spell checker, SonarLint highlights issues on the fly and provides quick fixes or clear remediation guidance
+                to help you clean the code before it is even committed. With support for several popular and classic languages,
                 SonarLint helps developers of all experience and skill levels write efficient, safe code.
             </p>
             <br/>
