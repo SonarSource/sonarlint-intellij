@@ -51,4 +51,9 @@ class TelemetryClientAttributeProviderImplTest : AbstractSonarLintLightTests() {
         assertThat(underTest.nonDefaultEnabledRules).containsExactly("ruleKey2", "ruleKey1")
     }
 
+    @Test
+    fun noAdditionalAttribute() {
+        assertThat(underTest.additionalAttributes()).isEmpty()
+    }
+
 }
