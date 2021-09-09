@@ -70,6 +70,8 @@ class TelemetryClientAttributeProviderImpl : TelemetryClientAttributesProvider {
             .toSet()
     }
 
+    override fun additionalAttributes() = emptyMap<String, Any>()
+
     private fun defaultEnabledRuleKeys(): Set<String> {
         val engineManager = SonarLintUtils.getService(SonarLintEngineManager::class.java)
         return engineManager.standaloneEngine.allRuleDetails.stream()
