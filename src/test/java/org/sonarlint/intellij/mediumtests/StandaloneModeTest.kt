@@ -148,9 +148,9 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
                     { it.ruleName },
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
                 .containsExactlyInAnyOrder(
-                    tuple("devenv.js", "secrets:S6290", "AWS Access Key ID", Pair(286, 306)),
+                    tuple("devenv.js", "secrets:S6290", "Amazon Web Services credentials should not be disclosed", Pair(286, 306)),
                     tuple("devenv.js", "javascript:S2703", "Variables should be declared explicitly", Pair(62, 72)),
-                    tuple("devenv_unversionned.js", "secrets:S6290", "AWS Access Key ID", Pair(286, 306)),
+                    tuple("devenv_unversionned.js", "secrets:S6290", "Amazon Web Services credentials should not be disclosed", Pair(286, 306)),
                     tuple("devenv_unversionned.js", "javascript:S2703", "Variables should be declared explicitly", Pair(62, 72))
                 )
         } finally {
