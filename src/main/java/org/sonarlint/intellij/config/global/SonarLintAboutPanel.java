@@ -130,7 +130,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "      \"taint_vulnerabilities\": {\n"
           + "        \"investigated_remotely_count\": 1,\n"
           + "        \"investigated_locally_count\": 4\n"
-          + "      }\n"
+          + "      },\n"
           + "     \"rules\": {\n"
           + "      \"raised_issues\": [\n"
           + "        \"secrets:S6290\",\n"
