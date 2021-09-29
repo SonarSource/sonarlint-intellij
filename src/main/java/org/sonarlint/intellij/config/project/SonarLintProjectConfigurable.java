@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
@@ -88,7 +89,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   }
 
   @Override
-  public void apply() {
+  public void apply() throws ConfigurationException {
     if (panel != null) {
       SonarLintProjectSettings projectSettings = getSettingsFor(project);
       boolean exclusionsModified = panel.isExclusionsModified(projectSettings);
