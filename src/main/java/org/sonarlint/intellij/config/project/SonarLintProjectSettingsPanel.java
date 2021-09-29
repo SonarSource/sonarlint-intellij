@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
@@ -48,7 +49,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     JBTabbedPane tabs = new JBTabbedPane();
 
     rootBindPane = new JPanel(new BorderLayout());
-    rootBindPane.add(bindPanel.create(project));
+    rootBindPane.add(bindPanel.create(project), BorderLayout.NORTH);
 
     rootPropertiesPane = new JPanel(new BorderLayout());
     rootPropertiesPane.add(propsPanel.create(), BorderLayout.CENTER);
@@ -66,26 +67,43 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
   public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getConnectionName(), projectSettings.getProjectKey());
+    bindPanel.load(servers, projectSettings);
     exclusionsPanel.load(projectSettings);
   }
 
-  public void save(Project project, SonarLintProjectSettings projectSettings) {
+  public void save(Project project, SonarLintProjectSettings projectSettings) throws ConfigurationException {
+    String selectedProjectKey = bindPanel.getSelectedProjectKey();
+    ServerConnection selectedConnection = bindPanel.getSelectedConnection();
+    boolean bindingEnabled = bindPanel.isBindingEnabled();
+    List<ModuleBindingPanel.ModuleBinding> moduleBindings = bindPanel.getModuleBindings();
+    if (bindingEnabled) {
+      if (selectedConnection == null) {
+        throw new ConfigurationException("Connection should not be empty");
+      }
+      if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
+        throw new ConfigurationException("Project key should not be empty");
+      }
+      for (ModuleBindingPanel.ModuleBinding binding : moduleBindings) {
+        String moduleProjectKey = binding.getSonarProjectKey();
+        if (moduleProjectKey == null || moduleProjectKey.isBlank()) {
+          throw new ConfigurationException("Project key for module '" + binding.getModuleName() + "' should not be empty");
+        }
+      }
+    }
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     exclusionsPanel.save(projectSettings);
 
     ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
-    ServerConnection connection = bindPanel.getSelectedConnection();
-    String projectKey = bindPanel.getSelectedProjectKey();
-    if (bindPanel.isBindingEnabled() && connection != null && projectKey != null) {
-      bindingManager.bindTo(connection, projectKey);
+    if (bindingEnabled) {
+      bindingManager.bindTo(selectedConnection, selectedProjectKey);
+      // TODO save module bindings
     } else {
       bindingManager.unbind();
     }
   }
 
   private boolean bindingChanged(SonarLintProjectSettings projectSettings) {
-    if (projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
+    if (projectSettings.isBindingEnabled() != bindPanel.isBindingEnabled()) {
       return true;
     }
 
@@ -97,6 +115,8 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       if (!StringUtils.equals(projectSettings.getProjectKey(), bindPanel.getSelectedProjectKey())) {
         return true;
       }
+
+      // TODO check if module bindings in panel differ from what's stored in the settings
     }
 
     return false;
