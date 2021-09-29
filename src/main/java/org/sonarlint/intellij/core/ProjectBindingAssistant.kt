@@ -82,7 +82,7 @@ open class ProjectBindingAssistant(private val title: String,
     private fun bindProject(project: Project, projectKey: String, connection: ServerConnection): BoundProject? {
         val confirmed = modalPresenter.showConfirmModal(title, "You are going to bind current project to '${connection.hostUrl}'. Do you agree?", "Yes")
         if (confirmed) {
-            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey)
+            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
             return BoundProject(project, connection)
         }
         return null
