@@ -20,20 +20,23 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
-
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
@@ -154,10 +157,23 @@ public class ProjectBindingManager {
     }
   }
 
-  public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey) {
+  public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
     SonarLintEngine previousEngine = getEngineIfStarted();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     projectSettings.bindTo(connection, projectKey);
+    moduleBindingsOverrides.entrySet().forEach(e -> {
+      SonarLintModuleSettings moduleSettings = getSettingsFor(e.getKey());
+      moduleSettings.overrideProjectBinding(e.getValue());
+    });
+
+    Module[] allModules = ModuleManager.getInstance(myProject).getModules();
+    Stream<Module> modulesToClearOverride = Stream.of(allModules)
+      .filter(m -> !moduleBindingsOverrides.containsKey(m));
+    modulesToClearOverride.forEach(m -> {
+      SonarLintModuleSettings moduleSettings = getSettingsFor(m);
+      moduleSettings.clearBindingOverride();
+    });
+
     SonarLintProjectNotifications.get(myProject).reset();
     ConnectedSonarLintEngine newEngine = getConnectedEngineSkipChecks();
     if (previousEngine != newEngine) {
@@ -179,5 +195,11 @@ public class ProjectBindingManager {
     if (previousEngine != standaloneEngine) {
       myProject.getMessageBus().syncPublisher(ProjectEngineListener.TOPIC).engineChanged(previousEngine, standaloneEngine);
     }
+  }
+
+  public Map<Module, SonarLintModuleSettings> getModuleOverrides() {
+    return Stream.of(ModuleManager.getInstance(myProject).getModules())
+      .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
+      .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
   }
 }

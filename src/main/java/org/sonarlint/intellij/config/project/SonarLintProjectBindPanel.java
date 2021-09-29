@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.progress.ProgressManager;
@@ -59,6 +60,7 @@ import javax.swing.border.Border;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -84,6 +86,9 @@ public class SonarLintProjectBindPanel {
   private JButton searchProjectButton;
 
   private Project project;
+  private JLabel connectionListLabel;
+  private JLabel projectKeyLabel;
+  private ModuleBindingPanel moduleBindingPanel;
 
   public JPanel create(Project project) {
     this.project = project;
@@ -92,20 +97,25 @@ public class SonarLintProjectBindPanel {
     bindEnable.addItemListener(new BindItemListener());
     createBindPanel();
 
+    moduleBindingPanel = new ModuleBindingPanel(project, () -> isBindingEnabled() ? getSelectedConnection() : null);
+
     rootPanel.add(bindEnable, BorderLayout.NORTH);
     rootPanel.add(bindPanel, BorderLayout.CENTER);
+    rootPanel.add(moduleBindingPanel.getRootPanel(), BorderLayout.SOUTH);
     return rootPanel;
   }
 
-  public void load(Collection<ServerConnection> connections, boolean enabled, @Nullable String selectedConnectionId, @Nullable String selectedProjectKey) {
+  public void load(Collection<ServerConnection> connections, SonarLintProjectSettings projectSettings, Map<Module, SonarLintModuleSettings> moduleSettings) {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    this.bindEnable.setSelected(enabled);
+    this.bindEnable.setSelected(projectSettings.isBindingEnabled());
 
     connectionComboBox.removeAllItems();
-    setConnectionList(connections, selectedConnectionId);
+    setConnectionList(connections, projectSettings.getConnectionName());
+    String selectedProjectKey = projectSettings.getProjectKey();
     if (selectedProjectKey != null) {
       projectKeyTextField.setText(selectedProjectKey);
     }
+    moduleBindingPanel.load(moduleSettings);
   }
 
   @CheckForNull
@@ -220,12 +230,12 @@ public class SonarLintProjectBindPanel {
     configureConnectionButton.setText("Configure the connection...");
 
     connectionComboBox = new ComboBox<>();
-    JLabel connectionListLabel = new JLabel("Connection:");
+    connectionListLabel = new JLabel("Connection:");
 
     connectionComboBox.setRenderer(new ServerComboBoxRenderer());
     connectionComboBox.addItemListener(new ServerItemListener());
 
-    JLabel projectListLabel = new JLabel("Project:");
+    projectKeyLabel = new JLabel("Project:");
     projectKeyTextField = new JBTextField();
     projectKeyTextField.getEmptyText().setText("Input project key or search one");
 
@@ -259,7 +269,7 @@ public class SonarLintProjectBindPanel {
     bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
 
-    bindPanel.add(projectListLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+    bindPanel.add(projectKeyLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
     bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
@@ -289,6 +299,10 @@ public class SonarLintProjectBindPanel {
 
   public boolean isBindingEnabled() {
     return bindEnable.isSelected();
+  }
+
+  public List<ModuleBindingPanel.ModuleBinding> getModuleBindings() {
+    return moduleBindingPanel.getModuleBindings();
   }
 
   /**
@@ -342,8 +356,13 @@ public class SonarLintProjectBindPanel {
       boolean bound = e.getStateChange() == ItemEvent.SELECTED;
 
       bindPanel.setEnabled(bound);
+      connectionListLabel.setEnabled(bound);
+      projectKeyLabel.setEnabled(bound);
+      projectKeyTextField.setEnabled(bound);
+      searchProjectButton.setEnabled(bound);
       connectionComboBox.setEnabled(bound);
       configureConnectionButton.setEnabled(bound);
+      moduleBindingPanel.setEnabled(bound);
     }
   }
 }
