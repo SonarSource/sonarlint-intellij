@@ -68,7 +68,6 @@ class CLionTests : BaseUiTest() {
         openFile("main.cpp")
 
         verifyCurrentFileTabContainsMessages(
-            this,
             "Found 5 issues in 1 file",
             "main.cpp",
             "array designators are a C99 extension",
@@ -77,20 +76,6 @@ class CLionTests : BaseUiTest() {
             "Use \"std::array\" or \"std::vector\" instead of a C-style array.",
             "unused variable 's'"
         )
-    }
-
-    private fun verifyCurrentFileTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
-        with(remoteRobot) {
-            idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
-                    tabTitleContains("Current file") { select() }
-                    content("SonarLintIssuesPanel") {
-                        expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
-                    }
-                }
-            }
-        }
     }
 
 }

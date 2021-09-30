@@ -23,11 +23,13 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
 import com.intellij.remoterobot.fixtures.JListFixture
 import com.intellij.remoterobot.utils.waitFor
+import org.assertj.core.api.Assertions
 import org.assertj.swing.timing.Pause
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
 import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
+import org.sonarlint.intellij.its.fixtures.PreferencesDialog
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -117,18 +119,32 @@ open class BaseUiTest {
             idea {
                 runJs(
                     """
-          const contentRoots = com.intellij.openapi.roots.ProjectRootManager.getInstance(component.project).getContentRoots();
-          for (let i = 0; i < contentRoots.length; i++) {
-            const file = contentRoots[i].findFileByRelativePath("$filePath");
-            if (file) {
-              new com.intellij.openapi.fileEditor.OpenFileDescriptor(component.project, file, 0).navigate(true);
-              break;
-            }
-          }
-        """, true
+                        const file = component.project.getBaseDir().findFileByRelativePath("$filePath");
+                        if (file) {
+                            const openDescriptor = new com.intellij.openapi.fileEditor.OpenFileDescriptor(component.project, file);
+                            com.intellij.openapi.application.ApplicationManager.getApplication().invokeLater(() => openDescriptor.navigate(true));
+                        }
+                        else {
+                            throw "Cannot open file '" + $filePath +"': not found";
+                        }
+        """, false
                 )
                 waitFor(Duration.ofSeconds(10)) { editor(fileName).isShowing }
                 waitBackgroundTasksFinished()
+            }
+        }
+    }
+
+    protected fun verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
+        with(remoteRobot) {
+            idea {
+                toolWindow("SonarLint") {
+                    ensureOpen()
+                    tabTitleContains("Current file") { select() }
+                    content("SonarLintIssuesPanel") {
+                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                    }
+                }
             }
         }
     }
@@ -146,38 +162,56 @@ open class BaseUiTest {
         }
     }
 
-    private fun clearConnections() {
+    private fun settings(function: PreferencesDialog.() -> Unit) {
         with(remoteRobot) {
-            welcomeFrame {
-                openPreferences()
-                preferencesDialog {
-                    // let the dialog settle (if we type the search query too soon it might be cleared for no reason)
-                    Pause.pause(2000)
-
-                    // Search for SonarLint because sometimes it is off the screen
-                    search("SonarLint")
-
-                    tree {
-                        waitUntilLoaded()
-                        // little trick to check if the search has been applied
-                        waitFor(Duration.ofSeconds(10), Duration.ofSeconds(1)) { collectRows().size in 1..7 }
-                        clickPath("Tools", "SonarLint")
-                    }
-
-                    val removeButton = actionButton(byTooltipText("Remove"))
-                    jList(JListFixture.byType(), Duration.ofSeconds(20)) {
-                        while (collectItems().isNotEmpty()) {
-                            removeButton.clickWhenEnabled()
-                            optionalStep {
-                                dialog("Connection In Use") {
-                                    button("Yes").click()
-                                }
-                            }
-                        }
-                    }
-                    pressOk()
+            try {
+                welcomeFrame {
+                    openPreferences()
+                }
+            } catch (e: Exception) {
+                idea {
+                    openSettings()
                 }
             }
+            preferencesDialog {
+                function(this)
+            }
+        }
+    }
+
+    protected fun sonarLintGlobalSettings(function: PreferencesDialog.() -> Unit) {
+        settings {
+            // let the dialog settle (if we type the search query too soon it might be cleared for no reason)
+            Pause.pause(2000)
+
+            // Search for SonarLint because sometimes it is off the screen
+            search("SonarLint")
+
+            tree {
+                waitUntilLoaded()
+                // little trick to check if the search has been applied
+                waitFor(Duration.ofSeconds(10), Duration.ofSeconds(1)) { collectRows().size in 1..8 }
+                clickPath("Tools", "SonarLint")
+            }
+
+            function(this)
+        }
+    }
+
+    private fun clearConnections() {
+        sonarLintGlobalSettings {
+            val removeButton = actionButton(byTooltipText("Remove"))
+            jList(JListFixture.byType(), Duration.ofSeconds(20)) {
+                while (collectItems().isNotEmpty()) {
+                    removeButton.clickWhenEnabled()
+                    optionalStep {
+                        dialog("Connection In Use") {
+                            button("Yes").click()
+                        }
+                    }
+                }
+            }
+            pressOk()
         }
     }
 
