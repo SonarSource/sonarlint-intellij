@@ -19,9 +19,16 @@
  */
 package org.sonarlint.intellij.config.module;
 
+import org.jetbrains.annotations.NotNull;
+
 public final class SonarLintModuleSettings {
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
+  private String projectKey = null;
+
+  public String getProjectKey() {
+    return projectKey;
+  }
 
   public String getSqPathPrefix() {
     return sqPathPrefix;
@@ -38,4 +45,17 @@ public final class SonarLintModuleSettings {
   public void setIdePathPrefix(String idePathPrefix) {
     this.idePathPrefix = idePathPrefix;
   }
+
+  public boolean isBound() {
+    return projectKey != null;
+  }
+
+  public void bindTo(@NotNull String projectKey) {
+    this.projectKey = projectKey;
+  }
+
+  public void unbind() {
+    this.projectKey = null;
+  }
+
 }

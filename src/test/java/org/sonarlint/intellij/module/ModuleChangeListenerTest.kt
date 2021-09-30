@@ -34,6 +34,7 @@ import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.capture
+import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.ProjectEngineListener
@@ -46,6 +47,7 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         `when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
+        `when`(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
         moduleChangeListener = ModuleChangeListener(project)
     }
 
@@ -53,7 +55,7 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     fun should_declare_module_on_engine_when_module_added_to_project() {
         moduleChangeListener.moduleAdded(project, module)
 
-        verify(fakeEngine).declareModule(capture(moduleInfoCaptor))
+        verify(moduleFakeEngine).declareModule(capture(moduleInfoCaptor))
         val moduleInfo = moduleInfoCaptor.value
         assertThat(moduleInfo.key()).isEqualTo(module)
     }
@@ -62,7 +64,7 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     fun should_stop_module_on_engine_when_module_removed_from_project() {
         moduleChangeListener.moduleRemoved(project, module)
 
-        verify(fakeEngine).stopModule(eq(module))
+        verify(moduleFakeEngine).stopModule(eq(module))
     }
 
     @Test
@@ -90,10 +92,16 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     private lateinit var projectBindingManager: ProjectBindingManager
 
     @Mock
+    private lateinit var moduleBindingManager: ModuleBindingManager
+
+    @Mock
     private lateinit var fakeEngine: SonarLintEngine
 
     @Mock
     private lateinit var otherFakeEngine: SonarLintEngine
+
+    @Mock
+    private lateinit var moduleFakeEngine: SonarLintEngine
 
     @Captor
     private lateinit var moduleInfoCaptor: ArgumentCaptor<ModuleInfo>
