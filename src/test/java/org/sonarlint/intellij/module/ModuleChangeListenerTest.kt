@@ -51,7 +51,6 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         moduleBindingManager = ModuleBindingManager(module) { engineManager }
         replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
-        //`when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
         `when`(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
         moduleChangeListener = ModuleChangeListener(project)
     }
