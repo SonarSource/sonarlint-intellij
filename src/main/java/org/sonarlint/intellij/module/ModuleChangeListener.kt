@@ -32,9 +32,6 @@ import org.sonarlint.intellij.util.ThreadPoolExecutor
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
-private fun getEngineIfStarted(project: Project) =
-        getService(project, ProjectBindingManager::class.java).engineIfStarted
-
 private fun getEngineIfStarted(module: Module) =
         getService(module, ModuleBindingManager::class.java).engineIfStarted
 
@@ -73,7 +70,7 @@ object Modules {
 
 class ProjectClosedListener : ProjectManagerListener {
     override fun projectClosing(project: Project) {
-        Modules.removeAllModules(project, getEngineIfStarted(project))
+        ModuleManager.getInstance(project).modules.forEach { Modules.removeModule(getEngineIfStarted(it), it) }
     }
 }
 

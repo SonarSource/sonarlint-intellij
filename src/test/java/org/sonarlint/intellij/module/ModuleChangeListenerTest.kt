@@ -36,17 +36,22 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import java.util.concurrent.CompletableFuture
+import java.util.function.Supplier
 
 @RunWith(MockitoJUnitRunner::class)
 class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     @Before
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
-        `when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
+        moduleBindingManager = ModuleBindingManager(module) { engineManager }
+        replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
+        //`when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
         `when`(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
         moduleChangeListener = ModuleChangeListener(project)
     }
@@ -71,7 +76,7 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     fun should_stop_modules_on_engine_when_project_is_closed() {
         ApplicationManager.getApplication().messageBus.syncPublisher(ProjectManager.TOPIC).projectClosing(project)
 
-        verify(fakeEngine).stopModule(eq(module))
+        verify(moduleFakeEngine).stopModule(eq(module))
     }
 
     @Test
@@ -92,9 +97,6 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     private lateinit var projectBindingManager: ProjectBindingManager
 
     @Mock
-    private lateinit var moduleBindingManager: ModuleBindingManager
-
-    @Mock
     private lateinit var fakeEngine: SonarLintEngine
 
     @Mock
@@ -102,6 +104,11 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
 
     @Mock
     private lateinit var moduleFakeEngine: SonarLintEngine
+
+    @Mock
+    private lateinit var engineManager: SonarLintEngineManager
+
+    private lateinit var moduleBindingManager: ModuleBindingManager
 
     @Captor
     private lateinit var moduleInfoCaptor: ArgumentCaptor<ModuleInfo>

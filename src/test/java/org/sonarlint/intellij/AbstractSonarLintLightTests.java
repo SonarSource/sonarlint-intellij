@@ -24,6 +24,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.components.ComponentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -95,6 +96,10 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   protected <T> void replaceProjectService(Class<T> clazz, T newInstance) {
     ((ComponentManagerImpl) getProject()).replaceServiceInstance(clazz, newInstance, disposable);
+  }
+
+  protected <T> void replaceModuleService(Class<T> clazz, T newInstance) {
+    ((ComponentManagerImpl) getModule()).replaceServiceInstance(clazz, newInstance, disposable);
   }
 
   public SonarLintGlobalSettings getGlobalSettings() {

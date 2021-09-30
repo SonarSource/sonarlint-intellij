@@ -48,7 +48,7 @@ public class ModuleBindingManager {
   }
 
   @NonInjectable
-  ModuleBindingManager(Module module, Supplier<SonarLintEngineManager> engineManagerSupplier) {
+  public ModuleBindingManager(Module module, Supplier<SonarLintEngineManager> engineManagerSupplier) {
     this.module = module;
     this.engineManagerSupplier = engineManagerSupplier;
   }
@@ -58,7 +58,7 @@ public class ModuleBindingManager {
     SonarLintModuleSettings moduleSettings = getSettingsFor(module);
     SonarLintProjectSettings projectSettings = getSettingsFor(module.getProject());
     String defaultProjectKey = projectSettings.getProjectKey();
-    if(moduleSettings.isBound()) {
+    if (moduleSettings.isBound()) {
       return new ProjectBinding(moduleSettings.getProjectKey(), moduleSettings.getSqPathPrefix(), moduleSettings.getIdePathPrefix());
     }
     // checking same variable twice here - not good
@@ -103,7 +103,7 @@ public class ModuleBindingManager {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
     SonarLintModuleSettings moduleSettings = getSettingsFor(module);
     SonarLintProjectSettings projectSettings = getSettingsFor(module.getProject());
-    if (moduleSettings.isBound()) {
+    if (moduleSettings.isBound() || projectSettings.isBound()) {
       String connectionId = projectSettings.getConnectionName();
       return engineManager.getConnectedEngineIfStarted(requireNonNull(connectionId));
     }
