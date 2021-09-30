@@ -44,6 +44,8 @@ fun ContainerFixture.jRadioButtons() = findAll<JRadioButtonFixture>(byXpath("//d
 
 fun ContainerFixture.jbTextField() = findElement<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
 
+fun ContainerFixture.jbTable() = findElement<JBTableFixture>(byXpath("//div[@class='JBTable']"))
+
 fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JTextField']"))
 
 fun ActionButtonFixture.clickWhenEnabled() {
