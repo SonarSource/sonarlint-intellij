@@ -26,7 +26,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ModuleBindingManager
-import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarlint.intellij.util.ThreadPoolExecutor
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo

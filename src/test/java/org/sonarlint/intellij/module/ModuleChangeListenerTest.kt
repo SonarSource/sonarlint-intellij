@@ -41,8 +41,6 @@ import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
-import java.util.concurrent.CompletableFuture
-import java.util.function.Supplier
 
 @RunWith(MockitoJUnitRunner::class)
 class ModuleChangeListenerTest : AbstractSonarLintLightTests() {

@@ -44,9 +44,9 @@ import static org.mockito.Mockito.when;
 public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager;
 
-  private final StandaloneSonarLintEngine standaloneEngine = mock(StandaloneSonarLintEngine.class);
-  private final ConnectedSonarLintEngine connectedEngine = mock(ConnectedSonarLintEngine.class);
-  private final SonarLintEngineManager engineManager = mock(SonarLintEngineManager.class);
+  private StandaloneSonarLintEngine standaloneEngine = mock(StandaloneSonarLintEngine.class);
+  private ConnectedSonarLintEngine connectedEngine = mock(ConnectedSonarLintEngine.class);
+  private SonarLintEngineManager engineManager = mock(SonarLintEngineManager.class);
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
