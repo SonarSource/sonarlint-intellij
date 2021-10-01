@@ -41,6 +41,7 @@ import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
 @RunWith(MockitoJUnitRunner::class)
 class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
@@ -49,7 +50,8 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         moduleBindingManager = ModuleBindingManager(module) { engineManager }
         replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
-        `when`(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
+        //`when`(engineManager.standaloneEngineIfStarted).thenReturn(moduleFakeEngine)
+        `when`(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine);
         moduleChangeListener = ModuleChangeListener(project)
     }
 
@@ -100,11 +102,12 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     private lateinit var otherFakeEngine: SonarLintEngine
 
     @Mock
-    private lateinit var moduleFakeEngine: SonarLintEngine
+    private lateinit var moduleFakeEngine: ConnectedSonarLintEngine
 
     @Mock
     private lateinit var engineManager: SonarLintEngineManager
 
+    @Mock
     private lateinit var moduleBindingManager: ModuleBindingManager
 
     @Captor
