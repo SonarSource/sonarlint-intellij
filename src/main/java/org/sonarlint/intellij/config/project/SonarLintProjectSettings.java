@@ -27,11 +27,7 @@ import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import com.intellij.openapi.module.Module;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.core.ModuleBindingManager;
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 public final class SonarLintProjectSettings {
 
