@@ -17,42 +17,26 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.config.module;
+package org.sonarlint.intellij.config.module
 
-public final class SonarLintModuleSettings {
-  private String sqPathPrefix = "";
-  private String idePathPrefix = "";
-  private String projectKey = "";
 
-  public String getProjectKey() {
-    return projectKey;
-  }
+import org.assertj.core.api.AssertionsForClassTypes.assertThat
+import org.junit.Test
 
-  public void overrideProjectBinding(String projectKey) {
-    this.projectKey = projectKey;
-  }
+class SonarLintModuleSettingsTest {
 
-  public boolean isProjectBindingOverridden() {
-    return !projectKey.equals("");
-  }
+    @Test
+    fun bindingRoundTrip() {
+        val settings = SonarLintModuleSettings()
+        assertThat(settings.projectKey).isEmpty()
+        assertThat(settings.isProjectBindingOverridden).isFalse
 
-  public void clearBindingOverride() {
-    this.projectKey = "";
-  }
+        settings.overrideProjectBinding("project1")
+        assertThat(settings.projectKey).isEqualTo("project1")
+        assertThat(settings.isProjectBindingOverridden).isTrue
 
-  public String getSqPathPrefix() {
-    return sqPathPrefix;
-  }
-
-  public void setSqPathPrefix(String sqPathPrefix) {
-    this.sqPathPrefix = sqPathPrefix;
-  }
-
-  public String getIdePathPrefix() {
-    return idePathPrefix;
-  }
-
-  public void setIdePathPrefix(String idePathPrefix) {
-    this.idePathPrefix = idePathPrefix;
-  }
+        settings.clearBindingOverride()
+        assertThat(settings.projectKey).isEmpty()
+        assertThat(settings.isProjectBindingOverridden).isFalse
+    }
 }
