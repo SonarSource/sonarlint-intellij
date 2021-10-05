@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.BrowserHyperlinkListener;
@@ -59,25 +60,27 @@ public class SonarLintRulePanel {
   private JEditorPane editor;
   private RuleDescriptionHyperLinkListener ruleDescriptionHyperLinkListener;
   private String currentRuleKey;
+  private Module currentModule;
 
   public SonarLintRulePanel(Project project) {
     this.project = project;
     panel = new JPanel(new BorderLayout());
-    setRuleKey(null);
+    setRuleKey(null,null);
     show();
   }
 
-  public void setRuleKey(@Nullable String ruleKey) {
-    if (Objects.equals(currentRuleKey, ruleKey)) {
+  public void setRuleKey(@Nullable Module module, @Nullable String ruleKey) {
+    if (Objects.equals(currentModule, module) && Objects.equals(currentRuleKey, ruleKey)) {
       return;
     }
     this.currentRuleKey = ruleKey;
-    if (ruleKey == null) {
+    this.currentModule = module;
+    if (module == null || ruleKey == null) {
       nothingToDisplay(false);
       return;
     }
     try {
-      SonarLintFacade facade = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade();
+      SonarLintFacade facade = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade(module);
       RuleDetails rule = facade.getActiveRuleDetails(ruleKey);
 
       String description = facade.getDescription(ruleKey);

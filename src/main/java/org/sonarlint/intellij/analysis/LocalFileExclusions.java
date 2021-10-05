@@ -258,11 +258,11 @@ public class LocalFileExclusions {
   private void filterWithServerExclusions(BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler, Map<Module, Collection<VirtualFile>> filesByModule)
     throws InvalidBindingException {
     ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
-    SonarLintFacade sonarLintFacade = projectBindingManager.getFacade();
     // Note: iterating over a copy of keys, because removal of last value removes the key,
     // resulting in ConcurrentModificationException
     List<Module> modules = new ArrayList<>(filesByModule.keySet());
     for (Module module : modules) {
+      SonarLintFacade sonarLintFacade = projectBindingManager.getFacade(module);
       Collection<VirtualFile> virtualFiles = filesByModule.get(module);
       Predicate<VirtualFile> testPredicate = f -> ReadAction.compute(() -> TestSourcesFilter.isTestSources(f, module.getProject()));
       Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
