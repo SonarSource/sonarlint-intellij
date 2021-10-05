@@ -281,14 +281,6 @@
                 icon="SonarLintIcons.SUSPEND">
         </action>
 
-        <action id="SonarLint.toolwindow.Analyzers"
-                class="org.sonarlint.intellij.actions.SonarShowCodeAnalyzers"
-                text="Show more information"
-                description="Show more information"
-                icon="SonarLintIcons.INFO">
-        </action>
-
-
         <action id="SonarLint.toolwindow.Configure"
                 class="org.sonarlint.intellij.actions.SonarConfigureProject"
                 text="Configure SonarLint"
