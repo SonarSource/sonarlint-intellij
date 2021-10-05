@@ -19,9 +19,29 @@
  */
 package org.sonarlint.intellij.config.module;
 
+
+import org.sonarsource.sonarlint.core.util.StringUtils;
+
 public final class SonarLintModuleSettings {
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
+  private String projectKey = "";
+
+  public String getProjectKey() {
+    return projectKey;
+  }
+
+  public void overrideProjectBinding(String projectKey) {
+    this.projectKey = projectKey;
+  }
+
+  public boolean isProjectBindingOverridden() {
+    return !StringUtils.isBlank(projectKey);
+  }
+
+  public void clearBindingOverride() {
+    this.projectKey = "";
+  }
 
   public String getSqPathPrefix() {
     return sqPathPrefix;
