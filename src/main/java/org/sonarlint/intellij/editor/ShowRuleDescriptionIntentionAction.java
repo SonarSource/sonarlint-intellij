@@ -67,7 +67,7 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
     IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
     Collection<LiveIssue> liveIssues = issueManager.getForFile(file.getVirtualFile());
     Optional<LiveIssue> liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
-    if(!liveIssue.isPresent()) {
+    if (!liveIssue.isPresent()) {
       return;
     }
     UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)

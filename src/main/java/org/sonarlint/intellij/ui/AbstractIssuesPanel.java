@@ -26,7 +26,9 @@ import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
@@ -34,8 +36,6 @@ import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
@@ -108,7 +108,8 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
       LiveIssue issue = selectedNodes[0].issue();
-      rulePanel.setRuleKey(issue.getRuleKey());
+      Module moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(issue.psiFile().getVirtualFile());
+      rulePanel.setRuleKey(moduleForFile, issue.getRuleKey());
       SonarLintUtils.getService(project, EditorDecorator.class).highlightIssue(issue);
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
       flowsTreeBuilder.populateForIssue(issue);
@@ -116,7 +117,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     } else {
       flowsTreeBuilder.clearFlows();
       flowsTree.getEmptyText().setText("No issue selected");
-      rulePanel.setRuleKey(null);
+      rulePanel.setRuleKey(null, null);
       EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
       highlighting.removeHighlights();
     }

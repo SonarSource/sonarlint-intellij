@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
@@ -67,15 +68,17 @@ public class ProjectBindingManager {
    *
    * @throws InvalidBindingException If current project binding is invalid
    */
-  public SonarLintFacade getFacade() throws InvalidBindingException {
-    return getFacade(false);
+  public SonarLintFacade getFacade(Module module) throws InvalidBindingException {
+    return getFacade(module, false);
   }
 
-  public SonarLintFacade getFacade(boolean logDetails) throws InvalidBindingException {
+  public SonarLintFacade getFacade(Module module, boolean logDetails) throws InvalidBindingException {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+    ModuleBindingManager moduleBindingManager = SonarLintUtils.getService(module, ModuleBindingManager.class);
+    // FIXME load binding from moduleBindingManager
     if (projectSettings.isBindingEnabled()) {
       String connectionId = projectSettings.getConnectionName();
       String projectKey = projectSettings.getProjectKey();

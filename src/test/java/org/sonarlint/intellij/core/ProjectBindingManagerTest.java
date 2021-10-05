@@ -65,7 +65,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_create_facade_standalone() throws InvalidBindingException {
-    assertThat(projectBindingManager.getFacade()).isInstanceOf(StandaloneSonarLintFacade.class);
+    assertThat(projectBindingManager.getFacade(getModule())).isInstanceOf(StandaloneSonarLintFacade.class);
   }
 
   @Test
@@ -90,7 +90,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setProjectKey("project1");
     getProjectSettings().setConnectionName("server1");
 
-    assertThat(projectBindingManager.getFacade()).isInstanceOf(ConnectedSonarLintFacade.class);
+    assertThat(projectBindingManager.getFacade(getModule())).isInstanceOf(ConnectedSonarLintFacade.class);
   }
 
   @Test
@@ -121,7 +121,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setBindingEnabled(true);
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
-    assertThat(projectBindingManager.getFacade()).isNotNull();
+    assertThat(projectBindingManager.getFacade(getModule())).isNotNull();
   }
 
   @Test
@@ -132,7 +132,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
-    assertThat(projectBindingManager.getFacade()).isNotNull();
+    assertThat(projectBindingManager.getFacade(getModule())).isNotNull();
   }
 
   @Test
