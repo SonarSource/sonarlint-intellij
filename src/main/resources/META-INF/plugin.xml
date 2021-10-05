@@ -49,7 +49,7 @@
             </p>
             <br/>
             <p>
-                SonarLint requires your IDE to be run with a JVM 8+ (this is the case for all recent JetBrains IDE);
+                SonarLint requires your IDE to be run with a JVM 11+ (this is the case for all recent JetBrains IDE);
                 the analysis of JavaScript and TypeScript requires Node.js >= 10.12 to be installed on your computer.
             </p>
         </html>
@@ -57,6 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>6.0 - Change plugin JVM runtime requirement to 11+</li>
         <li>5.3 - Introduce quick fixes for 40 Java rules. Remote and WSL toolchains support for CLion. 1 new rule for Java, 4 for C/C++, 5 for secrets detection. Rules improvements for Java and C++.</li>
         <li>5.2 - New Java 16 specific rules. Rules improvements for PHP. Performance improvement for Python analysis. Many bug fixes and small improvements.</li>
         <li>5.1 - Support TS 4.3 and Vue.js. MSVC support for CLion. Rules improvements for Java, Kotlin, C/C++ and JS/TS.</li>

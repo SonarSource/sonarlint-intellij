@@ -22,7 +22,6 @@ package org.sonarlint.intellij.issue
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.psi.PsiFile
-import org.sonar.api.batch.fs.TextPointer
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.getDocument
 import org.sonarsource.sonarlint.core.client.api.common.ClientInputFileEdit
@@ -77,7 +76,7 @@ fun aFileEdit(file: ClientInputFile, textEdits: List<TextEdit>) = object : Clien
     override fun textEdits() = textEdits
 }
 
-fun aTextEdit(range: org.sonar.api.batch.fs.TextRange, newText: String) = object : TextEdit {
+fun aTextEdit(range: TextRange, newText: String) = object : TextEdit {
     override fun range() = range
     override fun newText() = newText
 }
@@ -87,14 +86,5 @@ fun aTextRange(
     startLineOffset: Int,
     endLine: Int,
     endLineOffset: Int
-) = object : org.sonar.api.batch.fs.TextRange {
-    override fun start() = aTextPointer(startLine, startLineOffset)
-    override fun end() = aTextPointer(endLine, endLineOffset)
-    override fun overlap(p0: org.sonar.api.batch.fs.TextRange) = false
-}
+) = TextRange(startLine, startLineOffset, endLine, endLineOffset)
 
-fun aTextPointer(line: Int, lineOffset: Int) = object : TextPointer {
-    override fun compareTo(other: TextPointer?) = 0
-    override fun line() = line
-    override fun lineOffset() = lineOffset
-}
