@@ -165,8 +165,7 @@ public class ProjectBindingManager {
     if (previousEngine != newEngine) {
       myProject.getMessageBus().syncPublisher(ProjectEngineListener.TOPIC).engineChanged(previousEngine, newEngine);
     }
-    BindingStorageUpdateTask task = new BindingStorageUpdateTask(newEngine, connection,
-      Collections.singletonMap(projectKey, Collections.singletonList(myProject)), true);
+    BindingStorageUpdateTask task = new BindingStorageUpdateTask(newEngine, connection, false, true, myProject);
     ProgressManager.getInstance().run(task.asModal());
     myProject.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
   }
