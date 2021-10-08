@@ -28,20 +28,25 @@ import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.messages.Topic;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -54,20 +59,25 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
 import org.sonarsource.sonarlint.core.client.api.connected.UpdateResult;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
-import org.sonarsource.sonarlint.core.client.api.exceptions.SonarLintException;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
+
+import static java.util.stream.Collectors.toSet;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class BindingStorageUpdateTask {
   private final ConnectedSonarLintEngine engine;
   private final ServerConnection connection;
-  private final Map<String, List<Project>> projectsPerProjectKey;
-  private final boolean onlyModules;
+  private final boolean updateGlobalStorage;
+  private final boolean updateProjectsStorage;
+  private final Project onlyForProject;
 
-  public BindingStorageUpdateTask(ConnectedSonarLintEngine engine, ServerConnection connection, Map<String, List<Project>> projectsPerProjectKey, boolean onlyModules) {
+  public BindingStorageUpdateTask(ConnectedSonarLintEngine engine, ServerConnection connection, boolean updateGlobalStorage, boolean updateProjectsStorage,
+    @Nullable Project onlyForProject) {
     this.engine = engine;
     this.connection = connection;
-    this.projectsPerProjectKey = projectsPerProjectKey;
-    this.onlyModules = onlyModules;
+    this.updateGlobalStorage = updateGlobalStorage;
+    this.updateProjectsStorage = updateProjectsStorage;
+    this.onlyForProject = onlyForProject;
   }
 
   public Task.Modal asModal() {
@@ -89,14 +99,14 @@ public class BindingStorageUpdateTask {
   }
 
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Fetching data...");
+    indicator.setText("Update in progress...");
 
     try {
       indicator.setIndeterminate(false);
       TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, null);
 
       EndpointParams connectedModeEndpoint = connection.getEndpointParams();
-      if (!onlyModules) {
+      if (updateGlobalStorage) {
         UpdateResult updateResult = engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
         Collection<SonarAnalyzer> tooOld = updateResult.analyzers().stream()
           .filter(SonarAnalyzer::sonarlintCompatible)
@@ -105,20 +115,22 @@ public class BindingStorageUpdateTask {
         if (!tooOld.isEmpty()) {
           ApplicationManager.getApplication().invokeAndWait(() -> Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
         }
-        GlobalLogOutput.get().log("Server binding '" + connection.getName() + "' updated", LogOutput.Level.INFO);
+        GlobalLogOutput.get().log("Storage for connection '" + connection.getName() + "' updated", LogOutput.Level.INFO);
       }
 
-      updateProjects(connection, monitor);
+      if (updateProjectsStorage) {
+        updateProjectStorages(connection, monitor);
+      }
 
     } catch (CanceledException e) {
-      GlobalLogOutput.get().log("Update of server '" + connection.getName() + "' was cancelled", LogOutput.Level.INFO);
+      GlobalLogOutput.get().log("Update of storage for connection '" + connection.getName() + "' was cancelled", LogOutput.Level.INFO);
     } catch (Exception e) {
-      GlobalLogOutput.get().logError("Error updating from server '" + connection.getName() + "'", e);
-      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update binding for server connection '" + connection.getName() + "'");
+      GlobalLogOutput.get().logError("Error updating the storage for connection '" + connection.getName() + "'", e);
+      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update the binding for connection '" + connection.getName() + "'");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
         @Override
         public void doRun() {
-          Messages.showErrorDialog((Project) null, msg, "Update Failed");
+          Messages.showErrorDialog((Project) null, msg, "Binding Update Failed");
         }
       }, ModalityState.any());
     }
@@ -139,35 +151,32 @@ public class BindingStorageUpdateTask {
   }
 
   private static boolean tooOld(SonarAnalyzer analyzer) {
-    if (analyzer.minimumVersion() != null && analyzer.version() != null) {
-      Version minimum = Version.create(analyzer.minimumVersion());
-      Version version = Version.create(analyzer.version());
+    String minimumVersion = analyzer.minimumVersion();
+    String analyzerVersion = analyzer.version();
+    if (minimumVersion != null && analyzerVersion != null) {
+      Version minimum = Version.create(minimumVersion);
+      Version version = Version.create(analyzerVersion);
       return version.compareTo(minimum) < 0;
     }
     return false;
   }
 
   /**
-   * Updates all known projects belonging to a server configuration.
-   * It assumes that the server binding is updated.
+   * Updates all known projects belonging to a connection. Except if project class attribute is provided.
+   * It assumes that the global storage was updated previously.
    */
-  private void updateProjects(ServerConnection connection, TaskProgressMonitor monitor) {
-    Set<String> failedProjects = new LinkedHashSet<>();
-    for (Map.Entry<String, List<Project>> entry : projectsPerProjectKey.entrySet()) {
-      try {
-        updateProject(connection, entry.getValue(), monitor);
-      } catch (Throwable e) {
-        // in case of error, save project key and keep updating other projects
-        GlobalLogOutput.get().logError(e.getMessage(), e);
-        failedProjects.add(entry.getKey());
-      }
-    }
+  private void updateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor) {
+    Collection<Project> projectsToUpdate = collectProjectsToUpdate(connection);
 
-    if (!projectsPerProjectKey.isEmpty() && !failedProjects.isEmpty()) {
-      String errorMsg = "Failed to update the following projects. "
-        + "Please check if the server bindings are updated and the module key is correct: "
-        + failedProjects.toString();
-      GlobalLogOutput.get().log(errorMsg, LogOutput.Level.WARN);
+    List<ProjectStorageUpdateFailure> failures = tryUpdateProjectStorages(connection, monitor, projectsToUpdate);
+
+    projectsToUpdate.forEach(this::updatePathPrefixesForAllModules);
+    projectsToUpdate.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
+    projectsToUpdate.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
+
+    if (!failures.isEmpty()) {
+      String errorMsg = "Failed to update the storage for some projects: \n"
+        + failures.stream().map(f -> " - " + f.getReason().getMessage() + " (" + f.getProjectKey() + ")").collect(Collectors.joining("\n"));
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
         @Override
@@ -178,30 +187,38 @@ public class BindingStorageUpdateTask {
     }
   }
 
-  private void updateProject(ServerConnection connection, List<Project> projects, TaskProgressMonitor monitor) {
-    List<ProjectUpdateFailure> failures = new ArrayList<>();
-    projects.forEach(project -> {
-      Set<String> projectKeys = collectUniqueProjectKeysFromModuleBindings(project);
-      projectKeys.forEach(projectKeyFromModule -> {
-        try {
-          engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKeyFromModule, true, monitor);
-        } catch (SonarLintException e) {
-          String message = "Unable to update project " + projectKeyFromModule;
-          failures.add(new ProjectUpdateFailure(projectKeyFromModule, message, e));
-        }
-      });
+  private List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor, Collection<Project> projectsToUpdate) {
+    List<ProjectStorageUpdateFailure> failures = new ArrayList<>();
+
+    Set<String> projectKeysToUpdate = projectsToUpdate.stream()
+      .flatMap(p -> collectUniqueProjectKeysFromModuleBindings(p)
+        .stream())
+      .collect(toSet());
+
+    projectKeysToUpdate.forEach(projectKeyFromModule -> {
+      try {
+        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKeyFromModule, true, monitor);
+      } catch (Exception e) {
+        GlobalLogOutput.get().logError(e.getMessage(), e);
+        failures.add(new ProjectStorageUpdateFailure(projectKeyFromModule, e));
+      }
     });
 
-    if (!failures.isEmpty()) {
-      failures.forEach(failure -> {
-        // TODO display on frontend
-        GlobalLogOutput.get().log(failure.getMessage(), LogOutput.Level.WARN);
-      });
-    }
+    return failures;
+  }
 
-    projects.forEach(this::updatePathPrefixesForAllModules);
-    projects.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
-    projects.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
+  private Collection<Project> collectProjectsToUpdate(ServerConnection connection) {
+    Collection<Project> projectsToUpdate;
+    if (onlyForProject != null) {
+      projectsToUpdate = Collections.singleton(onlyForProject);
+    } else {
+      projectsToUpdate = Stream.of(ProjectManager.getInstance().getOpenProjects())
+        .filter(p -> {
+          SonarLintProjectSettings projectSettings = getSettingsFor(p);
+          return projectSettings.isBindingEnabled() && connection.getName().equals(projectSettings.getConnectionName());
+        }).collect(Collectors.toList());
+    }
+    return projectsToUpdate;
   }
 
   private static void notifyBindingStorageUpdated(Project project) {
@@ -246,30 +263,23 @@ public class BindingStorageUpdateTask {
     void updateFinished();
   }
 
-}
+  private static class ProjectStorageUpdateFailure {
 
-class ProjectUpdateFailure {
+    private final String projectKey;
+    private final Exception reason;
 
-  public ProjectUpdateFailure(String projectKey, String message, Exception reason) {
-    this.projectKey = projectKey;
-    this.message = message;
-    this.reason = reason;
+    public ProjectStorageUpdateFailure(String projectKey, Exception reason) {
+      this.projectKey = projectKey;
+      this.reason = reason;
+    }
+
+    public String getProjectKey() {
+      return projectKey;
+    }
+
+    public Exception getReason() {
+      return reason;
+    }
+
   }
-
-  public String getProjectKey() {
-    return projectKey;
-  }
-
-  public String getMessage() {
-    return message;
-  }
-
-  public Exception getReason() {
-    return reason;
-  }
-
-  private final String projectKey;
-  private final String message;
-  private final Exception reason;
-
 }

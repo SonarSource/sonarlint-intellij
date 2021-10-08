@@ -132,7 +132,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
       .setEditAction(e -> editSelectedConnection())
       .disableUpDownActions();
 
-    toolbarDecorator.setAddAction(new AddServerAction());
+    toolbarDecorator.setAddAction(new AddConnectionAction());
     toolbarDecorator.setRemoveAction(new RemoveServerAction());
 
     serversPanel.add(toolbarDecorator.createPanel(), BorderLayout.CENTER);
@@ -342,19 +342,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   }
 
   public static void updateServerBinding(ServerConnection connection, ConnectedSonarLintEngine engine, boolean onlyProjects) {
-    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-    Map<String, List<Project>> projectsPerModule = new HashMap<>();
-
-    for (Project openProject : openProjects) {
-      SonarLintProjectSettings projectSettings = getSettingsFor(openProject);
-      String projectKey = projectSettings.getProjectKey();
-      if (projectSettings.isBindingEnabled() && connection.getName().equals(projectSettings.getConnectionName()) && projectKey != null) {
-        List<Project> projects = projectsPerModule.computeIfAbsent(projectKey, k -> new ArrayList<>());
-        projects.add(openProject);
-      }
-    }
-
-    BindingStorageUpdateTask task = new BindingStorageUpdateTask(engine, connection, projectsPerModule, onlyProjects);
+    BindingStorageUpdateTask task = new BindingStorageUpdateTask(engine, connection, !onlyProjects, true, null);
     ProgressManager.getInstance().run(task.asBackground());
   }
 
@@ -383,7 +371,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     }
   }
 
-  private class AddServerAction implements AnActionButtonRunnable {
+  private class AddConnectionAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
       Set<String> existingNames = connections.stream().map(ServerConnection::getName).collect(Collectors.toSet());
@@ -401,7 +389,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
   private static void updateConnectionStorage(ServerConnection toUpdate) {
     SonarLintEngineManager serverManager = getService(SonarLintEngineManager.class);
-    BindingStorageUpdateTask task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(toUpdate.getName()), toUpdate, Collections.emptyMap(), false);
+    BindingStorageUpdateTask task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(toUpdate.getName()), toUpdate, true, false, null);
     ProgressManager.getInstance().run(task.asBackground());
   }
 
