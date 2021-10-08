@@ -55,7 +55,7 @@ public class ModuleBindingManager {
 
   @CheckForNull
   public ProjectBinding getBinding() {
-    String projectKey = resolveProjectKey(module);
+    String projectKey = resolveProjectKey();
     if (projectKey != null) {
       SonarLintModuleSettings moduleSettings = getSettingsFor(module);
       return new ProjectBinding(projectKey, moduleSettings.getSqPathPrefix(), moduleSettings.getIdePathPrefix());
@@ -64,7 +64,7 @@ public class ModuleBindingManager {
   }
 
   @CheckForNull
-  String resolveProjectKey(Module module) {
+  public String resolveProjectKey() {
     SonarLintModuleSettings moduleSettings = getSettingsFor(module);
     if (moduleSettings.isProjectBindingOverridden()) {
       return moduleSettings.getProjectKey();
@@ -78,7 +78,7 @@ public class ModuleBindingManager {
   }
 
   public void updatePathPrefixes(ConnectedSonarLintEngine engine) {
-    String projectKey = resolveProjectKey(module);
+    String projectKey = resolveProjectKey();
     if (projectKey == null) {
       throw new IllegalStateException("Project is not bound");
     }

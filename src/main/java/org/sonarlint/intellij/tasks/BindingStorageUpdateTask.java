@@ -30,7 +30,6 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.messages.Topic;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -39,11 +38,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -158,7 +155,7 @@ public class BindingStorageUpdateTask {
     Set<String> failedProjects = new LinkedHashSet<>();
     for (Map.Entry<String, List<Project>> entry : projectsPerProjectKey.entrySet()) {
       try {
-        updateProject(connection, entry.getKey(), entry.getValue(), monitor);
+        updateProject(connection, entry.getValue(), monitor);
       } catch (Throwable e) {
         // in case of error, save project key and keep updating other projects
         GlobalLogOutput.get().logError(e.getMessage(), e);
@@ -181,8 +178,7 @@ public class BindingStorageUpdateTask {
     }
   }
 
-  private void updateProject(ServerConnection connection, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
-    engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey, true, monitor);
+  private void updateProject(ServerConnection connection, List<Project> projects, TaskProgressMonitor monitor) {
     List<ProjectUpdateFailure> failures = new ArrayList<>();
     projects.forEach(project -> {
       Set<String> projectKeys = collectUniqueProjectKeysFromModuleBindings(project);
@@ -203,8 +199,7 @@ public class BindingStorageUpdateTask {
       });
     }
 
-    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + this.connection.getName() + "' updated", LogOutput.Level.INFO);
-    projects.forEach(this::updateSettingsForAllModules);
+    projects.forEach(this::updatePathPrefixesForAllModules);
     projects.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
     projects.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
   }
@@ -217,7 +212,7 @@ public class BindingStorageUpdateTask {
     if (!project.isDisposed()) {
       Module[] modules = ModuleManager.getInstance(project).getModules();
       for (Module m : modules) {
-        SonarLintUtils.getService(m, ModuleBindingManager.class).updateSettings(engine);
+        SonarLintUtils.getService(m, ModuleBindingManager.class).updatePathPrefixes(engine);
       }
     }
   }
@@ -226,7 +221,7 @@ public class BindingStorageUpdateTask {
     Module[] modules = ModuleManager.getInstance(project).getModules();
     Set<String> projectKeys = new HashSet<>();
     for (Module module : modules) {
-      String projectKey = Settings.getSettingsFor(module).getProjectKey();
+      String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();
       projectKeys.add(projectKey);
     }
     return projectKeys;
