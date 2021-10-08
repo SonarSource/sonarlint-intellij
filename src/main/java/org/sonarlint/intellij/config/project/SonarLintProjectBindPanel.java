@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.progress.ProgressManager;
@@ -59,6 +60,7 @@ import javax.swing.border.Border;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -103,7 +105,7 @@ public class SonarLintProjectBindPanel {
     return rootPanel;
   }
 
-  public void load(Collection<ServerConnection> connections, SonarLintProjectSettings projectSettings) {
+  public void load(Collection<ServerConnection> connections, SonarLintProjectSettings projectSettings, Map<Module, SonarLintModuleSettings> moduleSettings) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     this.bindEnable.setSelected(projectSettings.isBindingEnabled());
 
@@ -113,7 +115,7 @@ public class SonarLintProjectBindPanel {
     if (selectedProjectKey != null) {
       projectKeyTextField.setText(selectedProjectKey);
     }
-    moduleBindingPanel.load(projectSettings);
+    moduleBindingPanel.load(projectSettings, moduleSettings);
   }
 
   @CheckForNull

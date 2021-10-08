@@ -20,14 +20,21 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
+
 import java.awt.BorderLayout;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import javax.swing.JPanel;
+
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
 import static java.util.Optional.ofNullable;
@@ -65,9 +72,9 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     return root;
   }
 
-  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings) {
+  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings, Map<Module, SonarLintModuleSettings> moduleSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings);
+    bindPanel.load(servers, projectSettings, moduleSettings);
     exclusionsPanel.load(projectSettings);
   }
 
@@ -86,7 +93,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       for (ModuleBindingPanel.ModuleBinding binding : moduleBindings) {
         String moduleProjectKey = binding.getSonarProjectKey();
         if (moduleProjectKey == null || moduleProjectKey.isBlank()) {
-          throw new ConfigurationException("Project key for module '" + binding.getModuleName() + "' should not be empty");
+          throw new ConfigurationException("Project key for module '" + binding.getModule().getName() + "' should not be empty");
         }
       }
     }
@@ -95,8 +102,8 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
     ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
     if (bindingEnabled) {
-      bindingManager.bindTo(selectedConnection, selectedProjectKey);
-      // TODO save module bindings
+      Map<Module, String> moduleBindingsMap = moduleBindings.stream().collect(Collectors.toMap(b -> b.getModule(), b -> b.getSonarProjectKey()));
+      bindingManager.bindTo(selectedConnection, selectedProjectKey, moduleBindingsMap);
     } else {
       bindingManager.unbind();
     }
