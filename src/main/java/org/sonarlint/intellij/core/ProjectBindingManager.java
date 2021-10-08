@@ -24,7 +24,6 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -77,11 +76,10 @@ public class ProjectBindingManager {
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
     SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
-    ModuleBindingManager moduleBindingManager = SonarLintUtils.getService(module, ModuleBindingManager.class);
-    // FIXME load binding from moduleBindingManager
     if (projectSettings.isBindingEnabled()) {
+      ModuleBindingManager moduleBindingManager = SonarLintUtils.getService(module, ModuleBindingManager.class);
       String connectionId = projectSettings.getConnectionName();
-      String projectKey = projectSettings.getProjectKey();
+      String projectKey = moduleBindingManager.resolveProjectKey();
       checkBindingStatus(notifications, connectionId, projectKey);
       if (logDetails) {
         console.info(String.format("Using connection '%s' for project '%s'", connectionId, projectKey));
@@ -95,7 +93,7 @@ public class ProjectBindingManager {
 
   private ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
-    return engineManager.getConnectedEngine(getSettingsFor(myProject).getConnectionName());
+    return engineManager.getConnectedEngine(requireNonNull(getSettingsFor(myProject).getConnectionName()));
   }
 
   public ConnectedSonarLintEngine getConnectedEngine() throws InvalidBindingException {

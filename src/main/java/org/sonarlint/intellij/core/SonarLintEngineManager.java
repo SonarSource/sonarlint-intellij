@@ -135,6 +135,7 @@ public class SonarLintEngineManager implements Disposable {
     }
   }
 
+  @NotNull
   public synchronized ConnectedSonarLintEngine getConnectedEngine(String connectionId) {
     return connectedEngines.computeIfAbsent(connectionId, factory::createEngine);
   }
