@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project
 
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
@@ -39,6 +40,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings
 import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask
 import org.sonarsource.sonarlint.core.serverapi.project.ServerProject
@@ -83,7 +85,7 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
                 hasFocus: Boolean
             ) {
                 icon = AllIcons.Nodes.Module
-                append(module.moduleName, SimpleTextAttributes.REGULAR_ATTRIBUTES)
+                append(module.module.name, SimpleTextAttributes.REGULAR_ATTRIBUTES)
             }
         }
 
@@ -199,7 +201,7 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
         detailsContainer.repaint()
     }
 
-    fun load(projectSettings: SonarLintProjectSettings) {
+    fun load(projectSettings: SonarLintProjectSettings, moduleSettings: Map<Module, SonarLintModuleSettings>) {
         // TODO load from settings (and maybe clone data as it is mutable)
         val bindings = emptyList<ModuleBinding>()
         modulesListModel.add(bindings)
@@ -220,13 +222,13 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
         AnActionButtonRunnable {
         override fun run(t: AnActionButton) {
             val collectionListModel = modulesList.model as CollectionListModel<ModuleBinding>
-            val existingModuleNames = collectionListModel.items.map {it.moduleName}
+            val existingModuleNames = collectionListModel.items.map {it.module.name}
             val modulesToPickFrom = ModuleManager.getInstance(project).modules.filter { !existingModuleNames.contains(it.name) }
             val dialog = ChooseModulesDialog(modulesList, modulesToPickFrom.toMutableList(), "Select a module to bind")
             dialog.setSingleSelectionMode()
             dialog.show()
             dialog.chosenElements.firstOrNull()?.let {
-                collectionListModel.add(ModuleBinding(it.name))
+                collectionListModel.add(ModuleBinding(it))
                 modulesList.setSelectedIndex(modulesList.model.size - 1)
             }
         }
@@ -246,7 +248,7 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
     }
 
     data class ModuleBinding(
-        val moduleName: String,
+        val module: Module,
         var sonarProjectKey: String? = null
     )
 }

@@ -21,6 +21,8 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.ex.Settings;
@@ -28,6 +30,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 
@@ -36,6 +41,7 @@ import org.jetbrains.concurrency.Promise;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -107,9 +113,12 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     }
 
     getServersFromApplicationConfigurable()
-      .onProcessed(sonarQubeServers ->
-        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getServerConnections(), getSettingsFor(project))
-      );
+      .onProcessed(sonarQubeServers -> {
+        SonarLintProjectSettings projectSettings = getSettingsFor(project);
+        Map<Module, SonarLintModuleSettings> moduleSettings = Stream.of(ModuleManager.getInstance(project).getModules())
+          .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
+        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getServerConnections(), projectSettings, moduleSettings);
+      });
   }
 
   private static Promise<List<ServerConnection>> getServersFromApplicationConfigurable() {
