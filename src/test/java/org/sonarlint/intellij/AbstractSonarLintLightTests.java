@@ -77,6 +77,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
+    getModuleSettings().clearBindingOverride();
     if (!getProject().isDisposed()) {
       AnalysisStatus.get(getProject()).stopRun();
     }
@@ -95,6 +96,10 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   protected <T> void replaceProjectService(Class<T> clazz, T newInstance) {
     ((ComponentManagerImpl) getProject()).replaceServiceInstance(clazz, newInstance, disposable);
+  }
+
+  protected <T> void replaceModuleService(Class<T> clazz, T newInstance) {
+    ((ComponentManagerImpl) getModule()).replaceServiceInstance(clazz, newInstance, disposable);
   }
 
   public SonarLintGlobalSettings getGlobalSettings() {
