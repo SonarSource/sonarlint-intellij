@@ -77,7 +77,7 @@ public class ModuleBindingManager {
     return null;
   }
 
-  public void updateSettings(ConnectedSonarLintEngine engine) {
+  public void updatePathPrefixes(ConnectedSonarLintEngine engine) {
     String projectKey = resolveProjectKey(module);
     if (projectKey == null) {
       throw new IllegalStateException("Project is not bound");
