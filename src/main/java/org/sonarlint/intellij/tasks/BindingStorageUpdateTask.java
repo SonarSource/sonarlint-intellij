@@ -213,7 +213,7 @@ public class BindingStorageUpdateTask {
     project.getMessageBus().syncPublisher(Listener.TOPIC).updateFinished();
   }
 
-  private void updateSettingsForAllModules(Project project) {
+  private void updatePathPrefixesForAllModules(Project project) {
     if (!project.isDisposed()) {
       Module[] modules = ModuleManager.getInstance(project).getModules();
       for (Module m : modules) {
