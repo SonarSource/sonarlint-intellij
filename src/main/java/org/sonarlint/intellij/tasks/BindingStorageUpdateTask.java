@@ -30,14 +30,14 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.messages.Topic;
-
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -54,6 +54,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
 import org.sonarsource.sonarlint.core.client.api.connected.UpdateResult;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
+import org.sonarsource.sonarlint.core.client.api.exceptions.SonarLintException;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 public class BindingStorageUpdateTask {
@@ -154,7 +155,7 @@ public class BindingStorageUpdateTask {
     Set<String> failedProjects = new LinkedHashSet<>();
     for (Map.Entry<String, List<Project>> entry : projectsPerProjectKey.entrySet()) {
       try {
-        updateProject(connection, entry.getKey(), entry.getValue(), monitor);
+        updateProject(connection, entry.getValue(), monitor);
       } catch (Throwable e) {
         // in case of error, save project key and keep updating other projects
         GlobalLogOutput.get().logError(e.getMessage(), e);
@@ -177,10 +178,28 @@ public class BindingStorageUpdateTask {
     }
   }
 
-  private void updateProject(ServerConnection connection, String projectKey, List<Project> projects, TaskProgressMonitor monitor) {
-    engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey, true, monitor);
-    GlobalLogOutput.get().log("Project '" + projectKey + "' in server binding '" + this.connection.getName() + "' updated", LogOutput.Level.INFO);
-    projects.forEach(this::updateModules);
+  private void updateProject(ServerConnection connection, List<Project> projects, TaskProgressMonitor monitor) {
+    List<ProjectUpdateFailure> failures = new ArrayList<>();
+    projects.forEach(project -> {
+      Set<String> projectKeys = collectUniqueProjectKeysFromModuleBindings(project);
+      projectKeys.forEach(projectKeyFromModule -> {
+        try {
+          engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKeyFromModule, true, monitor);
+        } catch (SonarLintException e) {
+          String message = "Unable to update project " + projectKeyFromModule;
+          failures.add(new ProjectUpdateFailure(projectKeyFromModule, message, e));
+        }
+      });
+    });
+
+    if (!failures.isEmpty()) {
+      failures.forEach(failure -> {
+        // TODO display on frontend
+        GlobalLogOutput.get().log(failure.getMessage(), LogOutput.Level.WARN);
+      });
+    }
+
+    projects.forEach(this::updatePathPrefixesForAllModules);
     projects.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
     projects.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
   }
@@ -189,14 +208,23 @@ public class BindingStorageUpdateTask {
     project.getMessageBus().syncPublisher(Listener.TOPIC).updateFinished();
   }
 
-  private void updateModules(Project project) {
+  private void updatePathPrefixesForAllModules(Project project) {
     if (!project.isDisposed()) {
       Module[] modules = ModuleManager.getInstance(project).getModules();
-
       for (Module m : modules) {
-        SonarLintUtils.getService(m, ModuleBindingManager.class).updateBinding(engine);
+        SonarLintUtils.getService(m, ModuleBindingManager.class).updatePathPrefixes(engine);
       }
     }
+  }
+
+  Set<String> collectUniqueProjectKeysFromModuleBindings(Project project) {
+    Module[] modules = ModuleManager.getInstance(project).getModules();
+    Set<String> projectKeys = new HashSet<>();
+    for (Module module : modules) {
+      String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();
+      projectKeys.add(projectKey);
+    }
+    return projectKeys;
   }
 
   private static void analyzeOpenFiles(Project project) {
@@ -217,4 +245,31 @@ public class BindingStorageUpdateTask {
 
     void updateFinished();
   }
+
+}
+
+class ProjectUpdateFailure {
+
+  public ProjectUpdateFailure(String projectKey, String message, Exception reason) {
+    this.projectKey = projectKey;
+    this.message = message;
+    this.reason = reason;
+  }
+
+  public String getProjectKey() {
+    return projectKey;
+  }
+
+  public String getMessage() {
+    return message;
+  }
+
+  public Exception getReason() {
+    return reason;
+  }
+
+  private final String projectKey;
+  private final String message;
+  private final Exception reason;
+
 }
