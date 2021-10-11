@@ -171,7 +171,7 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
         val boundProject = assistant.bind("projectKey", "serverUrl")
 
         assertThat(boundProject).isEqualTo(BoundProject(project, connection))
-        verify(bindingManager).bindTo(connection, "projectKey")
+        verify(bindingManager).bindTo(connection, "projectKey", emptyMap())
     }
 
     @Test
