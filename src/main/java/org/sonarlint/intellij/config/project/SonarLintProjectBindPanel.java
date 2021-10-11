@@ -115,7 +115,7 @@ public class SonarLintProjectBindPanel {
     if (selectedProjectKey != null) {
       projectKeyTextField.setText(selectedProjectKey);
     }
-    moduleBindingPanel.load(projectSettings, moduleSettings);
+    moduleBindingPanel.load(moduleSettings);
   }
 
   @CheckForNull

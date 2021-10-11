@@ -21,15 +21,17 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.components.JBTabbedPane;
 
 import java.awt.BorderLayout;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.swing.JPanel;
 
 import org.apache.commons.lang.StringUtils;
@@ -102,7 +104,8 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
     ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
     if (bindingEnabled) {
-      Map<Module, String> moduleBindingsMap = moduleBindings.stream().collect(Collectors.toMap(b -> b.getModule(), b -> b.getSonarProjectKey()));
+      Map<Module, String> moduleBindingsMap = moduleBindings
+        .stream().collect(Collectors.toMap(b -> b.getModule(), b -> b.getSonarProjectKey()));
       bindingManager.bindTo(selectedConnection, selectedProjectKey, moduleBindingsMap);
     } else {
       bindingManager.unbind();
@@ -123,9 +126,25 @@ public class SonarLintProjectSettingsPanel implements Disposable {
         return true;
       }
 
-      // TODO check if module bindings in panel differ from what's stored in the settings
+      List<ModuleBindingPanel.ModuleBinding> moduleBindingsFromPanel = bindPanel.getModuleBindings();
+      Map<Module, SonarLintModuleSettings> moduleSettings =
+        Stream.of(ModuleManager.getInstance(ProjectManager.getInstance().getDefaultProject()).getModules())
+        .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
+      return moduleBindingsAreDifferent(moduleBindingsFromPanel, moduleSettings);
     }
 
+    return false;
+  }
+
+  boolean moduleBindingsAreDifferent(List<ModuleBindingPanel.ModuleBinding> moduleBindingsFromPanel,
+    Map<Module, SonarLintModuleSettings> settings) {
+    for (ModuleBindingPanel.ModuleBinding moduleBinding : moduleBindingsFromPanel) {
+      Module module = moduleBinding.getModule();
+      String projectKey = moduleBinding.getSonarProjectKey();
+      if (!(settings.containsKey(module) && settings.get(module).getProjectKey().equals(projectKey))) {
+        return true;
+      }
+    }
     return false;
   }
 
