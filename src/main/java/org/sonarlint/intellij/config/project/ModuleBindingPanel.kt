@@ -201,9 +201,8 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
         detailsContainer.repaint()
     }
 
-    fun load(projectSettings: SonarLintProjectSettings, moduleSettings: Map<Module, SonarLintModuleSettings>) {
-        // TODO load from settings (and maybe clone data as it is mutable)
-        val bindings = emptyList<ModuleBinding>()
+    fun load(moduleSettings: Map<Module, SonarLintModuleSettings>) {
+        val bindings = moduleSettings.map { ModuleBinding(it.key, it.value.projectKey) }
         modulesListModel.add(bindings)
         moduleBindingDetailsPanel.isEnabled = bindings.isNotEmpty()
     }
