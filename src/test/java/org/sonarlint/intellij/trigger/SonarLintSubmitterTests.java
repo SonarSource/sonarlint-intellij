@@ -52,7 +52,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Before
   public void start() throws InvalidBindingException {
-    when(bindingManager.getFacade()).thenReturn(facade);
+    when(bindingManager.getFacade(any())).thenReturn(facade);
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     getGlobalSettings().setAutoTrigger(true);
     submitter = new SonarLintSubmitter(getProject());

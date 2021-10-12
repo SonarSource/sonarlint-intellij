@@ -20,19 +20,27 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
+import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.swing.JPanel;
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
 import static java.util.Optional.ofNullable;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
+  private final Project project;
   private final SonarLintProjectPropertiesPanel propsPanel;
   private final JPanel root;
   private final JPanel rootBindPane;
@@ -41,6 +49,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
 
   public SonarLintProjectSettingsPanel(Project project) {
+    this.project = project;
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
@@ -48,7 +57,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     JBTabbedPane tabs = new JBTabbedPane();
 
     rootBindPane = new JPanel(new BorderLayout());
-    rootBindPane.add(bindPanel.create(project));
+    rootBindPane.add(bindPanel.create(project), BorderLayout.NORTH);
 
     rootPropertiesPane = new JPanel(new BorderLayout());
     rootPropertiesPane.add(propsPanel.create(), BorderLayout.CENTER);
@@ -64,28 +73,46 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     return root;
   }
 
-  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings) {
+  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings, Map<Module, SonarLintModuleSettings> moduleSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getConnectionName(), projectSettings.getProjectKey());
+    bindPanel.load(servers, projectSettings, moduleSettings);
     exclusionsPanel.load(projectSettings);
   }
 
-  public void save(Project project, SonarLintProjectSettings projectSettings) {
+  public void save(Project project, SonarLintProjectSettings projectSettings) throws ConfigurationException {
+    String selectedProjectKey = bindPanel.getSelectedProjectKey();
+    ServerConnection selectedConnection = bindPanel.getSelectedConnection();
+    boolean bindingEnabled = bindPanel.isBindingEnabled();
+    List<ModuleBindingPanel.ModuleBinding> moduleBindings = bindPanel.getModuleBindings();
+    if (bindingEnabled) {
+      if (selectedConnection == null) {
+        throw new ConfigurationException("Connection should not be empty");
+      }
+      if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
+        throw new ConfigurationException("Project key should not be empty");
+      }
+      for (ModuleBindingPanel.ModuleBinding binding : moduleBindings) {
+        String moduleProjectKey = binding.getSonarProjectKey();
+        if (moduleProjectKey == null || moduleProjectKey.isBlank()) {
+          throw new ConfigurationException("Project key for module '" + binding.getModule().getName() + "' should not be empty");
+        }
+      }
+    }
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     exclusionsPanel.save(projectSettings);
 
     ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
-    ServerConnection connection = bindPanel.getSelectedConnection();
-    String projectKey = bindPanel.getSelectedProjectKey();
-    if (bindPanel.isBindingEnabled() && connection != null && projectKey != null) {
-      bindingManager.bindTo(connection, projectKey);
+    if (bindingEnabled) {
+      Map<Module, String> moduleBindingsMap = moduleBindings
+        .stream().collect(Collectors.toMap(ModuleBindingPanel.ModuleBinding::getModule, ModuleBindingPanel.ModuleBinding::getSonarProjectKey));
+      bindingManager.bindTo(selectedConnection, selectedProjectKey, moduleBindingsMap);
     } else {
       bindingManager.unbind();
     }
   }
 
   private boolean bindingChanged(SonarLintProjectSettings projectSettings) {
-    if (projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
+    if (projectSettings.isBindingEnabled() != bindPanel.isBindingEnabled()) {
       return true;
     }
 
@@ -97,8 +124,26 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       if (!StringUtils.equals(projectSettings.getProjectKey(), bindPanel.getSelectedProjectKey())) {
         return true;
       }
+
+      List<ModuleBindingPanel.ModuleBinding> moduleBindingsFromPanel = bindPanel.getModuleBindings();
+      Map<Module, SonarLintModuleSettings> moduleSettings =
+        Stream.of(ModuleManager.getInstance(project).getModules())
+        .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
+      return moduleBindingsAreDifferent(moduleBindingsFromPanel, moduleSettings);
     }
 
+    return false;
+  }
+
+  boolean moduleBindingsAreDifferent(List<ModuleBindingPanel.ModuleBinding> moduleBindingsFromPanel,
+    Map<Module, SonarLintModuleSettings> settings) {
+    for (ModuleBindingPanel.ModuleBinding moduleBinding : moduleBindingsFromPanel) {
+      Module module = moduleBinding.getModule();
+      String projectKey = moduleBinding.getSonarProjectKey();
+      if (!(settings.containsKey(module) && settings.get(module).getProjectKey().equals(projectKey))) {
+        return true;
+      }
+    }
     return false;
   }
 

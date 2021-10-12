@@ -1,5 +1,5 @@
 /*
- * SonarLint for IntelliJ IDEA
+ * SonarLint for IntelliJ IDEA ITs
  * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
@@ -17,23 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.actions;
+package org.sonarlint.intellij.its.fixtures
 
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.analysis.AnalysisStatus;
-import org.sonarlint.intellij.ui.CodeAnalyzersDialog;
+import com.intellij.remoterobot.RemoteRobot
+import com.intellij.remoterobot.data.RemoteComponent
+import com.intellij.remoterobot.fixtures.CommonContainerFixture
+import com.intellij.remoterobot.fixtures.FixtureName
 
-public class SonarShowCodeAnalyzers extends AbstractSonarAction {
-
-  @Override protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
-    return e.getProject() != null;
-  }
-
-  @Override public void actionPerformed(AnActionEvent e) {
-    Project project = e.getProject();
-    if (project != null) {
-      new CodeAnalyzersDialog(project).showAndGet();
+@FixtureName("JBTable")
+class JBTableFixture(
+    remoteRobot: RemoteRobot,
+    remoteComponent: RemoteComponent
+) : CommonContainerFixture(remoteRobot, remoteComponent) {
+    fun selectItemContaining(content: String) {
+        runJs("JTableFixture(robot, component).cell(\".*$content.*\").click();", true)
     }
-  }
 }

@@ -41,7 +41,7 @@ open class ServerConnectionCreator {
             val serverChangeListener = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
             serverChangeListener.changed(globalSettings.serverConnections)
             val serverManager = SonarLintUtils.getService(SonarLintEngineManager::class.java)
-            val task = BindingStorageUpdateTask(serverManager.getConnectedEngine(created.name), created, emptyMap(), false)
+            val task = BindingStorageUpdateTask(serverManager.getConnectedEngine(created.name), created, true, false, null)
             ProgressManager.getInstance().run(task.asModal())
             return created
         }

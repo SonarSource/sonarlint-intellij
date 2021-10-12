@@ -21,7 +21,11 @@ package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.highlighting.TooltipLinkHandler;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiFile;
 
 import javax.annotation.Nullable;
 
@@ -41,11 +45,17 @@ public class SonarLinkHandler extends TooltipLinkHandler {
       return null;
     }
 
+    PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(editor.getDocument());
+    Module moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(psiFile.getVirtualFile());
+    if (moduleForFile == null) {
+      return null;
+    }
+
     ProjectBindingManager projectBindingManager = SonarLintUtils.getService(project, ProjectBindingManager.class);
     try {
-      SonarLintFacade sonarlint = projectBindingManager.getFacade();
-      String description = sonarlint.getDescription(refSuffix);
-      String name = sonarlint.getRuleName(refSuffix);
+      SonarLintFacade sonarlintFacade = projectBindingManager.getFacade(moduleForFile);
+      String description = sonarlintFacade.getDescription(refSuffix);
+      String name = sonarlintFacade.getRuleName(refSuffix);
       return transform(refSuffix, name, description);
     } catch (InvalidBindingException e) {
       return "";
@@ -61,11 +71,11 @@ public class SonarLinkHandler extends TooltipLinkHandler {
     return "<html><body>"
       + "<h2>" + StringEscapeUtils.escapeHtml(ruleName) + "</h2>"
       + "<code>" + ruleKey + "</code></br>"
-      + removeEmptyLines(description)
+      + removeBlankLines(description)
       + "</body></html>";
   }
 
-  private static String removeEmptyLines(String description) {
-    return description.replaceAll("\n(\\s*\n)+", "\n");
+  private static String removeBlankLines(String description) {
+    return description.replaceAll("(?m)^\\s*\r?\n", "");
   }
 }

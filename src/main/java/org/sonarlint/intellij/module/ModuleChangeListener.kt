@@ -25,22 +25,22 @@ import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.messages.ProjectEngineListener
 import org.sonarlint.intellij.util.ThreadPoolExecutor
 import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
-private fun getEngineIfStarted(project: Project) =
-    getService(project, ProjectBindingManager::class.java).engineIfStarted
+private fun getEngineIfStarted(module: Module) =
+    getService(module, ModuleBindingManager::class.java).engineIfStarted
 
 class ModuleChangeListener(val project: Project) : ModuleListener {
     override fun moduleAdded(project: Project, module: Module) {
-        Modules.declareModule(project, getEngineIfStarted(project), module)
+        Modules.declareModule(project, getEngineIfStarted(module), module)
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
-        Modules.removeModule(getEngineIfStarted(project), module)
+        Modules.removeModule(getEngineIfStarted(module), module)
     }
 }
 
@@ -69,7 +69,7 @@ object Modules {
 
 class ProjectClosedListener : ProjectManagerListener {
     override fun projectClosing(project: Project) {
-        Modules.removeAllModules(project, getEngineIfStarted(project))
+        ModuleManager.getInstance(project).modules.forEach { Modules.removeModule(getEngineIfStarted(it), it) }
     }
 }
 

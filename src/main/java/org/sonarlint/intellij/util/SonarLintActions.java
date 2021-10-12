@@ -45,7 +45,6 @@ public class SonarLintActions {
   private final AnAction configureAction;
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
-  private final AnAction showAnalyzersAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -63,7 +62,6 @@ public class SonarLintActions {
 
     cancelAction = actionManager.getAction("SonarLint.toolwindow.Cancel");
     configureAction = actionManager.getAction("SonarLint.toolwindow.Configure");
-    showAnalyzersAction = actionManager.getAction("SonarLint.toolwindow.Analyzers");
 
     clearResultsAction = new SonarClearAnalysisResultsAction("Clear Project Files Issues",
       "Clear analysis results",
@@ -114,7 +112,4 @@ public class SonarLintActions {
     return analyzeAllFilesAction;
   }
 
-  public AnAction showAnalyzers() {
-    return showAnalyzersAction;
-  }
 }
