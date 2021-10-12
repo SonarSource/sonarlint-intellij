@@ -24,7 +24,7 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
-
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +48,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.util.StringUtils;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -206,12 +207,24 @@ public class ProjectBindingManager {
       .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
   }
 
-  public Set<String> collectUniqueProjectKeysFromModuleBindings() {
-    Module[] modules = ModuleManager.getInstance(myProject).getModules();
+  public Set<String> collectUniqueProjectKeysForAllModules() {
+    Set<String> projectKeys = new HashSet<>();
+    SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
+    if (projectSettings.isBound()) {
+      Module[] modules = ModuleManager.getInstance(myProject).getModules();
+      projectKeys.addAll(collectUniqueProjectKeysForModules(List.of(modules)));
+      projectKeys.add(projectSettings.getProjectKey());
+    }
+    return projectKeys;
+  }
+
+  public Set<String> collectUniqueProjectKeysForModules(Collection<Module> modules) {
     Set<String> projectKeys = new HashSet<>();
     for (Module module : modules) {
       String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();
-      projectKeys.add(projectKey);
+      if (!StringUtils.isBlank(projectKey)) {
+        projectKeys.add(projectKey);
+      }
     }
     return projectKeys;
   }

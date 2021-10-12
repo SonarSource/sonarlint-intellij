@@ -191,7 +191,7 @@ public class BindingStorageUpdateTask {
     List<ProjectStorageUpdateFailure> failures = new ArrayList<>();
 
     Set<String> projectKeysToUpdate = projectsToUpdate.stream()
-      .flatMap(p -> getService(p, ProjectBindingManager.class).collectUniqueProjectKeysFromModuleBindings()
+      .flatMap(p -> getService(p, ProjectBindingManager.class).collectUniqueProjectKeysForAllModules()
         .stream())
       .collect(toSet());
 

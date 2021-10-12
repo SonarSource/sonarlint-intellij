@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.DumbProgressIndicator;
 import java.util.Collections;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -72,6 +73,7 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
   public void do_nothing_if_no_updates() {
     StorageUpdateCheckResult result = mock(StorageUpdateCheckResult.class);
     when(result.needUpdate()).thenReturn(false);
+    when(bindingManager.collectUniqueProjectKeysForAllModules()).thenReturn(Set.of("key"));
 
     when(engine.checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any())).thenReturn(result);
     when(engine.checkIfGlobalStorageNeedUpdate(any(), any(), any())).thenReturn(result);
@@ -89,6 +91,7 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     StorageUpdateCheckResult result = mock(StorageUpdateCheckResult.class);
     when(result.needUpdate()).thenReturn(true);
     when(result.changelog()).thenReturn(Collections.singletonList("change1"));
+    when(bindingManager.collectUniqueProjectKeysForAllModules()).thenReturn(Set.of("key"));
 
     when(engine.checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any())).thenReturn(result);
     when(engine.checkIfGlobalStorageNeedUpdate(any(), any(), any())).thenReturn(result);

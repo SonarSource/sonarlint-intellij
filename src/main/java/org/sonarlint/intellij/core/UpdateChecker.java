@@ -47,6 +47,8 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class UpdateChecker implements Disposable {
 
+  private static final double START_OF_PROJECTS_UPDATE = 0.0;
+  private static final double END_OF_PROJECTS_UPDATE = 0.8;
   private final Project myProject;
   private ScheduledFuture<?> scheduledTask;
 
@@ -86,11 +88,11 @@ public class UpdateChecker implements Disposable {
       ServerConnection serverConnection = projectBindingManager.getServerConnection();
       log.log("Check for updates from server '" + serverConnection.getName() + "'...", LogOutput.Level.INFO);
       progressIndicator.setIndeterminate(false);
-      progressIndicator.setFraction(0.0);
+      progressIndicator.setFraction(START_OF_PROJECTS_UPDATE);
       boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConnection, progressIndicator);
       SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
-      progressIndicator.setFraction(0.8);
       checkForProjectUpdates(changelog, engine, serverConnection, progressIndicator);
+      progressIndicator.setFraction(END_OF_PROJECTS_UPDATE);
       if (!changelog.isEmpty()) {
         changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
         SonarLintProjectNotifications notifications = getService(myProject, SonarLintProjectNotifications.class);
@@ -102,13 +104,17 @@ public class UpdateChecker implements Disposable {
   }
 
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator) {
-    Set<String> projectKeysToUpdate = getService(myProject, ProjectBindingManager.class).collectUniqueProjectKeysFromModuleBindings();
-    projectKeysToUpdate.add(getSettingsFor(myProject).getProjectKey());
+    Set<String> projectKeysToUpdate = getService(myProject, ProjectBindingManager.class).collectUniqueProjectKeysForAllModules();
+    double indicatorValue = START_OF_PROJECTS_UPDATE;
+    double divider = projectKeysToUpdate.size() == 0 ? 1 : projectKeysToUpdate.size();
+    double stepSize = (END_OF_PROJECTS_UPDATE - START_OF_PROJECTS_UPDATE) / divider;
     GlobalLogOutput log = getService(GlobalLogOutput.class);
-    projectKeysToUpdate.forEach(projectKey -> {
+    for (String projectKey : projectKeysToUpdate) {
       log.log("Check for updates from server '" + serverConnection.getName() + "' for project '" + projectKey + "'...", LogOutput.Level.INFO);
       checkForProjectKey(changelog, engine, serverConnection, indicator, projectKey);
-    });
+      indicatorValue += stepSize;
+      indicator.setFraction(indicatorValue);
+    }
   }
 
   private void checkForProjectKey(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator, String projectKey) {
