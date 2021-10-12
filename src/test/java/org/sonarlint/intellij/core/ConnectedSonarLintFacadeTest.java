@@ -24,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -45,8 +44,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Before
   public void before() {
-    getProjectSettings().setProjectKey("projectKey");
-    facade = new ConnectedSonarLintFacade(engine, getProject());
+    facade = new ConnectedSonarLintFacade(engine, getProject(), "projectKey");
   }
 
   @Test
@@ -77,13 +75,11 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_start_analysis() {
-    String projectKey = "project-key";
-    getProjectSettings().bindTo(ServerConnection.newBuilder().setName("connection").build(), projectKey);
     AnalysisResults results = mock(AnalysisResults.class);
     ArgumentCaptor<ConnectedAnalysisConfiguration> configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
     when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
     assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
     ConnectedAnalysisConfiguration config = configCaptor.getValue();
-    assertThat(config.projectKey()).isEqualTo(projectKey);
+    assertThat(config.projectKey()).isEqualTo("projectKey");
   }
 }

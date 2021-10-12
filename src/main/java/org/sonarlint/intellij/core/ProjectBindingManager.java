@@ -88,7 +88,7 @@ public class ProjectBindingManager {
         console.info(String.format("Using connection '%s' for project '%s'", connectionId, projectKey));
       }
       ConnectedSonarLintEngine engine = engineManager.getConnectedEngine(notifications, connectionId, projectKey);
-      return new ConnectedSonarLintFacade(engine, myProject);
+      return new ConnectedSonarLintFacade(engine, myProject, projectKey);
     }
 
     return new StandaloneSonarLintFacade(myProject, engineManager.getStandaloneEngine());

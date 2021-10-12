@@ -23,16 +23,13 @@ import com.google.common.base.Preconditions;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -47,13 +44,14 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
   private final ConnectedSonarLintEngine engine;
+  private final String projectKey;
 
-  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, Project project) {
+  ConnectedSonarLintFacade(ConnectedSonarLintEngine engine, Project project, String projectKey) {
     super(project);
+    this.projectKey = projectKey;
     Preconditions.checkNotNull(project, "project");
     Preconditions.checkNotNull(project.getBasePath(), "project base path");
     Preconditions.checkNotNull(engine, "engine");
@@ -66,7 +64,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     ConnectedAnalysisConfiguration config = ConnectedAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
-      .setProjectKey(getService(module, ModuleBindingManager.class).resolveProjectKey())
+      .setProjectKey(projectKey)
       .putAllExtraProperties(props)
       .setModuleKey(module)
       .build();
@@ -98,7 +96,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public ConnectedRuleDetails getActiveRuleDetails(String ruleKey) {
-    return engine.getActiveRuleDetails(ruleKey, getSettingsFor(project).getProjectKey());
+    return engine.getActiveRuleDetails(ruleKey, projectKey);
   }
 
   @Override
