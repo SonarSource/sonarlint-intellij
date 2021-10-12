@@ -46,6 +46,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 class ConnectedSonarLintFacade extends SonarLintFacade {
@@ -65,12 +66,12 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     ConnectedAnalysisConfiguration config = ConnectedAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
-      .setProjectKey(getSettingsFor(project).getProjectKey())
+      .setProjectKey(getService(module, ModuleBindingManager.class).resolveProjectKey())
       .putAllExtraProperties(props)
       .setModuleKey(module)
       .build();
-    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
-    console.debug("Starting analysis with configuration:\n" + config.toString());
+    SonarLintConsole console = getService(project, SonarLintConsole.class);
+    console.debug("Starting analysis with configuration:\n" + config);
 
     final AnalysisResults analysisResults = engine.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, engine.getPluginDetails(), project);
@@ -79,7 +80,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
-    ModuleBindingManager bindingManager = SonarLintUtils.getService(module, ModuleBindingManager.class);
+    ModuleBindingManager bindingManager = getService(module, ModuleBindingManager.class);
     ProjectBinding binding = bindingManager.getBinding();
     if (binding == null) {
       // should never happen since the project should be bound!
