@@ -24,9 +24,12 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -201,5 +204,15 @@ public class ProjectBindingManager {
     return Stream.of(ModuleManager.getInstance(myProject).getModules())
       .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
       .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
+  }
+
+  public Set<String> collectUniqueProjectKeysFromModuleBindings() {
+    Module[] modules = ModuleManager.getInstance(myProject).getModules();
+    Set<String> projectKeys = new HashSet<>();
+    for (Module module : modules) {
+      String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();
+      projectKeys.add(projectKey);
+    }
+    return projectKeys;
   }
 }

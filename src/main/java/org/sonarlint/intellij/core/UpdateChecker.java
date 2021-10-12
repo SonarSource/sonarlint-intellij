@@ -28,11 +28,11 @@ import com.intellij.openapi.project.Project;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
@@ -42,6 +42,7 @@ import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class UpdateChecker implements Disposable {
@@ -69,10 +70,10 @@ public class UpdateChecker implements Disposable {
 
   void checkForUpdate(@NotNull ProgressIndicator progressIndicator) {
     ProjectBindingManager projectBindingManager;
-    GlobalLogOutput log = SonarLintUtils.getService(GlobalLogOutput.class);
+    GlobalLogOutput log = getService(GlobalLogOutput.class);
     ConnectedSonarLintEngine engine;
     try {
-      projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
+      projectBindingManager = getService(myProject, ProjectBindingManager.class);
       engine = projectBindingManager.getConnectedEngine();
     } catch (Exception e) {
       // happens if project is not bound, binding is invalid, storages are not updated, ...
@@ -88,13 +89,11 @@ public class UpdateChecker implements Disposable {
       progressIndicator.setFraction(0.0);
       boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConnection, progressIndicator);
       SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
-      log.log("Check for updates from server '" + serverConnection.getName() +
-        "' for project '" + projectSettings.getProjectKey() + "'...", LogOutput.Level.INFO);
       progressIndicator.setFraction(0.8);
       checkForProjectUpdates(changelog, engine, serverConnection, progressIndicator);
       if (!changelog.isEmpty()) {
         changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
-        SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
+        SonarLintProjectNotifications notifications = getService(myProject, SonarLintProjectNotifications.class);
         notifications.notifyServerHasUpdates(projectSettings.getConnectionName(), engine, serverConnection, !hasGlobalUpdates);
       }
     } catch (Exception e) {
@@ -103,9 +102,18 @@ public class UpdateChecker implements Disposable {
   }
 
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator) {
+    Set<String> projectKeysToUpdate = getService(myProject, ProjectBindingManager.class).collectUniqueProjectKeysFromModuleBindings();
+    projectKeysToUpdate.add(getSettingsFor(myProject).getProjectKey());
+    GlobalLogOutput log = getService(GlobalLogOutput.class);
+    projectKeysToUpdate.forEach(projectKey -> {
+      log.log("Check for updates from server '" + serverConnection.getName() + "' for project '" + projectKey + "'...", LogOutput.Level.INFO);
+      checkForProjectKey(changelog, engine, serverConnection, indicator, projectKey);
+    });
+  }
+
+  private void checkForProjectKey(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator, String projectKey) {
     StorageUpdateCheckResult projectUpdateCheckResult = engine.checkIfProjectStorageNeedUpdate(serverConnection.getEndpointParams(), serverConnection.getHttpClient(),
-      getSettingsFor(myProject).getProjectKey(),
-      new TaskProgressMonitor(indicator, myProject));
+      projectKey, new TaskProgressMonitor(indicator, myProject));
     if (projectUpdateCheckResult.needUpdate()) {
       changelog.addAll(projectUpdateCheckResult.changelog());
     }
