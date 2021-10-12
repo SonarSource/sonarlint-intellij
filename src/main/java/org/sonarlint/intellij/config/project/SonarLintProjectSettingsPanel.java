@@ -43,6 +43,7 @@ import static java.util.Optional.ofNullable;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
+  private final Project project;
   private final SonarLintProjectPropertiesPanel propsPanel;
   private final JPanel root;
   private final JPanel rootBindPane;
@@ -51,6 +52,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
 
   public SonarLintProjectSettingsPanel(Project project) {
+    this.project = project;
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
@@ -128,7 +130,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
 
       List<ModuleBindingPanel.ModuleBinding> moduleBindingsFromPanel = bindPanel.getModuleBindings();
       Map<Module, SonarLintModuleSettings> moduleSettings =
-        Stream.of(ModuleManager.getInstance(ProjectManager.getInstance().getDefaultProject()).getModules())
+        Stream.of(ModuleManager.getInstance(project).getModules())
         .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
       return moduleBindingsAreDifferent(moduleBindingsFromPanel, moduleSettings);
     }
