@@ -24,16 +24,14 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -197,5 +195,11 @@ public class ProjectBindingManager {
     if (previousEngine != standaloneEngine) {
       myProject.getMessageBus().syncPublisher(ProjectEngineListener.TOPIC).engineChanged(previousEngine, standaloneEngine);
     }
+  }
+
+  public Map<Module, SonarLintModuleSettings> getModuleOverrides() {
+    return Stream.of(ModuleManager.getInstance(myProject).getModules())
+      .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
+      .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
   }
 }
