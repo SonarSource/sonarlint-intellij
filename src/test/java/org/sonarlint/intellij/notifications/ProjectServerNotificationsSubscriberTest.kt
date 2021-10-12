@@ -30,6 +30,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.timeout
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyZeroInteractions
 import org.mockito.junit.MockitoJUnitRunner
@@ -69,6 +70,21 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
     verify(serverNotificationsService).register(capture(notificationConfigurationCaptor))
     val notificationConfiguration = notificationConfigurationCaptor.value
     assertThat(notificationConfiguration.projectKey()).isEqualTo("projectKey")
+  }
+
+  @Test
+  fun it_should_register_at_start_when_project_and_module_bound_and_server_supports_notifications() {
+    connectProjectTo("host", "name", "projectKey")
+    connectModuleTo("moduleProjectKey")
+    `when`(serverNotificationsService.isSupported(any())).thenReturn(true)
+
+    projectServerNotificationsSubscriber.start()
+
+    verify(serverNotificationsService, times(2)).register(capture(notificationConfigurationCaptor))
+    val notificationConfigurations = notificationConfigurationCaptor.allValues
+    assertThat(notificationConfigurations)
+      .extracting(NotificationConfiguration::projectKey)
+      .containsOnly(tuple("projectKey"), tuple("moduleProjectKey"))
   }
 
   @Test
