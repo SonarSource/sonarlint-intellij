@@ -19,8 +19,10 @@
  */
 package org.sonarlint.intellij.core
 
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -39,7 +41,7 @@ open class ProjectBindingAssistant(private val title: String,
 
     open fun bind(projectKey: String, serverUrl: String): BoundProject? {
         val connection = findOrCreateConnectionTo(serverUrl) ?: return null
-        return findBoundProjectAmongOpened(projectKey, connection) ?: selectAndBindProject(projectKey, connection)
+        return findFirstBoundProjectAmongOpened(projectKey, connection) ?: selectAndBindProject(projectKey, connection)
     }
 
     private fun findOrCreateConnectionTo(serverUrl: String): ServerConnection? {
@@ -54,14 +56,18 @@ open class ProjectBindingAssistant(private val title: String,
         return if (confirmed) connectionCreator.createThroughWizard(serverUrl) else null
     }
 
-    private fun findBoundProjectAmongOpened(projectKey: String, connection: ServerConnection): BoundProject? {
-        val project = projectManager.openProjects.find { getSettingsFor(it).isBoundTo(projectKey, connection) }
+    private fun findFirstBoundProjectAmongOpened(projectKey: String, connection: ServerConnection): BoundProject? {
+        val project = projectManager.openProjects.find { it.hasAnyModuleBoundTo(projectKey) }
         return if (project != null) BoundProject(project, connection) else null
+    }
+
+    private fun Project.hasAnyModuleBoundTo(projectKey: String): Boolean {
+        return SonarLintUtils.getService(this, ProjectBindingManager::class.java).uniqueProjectKeys.contains(projectKey)
     }
 
     private fun selectAndBindProject(projectKey: String, connection: ServerConnection): BoundProject? {
         val selectedProject = selectProject(projectKey, connection.hostUrl) ?: return null
-        if (getSettingsFor(selectedProject).isBoundTo(projectKey, connection)) {
+        if (getSettingsFor(selectedProject).isBoundTo(connection) && selectedProject.hasAnyModuleBoundTo(projectKey)) {
             return BoundProject(selectedProject, connection)
         }
         return bindProject(selectedProject, projectKey, connection)
