@@ -24,16 +24,13 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectManager;
 import com.intellij.ui.components.JBTabbedPane;
-
 import java.awt.BorderLayout;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.JPanel;
-
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
@@ -107,7 +104,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
     if (bindingEnabled) {
       Map<Module, String> moduleBindingsMap = moduleBindings
-        .stream().collect(Collectors.toMap(b -> b.getModule(), b -> b.getSonarProjectKey()));
+        .stream().collect(Collectors.toMap(ModuleBindingPanel.ModuleBinding::getModule, ModuleBindingPanel.ModuleBinding::getSonarProjectKey));
       bindingManager.bindTo(selectedConnection, selectedProjectKey, moduleBindingsMap);
     } else {
       bindingManager.unbind();
