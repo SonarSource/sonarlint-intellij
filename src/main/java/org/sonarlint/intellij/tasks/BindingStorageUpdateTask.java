@@ -35,7 +35,6 @@ import com.intellij.util.messages.Topic;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -44,10 +43,10 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ModuleBindingManager;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -62,6 +61,7 @@ import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 import static java.util.stream.Collectors.toSet;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class BindingStorageUpdateTask {
@@ -191,7 +191,7 @@ public class BindingStorageUpdateTask {
     List<ProjectStorageUpdateFailure> failures = new ArrayList<>();
 
     Set<String> projectKeysToUpdate = projectsToUpdate.stream()
-      .flatMap(p -> collectUniqueProjectKeysFromModuleBindings(p)
+      .flatMap(p -> getService(p, ProjectBindingManager.class).collectUniqueProjectKeysForAllModules()
         .stream())
       .collect(toSet());
 
@@ -229,19 +229,9 @@ public class BindingStorageUpdateTask {
     if (!project.isDisposed()) {
       Module[] modules = ModuleManager.getInstance(project).getModules();
       for (Module m : modules) {
-        SonarLintUtils.getService(m, ModuleBindingManager.class).updatePathPrefixes(engine);
+        getService(m, ModuleBindingManager.class).updatePathPrefixes(engine);
       }
     }
-  }
-
-  Set<String> collectUniqueProjectKeysFromModuleBindings(Project project) {
-    Module[] modules = ModuleManager.getInstance(project).getModules();
-    Set<String> projectKeys = new HashSet<>();
-    for (Module module : modules) {
-      String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();
-      projectKeys.add(projectKey);
-    }
-    return projectKeys;
   }
 
   private static void analyzeOpenFiles(Project project) {
@@ -249,10 +239,10 @@ public class BindingStorageUpdateTask {
       SonarLintConsole console = SonarLintConsole.get(project);
       console.info("Clearing all issues because binding was updated");
 
-      IssueManager store = SonarLintUtils.getService(project, IssueManager.class);
+      IssueManager store = getService(project, IssueManager.class);
       store.clearAllIssuesForAllFiles();
 
-      SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
+      SonarLintSubmitter submitter = getService(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
     }
   }
