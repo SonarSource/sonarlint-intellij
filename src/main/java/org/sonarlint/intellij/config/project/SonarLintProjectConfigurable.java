@@ -21,32 +21,25 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBusConnection;
-
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
-
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.concurrency.Promise;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -101,7 +94,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       boolean exclusionsModified = panel.isExclusionsModified(projectSettings);
       panel.save(project, projectSettings);
       if (exclusionsModified) {
-        SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+        getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }
     }
   }
@@ -115,9 +108,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
     getServersFromApplicationConfigurable()
       .onProcessed(sonarQubeServers -> {
         SonarLintProjectSettings projectSettings = getSettingsFor(project);
-        Map<Module, SonarLintModuleSettings> moduleSettings = Stream.of(ModuleManager.getInstance(project).getModules())
-          .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
-        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getServerConnections(), projectSettings, moduleSettings);
+        panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getServerConnections(),
+          projectSettings,
+          getService(project, ProjectBindingManager.class).getModuleOverrides());
       });
   }
 
