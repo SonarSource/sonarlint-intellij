@@ -31,12 +31,10 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
-
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
 import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
@@ -142,6 +140,10 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     ServerConnection connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
     getGlobalSettings().addServerConnection(connection);
     getProjectSettings().bindTo(connection, projectKey);
+  }
+
+  protected void connectModuleTo(String projectKey) {
+    getModuleSettings().overrideProjectBinding(projectKey);
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {
