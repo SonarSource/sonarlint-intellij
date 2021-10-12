@@ -24,12 +24,8 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -208,14 +204,12 @@ public class ProjectBindingManager {
   }
 
   public Set<String> getUniqueProjectKeys() {
-    Set<String> projectKeys = new HashSet<>();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     if (projectSettings.isBound()) {
       Module[] modules = ModuleManager.getInstance(myProject).getModules();
-      projectKeys.addAll(getUniqueProjectKeysForModules(List.of(modules)));
-      projectKeys.add(projectSettings.getProjectKey());
+      return getUniqueProjectKeysForModules(List.of(modules));
     }
-    return projectKeys;
+    return Collections.emptySet();
   }
 
   public Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {

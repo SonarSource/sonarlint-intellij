@@ -73,18 +73,18 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   }
 
   @Test
-  fun it_should_register_at_start_when_project_and_module_bound_and_server_supports_notifications() {
+  fun it_should_register_at_start_when_module_bound_and_server_supports_notifications() {
     connectProjectTo("host", "name", "projectKey")
     connectModuleTo("moduleProjectKey")
     `when`(serverNotificationsService.isSupported(any())).thenReturn(true)
 
     projectServerNotificationsSubscriber.start()
 
-    verify(serverNotificationsService, times(2)).register(capture(notificationConfigurationCaptor))
+    verify(serverNotificationsService, times(1)).register(capture(notificationConfigurationCaptor))
     val notificationConfigurations = notificationConfigurationCaptor.allValues
     assertThat(notificationConfigurations)
       .extracting(NotificationConfiguration::projectKey)
-      .containsOnly(tuple("projectKey"), tuple("moduleProjectKey"))
+      .containsOnly(tuple("moduleProjectKey"))
   }
 
   @Test
