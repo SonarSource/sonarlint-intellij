@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.notifications
 
+import com.intellij.ProjectTopics
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
@@ -26,6 +27,8 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.util.ui.UIUtil
@@ -36,7 +39,6 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectState
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ServerNotificationsService
@@ -49,7 +51,6 @@ import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationT
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener
 import java.time.ZonedDateTime
-import java.util.function.Supplier
 
 class ProjectServerNotificationsSubscriber : Disposable {
   private val project: Project
@@ -83,6 +84,15 @@ class ProjectServerNotificationsSubscriber : Disposable {
         }
       }
     })
+    busConnection.subscribe(ProjectTopics.MODULES, object : ModuleListener {
+      override fun moduleAdded(project: Project, module: Module) {
+        register()
+      }
+
+      override fun moduleRemoved(project: Project, module: Module) {
+        register()
+      }
+    })
   }
 
   @Synchronized private fun register() {
@@ -93,8 +103,9 @@ class ProjectServerNotificationsSubscriber : Disposable {
         eventListener = EventListener(it.isSonarCloud, it.name)
         try {
           if (notificationsService.isSupported(it)) {
-            val config = createConfiguration(Settings.getSettingsFor(project), it)
-            notificationsService.register(config)
+            getService(project, ProjectBindingManager::class.java).uniqueProjectKeys.forEach { projectKey ->
+              notificationsService.register(createConfiguration(projectKey, it))
+            }
           }
         } catch (e: Exception) {
           SonarLintConsole.get(project)
@@ -114,9 +125,8 @@ class ProjectServerNotificationsSubscriber : Disposable {
     }
   }
 
-  private fun createConfiguration(settings: SonarLintProjectSettings, server: ServerConnection): NotificationConfiguration {
-    val projectKey = settings.projectKey
-    return NotificationConfiguration(eventListener, notificationTime, projectKey, Supplier { server.endpointParams }, Supplier { server.httpClient })
+  private fun createConfiguration(projectKey: String, server: ServerConnection): NotificationConfiguration {
+    return NotificationConfiguration(eventListener, notificationTime, projectKey, { server.endpointParams }, { server.httpClient })
   }
 
   /**
