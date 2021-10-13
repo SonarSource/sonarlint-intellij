@@ -117,4 +117,7 @@ public class ModuleBindingManager {
     return engineManager.getStandaloneEngineIfStarted();
   }
 
+  public void unbind() {
+    getSettingsFor(module).clearBindingOverride();
+  }
 }
