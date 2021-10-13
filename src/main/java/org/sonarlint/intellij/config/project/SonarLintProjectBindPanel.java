@@ -36,7 +36,6 @@ import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
-
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -56,11 +55,10 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
-
+import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -69,6 +67,7 @@ import org.sonarsource.sonarlint.core.serverapi.project.ServerProject;
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
+import static java.util.Optional.ofNullable;
 
 public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
@@ -105,7 +104,7 @@ public class SonarLintProjectBindPanel {
     return rootPanel;
   }
 
-  public void load(Collection<ServerConnection> connections, SonarLintProjectSettings projectSettings, Map<Module, SonarLintModuleSettings> moduleSettings) {
+  public void load(Collection<ServerConnection> connections, SonarLintProjectSettings projectSettings, Map<Module, String> moduleOverrides) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     this.bindEnable.setSelected(projectSettings.isBindingEnabled());
 
@@ -115,7 +114,7 @@ public class SonarLintProjectBindPanel {
     if (selectedProjectKey != null) {
       projectKeyTextField.setText(selectedProjectKey);
     }
-    moduleBindingPanel.load(moduleSettings);
+    moduleBindingPanel.load(moduleOverrides);
   }
 
   @CheckForNull
@@ -303,6 +302,25 @@ public class SonarLintProjectBindPanel {
 
   public List<ModuleBindingPanel.ModuleBinding> getModuleBindings() {
     return moduleBindingPanel.getModuleBindings();
+  }
+
+  public boolean isModified(SonarLintProjectSettings projectSettings) {
+    if (projectSettings.isBindingEnabled() != isBindingEnabled()) {
+      return true;
+    }
+
+    if (isBindingEnabled()) {
+      if (!StringUtils.equals(projectSettings.getConnectionName(), ofNullable(getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
+        return true;
+      }
+
+      if (!StringUtils.equals(projectSettings.getProjectKey(), getSelectedProjectKey())) {
+        return true;
+      }
+
+      return moduleBindingPanel.isModified();
+    }
+    return false;
   }
 
   /**
