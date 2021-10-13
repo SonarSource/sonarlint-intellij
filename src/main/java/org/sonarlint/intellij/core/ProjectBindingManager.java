@@ -24,9 +24,12 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +48,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.util.StringUtils;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
@@ -201,5 +205,22 @@ public class ProjectBindingManager {
     return Stream.of(ModuleManager.getInstance(myProject).getModules())
       .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
       .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
+  }
+
+  public Set<String> getUniqueProjectKeys() {
+    Set<String> projectKeys = new HashSet<>();
+    SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
+    if (projectSettings.isBound()) {
+      Module[] modules = ModuleManager.getInstance(myProject).getModules();
+      projectKeys.addAll(getUniqueProjectKeysForModules(List.of(modules)));
+      projectKeys.add(projectSettings.getProjectKey());
+    }
+    return projectKeys;
+  }
+
+  public Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
+    return modules.stream().map(module -> SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey())
+      .filter(projectKey -> !StringUtils.isBlank(projectKey))
+      .collect(Collectors.toSet());
   }
 }
