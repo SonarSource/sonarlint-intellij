@@ -24,8 +24,13 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -33,9 +38,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
@@ -47,6 +50,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.util.StringUtils;
 
 import static java.util.Objects.requireNonNull;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -55,7 +59,7 @@ public class ProjectBindingManager {
   private final Supplier<SonarLintEngineManager> engineManagerSupplier;
 
   public ProjectBindingManager(Project project) {
-    this(project, () -> SonarLintUtils.getService(SonarLintEngineManager.class));
+    this(project, () -> getService(SonarLintEngineManager.class));
   }
 
   @NonInjectable
@@ -77,10 +81,10 @@ public class ProjectBindingManager {
   public SonarLintFacade getFacade(Module module, boolean logDetails) throws InvalidBindingException {
     SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
-    SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
-    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+    SonarLintProjectNotifications notifications = getService(myProject, SonarLintProjectNotifications.class);
+    SonarLintConsole console = getService(myProject, SonarLintConsole.class);
     if (projectSettings.isBindingEnabled()) {
-      ModuleBindingManager moduleBindingManager = SonarLintUtils.getService(module, ModuleBindingManager.class);
+      ModuleBindingManager moduleBindingManager = getService(module, ModuleBindingManager.class);
       String connectionId = projectSettings.getConnectionName();
       String projectKey = moduleBindingManager.resolveProjectKey();
       checkBindingStatus(notifications, connectionId, projectKey);
@@ -104,7 +108,7 @@ public class ProjectBindingManager {
     if (!projectSettings.isBindingEnabled()) {
       throw new IllegalStateException("Project is not bound to a SonarQube project");
     }
-    SonarLintProjectNotifications notifications = SonarLintUtils.getService(myProject, SonarLintProjectNotifications.class);
+    SonarLintProjectNotifications notifications = getService(myProject, SonarLintProjectNotifications.class);
     String connectionName = projectSettings.getConnectionName();
     String projectKey = projectSettings.getProjectKey();
     checkBindingStatus(notifications, connectionName, projectKey);
@@ -161,18 +165,11 @@ public class ProjectBindingManager {
     SonarLintEngine previousEngine = getEngineIfStarted();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     projectSettings.bindTo(connection, projectKey);
-    moduleBindingsOverrides.entrySet().forEach(e -> {
-      SonarLintModuleSettings moduleSettings = getSettingsFor(e.getKey());
-      moduleSettings.overrideProjectBinding(e.getValue());
-    });
+    moduleBindingsOverrides.forEach((module, overriddenProjectKey) -> getSettingsFor(module).overrideProjectBinding(overriddenProjectKey));
 
-    Module[] allModules = ModuleManager.getInstance(myProject).getModules();
-    Stream<Module> modulesToClearOverride = Stream.of(allModules)
+    Stream<Module> modulesToClearOverride = allModules().stream()
       .filter(m -> !moduleBindingsOverrides.containsKey(m));
-    modulesToClearOverride.forEach(m -> {
-      SonarLintModuleSettings moduleSettings = getSettingsFor(m);
-      moduleSettings.clearBindingOverride();
-    });
+    unbind(modulesToClearOverride.collect(Collectors.toList()));
 
     SonarLintProjectNotifications.get(myProject).reset();
     ConnectedSonarLintEngine newEngine = getConnectedEngineSkipChecks();
@@ -188,6 +185,7 @@ public class ProjectBindingManager {
     SonarLintEngine previousEngine = getEngineIfStarted();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     projectSettings.unbind();
+    unbind(allModules());
     SonarLintProjectNotifications.get(myProject).reset();
     ProjectConfigurationListener projectListener = myProject.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
     projectListener.changed(projectSettings);
@@ -197,8 +195,16 @@ public class ProjectBindingManager {
     }
   }
 
+  private static void unbind(List<Module> modules) {
+    modules.forEach(m -> getService(m, ModuleBindingManager.class).unbind());
+  }
+
+  private List<Module> allModules() {
+    return Arrays.asList(ModuleManager.getInstance(myProject).getModules());
+  }
+
   public Map<Module, String> getModuleOverrides() {
-    return Stream.of(ModuleManager.getInstance(myProject).getModules())
+    return allModules().stream()
       .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
       .collect(Collectors.toMap(m -> m, m -> org.sonarlint.intellij.config.Settings.getSettingsFor(m).getProjectKey()));
   }
@@ -206,14 +212,13 @@ public class ProjectBindingManager {
   public Set<String> getUniqueProjectKeys() {
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     if (projectSettings.isBound()) {
-      Module[] modules = ModuleManager.getInstance(myProject).getModules();
-      return getUniqueProjectKeysForModules(List.of(modules));
+      return getUniqueProjectKeysForModules(allModules());
     }
     return Collections.emptySet();
   }
 
   public Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
-    return modules.stream().map(module -> SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey())
+    return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())
       .filter(projectKey -> !StringUtils.isBlank(projectKey))
       .collect(Collectors.toSet());
   }
