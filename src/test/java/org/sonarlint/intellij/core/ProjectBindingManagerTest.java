@@ -195,4 +195,15 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
     assertThat(engine).isNull();
   }
+
+  @Test
+  public void should_clear_project_and_module_binding_settings_when_unbinding() {
+    getProjectSettings().bindTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey");
+    getModuleSettings().overrideProjectBinding("moduleProjectKey");
+
+    projectBindingManager.unbind();
+
+    assertThat(getProjectSettings().isBound()).isFalse();
+    assertThat(getModuleSettings().isProjectBindingOverridden()).isFalse();
+  }
 }
