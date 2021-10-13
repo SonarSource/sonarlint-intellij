@@ -91,7 +91,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   public void apply() throws ConfigurationException {
     if (panel != null) {
       SonarLintProjectSettings projectSettings = getSettingsFor(project);
-      boolean exclusionsModified = panel.isExclusionsModified(projectSettings);
+      boolean exclusionsModified = panel.areExclusionsModified(projectSettings);
       panel.save(project, projectSettings);
       if (exclusionsModified) {
         getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);

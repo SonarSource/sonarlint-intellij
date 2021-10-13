@@ -40,7 +40,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.module.SonarLintModuleSettings
+import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask
 import org.sonarsource.sonarlint.core.serverapi.project.ServerProject
@@ -58,7 +58,7 @@ import javax.swing.event.DocumentListener
 import kotlin.math.max
 import kotlin.math.min
 
-class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> ServerConnection?) {
+class ModuleBindingPanel(private val project: Project, currentConnectionSupplier: () -> ServerConnection?) {
     private var projectKeyTextField = JBTextField()
     val rootPanel: JPanel = JPanel(BorderLayout())
     private val modulesList: JBList<ModuleBinding>
@@ -146,7 +146,7 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
         }
         searchProjectKeyButton.text = "Search in list..."
 
-        projectKeyTextField.document.addDocumentListener( object : DocumentListener {
+        projectKeyTextField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent?) {
                 updateSelectedModuleBinding()
             }
@@ -201,8 +201,8 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
         detailsContainer.repaint()
     }
 
-    fun load(moduleSettings: Map<Module, SonarLintModuleSettings>) {
-        val bindings = moduleSettings.map { ModuleBinding(it.key, it.value.projectKey) }
+    fun load(moduleOverrides: Map<Module, String>) {
+        val bindings = moduleOverrides.map { ModuleBinding(it.key, it.value) }
         modulesListModel.add(bindings)
         moduleBindingDetailsPanel.isEnabled = bindings.isNotEmpty()
     }
@@ -217,12 +217,21 @@ class ModuleBindingPanel(project: Project, currentConnectionSupplier: () -> Serv
 
     fun getModuleBindings(): List<ModuleBinding> = modulesListModel.items
 
+    fun isModified(): Boolean {
+        val moduleBindingsFromSettings = getService(project, ProjectBindingManager::class.java)
+            .moduleOverrides
+            .map { ModuleBinding(it.key, it.value) }.toSet()
+        val moduleBindingsFromPanel = getModuleBindings().toSet()
+        return moduleBindingsFromSettings != moduleBindingsFromPanel
+    }
+
     private class AddModuleAction(private val project: Project, private val modulesList: JBList<ModuleBinding>) :
         AnActionButtonRunnable {
         override fun run(t: AnActionButton) {
             val collectionListModel = modulesList.model as CollectionListModel<ModuleBinding>
-            val existingModuleNames = collectionListModel.items.map {it.module.name}
-            val modulesToPickFrom = ModuleManager.getInstance(project).modules.filter { !existingModuleNames.contains(it.name) }
+            val existingModuleNames = collectionListModel.items.map { it.module.name }
+            val modulesToPickFrom =
+                ModuleManager.getInstance(project).modules.filter { !existingModuleNames.contains(it.name) }
             val dialog = ChooseModulesDialog(modulesList, modulesToPickFrom.toMutableList(), "Select a module to bind")
             dialog.setSingleSelectionMode()
             dialog.show()

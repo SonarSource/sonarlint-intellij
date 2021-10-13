@@ -197,10 +197,10 @@ public class ProjectBindingManager {
     }
   }
 
-  public Map<Module, SonarLintModuleSettings> getModuleOverrides() {
+  public Map<Module, String> getModuleOverrides() {
     return Stream.of(ModuleManager.getInstance(myProject).getModules())
       .filter(m -> getSettingsFor(m).isProjectBindingOverridden())
-      .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
+      .collect(Collectors.toMap(m -> m, m -> org.sonarlint.intellij.config.Settings.getSettingsFor(m).getProjectKey()));
   }
 
   public Set<String> getUniqueProjectKeys() {

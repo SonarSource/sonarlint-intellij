@@ -69,6 +69,10 @@ public class SonarLintProjectPropertiesPanel {
     return tablePanel;
   }
 
+  public boolean isModified(SonarLintProjectSettings projectSettings) {
+    return !getProperties().equals(projectSettings.getAdditionalProperties());
+  }
+
   private static class PropertiesTableModel extends AbstractTableModel implements EditableModel {
     private final java.util.List<KeyValuePair> myRows = new ArrayList<>();
 
