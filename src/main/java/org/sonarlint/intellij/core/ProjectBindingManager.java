@@ -207,25 +207,20 @@ public class ProjectBindingManager {
       .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
   }
 
-  public Set<String> collectUniqueProjectKeysForAllModules() {
+  public Set<String> getUniqueProjectKeys() {
     Set<String> projectKeys = new HashSet<>();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     if (projectSettings.isBound()) {
       Module[] modules = ModuleManager.getInstance(myProject).getModules();
-      projectKeys.addAll(collectUniqueProjectKeysForModules(List.of(modules)));
+      projectKeys.addAll(getUniqueProjectKeysForModules(List.of(modules)));
       projectKeys.add(projectSettings.getProjectKey());
     }
     return projectKeys;
   }
 
-  public Set<String> collectUniqueProjectKeysForModules(Collection<Module> modules) {
-    Set<String> projectKeys = new HashSet<>();
-    for (Module module : modules) {
-      String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();
-      if (!StringUtils.isBlank(projectKey)) {
-        projectKeys.add(projectKey);
-      }
-    }
-    return projectKeys;
+  public Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
+    return modules.stream().map(module -> SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey())
+      .filter(projectKey -> !StringUtils.isBlank(projectKey))
+      .collect(Collectors.toSet());
   }
 }

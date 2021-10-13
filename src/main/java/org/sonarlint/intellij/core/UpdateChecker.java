@@ -104,9 +104,9 @@ public class UpdateChecker implements Disposable {
   }
 
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator) {
-    Set<String> projectKeysToUpdate = getService(myProject, ProjectBindingManager.class).collectUniqueProjectKeysForAllModules();
+    Set<String> projectKeysToUpdate = getService(myProject, ProjectBindingManager.class).getUniqueProjectKeys();
     double indicatorValue = START_OF_PROJECTS_UPDATE;
-    double divider = projectKeysToUpdate.size() == 0 ? 1 : projectKeysToUpdate.size();
+    double divider = projectKeysToUpdate.isEmpty() ? 1 : projectKeysToUpdate.size();
     double stepSize = (END_OF_PROJECTS_UPDATE - START_OF_PROJECTS_UPDATE) / divider;
     GlobalLogOutput log = getService(GlobalLogOutput.class);
     for (String projectKey : projectKeysToUpdate) {
