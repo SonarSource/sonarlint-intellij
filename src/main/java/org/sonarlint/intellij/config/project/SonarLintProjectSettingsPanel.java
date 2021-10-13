@@ -21,7 +21,6 @@ package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
@@ -29,18 +28,13 @@ import java.awt.BorderLayout;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.swing.JPanel;
-import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
-import static java.util.Optional.ofNullable;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
-  private final Project project;
   private final SonarLintProjectPropertiesPanel propsPanel;
   private final JPanel root;
   private final JPanel rootBindPane;
@@ -49,7 +43,6 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   private SonarLintProjectBindPanel bindPanel;
 
   public SonarLintProjectSettingsPanel(Project project) {
-    this.project = project;
     bindPanel = new SonarLintProjectBindPanel();
     propsPanel = new SonarLintProjectPropertiesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
@@ -73,9 +66,9 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     return root;
   }
 
-  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings, Map<Module, SonarLintModuleSettings> moduleSettings) {
+  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings, Map<Module, String> moduleOverrides) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings, moduleSettings);
+    bindPanel.load(servers, projectSettings, moduleOverrides);
     exclusionsPanel.load(projectSettings);
   }
 
@@ -111,58 +104,18 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     }
   }
 
-  private boolean bindingChanged(SonarLintProjectSettings projectSettings) {
-    if (projectSettings.isBindingEnabled() != bindPanel.isBindingEnabled()) {
-      return true;
-    }
-
-    if (bindPanel.isBindingEnabled()) {
-      if (!StringUtils.equals(projectSettings.getConnectionName(), ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
-        return true;
-      }
-
-      if (!StringUtils.equals(projectSettings.getProjectKey(), bindPanel.getSelectedProjectKey())) {
-        return true;
-      }
-
-      List<ModuleBindingPanel.ModuleBinding> moduleBindingsFromPanel = bindPanel.getModuleBindings();
-      Map<Module, SonarLintModuleSettings> moduleSettings =
-        Stream.of(ModuleManager.getInstance(project).getModules())
-        .collect(Collectors.toMap(m -> m, org.sonarlint.intellij.config.Settings::getSettingsFor));
-      return moduleBindingsAreDifferent(moduleBindingsFromPanel, moduleSettings);
-    }
-
-    return false;
-  }
-
-  boolean moduleBindingsAreDifferent(List<ModuleBindingPanel.ModuleBinding> moduleBindingsFromPanel,
-    Map<Module, SonarLintModuleSettings> settings) {
-    for (ModuleBindingPanel.ModuleBinding moduleBinding : moduleBindingsFromPanel) {
-      Module module = moduleBinding.getModule();
-      String projectKey = moduleBinding.getSonarProjectKey();
-      if (!(settings.containsKey(module) && settings.get(module).getProjectKey().equals(projectKey))) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public boolean isModified(SonarLintProjectSettings projectSettings) {
-    if (!propsPanel.getProperties().equals(projectSettings.getAdditionalProperties())) {
-      return true;
-    }
-
-    if (isExclusionsModified(projectSettings)) {
-      return true;
-    }
-    return bindingChanged(projectSettings);
-  }
-
-  public boolean isExclusionsModified(SonarLintProjectSettings projectSettings) {
+  public boolean areExclusionsModified(SonarLintProjectSettings projectSettings) {
     return exclusionsPanel.isModified(projectSettings);
   }
 
-  @Override public void dispose() {
+  public boolean isModified(SonarLintProjectSettings projectSettings) {
+    return bindPanel.isModified(projectSettings)
+      || exclusionsPanel.isModified(projectSettings)
+      || propsPanel.isModified(projectSettings);
+  }
+
+  @Override
+  public void dispose() {
     if (bindPanel != null) {
       bindPanel = null;
     }
