@@ -31,7 +31,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.messages.Topic;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,12 +38,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -213,10 +210,8 @@ public class BindingStorageUpdateTask {
       projectsToUpdate = Collections.singleton(onlyForProject);
     } else {
       projectsToUpdate = Stream.of(ProjectManager.getInstance().getOpenProjects())
-        .filter(p -> {
-          SonarLintProjectSettings projectSettings = getSettingsFor(p);
-          return projectSettings.isBindingEnabled() && connection.getName().equals(projectSettings.getConnectionName());
-        }).collect(Collectors.toList());
+        .filter(p -> getSettingsFor(p).isBoundTo(connection))
+        .collect(Collectors.toList());
     }
     return projectsToUpdate;
   }

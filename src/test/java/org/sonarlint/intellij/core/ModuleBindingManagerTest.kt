@@ -27,6 +27,7 @@ import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.common.ui.SonarLintConsole
+import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
@@ -45,7 +46,7 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
         `when`(engineManager.standaloneEngine).thenReturn(standaloneEngine)
         `when`(engineManager.getConnectedEngine(ArgumentMatchers.any(SonarLintProjectNotifications::class.java), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(connectedEngine)
         moduleBindingManager = ModuleBindingManager(module) { engineManager }
-        replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager);
+        replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
     }
 
     @Test
@@ -70,9 +71,35 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
         `when`(engineManager.getConnectedEngineIfStarted(ArgumentMatchers.anyString())).thenReturn(connectedEngine)
         projectSettings.isBindingEnabled = true
         projectSettings.connectionName = "server1"
-        moduleSettings.setProjectKey("key")
+        moduleSettings.projectKey = "key"
 
         assertThat(moduleBindingManager.engineIfStarted).isEqualTo(connectedEngine)
+    }
+
+    @Test
+    fun should_resolve_project_key_if_module_is_not_bound() {
+        projectSettings.bindTo(ServerConnection.newBuilder().setName("name").build(), "projectKey")
+
+        val resolvedProjectKey = moduleBindingManager.resolveProjectKey()
+
+        assertThat(resolvedProjectKey).isEqualTo("projectKey")
+    }
+
+    @Test
+    fun should_not_resolve_any_key_if_project_and_module_are_not_bound() {
+        val resolvedProjectKey = moduleBindingManager.resolveProjectKey()
+
+        assertThat(resolvedProjectKey).isNull()
+    }
+
+    @Test
+    fun should_clear_project_and_module_binding_settings_when_unbinding() {
+        moduleSettings.projectKey = "moduleKey"
+
+        moduleBindingManager.unbind()
+
+        assertThat(moduleSettings.isProjectBindingOverridden).isFalse
+        assertThat(moduleSettings.projectKey).isEmpty()
     }
 
     private val standaloneEngine = mock(StandaloneSonarLintEngine::class.java)

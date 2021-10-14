@@ -103,10 +103,6 @@ public final class SonarLintProjectSettings {
     return isBindingEnabled() && this.projectKey != null && connectionName != null;
   }
 
-  public boolean isBoundTo(String projectKey, ServerConnection connection) {
-    return isBoundTo(connection) && projectKey.equals(this.projectKey);
-  }
-
   public boolean isBoundTo(ServerConnection connection) {
     return isBindingEnabled() && connection.getName().equals(connectionName);
   }

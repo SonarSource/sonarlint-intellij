@@ -57,15 +57,17 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 public class ProjectBindingManager {
   private final Project myProject;
   private final Supplier<SonarLintEngineManager> engineManagerSupplier;
+  private final ProgressManager progressManager;
 
   public ProjectBindingManager(Project project) {
-    this(project, () -> getService(SonarLintEngineManager.class));
+    this(project, () -> getService(SonarLintEngineManager.class), ProgressManager.getInstance());
   }
 
   @NonInjectable
-  ProjectBindingManager(Project project, Supplier<SonarLintEngineManager> engineManagerSupplier) {
+  ProjectBindingManager(Project project, Supplier<SonarLintEngineManager> engineManagerSupplier, ProgressManager progressManager) {
     this.myProject = project;
     this.engineManagerSupplier = engineManagerSupplier;
+    this.progressManager = progressManager;
   }
 
   /**
@@ -177,7 +179,7 @@ public class ProjectBindingManager {
       myProject.getMessageBus().syncPublisher(ProjectEngineListener.TOPIC).engineChanged(previousEngine, newEngine);
     }
     BindingStorageUpdateTask task = new BindingStorageUpdateTask(newEngine, connection, false, true, myProject);
-    ProgressManager.getInstance().run(task.asModal());
+    progressManager.run(task.asModal());
     myProject.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
   }
 
