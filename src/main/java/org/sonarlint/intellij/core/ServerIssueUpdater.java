@@ -33,9 +33,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -151,10 +153,13 @@ public class ServerIssueUpdater implements Disposable {
     ConnectedSonarLintEngine engine) {
     IssueUpdater issueUpdater = new IssueUpdater(server, engine);
     List<Future<Void>> futuresList = new ArrayList<>();
+    Set<String> updatedProjects = ConcurrentHashMap.newKeySet();
     for (Map.Entry<Module, Collection<VirtualFile>> e : filesPerModule.entrySet()) {
       String projectKey = getService(e.getKey(), ModuleBindingManager.class).resolveProjectKey();
       Runnable task = () -> {
-        issueUpdater.downloadAllServerIssues(Objects.requireNonNull(projectKey));
+        if (updatedProjects.add(projectKey)) {
+          issueUpdater.downloadAllServerIssues(Objects.requireNonNull(projectKey));
+        }
         ProjectBinding binding = getProjectBinding(e.getKey());
         Map<VirtualFile, String> relativePathPerFile = getRelativePaths(e.getKey().getProject(), e.getValue());
 
