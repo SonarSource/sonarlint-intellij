@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.progress.ProgressManager;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Rule;
@@ -60,7 +61,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
     when(engineManager.getStandaloneEngine()).thenReturn(standaloneEngine);
     when(engineManager.getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), anyString())).thenReturn(connectedEngine);
-    projectBindingManager = new ProjectBindingManager(getProject(), () -> engineManager);
+    projectBindingManager = new ProjectBindingManager(getProject(), () -> engineManager, mock(ProgressManager.class));
   }
 
   @Test
@@ -180,6 +181,27 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     SonarLintEngine engine = projectBindingManager.getEngineIfStarted();
 
     assertThat(engine).isNull();
+  }
+
+  @Test
+  public void should_store_project_binding_in_settings() {
+    ServerConnection connection = ServerConnection.newBuilder().setName("name").build();
+
+    projectBindingManager.bindTo(connection, "projectKey", Collections.emptyMap());
+
+    assertThat(getProjectSettings().isBoundTo(connection)).isTrue();
+    assertThat(getProjectSettings().getProjectKey()).isEqualTo("projectKey");
+  }
+
+  @Test
+  public void should_store_project_and_module_bindings_in_settings() {
+    ServerConnection connection = ServerConnection.newBuilder().setName("name").build();
+    projectBindingManager.bindTo(connection, "projectKey", Collections.singletonMap(getModule(), "moduleProjectKey"));
+
+    assertThat(getProjectSettings().isBoundTo(connection)).isTrue();
+    assertThat(getProjectSettings().getProjectKey()).isEqualTo("projectKey");
+    assertThat(getModuleSettings().isProjectBindingOverridden()).isTrue();
+    assertThat(getModuleSettings().getProjectKey()).isEqualTo("moduleProjectKey");
   }
 
   @Test
