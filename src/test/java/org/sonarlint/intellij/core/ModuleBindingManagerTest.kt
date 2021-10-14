@@ -70,7 +70,7 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
         `when`(engineManager.getConnectedEngineIfStarted(ArgumentMatchers.anyString())).thenReturn(connectedEngine)
         projectSettings.isBindingEnabled = true
         projectSettings.connectionName = "server1"
-        moduleSettings.overrideProjectBinding("key")
+        moduleSettings.setProjectKey("key")
 
         assertThat(moduleBindingManager.engineIfStarted).isEqualTo(connectedEngine)
     }
