@@ -165,7 +165,7 @@ public class ProjectBindingManager {
     SonarLintEngine previousEngine = getEngineIfStarted();
     SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
     projectSettings.bindTo(connection, projectKey);
-    moduleBindingsOverrides.forEach((module, overriddenProjectKey) -> getSettingsFor(module).overrideProjectBinding(overriddenProjectKey));
+    moduleBindingsOverrides.forEach((module, overriddenProjectKey) -> getSettingsFor(module).setProjectKey(overriddenProjectKey));
 
     Stream<Module> modulesToClearOverride = allModules().stream()
       .filter(m -> !moduleBindingsOverrides.containsKey(m));

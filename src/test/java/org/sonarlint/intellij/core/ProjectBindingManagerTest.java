@@ -102,7 +102,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setProjectKey("project1");
     getProjectSettings().setConnectionName("server1");
 
-    getModuleSettings().overrideProjectBinding("project2");
+    getModuleSettings().setProjectKey("project2");
 
     SonarLintFacade facade = projectBindingManager.getFacade(getModule());
 
@@ -199,7 +199,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_clear_project_and_module_binding_settings_when_unbinding() {
     getProjectSettings().bindTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey");
-    getModuleSettings().overrideProjectBinding("moduleProjectKey");
+    getModuleSettings().setProjectKey("moduleProjectKey");
 
     projectBindingManager.unbind();
 
