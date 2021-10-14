@@ -26,15 +26,13 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -92,7 +90,6 @@ public class ServerIssueUpdater implements Disposable {
     }
     try {
       ProjectBindingManager projectBindingManager = getService(myProject, ProjectBindingManager.class);
-      Set<String> projectKeysToFetchIssues = new HashSet<>(projectBindingManager.getUniqueProjectKeysForModules(filesPerModule.keySet()));
       ServerConnection connection = projectBindingManager.getServerConnection();
       ConnectedSonarLintEngine engine = projectBindingManager.getConnectedEngine();
 
@@ -113,12 +110,10 @@ public class ServerIssueUpdater implements Disposable {
       indicator.setText(msg);
 
       // submit tasks
-      projectKeysToFetchIssues.forEach(projectKey -> {
-        List<Future<Void>> updateTasks = fetchAndMatchServerIssues(projectKey, filesPerModule, connection, engine, downloadAll);
-        if (waitForCompletion) {
-          waitForTasks(updateTasks);
-        }
-      });
+      List<Future<Void>> updateTasks = fetchAndMatchServerIssues(filesPerModule, connection, engine, downloadAll);
+      if (waitForCompletion) {
+        waitForTasks(updateTasks);
+      }
     } catch (InvalidBindingException e) {
       // ignore, do nothing
     }
@@ -137,38 +132,40 @@ public class ServerIssueUpdater implements Disposable {
     }
   }
 
-  private List<Future<Void>> fetchAndMatchServerIssues(String projectKey, Map<Module, Collection<VirtualFile>> filesPerModule,
+  private List<Future<Void>> fetchAndMatchServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule,
     ServerConnection server, ConnectedSonarLintEngine engine, boolean downloadAll) {
     List<Future<Void>> futureList = new LinkedList<>();
 
     if (!downloadAll) {
       for (Map.Entry<Module, Collection<VirtualFile>> e : filesPerModule.entrySet()) {
-        futureList.addAll(fetchAndMatchServerIssues(projectKey, e.getKey(), e.getValue(), server, engine));
+        String projectKey = getService(e.getKey(), ModuleBindingManager.class).resolveProjectKey();
+        futureList.addAll(fetchAndMatchServerIssues(Objects.requireNonNull(projectKey), e.getKey(), e.getValue(), server, engine));
       }
     } else {
-      futureList.addAll(downloadAndMatchAllServerIssues(projectKey, filesPerModule, server, engine));
+      futureList.addAll(downloadAndMatchAllServerIssues(filesPerModule, server, engine));
     }
     return futureList;
   }
 
-  private List<Future<Void>> downloadAndMatchAllServerIssues(String projectKey, Map<Module, Collection<VirtualFile>> filesPerModule, ServerConnection server,
+  private List<Future<Void>> downloadAndMatchAllServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule, ServerConnection server,
     ConnectedSonarLintEngine engine) {
     IssueUpdater issueUpdater = new IssueUpdater(server, engine);
-
-    Runnable task = () -> {
-      issueUpdater.downloadAllServerIssues(projectKey);
-
-      for (Map.Entry<Module, Collection<VirtualFile>> e : filesPerModule.entrySet()) {
+    List<Future<Void>> futuresList = new ArrayList<>();
+    for (Map.Entry<Module, Collection<VirtualFile>> e : filesPerModule.entrySet()) {
+      String projectKey = getService(e.getKey(), ModuleBindingManager.class).resolveProjectKey();
+      Runnable task = () -> {
+        issueUpdater.downloadAllServerIssues(Objects.requireNonNull(projectKey));
         ProjectBinding binding = getProjectBinding(e.getKey());
         Map<VirtualFile, String> relativePathPerFile = getRelativePaths(e.getKey().getProject(), e.getValue());
 
         for (Map.Entry<VirtualFile, String> entry : relativePathPerFile.entrySet()) {
           issueUpdater.fetchAndMatchFile(binding, entry.getKey(), entry.getValue());
         }
-      }
-    };
+      };
+      futuresList.add(submit(task, Objects.requireNonNull(projectKey), null));
+    }
 
-    return Collections.singletonList(submit(task, projectKey, null));
+    return futuresList;
   }
 
   private ProjectBinding getProjectBinding(Module module) {
