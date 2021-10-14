@@ -125,7 +125,7 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
         val connection = ServerConnection.newBuilder().setHostUrl("serverUrl").setName("connectionName").build()
         globalSettings.addServerConnection(connection)
         projectSettings.bindTo(connection, "another_projectKey")
-        moduleSettings.overrideProjectBinding("projectKey")
+        moduleSettings.setProjectKey("projectKey")
         `when`(projectManager.openProjects).thenReturn(arrayOf(project))
         `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("projectKey"))
 
@@ -140,7 +140,7 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
         val connection = ServerConnection.newBuilder().setHostUrl("serverUrl").setName("connectionName").build()
         globalSettings.addServerConnection(connection)
         projectSettings.bindTo(connection, "another_projectKey")
-        moduleSettings.overrideProjectBinding("projectKey")
+        moduleSettings.setProjectKey("projectKey")
         `when`(modalPresenter.showConfirmModal(eq("title"), any(), eq("Select project"))).thenReturn(true)
         `when`(projectSelectionDialog.selectProject()).thenReturn(project)
         `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("projectKey"))

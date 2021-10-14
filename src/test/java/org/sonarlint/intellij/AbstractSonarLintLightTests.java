@@ -143,7 +143,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   protected void connectModuleTo(String projectKey) {
-    getModuleSettings().overrideProjectBinding(projectKey);
+    getModuleSettings().setProjectKey(projectKey);
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {

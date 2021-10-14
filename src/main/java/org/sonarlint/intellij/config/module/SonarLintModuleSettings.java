@@ -31,7 +31,7 @@ public final class SonarLintModuleSettings {
     return projectKey;
   }
 
-  public void overrideProjectBinding(String projectKey) {
+  public void setProjectKey(String projectKey) {
     this.projectKey = projectKey;
   }
 

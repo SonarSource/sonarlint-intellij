@@ -31,7 +31,7 @@ class SonarLintModuleSettingsTest {
         assertThat(settings.projectKey).isEmpty()
         assertThat(settings.isProjectBindingOverridden).isFalse
 
-        settings.overrideProjectBinding("project1")
+        settings.setProjectKey("project1")
         assertThat(settings.projectKey).isEqualTo("project1")
         assertThat(settings.isProjectBindingOverridden).isTrue
 
