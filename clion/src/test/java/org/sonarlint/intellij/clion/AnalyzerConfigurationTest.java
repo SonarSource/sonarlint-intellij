@@ -22,13 +22,22 @@ package org.sonarlint.intellij.clion;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.CUDALanguageKind;
+import com.jetbrains.cidr.lang.OCLanguageKind;
+import com.jetbrains.cidr.lang.toolchains.CidrSwitchBuilder;
+import com.jetbrains.cidr.lang.toolchains.CidrToolEnvironment;
+import com.jetbrains.cidr.lang.workspace.compiler.CompilerSpecificSwitchBuilder;
+import com.jetbrains.cidr.lang.workspace.compiler.OCCompiler;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
-
-import java.util.Arrays;
-import java.util.Collections;
-
+import com.jetbrains.cidr.lang.workspace.compiler.TempFilesPool;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -38,6 +47,31 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 
 class AnalyzerConfigurationTest {
+
+  /**
+   * 2021.3 differentiates AppleClang from Clang
+   */
+  private static final OCCompilerKind APPLE_CLANG_COMPILER = new OCCompilerKind() {
+    @Override
+    public @NotNull String getDisplayName() {
+      return "AppleClang";
+    }
+
+    @Override
+    public @Nullable OCLanguageKind resolveLanguage(@NotNull List<String> list) {
+      return null;
+    }
+
+    @Override
+    public @Nullable CompilerSpecificSwitchBuilder getSwitchBuilder(@NotNull CidrSwitchBuilder cidrSwitchBuilder) {
+      return null;
+    }
+
+    @Override
+    public @NotNull OCCompiler getCompilerInstance(@NotNull File file, @NotNull File file1, @NotNull CidrToolEnvironment cidrToolEnvironment, @NotNull TempFilesPool tempFilesPool) {
+      return null;
+    }
+  };
 
   @Test
   void get_sonar_language() {
@@ -54,6 +88,7 @@ class AnalyzerConfigurationTest {
     assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.GCC));
     assertNull(AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG_CL));
     assertEquals("msvc-cl", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.MSVC));
+    assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(APPLE_CLANG_COMPILER));
   }
 
   @Test

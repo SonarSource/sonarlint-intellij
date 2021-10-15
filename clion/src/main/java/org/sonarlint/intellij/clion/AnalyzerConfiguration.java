@@ -32,14 +32,13 @@ import com.jetbrains.cidr.cpp.toolchains.CPPEnvironment;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.OCLanguageKind;
 import com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil;
+import com.jetbrains.cidr.lang.preprocessor.OCResolveRootAndConfiguration;
 import com.jetbrains.cidr.lang.psi.OCFile;
 import com.jetbrains.cidr.lang.psi.OCParsedLanguageAndConfiguration;
 import com.jetbrains.cidr.lang.psi.OCPsiFile;
 import com.jetbrains.cidr.lang.toolchains.CidrCompilerSwitches;
 import com.jetbrains.cidr.lang.workspace.OCCompilerSettings;
 import com.jetbrains.cidr.lang.workspace.OCResolveConfiguration;
-import com.jetbrains.cidr.lang.workspace.compiler.ClangCompilerKind;
-import com.jetbrains.cidr.lang.workspace.compiler.GCCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.MSVCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.headerRoots.HeadersSearchPath;
@@ -53,10 +52,14 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class AnalyzerConfiguration {
   private final Project project;
+
+  private static final BiFunction<VirtualFile, Project, OCResolveConfiguration> FALLBACK_CONFIGURATION_RESOLVER = (f, p) -> null;
+  private static BiFunction<VirtualFile, Project, OCResolveConfiguration> configurationResolver = null;
   private static Method preprocessorDefinesMethod;
 
   public AnalyzerConfiguration(@NotNull Project project) {
@@ -89,7 +92,7 @@ public class AnalyzerConfiguration {
       languageKind = ocFile.getKind();
     }
     if (configuration == null) {
-      configuration = OCInclusionContextUtil.getResolveRootAndActiveConfiguration(file, project).getConfiguration();
+      configuration = getConfigurationResolver(project).apply(file, project);
     }
     if (configuration == null) {
       return ConfigurationResult.skip("configuration not found");
@@ -172,12 +175,16 @@ public class AnalyzerConfiguration {
 
   @Nullable
   static String mapToCFamilyCompiler(OCCompilerKind compilerKind) {
-    if ((compilerKind instanceof GCCCompilerKind) || (compilerKind instanceof ClangCompilerKind)) {
-      return "clang";
-    } else if (compilerKind instanceof MSVCCompilerKind) {
-      return "msvc-cl";
+    switch (compilerKind.getDisplayName()) {
+      case "AppleClang":
+      case "Clang":
+      case "GCC":
+        return "clang";
+      case "MSVC":
+        return "msvc-cl";
+      default:
+        return null;
     }
-    return null;
   }
 
   @Nullable
@@ -255,6 +262,53 @@ public class AnalyzerConfiguration {
       }
     }
     return preprocessorDefinesMethod;
+  }
+
+  private static BiFunction<VirtualFile, Project, OCResolveConfiguration> getConfigurationResolver(Project project) {
+    if (configurationResolver == null) {
+      configurationResolver = loadConfigurationResolver(project);
+    }
+    return configurationResolver;
+  }
+
+  private static BiFunction<VirtualFile, Project, OCResolveConfiguration> loadConfigurationResolver(Project project) {
+    // Before 2021.3: com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil.getResolveRootAndActiveConfiguration
+    try {
+      final Method method = OCInclusionContextUtil.class.getMethod("getResolveRootAndActiveConfiguration", VirtualFile.class, Project.class);
+      return (f, p) -> {
+        try {
+          final Object result = method.invoke(null, f, p);
+          return result == null ? null : ((OCResolveRootAndConfiguration) result).getConfiguration();
+        } catch (ReflectiveOperationException e) {
+          throw new IllegalStateException(e);
+        }
+      };
+    } catch (NoSuchMethodException e) {
+      SonarLintConsole.get(project).debug("com.jetbrains.cidr.lang.preprocessor.OCInclusionContextUtil$getResolveRootAndActiveConfiguration not found");
+    }
+
+    // Starting from 2021.3 com.jetbrains.cidr.lang.workspace.OCResolveConfigurations.getPreselectedConfiguration
+    Class<?> ocResolveConfigurationsClass;
+    try {
+      ocResolveConfigurationsClass = OCResolveConfiguration.class.forName("com.jetbrains.cidr.lang.workspace.OCResolveConfigurations");
+    } catch (ClassNotFoundException e) {
+      SonarLintConsole.get(project).debug("com.jetbrains.cidr.lang.workspace.OCResolveConfigurations not found");
+      return FALLBACK_CONFIGURATION_RESOLVER;
+    }
+    try {
+      final Method getPreselectedConfiguration = ocResolveConfigurationsClass.getMethod("getPreselectedConfiguration", VirtualFile.class, Project.class);
+      return (f, p) -> {
+        try {
+          final Object result = getPreselectedConfiguration.invoke(null, f, p);
+          return result == null ? null : (OCResolveConfiguration) result;
+        } catch (ReflectiveOperationException e) {
+          throw new IllegalStateException(e);
+        }
+      };
+    } catch (NoSuchMethodException e) {
+      SonarLintConsole.get(project).debug("com.jetbrains.cidr.lang.workspace.OCResolveConfigurations$getPreselectedConfiguration not found");
+    }
+    return FALLBACK_CONFIGURATION_RESOLVER;
   }
 
   public static class ConfigurationResult {
