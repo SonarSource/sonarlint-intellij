@@ -27,6 +27,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ui.configuration.ChooseModulesDialog
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.ui.Splitter
+import com.intellij.projectImport.ProjectAttachProcessor
 import com.intellij.ui.AnActionButton
 import com.intellij.ui.AnActionButtonRunnable
 import com.intellij.ui.CollectionListModel
@@ -41,6 +42,7 @@ import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask
@@ -68,11 +70,18 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
     private val detailsContainer = JBPanelWithEmptyText(BorderLayout())
 
     init {
-        rootPanel.isVisible = SonarLintUtils.enableModuleLevelBinding()
-        rootPanel.border = IdeBorderFactory.createTitledBorder("Override binding per-module:")
+        rootPanel.isVisible = SonarLintUtils.isModuleLevelBindingEnabled() && ModuleManager.getInstance(project).modules.size > 1
         modulesList = JBList()
+        if (ProjectAttachProcessor.canAttachToProject()) {
+            rootPanel.border = IdeBorderFactory.createTitledBorder("Override binding of attached project(s)")
+            modulesList.emptyText.text = "No overridden attached project(s) binding"
+            detailsContainer.withEmptyText("Select an attached project in the list")
+        } else {
+            rootPanel.border = IdeBorderFactory.createTitledBorder("Override binding per-module")
+            modulesList.emptyText.text = "No overridden module binding"
+            detailsContainer.withEmptyText("Select a module in the list")
+        }
         modulesList.model = modulesListModel
-        modulesList.emptyText.text = "No module binding"
         modulesList.addListSelectionListener { event ->
             if (!event.valueIsAdjusting) {
                 onModuleBindingSelectionChanged()
@@ -84,7 +93,7 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
                 module: ModuleBinding,
                 index: Int,
                 selected: Boolean,
-                hasFocus: Boolean
+                hasFocus: Boolean,
             ) {
                 icon = AllIcons.Nodes.Module
                 append(module.module.name, SimpleTextAttributes.REGULAR_ATTRIBUTES)
@@ -100,33 +109,32 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
         projectKeyTextField.emptyText.text = "Input project key or search one"
         val projectKeyLabel = JLabel("Project key:")
         projectKeyLabel.labelFor = projectKeyTextField
-        detailsContainer.withEmptyText("Select a module in the list")
         val insets = JBUI.insets(2, 0, 0, 0)
         moduleBindingDetailsPanel.add(
             projectKeyLabel, GridBagConstraints(
-                0, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST, GridBagConstraints.NONE, insets, 0, 0
-            )
+            0, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST, GridBagConstraints.NONE, insets, 0, 0
+        )
         )
         moduleBindingDetailsPanel.add(
             projectKeyTextField, GridBagConstraints(
-                1, 0, 1, 1, 1.0, 0.0,
-                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, insets, 0, 0
-            )
+            1, 0, 1, 1, 1.0, 0.0,
+            GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, insets, 0, 0
+        )
         )
         val searchProjectKeyButton = JButton()
         moduleBindingDetailsPanel.add(
             searchProjectKeyButton, GridBagConstraints(
-                2, 0, 1, 1, 0.0, 0.0,
-                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, insets, 0, 0
-            )
+            2, 0, 1, 1, 0.0, 0.0,
+            GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, insets, 0, 0
+        )
         )
         // fill remaining space
         moduleBindingDetailsPanel.add(
             JPanel(), GridBagConstraints(
-                0, 1, 3, 1, 0.0, 1.0,
-                GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, insets, 0, 0
-            )
+            0, 1, 3, 1, 0.0, 1.0,
+            GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL, insets, 0, 0
+        )
         )
         detailsContainer.add(moduleBindingDetailsPanel)
         moduleBindingDetailsPanel.isVisible = false
@@ -176,7 +184,7 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
 
     private fun downloadProjectList(
         project: Project,
-        selectedConnection: ServerConnection
+        selectedConnection: ServerConnection,
     ): Map<String, ServerProject>? {
         val engine = getService(SonarLintEngineManager::class.java).getConnectedEngine(selectedConnection.name)
         val downloadTask = ServerDownloadProjectTask(project, engine, selectedConnection)
@@ -233,8 +241,14 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
             val collectionListModel = modulesList.model as CollectionListModel<ModuleBinding>
             val existingModuleNames = collectionListModel.items.map { it.module.name }
             val modulesToPickFrom =
-                ModuleManager.getInstance(project).modules.filter { !existingModuleNames.contains(it.name) }
-            val dialog = ChooseModulesDialog(modulesList, modulesToPickFrom.toMutableList(), "Select a module to bind")
+                ModuleManager.getInstance(project).modules.filter {
+                    !existingModuleNames.contains(it.name) &&
+                        getService(it, ModuleBindingManager::class.java).isBindingOverrideAllowed()
+                }
+            val dialog = if (ProjectAttachProcessor.canAttachToProject())
+                ChooseModulesDialog(modulesList, modulesToPickFrom.toMutableList(), "Select attached project", "Select the attached project for which you want to override the binding")
+            else
+                ChooseModulesDialog(modulesList, modulesToPickFrom.toMutableList(), "Select module", "Select the module for which you want to override the binding")
             dialog.setSingleSelectionMode()
             dialog.show()
             dialog.chosenElements.firstOrNull()?.let {
@@ -259,6 +273,6 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
 
     data class ModuleBinding(
         val module: Module,
-        var sonarProjectKey: String? = null
+        var sonarProjectKey: String? = null,
     )
 }

@@ -61,7 +61,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     ContentManager contentManager = toolWindow.getContentManager();
     addIssuesTab(project, contentManager);
     addAnalysisResultsTab(project, contentManager);
-    if (SonarLintUtils.enableTaintVulnerabilities()) {
+    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       addTaintIssuesTab(project, contentManager);
     }
     addLogTab(project, toolWindow);

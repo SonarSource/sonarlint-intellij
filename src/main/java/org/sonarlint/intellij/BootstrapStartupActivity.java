@@ -44,7 +44,7 @@ public class BootstrapStartupActivity implements StartupActivity {
     SonarLintUtils.getService(project, ProjectServerNotificationsSubscriber.class).start();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
-    if (SonarLintUtils.enableTaintVulnerabilities()) {
+    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       SonarLintUtils.getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
     }
 

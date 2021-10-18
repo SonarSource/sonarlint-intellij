@@ -22,12 +22,14 @@ package org.sonarlint.intellij.config.project;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.options.ex.Settings;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.projectImport.ProjectAttachProcessor;
 import com.intellij.ui.ColoredListCellRenderer;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SimpleTextAttributes;
@@ -36,6 +38,7 @@ import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
+
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -55,6 +58,7 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
+
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -92,10 +96,10 @@ public class SonarLintProjectBindPanel {
   public JPanel create(Project project) {
     this.project = project;
     rootPanel = new JPanel(new BorderLayout());
-    bindEnable = new JBCheckBox("Bind project to SonarQube / SonarCloud", true);
+    boolean pluralizeProject = ProjectAttachProcessor.canAttachToProject() && ModuleManager.getInstance(project).getModules().length > 1;
+    bindEnable = new JBCheckBox("Bind project"+ (pluralizeProject ? "s" : "") + " to SonarQube / SonarCloud", true);
     bindEnable.addItemListener(new BindItemListener());
     createBindPanel();
-
 
     rootPanel.add(bindEnable, BorderLayout.NORTH);
     rootPanel.add(bindPanel, BorderLayout.CENTER);
@@ -214,10 +218,8 @@ public class SonarLintProjectBindPanel {
   }
 
   private void createBindPanel() {
-    Border b = IdeBorderFactory.createTitledBorder("Project binding");
 
     bindPanel = new JPanel(new GridBagLayout());
-    bindPanel.setBorder(b);
 
     configureConnectionButton = new JButton();
     configureConnectionButton.setAction(new AbstractAction() {
@@ -234,9 +236,9 @@ public class SonarLintProjectBindPanel {
     connectionComboBox.setRenderer(new ServerComboBoxRenderer());
     connectionComboBox.addItemListener(new ServerItemListener());
 
-    projectKeyLabel = new JLabel("Project:");
+    projectKeyLabel = new JLabel("Project key:");
     projectKeyTextField = new JBTextField();
-    projectKeyTextField.getEmptyText().setText("Input project key or search one");
+    projectKeyTextField.getEmptyText().setText("Input SonarQube/SonarCloud project key or search one");
 
     searchProjectButton = new JButton();
     searchProjectButton.setAction(new AbstractAction() {

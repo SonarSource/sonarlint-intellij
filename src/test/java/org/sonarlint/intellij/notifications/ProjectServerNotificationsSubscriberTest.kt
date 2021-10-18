@@ -19,6 +19,17 @@
  */
 package org.sonarlint.intellij.notifications
 
+import com.intellij.openapi.module.Module
+import com.intellij.openapi.projectRoots.Sdk
+import com.intellij.openapi.roots.ContentEntry
+import com.intellij.openapi.roots.DependencyScope
+import com.intellij.openapi.roots.ModifiableRootModel
+import com.intellij.openapi.roots.ModuleRootModificationUtil
+import com.intellij.openapi.util.io.FileUtil
+import com.intellij.testFramework.IdeaTestUtil
+import com.intellij.testFramework.LightProjectDescriptor
+import com.intellij.testFramework.PsiTestUtil
+import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.Before
@@ -35,6 +46,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyZeroInteractions
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.analysis.JavaAnalysisConfiguratorTests
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -42,6 +54,7 @@ import org.sonarlint.intellij.core.ServerNotificationsService
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
+import java.io.IOException
 
 @RunWith(MockitoJUnitRunner::class)
 class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
@@ -55,8 +68,6 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   fun setup() {
     serverNotificationsService = mock(ServerNotificationsService::class.java)
     projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService)
-    projectSettings.unbind()
-    globalSettings.serverConnections = emptyList()
     clearNotifications()
   }
 
@@ -70,21 +81,6 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
     verify(serverNotificationsService).register(capture(notificationConfigurationCaptor))
     val notificationConfiguration = notificationConfigurationCaptor.value
     assertThat(notificationConfiguration.projectKey()).isEqualTo("projectKey")
-  }
-
-  @Test
-  fun it_should_register_at_start_when_module_bound_and_server_supports_notifications() {
-    connectProjectTo("host", "name", "projectKey")
-    connectModuleTo("moduleProjectKey")
-    `when`(serverNotificationsService.isSupported(any())).thenReturn(true)
-
-    projectServerNotificationsSubscriber.start()
-
-    verify(serverNotificationsService, times(1)).register(capture(notificationConfigurationCaptor))
-    val notificationConfigurations = notificationConfigurationCaptor.allValues
-    assertThat(notificationConfigurations)
-      .extracting(NotificationConfiguration::projectKey)
-      .containsOnly(tuple("moduleProjectKey"))
   }
 
   @Test

@@ -21,12 +21,16 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.platform.ModuleAttachProcessor;
 import com.intellij.serviceContainer.NonInjectable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.annotation.CheckForNull;
+
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
@@ -64,9 +68,11 @@ public class ModuleBindingManager {
 
   @CheckForNull
   public String resolveProjectKey() {
-    SonarLintModuleSettings moduleSettings = getSettingsFor(module);
-    if (moduleSettings.isProjectBindingOverridden()) {
-      return moduleSettings.getProjectKey();
+    if (isBindingOverrideAllowed()) {
+      SonarLintModuleSettings moduleSettings = getSettingsFor(module);
+      if (moduleSettings.isProjectBindingOverridden()) {
+        return moduleSettings.getProjectKey();
+      }
     }
     SonarLintProjectSettings projectSettings = getSettingsFor(module.getProject());
     String defaultProjectKey = projectSettings.getProjectKey();
@@ -74,6 +80,30 @@ public class ModuleBindingManager {
       return defaultProjectKey;
     }
     return null;
+  }
+
+  /**
+   * Module level binding override is allowed if:
+   * <li>the IDE supports module or attached projects</li>
+   * <li>there is more than one module/at least one attached project</li>
+   * <li>the current module is not the primary project</li>
+   */
+  public boolean isBindingOverrideAllowed() {
+    return SonarLintUtils.isModuleLevelBindingEnabled()
+            && hasProjectMoreThanOneModule()
+            && isNotPrimaryProject();
+  }
+
+  /**
+   * In some IDEs (PyCharm, PHPStorm, ..) there is the possibility to attach additional projects to the "primary" project.
+   * We only want to allow overriding the binding for attached projects.
+   */
+  private boolean isNotPrimaryProject() {
+    return !module.equals(ModuleAttachProcessor.getPrimaryModule(module.getProject()));
+  }
+
+  private boolean hasProjectMoreThanOneModule() {
+    return ModuleManager.getInstance(module.getProject()).getModules().length > 1;
   }
 
   public void updatePathPrefixes(ConnectedSonarLintEngine engine) {
@@ -120,4 +150,5 @@ public class ModuleBindingManager {
   public void unbind() {
     getSettingsFor(module).clearBindingOverride();
   }
+
 }
