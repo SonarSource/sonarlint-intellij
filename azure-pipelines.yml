@@ -148,7 +148,6 @@ stages:
       displayName: Run ITs
       strategy:
         matrix:
-          # remote-robot crashes on 2018.3
           Idea2019:
             IDEA_VERSION: 'IC-2019.3'
           CLion2019:
@@ -157,10 +156,10 @@ stages:
             IDEA_VERSION: 'IC-2020.3.3'
           CLion2020:
             IDEA_VERSION: 'CL-2020.3.3'
-          LatestIdeaEAP:
+          IdeaEAP:
             IDEA_VERSION: 'IC-LATEST-EAP-SNAPSHOT'
-          CLion2021:
-            IDEA_VERSION: 'CL-2021.1'
+          CLionEAP:
+            IDEA_VERSION: 'CL-LATEST-EAP-SNAPSHOT'
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:

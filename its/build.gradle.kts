@@ -78,6 +78,7 @@ tasks.runIdeForUiTests {
     systemProperty("sonarlint.telemetry.disabled", "true")
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")
     systemProperty("jb.consents.confirmation.enabled", "false")
+    systemProperty("eap.require.license", "true")
     jvmArgs = listOf("-Xmx1G")
 }
 
