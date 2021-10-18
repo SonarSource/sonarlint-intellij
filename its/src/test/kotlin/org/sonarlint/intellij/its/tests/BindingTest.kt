@@ -47,6 +47,7 @@ import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
 import org.sonarqube.ws.client.issues.DoTransitionRequest
 import org.sonarqube.ws.client.issues.SearchRequest
+import org.sonarqube.ws.client.settings.SetRequest
 import org.sonarqube.ws.client.users.CreateRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
@@ -81,6 +82,12 @@ class BindingTest : BaseUiTest() {
         )
         clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
         verifyRuleDescriptionTabContains("Methods should not be empty")
+
+        openFile("mod/src/Excluded.scala", "Excluded.scala")
+        verifyCurrentFileTabContainsMessages(
+            "No analysis done on the current opened file",
+            "This file is not automatically analyzed",
+        )
     }
 
     private fun bindProjectAndModuleInFileSettings() {
@@ -164,6 +171,12 @@ class BindingTest : BaseUiTest() {
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "scala", "SonarLint IT Scala")
             ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module ")
             ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
+
+            val excludeFileRequest = SetRequest()
+            excludeFileRequest.key = "sonar.exclusions"
+            excludeFileRequest.component = MODULE_PROJECT_KEY
+            excludeFileRequest.values = listOf("src/Excluded.scala")
+            adminWsClient.settings().set(excludeFileRequest)
 
             ORCHESTRATOR.executeBuild(
                 SonarScanner.create(File("projects/sample-scala/"))
