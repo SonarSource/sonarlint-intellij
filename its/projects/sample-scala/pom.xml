@@ -6,6 +6,7 @@
   <version>1.0-SNAPSHOT</version>
   <name>Sample Scala</name>
   <description>Sample project for ITs</description>
+  <packaging>pom</packaging>
   <!-- Use Maven projects for IntelliJ to automatically create modules -->
   <modules>
     <module>mod</module>

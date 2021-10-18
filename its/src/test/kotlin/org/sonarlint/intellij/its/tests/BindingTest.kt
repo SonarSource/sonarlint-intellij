@@ -23,6 +23,7 @@ import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltip
 import com.intellij.remoterobot.fixtures.JButtonFixture.Companion.byText
 import com.intellij.remoterobot.utils.keyboard
 import com.sonar.orchestrator.Orchestrator
+import com.sonar.orchestrator.build.SonarScanner
 import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.locator.FileLocation
 import com.sonar.orchestrator.locator.MavenLocation
@@ -44,8 +45,11 @@ import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
+import org.sonarqube.ws.client.issues.DoTransitionRequest
+import org.sonarqube.ws.client.issues.SearchRequest
 import org.sonarqube.ws.client.users.CreateRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
+import java.io.File
 
 class BindingTest : BaseUiTest() {
 
@@ -65,16 +69,18 @@ class BindingTest : BaseUiTest() {
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "HelloProject.scala",
-            "Remove or correct this useless self-assignment.",
         )
+        clickCurrentFileIssue("Remove or correct this useless self-assignment.")
+        verifyRuleDescriptionTabContains("Variables should not be self-assigned")
 
         openFile("mod/src/HelloModule.scala", "HelloModule.scala")
 
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "HelloModule.scala",
-            "Add a nested comment explaining why this function is empty or complete the implementation.",
         )
+        clickCurrentFileIssue("Add a nested comment explaining why this function is empty or complete the implementation.")
+        verifyRuleDescriptionTabContains("Methods should not be empty")
     }
 
     private fun bindProjectAndModuleInFileSettings() {
@@ -100,7 +106,13 @@ class BindingTest : BaseUiTest() {
                 clickPath("Tools", "SonarLint", "Project Settings")
             }
             checkBox("Bind project to SonarQube / SonarCloud").select()
+            pressOk()
+            errorMessage("Connection should not be empty")
+
             comboBox("Connection:").selectItem("Orchestrator")
+            pressOk()
+            errorMessage("Project key should not be empty")
+
             jbTextField().text = PROJECT_KEY
 
             actionButton(byTooltipText("Add")).clickWhenEnabled()
@@ -109,6 +121,8 @@ class BindingTest : BaseUiTest() {
                 pressOk()
             }
 
+            pressOk()
+            errorMessage("Project key for module 'sample-scala-module' should not be empty")
             buttons(byText("Search in list..."))[1].click()
             dialog("Search Project in SonarQube") {
                 jList {
@@ -151,9 +165,30 @@ class BindingTest : BaseUiTest() {
             ORCHESTRATOR.server.provisionProject(MODULE_PROJECT_KEY, "Sample Scala Module ")
             ORCHESTRATOR.server.associateProjectToQualityProfile(MODULE_PROJECT_KEY, "scala", "SonarLint IT Scala Module")
 
+            ORCHESTRATOR.executeBuild(
+                SonarScanner.create(File("projects/sample-scala/"))
+                    .setProperty("sonar.login", SONARLINT_USER)
+                    .setProperty("sonar.password", SONARLINT_PWD)
+                    .setProperty("sonar.projectKey", PROJECT_KEY)
+            )
+            ORCHESTRATOR.executeBuild(
+                SonarScanner.create(File("projects/sample-scala/mod/"))
+                    .setProperty("sonar.login", SONARLINT_USER)
+                    .setProperty("sonar.password", SONARLINT_PWD)
+                    .setProperty("sonar.projectKey", MODULE_PROJECT_KEY)
+            )
+
             val generateRequest = GenerateRequest()
             generateRequest.name = "TestUser"
             token = adminWsClient.userTokens().generate(generateRequest).token
+
+
+            val searchRequest = SearchRequest()
+            searchRequest.s = "FILE_LINE"
+            searchRequest.projects = listOf(MODULE_PROJECT_KEY)
+            val response = adminWsClient.issues().search(searchRequest)
+            val firstIssueKey = response.issuesList[0].key
+            adminWsClient.issues().doTransition(DoTransitionRequest().setIssue(firstIssueKey).setTransition("wontfix"))
         }
 
         private fun newAdminWsClient(): WsClient {

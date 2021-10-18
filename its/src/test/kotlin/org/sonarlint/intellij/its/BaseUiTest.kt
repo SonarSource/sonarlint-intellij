@@ -149,6 +149,32 @@ open class BaseUiTest {
         }
     }
 
+    protected fun clickCurrentFileIssue(issueMessage: String) {
+        with(remoteRobot) {
+            idea {
+                toolWindow("SonarLint") {
+                    ensureOpen()
+                    tabTitleContains("Current file") { select() }
+                    content("SonarLintIssuesPanel") {
+                        findText(issueMessage).click()
+                    }
+                }
+            }
+        }
+    }
+
+    protected fun verifyRuleDescriptionTabContains(expectedMessage: String) {
+        with(remoteRobot) {
+            idea {
+                toolWindow("SonarLint") {
+                    content("SonarLintIssuesPanel") {
+                        Assertions.assertThat(hasText(expectedMessage)).isTrue()
+                    }
+                }
+            }
+        }
+    }
+
     @BeforeEach
     fun cleanProject() {
         closeAllDialogs()
