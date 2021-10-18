@@ -38,6 +38,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBPanelWithEmptyText
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -67,6 +68,7 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
     private val detailsContainer = JBPanelWithEmptyText(BorderLayout())
 
     init {
+        rootPanel.isVisible = SonarLintUtils.enableModuleLevelBinding()
         rootPanel.border = IdeBorderFactory.createTitledBorder("Override binding per-module:")
         modulesList = JBList()
         modulesList.model = modulesListModel
