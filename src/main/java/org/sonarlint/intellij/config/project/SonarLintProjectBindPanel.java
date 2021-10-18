@@ -96,10 +96,10 @@ public class SonarLintProjectBindPanel {
     bindEnable.addItemListener(new BindItemListener());
     createBindPanel();
 
-    moduleBindingPanel = new ModuleBindingPanel(project, () -> isBindingEnabled() ? getSelectedConnection() : null);
 
     rootPanel.add(bindEnable, BorderLayout.NORTH);
     rootPanel.add(bindPanel, BorderLayout.CENTER);
+    moduleBindingPanel = new ModuleBindingPanel(project, () -> isBindingEnabled() ? getSelectedConnection() : null);
     rootPanel.add(moduleBindingPanel.getRootPanel(), BorderLayout.SOUTH);
     return rootPanel;
   }

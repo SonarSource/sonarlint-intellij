@@ -223,4 +223,8 @@ public class SonarLintUtils {
     // No Taint Vulnerabilities in C/C++ for the time being
     return !PlatformUtils.isCLion();
   }
+
+  public static boolean enableModuleLevelBinding() {
+    return !PlatformUtils.isRider() && !PlatformUtils.isCLion() && !PlatformUtils.isAppCode();
+  }
 }
