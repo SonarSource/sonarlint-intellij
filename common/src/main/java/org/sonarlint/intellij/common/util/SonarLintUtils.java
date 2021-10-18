@@ -219,12 +219,12 @@ public class SonarLintUtils {
     return ApplicationInfo.getInstance();
   }
 
-  public static boolean enableTaintVulnerabilities() {
+  public static boolean isTaintVulnerabilitiesEnabled() {
     // No Taint Vulnerabilities in C/C++ for the time being
     return !PlatformUtils.isCLion();
   }
 
-  public static boolean enableModuleLevelBinding() {
+  public static boolean isModuleLevelBindingEnabled() {
     return !PlatformUtils.isRider() && !PlatformUtils.isCLion() && !PlatformUtils.isAppCode();
   }
 }

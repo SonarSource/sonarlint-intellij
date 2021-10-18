@@ -97,20 +97,6 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void should_return_facade_for_module_binding_override() throws InvalidBindingException {
-    getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setProjectKey("project1");
-    getProjectSettings().setConnectionName("server1");
-
-    getModuleSettings().setProjectKey("project2");
-
-    SonarLintFacade facade = projectBindingManager.getFacade(getModule());
-
-    assertThat(facade).isInstanceOf(ConnectedSonarLintFacade.class);
-    verify(engineManager).getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), eq("project2"));
-  }
-
-  @Test
   public void should_find_sq_server() throws InvalidBindingException {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setProjectKey("project1");

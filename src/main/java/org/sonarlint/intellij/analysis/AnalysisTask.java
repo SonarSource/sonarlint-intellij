@@ -175,7 +175,7 @@ public class AnalysisTask extends Task.Backgroundable {
 
       matchWithServerIssuesIfNeeded(indicator, filesByModule, issuesPerFile);
 
-      if (SonarLintUtils.enableTaintVulnerabilities()) {
+      if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
         SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
       }
 

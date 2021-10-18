@@ -104,7 +104,7 @@ class BindingTest : BaseUiTest() {
             jbTextField().text = PROJECT_KEY
 
             actionButton(byTooltipText("Add")).clickWhenEnabled()
-            dialog("Select a module to bind") {
+            dialog("Select module") {
                 jbTable().selectItemContaining("sample-scala-module")
                 pressOk()
             }
