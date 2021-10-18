@@ -7,4 +7,8 @@ object Hello {
     def empty() {
 
     }
+
+    def empty2() {
+
+    }
 }

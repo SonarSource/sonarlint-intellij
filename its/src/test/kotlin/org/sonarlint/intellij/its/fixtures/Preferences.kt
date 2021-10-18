@@ -56,17 +56,8 @@ open class PreferencesDialog(
         findElement<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)
     }
 
-    override fun pressOk() {
-        super.pressOk()
-
-        assertValidSettings()
-    }
-
-    fun assertValidSettings() {
-        val invalidSettingsLabel = jLabels(JLabelFixture.byContainsText("Cannot Save Settings"))
-        if (invalidSettingsLabel.isNotEmpty()) {
-            throw IllegalStateException("Could not save settings: ${invalidSettingsLabel.first().value}")
-        }
+    fun errorMessage(message: String) {
+        jLabel(JLabelFixture.byContainsText(message))
     }
 }
 
