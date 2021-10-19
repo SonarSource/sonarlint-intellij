@@ -196,7 +196,7 @@ public class ServerIssueUpdater implements Disposable {
       Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
 
       for (VirtualFile file : files) {
-        String relativePath = SonarLintAppUtils.getPathRelativeToProjectBaseDir(project, file);
+        String relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file);
         if (relativePath != null) {
           relativePathPerFile.put(file, relativePath);
         }

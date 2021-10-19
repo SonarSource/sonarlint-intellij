@@ -124,7 +124,7 @@ public class ModuleBindingManager {
       ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
       moduleRootManager.getFileIndex().iterateContent(virtualFile -> {
         if (!virtualFile.isDirectory()) {
-          String path = SonarLintAppUtils.getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
+          String path = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
           if (path != null) {
             paths.add(path);
           }

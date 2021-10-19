@@ -35,6 +35,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
+import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
 import org.sonarlint.intellij.util.getRelativePathOf
@@ -72,7 +73,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val bindingManager = getService(project, ProjectBindingManager::class.java)
     val module = project.findModuleOf(file) ?: return
     val projectBinding = getService(module, ModuleBindingManager::class.java).binding ?: return
-    val relativePath = project.getRelativePathOf(file) ?: return
+    val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file) ?: return
 
     val serverConnection = bindingManager.serverConnection
     bindingManager.connectedEngine.downloadServerIssues(serverConnection.endpointParams,

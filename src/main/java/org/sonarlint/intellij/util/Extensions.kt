@@ -29,7 +29,7 @@ import com.intellij.openapi.vfs.VirtualFile
 
 fun Project.getOpenFiles() = FileEditorManager.getInstance(this).openFiles.toList()
 
-fun Project.getRelativePathOf(file: VirtualFile) = SonarLintAppUtils.getPathRelativeToProjectBaseDir(this, file)
+fun Project.getRelativePathOf(file: VirtualFile) = SonarLintAppUtils.getRelativePathForAnalysis(this, file)
 
 fun Project.findModuleOf(file: VirtualFile): Module? {
   return ApplicationManager.getApplication().runReadAction<Module?> {
