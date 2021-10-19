@@ -121,7 +121,7 @@ public class SonarLintAppUtils {
   }
 
   @CheckForNull
-  public static String getPathRelativeToProjectBaseDir(Project project, VirtualFile file) {
+  private static String getPathRelativeToProjectBaseDir(Project project, VirtualFile file) {
     final VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
     if (projectDir == null) {
       return null;
@@ -133,7 +133,7 @@ public class SonarLintAppUtils {
    * Path will always contain forward slashes.
    */
   @CheckForNull
-  public static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
+  private static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
     String moduleFilePath = module.getModuleFilePath();
     if ("".equals(moduleFilePath)) {
       // Non persistent module

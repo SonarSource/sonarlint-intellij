@@ -85,7 +85,7 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
       return Collections.emptyList();
     }
 
-    Function<VirtualFile, String> ideFilePathExtractor = s -> SonarLintAppUtils.getPathRelativeToProjectBaseDir(module.getProject(), s);
+    Function<VirtualFile, String> ideFilePathExtractor = s -> SonarLintAppUtils.getRelativePathForAnalysis(module, s);
     return engine.getExcludedFiles(binding, files, ideFilePathExtractor, testPredicate);
   }
 
