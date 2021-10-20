@@ -320,7 +320,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     panel = new JBLoadingPanel(new BorderLayout(), this);
     panel.add(inspectionTreePanel, BorderLayout.CENTER);
 
-    JBLabel label = new JBLabel("<html><b>Note: </b>When a project is bound to a SonarQube server or SonarCloud, only rules configuration from the server applies.</html>");
+    JBLabel label = new JBLabel("<html><b>Note: </b>When a project is bound to a SonarQube server or SonarCloud, the configuration in this tab is ignored. " +
+      "In this case, rules configuration from the server applies, except for rules in the \"Secrets\" category that will always be activated.</html>");
     panel.add(label, BorderLayout.NORTH);
     return panel;
   }
