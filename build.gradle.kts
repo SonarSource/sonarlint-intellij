@@ -15,17 +15,17 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 plugins {
-    kotlin("jvm") version "1.4.30"
-    id("org.jetbrains.intellij") version "1.1.2"
-    id("org.sonarqube") version "3.1.1"
+    kotlin("jvm") version "1.5.31"
+    id("org.jetbrains.intellij") version "1.2.1"
+    id("org.sonarqube") version "3.3"
     java
     jacoco
-    id("com.github.hierynomus.license") version "0.15.0"
-    id("com.jfrog.artifactory") version "4.21.0"
-    id("com.google.protobuf") version "0.8.16"
+    id("com.github.hierynomus.license") version "0.16.1"
+    id("com.jfrog.artifactory") version "4.24.20"
+    id("com.google.protobuf") version "0.8.17"
     idea
     signing
-    id("de.undercouch.download") version "4.1.1"
+    id("de.undercouch.download") version "4.1.2"
 }
 
 buildscript {
@@ -87,10 +87,10 @@ allprojects {
         }
     }
 
-    tasks.withType<KotlinCompile> {
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            jvmTarget = "11"
             apiVersion = "1.3"
+            jvmTarget = "11"
         }
     }
 }
@@ -130,19 +130,6 @@ protobuf {
     }
 }
 
-// The protobuf version embedded into the IntelliJ distribution is conflicting with the one we use in our plugin, so we have to exclude it
-// Note that the version (3.5.1) may change when updating the traget IDE we use for compilation, so this will have to be kept up to date.
-project.afterEvaluate {
-    sourceSets {
-        main {
-            compileClasspath -= files(File(intellij.getIdeaDependency(project).classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
-        }
-        test {
-            runtimeClasspath -= files(File(intellij.getIdeaDependency(project).classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
-        }
-    }
-}
-
 tasks.test {
     java {
         toolchain {
@@ -166,6 +153,12 @@ tasks.runIde {
 configurations {
     create("sqplugins") { isTransitive = false }
     create("typescript") { isCanBeConsumed = false }
+    all {
+        // Allows using project dependencies instead of IDE dependencies during compilation and test running
+        resolutionStrategy {
+            sortArtifacts(ResolutionStrategy.SortOrder.DEPENDENCY_FIRST)
+        }
+    }
 }
 
 dependencies {
@@ -176,8 +169,8 @@ dependencies {
         exclude(module = "slf4j-api")
     }
     implementation(project(":common"))
-    implementation(project(":clion"))
-    implementation(project(":rider"))
+    runtimeOnly(project(":clion"))
+    runtimeOnly(project(":rider"))
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.16.1")
     testImplementation("org.mockito:mockito-core:2.19.0")
@@ -335,7 +328,7 @@ tasks {
     jacocoTestReport {
         classDirectories.setFrom(files("build/classes/java/main-instrumented"))
         reports {
-            xml.setEnabled(true)
+            xml.required.set(true)
         }
     }
 }
