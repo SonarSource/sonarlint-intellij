@@ -64,27 +64,27 @@ For the complete list of tasks, see:
 How to run ITs
 ------------
 
+    ./gradlew :its:runIdeForUiTests &
+
+The above will start an IDE instance with the SonarLint plugin. Wait for the UI robot server to start, then run the ITs:
+
     ./gradlew :its:check
 
-The above will start an IDE instance, wait for the UI robot server to start, run the ITs and finally close the IDE.
+Finally close the IDE.
 
 To test against a specific version of IntelliJ, the `ijVersion` property can be used, e.g.:
 
-    ./gradlew :its:check -PijVersion=IC-2019.3
+    ./gradlew :its:runIdeForUiTests  -PijVersion=IC-2019.3 &
+    ./gradlew :its:check
 
-In development mode, it can be handy to separately start the IDE and run the tests, as follows:
-
-    ./gradlew :its:runIdeForUiTests
-    ./gradlew :its:test
-
-The `:its:runIdeForUiTests` task is blocking. Also please note that the IDE must be in foreground while tests are executed.
+Please note that the IDE must be in foreground while tests are executed.
 
 How to develop in IntelliJ
 --------------------------
 
 Import the project as a Gradle project.
 
-Note: whenever you change a Gradle setting (for example in `build.gradle`),
+Note: whenever you change a Gradle setting (for example in `build.gradle.kts`),
 don't forget to **Refresh all Gradle projects** in the **Gradle** toolbar.
 
 To run an IntelliJ instance with the plugin installed, execute the Gradle task `runIde` using the command line,
