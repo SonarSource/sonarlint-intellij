@@ -22,7 +22,6 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -31,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 import javax.annotation.CheckForNull;
-
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -56,9 +54,9 @@ public abstract class SonarLintFacade {
 
   public synchronized AnalysisResults startAnalysis(Module module, List<ClientInputFile> inputFiles, IssueListener issueListener,
     Map<String, String> additionalProps, ProgressMonitor progressMonitor) {
-    Path baseDir = Paths.get(project.getBasePath());
-    Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
-    Map<String, String> props = new HashMap<>();
+    var baseDir = Paths.get(project.getBasePath());
+    var workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
+    var props = new HashMap<String, String>();
     props.putAll(additionalProps);
     props.putAll(getSettingsFor(project).getAdditionalProperties());
     return analyze(module, baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
@@ -73,7 +71,7 @@ public abstract class SonarLintFacade {
 
   @CheckForNull
   public String getRuleName(String ruleKey) {
-    RuleDetails details = getActiveRuleDetails(ruleKey);
+    var details = getActiveRuleDetails(ruleKey);
     if (details == null) {
       return null;
     }

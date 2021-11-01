@@ -22,10 +22,8 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.MessageBus;
-
 import java.util.Collection;
 import javax.annotation.CheckForNull;
-
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.messages.AnalysisListener;
@@ -47,13 +45,13 @@ public class AnalysisManager {
    * might be changed with the editor at the same time, resulting in a bad or failed placement of the issues in the editor.
    *
    * @see #submitManual(Collection, TriggerType, boolean, AnalysisCallback)
-   * @return
+   * @return the newly submitted analysis task
    */
   public AnalysisTask submitBackground(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
-    AnalysisRequest analysisRequest = new AnalysisRequest(myProject, files, trigger, false, callback);
-    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+    var analysisRequest = new AnalysisRequest(myProject, files, trigger, false, callback);
+    var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), analysisRequest.files().size()));
-    AnalysisTask task = new AnalysisTask(analysisRequest, true);
+    var task = new AnalysisTask(analysisRequest, true);
     notifyStart(task.getRequest());
     task.queue();
     return task;
@@ -68,16 +66,16 @@ public class AnalysisManager {
    */
   @CheckForNull
   public AnalysisTask submitManual(Collection<VirtualFile> files, TriggerType trigger, boolean modal, AnalysisCallback callback) {
-    AnalysisStatus status = SonarLintUtils.getService(myProject, AnalysisStatus.class);
-    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+    var status = SonarLintUtils.getService(myProject, AnalysisStatus.class);
+    var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
     if (myProject.isDisposed() || !status.tryRun()) {
       console.info("Canceling analysis triggered by the user because another one is already running or because the project is disposed");
       return null;
     }
 
-    AnalysisRequest analysisRequest = new AnalysisRequest(myProject, files, trigger, true, callback);
+    var analysisRequest = new AnalysisRequest(myProject, files, trigger, true, callback);
     console.debug(String.format("[%s] %d file(s) submitted", trigger.getName(), analysisRequest.files().size()));
-    UserTriggeredAnalysisTask task = new UserTriggeredAnalysisTask(analysisRequest, modal);
+    var task = new UserTriggeredAnalysisTask(analysisRequest, modal);
     notifyStart(task.getRequest());
     task.queue();
     return task;

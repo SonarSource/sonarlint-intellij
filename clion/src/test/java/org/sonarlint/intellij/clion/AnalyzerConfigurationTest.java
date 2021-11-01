@@ -93,8 +93,8 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration() {
-    VirtualFile file = mock(VirtualFile.class);
-    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+    var file = mock(VirtualFile.class);
+    var configuration = new AnalyzerConfiguration.Configuration(
       file,
       "compilerExecutable",
       "compilerWorkingDir",
@@ -114,7 +114,7 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration_result() {
-    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+    var configuration = new AnalyzerConfiguration.Configuration(
       null,
       null,
       null,
@@ -122,7 +122,7 @@ class AnalyzerConfigurationTest {
       null,
       null,
       Collections.singletonMap("isHeaderFile", "false"));
-    AnalyzerConfiguration.ConfigurationResult result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
+    var result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
     assertTrue(result.hasConfiguration());
     assertEquals(configuration, result.getConfiguration());
     assertThrows(UnsupportedOperationException.class, result::getSkipReason);
@@ -130,7 +130,7 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration_result_skipped() {
-    AnalyzerConfiguration.ConfigurationResult result = AnalyzerConfiguration.ConfigurationResult.skip("reason");
+    var result = AnalyzerConfiguration.ConfigurationResult.skip("reason");
     assertFalse(result.hasConfiguration());
     assertEquals("reason", result.getSkipReason());
     assertThrows(UnsupportedOperationException.class, result::getConfiguration);

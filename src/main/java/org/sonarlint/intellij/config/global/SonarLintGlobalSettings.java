@@ -167,9 +167,9 @@ public final class SonarLintGlobalSettings {
   }
 
   public void setServerConnections(List<ServerConnection> servers) {
-    this.servers = Collections.unmodifiableList(servers.stream()
+    this.servers = servers.stream()
       .filter(s -> !SonarLintUtils.isBlank(s.getName()))
-      .collect(Collectors.toList()));
+      .collect(Collectors.toUnmodifiableList());
   }
 
   public void addServerConnection(ServerConnection connection) {
@@ -189,7 +189,7 @@ public final class SonarLintGlobalSettings {
   }
 
   public void setFileExclusions(List<String> fileExclusions) {
-    this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
+    this.fileExclusions = List.copyOf(fileExclusions);
   }
 
   /**

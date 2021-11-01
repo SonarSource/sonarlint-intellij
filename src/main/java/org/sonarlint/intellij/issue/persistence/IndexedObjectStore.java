@@ -21,13 +21,9 @@ package org.sonarlint.intellij.issue.persistence;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
-
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.ObjectStore;
@@ -58,11 +54,11 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
 
   @Override
   public Optional<V> read(K key) {
-    Path path = pathMapper.apply(key);
+    var path = pathMapper.apply(key);
     if (!path.toFile().exists()) {
       return Optional.empty();
     }
-    try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
+    try (var is = new BufferedInputStream(Files.newInputStream(path))) {
       return Optional.of(reader.apply(is));
     } catch (Exception e) {
       GlobalLogOutput.get().logError("Failed to read the issue store at: " + path, e);
@@ -71,7 +67,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   }
 
   public boolean contains(K key) {
-    Path path = pathMapper.apply(key);
+    var path = pathMapper.apply(key);
     return path.toFile().exists();
   }
 
@@ -79,7 +75,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
    * Deletes all entries in the index are no longer valid.
    */
   public void deleteInvalid() {
-    int counter = 0;
+    var counter = 0;
     Collection<K> keys;
     try {
       keys = index.keys();
@@ -103,20 +99,20 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
 
   @Override
   public void delete(K key) throws IOException {
-    Path path = pathMapper.apply(key);
+    var path = pathMapper.apply(key);
     Files.deleteIfExists(path);
     index.delete(key);
   }
 
   @Override
   public void write(K key, V value) throws IOException {
-    Path path = pathMapper.apply(key);
+    var path = pathMapper.apply(key);
     index.save(key, path);
-    Path parent = path.getParent();
+    var parent = path.getParent();
     if (!parent.toFile().exists()) {
       Files.createDirectories(parent);
     }
-    try (OutputStream out = Files.newOutputStream(path)) {
+    try (var out = Files.newOutputStream(path)) {
       writer.accept(out, value);
     }
   }

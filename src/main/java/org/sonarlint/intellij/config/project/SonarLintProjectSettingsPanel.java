@@ -47,7 +47,7 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     propsPanel = new SonarLintProjectPropertiesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
     root = new JPanel(new BorderLayout());
-    JBTabbedPane tabs = new JBTabbedPane();
+    var tabs = new JBTabbedPane();
 
     rootBindPane = new JPanel(new BorderLayout());
     rootBindPane.add(bindPanel.create(project), BorderLayout.NORTH);
@@ -73,10 +73,10 @@ public class SonarLintProjectSettingsPanel implements Disposable {
   }
 
   public void save(Project project, SonarLintProjectSettings projectSettings) throws ConfigurationException {
-    String selectedProjectKey = bindPanel.getSelectedProjectKey();
-    ServerConnection selectedConnection = bindPanel.getSelectedConnection();
-    boolean bindingEnabled = bindPanel.isBindingEnabled();
-    List<ModuleBindingPanel.ModuleBinding> moduleBindings = bindPanel.getModuleBindings();
+    var selectedProjectKey = bindPanel.getSelectedProjectKey();
+    var selectedConnection = bindPanel.getSelectedConnection();
+    var bindingEnabled = bindPanel.isBindingEnabled();
+    var moduleBindings = bindPanel.getModuleBindings();
     if (bindingEnabled) {
       if (selectedConnection == null) {
         throw new ConfigurationException("Connection should not be empty");
@@ -84,8 +84,8 @@ public class SonarLintProjectSettingsPanel implements Disposable {
       if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
         throw new ConfigurationException("Project key should not be empty");
       }
-      for (ModuleBindingPanel.ModuleBinding binding : moduleBindings) {
-        String moduleProjectKey = binding.getSonarProjectKey();
+      for (var binding : moduleBindings) {
+        var moduleProjectKey = binding.getSonarProjectKey();
         if (moduleProjectKey == null || moduleProjectKey.isBlank()) {
           throw new ConfigurationException("Project key for module '" + binding.getModule().getName() + "' should not be empty");
         }
@@ -94,9 +94,9 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     exclusionsPanel.save(projectSettings);
 
-    ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
+    var bindingManager = getService(project, ProjectBindingManager.class);
     if (bindingEnabled) {
-      Map<Module, String> moduleBindingsMap = moduleBindings
+      var moduleBindingsMap = moduleBindings
         .stream().collect(Collectors.toMap(ModuleBindingPanel.ModuleBinding::getModule, ModuleBindingPanel.ModuleBinding::getSonarProjectKey));
       bindingManager.bindTo(selectedConnection, selectedProjectKey, moduleBindingsMap);
     } else {

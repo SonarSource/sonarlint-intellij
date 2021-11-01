@@ -71,7 +71,7 @@ public class SonarLintColorSettingsPage implements ColorSettingsPage {
   }
 
   @NotNull @Override public String getDemoText() {
-    StringBuilder buffer = new StringBuilder();
+    var buffer = new StringBuilder();
 
     for (AttributesDescriptor desc : DESCRIPTORS) {
       buffer

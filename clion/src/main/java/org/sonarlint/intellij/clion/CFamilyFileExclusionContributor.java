@@ -28,7 +28,7 @@ public class CFamilyFileExclusionContributor implements FileExclusionContributor
 
   @Override
   public ExcludeResult shouldExclude(Module module, VirtualFile fileToAnalyze) {
-    AnalyzerConfiguration.ConfigurationResult configurationResult = new AnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
+    var configurationResult = new AnalyzerConfiguration(module.getProject()).getConfiguration(fileToAnalyze);
     if (configurationResult.hasConfiguration()) {
       return ExcludeResult.notExcluded();
     }

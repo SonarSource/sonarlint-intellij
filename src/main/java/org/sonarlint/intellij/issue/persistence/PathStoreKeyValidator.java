@@ -29,7 +29,7 @@ class PathStoreKeyValidator implements StoreKeyValidator<String> {
   }
 
   @Override public Boolean apply(String relativeFilePath) {
-    VirtualFile virtualFile = projectBaseDir.findFileByRelativePath(relativeFilePath);
+    var virtualFile = projectBaseDir.findFileByRelativePath(relativeFilePath);
     return virtualFile != null && virtualFile.isValid();
   }
 }

@@ -50,7 +50,7 @@ public class MatchedFlowsAdapter {
 
   private static List<Flow> reverse(List<Flow> flows) {
     return flows.stream().map(f -> {
-      ArrayList<Location> reorderedLocations = new ArrayList<>(f.getLocations());
+      var reorderedLocations = new ArrayList<>(f.getLocations());
       Collections.reverse(reorderedLocations);
       return new Flow(reorderedLocations);
     }).collect(Collectors.toList());

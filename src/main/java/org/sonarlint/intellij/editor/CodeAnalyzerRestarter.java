@@ -28,14 +28,11 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.serviceContainer.NonInjectable;
 import com.intellij.util.messages.MessageBus;
-import com.intellij.util.messages.MessageBusConnection;
-
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
-
 import org.sonarlint.intellij.messages.IssueStoreListener;
 
 public class CodeAnalyzerRestarter implements IssueStoreListener {
@@ -56,7 +53,7 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
   }
 
   public void init() {
-    MessageBusConnection busConnection = messageBus.connect(myProject);
+    var busConnection = messageBus.connect(myProject);
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this);
   }
 
@@ -64,10 +61,10 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
     if (myProject.isDisposed()) {
       return;
     }
-    FileEditorManager fileEditorManager = FileEditorManager.getInstance(myProject);
+    var fileEditorManager = FileEditorManager.getInstance(myProject);
 
-    VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
-    Arrays.stream(openFiles)
+    var openFiles = fileEditorManager.getOpenFiles();
+    Stream.of(openFiles)
       .map(this::getPsi)
       .filter(Objects::nonNull)
       .forEach(codeAnalyzer::restart);
@@ -77,9 +74,9 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
     if (myProject.isDisposed()) {
       return;
     }
-    FileEditorManager fileEditorManager = FileEditorManager.getInstance(myProject);
-    VirtualFile[] openFiles = fileEditorManager.getOpenFiles();
-    Arrays.stream(openFiles)
+    var fileEditorManager = FileEditorManager.getInstance(myProject);
+    var openFiles = fileEditorManager.getOpenFiles();
+    Stream.of(openFiles)
       .filter(changedFiles::contains)
       .map(this::getPsi)
       .filter(Objects::nonNull)

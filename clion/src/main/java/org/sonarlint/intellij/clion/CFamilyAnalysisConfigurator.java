@@ -30,9 +30,9 @@ public class CFamilyAnalysisConfigurator implements AnalysisConfigurator {
 
   @Override
   public AnalysisConfiguration configure(Module module, Collection<VirtualFile> filesToAnalyze) {
-    AnalysisConfiguration result = new AnalysisConfiguration();
-    AnalyzerConfiguration analyzerConfiguration = new AnalyzerConfiguration(module.getProject());
-    BuildWrapperJsonGenerator buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
+    var result = new AnalysisConfiguration();
+    var analyzerConfiguration = new AnalyzerConfiguration(module.getProject());
+    var buildWrapperJsonGenerator = new BuildWrapperJsonGenerator();
     filesToAnalyze.stream()
       .map(analyzerConfiguration::getConfiguration)
       .filter(AnalyzerConfiguration.ConfigurationResult::hasConfiguration)

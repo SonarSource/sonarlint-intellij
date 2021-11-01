@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -123,7 +122,7 @@ public class RulesFilterModel {
     if (str == null || str.isEmpty()) {
       return Collections.emptyList();
     }
-    String lower = str.toLowerCase(Locale.US);
-    return Arrays.asList(lower.split("\\s"));
+    var lower = str.toLowerCase(Locale.US);
+    return List.of(lower.split("\\s"));
   }
 }

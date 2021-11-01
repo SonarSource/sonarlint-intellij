@@ -26,12 +26,9 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
-import java.awt.Window;
 import java.util.function.Consumer;
-import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.editor.EditorDecorator;
@@ -64,7 +61,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
    */
   public void openAnalysisResults() {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    ToolWindow toolWindow = getToolWindow();
+    var toolWindow = getToolWindow();
     if (toolWindow != null) {
       toolWindow.show(() -> selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS));
     }
@@ -79,7 +76,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   public void openTab(String name) {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    ToolWindow toolWindow = getToolWindow();
+    var toolWindow = getToolWindow();
     if (toolWindow != null) {
       toolWindow.show(() -> selectTab(toolWindow, name));
     }
@@ -87,14 +84,14 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   public void openTab(Content content) {
     ApplicationManager.getApplication().assertIsDispatchThread();
-    ToolWindow toolWindow = getToolWindow();
+    var toolWindow = getToolWindow();
     if (toolWindow != null) {
       toolWindow.show(() -> toolWindow.getContentManager().setSelectedContent(content));
     }
   }
 
   private ToolWindow getToolWindow() {
-    ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+    var toolWindowManager = ToolWindowManager.getInstance(project);
     return toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
   }
 
@@ -110,9 +107,9 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     if (getToolWindow() == null) {
       return;
     }
-    Content content = getTaintVulnerabilitiesContent();
+    var content = getTaintVulnerabilitiesContent();
     content.setDisplayName(buildVulnerabilitiesTabName(status.count()));
-    TaintVulnerabilitiesPanel taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
+    var taintVulnerabilitiesPanel = (TaintVulnerabilitiesPanel) content.getComponent();
     taintVulnerabilitiesPanel.populate(status);
   }
 
@@ -125,14 +122,14 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
   public void showTaintVulnerabilityDescription(LocalTaintVulnerability vulnerability) {
-    Content content = getTaintVulnerabilitiesContent();
+    var content = getTaintVulnerabilitiesContent();
     openTab(content);
     ((TaintVulnerabilitiesPanel)content.getComponent()).setSelectedVulnerability(vulnerability);
   }
 
   private static void selectTab(ToolWindow toolWindow, String tabId) {
-    ContentManager contentManager = toolWindow.getContentManager();
-    Content content = contentManager.findContent(tabId);
+    var contentManager = toolWindow.getContentManager();
+    var content = contentManager.findContent(tabId);
     if (content != null) {
       contentManager.setSelectedContent(content);
     }
@@ -141,8 +138,8 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   private void showIssue(LiveIssue liveIssue, Consumer<SonarLintIssuesPanel> selectTab) {
     openCurrentFile();
     selectTab(getToolWindow(), SonarLintToolWindowFactory.TAB_CURRENT_FILE);
-    ContentManager contentManager = getToolWindow().getContentManager();
-    Content content = contentManager.findContent(SonarLintToolWindowFactory.TAB_CURRENT_FILE);
+    var contentManager = getToolWindow().getContentManager();
+    var content = contentManager.findContent(SonarLintToolWindowFactory.TAB_CURRENT_FILE);
     SonarLintIssuesPanel sonarLintIssuesPanel = (SonarLintIssuesPanel) content.getComponent();
     sonarLintIssuesPanel.setSelectedIssue(liveIssue);
     selectTab.accept(sonarLintIssuesPanel);
@@ -163,9 +160,9 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       // we will show the hotspot when the tool window is built
       return;
     }
-    Content content = ensureHotspotsTabCreated();
+    var content = ensureHotspotsTabCreated();
     openTab(TAB_HOTSPOTS);
-    SonarLintHotspotsPanel sonarLintHotspotsPanel = (SonarLintHotspotsPanel) content.getComponent();
+    var sonarLintHotspotsPanel = (SonarLintHotspotsPanel) content.getComponent();
     sonarLintHotspotsPanel.setHotspot(localHotspot);
     bringIdeToFront(project);
   }
@@ -175,21 +172,21 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
   private void bringIdeToFront(Project project) {
-    JComponent component = getToolWindow().getComponent();
+    var component = getToolWindow().getComponent();
     IdeFocusManager.getInstance(project).requestFocus(component, true);
-    Window window = SwingUtilities.getWindowAncestor(component);
+    var window = SwingUtilities.getWindowAncestor(component);
     if (window != null) {
       window.toFront();
     }
   }
 
   private Content ensureHotspotsTabCreated() {
-    ContentManager contentManager = getToolWindow().getContentManager();
-    Content existingContent = contentManager.findContent(TAB_HOTSPOTS);
+    var contentManager = getToolWindow().getContentManager();
+    var existingContent = contentManager.findContent(TAB_HOTSPOTS);
     if (existingContent != null) {
       return existingContent;
     }
-    Content hotspotsContent = contentManager.getFactory()
+    var hotspotsContent = contentManager.getFactory()
       .createContent(
         new SonarLintHotspotsPanel(project),
         TAB_HOTSPOTS,

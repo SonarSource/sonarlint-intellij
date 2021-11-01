@@ -22,18 +22,14 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
-
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;
-import org.sonarlint.intellij.issue.LiveIssue;
 
 public class ShowAnalysisResultsCallable implements AnalysisCallback {
   private final Project project;
@@ -52,11 +48,11 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
 
   @Override
   public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
-    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
-    Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
+    var issueManager = SonarLintUtils.getService(project, IssueManager.class);
+    var map = affectedFiles.stream()
       .filter(f -> !failedVirtualFiles.contains(f))
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
-    IssueStore issueStore = SonarLintUtils.getService(project, IssueStore.class);
+    var issueStore = SonarLintUtils.getService(project, IssueStore.class);
     issueStore.set(map, whatAnalyzed);
     showAnalysisResultsTab();
   }

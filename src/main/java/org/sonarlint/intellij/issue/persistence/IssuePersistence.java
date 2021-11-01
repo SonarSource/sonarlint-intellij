@@ -25,14 +25,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LocalIssueTrackable;
 import org.sonarlint.intellij.proto.Sonarlint;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.HashingPathMapper;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
 import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
@@ -47,9 +45,9 @@ public class IssuePersistence {
 
     storeBasePath = getBasePath();
     FileUtils.mkdirs(storeBasePath);
-    StoreIndex<String> index = new StringStoreIndex(storeBasePath);
-    PathMapper<String> mapper = new HashingPathMapper(storeBasePath, 2);
-    StoreKeyValidator<String> validator = new PathStoreKeyValidator(project.getBaseDir());
+    var index = new StringStoreIndex(storeBasePath);
+    var mapper = new HashingPathMapper(storeBasePath, 2);
+    var validator = new PathStoreKeyValidator(project.getBaseDir());
     Reader<Sonarlint.Issues> reader = is -> {
       try {
         return Sonarlint.Issues.parseFrom(is);
@@ -83,12 +81,12 @@ public class IssuePersistence {
 
   @CheckForNull
   public synchronized Collection<LocalIssueTrackable> read(String key) throws IOException {
-    Optional<Sonarlint.Issues> issues = store.read(key);
+    var issues = store.read(key);
     return issues.map(IssuePersistence::transform).orElse(null);
   }
 
   private Path getBasePath() {
-    Path ideaDir = new File(myProject.getBasePath(), Project.DIRECTORY_STORE_FOLDER).toPath();
+    var ideaDir = new File(myProject.getBasePath(), Project.DIRECTORY_STORE_FOLDER).toPath();
     return ideaDir.resolve("sonarlint").resolve("issuestore");
   }
 
@@ -108,7 +106,7 @@ public class IssuePersistence {
   }
 
   private static Sonarlint.Issues transform(Collection<LiveIssue> localIssues) {
-    Sonarlint.Issues.Builder builder = Sonarlint.Issues.newBuilder();
+    var builder = Sonarlint.Issues.newBuilder();
     ReadAction.run(() -> localIssues.stream()
       .filter(LiveIssue::isValid)
       .map(IssuePersistence::transform)
@@ -122,7 +120,7 @@ public class IssuePersistence {
   }
 
   private static Sonarlint.Issues.Issue transform(LiveIssue liveIssue) {
-    Sonarlint.Issues.Issue.Builder builder = Sonarlint.Issues.Issue.newBuilder()
+    var builder = Sonarlint.Issues.Issue.newBuilder()
       .setRuleKey(liveIssue.getRuleKey())
       .setMessage(liveIssue.getMessage())
       .setResolved(liveIssue.isResolved());

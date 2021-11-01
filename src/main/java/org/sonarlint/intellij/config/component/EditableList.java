@@ -29,22 +29,22 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
 
 public class EditableList<T> {
   private final Supplier<T> onAdd;
-  private final Function<T, T> onEdit;
-  private final JBList list;
+  private final UnaryOperator<T> onEdit;
+  private final JBList<T> list;
   private final JPanel listPanel;
   private final CollectionListModel<T> model;
 
-  public EditableList(String emptyLabel, Supplier<T> onAdd, Function<T, T> onEdit) {
+  public EditableList(String emptyLabel, Supplier<T> onAdd, UnaryOperator<T> onEdit) {
     this.onAdd = onAdd;
     this.onEdit = onEdit;
-    list = new JBList();
+    list = new JBList<>();
     list.getEmptyText().setText(emptyLabel);
     list.addMouseListener(new MouseAdapter() {
       @Override
@@ -57,7 +57,7 @@ public class EditableList<T> {
     model = new CollectionListModel<>(new ArrayList<>());
     list.setModel(model);
 
-    ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(list)
+    var toolbarDecorator = ToolbarDecorator.createDecorator(list)
       .setEditActionName("Edit")
       .setEditAction(e -> editEntry())
       .setAddAction(new AddEntryAction())
@@ -86,8 +86,8 @@ public class EditableList<T> {
   private void editEntry() {
     int selectedIndex = list.getSelectedIndex();
     if (selectedIndex >= 0) {
-      T value = model.getElementAt(selectedIndex);
-      T newValue = onEdit.apply(value);
+      var value = model.getElementAt(selectedIndex);
+      var newValue = onEdit.apply(value);
       if (newValue != null) {
         model.setElementAt(newValue, selectedIndex);
       }
@@ -97,7 +97,7 @@ public class EditableList<T> {
   private class AddEntryAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      T input = onAdd.get();
+      var input = onAdd.get();
       if (input != null) {
         model.add(input);
         list.setSelectedIndex(list.getModel().getSize() - 1);
@@ -108,7 +108,7 @@ public class EditableList<T> {
   private class RemoveEntryAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      T entry = getSelectedEntry();
+      var entry = getSelectedEntry();
       if (entry == null) {
         return;
       }
@@ -123,7 +123,7 @@ public class EditableList<T> {
 
     @Nullable
     private T getSelectedEntry() {
-      return (T) list.getSelectedValue();
+      return list.getSelectedValue();
     }
   }
 

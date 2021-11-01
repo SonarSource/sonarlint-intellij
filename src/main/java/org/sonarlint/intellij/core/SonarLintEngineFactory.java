@@ -23,10 +23,8 @@ import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.PlatformUtils;
-
 import java.io.IOException;
 import java.net.URL;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -37,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckForNull;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.LanguageActivator;
@@ -71,28 +68,28 @@ public class SonarLintEngineFactory {
     Language.XML);
 
   ConnectedSonarLintEngine createEngine(String connectionId) {
-    Set<Language> enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
+    var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
     enabledLanguages.addAll(CONNECTED_ADDITIONAL_LANGUAGES);
 
     amendEnabledLanguages(enabledLanguages);
 
-    ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
+    var modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
 
-    ConnectedGlobalConfiguration.Builder configBuilder = ConnectedGlobalConfiguration.builder()
+    var configBuilder = ConnectedGlobalConfiguration.builder()
       .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
       .setConnectionId(connectionId)
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
     configureCommonEngine(configBuilder);
 
-    URL cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
+    var cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
     if (cFamilyPluginUrl != null) {
       configBuilder.useEmbeddedPlugin(Language.CPP.getPluginKey(), cFamilyPluginUrl);
     }
-    URL secretsPluginUrl = findEmbeddedSecretsPlugin(getPluginsDir());
+    var secretsPluginUrl = findEmbeddedSecretsPlugin(getPluginsDir());
     if (secretsPluginUrl != null) {
       configBuilder.addExtraPlugin(Language.SECRETS.getPluginKey(), secretsPluginUrl);
     }
-    URL csPluginUrl = findEmbeddedOmnisharpPlugin(getPluginsDir());
+    var csPluginUrl = findEmbeddedOmnisharpPlugin(getPluginsDir());
     if (csPluginUrl != null) {
       configBuilder.useEmbeddedPlugin(Language.CS.getPluginKey(), csPluginUrl);
     }
@@ -104,19 +101,19 @@ public class SonarLintEngineFactory {
      * Some components in the container use the context classloader to find resources. For example, the ServiceLoader uses it by default
      * to find services declared by some libs.
      */
-    ClassLoader cl = Thread.currentThread().getContextClassLoader();
+    var cl = Thread.currentThread().getContextClassLoader();
     Thread.currentThread().setContextClassLoader(this.getClass().getClassLoader());
 
     try {
-      URL[] plugins = findEmbeddedPlugins();
+      var plugins = findEmbeddedPlugins();
 
-      Set<Language> enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
+      var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
 
       amendEnabledLanguages(enabledLanguages);
 
-      ModulesRegistry modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
+      var modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
 
-      StandaloneGlobalConfiguration.Builder configBuilder = StandaloneGlobalConfiguration.builder()
+      var configBuilder = StandaloneGlobalConfiguration.builder()
         .addPlugins(plugins)
         .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
         .setModulesProvider(modulesRegistry::getStandaloneModules);
@@ -131,8 +128,8 @@ public class SonarLintEngineFactory {
   }
 
   private static void configureCommonEngine(AbstractGlobalConfiguration.AbstractBuilder<?> builder) {
-    GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
-    final NodeJsManager nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
+    var globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
+    final var nodeJsManager = SonarLintUtils.getService(NodeJsManager.class);
     builder
       .setLogOutput(globalLogOutput)
       .setSonarLintUserHome(getSonarLintHome())
@@ -143,7 +140,7 @@ public class SonarLintEngineFactory {
   }
 
   private static void amendEnabledLanguages(Set<Language> enabledLanguages) {
-    List<LanguageActivator> languageActivator = LanguageActivator.EP_NAME.getExtensionList();
+    var languageActivator = LanguageActivator.EP_NAME.getExtensionList();
     languageActivator.forEach(l -> l.amendLanguages(enabledLanguages));
   }
 
@@ -153,14 +150,14 @@ public class SonarLintEngineFactory {
 
   @NotNull
   private static Path getPluginsDir() {
-    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     return plugin.getPath().resolve("plugins");
   }
 
   @CheckForNull
   private static URL findEmbeddedPlugin(Path pluginsDir, String pluginNamePattern, String logPrefix) {
     try {
-      List<URL> pluginsUrls = findFilesInDir(pluginsDir, pluginNamePattern, logPrefix);
+      var pluginsUrls = findFilesInDir(pluginsDir, pluginNamePattern, logPrefix);
       if (pluginsUrls.size() > 1) {
         throw new IllegalStateException("Multiple plugins found");
       }
@@ -190,11 +187,11 @@ public class SonarLintEngineFactory {
   }
 
   private static List<URL> findFilesInDir(Path pluginsDir, String pattern, String logPrefix) throws IOException {
-    List<URL> pluginsUrls = new ArrayList<>();
+    var pluginsUrls = new ArrayList<URL>();
     if (Files.isDirectory(pluginsDir)) {
-      try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(pluginsDir, pattern)) {
-        GlobalLogOutput globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
-        for (Path path : directoryStream) {
+      try (var directoryStream = Files.newDirectoryStream(pluginsDir, pattern)) {
+        var globalLogOutput = SonarLintUtils.getService(GlobalLogOutput.class);
+        for (var path : directoryStream) {
           globalLogOutput.log(logPrefix + path.getFileName().toString(), LogOutput.Level.DEBUG);
           pluginsUrls.add(path.toUri().toURL());
         }
@@ -212,8 +209,8 @@ public class SonarLintEngineFactory {
   }
 
   private static Map<String, String> prepareExtraProps() {
-    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    Map<String, String> extraProps = new HashMap<>();
+    var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    var extraProps = new HashMap<String, String>();
     extraProps.put("sonar.typescript.internal.typescriptLocation", plugin.getPath().toString());
     if (PlatformUtils.isRider()) {
       addOmnisharpServerPath(plugin, extraProps);

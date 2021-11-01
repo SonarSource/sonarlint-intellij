@@ -21,14 +21,12 @@ package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import javax.annotation.CheckForNull;
-
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -66,11 +64,11 @@ public class LiveIssueCache {
       }
 
       if (eldest.getKey().isValid()) {
-        String key = createKey(eldest.getKey());
+        var key = createKey(eldest.getKey());
         if (key != null) {
           try {
             SonarLintConsole.get(myproject).debug("Persisting issues for " + key);
-            IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
+            var store = SonarLintUtils.getService(myproject, IssuePersistence.class);
             store.save(key, eldest.getValue());
           } catch (IOException e) {
             throw new IllegalStateException(String.format("Error persisting issues for %s", key), e);
@@ -86,7 +84,7 @@ public class LiveIssueCache {
    */
   @CheckForNull
   public synchronized Collection<LiveIssue> getLive(VirtualFile virtualFile) {
-    Collection<LiveIssue> liveIssues = cache.get(virtualFile);
+    var liveIssues = cache.get(virtualFile);
     if (liveIssues != null) {
       // Create a copy to avoid concurrent modification issues
       return new ArrayList<>(liveIssues);
@@ -110,10 +108,10 @@ public class LiveIssueCache {
     SonarLintConsole.get(myproject).debug("Persisting all issues");
     cache.forEach((virtualFile, liveIssues) -> {
       if (virtualFile.isValid()) {
-        String key = createKey(virtualFile);
+        var key = createKey(virtualFile);
         if (key != null) {
           try {
-            IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
+            var store = SonarLintUtils.getService(myproject, IssuePersistence.class);
             store.save(key, liveIssues);
           } catch (IOException e) {
             throw new IllegalStateException("Failed to flush cache", e);
@@ -127,17 +125,17 @@ public class LiveIssueCache {
    * Clear cache and underlying persistent store
    */
   public synchronized void clear() {
-    IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
+    var store = SonarLintUtils.getService(myproject, IssuePersistence.class);
     store.clear();
     cache.clear();
   }
 
   public synchronized void clear(VirtualFile virtualFile) {
-    String key = createKey(virtualFile);
+    var key = createKey(virtualFile);
     if (key != null) {
       cache.remove(virtualFile);
       try {
-        IssuePersistence store = SonarLintUtils.getService(myproject, IssuePersistence.class);
+        var store = SonarLintUtils.getService(myproject, IssuePersistence.class);
         store.clear(key);
       } catch (IOException e) {
         throw new IllegalStateException("Failed to clear cache", e);

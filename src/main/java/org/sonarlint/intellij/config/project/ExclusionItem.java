@@ -42,11 +42,11 @@ public class ExclusionItem {
 
   @CheckForNull
   public static ExclusionItem parse(String text) {
-    int i = text.indexOf(':');
+    var i = text.indexOf(':');
     if (i < 0) {
       return null;
     }
-    String item = text.substring(i + 1);
+    var item = text.substring(i + 1);
     if (StringUtils.trimToNull(item) == null) {
       return null;
     }

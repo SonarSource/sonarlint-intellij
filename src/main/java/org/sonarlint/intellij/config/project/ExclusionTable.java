@@ -30,22 +30,21 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumn;
 import org.apache.commons.lang.StringUtils;
 
 public class ExclusionTable {
   private final Supplier<ExclusionItem> onAdd;
-  private final Function<ExclusionItem, ExclusionItem> onEdit;
+  private final UnaryOperator<ExclusionItem> onEdit;
   private final JBTable table;
   private final JPanel panel;
   private final Model model;
 
-  public ExclusionTable(String emptyLabel, Supplier<ExclusionItem> onAdd, Function<ExclusionItem, ExclusionItem> onEdit) {
+  public ExclusionTable(String emptyLabel, Supplier<ExclusionItem> onAdd, UnaryOperator<ExclusionItem> onEdit) {
     this.onAdd = onAdd;
     this.onEdit = onEdit;
 
@@ -57,8 +56,8 @@ public class ExclusionTable {
     table.setDragEnabled(false);
     table.setShowVerticalLines(false);
 
-    TableColumn typeColumn = table.getColumnModel().getColumn(0);
-    int width = table.getFontMetrics(table.getFont()).stringWidth("DIRECTORY") + 10;
+    var typeColumn = table.getColumnModel().getColumn(0);
+    var width = table.getFontMetrics(table.getFont()).stringWidth("DIRECTORY") + 10;
     typeColumn.setPreferredWidth(width);
     typeColumn.setMaxWidth(width);
     typeColumn.setMinWidth(width);
@@ -75,7 +74,7 @@ public class ExclusionTable {
       }
     });
 
-    ToolbarDecorator toolbarDecorator = ToolbarDecorator.createDecorator(table)
+    var toolbarDecorator = ToolbarDecorator.createDecorator(table)
       .setEditActionName("Edit")
       .setEditAction(e -> editEntry())
       .setAddAction(new AddEntryAction())
@@ -99,10 +98,10 @@ public class ExclusionTable {
   }
 
   private void editEntry() {
-    int selectedIndex = table.getSelectedRow();
+    var selectedIndex = table.getSelectedRow();
     if (selectedIndex >= 0) {
-      ExclusionItem value = model.items().get(selectedIndex);
-      ExclusionItem newValue = onEdit.apply(value);
+      var value = model.items().get(selectedIndex);
+      var newValue = onEdit.apply(value);
       if (newValue != null) {
         model.items().set(selectedIndex, newValue);
       }
@@ -112,10 +111,10 @@ public class ExclusionTable {
   private class AddEntryAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      ExclusionItem input = onAdd.get();
+      var input = onAdd.get();
       if (input != null) {
         model.items().add(input);
-        int lastRow = model.getRowCount() - 1;
+        var lastRow = model.getRowCount() - 1;
         table.setRowSelectionInterval(lastRow, lastRow);
       }
     }
@@ -133,7 +132,7 @@ public class ExclusionTable {
     }
 
     public void add(ExclusionItem item) {
-      int lastRow = rows.size();
+      var lastRow = rows.size();
       rows.add(item);
       fireTableRowsInserted(lastRow, lastRow);
     }
@@ -163,7 +162,7 @@ public class ExclusionTable {
     }
 
     @Override public Object getValueAt(int rowIndex, int columnIndex) {
-      ExclusionItem item = rows.get(rowIndex);
+      var item = rows.get(rowIndex);
       if (columnIndex == 0) {
         return StringUtils.capitalize(item.type().name().toLowerCase(Locale.US));
       }
@@ -174,15 +173,15 @@ public class ExclusionTable {
   private class RemoveEntryAction implements AnActionButtonRunnable {
     @Override
     public void run(AnActionButton anActionButton) {
-      int selectedIndex = table.getSelectedRow();
+      var selectedIndex = table.getSelectedRow();
 
-      ExclusionItem entry = model.items().get(selectedIndex);
+      var entry = model.items().get(selectedIndex);
       if (entry == null) {
         return;
       }
       model.remove(selectedIndex);
       if (model.getRowCount() > 0) {
-        int newIndex = Math.min(model.getRowCount() - 1, Math.max(selectedIndex - 1, 0));
+        var newIndex = Math.min(model.getRowCount() - 1, Math.max(selectedIndex - 1, 0));
         table.setRowSelectionInterval(newIndex, newIndex);
       }
     }
@@ -190,7 +189,7 @@ public class ExclusionTable {
 
   public void add(ExclusionItem value) {
     model.add(value);
-    int lastIndex = model.getRowCount() - 1;
+    var lastIndex = model.getRowCount() - 1;
     table.setRowSelectionInterval(lastIndex, lastIndex);
   }
 }

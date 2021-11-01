@@ -76,12 +76,12 @@ public class LiveIssue implements Trackable {
     this.quickFixes = quickFixes;
 
     if (range != null) {
-      Document document = range.getDocument();
+      var document = range.getDocument();
       this.textRangeHash = checksum(document.getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
 
-      int line = range.getDocument().getLineNumber(range.getStartOffset());
-      int lineStartOffset = document.getLineStartOffset(line);
-      int lineEndOffset = document.getLineEndOffset(line);
+      var line = range.getDocument().getLineNumber(range.getStartOffset());
+      var lineStartOffset = document.getLineStartOffset(line);
+      var lineEndOffset = document.getLineEndOffset(line);
       this.lineHash = checksum(document.getText(new TextRange(lineStartOffset, lineEndOffset)));
     } else {
       this.textRangeHash = null;
@@ -104,7 +104,7 @@ public class LiveIssue implements Trackable {
   @Override
   public Integer getLine() {
     if (range != null) {
-      return ReadAction.compute(() -> isValid() ? range.getDocument().getLineNumber(range.getStartOffset()) + 1 : null);
+      return ReadAction.compute(() -> isValid() ? (range.getDocument().getLineNumber(range.getStartOffset()) + 1) : null);
     }
 
     return null;

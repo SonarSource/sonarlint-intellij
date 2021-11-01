@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -50,8 +51,8 @@ public class ProjectExclusionsPanel implements ConfigurationPanel<SonarLintProje
       return null;
     };
 
-    Function<ExclusionItem, ExclusionItem> onEdit = value -> {
-      AddEditExclusionDialog dialog = new AddEditExclusionDialog(project);
+    UnaryOperator<ExclusionItem> onEdit = value -> {
+      var dialog = new AddEditExclusionDialog(project);
       dialog.setExclusion(value);
       if (dialog.showAndGet() && dialog.getExclusion() != null) {
         return dialog.getExclusion();

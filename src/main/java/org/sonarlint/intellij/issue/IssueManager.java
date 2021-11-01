@@ -28,17 +28,14 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.serviceContainer.NonInjectable;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -92,7 +89,7 @@ public class IssueManager {
   }
 
   public void clearAllIssuesForFiles(Collection<VirtualFile> files) {
-    files.stream().forEach(liveIssueCache::clear);
+    files.forEach(liveIssueCache::clear);
     myProject.getMessageBus().syncPublisher(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC).filesChanged(new HashSet<>(files));
   }
 
@@ -111,23 +108,23 @@ public class IssueManager {
   }
 
   public Collection<LiveIssue> getForFile(VirtualFile file) {
-    Collection<LiveIssue> issues = liveIssueCache.getLive(file);
+    var issues = liveIssueCache.getLive(file);
     return issues != null ? issues : emptyList();
   }
 
   public Collection<Trackable> getPreviousIssues(VirtualFile file) {
-    Collection<LiveIssue> liveIssues = liveIssueCache.getLive(file);
+    var liveIssues = liveIssueCache.getLive(file);
     if (liveIssues != null) {
       return ReadAction.compute(() -> liveIssues.stream().filter(LiveIssue::isValid).collect(Collectors.toList()));
     }
 
-    String storeKey = SonarLintAppUtils.getRelativePathForAnalysis(myProject, file);
+    var storeKey = SonarLintAppUtils.getRelativePathForAnalysis(myProject, file);
     if (storeKey == null) {
       return emptyList();
     }
     try {
-      IssuePersistence store = SonarLintUtils.getService(myProject, IssuePersistence.class);
-      Collection<LocalIssueTrackable> storeIssues = store.read(storeKey);
+      var store = SonarLintUtils.getService(myProject, IssuePersistence.class);
+      var storeIssues = store.read(storeKey);
       return storeIssues != null ? Collections.unmodifiableCollection(storeIssues) : emptyList();
     } catch (IOException e) {
       SonarLintConsole.get(myProject).error(String.format("Failed to read issues from store for file %s", file.getPath()), e);
@@ -139,16 +136,16 @@ public class IssueManager {
     if (liveIssueCache.contains(file)) {
       return true;
     }
-    String storeKey = SonarLintAppUtils.getRelativePathForAnalysis(myProject, file);
+    var storeKey = SonarLintAppUtils.getRelativePathForAnalysis(myProject, file);
     if (storeKey == null) {
       return false;
     }
-    IssuePersistence store = SonarLintUtils.getService(myProject, IssuePersistence.class);
+    var store = SonarLintUtils.getService(myProject, IssuePersistence.class);
     return store.contains(storeKey);
   }
 
   public void matchWithServerIssues(VirtualFile file, final Collection<Trackable> serverIssues) {
-    Collection<LiveIssue> previousIssues = getForFile(file);
+    var previousIssues = getForFile(file);
     Input<Trackable> baseInput = () -> serverIssues;
     Input<LiveIssue> rawInput = () -> previousIssues;
 
@@ -157,13 +154,13 @@ public class IssueManager {
   }
 
   private static <T extends Trackable> void trackServerIssues(Input<T> baseInput, Input<LiveIssue> rawInput) {
-    Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(rawInput, baseInput);
-    for (Map.Entry<LiveIssue, ? extends Trackable> entry : tracking.getMatchedRaws().entrySet()) {
-      LiveIssue liveMatched = entry.getKey();
-      Trackable serverMatched = entry.getValue();
+    var tracking = new Tracker<LiveIssue, T>().track(rawInput, baseInput);
+    for (var entry : tracking.getMatchedRaws().entrySet()) {
+      var liveMatched = entry.getKey();
+      var serverMatched = entry.getValue();
       copyAttributesFromServer(liveMatched, serverMatched);
     }
-    for (LiveIssue liveUnmatched : tracking.getUnmatchedRaws()) {
+    for (var liveUnmatched : tracking.getUnmatchedRaws()) {
       if (liveUnmatched.getServerIssueKey() != null) {
         // were matched before with server issues, now not anymore
         wipeServerIssueDetails(liveUnmatched);

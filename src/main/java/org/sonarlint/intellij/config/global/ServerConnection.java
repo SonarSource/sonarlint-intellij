@@ -92,7 +92,7 @@ public class ServerConnection {
     if (!(o instanceof ServerConnection)) {
       return false;
     }
-    ServerConnection other = (ServerConnection) o;
+    var other = (ServerConnection) o;
 
     return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
       Comparing.equal(getPassword(), other.getPassword()) &&
@@ -176,7 +176,7 @@ public class ServerConnection {
   }
 
   public HttpClient getHttpClient() {
-    String userToken = getToken();
+    var userToken = getToken();
     return ApacheHttpClient.getDefault().withCredentials(isBlank(userToken) ? getLogin() : userToken, getPassword());
   }
 

@@ -20,14 +20,10 @@
 package org.sonarlint.intellij.clion;
 
 import com.intellij.mock.MockLocalFileSystem;
-import com.intellij.openapi.vfs.VirtualFile;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Map;
 import java.util.TreeMap;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,24 +32,24 @@ class BuildWrapperJsonGeneratorTest {
 
   @Test
   void empty() {
-    String json = new BuildWrapperJsonGenerator().build();
+    var json = new BuildWrapperJsonGenerator().build();
     assertEquals("{\"version\":0,\"captures\":[]}", json);
   }
 
   @Test
   void single() {
-    MockLocalFileSystem fileSystem = new MockLocalFileSystem();
+    var fileSystem = new MockLocalFileSystem();
 
-    VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
-    File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
-    File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
+    var virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
+    var compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
+    var compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
 
-    Map<String, String> properties = new TreeMap<>();
+    var properties = new TreeMap<String, String>();
     properties.put("prop1", "val1");
     properties.put("prop2", "\"val2\"");
     properties.put("propn", "valn");
 
-    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+    var configuration = new AnalyzerConfiguration.Configuration(
       virtualFile,
       compilerExecutable.toString(),
       compilerWorkingDir.toString(),
@@ -61,7 +57,7 @@ class BuildWrapperJsonGeneratorTest {
       "clang",
       null,
       properties);
-    String json = new BuildWrapperJsonGenerator()
+    var json = new BuildWrapperJsonGenerator()
       .add(configuration)
       .build();
     assertEquals(
@@ -79,21 +75,21 @@ class BuildWrapperJsonGeneratorTest {
 
   @Test
   void multiple() {
-    MockLocalFileSystem fileSystem = new MockLocalFileSystem();
+    var fileSystem = new MockLocalFileSystem();
 
-    VirtualFile virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
-    File compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
-    File compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
+    var virtualFile = fileSystem.findFileByIoFile(new File("test.cpp"));
+    var compilerExecutable = new File("/path/to/compiler").getAbsoluteFile();
+    var compilerWorkingDir = new File("/path/to/compiler/working/dir").getAbsoluteFile();
 
-    VirtualFile virtualFile2 = fileSystem.findFileByIoFile(new File("test2.cpp"));
-    File compilerExecutable2 = new File("/path/to/compiler2").getAbsoluteFile();
-    File compilerWorkingDir2 = new File("/path/to/compiler/working/dir2").getAbsoluteFile();
+    var virtualFile2 = fileSystem.findFileByIoFile(new File("test2.cpp"));
+    var compilerExecutable2 = new File("/path/to/compiler2").getAbsoluteFile();
+    var compilerWorkingDir2 = new File("/path/to/compiler/working/dir2").getAbsoluteFile();
 
-    VirtualFile virtualFile3 = fileSystem.findFileByIoFile(new File("test3.h"));
-    File compilerExecutable3 = new File("/path/to/compiler3").getAbsoluteFile();
-    File compilerWorkingDir3 = new File("/path/to/compiler/working/dir3").getAbsoluteFile();
+    var virtualFile3 = fileSystem.findFileByIoFile(new File("test3.h"));
+    var compilerExecutable3 = new File("/path/to/compiler3").getAbsoluteFile();
+    var compilerWorkingDir3 = new File("/path/to/compiler/working/dir3").getAbsoluteFile();
 
-    AnalyzerConfiguration.Configuration configuration1 = new AnalyzerConfiguration.Configuration(
+    var configuration1 = new AnalyzerConfiguration.Configuration(
       virtualFile,
       compilerExecutable.toString(),
       compilerWorkingDir.toString(),
@@ -101,11 +97,11 @@ class BuildWrapperJsonGeneratorTest {
       "clang",
       null,
       Collections.singletonMap("isHeaderFile", "false"));
-    Map<String, String> properties2 = new TreeMap<>();
+    var properties2 = new TreeMap<String, String>();
     properties2.put("prop1", "val1");
     properties2.put("prop2", "\"val2\"");
     properties2.put("propn", "valn");
-    AnalyzerConfiguration.Configuration configuration2 = new AnalyzerConfiguration.Configuration(
+    var configuration2 = new AnalyzerConfiguration.Configuration(
       virtualFile2,
       compilerExecutable2.toString(),
       compilerWorkingDir2.toString(),
@@ -113,7 +109,7 @@ class BuildWrapperJsonGeneratorTest {
       "clang",
       null,
       properties2);
-    AnalyzerConfiguration.Configuration configuration3 = new AnalyzerConfiguration.Configuration(
+    var configuration3 = new AnalyzerConfiguration.Configuration(
       virtualFile3,
       compilerExecutable3.toString(),
       compilerWorkingDir3.toString(),
@@ -121,7 +117,7 @@ class BuildWrapperJsonGeneratorTest {
       "clang",
       null,
       Collections.emptyMap());
-    String json = new BuildWrapperJsonGenerator()
+    var json = new BuildWrapperJsonGenerator()
       .add(configuration1)
       .add(configuration2)
       .add(configuration3)
