@@ -19,18 +19,14 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
-
 import java.util.Locale;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
-
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
@@ -51,13 +47,13 @@ public class IssueNode extends AbstractNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
-    String severity = StringUtil.capitalize(issue.getSeverity().toLowerCase(Locale.ENGLISH));
-    String type = issue.getType();
+    var severity = StringUtil.capitalize(issue.getSeverity().toLowerCase(Locale.ENGLISH));
+    var type = issue.getType();
 
     if (type != null) {
-      String typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
+      var typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
       renderer.setIconToolTip(severity + " " + typeStr);
-      int gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
+      var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
     } else {
       renderer.setIconToolTip(severity);
@@ -78,7 +74,7 @@ public class IssueNode extends AbstractNode {
 
     if (issue.getCreationDate() != null) {
       renderer.append(" ");
-      String creationDate = DateUtils.toAge(issue.getCreationDate());
+      var creationDate = DateUtils.toAge(issue.getCreationDate());
       renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
   }
@@ -101,7 +97,7 @@ public class IssueNode extends AbstractNode {
   }
 
   private static String issueCoordinates(@Nonnull LiveIssue issue) {
-    RangeMarker range = issue.getRange();
+    var range = issue.getRange();
     if (range == null) {
       return "(0, 0) ";
     }
@@ -110,9 +106,9 @@ public class IssueNode extends AbstractNode {
       return "(-, -) ";
     }
 
-    Document doc = range.getDocument();
-    int line = doc.getLineNumber(range.getStartOffset());
-    int offset = range.getStartOffset() - doc.getLineStartOffset(line);
+    var doc = range.getDocument();
+    var line = doc.getLineNumber(range.getStartOffset());
+    var offset = range.getStartOffset() - doc.getLineStartOffset(line);
     return String.format("(%d, %d) ", line + 1, offset);
   }
 }

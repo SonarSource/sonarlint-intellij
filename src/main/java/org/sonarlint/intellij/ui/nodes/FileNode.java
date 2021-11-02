@@ -64,7 +64,7 @@ public class FileNode extends AbstractNode {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    FileNode fileNode = (FileNode) o;
+    var fileNode = (FileNode) o;
     return Objects.equals(file, fileNode.file);
   }
 

@@ -24,7 +24,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
@@ -46,7 +45,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     this.results = new AnalysisResults(project);
 
     // Issues panel with tree
-    JPanel issuesPanel = new JPanel(new BorderLayout());
+    var issuesPanel = new JPanel(new BorderLayout());
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
     setToolbar(createActionGroup());
@@ -59,8 +58,8 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
   }
 
   private static SimpleActionGroup createActionGroup() {
-    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
-    SimpleActionGroup actionGroup = new SimpleActionGroup();
+    var sonarLintActions = SonarLintActions.getInstance();
+    var actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.analyzeChangedFiles());
     actionGroup.add(sonarLintActions.analyzeAllFiles());
     actionGroup.add(sonarLintActions.cancelAnalysis());
@@ -70,7 +69,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
   }
 
   private void subscribeToEvents() {
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
     busConnection.subscribe(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(this::updateIssues));
 

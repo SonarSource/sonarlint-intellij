@@ -39,7 +39,7 @@ public class ProjectLogOutput implements LogOutput {
     if (project.isDisposed()) {
       return;
     }
-    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
+    var console = SonarLintUtils.getService(project, SonarLintConsole.class);
     if (isNodeCommandException(msg)) {
       console.info(msg);
       AnalysisRequirementNotifications.notifyNodeCommandException(project);

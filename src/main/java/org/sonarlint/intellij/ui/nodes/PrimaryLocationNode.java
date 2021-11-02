@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
@@ -85,9 +84,9 @@ public class PrimaryLocationNode extends AbstractNode {
       return "(-, -) ";
     }
 
-    Document doc = rangeMarker.getDocument();
-    int line = doc.getLineNumber(rangeMarker.getStartOffset());
-    int offset = rangeMarker.getStartOffset() - doc.getLineStartOffset(line);
+    var doc = rangeMarker.getDocument();
+    var line = doc.getLineNumber(rangeMarker.getStartOffset());
+    var offset = rangeMarker.getStartOffset() - doc.getLineStartOffset(line);
     return String.format("(%d, %d) ", line + 1, offset);
   }
 }

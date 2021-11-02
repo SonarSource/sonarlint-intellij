@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.util;
 
 import com.intellij.openapi.project.ProjectManager;
-import java.util.Arrays;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -34,7 +33,7 @@ public class GlobalLogOutputImpl implements GlobalLogOutput {
     switch (level) {
       case TRACE:
       case DEBUG:
-          getConsolesOfOpenedProjects().forEach(console -> console.debug(msg));
+        getConsolesOfOpenedProjects().forEach(console -> console.debug(msg));
         break;
       case ERROR:
         getConsolesOfOpenedProjects().forEach(console -> console.error(msg));
@@ -53,8 +52,8 @@ public class GlobalLogOutputImpl implements GlobalLogOutput {
   }
 
   @NotNull
-  private Stream<SonarLintConsole> getConsolesOfOpenedProjects() {
-    return Arrays.stream(ProjectManager.getInstance().getOpenProjects())
+  private static Stream<SonarLintConsole> getConsolesOfOpenedProjects() {
+    return Stream.of(ProjectManager.getInstance().getOpenProjects())
       .map(project -> SonarLintUtils.getService(project, SonarLintConsole.class));
   }
 

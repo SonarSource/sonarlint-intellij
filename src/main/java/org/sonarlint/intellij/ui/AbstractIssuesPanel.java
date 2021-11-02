@@ -24,9 +24,7 @@ import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -35,21 +33,18 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
-
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Collection;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Box;
-import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -88,12 +83,12 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void createTabs() {
     // Flows panel with tree
-    JScrollPane flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
+    var flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
     flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
 
     // Rule panel
     rulePanel = new SonarLintRulePanel(project);
-    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(rulePanel.getPanel(), true);
+    var scrollableRulePanel = ScrollPaneFactory.createScrollPane(rulePanel.getPanel(), true);
 
     scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
@@ -105,10 +100,10 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   protected void issueTreeSelectionChanged() {
-    IssueNode[] selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
+    var selectedNodes = tree.getSelectedNodes(IssueNode.class, null);
     if (selectedNodes.length > 0) {
-      LiveIssue issue = selectedNodes[0].issue();
-      Module moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(issue.psiFile().getVirtualFile());
+      var issue = selectedNodes[0].issue();
+      var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(issue.psiFile().getVirtualFile());
       rulePanel.setRuleKey(moduleForFile, issue.getRuleKey());
       SonarLintUtils.getService(project, EditorDecorator.class).highlightIssue(issue);
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
@@ -118,7 +113,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       flowsTreeBuilder.clearFlows();
       flowsTree.getEmptyText().setText("No issue selected");
       rulePanel.setRuleKey(null, null);
-      EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
       highlighting.removeHighlights();
     }
   }
@@ -135,21 +130,21 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     }
     mainToolbar = ActionManager.getInstance().createActionToolbar(ID, group, false);
     mainToolbar.setTargetComponent(this);
-    Box toolBarBox = Box.createHorizontalBox();
+    var toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
     super.setToolbar(toolBarBox);
     mainToolbar.getComponent().setVisible(true);
   }
 
   private static ActionGroup createActionGroup(Collection<AnAction> actions) {
-    SimpleActionGroup actionGroup = new SimpleActionGroup();
+    var actionGroup = new SimpleActionGroup();
     actions.forEach(actionGroup::add);
     return actionGroup;
   }
 
   private void createFlowsTree() {
     flowsTreeBuilder = new FlowsTreeModelBuilder();
-    DefaultTreeModel model = flowsTreeBuilder.createModel();
+    var model = flowsTreeBuilder.createModel();
     flowsTree = new FlowsTree(project, model);
     flowsTreeBuilder.clearFlows();
     flowsTree.getEmptyText().setText("No issue selected");
@@ -157,14 +152,14 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   private void createIssuesTree() {
     treeBuilder = new IssueTreeModelBuilder();
-    DefaultTreeModel model = treeBuilder.createModel();
+    var model = treeBuilder.createModel();
     tree = new IssueTree(project, model);
     tree.addTreeSelectionListener(e -> issueTreeSelectionChanged());
     tree.addKeyListener(new KeyAdapter() {
       @Override
       public void keyPressed(KeyEvent e) {
         if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
-          EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+          var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
           highlighting.removeHighlights();
         }
       }
@@ -178,12 +173,12 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       return null;
     }
 
-    TreePath path = new TreePath(node.getPath());
+    var path = new TreePath(node.getPath());
     tree.getSelectionModel().setSelectionPath(path);
     tree.scrollPathToVisible(path);
 
-    RangeMarker range = node.issue().getRange();
-    int startOffset = (range != null) ? range.getStartOffset() : 0;
+    var range = node.issue().getRange();
+    var startOffset = (range != null) ? range.getStartOffset() : 0;
     return new OccurenceNavigator.OccurenceInfo(
       new OpenFileDescriptor(project, node.issue().psiFile().getVirtualFile(), startOffset),
       -1,
@@ -193,11 +188,11 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   @Override
   public boolean hasNextOccurence() {
     // relies on the assumption that a TreeNodes will always be the last row in the table view of the tree
-    TreePath path = tree.getSelectionPath();
+    var path = tree.getSelectionPath();
     if (path == null) {
       return false;
     }
-    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+    var node = (DefaultMutableTreeNode) path.getLastPathComponent();
     if (node instanceof IssueNode) {
       return tree.getRowCount() != tree.getRowForPath(path) + 1;
     } else {
@@ -207,23 +202,23 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
   @Override
   public boolean hasPreviousOccurence() {
-    TreePath path = tree.getSelectionPath();
+    var path = tree.getSelectionPath();
     if (path == null) {
       return false;
     }
-    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+    var node = (DefaultMutableTreeNode) path.getLastPathComponent();
     return (node instanceof IssueNode) && !isFirst(node);
   }
 
   private static boolean isFirst(final TreeNode node) {
-    final TreeNode parent = node.getParent();
+    final var parent = node.getParent();
     return parent == null || (parent.getIndex(node) == 0 && isFirst(parent));
   }
 
   @CheckForNull
   @Override
   public OccurenceNavigator.OccurenceInfo goNextOccurence() {
-    TreePath path = tree.getSelectionPath();
+    var path = tree.getSelectionPath();
     if (path == null) {
       return null;
     }
@@ -233,7 +228,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   @CheckForNull
   @Override
   public OccurenceNavigator.OccurenceInfo goPreviousOccurence() {
-    TreePath path = tree.getSelectionPath();
+    var path = tree.getSelectionPath();
     if (path == null) {
       return null;
     }
@@ -241,18 +236,20 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   @Override
+  @NotNull
   public String getNextOccurenceActionName() {
     return "Next Issue";
   }
 
   @Override
+  @NotNull
   public String getPreviousOccurenceActionName() {
     return "Previous Issue";
   }
 
   public void setSelectedIssue(LiveIssue issue) {
-    DefaultMutableTreeNode issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()),
-      (node) -> node instanceof IssueNode && ((IssueNode) node).issue().equals(issue));
+    var issueNode = TreeUtil.findNode(((DefaultMutableTreeNode) tree.getModel().getRoot()),
+      node -> node instanceof IssueNode && ((IssueNode) node).issue().equals(issue));
     if (issueNode == null) {
       return;
     }

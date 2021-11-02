@@ -23,7 +23,6 @@ import com.intellij.openapi.application.ApplicationManager;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -66,7 +65,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       return;
     }
 
-    Map<SearchKey, List<BASE>> baseSearch = new HashMap<>();
+    var baseSearch = new HashMap<SearchKey, List<BASE>>();
     for (var base : tracking.getUnmatchedBases()) {
       var searchKey = factory.apply(base);
       baseSearch.computeIfAbsent(searchKey, k -> new ArrayList<>()).add(base);

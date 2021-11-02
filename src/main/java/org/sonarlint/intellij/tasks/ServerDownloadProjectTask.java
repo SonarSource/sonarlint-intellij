@@ -22,9 +22,7 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-
 import java.util.Map;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -49,7 +47,7 @@ public class ServerDownloadProjectTask extends Task.Modal {
   @Override
   public void run(@NotNull ProgressIndicator indicator) {
     try {
-      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, myProject);
+      var monitor = new TaskProgressMonitor(indicator, myProject);
       this.result = engine.downloadAllProjects(server.getEndpointParams(), server.getHttpClient(), monitor);
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to download list of projects", e);

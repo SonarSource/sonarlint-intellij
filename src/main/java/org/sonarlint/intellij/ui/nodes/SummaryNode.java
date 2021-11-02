@@ -21,10 +21,7 @@ package org.sonarlint.intellij.ui.nodes;
 
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
-import java.util.Vector;
 import java.util.stream.Collectors;
-import javax.swing.tree.TreeNode;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class SummaryNode extends AbstractNode {
@@ -40,8 +37,8 @@ public class SummaryNode extends AbstractNode {
   }
 
   public String getText() {
-    int issues = getIssueCount();
-    int files = getChildCount();
+    var issues = getIssueCount();
+    var files = getChildCount();
 
     if (issues == 0) {
       return emptyText;
@@ -57,13 +54,13 @@ public class SummaryNode extends AbstractNode {
     }
 
     // keep the cast for Java 8 compat
-    List<FileNode> nodes = ((Vector<TreeNode>)children).stream().map(FileNode.class::cast).collect(Collectors.<FileNode>toList());
-    int i = Collections.binarySearch(nodes, newChild, comparator);
-    if (i >= 0) {
+    var nodes = children.stream().map(FileNode.class::cast).collect(Collectors.<FileNode>toList());
+    var foundIndex = Collections.binarySearch(nodes, newChild, comparator);
+    if (foundIndex >= 0) {
       throw new IllegalArgumentException("Child already exists");
     }
 
-    int insertIdx = -i - 1;
+    int insertIdx = -foundIndex - 1;
     insert(newChild, insertIdx);
     return insertIdx;
   }

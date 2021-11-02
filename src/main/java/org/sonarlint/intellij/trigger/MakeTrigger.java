@@ -26,7 +26,6 @@ import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
-import com.intellij.util.messages.MessageBusConnection;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -38,7 +37,7 @@ public class MakeTrigger implements BuildManagerListener, CompilationStatusListe
   @Override
   public void runActivity(@NotNull Project project) {
     this.project = project;
-    MessageBusConnection busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
+    var busConnection = ApplicationManager.getApplication().getMessageBus().connect(project);
     busConnection.subscribe(BuildManagerListener.TOPIC, this);
     busConnection.subscribe(CompilerTopics.COMPILATION_STATUS, this);
   }
@@ -67,10 +66,10 @@ public class MakeTrigger implements BuildManagerListener, CompilationStatusListe
    * {@link CompileContext} can have a null Project. See {@link com.intellij.openapi.compiler.DummyCompileContext}.
    */
   @Override public void compilationFinished(boolean aborted, int errors, int warnings, CompileContext compileContext) {
-    Project project = compileContext.getProject();
-    if (project != null && compileContext.getProject().equals(this.project)) {
-      SonarLintUtils.getService(project, SonarLintConsole.class).debug("compilation finished");
-      SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.COMPILATION);
+    var compiledProject = compileContext.getProject();
+    if (this.project.equals(compiledProject)) {
+      SonarLintUtils.getService(compiledProject, SonarLintConsole.class).debug("compilation finished");
+      SonarLintUtils.getService(compiledProject, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.COMPILATION);
     }
   }
 

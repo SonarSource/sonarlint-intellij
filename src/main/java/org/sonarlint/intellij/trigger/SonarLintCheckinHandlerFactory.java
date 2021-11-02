@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.trigger;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
@@ -28,10 +27,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
 
-
-
   @NotNull @Override public CheckinHandler createHandler(@NotNull CheckinProjectPanel panel, @NotNull CommitContext commitContext) {
-    Project project = panel.getProject();
+    var project = panel.getProject();
     return new SonarLintCheckinHandler(project, panel);
   }
 }

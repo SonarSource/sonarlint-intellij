@@ -52,7 +52,6 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -67,9 +66,7 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
 import org.sonarlint.intellij.config.ConfigurationPanel;
-import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -86,10 +83,8 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
   // UI
   private JPanel panel;
-  private Splitter splitter;
   private JPanel serversPanel;
   private JBList<ServerConnection> connectionList;
-  private JPanel emptyPanel;
   private JLabel serverStatus;
   private JButton updateServerButton;
 
@@ -130,12 +125,12 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     toolbarDecorator.setRemoveAction(new RemoveServerAction());
 
     serversPanel.add(toolbarDecorator.createPanel(), BorderLayout.CENTER);
-    splitter = new Splitter(true);
+    Splitter splitter = new Splitter(true);
     splitter.setFirstComponent(serversPanel);
     splitter.setSecondComponent(createServerStatus());
 
     var emptyLabel = new JBLabel("No connection selected", SwingConstants.CENTER);
-    emptyPanel = new JPanel(new BorderLayout());
+    JPanel emptyPanel = new JPanel(new BorderLayout());
     emptyPanel.add(emptyLabel, BorderLayout.CENTER);
 
     var border = IdeBorderFactory.createTitledBorder("SonarQube / SonarCloud connections");

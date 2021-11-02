@@ -26,16 +26,13 @@ import com.intellij.openapi.editor.event.DocumentListener;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
-
 import org.sonarlint.intellij.analysis.AnalysisRequest;
 import org.sonarlint.intellij.analysis.AnalysisTask;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -51,7 +48,6 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
   // entries in this map mean that the file is "dirty"
   private final ConcurrentHashMap<VirtualFile, Long> eventMap = new ConcurrentHashMap<>();
   private final EventWatcher watcher;
-  private final int timerMs = DEFAULT_TIMER_MS;
   private final Project myProject;
 
   public EditorChangeTrigger(Project project) {
@@ -82,11 +78,11 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
     if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
-    VirtualFile file = FileDocumentManager.getInstance().getFile(event.getDocument());
+    var file = FileDocumentManager.getInstance().getFile(event.getDocument());
     if (file == null) {
       return;
     }
-    Project project = SonarLintAppUtils.guessProjectForFile(file);
+    var project = SonarLintAppUtils.guessProjectForFile(file);
 
     if (project == null || !project.equals(myProject)) {
       return;
@@ -135,35 +131,35 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
 
     private void triggerFiles(List<VirtualFile> files) {
       if (getGlobalSettings().isAutoTrigger()) {
-        List<VirtualFile> openFilesToAnalyze = SonarLintAppUtils.retainOpenFiles(myProject, files);
+        var openFilesToAnalyze = SonarLintAppUtils.retainOpenFiles(myProject, files);
         if (!openFilesToAnalyze.isEmpty()) {
           if (task != null && !task.isFinished()) {
             task.cancel();
             return;
           }
           files.forEach(eventMap::remove);
-          SonarLintSubmitter submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
+          var submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
           task = submitter.submitFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE, true);
         }
       }
     }
 
     private void checkTimers() {
-      long t = System.currentTimeMillis();
+      var now = System.currentTimeMillis();
 
-      Iterator<Map.Entry<VirtualFile, Long>> it = eventMap.entrySet().iterator();
-      List<VirtualFile> filesToTrigger = new ArrayList<>();
+      var it = eventMap.entrySet().iterator();
+      var filesToTrigger = new ArrayList<VirtualFile>();
       while (it.hasNext()) {
-        Map.Entry<VirtualFile, Long> e = it.next();
-        if (!e.getKey().isValid()) {
+        var event = it.next();
+        if (!event.getKey().isValid()) {
           it.remove();
           continue;
         }
         // don't trigger if file currently has errors?
         // filter files opened in the editor
         // use some heuristics based on analysis time or average pauses? Or make it configurable?
-        if (e.getValue() + timerMs < t) {
-          filesToTrigger.add(e.getKey());
+        if (event.getValue() + DEFAULT_TIMER_MS < now) {
+          filesToTrigger.add(event.getKey());
         }
       }
       triggerFiles(filesToTrigger);

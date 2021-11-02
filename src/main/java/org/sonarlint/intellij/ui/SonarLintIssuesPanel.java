@@ -25,19 +25,15 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
-
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
-
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -48,7 +44,6 @@ import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitte
 public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final CurrentFileController scope;
-  private final JBSplitter splitter;
 
   public SonarLintIssuesPanel(Project project, CurrentFileController scope) {
     super(project);
@@ -56,11 +51,11 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
 
     // Issues panel
     setToolbar(actions());
-    JPanel issuesPanel = new JPanel(new BorderLayout());
+    var issuesPanel = new JPanel(new BorderLayout());
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
-    splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
+    var splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
     super.setContent(splitter);
     subscribeToEvents();
   }
@@ -71,14 +66,12 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
   }
 
   private static Collection<AnAction> actions() {
-    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
-    List<AnAction> list = new ArrayList<>();
-    list.add(ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"));
-    list.add(ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"));
-    list.add(ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"));
-    list.add(sonarLintActions.clearIssues());
-
-    return list;
+    return List.of(
+      ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"),
+      ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
+      ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
+      SonarLintActions.getInstance().clearIssues()
+    );
   }
 
   private void subscribeToEvents() {

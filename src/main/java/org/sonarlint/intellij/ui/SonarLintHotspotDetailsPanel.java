@@ -45,7 +45,7 @@ public class SonarLintHotspotDetailsPanel {
   public SonarLintHotspotDetailsPanel() {
     panel = new JPanel();
     panel.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN));
-    GridBagLayout gridLayout = new GridBagLayout();
+    var gridLayout = new GridBagLayout();
     panel.setLayout(gridLayout);
     panel.add(new JLabel("Category"), position(0, 0));
     categoryLabel = new JLabel("");
@@ -66,7 +66,7 @@ public class SonarLintHotspotDetailsPanel {
   }
 
   private static GridBagConstraints position(int row, int column) {
-    GridBagConstraints constraints = new GridBagConstraints();
+    var constraints = new GridBagConstraints();
     constraints.insets = JBUI.insets(PADDING);
     constraints.anchor = GridBagConstraints.FIRST_LINE_START;
     constraints.weightx = COLUMNS_PROPORTION;

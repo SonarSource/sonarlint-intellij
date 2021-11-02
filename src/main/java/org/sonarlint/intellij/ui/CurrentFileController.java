@@ -25,13 +25,10 @@ import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.MessageBusConnection;
-
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
@@ -43,9 +40,8 @@ public class CurrentFileController implements Disposable {
   private final Project project;
   private final IssueManager store;
   private SonarLintIssuesPanel panel;
-  private AtomicLong refreshTimestamp = new AtomicLong(Long.MAX_VALUE);
+  private final AtomicLong refreshTimestamp = new AtomicLong(Long.MAX_VALUE);
   private final EventWatcher watcher;
-  private final int delayMs = DEFAULT_DELAY_MS;
   private VirtualFile selectedFile = null;
 
   public CurrentFileController(Project project, IssueManager store) {
@@ -77,26 +73,26 @@ public class CurrentFileController implements Disposable {
   }
 
   private void initEventHandling() {
-    EditorChangeListener editorChangeListener = new EditorChangeListener();
+    var editorChangeListener = new EditorChangeListener();
     project.getMessageBus()
       .connect(project)
       .subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, editorChangeListener);
 
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> ApplicationManager.getApplication().invokeLater(panel::refreshToolbar));
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
       @Override
       public void filesChanged(final Set<VirtualFile> changedFiles) {
         if (selectedFile != null && changedFiles.contains(selectedFile)) {
-          refreshTimestamp.set(System.currentTimeMillis() + delayMs);
+          refreshTimestamp.set(System.currentTimeMillis() + DEFAULT_DELAY_MS);
         }
       }
 
       @Override
       public void allChanged() {
         if (selectedFile != null) {
-          refreshTimestamp.set(System.currentTimeMillis() + delayMs);
+          refreshTimestamp.set(System.currentTimeMillis() + DEFAULT_DELAY_MS);
         }
       }
     });
@@ -133,9 +129,7 @@ public class CurrentFileController implements Disposable {
       long t = System.currentTimeMillis();
       if (t > refreshTimestamp.get()) {
         refreshTimestamp.set(Long.MAX_VALUE);
-        ApplicationManager.getApplication().invokeLater(() -> {
-          update();
-        });
+        ApplicationManager.getApplication().invokeLater(CurrentFileController.this::update);
       }
     }
 
@@ -150,7 +144,7 @@ public class CurrentFileController implements Disposable {
   }
 
   private void update() {
-    String emptyText = getEmptyText(selectedFile);
+    var emptyText = getEmptyText(selectedFile);
     if (selectedFile == null) {
       panel.update(null, Collections.emptyList(), emptyText);
     } else {

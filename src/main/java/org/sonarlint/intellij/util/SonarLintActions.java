@@ -52,11 +52,11 @@ public class SonarLintActions {
 
   @NonInjectable
   SonarLintActions(ActionManager actionManager) {
-    AnAction analyzeMenu = actionManager.getAction("AnalyzeMenu");
+    var analyzeMenu = actionManager.getAction("AnalyzeMenu");
     // some flavors of IDEA don't have the analyze menu
     if (analyzeMenu instanceof DefaultActionGroup) {
-      AnAction sonarLintAnalyzeMenu = actionManager.getAction("SonarLint.AnalyzeMenu");
-      DefaultActionGroup analyzeMenuGroup = (DefaultActionGroup) analyzeMenu;
+      var sonarLintAnalyzeMenu = actionManager.getAction("SonarLint.AnalyzeMenu");
+      var analyzeMenuGroup = (DefaultActionGroup) analyzeMenu;
       analyzeMenuGroup.add(sonarLintAnalyzeMenu);
     }
 

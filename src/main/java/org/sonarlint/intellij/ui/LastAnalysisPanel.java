@@ -82,17 +82,17 @@ public class LastAnalysisPanel {
     lastAnalysisLabel = new JLabel("");
     noAnalysisLabel = new JLabel("No analysis done");
 
-    GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(2, 2, 2, 2), 0, 0);
+    var gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(2, 2, 2, 2), 0, 0);
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.weightx = 1;
 
-    JPanel noAnalysisCard = new JPanel(new GridBagLayout());
+    var noAnalysisCard = new JPanel(new GridBagLayout());
     noAnalysisCard.add(new JLabel(SonarLintIcons.INFO));
     noAnalysisCard.add(noAnalysisLabel, gc);
     noAnalysisCard.add(Box.createHorizontalBox(), gc);
     panel.add(noAnalysisCard, NO_ANALYSIS);
 
-    JPanel withAnalysisCard = new JPanel(new GridBagLayout());
+    var withAnalysisCard = new JPanel(new GridBagLayout());
     withAnalysisCard.add(lastAnalysisLabel, gc);
     withAnalysisCard.add(Box.createHorizontalBox(), gc);
     panel.add(withAnalysisCard, WITH_ANALYSIS);

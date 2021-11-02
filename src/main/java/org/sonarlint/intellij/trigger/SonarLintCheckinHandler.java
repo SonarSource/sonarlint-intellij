@@ -32,20 +32,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.NonFocusableCheckBox;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
-
 import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
-
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -84,12 +81,12 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
 
     // de-duplicate as the same file can be present several times in the panel (e.g. in several changelists)
-    Set<VirtualFile> affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
-    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
+    var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
+    var submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     // this will block EDT (modal)
     try {
-      AtomicBoolean error = new AtomicBoolean(false);
-      AnalysisCallback callback = new AnalysisCallback() {
+      var error = new AtomicBoolean(false);
+      var callback = new AnalysisCallback() {
         @Override public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
           // do nothing
         }
@@ -110,7 +107,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void handleError(Exception e, int numFiles) {
-    String msg = "SonarLint - Error analysing " + numFiles + " changed file(s).";
+    var msg = "SonarLint - Error analysing " + numFiles + " changed file(s).";
     if (e.getMessage() != null) {
       msg = msg + ": " + e.getMessage();
     }
@@ -119,21 +116,21 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private ReturnResult processResult(Set<VirtualFile> affectedFiles) {
-    IssueStore issueStore = SonarLintUtils.getService(project, IssueStore.class);
-    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
+    var issueStore = SonarLintUtils.getService(project, IssueStore.class);
+    var issueManager = SonarLintUtils.getService(project, IssueManager.class);
 
-    Map<VirtualFile, Collection<LiveIssue>> map = affectedFiles.stream()
+    var issuesPerFile = affectedFiles.stream()
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
 
-    long numIssues = map.entrySet().stream()
+    var numIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
-      .filter(i -> !i.isResolved())
+      .filter(Predicate.not(LiveIssue::isResolved))
       .count();
-    issueStore.set(map, "SCM changed files");
+    issueStore.set(issuesPerFile, "SCM changed files");
 
-    long numBlockerIssues = map.entrySet().stream()
+    var numBlockerIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
-      .filter(i -> !i.isResolved())
+      .filter(Predicate.not(LiveIssue::isResolved))
       .filter(i -> "BLOCKER".equals(i.getSeverity()))
       .count();
 
@@ -141,28 +138,28 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       return ReturnResult.COMMIT;
     }
 
-    long numFiles = map.keySet().size();
+    var numFiles = issuesPerFile.keySet().size();
 
-    List<LiveIssue> issues = map.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-    long numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().startsWith(Language.SECRETS.getPluginKey())).count();
-    String msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
+    var issues = issuesPerFile.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
+    var numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().startsWith(Language.SECRETS.getPluginKey())).count();
+    var msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
 
     return showYesNoCancel(msg);
   }
 
   private static String createMessage(long filesAnalyzed, long numIssues, long numBlockerIssues, long numSecretsIssues) {
-    String files = filesAnalyzed == 1 ? "file" : "files";
-    String issues = numIssues == 1 ? "issue" : "issues";
+    var files = filesAnalyzed == 1 ? "file" : "files";
+    var issues = numIssues == 1 ? "issue" : "issues";
 
-    String warningAboutLeakedSecrets = "";
+    var warningAboutLeakedSecrets = "";
     if (numSecretsIssues > 0) {
-      String secretWord = numSecretsIssues == 1 ? "secret" : "secrets";
+      var secretWord = SonarLintUtils.pluralize("secret", numSecretsIssues);
       warningAboutLeakedSecrets = String.format("\n\nSonarLint analysis found %d %s. " +
         "Committed secrets may lead to unauthorized system access.", numSecretsIssues, secretWord);
     }
-    StringBuilder message = new StringBuilder();
+    var message = new StringBuilder();
     if (numBlockerIssues > 0) {
-      String blocker = numBlockerIssues == 1 ? "issue" : "issues";
+      var blocker = SonarLintUtils.pluralize("issue", numBlockerIssues);
       message.append(String.format("SonarLint analysis on %d %s found %d %s (including %d blocker %s)", filesAnalyzed, files,
         numIssues, issues, numBlockerIssues, blocker));
     } else {
@@ -173,7 +170,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private ReturnResult showYesNoCancel(String resultStr) {
-    final int answer = Messages.showYesNoCancelDialog(project,
+    final var answer = Messages.showYesNoCancelDialog(project,
       resultStr,
       "SonarLint Analysis Results",
       "&Review Issues",
@@ -204,9 +201,9 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     @Override
     public JComponent getComponent() {
-      JPanel panel = new JPanel(new BorderLayout());
+      var panel = new JPanel(new BorderLayout());
       panel.add(checkBox);
-      boolean dumb = DumbService.isDumb(project);
+      var dumb = DumbService.isDumb(project);
       checkBox.setEnabled(!dumb);
       checkBox.setToolTipText(dumb ? "SonarLint analysis is impossible until indices are up-to-date" : "");
       return panel;
@@ -224,7 +221,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     @Override
     public void restoreState() {
-      PropertiesComponent props = PropertiesComponent.getInstance(project);
+      var props = PropertiesComponent.getInstance(project);
       checkBox.setSelected(props.getBoolean(ACTIVATED_OPTION_NAME, getGlobalSettings().isAutoTrigger()));
     }
   }

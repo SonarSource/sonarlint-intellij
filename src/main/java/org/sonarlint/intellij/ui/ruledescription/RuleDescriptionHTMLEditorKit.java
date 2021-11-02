@@ -20,24 +20,20 @@
 package org.sonarlint.intellij.ui.ruledescription;
 
 import com.intellij.openapi.util.text.StringUtil;
-
 import java.util.Locale;
 import javax.swing.text.AbstractDocument;
-import javax.swing.text.AttributeSet;
 import javax.swing.text.Element;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
-
 import org.jetbrains.annotations.Nullable;
 
 public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
 
   public RuleDescriptionHTMLEditorKit() {
-    StyleSheet styleSheet = this.getStyleSheet();
+    var styleSheet = this.getStyleSheet();
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
     styleSheet.addRule(".rule-params { border: none; border-collapse: collapse; padding: 1em }");
@@ -51,7 +47,7 @@ public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
 
   public static void appendRuleAttributesHtmlTable(String ruleKey, String ruleSeverity, @Nullable String ruleType, StringBuilder builder) {
     // apparently some css properties are not supported
-    String imgAttributes = "valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\"";
+    var imgAttributes = "valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\"";
 
     builder.append("<table><tr>");
     if (ruleType != null) {
@@ -71,11 +67,11 @@ public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
   private static final HTMLFactory factory = new HTMLFactory() {
     @Override
     public View create(Element elem) {
-      AttributeSet attrs = elem.getAttributes();
-      Object elementName = attrs.getAttribute(AbstractDocument.ElementNameAttribute);
-      Object o = (elementName != null) ? null : attrs.getAttribute(StyleConstants.NameAttribute);
+      var attrs = elem.getAttributes();
+      var elementName = attrs.getAttribute(AbstractDocument.ElementNameAttribute);
+      var o = (elementName != null) ? null : attrs.getAttribute(StyleConstants.NameAttribute);
       if (o instanceof HTML.Tag) {
-        HTML.Tag kind = (HTML.Tag) o;
+        var kind = (HTML.Tag) o;
         if (HTML.Tag.IMG.equals(kind)) {
           return new RuleDescriptionImageView(elem);
         }

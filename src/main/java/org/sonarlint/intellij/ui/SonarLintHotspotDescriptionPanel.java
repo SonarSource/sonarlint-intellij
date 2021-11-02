@@ -20,12 +20,10 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.project.Project;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
-
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -33,33 +31,30 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
 
 import static org.sonarlint.intellij.ui.HtmlUtils.fixPreformattedText;
 
 public class SonarLintHotspotDescriptionPanel {
   private static final int BORDER = 10;
 
-  private final Project project;
   private final JPanel panel;
   private final HTMLEditorKit kit;
   private JEditorPane editor;
 
-  public SonarLintHotspotDescriptionPanel(Project project) {
-    this.project = project;
+  public SonarLintHotspotDescriptionPanel() {
     this.kit = new HTMLEditorKit();
-    StyleSheet styleSheet = kit.getStyleSheet();
+    var styleSheet = kit.getStyleSheet();
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
 
     panel = new JPanel(new BorderLayout());
 
-    JComponent titleComp = new JLabel("Select a hotspot to see more details", SwingConstants.CENTER);
+    var titleComp = new JLabel("Select a hotspot to see more details", SwingConstants.CENTER);
     panel.add(titleComp, BorderLayout.CENTER);
   }
 
   public void setDescription(String description) {
-    String htmlBody = fixPreformattedText("<table><tr><td>" + description + "</td></tr></table>");
+    var htmlBody = fixPreformattedText("<table><tr><td>" + description + "</td></tr></table>");
     updateEditor(htmlBody);
   }
 
@@ -77,7 +72,7 @@ public class SonarLintHotspotDescriptionPanel {
   }
 
   private JEditorPane createEditor() {
-    JEditorPane newEditor = new JEditorPane();
+    var newEditor = new JEditorPane();
     newEditor.setEditorKit(kit);
     newEditor.setBorder(JBUI.Borders.empty(BORDER));
     newEditor.setEditable(false);
