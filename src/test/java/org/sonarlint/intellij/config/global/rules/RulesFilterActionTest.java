@@ -47,7 +47,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void show_only_changed() {
-    AnAction changed = findAction("Changed");
+    var changed = findAction("Changed");
 
     presentation.putClientProperty(SELECTED_PROPERTY, true);
 
@@ -59,7 +59,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void show_only_disabled() {
-    AnAction disabled = findAction("Disabled");
+    var disabled = findAction("Disabled");
 
     presentation.putClientProperty(SELECTED_PROPERTY, true);
 
@@ -71,7 +71,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void show_only_enabled() {
-    AnAction enabled = findAction("Enabled");
+    var enabled = findAction("Enabled");
 
     presentation.putClientProperty(SELECTED_PROPERTY, true);
 
@@ -83,7 +83,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void reset_filter() {
-    AnAction reset = findAction("Filter");
+    var reset = findAction("Filter");
     reset.actionPerformed(event);
     verify(model).reset(true);
 
@@ -96,6 +96,6 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
     return Arrays.stream(action.getChildActionsOrStubs())
       .filter(a -> a.getTemplatePresentation().getText() != null && a.getTemplatePresentation().getText().contains(text))
       .findFirst()
-      .get();
+      .orElseThrow(() -> new IllegalStateException("Action not found: " + text));
   }
 }

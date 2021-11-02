@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ServerIssueTrackableTest {
   @Test
   public void testNulls() {
-    ServerIssueTrackable trackable = new ServerIssueTrackable(new NullTestIssue());
+    var trackable = new ServerIssueTrackable(new NullTestIssue());
 
     assertThat(trackable.getServerIssueKey()).isNull();
     assertThat(trackable.getLine()).isNull();
@@ -40,7 +40,7 @@ public class ServerIssueTrackableTest {
 
   @Test
   public void testWrapping() {
-    ServerIssueTrackable trackable = new ServerIssueTrackable(new TestIssue());
+    var trackable = new ServerIssueTrackable(new TestIssue());
 
     assertThat(trackable.getAssignee()).isEqualTo("assigneeLogin");
     assertThat(trackable.isResolved()).isTrue();

@@ -38,13 +38,13 @@ public class SonarLintTestUtils {
   }
 
   public static AnActionEvent createAnActionEvent(@Nullable Project project) {
-    AnActionEvent event = mock(AnActionEvent.class);
+    var event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(project);
     return event;
   }
 
   public static Issue createIssue(int id) {
-    Issue issue = mock(Issue.class);
+    var issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(Integer.toString(id));
     when(issue.getMessage()).thenReturn("issue " + id);
     return issue;

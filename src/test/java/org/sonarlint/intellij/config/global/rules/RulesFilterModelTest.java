@@ -92,7 +92,7 @@ public class RulesFilterModelTest {
 
   @Test
   public void should_apply_filter() {
-    RulesTreeNode.Rule rule = mock(RulesTreeNode.Rule.class);
+    var rule = mock(RulesTreeNode.Rule.class);
     when(rule.getName()).thenReturn("my rule");
     when(rule.getKey()).thenReturn("my:rule");
     assertThat(model.filter(rule)).isTrue();

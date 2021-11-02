@@ -31,9 +31,9 @@ import static org.mockito.Mockito.mock;
 public class AnalysisRequestTest {
   @Test
   public void testRoundTrip() {
-    Project p = mock(Project.class);
-    VirtualFile f = mock(VirtualFile.class);
-    AnalysisRequest analysisRequest = new AnalysisRequest(p, singletonList(f), TriggerType.COMPILATION, false, mock(AnalysisCallback.class));
+    var p = mock(Project.class);
+    var f = mock(VirtualFile.class);
+    var analysisRequest = new AnalysisRequest(p, singletonList(f), TriggerType.COMPILATION, false, mock(AnalysisCallback.class));
 
     assertThat(analysisRequest.files()).containsOnly(f);
     assertThat(analysisRequest.trigger()).isEqualTo(TriggerType.COMPILATION);

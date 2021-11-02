@@ -19,9 +19,7 @@
  */
 package org.sonarlint.intellij.editor;
 
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
-import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -43,7 +41,7 @@ public class SonarLinkHandlerTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() throws InvalidBindingException {
-    ProjectBindingManager projectBindingManager = mock(ProjectBindingManager.class);
+    var projectBindingManager = mock(ProjectBindingManager.class);
     replaceProjectService(ProjectBindingManager.class, projectBindingManager);
 
     when(projectBindingManager.getFacade(any())).thenReturn(sonarlintFacade);
@@ -55,17 +53,18 @@ public class SonarLinkHandlerTest extends AbstractSonarLintLightTests {
   public void testDescription() {
     when(sonarlintFacade.getDescription(RULE_KEY)).thenReturn("description");
     when(sonarlintFacade.getRuleName(RULE_KEY)).thenReturn("name");
-    String desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
-    assertThat(desc).contains("description");
-    assertThat(desc).contains("name");
-    assertThat(desc).contains(RULE_KEY);
+    var desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
+    assertThat(desc)
+      .contains("description")
+      .contains("name")
+      .contains(RULE_KEY);
     verify(sonarlintFacade).getDescription(RULE_KEY);
     verify(sonarlintFacade).getRuleName(RULE_KEY);
   }
 
   @Test
   public void testDescriptionWithoutProject() {
-    Editor editor = mock(Editor.class);
+    var editor = mock(Editor.class);
     when(editor.getProject()).thenReturn(null);
 
     assertThat(handler.getDescription(RULE_KEY, editor)).isNull();
@@ -77,7 +76,7 @@ public class SonarLinkHandlerTest extends AbstractSonarLintLightTests {
     when(sonarlintFacade.getDescription(RULE_KEY)).thenReturn(null);
     when(sonarlintFacade.getRuleName(RULE_KEY)).thenReturn(null);
 
-    String desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
+    var desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
     assertThat(desc).contains(RULE_KEY);
     verify(sonarlintFacade).getDescription(RULE_KEY);
     verify(sonarlintFacade).getRuleName(RULE_KEY);
@@ -88,7 +87,7 @@ public class SonarLinkHandlerTest extends AbstractSonarLintLightTests {
     when(sonarlintFacade.getDescription(RULE_KEY)).thenReturn("text1\n   \t\n \r\ntext2");
     when(sonarlintFacade.getRuleName(RULE_KEY)).thenReturn("name");
 
-    String desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
+    var desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
     assertThat(desc).contains("text1\ntext2");
     verify(sonarlintFacade).getDescription(RULE_KEY);
     verify(sonarlintFacade).getRuleName(RULE_KEY);
@@ -98,9 +97,10 @@ public class SonarLinkHandlerTest extends AbstractSonarLintLightTests {
     when(sonarlintFacade.getDescription(RULE_KEY)).thenReturn("description");
     when(sonarlintFacade.getRuleName(RULE_KEY)).thenReturn("name with <html> tag");
 
-    String desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
-    assertThat(desc).contains("&lt;html&gt;");
-    assertThat(desc).contains("description");
+    var desc = handler.getDescription(RULE_KEY, myFixture.getEditor());
+    assertThat(desc)
+      .contains("&lt;html&gt;")
+      .contains("description");
     verify(sonarlintFacade).getDescription(RULE_KEY);
     verify(sonarlintFacade).getRuleName(RULE_KEY);
   }

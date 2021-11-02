@@ -38,7 +38,6 @@ import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -127,13 +126,13 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   }
 
   private static LiveIssue createFileStoredIssue(int id, PsiFile file) {
-    Issue issue = SonarLintTestUtils.createIssue(id);
+    var issue = SonarLintTestUtils.createIssue(id);
     return new LiveIssue(issue, file, null, null, Collections.emptyList());
   }
 
   private LiveIssue createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
-    Issue issue = SonarLintTestUtils.createIssue(id);
-    RangeMarker range = mock(RangeMarker.class);
+    var issue = SonarLintTestUtils.createIssue(id);
+    var range = mock(RangeMarker.class);
 
     when(range.getStartOffset()).thenReturn(rangeStart);
     when(range.getEndOffset()).thenReturn(rangeEnd);

@@ -48,7 +48,7 @@ public class AbstractNodeTest {
 
   @Test
   public void testInsertion() {
-    SummaryNode summaryNode = new SummaryNode();
+    var summaryNode = new SummaryNode();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("name")), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("file")), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
@@ -63,9 +63,9 @@ public class AbstractNodeTest {
 
   @Test
   public void testFileCount() {
-    AbstractNode child1 = mock(AbstractNode.class);
-    AbstractNode child2 = mock(AbstractNode.class);
-    AbstractNode child3 = mock(AbstractNode.class);
+    var child1 = mock(AbstractNode.class);
+    var child2 = mock(AbstractNode.class);
+    var child3 = mock(AbstractNode.class);
 
     when(child1.getIssueCount()).thenReturn(1);
 
@@ -87,7 +87,7 @@ public class AbstractNodeTest {
   private final Comparator<FileNode> nameComparator = Comparator.comparing(f -> f.file().getName());
 
   private VirtualFile mockFile(String name) {
-    VirtualFile file = mock(VirtualFile.class);
+    var file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(name);
     return file;
   }

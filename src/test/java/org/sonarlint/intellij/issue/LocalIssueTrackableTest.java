@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LocalIssueTrackableTest {
   @Test
   public void testWrapping() {
-    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
+    var issue = Sonarlint.Issues.Issue.newBuilder()
       .setServerIssueKey("key")
       .setAssignee("assignee")
       .setLine(10)
@@ -38,7 +38,7 @@ public class LocalIssueTrackableTest {
       .setRuleKey("ruleKey")
       .build();
 
-    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
+    var trackable = new LocalIssueTrackable(issue);
     assertThat(trackable.getAssignee()).isEqualTo("assignee");
     assertThat(trackable.getMessage()).isEqualTo("msg");
     assertThat(trackable.getServerIssueKey()).isEqualTo("key");
@@ -52,10 +52,10 @@ public class LocalIssueTrackableTest {
 
   @Test
   public void testNulls() {
-    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
+    var issue = Sonarlint.Issues.Issue.newBuilder()
       .build();
 
-    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
+    var trackable = new LocalIssueTrackable(issue);
     assertThat(trackable.getServerIssueKey()).isNull();
     assertThat(trackable.getLine()).isNull();
     assertThat(trackable.getCreationDate()).isNull();
@@ -63,19 +63,19 @@ public class LocalIssueTrackableTest {
 
   @Test(expected = UnsupportedOperationException.class)
   public void severityNotStored() {
-    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
+    var issue = Sonarlint.Issues.Issue.newBuilder()
       .build();
 
-    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
+    var trackable = new LocalIssueTrackable(issue);
     trackable.getSeverity();
   }
 
   @Test(expected = UnsupportedOperationException.class)
   public void typeNotStored() {
-    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
+    var issue = Sonarlint.Issues.Issue.newBuilder()
       .build();
 
-    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
+    var trackable = new LocalIssueTrackable(issue);
     trackable.getType();
   }
 }

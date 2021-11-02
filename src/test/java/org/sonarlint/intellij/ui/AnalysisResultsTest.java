@@ -53,8 +53,8 @@ public class AnalysisResultsTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testContainsIssues() {
-    VirtualFile file = mock(VirtualFile.class);
-    LiveIssue issue = mock(LiveIssue.class);
+    var file = mock(VirtualFile.class);
+    var issue = mock(LiveIssue.class);
     when(issues.lastAnalysisDate()).thenReturn(Instant.now());
     when(issues.wasAnalyzed()).thenReturn(true);
     when(issues.issues()).thenReturn(Collections.singletonMap(file, Collections.singleton(issue)));

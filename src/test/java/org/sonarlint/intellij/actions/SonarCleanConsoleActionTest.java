@@ -32,14 +32,13 @@ public class SonarCleanConsoleActionTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testAction() {
-    AnActionEvent event = mock(AnActionEvent.class);
-    SonarLintConsole console = mock(SonarLintConsole.class);
-
+    var event = mock(AnActionEvent.class);
+    var console = mock(SonarLintConsole.class);
 
     when(event.getProject()).thenReturn(getProject());
     replaceProjectService(SonarLintConsole.class, console);
 
-    SonarCleanConsoleAction clean = new SonarCleanConsoleAction(null, null, null);
+    var clean = new SonarCleanConsoleAction(null, null, null);
 
     clean.actionPerformed(event);
     verify(console).clear();
@@ -47,8 +46,8 @@ public class SonarCleanConsoleActionTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testNoOpIfNoProject() {
-    AnActionEvent event = mock(AnActionEvent.class);
-    SonarCleanConsoleAction clean = new SonarCleanConsoleAction(null, null, null);
+    var event = mock(AnActionEvent.class);
+    var clean = new SonarCleanConsoleAction(null, null, null);
     clean.actionPerformed(event);
   }
 }

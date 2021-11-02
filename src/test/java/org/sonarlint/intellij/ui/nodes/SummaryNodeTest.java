@@ -31,12 +31,12 @@ public class SummaryNodeTest {
 
   @Test
   public void testText() {
-    AbstractNode child1 = mock(AbstractNode.class);
+    var child1 = mock(AbstractNode.class);
     when(child1.getIssueCount()).thenReturn(3);
 
     node.add(child1);
 
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
+    var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("Found 3 issues in 1 file");
@@ -44,7 +44,7 @@ public class SummaryNodeTest {
 
   @Test
   public void testNoIssues() {
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
+    var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("No issues to display");
@@ -52,7 +52,7 @@ public class SummaryNodeTest {
 
   @Test
   public void testEmptyText() {
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
+    var renderer = mock(TreeCellRenderer.class);
     node.setEmptyText("Empty");
     node.render(renderer);
 

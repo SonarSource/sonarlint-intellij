@@ -67,7 +67,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() throws InvalidBindingException {
-    ProjectBindingManager bindingManager = spy(SonarLintUtils.getService(getProject(), ProjectBindingManager.class));
+    var bindingManager = spy(SonarLintUtils.getService(getProject(), ProjectBindingManager.class));
     replaceProjectService(IssueManager.class, issueManager);
     replaceProjectService(SonarLintConsole.class, mockedConsole);
     replaceProjectService(ProjectBindingManager.class, bindingManager);
@@ -86,7 +86,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_do_nothing_if_not_connected() {
-    VirtualFile file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
+    var file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
     getProjectSettings().setBindingEnabled(false);
 
     underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), Collections.singletonList(file)), new EmptyProgressIndicator(), false);
@@ -95,8 +95,8 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testServerIssueTracking() {
-    VirtualFile file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
-    ServerIssue serverIssue = mock(ServerIssue.class);
+    var file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
+    var serverIssue = mock(ServerIssue.class);
 
     // mock issues downloaded
     when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), eq(null)))
@@ -121,7 +121,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
       VirtualFile file = myFixture.copyFileToProject(FOO_PHP, "foo" + i + ".php");
       files.add(file);
     }
-    ServerIssue serverIssue = mock(ServerIssue.class);
+    var serverIssue = mock(ServerIssue.class);
 
     // mock issues fetched
     when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(Collections.singletonList(serverIssue));

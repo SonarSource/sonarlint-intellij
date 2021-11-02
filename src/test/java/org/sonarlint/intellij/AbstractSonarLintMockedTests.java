@@ -59,7 +59,7 @@ public abstract class AbstractSonarLintMockedTests {
   }
 
   protected MockModule createModule() {
-    MockModule m = new MockModule(project, disposable);
+    var m = new MockModule(project, disposable);
     m.setName("testModule");
     return m;
   }

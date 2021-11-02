@@ -24,11 +24,9 @@ import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.LocalFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,86 +54,86 @@ public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_not_exclude_source_file() throws InvalidBindingException {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
     assertIsNotExcluded(file, nonExcludedFilesByModule);
   }
 
   @Test
   public void should_exclude_if_file_not_part_of_a_module() throws Exception {
-    VirtualFile tempFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(temp.newFile());
+    var tempFile = LocalFileSystem.getInstance().refreshAndFindFileByIoFile(temp.newFile());
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(tempFile), false, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(tempFile), false, excludeReasons::put);
     assertIsExcluded(tempFile, nonExcludedFilesByModule, "file is not part of any module in IntelliJ's project structure");
   }
 
   @Test
   public void should_exclude_if_file_is_binary() throws InvalidBindingException {
-    VirtualFile file = myFixture.copyFileToProject("foo.bin", "foo.bin");
+    var file = myFixture.copyFileToProject("foo.bin", "foo.bin");
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
     assertIsExcluded(file, nonExcludedFilesByModule, "file's type or location are not supported");
   }
 
   @Test
   public void should_exclude_if_file_is_deleted() throws Exception {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
     WriteAction.runAndWait(() -> file.delete(null));
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
     assertIsExcluded(file, nonExcludedFilesByModule, "file is not part of any module in IntelliJ's project structure");
   }
 
   @Test
   public void should_exclude_if_file_excluded_in_project_config() throws Exception {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
     setProjectLevelExclusions(singletonList("GLOB:foo.php"));
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
     assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarLint Project Settings");
   }
 
   @Test
   public void should_not_exclude_if_file_excluded_in_project_config_when_forced_analysis() throws Exception {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
     setProjectLevelExclusions(singletonList("GLOB:foo.php"));
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
     assertIsNotExcluded(file, nonExcludedFilesByModule);
   }
 
   @Test
   public void should_exclude_if_file_excluded_in_global_config() throws Exception {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
     setGlobalLevelExclusions(singletonList("foo.php"));
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), false, excludeReasons::put);
     assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarLint Global Settings");
   }
 
   @Test
   public void should_not_exclude_if_file_excluded_in_global_config_when_forced_analysis() throws Exception {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
     setGlobalLevelExclusions(singletonList("GLOB:foo.php"));
 
-    Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
+    var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
     assertIsNotExcluded(file, nonExcludedFilesByModule);
   }
 
   @Test
   public void should_exclude_if_power_save_mode() throws Exception {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
     try {
       PowerSaveMode.setEnabled(true);
 
-      Map<Module, Collection<VirtualFile>> nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
+      var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(singletonList(file), true, excludeReasons::put);
       assertIsExcluded(file, nonExcludedFilesByModule, "power save mode is enabled");
     } finally {
       PowerSaveMode.setEnabled(false);

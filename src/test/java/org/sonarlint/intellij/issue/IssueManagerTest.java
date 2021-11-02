@@ -24,12 +24,10 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -38,9 +36,7 @@ import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,19 +76,19 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void testTracking() {
     // tracking based on setRuleKey / line number
-    LiveIssue previousIssue = createRangeStoredIssue(1, "issue 1", 10);
+    var previousIssue = createRangeStoredIssue(1, "issue 1", 10);
     previousIssue.setCreationDate(1000L);
     previousIssue.setSeverity("old");
     previousIssue.setType("old");
 
-    LiveIssue rawIssue = createRangeStoredIssue(1, "issue 1", 10);
+    var rawIssue = createRangeStoredIssue(1, "issue 1", 10);
     rawIssue.setCreationDate(2000L);
     rawIssue.setSeverity("severity");
     rawIssue.setType("type");
 
-    List<LiveIssue> previousIssues = new ArrayList<>(asList(previousIssue));
+    var previousIssues = new ArrayList<>(List.of(previousIssue));
 
-    LiveIssue trackedIssue = underTest.trackSingleIssue(file1, previousIssues, rawIssue);
+    var trackedIssue = underTest.trackSingleIssue(file1, previousIssues, rawIssue);
 
     // matched issues are removed from the list
     assertThat(previousIssues).isEmpty();
@@ -108,11 +104,11 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     issue1.setCreationDate(1000L);
 
     // line is different
-    LiveIssue i2 = createRangeStoredIssue(1, "issue 1", 11);
+    var i2 = createRangeStoredIssue(1, "issue 1", 11);
     i2.setCreationDate(2000L);
 
-    List<LiveIssue> previousIssues = new ArrayList<>(asList(issue1));
-    LiveIssue trackedIssue = underTest.trackSingleIssue(file1, previousIssues, i2);
+    var previousIssues = new ArrayList<>(List.of(issue1));
+    var trackedIssue = underTest.trackSingleIssue(file1, previousIssues, i2);
 
     // matched issues are removed from the list
     assertThat(previousIssues).isEmpty();
@@ -122,12 +118,12 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_copy_server_issue_on_match() {
-    String serverIssueKey = "dummyServerIssueKey";
+    var serverIssueKey = "dummyServerIssueKey";
     issue1.setSeverity("localSeverity");
     issue1.setType("localType");
     assertThat(issue1.getServerIssueKey()).isNull();
 
-    LiveIssue serverIssue = createRangeStoredIssue(1, "issue 1", 10);
+    var serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setSeverity("serverSeverity");
     // old SQ servers don't give type
@@ -143,8 +139,8 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_track_server_issue_based_on_rule_key() {
-    LiveIssue serverIssue = createRangeStoredIssue(1, "issue 1", 10);
-    String newAssignee = "newAssignee";
+    var serverIssue = createRangeStoredIssue(1, "issue 1", 10);
+    var newAssignee = "newAssignee";
     serverIssue.setAssignee(newAssignee);
     serverIssue.setResolved(true);
 
@@ -156,16 +152,16 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_track_server_issue_based_on_issue_key_even_if_no_other_attributes_matches() {
-    String serverIssueKey = "dummyServerIssueKey";
+    var serverIssueKey = "dummyServerIssueKey";
     issue1.setServerIssueKey(serverIssueKey);
-    int localLine = issue1.getLine();
+    var localLine = issue1.getLine();
 
-    LiveIssue serverIssue = createRangeStoredIssue(2, "server issue", localLine + 100);
+    var serverIssue = createRangeStoredIssue(2, "server issue", localLine + 100);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setResolved(true);
     serverIssue.setSeverity("sev");
     serverIssue.setType("type");
-    String newAssignee = "newAssignee";
+    var newAssignee = "newAssignee";
     serverIssue.setAssignee(newAssignee);
     underTest.matchWithServerIssues(file1, singletonList(serverIssue));
 
@@ -180,7 +176,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_ignore_server_issue_if_not_matched() {
-    LiveIssue serverIssue = createRangeStoredIssue(2, "server issue", issue1.getLine() + 100);
+    var serverIssue = createRangeStoredIssue(2, "server issue", issue1.getLine() + 100);
     serverIssue.setServerIssueKey("dummyServerIssueKey");
     underTest.matchWithServerIssues(file1, singletonList(serverIssue));
 
@@ -204,7 +200,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void unknown_file() {
-    VirtualFile unknownFile = mock(VirtualFile.class);
+    var unknownFile = mock(VirtualFile.class);
     when(cache.getLive(unknownFile)).thenReturn(null);
     assertThat(underTest.getForFileOrNull(unknownFile)).isNull();
     assertThat(underTest.getForFile(unknownFile)).isEmpty();
@@ -212,7 +208,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_preserve_creation_date_of_leaked_issues_in_connected_mode() {
-    Long creationDate = 1L;
+    var creationDate = 1L;
     issue1.setCreationDate(creationDate);
 
     underTest.matchWithServerIssues(file1, Collections.emptyList());
@@ -227,13 +223,13 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
   }
 
   private LiveIssue createRangeStoredIssue(int id, String rangeContent, int line) {
-    Issue issue = SonarLintTestUtils.createIssue(id);
+    var issue = SonarLintTestUtils.createIssue(id);
     when(issue.getStartLine()).thenReturn(line);
-    RangeMarker range = mock(RangeMarker.class);
+    var range = mock(RangeMarker.class);
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(rangeContent);
-    PsiFile psiFile = mock(PsiFile.class);
+    var psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
     return new LiveIssue(issue, psiFile, range, null, Collections.emptyList());
   }

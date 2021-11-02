@@ -48,7 +48,7 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_name() {
-    StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
+    var ruleDetails = mock(StandaloneRuleDetails.class);
     when(ruleDetails.getName()).thenReturn("name");
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
@@ -57,14 +57,14 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_details() {
-    StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
+    var ruleDetails = mock(StandaloneRuleDetails.class);
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.getActiveRuleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test
   public void should_get_description() {
-    StandaloneRuleDetails ruleDetails = mock(StandaloneRuleDetails.class);
+    var ruleDetails = mock(StandaloneRuleDetails.class);
     when(ruleDetails.getHtmlDescription()).thenReturn("html");
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
     assertThat(facade.getDescription("rule1")).isEqualTo("html");
@@ -73,7 +73,7 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_start_analysis() {
-    AnalysisResults results = mock(AnalysisResults.class);
+    var results = mock(AnalysisResults.class);
     when(engine.analyze(any(StandaloneAnalysisConfiguration.class), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
     assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
   }

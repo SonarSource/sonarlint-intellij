@@ -38,7 +38,7 @@ public class PrimaryLocationNodeTest {
 
   @Before
   public void setUp() {
-    MockDocument doc = new MockDocument();
+    var doc = new MockDocument();
     doc.replaceText("my document test", System.currentTimeMillis());
     when(range.getDocument()).thenReturn(doc);
     when(range.isValid()).thenReturn(true);
@@ -49,7 +49,7 @@ public class PrimaryLocationNodeTest {
   @Test
   public void testRenderer() {
     node = new PrimaryLocationNode(3, range, "msg", new Flow(Collections.emptyList()));
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
+    var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);
@@ -61,7 +61,7 @@ public class PrimaryLocationNodeTest {
   @Test
   public void testNoMessage() {
     node = new PrimaryLocationNode(3, range, "...", new Flow(Collections.emptyList()));
-    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
+    var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);

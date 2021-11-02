@@ -34,10 +34,10 @@ public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintLightT
 
   @Test
   public void clear() {
-    IssueStore issueStore = mock(IssueStore.class);
+    var issueStore = mock(IssueStore.class);
     replaceProjectService(IssueStore.class, issueStore);
 
-    AnActionEvent event = mock(AnActionEvent.class);
+    var event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(getProject());
     action.actionPerformed(event);
 
@@ -46,7 +46,7 @@ public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintLightT
 
   @Test
   public void noProject() {
-    AnActionEvent event = mock(AnActionEvent.class);
+    var event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
     action.actionPerformed(event);
   }

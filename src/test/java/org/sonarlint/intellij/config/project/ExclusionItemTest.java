@@ -26,21 +26,21 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ExclusionItemTest {
   @Test
   public void should_parse_file() {
-    ExclusionItem item = ExclusionItem.parse("FILE:src/main/java/File.java");
+    var item = ExclusionItem.parse("FILE:src/main/java/File.java");
     assertThat(item.item()).isEqualTo("src/main/java/File.java");
     assertThat(item.type()).isEqualTo(ExclusionItem.Type.FILE);
   }
 
   @Test
   public void should_parse_dir() {
-    ExclusionItem item = ExclusionItem.parse("DIRECTORY:src/main/java");
+    var item = ExclusionItem.parse("DIRECTORY:src/main/java");
     assertThat(item.item()).isEqualTo("src/main/java");
     assertThat(item.type()).isEqualTo(ExclusionItem.Type.DIRECTORY);
   }
 
   @Test
   public void should_parse_regex() {
-    ExclusionItem item = ExclusionItem.parse("GLOB:*.java");
+    var item = ExclusionItem.parse("GLOB:*.java");
     assertThat(item.item()).isEqualTo("*.java");
     assertThat(item.type()).isEqualTo(ExclusionItem.Type.GLOB);
   }
@@ -48,32 +48,32 @@ public class ExclusionItemTest {
 
   @Test
   public void return_null_if_fail_to_parse() {
-    ExclusionItem item = ExclusionItem.parse("Unknown:src/main/java/File.java");
+    var item = ExclusionItem.parse("Unknown:src/main/java/File.java");
     assertThat(item).isNull();
   }
 
   @Test
   public void return_null_if_fail_to_parse2() {
-    ExclusionItem item = ExclusionItem.parse("Unknown:");
+    var item = ExclusionItem.parse("Unknown:");
     assertThat(item).isNull();
   }
 
   @Test
   public void return_null_if_fail_to_parse3() {
-    ExclusionItem item = ExclusionItem.parse("Unknown");
+    var item = ExclusionItem.parse("Unknown");
     assertThat(item).isNull();
   }
 
   @Test
   public void use_constructor() {
-    ExclusionItem item = new ExclusionItem(ExclusionItem.Type.DIRECTORY, "dir");
+    var item = new ExclusionItem(ExclusionItem.Type.DIRECTORY, "dir");
     assertThat(item.item()).isEqualTo("dir");
     assertThat(item.type()).isEqualTo(ExclusionItem.Type.DIRECTORY);
   }
 
   @Test
   public void string() {
-    ExclusionItem item = new ExclusionItem(ExclusionItem.Type.DIRECTORY, "dir");
+    var item = new ExclusionItem(ExclusionItem.Type.DIRECTORY, "dir");
     assertThat(item.toStringWithType()).isEqualTo("DIRECTORY:dir");
   }
 }

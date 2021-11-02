@@ -20,14 +20,13 @@
 package org.sonarlint.intellij.config.global;
 
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ServerConnectionTest {
   @Test
   public void testRoundTrip() {
-    ServerConnection server = ServerConnection.newBuilder()
+    var server = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
@@ -41,13 +40,13 @@ public class ServerConnectionTest {
     assertThat(server.getPassword()).isEqualTo("pass");
     assertThat(server.getHostUrl()).isEqualTo("host");
 
-    assertThat(server.toString()).isEqualTo(server.getName());
+    assertThat(server).hasToString(server.getName());
     assertThat(server.isSonarCloud()).isFalse();
   }
 
   @Test
   public void testSonarCloud() {
-    ServerConnection server1 = ServerConnection.newBuilder()
+    var server1 = ServerConnection.newBuilder()
       .setHostUrl("https://sonarqube.com")
       .setPassword("pass")
       .setToken("token")
@@ -59,7 +58,7 @@ public class ServerConnectionTest {
 
   @Test
   public void testEqualsAndHash() {
-    ServerConnection server1 = ServerConnection.newBuilder()
+    var server1 = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
@@ -67,7 +66,7 @@ public class ServerConnectionTest {
       .setLogin("login")
       .build();
 
-    ServerConnection server2 = ServerConnection.newBuilder()
+    var server2 = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass")
       .setToken("token")
@@ -75,7 +74,7 @@ public class ServerConnectionTest {
       .setLogin("login")
       .build();
 
-    ServerConnection server3 = ServerConnection.newBuilder()
+    var server3 = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword("pass1")
       .setToken("token")
@@ -83,16 +82,16 @@ public class ServerConnectionTest {
       .setLogin("login")
       .build();
 
-    assertThat(server1.equals(server2)).isTrue();
-    assertThat(server1.equals(server3)).isFalse();
-    assertThat(server1.equals(null)).isFalse();
-
-    assertThat(server1.hashCode()).isEqualTo(server2.hashCode());
+    assertThat(server1)
+      .isEqualTo(server2)
+      .isNotEqualTo(server3)
+      .isNotEqualTo(null)
+      .hasSameHashCodeAs(server2);
   }
 
   @Test
   public void testSetNullEncodedFields() {
-    ServerConnection server = ServerConnection.newBuilder()
+    var server = ServerConnection.newBuilder()
       .setHostUrl("host")
       .setPassword(null)
       .setToken(null)
@@ -106,24 +105,25 @@ public class ServerConnectionTest {
 
   @Test
   public void testEncoded() {
-    ServerConnection.Builder builder = ServerConnection.newBuilder()
+    var builder = ServerConnection.newBuilder()
       .setPassword("pass")
       .setToken("token");
 
-    assertThat(builder.build().getPassword()).isEqualTo("pass");
-    assertThat(builder.build().getToken()).isEqualTo("token");
+    ServerConnection connection = builder.build();
+    assertThat(connection.getPassword()).isEqualTo("pass");
+    assertThat(connection.getToken()).isEqualTo("token");
   }
 
   @Test
   public void testEndpointParams() {
-    ServerConnection server = ServerConnection.newBuilder()
+    var server = ServerConnection.newBuilder()
       .setHostUrl("http://myhost")
       .setEnableProxy(false)
       .setToken("token")
       .setOrganizationKey("org")
       .build();
 
-    EndpointParams endpointParams = server.getEndpointParams();
+    var endpointParams = server.getEndpointParams();
 
     assertThat(endpointParams.getBaseUrl()).isEqualTo("http://myhost");
     assertThat(endpointParams.getOrganization()).isEmpty();

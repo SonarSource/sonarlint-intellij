@@ -21,7 +21,6 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import java.util.function.Predicate;
 import org.junit.Before;
@@ -62,7 +61,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Test
   public void should_submit_open_files() {
-    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
+    var f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
@@ -71,7 +70,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Test
   public void should_submit_manual() {
-    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
+    var f1 = myFixture.copyFileToProject("foo.php", "foo.php");
 
     final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
     submitter.submitFilesModal(singleton(f1), TriggerType.CONFIG_CHANGE, analysisCallback);
@@ -80,7 +79,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Test
   public void should_submit_open_files_auto() {
-    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
+    var f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
     setProjectLevelExclusions(singletonList("GLOB:foo.php"));

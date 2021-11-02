@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
@@ -56,8 +55,8 @@ public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testAnalysis() {
-    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
-    IssueListener listener = mock(IssueListener.class);
+    var file = myFixture.copyFileToProject("foo.php", "foo.php");
+    var listener = mock(IssueListener.class);
 
     analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ProgressMonitor.class));
 

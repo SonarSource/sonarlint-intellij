@@ -28,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SonarLintProjectSettingsTest {
   @Test
   public void testRoundTrip() {
-    SonarLintProjectSettings settings = new SonarLintProjectSettings();
+    var settings = new SonarLintProjectSettings();
 
     settings.setBindingEnabled(true);
     assertThat(settings.isBindingEnabled()).isTrue();

@@ -34,19 +34,19 @@ public class IssueNodeTest {
 
   @Test
   public void testCount() {
-    LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
+    var i = createIssue(System.currentTimeMillis(), "rule");
     node = new IssueNode(i);
     assertThat(node.getIssueCount()).isEqualTo(1);
     assertThat(node.issue()).isEqualTo(i);
   }
 
   private static LiveIssue createIssue(long date, String message) {
-    PsiFile file = mock(PsiFile.class);
+    var file = mock(PsiFile.class);
     when(file.isValid()).thenReturn(true);
-    Issue issue = mock(Issue.class);
+    var issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn("MAJOR");
-    LiveIssue issuePointer = new LiveIssue(issue, file, Collections.emptyList());
+    var issuePointer = new LiveIssue(issue, file, Collections.emptyList());
     issuePointer.setCreationDate(date);
     return issuePointer;
   }
