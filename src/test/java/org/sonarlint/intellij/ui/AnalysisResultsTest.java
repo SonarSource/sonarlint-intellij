@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -57,7 +58,7 @@ public class AnalysisResultsTest extends AbstractSonarLintLightTests {
     var issue = mock(LiveIssue.class);
     when(issues.lastAnalysisDate()).thenReturn(Instant.now());
     when(issues.wasAnalyzed()).thenReturn(true);
-    when(issues.issues()).thenReturn(Collections.singletonMap(file, Collections.singleton(issue)));
+    when(issues.issues()).thenReturn(Map.of(file, Collections.singleton(issue)));
 
     assertThat(analysisResults.getLastAnalysisDate()).isNotNull();
     assertThat(analysisResults.getEmptyText()).isEqualTo("No issues found");

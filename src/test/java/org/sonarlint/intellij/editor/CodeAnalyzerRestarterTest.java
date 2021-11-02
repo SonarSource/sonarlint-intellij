@@ -26,7 +26,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
-import java.util.Arrays;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -80,7 +80,7 @@ public class CodeAnalyzerRestarterTest extends AbstractSonarLintLightTests {
     var file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
     var file2 = createTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "public class Bar {}");
 
-    analyzerRestarter.refreshFiles(Arrays.asList(file1.getVirtualFile(), file2.getVirtualFile()));
+    analyzerRestarter.refreshFiles(List.of(file1.getVirtualFile(), file2.getVirtualFile()));
 
     verify(codeAnalyzer).restart(file1);
     verifyNoMoreInteractions(codeAnalyzer);

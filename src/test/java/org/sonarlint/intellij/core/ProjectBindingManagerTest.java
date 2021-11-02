@@ -21,6 +21,8 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.ProgressManager;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -103,7 +105,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setConnectionName("server1");
 
     var server = ServerConnection.newBuilder().setName("server1").build();
-    getGlobalSettings().setServerConnections(Collections.singletonList(server));
+    getGlobalSettings().setServerConnections(List.of(server));
     assertThat(projectBindingManager.getServerConnection()).isEqualTo(server);
   }
 
@@ -114,7 +116,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setConnectionName("server1");
 
     var server = ServerConnection.newBuilder().setName("server2").build();
-    getGlobalSettings().setServerConnections(Collections.singletonList(server));
+    getGlobalSettings().setServerConnections(List.of(server));
     exception.expect(InvalidBindingException.class);
     projectBindingManager.getServerConnection();
   }
@@ -195,7 +197,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_store_project_and_module_bindings_in_settings() {
     var connection = ServerConnection.newBuilder().setName("name").build();
-    projectBindingManager.bindTo(connection, "projectKey", Collections.singletonMap(getModule(), "moduleProjectKey"));
+    projectBindingManager.bindTo(connection, "projectKey", Map.of(getModule(), "moduleProjectKey"));
 
     assertThat(getProjectSettings().isBoundTo(connection)).isTrue();
     assertThat(getProjectSettings().getProjectKey()).isEqualTo("projectKey");

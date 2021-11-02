@@ -22,6 +22,7 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Predicate;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,7 +34,6 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 
 import static java.util.Collections.singleton;
-import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
@@ -65,7 +65,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(analysisManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
+    verify(analysisManager).submitBackground(List.of(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test
@@ -82,10 +82,10 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
     var f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
-    setProjectLevelExclusions(singletonList("GLOB:foo.php"));
+    setProjectLevelExclusions(List.of("GLOB:foo.php"));
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(analysisManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
+    verify(analysisManager).submitBackground(List.of(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test

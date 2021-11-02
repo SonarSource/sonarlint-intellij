@@ -49,7 +49,6 @@ import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.singletonList;
 
 /**
  * Stores issues associated to a {@link PsiElement}, {@link RangeMarker} or  {@link PsiFile}.
@@ -172,7 +171,7 @@ public class IssueManager {
   }
 
   public <T extends Trackable> LiveIssue trackSingleIssue(VirtualFile file, Collection<T> baseInput, LiveIssue rawInput) {
-    Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(() -> singletonList(rawInput), () -> baseInput);
+    Tracking<LiveIssue, T> tracking = new Tracker<LiveIssue, T>().track(() -> List.of(rawInput), () -> baseInput);
     if (!tracking.getMatchedRaws().isEmpty()) {
       T previousMatched = tracking.getMatchedRaws().get(rawInput);
       baseInput.remove(previousMatched);

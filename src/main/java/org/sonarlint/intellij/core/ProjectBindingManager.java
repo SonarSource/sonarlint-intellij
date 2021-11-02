@@ -24,7 +24,6 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -200,7 +199,7 @@ public class ProjectBindingManager {
   }
 
   private List<Module> allModules() {
-    return Arrays.asList(ModuleManager.getInstance(myProject).getModules());
+    return List.of(ModuleManager.getInstance(myProject).getModules());
   }
 
   public Map<Module, String> getModuleOverrides() {

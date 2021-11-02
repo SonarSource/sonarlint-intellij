@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.LiveIssue;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -77,7 +76,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
     var issue = createTestIssue("r1");
 
     cache.insertIssue(file, issue);
-    cache.removeIssues(file, singletonList(issue));
+    cache.removeIssues(file, List.of(issue));
 
     assertThat(cache.contains(file)).isTrue();
     assertThat(cache.getLive(file)).isEmpty();

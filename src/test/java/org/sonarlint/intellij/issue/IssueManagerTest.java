@@ -37,7 +37,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -65,7 +64,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
 
     when(cache.contains(file1)).thenReturn(true);
-    when(cache.getLive(file1)).thenReturn(singletonList(issue1));
+    when(cache.getLive(file1)).thenReturn(List.of(issue1));
   }
 
   @Test
@@ -128,7 +127,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     serverIssue.setSeverity("serverSeverity");
     // old SQ servers don't give type
     serverIssue.setType(null);
-    underTest.matchWithServerIssues(file1, singletonList(serverIssue));
+    underTest.matchWithServerIssues(file1, List.of(serverIssue));
 
     // issue1 has been changed
     assertThat(issue1.getServerIssueKey()).isEqualTo(serverIssueKey);
@@ -163,7 +162,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     serverIssue.setType("type");
     var newAssignee = "newAssignee";
     serverIssue.setAssignee(newAssignee);
-    underTest.matchWithServerIssues(file1, singletonList(serverIssue));
+    underTest.matchWithServerIssues(file1, List.of(serverIssue));
 
     // the local issue is preserved ...
     assertThat(issue1.getLine()).isEqualTo(localLine);
@@ -178,7 +177,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
   public void should_ignore_server_issue_if_not_matched() {
     var serverIssue = createRangeStoredIssue(2, "server issue", issue1.getLine() + 100);
     serverIssue.setServerIssueKey("dummyServerIssueKey");
-    underTest.matchWithServerIssues(file1, singletonList(serverIssue));
+    underTest.matchWithServerIssues(file1, List.of(serverIssue));
 
     assertThat(issue1.getServerIssueKey()).isNull();
   }

@@ -30,8 +30,8 @@ import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.NonNls;
@@ -80,9 +80,9 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
 
   public void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {
     if (file == null) {
-      treeBuilder.updateModel(Collections.emptyMap(), emptyText);
+      treeBuilder.updateModel(Map.of(), emptyText);
     } else {
-      treeBuilder.updateModel(Collections.singletonMap(file, issues), emptyText);
+      treeBuilder.updateModel(Map.of(file, issues), emptyText);
     }
     expandTree();
   }

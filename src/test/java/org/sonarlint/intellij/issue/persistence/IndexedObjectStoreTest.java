@@ -22,8 +22,8 @@ package org.sonarlint.intellij.issue.persistence;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Scanner;
 import org.junit.Before;
 import org.junit.Rule;
@@ -112,7 +112,7 @@ public class IndexedObjectStoreTest extends AbstractSonarLintLightTests {
       Files.createDirectories(getPath("mykey").resolve("foo"));
     }
 
-    when(index.keys()).thenReturn(Collections.singletonList("mykey"));
+    when(index.keys()).thenReturn(List.of("mykey"));
     when(validator.apply(anyString())).thenReturn(Boolean.FALSE);
 
     store.deleteInvalid();
@@ -132,7 +132,7 @@ public class IndexedObjectStoreTest extends AbstractSonarLintLightTests {
     store.write("mykey", "myvalue");
     store.write("mykey2", "myvalue2");
 
-    when(index.keys()).thenReturn(Arrays.asList("mykey", "mykey2"));
+    when(index.keys()).thenReturn(List.of("mykey", "mykey2"));
     when(validator.apply("mykey")).thenReturn(Boolean.FALSE);
     when(validator.apply("mykey2")).thenReturn(Boolean.TRUE);
 

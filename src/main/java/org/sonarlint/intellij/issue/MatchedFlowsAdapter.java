@@ -26,8 +26,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static java.util.Collections.singletonList;
-
 public class MatchedFlowsAdapter {
   public static Optional<IssueContext> adapt(List<Flow> flows) {
     return flows.isEmpty()
@@ -38,7 +36,7 @@ public class MatchedFlowsAdapter {
   private static List<Flow> adaptFlows(List<Flow> flows) {
     return flows.stream().anyMatch(Flow::hasMoreThanOneLocation)
       ? reverse(flows)
-      : singletonList(groupToSingleFlow(flows));
+      : List.of(groupToSingleFlow(flows));
   }
 
   private static Flow groupToSingleFlow(List<Flow> flows) {

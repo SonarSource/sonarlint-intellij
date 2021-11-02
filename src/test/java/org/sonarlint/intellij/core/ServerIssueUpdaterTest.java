@@ -21,11 +21,9 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +71,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     replaceProjectService(ProjectBindingManager.class, bindingManager);
     doReturn(engine).when(bindingManager).getConnectedEngine();
     underTest = new ServerIssueUpdater(getProject());
-    getGlobalSettings().setServerConnections(Collections.singletonList(ServerConnection.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
+    getGlobalSettings().setServerConnections(List.of(ServerConnection.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
     getProjectSettings().setConnectionName(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);
 
@@ -89,7 +87,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     var file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
     getProjectSettings().setBindingEnabled(false);
 
-    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), Collections.singletonList(file)), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
     verifyZeroInteractions(issueManager);
   }
 
@@ -100,12 +98,12 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
     // mock issues downloaded
     when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), eq(null)))
-      .thenReturn(Collections.singletonList(serverIssue));
+      .thenReturn(List.of(serverIssue));
 
     // run
     getProjectSettings().setBindingEnabled(true);
 
-    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), Collections.singletonList(file)), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
@@ -124,13 +122,13 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     var serverIssue = mock(ServerIssue.class);
 
     // mock issues fetched
-    when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(Collections.singletonList(serverIssue));
+    when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(List.of(serverIssue));
 
 
     // run
     getProjectSettings().setBindingEnabled(true);
 
-    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), files), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
     verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), eq(true), eq(null));

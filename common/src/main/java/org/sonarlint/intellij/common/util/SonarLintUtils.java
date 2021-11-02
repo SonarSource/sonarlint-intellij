@@ -37,7 +37,7 @@ import com.intellij.util.PlatformUtils;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Transparency;
-import java.util.Arrays;
+import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
@@ -84,7 +84,7 @@ public class SonarLintUtils {
   }
 
   public static boolean isSonarCloudAlias(@Nullable String url) {
-    return Arrays.asList(SONARCLOUD_ALIAS).contains(url);
+    return List.of(SONARCLOUD_ALIAS).contains(url);
   }
 
   public static boolean isEmpty(@Nullable String str) {

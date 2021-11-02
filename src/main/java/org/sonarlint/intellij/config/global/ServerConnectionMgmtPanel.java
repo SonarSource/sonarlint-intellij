@@ -125,12 +125,12 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     toolbarDecorator.setRemoveAction(new RemoveServerAction());
 
     serversPanel.add(toolbarDecorator.createPanel(), BorderLayout.CENTER);
-    Splitter splitter = new Splitter(true);
+    var splitter = new Splitter(true);
     splitter.setFirstComponent(serversPanel);
     splitter.setSecondComponent(createServerStatus());
 
     var emptyLabel = new JBLabel("No connection selected", SwingConstants.CENTER);
-    JPanel emptyPanel = new JPanel(new BorderLayout());
+    var emptyPanel = new JPanel(new BorderLayout());
     emptyPanel.add(emptyLabel, BorderLayout.CENTER);
 
     var border = IdeBorderFactory.createTitledBorder("SonarQube / SonarCloud connections");

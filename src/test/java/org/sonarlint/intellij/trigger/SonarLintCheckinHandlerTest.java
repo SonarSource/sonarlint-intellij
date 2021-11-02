@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +74,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(issueStore).set(Collections.singletonMap(file, Collections.singleton(issue)), "SCM changed files");
+    verify(issueStore).set(Map.of(file, Collections.singleton(issue)), "SCM changed files");
     verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 

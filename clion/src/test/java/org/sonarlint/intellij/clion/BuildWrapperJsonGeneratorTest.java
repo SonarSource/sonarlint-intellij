@@ -21,8 +21,9 @@ package org.sonarlint.intellij.clion;
 
 import com.intellij.mock.MockLocalFileSystem;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import org.junit.jupiter.api.Test;
 
@@ -53,7 +54,7 @@ class BuildWrapperJsonGeneratorTest {
       virtualFile,
       compilerExecutable.toString(),
       compilerWorkingDir.toString(),
-      Arrays.asList("a1", "a2"),
+      List.of("a1", "a2"),
       "clang",
       null,
       properties);
@@ -93,10 +94,10 @@ class BuildWrapperJsonGeneratorTest {
       virtualFile,
       compilerExecutable.toString(),
       compilerWorkingDir.toString(),
-      Arrays.asList("a1", "a2"),
+      List.of("a1", "a2"),
       "clang",
       null,
-      Collections.singletonMap("isHeaderFile", "false"));
+      Map.of("isHeaderFile", "false"));
     var properties2 = new TreeMap<String, String>();
     properties2.put("prop1", "val1");
     properties2.put("prop2", "\"val2\"");
@@ -105,7 +106,7 @@ class BuildWrapperJsonGeneratorTest {
       virtualFile2,
       compilerExecutable2.toString(),
       compilerWorkingDir2.toString(),
-      Arrays.asList("b1", "b2"),
+      List.of("b1", "b2"),
       "clang",
       null,
       properties2);
@@ -113,7 +114,7 @@ class BuildWrapperJsonGeneratorTest {
       virtualFile3,
       compilerExecutable3.toString(),
       compilerWorkingDir3.toString(),
-      Arrays.asList("c1", "c2"),
+      List.of("c1", "c2"),
       "clang",
       null,
       Collections.emptyMap());

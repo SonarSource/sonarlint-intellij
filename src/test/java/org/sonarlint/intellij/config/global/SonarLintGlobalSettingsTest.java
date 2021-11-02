@@ -21,6 +21,7 @@ package org.sonarlint.intellij.config.global;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
 
@@ -42,7 +43,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
     var server = ServerConnection.newBuilder().setName("name").build();
 
-    settings.setServerConnections(Collections.singletonList(server));
+    settings.setServerConnections(List.of(server));
     assertThat(settings.getServerConnections()).containsOnly(server);
 
     settings.setAutoTrigger(false);
@@ -75,7 +76,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
     var state = new SonarLintGlobalSettings();
     var settingsStore = new SonarLintGlobalSettingsStore();
     var activeRuleWithParam = new SonarLintGlobalSettings.Rule(RULE, true);
-    activeRuleWithParam.setParams(Collections.singletonMap("paramKey", "paramValue"));
+    activeRuleWithParam.setParams(Map.of("paramKey", "paramValue"));
     var inactiveRule = new SonarLintGlobalSettings.Rule(RULE1, false);
     state.setRules(List.of(activeRuleWithParam, inactiveRule));
 
