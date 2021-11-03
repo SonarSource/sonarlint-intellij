@@ -201,34 +201,45 @@ public class AnalyzerConfiguration {
       if (initializedWorkspace instanceof CMakeWorkspace) {
         cppEnvironment = getCMakeCppEnvironment((CMakeWorkspace) initializedWorkspace, configuration);
       } else {
-        // Use reflection to check if workspace is instanceof com.jetbrains.cidr.project.workspace.WorkspaceWithEnvironment
-        // WorkspaceWithEnvironment interface has getEnvironment() method
-        final Method classMethod;
-        try {
-          classMethod = initializedWorkspace.getClass().getMethod("getEnvironment");
-        } catch (NoSuchMethodException e) {
-          SonarLintConsole.get(project).debug(initializedWorkspace.getClass().getName() + " has no getEnvironment() method");
-          continue;
-        }
-        Object result;
-        try {
-          result = classMethod.invoke(initializedWorkspace);
-        } catch (ReflectiveOperationException e) {
-          SonarLintConsole.get(project).debug(e.getMessage());
-          continue;
-        }
-        if (result instanceof List) {
-          // getEnvironment returns a singleton list
-          result = ((List<?>) result).get(0);
-        }
-        if (result instanceof CPPEnvironment) {
-          cppEnvironment = (CPPEnvironment) result;
-          // stop at the first CPPEnvironment found
+        cppEnvironment = tryReflection(initializedWorkspace);
+        if (cppEnvironment != null) {
           break;
         }
       }
     }
     return cppEnvironment != null && (cppEnvironment.getToolSet().isRemote() || cppEnvironment.getToolSet().isWSL());
+  }
+
+  @Nullable
+  private CPPEnvironment tryReflection(CidrWorkspace initializedWorkspace) {
+    // Use reflection to check if workspace is instanceof com.jetbrains.cidr.project.workspace.WorkspaceWithEnvironment interface has getEnvironment() method
+    final Method classMethod;
+    try {
+      classMethod = initializedWorkspace.getClass().getMethod("getEnvironment");
+    } catch (NoSuchMethodException e) {
+      SonarLintConsole.get(project).debug(initializedWorkspace.getClass().getName() + " has no getEnvironment() method");
+      return null;
+    }
+    Object result;
+    try {
+      result = classMethod.invoke(initializedWorkspace);
+    } catch (ReflectiveOperationException e) {
+      SonarLintConsole.get(project).debug(e.getMessage());
+      return null;
+    }
+    result = unWrapList(result);
+    if (result instanceof CPPEnvironment) {
+      return (CPPEnvironment) result;
+    }
+    return null;
+  }
+
+  private static Object unWrapList(Object result) {
+    if (result instanceof List) {
+      // getEnvironment returns a singleton list
+      result = ((List<?>) result).get(0);
+    }
+    return result;
   }
 
   @Nullable

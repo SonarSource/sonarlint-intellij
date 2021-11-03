@@ -110,31 +110,40 @@ public class WizardModel {
   public void queryOrganizations() throws Exception {
     final ServerConnection partialConnection = createConnectionWithoutOrganization();
     if (partialConnection.isSonarCloud()) {
-      var task = new GetOrganizationsTask(partialConnection);
-      ProgressManager.getInstance().run(task);
-      if (task.getException() != null) {
-        throw task.getException();
-      }
+      final var task = buildAndRunGetOrganizationsTask(partialConnection);
       setOrganizationList(task.organizations());
       final var presetOrganizationKey = getOrganizationKey();
       if (presetOrganizationKey != null) {
-        // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
-        var orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(presetOrganizationKey));
-        if (!orgExists) {
-          var getOrganizationTask = new GetOrganizationTask(partialConnection, presetOrganizationKey);
-          ProgressManager.getInstance().run(getOrganizationTask);
-          final var fetchedOrganization = getOrganizationTask.organization();
-          if (getOrganizationTask.getException() != null || fetchedOrganization.isEmpty()) {
-            // ignore and reset organization
-            setOrganizationKey(null);
-          } else {
-            getOrganizationList().add(fetchedOrganization.get());
-          }
-        }
+        addPresetOrganization(partialConnection, task, presetOrganizationKey);
       }
       if (getOrganizationKey() == null && task.organizations().size() == 1) {
         // if there is only one organization, we can preselect it
         setOrganizationKey(task.organizations().iterator().next().getKey());
+      }
+    }
+  }
+
+  private static GetOrganizationsTask buildAndRunGetOrganizationsTask(ServerConnection partialConnection) throws Exception {
+    var task = new GetOrganizationsTask(partialConnection);
+    ProgressManager.getInstance().run(task);
+    if (task.getException() != null) {
+      throw task.getException();
+    }
+    return task;
+  }
+
+  private void addPresetOrganization(ServerConnection partialConnection, GetOrganizationsTask task, String presetOrganizationKey) {
+    // the previously configured organization might not be in the list. If that's the case, fetch it and add it to the list.
+    var orgExists = task.organizations().stream().anyMatch(o -> o.getKey().equals(presetOrganizationKey));
+    if (!orgExists) {
+      var getOrganizationTask = new GetOrganizationTask(partialConnection, presetOrganizationKey);
+      ProgressManager.getInstance().run(getOrganizationTask);
+      final var fetchedOrganization = getOrganizationTask.organization();
+      if (getOrganizationTask.getException() != null || fetchedOrganization.isEmpty()) {
+        // ignore and reset organization
+        setOrganizationKey(null);
+      } else {
+        getOrganizationList().add(fetchedOrganization.get());
       }
     }
   }
