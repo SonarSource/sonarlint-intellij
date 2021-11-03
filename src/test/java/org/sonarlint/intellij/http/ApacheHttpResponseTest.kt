@@ -20,25 +20,24 @@
 package org.sonarlint.intellij.http
 
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
-import org.sonarsource.sonarlint.core.serverapi.HttpClient
-import java.io.ByteArrayInputStream
+import org.apache.hc.core5.http.ContentType
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.Test
 
-internal class ApacheHttpResponse(
-  private val requestUrl: String, private val response: SimpleHttpResponse
-) : HttpClient.Response {
-  override fun code(): Int {
-    return response.code
-  }
+class ApacheHttpResponseTest {
 
-  override fun bodyAsString(): String = response.bodyText
+    @Test
+    fun should_return_body_when_not_empty() {
+        val responseBody = "hello world"
+        val response = SimpleHttpResponse.create(200, responseBody, ContentType.TEXT_PLAIN)
+        val nonEmptyResponse = ApacheHttpResponse("https://nowhere.tld", response)
+        assertThat(nonEmptyResponse.bodyAsStream()).hasBinaryContent(responseBody.toByteArray())
+    }
 
-  override fun bodyAsStream() = ByteArrayInputStream(response.bodyBytes ?: ByteArray(0))
-
-  override fun close() {
-    // nothing to do
-  }
-
-  override fun url(): String {
-    return requestUrl
-  }
+    @Test
+    fun should_return_empty_body() {
+        val response = SimpleHttpResponse.create(204)
+        val emptyResponse = ApacheHttpResponse("https://nowhere.tld", response)
+        assertThat(emptyResponse.bodyAsStream()).hasBinaryContent(ByteArray(0))
+    }
 }
