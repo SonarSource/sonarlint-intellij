@@ -25,14 +25,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
+import org.sonarlint.intellij.any
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.http.ApacheHttpClient
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams
-import org.sonarsource.sonarlint.core.serverapi.HttpClient
 import java.util.concurrent.CompletableFuture
 
 class ConnectionTestTaskTest : AbstractSonarLintLightTests() {
@@ -63,8 +63,8 @@ class ConnectionTestTaskTest : AbstractSonarLintLightTests() {
         val progress = mock(ProgressIndicator::class.java)
         val server = mock(ServerConnection::class.java)
         `when`(server.endpointParams).thenReturn(EndpointParams("base", false, null))
-        val httpClient = mock(HttpClient::class.java)
-        `when`(httpClient.getAsync(ArgumentMatchers.any())).thenReturn(CompletableFuture())
+        val httpClient = mock(ApacheHttpClient::class.java)
+        `when`(httpClient.getAsync(any())).thenReturn(CompletableFuture())
         `when`(server.httpClient).thenReturn(httpClient)
         val task = ConnectionTestTask(server)
         GlobalScope.launch {

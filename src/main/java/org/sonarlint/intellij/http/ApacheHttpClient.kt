@@ -21,6 +21,7 @@ package org.sonarlint.intellij.http
 
 import com.intellij.util.net.ssl.CertificateManager
 import com.intellij.util.proxy.CommonProxy
+import org.apache.hc.client5.http.async.methods.AbstractCharResponseConsumer
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequests
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
@@ -33,114 +34,191 @@ import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.http.ContentType
+import org.apache.hc.core5.http.HttpResponse
+import org.apache.hc.core5.http.message.StatusLine
+import org.apache.hc.core5.http.nio.support.BasicRequestProducer
 import org.apache.hc.core5.http2.HttpVersionPolicy
 import org.apache.hc.core5.reactor.ssl.TlsDetails
 import org.apache.hc.core5.util.Timeout
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
+import java.nio.CharBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.function.Consumer
 
 
-class ApacheHttpClient private constructor(
-  private val client: CloseableHttpAsyncClient,
-  private val login: String? = null,
-  private val password: String? = null
+open class ApacheHttpClient private constructor(
+    private val client: CloseableHttpAsyncClient,
+    private val login: String? = null,
+    private val password: String? = null
 ) : org.sonarsource.sonarlint.core.serverapi.HttpClient {
 
-  fun withCredentials(login: String?, password: String?): ApacheHttpClient {
-    return ApacheHttpClient(client, login, password)
-  }
-
-  override fun get(url: String): Response {
-    return getAsync(url).get()
-  }
-
-  override fun getAsync(url: String) = executeAsync(SimpleHttpRequests.get(url))
-
-  override fun post(url: String, contentType: String, body: String): Response {
-    val httpRequest = SimpleHttpRequests.post(url)
-    httpRequest.setBody(body, ContentType.parse(contentType))
-    return executeAsync(httpRequest).get()
-  }
-
-  override fun delete(url: String, contentType: String, body: String): Response {
-    val httpRequest = SimpleHttpRequests.delete(url)
-    httpRequest.setBody(body, ContentType.parse(contentType))
-    return executeAsync(httpRequest).get()
-  }
-
-  private fun executeAsync(httpRequest: SimpleHttpRequest): CompletableFuture<Response> {
-    login?.let { httpRequest.setHeader("Authorization", basic(login, password ?: "")) }
-    val futureResponse = CompletableFuture<Response>()
-    val httpFuture = client.execute(httpRequest, object : FutureCallback<SimpleHttpResponse> {
-      override fun completed(result: SimpleHttpResponse) {
-        futureResponse.complete(ApacheHttpResponse(httpRequest.requestUri, result))
-      }
-
-      override fun failed(ex: Exception) {
-        futureResponse.completeExceptionally(ex)
-      }
-
-      override fun cancelled() {
-        // nothing to do, the completable future is already canceled
-      }
-    })
-    return futureResponse.whenComplete { _, error ->
-      if (error is CancellationException) {
-        httpFuture.cancel(false)
-      }
+    fun withCredentials(login: String?, password: String?): ApacheHttpClient {
+        return ApacheHttpClient(client, login, password)
     }
-  }
 
-  fun basic(username: String, password: String): String {
-    val usernameAndPassword = "$username:$password"
-    val encoded = Base64.getEncoder().encodeToString(usernameAndPassword.toByteArray(StandardCharsets.ISO_8859_1))
-    return "Basic $encoded"
-  }
-
-  fun close() {
-    client.close()
-  }
-
-  companion object {
-    private val CONNECTION_TIMEOUT = Timeout.ofSeconds(30)
-    private val RESPONSE_TIMEOUT = Timeout.ofMinutes(10)
-
-    @JvmStatic
-    val default: ApacheHttpClient = ApacheHttpClient(
-      HttpAsyncClients.custom()
-        .setConnectionManager(
-          PoolingAsyncClientConnectionManagerBuilder.create()
-            .setTlsStrategy(
-              ClientTlsStrategyBuilder.create()
-                .setSslContext(CertificateManager.getInstance().sslContext)
-                .setTlsDetailsFactory { TlsDetails(it.session, it.applicationProtocol) }
-                .build())
-            .build()
-        )
-        .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
-        // SLI-629 - Force HTTP/1
-        .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_1)
-
-        // proxy settings
-        .setRoutePlanner(SystemDefaultRoutePlanner(CommonProxy.getInstance()))
-        .setDefaultCredentialsProvider(SystemDefaultCredentialsProvider())
-
-        .setDefaultRequestConfig(
-          RequestConfig.copy(RequestConfig.DEFAULT)
-            .setConnectionRequestTimeout(CONNECTION_TIMEOUT)
-            .setResponseTimeout(RESPONSE_TIMEOUT)
-            .build()
-        )
-        .build()
-    )
-
-    init {
-      default.client.start()
+    override fun get(url: String): Response {
+        return getAsync(url).get()
     }
-  }
+
+    override fun getAsync(url: String) = executeAsync(SimpleHttpRequests.get(url))
+
+    override fun post(url: String, contentType: String, body: String): Response {
+        val httpRequest = SimpleHttpRequests.post(url)
+        httpRequest.setBody(body, ContentType.parse(contentType))
+        return executeAsync(httpRequest).get()
+    }
+
+    override fun delete(url: String, contentType: String, body: String): Response {
+        val httpRequest = SimpleHttpRequests.delete(url)
+        httpRequest.setBody(body, ContentType.parse(contentType))
+        return executeAsync(httpRequest).get()
+    }
+
+    private fun executeAsync(httpRequest: SimpleHttpRequest): CompletableFuture<Response> {
+        login?.let { httpRequest.setHeader("Authorization", basic(login, password ?: "")) }
+        val futureResponse = CompletableFuture<Response>()
+        val httpFuture = client.execute(httpRequest, object : FutureCallback<SimpleHttpResponse> {
+            override fun completed(result: SimpleHttpResponse) {
+                futureResponse.complete(ApacheHttpResponse(httpRequest.requestUri, result))
+            }
+
+            override fun failed(ex: Exception) {
+                futureResponse.completeExceptionally(ex)
+            }
+
+            override fun cancelled() {
+                // nothing to do, the completable future is already canceled
+            }
+        })
+        return futureResponse.whenComplete { _, error ->
+            if (error is CancellationException) {
+                httpFuture.cancel(false)
+            }
+        }
+    }
+
+    fun getEventStream(url: String, messageConsumer: Consumer<String>): CompletableFuture<Nothing> {
+        val request = SimpleHttpRequests.get(url)
+        request.config = RequestConfig.custom()
+            .setConnectionRequestTimeout(STREAM_CONNECTION_REQUEST_TIMEOUT)
+            .setConnectTimeout(STREAM_CONNECTION_TIMEOUT)
+            .setResponseTimeout(STREAM_RESPONSE_TIMEOUT)
+            .build()
+        login?.let { request.setHeader("Authorization", basic(login, password ?: "")) }
+        request.setHeader("Accept", "text/event-stream")
+        val futureResponse = CompletableFuture<Nothing>()
+        client.execute(
+            BasicRequestProducer(request, null),
+            object : AbstractCharResponseConsumer<Nothing>() {
+                override fun start(
+                    response: HttpResponse,
+                    contentType: ContentType
+                ) {
+                    println(request.toString() + "->" + StatusLine(response))
+                }
+
+                override fun capacityIncrement() = Int.MAX_VALUE
+
+                // should we close something if endOfStream?
+                override fun data(data: CharBuffer, endOfStream: Boolean) {
+                    extractMessage(data.toString())?.let { messageConsumer.accept(it) }
+                }
+
+                override fun buildResult() = null
+
+                override fun failed(cause: java.lang.Exception) {
+                    // should we close something ?
+                }
+
+                override fun releaseResources() {
+                    // should we close something ?
+                }
+            }, object : FutureCallback<Nothing> {
+                override fun completed(result: Nothing) {
+                    futureResponse.complete(null)
+                }
+
+                override fun failed(ex: java.lang.Exception) {
+                    futureResponse.completeExceptionally(ex)
+                }
+
+                override fun cancelled() {
+                    // nothing to do, the completable future is already canceled
+                }
+
+            }
+        )
+        return futureResponse
+    }
+
+    fun close() {
+        client.close()
+    }
+
+    companion object {
+        private val STREAM_CONNECTION_TIMEOUT = Timeout.ofMinutes(10)
+        private val STREAM_CONNECTION_REQUEST_TIMEOUT = Timeout.ofMinutes(10)
+        private val STREAM_RESPONSE_TIMEOUT = Timeout.ofMinutes(10)
+        private val CONNECTION_TIMEOUT = Timeout.ofSeconds(30)
+        private val RESPONSE_TIMEOUT = Timeout.ofMinutes(10)
+        private const val DATA_PREFIX = "data: "
+        private const val DATA_SUFFIX = "\n\n"
+
+        @JvmStatic
+        val default: ApacheHttpClient = ApacheHttpClient(
+            HttpAsyncClients.custom()
+                .setConnectionManager(
+                    PoolingAsyncClientConnectionManagerBuilder.create()
+                        .setTlsStrategy(
+                            ClientTlsStrategyBuilder.create()
+                                .setSslContext(CertificateManager.getInstance().sslContext)
+                                .setTlsDetailsFactory { TlsDetails(it.session, it.applicationProtocol) }
+                                .build())
+                        .build()
+                )
+                .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
+                // SLI-629 - Force HTTP/1
+                .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_1)
+
+                // proxy settings
+                .setRoutePlanner(SystemDefaultRoutePlanner(CommonProxy.getInstance()))
+                .setDefaultCredentialsProvider(SystemDefaultCredentialsProvider())
+
+                .setDefaultRequestConfig(
+                    RequestConfig.copy(RequestConfig.DEFAULT)
+                        .setConnectionRequestTimeout(CONNECTION_TIMEOUT)
+                        .setResponseTimeout(RESPONSE_TIMEOUT)
+                        .build()
+                )
+                .build()
+        )
+
+        private fun extractMessage(eventPayload: String): String? {
+            return if (isValidSSEEvent(eventPayload)) {
+                eventPayload.substring(DATA_PREFIX.length, eventPayload.length - DATA_SUFFIX.length)
+            } else {
+                println("Invalid event payload: $eventPayload")
+                null
+            }
+        }
+
+        private fun isValidSSEEvent(receivedData: String) =
+            receivedData.startsWith(DATA_PREFIX) && receivedData.endsWith(DATA_SUFFIX)
+
+        fun basic(username: String, password: String): String {
+            val usernameAndPassword = "$username:$password"
+            val encoded =
+                Base64.getEncoder().encodeToString(usernameAndPassword.toByteArray(StandardCharsets.ISO_8859_1))
+            return "Basic $encoded"
+        }
+
+        init {
+            default.client.start()
+        }
+    }
 }

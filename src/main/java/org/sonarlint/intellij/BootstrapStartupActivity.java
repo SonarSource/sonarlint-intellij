@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.ServerEventsSubscriber;
 import org.sonarlint.intellij.core.UpdateChecker;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
@@ -41,6 +42,7 @@ public class BootstrapStartupActivity implements StartupActivity {
 
     SonarLintUtils.getService(SonarLintHttpServer.class).startOnce();
 
+    SonarLintUtils.getService(ServerEventsSubscriber.class).subscribeFor(project);
     SonarLintUtils.getService(project, ProjectServerNotificationsSubscriber.class).start();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();

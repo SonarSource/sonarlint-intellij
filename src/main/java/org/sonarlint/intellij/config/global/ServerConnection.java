@@ -24,16 +24,16 @@ import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
-
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
-
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
-import org.sonarsource.sonarlint.core.serverapi.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 
 import static icons.SonarLintIcons.ICON_SONARCLOUD_16;
@@ -175,13 +175,21 @@ public class ServerConnection {
     return new EndpointParams(getHostUrl(), isSonarCloud(), getOrganizationKey());
   }
 
-  public HttpClient getHttpClient() {
+  public ApacheHttpClient getHttpClient() {
     var userToken = getToken();
     return ApacheHttpClient.getDefault().withCredentials(isBlank(userToken) ? getLogin() : userToken, getPassword());
   }
 
   public ServerApi api() {
     return new ServerApi(getEndpointParams(), getHttpClient());
+  }
+
+  public CompletableFuture<Void> subscribeForEvents(Set<String> projectKeys, Consumer<String> messageConsumer) {
+    return getHttpClient().getEventStream(buildEventStreamUrl(projectKeys), messageConsumer);
+  }
+
+  private String buildEventStreamUrl(Set<String> projectKeys) {
+    return getEndpointParams().getBaseUrl() + "/api/sonarlint/streamEvents?p=" + String.join(",", projectKeys);
   }
 
   @Override

@@ -169,6 +169,8 @@
         <externalAnnotator language="Scala" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
         <externalAnnotator language="Swift" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
+        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerEventsSubscriber"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerEventHandler"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
