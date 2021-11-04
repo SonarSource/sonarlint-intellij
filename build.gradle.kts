@@ -165,6 +165,8 @@ dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
+    // Actual runtime dependency is shaded by sonarlint-core but seems invisible to IntelliJ
+    compileOnly("com.google.protobuf:protobuf-java:$protobufVersion")
     implementation("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
         exclude(module = "slf4j-api")
     }
