@@ -90,7 +90,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   @Override
   public void apply() throws ConfigurationException {
     if (panel != null) {
-      SonarLintProjectSettings projectSettings = getSettingsFor(project);
+      var projectSettings = getSettingsFor(project);
       boolean exclusionsModified = panel.areExclusionsModified(projectSettings);
       panel.save(project, projectSettings);
       if (exclusionsModified) {
@@ -107,7 +107,7 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
 
     getServersFromApplicationConfigurable()
       .onProcessed(sonarQubeServers -> {
-        SonarLintProjectSettings projectSettings = getSettingsFor(project);
+        var projectSettings = getSettingsFor(project);
         panel.load(sonarQubeServers != null ? sonarQubeServers : getGlobalSettings().getServerConnections(),
           projectSettings,
           getService(project, ProjectBindingManager.class).getModuleOverrides());
@@ -117,9 +117,9 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
   private static Promise<List<ServerConnection>> getServersFromApplicationConfigurable() {
     return DataManager.getInstance().getDataContextFromFocusAsync()
       .then(dataContext -> {
-        Settings allSettings = Settings.KEY.getData(dataContext);
+        var allSettings = Settings.KEY.getData(dataContext);
         if (allSettings != null) {
-          final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+          final var globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
           if (globalConfigurable != null) {
             return globalConfigurable.getCurrentConnections();
           }

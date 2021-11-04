@@ -76,7 +76,7 @@ public class IssueTreeIndexTest {
   }
 
   private VirtualFile createFile(String name) {
-    VirtualFile newFile = mock(VirtualFile.class);
+    var newFile = mock(VirtualFile.class);
     when(newFile.getName()).thenReturn(name);
     return newFile;
   }

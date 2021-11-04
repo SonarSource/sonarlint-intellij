@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -48,9 +47,9 @@ public class SecurityHotspotMatcher {
   }
 
   public Location matchLocation(ServerHotspot serverHotspot) {
-    for (VirtualFile contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
+    for (var contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
       if (contentRoot.isDirectory()) {
-        VirtualFile matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
+        var matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
         if (matchedFile != null) {
           return matchTextRange(matchedFile, serverHotspot.textRange, serverHotspot.message);
         }
@@ -66,7 +65,7 @@ public class SecurityHotspotMatcher {
 
   private Location matchTextRange(VirtualFile matchedFile, TextRange textRange, String message) {
     try {
-      RangeMarker rangeMarker = issueMatcher.match(matchedFile, textRange);
+      var rangeMarker = issueMatcher.match(matchedFile, textRange);
       return resolvedLocation(matchedFile, rangeMarker, message, null);
     } catch (IssueMatcher.NoMatchException e) {
       return fileOnlyLocation(matchedFile, message);

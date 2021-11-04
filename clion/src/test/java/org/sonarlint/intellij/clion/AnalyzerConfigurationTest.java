@@ -29,15 +29,13 @@ import com.jetbrains.cidr.lang.workspace.compiler.CompilerSpecificSwitchBuilder;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompiler;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.TempFilesPool;
+import java.io.File;
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.sonarsource.sonarlint.core.client.api.common.Language;
-
-import java.io.File;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -93,20 +91,20 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration() {
-    VirtualFile file = mock(VirtualFile.class);
-    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+    var file = mock(VirtualFile.class);
+    var configuration = new AnalyzerConfiguration.Configuration(
       file,
       "compilerExecutable",
       "compilerWorkingDir",
-      Arrays.asList("s1", "s2"),
+      List.of("s1", "s2"),
       "compilerKind",
       Language.CPP,
-      Collections.singletonMap("isHeaderFile", "true"));
+      Map.of("isHeaderFile", "true"));
 
     assertEquals(file, configuration.virtualFile);
     assertEquals("compilerExecutable", configuration.compilerExecutable);
     assertEquals("compilerWorkingDir", configuration.compilerWorkingDir);
-    assertEquals(Arrays.asList("s1", "s2"), configuration.compilerSwitches);
+    assertEquals(List.of("s1", "s2"), configuration.compilerSwitches);
     assertEquals("compilerKind", configuration.compilerKind);
     assertEquals(Language.CPP, configuration.sonarLanguage);
     assertEquals("true", configuration.properties.get("isHeaderFile"));
@@ -114,15 +112,15 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration_result() {
-    AnalyzerConfiguration.Configuration configuration = new AnalyzerConfiguration.Configuration(
+    var configuration = new AnalyzerConfiguration.Configuration(
       null,
       null,
       null,
       null,
       null,
       null,
-      Collections.singletonMap("isHeaderFile", "false"));
-    AnalyzerConfiguration.ConfigurationResult result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
+      Map.of("isHeaderFile", "false"));
+    var result = AnalyzerConfiguration.ConfigurationResult.of(configuration);
     assertTrue(result.hasConfiguration());
     assertEquals(configuration, result.getConfiguration());
     assertThrows(UnsupportedOperationException.class, result::getSkipReason);
@@ -130,7 +128,7 @@ class AnalyzerConfigurationTest {
 
   @Test
   void configuration_result_skipped() {
-    AnalyzerConfiguration.ConfigurationResult result = AnalyzerConfiguration.ConfigurationResult.skip("reason");
+    var result = AnalyzerConfiguration.ConfigurationResult.skip("reason");
     assertFalse(result.hasConfiguration());
     assertEquals("reason", result.getSkipReason());
     assertThrows(UnsupportedOperationException.class, result::getConfiguration);

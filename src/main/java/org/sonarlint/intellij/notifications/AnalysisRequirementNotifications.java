@@ -20,22 +20,17 @@
 
 package org.sonarlint.intellij.notifications;
 
-import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-
-import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
 import org.sonarsource.sonarlint.core.client.api.common.SkipReason;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
@@ -57,25 +52,25 @@ public class AnalysisRequirementNotifications {
   }
 
   public static void notifyOnceForSkippedPlugins(AnalysisResults analysisResults, Collection<PluginDetails> allPlugins, Project project) {
-    Set<Language> attemptedLanguages = analysisResults.languagePerFile().values()
+    var attemptedLanguages = analysisResults.languagePerFile().values()
       .stream()
       .filter(Objects::nonNull)
       .collect(toSet());
     attemptedLanguages.forEach(l -> {
-      final Optional<PluginDetails> correspondingPlugin = allPlugins.stream().filter(p -> p.key().equals(l.getPluginKey())).findFirst();
+      final var correspondingPlugin = allPlugins.stream().filter(p -> p.key().equals(l.getPluginKey())).findFirst();
       correspondingPlugin.flatMap(PluginDetails::skipReason).ifPresent(skipReason -> {
         if (skipReason instanceof SkipReason.UnsatisfiedRuntimeRequirement) {
-          final SkipReason.UnsatisfiedRuntimeRequirement runtimeRequirement = (SkipReason.UnsatisfiedRuntimeRequirement) skipReason;
-          final String title = "<b>SonarLint failed to analyze " + l.getLabel() + " code</b>";
+          final var runtimeRequirement = (SkipReason.UnsatisfiedRuntimeRequirement) skipReason;
+          final var title = "<b>SonarLint failed to analyze " + l.getLabel() + " code</b>";
           if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE) {
-            String content = String.format(
+            var content = String.format(
               "SonarLint requires Java runtime version %s or later to analyze %s code. Current version is %s.<br>" +
                 "See <a href=\"https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under\">" +
                 "how to select the JDK version the IDE will run under</a>.",
               runtimeRequirement.getMinVersion(), l.getLabel(), runtimeRequirement.getCurrentVersion());
             createNotificationOnce(project, title, content, new NotificationListener.UrlOpeningListener(true));
           } else if (runtimeRequirement.getRuntime() == SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS) {
-            StringBuilder content = new StringBuilder(
+            var content = new StringBuilder(
               String.format("SonarLint requires Node.js runtime version %s or later to analyze %s code.", runtimeRequirement.getMinVersion(), l.getLabel()));
             if (runtimeRequirement.getCurrentVersion() != null) {
               content.append(String.format(" Current version is %s.", runtimeRequirement.getCurrentVersion()));
@@ -90,7 +85,7 @@ public class AnalysisRequirementNotifications {
 
   private static void createNotificationOnce(Project project, String title, String content, @Nullable NotificationListener listener, NotificationAction... actions) {
     if (!alreadyNotified.contains(content)) {
-      Notification notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
+      var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
         title,
         content,
         NotificationType.WARNING, listener);
@@ -105,7 +100,7 @@ public class AnalysisRequirementNotifications {
    * For old versions of SonarJS before the requirement was stored in the MANIFEST
    */
   public static void notifyNodeCommandException(Project project) {
-    Notification notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
+    var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
       "<b>SonarLint - Node.js Required</b>",
       "Node.js >= 8.x is required to perform JavaScript or TypeScript analysis. Check the SonarLint Log for details.",
       NotificationType.WARNING, null);

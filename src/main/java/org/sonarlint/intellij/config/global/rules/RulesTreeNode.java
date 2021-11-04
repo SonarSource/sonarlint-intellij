@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -39,7 +38,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
 
   public Iterable<T> childrenIterable() {
-    Enumeration children = children();
+    var children = children();
     return () -> new Iterator<T>() {
       @Override
       public boolean hasNext() {
@@ -156,7 +155,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     public List<RuleParam> getParamDetails() {
       return ((StandaloneRule) details).params()
         .stream()
-        .map(p -> (StandaloneRuleParam) p)
+        .map(StandaloneRuleParam.class::cast)
         .map(RuleParam::new)
         .collect(Collectors.toList());
     }
@@ -173,7 +172,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       if (!(o instanceof Rule)) {
         return false;
       }
-      Rule rule = (Rule) o;
+      var rule = (Rule) o;
       return details.getKey().equals(rule.details.getKey()) && activated == rule.activated && nonDefaultParams.equals(rule.nonDefaultParams);
     }
 

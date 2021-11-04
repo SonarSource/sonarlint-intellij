@@ -22,7 +22,6 @@ package org.sonarlint.intellij.issue.persistence;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -50,7 +49,7 @@ public class StringStoreIndexTest {
 
   @Test
   public void testSave() {
-    Path test1 = baseDir.resolve("p1").resolve("file1");
+    var test1 = baseDir.resolve("p1").resolve("file1");
     index.save("key1", test1);
 
     assertThat(baseDir.resolve(StringStoreIndex.INDEX_FILENAME)).exists();
@@ -59,7 +58,7 @@ public class StringStoreIndexTest {
 
   @Test
   public void testDelete() {
-    Path test1 = baseDir.resolve("p1").resolve("file1");
+    var test1 = baseDir.resolve("p1").resolve("file1");
     index.save("key1", test1);
     index.delete("key1");
     index.delete("key2");
@@ -70,7 +69,7 @@ public class StringStoreIndexTest {
 
   @Test
   public void deleteShouldRecoverFromCorruptedIndex() throws IOException {
-    Path indexFile = baseDir.resolve(StringStoreIndex.INDEX_FILENAME);
+    var indexFile = baseDir.resolve(StringStoreIndex.INDEX_FILENAME);
     FileUtils.write(indexFile.toFile(), "not valid protobuf", StandardCharsets.UTF_8);
 
     index.delete("key1");

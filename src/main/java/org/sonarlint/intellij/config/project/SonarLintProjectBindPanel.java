@@ -31,14 +31,11 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.projectImport.ProjectAttachProcessor;
 import com.intellij.ui.ColoredListCellRenderer;
-import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
-import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
-
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -57,15 +54,12 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
-
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverapi.project.ServerProject;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
@@ -114,7 +108,7 @@ public class SonarLintProjectBindPanel {
 
     connectionComboBox.removeAllItems();
     setConnectionList(connections, projectSettings.getConnectionName());
-    String selectedProjectKey = projectSettings.getProjectKey();
+    var selectedProjectKey = projectSettings.getProjectKey();
     if (selectedProjectKey != null) {
       projectKeyTextField.setText(selectedProjectKey);
     }
@@ -124,7 +118,7 @@ public class SonarLintProjectBindPanel {
   @CheckForNull
   public ServerConnection getSelectedConnection() {
     // do things in a type safe way
-    int idx = connectionComboBox.getSelectedIndex();
+    var idx = connectionComboBox.getSelectedIndex();
     if (idx < 0) {
       return null;
     }
@@ -144,7 +138,7 @@ public class SonarLintProjectBindPanel {
   private void onConnectionSelected() {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    boolean connectionSelected = getSelectedConnection() != null;
+    var connectionSelected = getSelectedConnection() != null;
     projectKeyTextField.setEnabled(connectionSelected);
     projectKeyTextField.setEditable(connectionSelected);
     searchProjectButton.setEnabled(connectionSelected);
@@ -157,15 +151,15 @@ public class SonarLintProjectBindPanel {
   private Map<String, ServerProject> downloadProjectList(ServerConnection selectedConnection) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    SonarLintEngineManager core = SonarLintUtils.getService(SonarLintEngineManager.class);
-    ConnectedSonarLintEngine engine = core.getConnectedEngine(selectedConnection.getName());
-    ServerDownloadProjectTask downloadTask = new ServerDownloadProjectTask(project, engine, selectedConnection);
+    var core = SonarLintUtils.getService(SonarLintEngineManager.class);
+    var engine = core.getConnectedEngine(selectedConnection.getName());
+    var downloadTask = new ServerDownloadProjectTask(project, engine, selectedConnection);
 
     try {
       ProgressManager.getInstance().run(downloadTask);
       return downloadTask.getResult();
     } catch (Exception e) {
-      String msg = e.getMessage() != null ? e.getMessage() : "Failed to download list of projects";
+      var msg = e.getMessage() != null ? e.getMessage() : "Failed to download list of projects";
       Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List");
       return null;
     }
@@ -175,8 +169,8 @@ public class SonarLintProjectBindPanel {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
     // keep selection if possible
-    final ServerConnection selectedConnection = getSelectedConnection();
-    String previousSelectedStorageId = selectedConnection != null ? selectedConnection.getName() : null;
+    final var selectedConnection = getSelectedConnection();
+    var previousSelectedStorageId = selectedConnection != null ? selectedConnection.getName() : null;
     connectionComboBox.removeAllItems();
     setConnectionList(connectionList, previousSelectedStorageId);
   }
@@ -186,20 +180,20 @@ public class SonarLintProjectBindPanel {
    * Will also enable or disable other components.
    */
   private void setConnectionList(Collection<ServerConnection> connections, @Nullable String previousSelectedStorageId) {
-    DefaultComboBoxModel<ServerConnection> model = (DefaultComboBoxModel<ServerConnection>) connectionComboBox.getModel();
+    var model = (DefaultComboBoxModel<ServerConnection>) connectionComboBox.getModel();
 
     if (connections.isEmpty()) {
       connectionComboBox.setEnabled(false);
-      ServerConnection s = ServerConnection.newBuilder()
+      var connection = ServerConnection.newBuilder()
         .setName(CONNECTION_EMPTY_TEXT)
         .build();
-      connectionComboBox.setPrototypeDisplayValue(s);
+      connectionComboBox.setPrototypeDisplayValue(connection);
       // ensure this is called, even when nothing is selected
     } else {
       connectionComboBox.setEnabled(bindEnable.isSelected());
-      int i = 0;
-      int selectedIndex = -1;
-      for (ServerConnection connection : connections) {
+      var i = 0;
+      var selectedIndex = -1;
+      for (var connection : connections) {
         if (previousSelectedStorageId != null && connection.getName() != null && previousSelectedStorageId.equals(connection.getName())) {
           selectedIndex = i;
         }
@@ -244,13 +238,13 @@ public class SonarLintProjectBindPanel {
     searchProjectButton.setAction(new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        ServerConnection selectedConnection = getSelectedConnection();
+        var selectedConnection = getSelectedConnection();
         if (selectedConnection == null) {
           return;
         }
-        Map<String, ServerProject> map = downloadProjectList(selectedConnection);
-        if (map != null) {
-          SearchProjectKeyDialog dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), map, selectedConnection.isSonarCloud());
+        var projects = downloadProjectList(selectedConnection);
+        if (projects != null) {
+          var dialog = new SearchProjectKeyDialog(rootPanel, projectKeyTextField.getText(), projects, selectedConnection.isSonarCloud());
           if (dialog.showAndGet()) {
             projectKeyTextField.setText(dialog.getSelectedProjectKey() != null ? dialog.getSelectedProjectKey() : "");
           }
@@ -261,7 +255,7 @@ public class SonarLintProjectBindPanel {
 
     connectionListLabel.setLabelFor(connectionComboBox);
 
-    JBInsets insets = JBUI.insets(2, 0, 0, 0);
+    var insets = JBUI.insets(2, 0, 0, 0);
 
     bindPanel.add(connectionListLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
@@ -286,14 +280,14 @@ public class SonarLintProjectBindPanel {
    * Navigates to global configuration. There are 2 possible ways of doing it, depending on how the settings are opened.
    */
   private void actionConfigureConnections() {
-    Settings allSettings = Settings.KEY.getData(DataManager.getInstance().getDataContext(rootPanel));
+    var allSettings = Settings.KEY.getData(DataManager.getInstance().getDataContext(rootPanel));
     if (allSettings != null) {
-      final SonarLintGlobalConfigurable globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
+      final var globalConfigurable = allSettings.find(SonarLintGlobalConfigurable.class);
       if (globalConfigurable != null) {
         allSettings.select(globalConfigurable);
       }
     } else {
-      SonarLintGlobalConfigurable globalConfigurable = new SonarLintGlobalConfigurable();
+      var globalConfigurable = new SonarLintGlobalConfigurable();
       ShowSettingsUtil.getInstance().editConfigurable(rootPanel, globalConfigurable);
     }
   }

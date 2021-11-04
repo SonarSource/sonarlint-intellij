@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -31,9 +30,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
-
 import javax.swing.Box;
-
 import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -64,10 +61,10 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   }
 
   private void addToolbar() {
-    ActionGroup actionGroup = createActionGroup();
+    var actionGroup = createActionGroup();
     mainToolbar = ActionManager.getInstance().createActionToolbar(ID, actionGroup, false);
     mainToolbar.setTargetComponent(this);
-    Box toolBarBox = Box.createHorizontalBox();
+    var toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
 
     super.setToolbar(toolBarBox);
@@ -75,22 +72,22 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   }
 
   private static ActionGroup createActionGroup() {
-    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
-    SimpleActionGroup actionGroup = new SimpleActionGroup();
+    var sonarLintActions = SonarLintActions.getInstance();
+    var actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.configure());
     actionGroup.add(sonarLintActions.cleanConsole());
     return actionGroup;
   }
 
   private void addLogActions() {
-    DefaultActionGroup group = new DefaultActionGroup();
+    var group = new DefaultActionGroup();
     group.add(new ToolWindowLogAnalysisAction());
     group.add(new ToolWindowVerboseModeAction());
     ((ToolWindowEx) toolWindow).setAdditionalGearActions(group);
   }
 
   private void addConsole() {
-    ConsoleView consoleView = SonarLintUtils.getService(project, SonarLintConsole.class).getConsoleView();
+    var consoleView = SonarLintUtils.getService(project, SonarLintConsole.class).getConsoleView();
     if (consoleView != null) {
       super.setContent(consoleView.getComponent());
     }

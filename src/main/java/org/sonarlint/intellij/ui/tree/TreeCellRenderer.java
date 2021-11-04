@@ -33,7 +33,7 @@ public class TreeCellRenderer extends ColoredTreeCellRenderer {
   private String iconToolTip = null;
 
   @Override public void customizeCellRenderer(@NotNull JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-    AbstractNode node = (AbstractNode) value;
+    var node = (AbstractNode) value;
     node.render(this);
   }
 

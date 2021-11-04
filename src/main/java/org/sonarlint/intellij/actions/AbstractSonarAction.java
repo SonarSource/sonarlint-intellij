@@ -23,25 +23,23 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
-import java.util.Arrays;
+import java.util.stream.Stream;
 import javax.swing.Icon;
-
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 public abstract class AbstractSonarAction extends AnAction {
-  public AbstractSonarAction() {
+  protected AbstractSonarAction() {
     super();
   }
 
-  public AbstractSonarAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+  protected AbstractSonarAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);
   }
 
   @Override
   public void update(AnActionEvent e) {
-    Project p = e.getProject();
+    var p = e.getProject();
 
     if (isVisible(e.getPlace())) {
       e.getPresentation().setVisible(true);
@@ -54,13 +52,13 @@ public abstract class AbstractSonarAction extends AnAction {
     if (p == null || !p.isInitialized() || p.isDisposed()) {
       e.getPresentation().setEnabled(false);
     } else {
-      AnalysisStatus status = AnalysisStatus.get(p);
+      var status = AnalysisStatus.get(p);
       e.getPresentation().setEnabled(isEnabled(e, p, status));
     }
   }
 
   static boolean isRiderSlnOrCsproj(VirtualFile[] files) {
-    return Arrays.stream(files)
+    return Stream.of(files)
       .allMatch(f -> f.getName().endsWith(".sln") || f.getName().endsWith(".csproj"));
   }
 

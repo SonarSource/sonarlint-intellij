@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.config.project;
 
 import java.util.Collections;
+import java.util.Map;
 import org.assertj.core.data.MapEntry;
 import org.junit.Test;
 
@@ -28,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SonarLintProjectSettingsTest {
   @Test
   public void testRoundTrip() {
-    SonarLintProjectSettings settings = new SonarLintProjectSettings();
+    var settings = new SonarLintProjectSettings();
 
     settings.setBindingEnabled(true);
     assertThat(settings.isBindingEnabled()).isTrue();
@@ -48,7 +49,7 @@ public class SonarLintProjectSettingsTest {
     settings.setBindingEnabled(true);
     assertThat(settings.isBindingEnabled()).isTrue();
 
-    settings.setAdditionalProperties(Collections.singletonMap("key", "value"));
+    settings.setAdditionalProperties(Map.of("key", "value"));
     assertThat(settings.getAdditionalProperties()).containsExactly(MapEntry.entry("key", "value"));
   }
 }

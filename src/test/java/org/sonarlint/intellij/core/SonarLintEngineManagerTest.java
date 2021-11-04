@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -88,7 +89,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_fail_not_updated() throws InvalidBindingException {
-    getGlobalSettings().setServerConnections(Collections.singletonList(createServer("server1")));
+    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
     manager = new SonarLintEngineManager();
 
 
@@ -102,7 +103,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
-    getGlobalSettings().setServerConnections(Collections.singletonList(createServer("server1")));
+    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
     manager = new SonarLintEngineManager(engineFactory);
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);

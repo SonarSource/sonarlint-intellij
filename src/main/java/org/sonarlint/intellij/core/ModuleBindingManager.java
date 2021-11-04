@@ -25,15 +25,11 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.platform.ModuleAttachProcessor;
 import com.intellij.serviceContainer.NonInjectable;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.annotation.CheckForNull;
-
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -58,9 +54,9 @@ public class ModuleBindingManager {
 
   @CheckForNull
   public ProjectBinding getBinding() {
-    String projectKey = resolveProjectKey();
+    var projectKey = resolveProjectKey();
     if (projectKey != null) {
-      SonarLintModuleSettings moduleSettings = getSettingsFor(module);
+      var moduleSettings = getSettingsFor(module);
       return new ProjectBinding(projectKey, moduleSettings.getSqPathPrefix(), moduleSettings.getIdePathPrefix());
     }
     return null;
@@ -69,13 +65,13 @@ public class ModuleBindingManager {
   @CheckForNull
   public String resolveProjectKey() {
     if (isBindingOverrideAllowed()) {
-      SonarLintModuleSettings moduleSettings = getSettingsFor(module);
+      var moduleSettings = getSettingsFor(module);
       if (moduleSettings.isProjectBindingOverridden()) {
         return moduleSettings.getProjectKey();
       }
     }
-    SonarLintProjectSettings projectSettings = getSettingsFor(module.getProject());
-    String defaultProjectKey = projectSettings.getProjectKey();
+    var projectSettings = getSettingsFor(module.getProject());
+    var defaultProjectKey = projectSettings.getProjectKey();
     if (projectSettings.isBound()) {
       return defaultProjectKey;
     }
@@ -107,24 +103,24 @@ public class ModuleBindingManager {
   }
 
   public void updatePathPrefixes(ConnectedSonarLintEngine engine) {
-    String projectKey = resolveProjectKey();
+    var projectKey = resolveProjectKey();
     if (projectKey == null) {
       throw new IllegalStateException("Project is not bound");
     }
-    List<String> moduleFiles = collectPathsForModule();
-    ProjectBinding projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
-    SonarLintModuleSettings settings = getSettingsFor(module);
+    var moduleFiles = collectPathsForModule();
+    var projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
+    var settings = getSettingsFor(module);
     settings.setIdePathPrefix(projectBinding.idePathPrefix());
     settings.setSqPathPrefix(projectBinding.sqPathPrefix());
   }
 
   private List<String> collectPathsForModule() {
     return ApplicationManager.getApplication().<List<String>>runReadAction(() -> {
-      List<String> paths = new ArrayList<>();
-      ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
+      var paths = new ArrayList<String>();
+      var moduleRootManager = ModuleRootManager.getInstance(module);
       moduleRootManager.getFileIndex().iterateContent(virtualFile -> {
         if (!virtualFile.isDirectory()) {
-          String path = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
+          var path = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
           if (path != null) {
             paths.add(path);
           }
@@ -137,11 +133,11 @@ public class ModuleBindingManager {
 
   @CheckForNull
   public SonarLintEngine getEngineIfStarted() {
-    SonarLintEngineManager engineManager = this.engineManagerSupplier.get();
-    SonarLintModuleSettings moduleSettings = getSettingsFor(module);
-    SonarLintProjectSettings projectSettings = getSettingsFor(module.getProject());
+    var engineManager = this.engineManagerSupplier.get();
+    var moduleSettings = getSettingsFor(module);
+    var projectSettings = getSettingsFor(module.getProject());
     if (moduleSettings.isProjectBindingOverridden() || projectSettings.isBound()) {
-      String connectionId = projectSettings.getConnectionName();
+      var connectionId = projectSettings.getConnectionName();
       return engineManager.getConnectedEngineIfStarted(requireNonNull(connectionId));
     }
     return engineManager.getStandaloneEngineIfStarted();

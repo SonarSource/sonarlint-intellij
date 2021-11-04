@@ -38,7 +38,7 @@ public class GlobalLogOutputImplTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_log_to_registered_consoles() {
-    SonarLintConsole console = mock(SonarLintConsole.class);
+    var console = mock(SonarLintConsole.class);
     replaceProjectService(SonarLintConsole.class, console);
     output.log("warn", LogOutput.Level.WARN);
     verify(console).info("warn");

@@ -35,6 +35,10 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class RuleDescriptionImageView extends ImageView {
+
+  public static final String PREFIX_SEVERITY = "/severity/";
+  public static final String PREFIX_TYPE = "/type/";
+
   public RuleDescriptionImageView(Element elem) {
     super(elem);
     cacheImage(getImageURL());
@@ -44,17 +48,17 @@ public class RuleDescriptionImageView extends ImageView {
     if (url == null) {
       return;
     }
-    String path = url.getPath();
+    var path = url.getPath();
     if (path == null) {
       return;
     }
 
     Icon icon;
-    if (path.startsWith("/severity/")) {
-      String severity = url.getPath().substring(10);
+    if (path.startsWith(PREFIX_SEVERITY)) {
+      var severity = path.substring(PREFIX_SEVERITY.length());
       icon = SonarLintIcons.severity(severity);
-    } else if (path.startsWith("/type/")) {
-      String type = url.getPath().substring(6);
+    } else if (path.startsWith(PREFIX_TYPE)) {
+      var type = path.substring(PREFIX_TYPE.length());
       icon = SonarLintIcons.type(type);
     } else {
       return;
@@ -64,7 +68,7 @@ public class RuleDescriptionImageView extends ImageView {
     if (JBUIScale.isUsrHiDPI()) {
       icon = IconUtil.scale(icon, null, 0.5f);
     }
-    Dictionary<URL, Image> cache = (Dictionary<URL, Image>) getDocument().getProperty("imageCache");
+    var cache = (Dictionary<URL, Image>) getDocument().getProperty("imageCache");
     if (cache == null) {
       cache = new Hashtable<>();
     }

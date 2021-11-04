@@ -21,20 +21,13 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.MessageBusConnection;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -46,7 +39,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
@@ -55,7 +48,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.project.ExclusionItem;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
@@ -86,14 +78,14 @@ public class LocalFileExclusions {
   }
 
   private void loadProjectExclusions(SonarLintProjectSettings settings) {
-    List<ExclusionItem> projectExclusionsItems = settings.getFileExclusions().stream()
+    var projectExclusionsItems = settings.getFileExclusions().stream()
       .map(ExclusionItem::parse)
       .filter(Objects::nonNull)
       .collect(Collectors.toList());
 
-    Set<String> projectFileExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.FILE);
-    Set<String> projectDirExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.DIRECTORY);
-    Set<String> projectGlobExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.GLOB);
+    var projectFileExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.FILE);
+    var projectDirExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.DIRECTORY);
+    var projectGlobExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.GLOB);
 
     this.projectExclusions = new FileExclusions(projectFileExclusions, projectDirExclusions, projectGlobExclusions);
   }
@@ -103,7 +95,7 @@ public class LocalFileExclusions {
   }
 
   private void subscribeToSettingsChanges(Project project) {
-    MessageBusConnection busConnection = project.getMessageBus().connect(project);
+    var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
       public void applied(SonarLintGlobalSettings newSettings) {
@@ -117,7 +109,7 @@ public class LocalFileExclusions {
    * Checks if a file is excluded from analysis based on locally configured exclusions.
    */
   private ExcludeResult checkExclusionsFromSonarLintSettings(VirtualFile file, Module module) {
-    String relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file);
+    var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, file);
     if (relativePath == null) {
       return ExcludeResult.excluded("Could not create a relative path");
     }
@@ -132,7 +124,7 @@ public class LocalFileExclusions {
   }
 
   private ExcludeResult checkVcsIgnored(VirtualFile file) {
-    FileStatusManager fileStatusManager = FileStatusManager.getInstance(myProject);
+    var fileStatusManager = FileStatusManager.getInstance(myProject);
     if (fileStatusManager.getStatus(file) == FileStatus.IGNORED) {
       return ExcludeResult.excluded("file is ignored in VCS");
     }
@@ -140,8 +132,8 @@ public class LocalFileExclusions {
   }
 
   private ExcludeResult checkFileInSourceFolders(VirtualFile file, Module module) {
-    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(myProject).getFileIndex();
-    SourceFolder sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
+    var fileIndex = ProjectRootManager.getInstance(myProject).getFileIndex();
+    var sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
     if (sourceFolder != null) {
       if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
         return ExcludeResult.excluded("file is classified as generated in project structure");
@@ -159,9 +151,9 @@ public class LocalFileExclusions {
   public Map<Module, Collection<VirtualFile>> retainNonExcludedFilesByModules(Collection<VirtualFile> files, boolean forcedAnalysis,
     BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler)
     throws InvalidBindingException {
-    Map<Module, Collection<VirtualFile>> filesByModule = new LinkedHashMap<>();
+    var filesByModule = new LinkedHashMap<Module, Collection<VirtualFile>>();
 
-    for (VirtualFile file : files) {
+    for (var file : files) {
       checkExclusionsFileByFile(forcedAnalysis, excludedFileHandler, filesByModule, file);
     }
     if (!forcedAnalysis && !filesByModule.isEmpty()) {
@@ -174,41 +166,52 @@ public class LocalFileExclusions {
 
   private void checkExclusionsFileByFile(boolean forcedAnalysis, BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler,
     Map<Module, Collection<VirtualFile>> filesByModule, VirtualFile file) {
-    Module m = SonarLintAppUtils.findModuleForFile(file, myProject);
+    var module = SonarLintAppUtils.findModuleForFile(file, myProject);
     // Handle this case first, so that later we are guaranteed module is not null
-    if (m == null) {
+    if (module == null) {
       excludedFileHandler.accept(file, ExcludeResult.excluded("file is not part of any module in IntelliJ's project structure"));
       return;
     }
 
-    List<Supplier<ExcludeResult>> exclusionCheckers = new ArrayList<>(Arrays.asList(
-      () -> excludeIfDisposed(m),
-      LocalFileExclusions::excludeIfPowerSaveModeOn,
-      () -> checkProjectStructureExclusion(file),
-      () -> excludeUnsupportedFileOrFileType(file),
-      () -> checkExclusionFromEP(file, m)));
+    var exclusionCheckers = Stream.concat(
+      defaultExclusionCheckers(file, module),
+      forcedAnalysis ? Stream.empty() : onTheFlyExclusionCheckers(file, module)
+    ).collect(Collectors.toList());
 
-    if (!forcedAnalysis) {
-      exclusionCheckers.addAll(Arrays.asList(
-        () -> checkVcsIgnored(file),
-        () -> checkFileInSourceFolders(file, m),
-        () -> checkExclusionsFromSonarLintSettings(file, m)));
-    }
-
-    for (Supplier<ExcludeResult> exclusionChecker : exclusionCheckers) {
-      ExcludeResult result = exclusionChecker.get();
+    for (var exclusionChecker : exclusionCheckers) {
+      var result = exclusionChecker.get();
       if (result.isExcluded()) {
         excludedFileHandler.accept(file, result);
         return;
       }
     }
 
-    filesByModule.computeIfAbsent(m, mod -> new LinkedHashSet<>()).add(file);
+    filesByModule.computeIfAbsent(module, mod -> new LinkedHashSet<>()).add(file);
+  }
+
+  @NotNull
+  private Stream<Supplier<ExcludeResult>> onTheFlyExclusionCheckers(VirtualFile file, Module module) {
+    return Stream.of(
+      () -> checkVcsIgnored(file),
+      () -> checkFileInSourceFolders(file, module),
+      () -> checkExclusionsFromSonarLintSettings(file, module)
+    );
+  }
+
+  @NotNull
+  private Stream<Supplier<ExcludeResult>> defaultExclusionCheckers(VirtualFile file, Module module) {
+    return Stream.of(
+      () -> excludeIfDisposed(module),
+      LocalFileExclusions::excludeIfPowerSaveModeOn,
+      () -> checkProjectStructureExclusion(file),
+      () -> excludeUnsupportedFileOrFileType(file),
+      () -> checkExclusionFromEP(file, module)
+    );
   }
 
   @NotNull
   private ExcludeResult checkProjectStructureExclusion(VirtualFile file) {
-    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(myProject).getFileIndex();
+    var fileIndex = ProjectRootManager.getInstance(myProject).getFileIndex();
     if (fileIndex.isExcluded(file)) {
       return ExcludeResult.excluded("file is excluded or ignored in project structure");
     }
@@ -217,7 +220,7 @@ public class LocalFileExclusions {
 
   @NotNull
   private static ExcludeResult excludeUnsupportedFileOrFileType(VirtualFile file) {
-    FileType fileType = file.getFileType();
+    var fileType = file.getFileType();
     if (!file.isInLocalFileSystem() || fileType.isBinary() || !file.isValid() || ".idea".equals(file.getParent().getName())) {
       return ExcludeResult.excluded("file's type or location are not supported");
     }
@@ -245,8 +248,8 @@ public class LocalFileExclusions {
 
   @NotNull
   private static ExcludeResult checkExclusionFromEP(VirtualFile file, Module m) {
-    ExcludeResult excludeResultFromEp = ExcludeResult.notExcluded();
-    for (FileExclusionContributor fileExclusion : FileExclusionContributor.EP_NAME.getExtensionList()) {
+    var excludeResultFromEp = ExcludeResult.notExcluded();
+    for (var fileExclusion : FileExclusionContributor.EP_NAME.getExtensionList()) {
       excludeResultFromEp = fileExclusion.shouldExclude(m, file);
       if (excludeResultFromEp.isExcluded()) {
         break;
@@ -257,16 +260,16 @@ public class LocalFileExclusions {
 
   private void filterWithServerExclusions(BiConsumer<VirtualFile, ExcludeResult> excludedFileHandler, Map<Module, Collection<VirtualFile>> filesByModule)
     throws InvalidBindingException {
-    ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
+    var projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
     // Note: iterating over a copy of keys, because removal of last value removes the key,
     // resulting in ConcurrentModificationException
-    List<Module> modules = new ArrayList<>(filesByModule.keySet());
-    for (Module module : modules) {
-      SonarLintFacade sonarLintFacade = projectBindingManager.getFacade(module);
-      Collection<VirtualFile> virtualFiles = filesByModule.get(module);
-      Predicate<VirtualFile> testPredicate = f -> ReadAction.compute(() -> TestSourcesFilter.isTestSources(f, module.getProject()));
-      Collection<VirtualFile> excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
-      for (VirtualFile f : excluded) {
+    var modules = List.copyOf(filesByModule.keySet());
+    for (var module : modules) {
+      var sonarLintFacade = projectBindingManager.getFacade(module);
+      var virtualFiles = filesByModule.get(module);
+      var testPredicate = (Predicate<VirtualFile>) f -> ReadAction.compute(() -> TestSourcesFilter.isTestSources(f, module.getProject()));
+      var excluded = sonarLintFacade.getExcluded(module, virtualFiles, testPredicate);
+      for (var f : excluded) {
         excludedFileHandler.accept(f, ExcludeResult.excluded("exclusions configured in the bound project"));
       }
       virtualFiles.removeAll(excluded);

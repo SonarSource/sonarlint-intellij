@@ -25,8 +25,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManager;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
@@ -41,20 +39,20 @@ class OpenSonarLintLogAction extends NotificationAction {
   @Override
   public void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
     notification.expire();
-    ToolWindow toolWindow = getToolWindow();
+    var toolWindow = getToolWindow();
     if (toolWindow != null) {
       toolWindow.show(() -> selectLogsTab(toolWindow));
     }
   }
 
   private ToolWindow getToolWindow() {
-    ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+    var toolWindowManager = ToolWindowManager.getInstance(project);
     return toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
   }
 
   private static void selectLogsTab(ToolWindow toolWindow) {
-    ContentManager contentManager = toolWindow.getContentManager();
-    Content content = contentManager.findContent(SonarLintToolWindowFactory.TAB_LOGS);
+    var contentManager = toolWindow.getContentManager();
+    var content = contentManager.findContent(SonarLintToolWindowFactory.TAB_LOGS);
     if (content != null) {
       contentManager.setSelectedContent(content);
     }

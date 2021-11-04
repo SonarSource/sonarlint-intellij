@@ -62,7 +62,7 @@ public class NodeJsManager {
 
   private synchronized void initNodeIfNeeded() {
     if (!nodeInit) {
-      NodeJsHelper helper = new NodeJsHelper();
+      var helper = new NodeJsHelper();
       helper.detect(getNodeJsPathFromConfig());
       this.nodeInit = true;
       this.nodeJsPath = helper.getNodeJsPath();
@@ -82,7 +82,7 @@ public class NodeJsManager {
 
   @CheckForNull
   private Path getNodeJsPathFromConfig() {
-    final String nodejsPathStr = Settings.getGlobalSettings().getNodejsPath();
+    final var nodejsPathStr = Settings.getGlobalSettings().getNodejsPath();
     this.previousSettingValue = nodejsPathStr;
     if (StringUtils.isNotBlank(nodejsPathStr)) {
       try {

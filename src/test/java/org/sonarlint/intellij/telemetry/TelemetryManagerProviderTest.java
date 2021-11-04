@@ -24,7 +24,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,16 +34,16 @@ public class TelemetryManagerProviderTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testCreation() throws Exception {
-    Path path = temporaryFolder.newFolder().toPath().resolve("usage");
+    var path = temporaryFolder.newFolder().toPath().resolve("usage");
 
-    TelemetryManagerProvider engineProvider = new TelemetryManagerProvider() {
+    var engineProvider = new TelemetryManagerProvider() {
       @Override
       Path getStorageFilePath() {
         return path;
       }
     };
 
-    TelemetryManager telemetry = engineProvider.get();
+    var telemetry = engineProvider.get();
     assertThat(path).doesNotExist();
     telemetry.analysisDoneOnMultipleFiles();
     assertThat(path).exists();

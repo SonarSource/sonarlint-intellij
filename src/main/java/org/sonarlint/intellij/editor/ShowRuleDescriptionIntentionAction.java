@@ -27,17 +27,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
-
-import java.util.Collection;
-import java.util.Optional;
 import javax.swing.Icon;
-
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.LiveIssue;
 
 public class ShowRuleDescriptionIntentionAction implements IntentionAction, PriorityAction, Iconable {
 
@@ -64,10 +59,10 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
 
   @Override
   public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
-    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
-    Collection<LiveIssue> liveIssues = issueManager.getForFile(file.getVirtualFile());
-    Optional<LiveIssue> liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
-    if (!liveIssue.isPresent()) {
+    var issueManager = SonarLintUtils.getService(project, IssueManager.class);
+    var liveIssues = issueManager.getForFile(file.getVirtualFile());
+    var liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
+    if (liveIssue.isEmpty()) {
       return;
     }
     UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)

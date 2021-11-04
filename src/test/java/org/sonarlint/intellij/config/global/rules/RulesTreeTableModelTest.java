@@ -57,8 +57,8 @@ public class RulesTreeTableModelTest {
     lang.add(rule);
 
     // just to not give NPE when firing changes
-    TreeTableTree treeTableTree = mock(TreeTableTree.class);
-    TreeTable treeTable = mock(TreeTable.class);
+    var treeTableTree = mock(TreeTableTree.class);
+    var treeTable = mock(TreeTable.class);
     when(treeTableTree.getTreeTable()).thenReturn(treeTable);
     when(treeTable.getModel()).thenReturn(tableModel);
     model.setTree(treeTableTree);

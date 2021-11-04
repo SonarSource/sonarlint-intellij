@@ -29,15 +29,15 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 public class SonarLintToolWindowFixture {
   public static SonarLintToolWindowFixture createFor(Project project) {
-    ToolWindowManagerImpl manager = new ToolWindowManagerImpl(project) {
+    var manager = new ToolWindowManagerImpl(project) {
       @Override
       protected void fireStateChanged() {
       }
     };
-    ProjectFrameHelper frame = new ProjectFrameHelper(new IdeFrameImpl(), null);
+    var frame = new ProjectFrameHelper(new IdeFrameImpl(), null);
     frame.init();
     manager.init(frame);
-    for (ToolWindowEP extension : ToolWindowEP.EP_NAME.getExtensionList()) {
+    for (var extension : ToolWindowEP.EP_NAME.getExtensionList()) {
       if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(extension.id)) {
         manager.initToolWindow(extension);
       }

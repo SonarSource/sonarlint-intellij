@@ -41,7 +41,6 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
@@ -61,25 +60,25 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
   @Override
   protected AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
-    ConnectedAnalysisConfiguration config = ConnectedAnalysisConfiguration.builder()
+    var config = ConnectedAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
       .setProjectKey(projectKey)
       .putAllExtraProperties(props)
       .setModuleKey(module)
       .build();
-    SonarLintConsole console = getService(project, SonarLintConsole.class);
+    var console = getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config);
 
-    final AnalysisResults analysisResults = engine.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    final var analysisResults = engine.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, engine.getPluginDetails(), project);
     return analysisResults;
   }
 
   @Override
   public Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate) {
-    ModuleBindingManager bindingManager = getService(module, ModuleBindingManager.class);
-    ProjectBinding binding = bindingManager.getBinding();
+    var bindingManager = getService(module, ModuleBindingManager.class);
+    var binding = bindingManager.getBinding();
     if (binding == null) {
       // should never happen since the project should be bound!
       return Collections.emptyList();
@@ -101,11 +100,11 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
 
   @Override
   public String getDescription(String ruleKey) {
-    ConnectedRuleDetails details = getActiveRuleDetails(ruleKey);
+    var details = getActiveRuleDetails(ruleKey);
     if (details == null) {
       return null;
     }
-    String extendedDescription = details.getExtendedDescription();
+    var extendedDescription = details.getExtendedDescription();
     if (extendedDescription.isEmpty()) {
       return details.getHtmlDescription();
     }

@@ -30,14 +30,12 @@ import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.PathUtil;
-import org.jetbrains.annotations.Nullable;
-
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
+import org.jetbrains.annotations.Nullable;
 
 import static com.intellij.openapi.application.ApplicationManager.getApplication;
 
@@ -77,7 +75,7 @@ public class SonarLintAppUtils {
    */
   @CheckForNull
   public static String getRelativePathForAnalysis(Project project, VirtualFile virtualFile) {
-    Module module = findModuleForFile(virtualFile, project);
+    var module = findModuleForFile(virtualFile, project);
     if (module == null) {
       return null;
     }
@@ -89,17 +87,17 @@ public class SonarLintAppUtils {
    */
   @CheckForNull
   public static String getRelativePathForAnalysis(Module module, VirtualFile virtualFile) {
-    String relativePathToProject = getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
+    var relativePathToProject = getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
     if (relativePathToProject != null) {
       return relativePathToProject;
     }
 
-    String relativePathToModule = getPathRelativeToModuleBaseDir(module, virtualFile);
+    var relativePathToModule = getPathRelativeToModuleBaseDir(module, virtualFile);
     if (relativePathToModule != null) {
       return relativePathToModule;
     }
 
-    String strictRelativePathToContentRoot = getPathRelativeToContentRoot(module, virtualFile);
+    var strictRelativePathToContentRoot = getPathRelativeToContentRoot(module, virtualFile);
     if (strictRelativePathToContentRoot != null) {
       return strictRelativePathToContentRoot;
     }
@@ -109,11 +107,11 @@ public class SonarLintAppUtils {
 
   @Nullable
   private static String getPathRelativeToCommonAncestorWithProjectBaseDir(Project project, VirtualFile virtualFile) {
-    final VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
+    final var projectDir = ProjectUtil.guessProjectDir(project);
     if (projectDir == null) {
       return null;
     }
-    VirtualFile commonAncestor = VfsUtilCore.getCommonAncestor(projectDir, virtualFile);
+    var commonAncestor = VfsUtilCore.getCommonAncestor(projectDir, virtualFile);
     if (commonAncestor != null) {
       return VfsUtilCore.getRelativePath(virtualFile, commonAncestor);
     }
@@ -122,7 +120,7 @@ public class SonarLintAppUtils {
 
   @CheckForNull
   private static String getPathRelativeToProjectBaseDir(Project project, VirtualFile file) {
-    final VirtualFile projectDir = ProjectUtil.guessProjectDir(project);
+    final var projectDir = ProjectUtil.guessProjectDir(project);
     if (projectDir == null) {
       return null;
     }
@@ -134,13 +132,13 @@ public class SonarLintAppUtils {
    */
   @CheckForNull
   private static String getPathRelativeToModuleBaseDir(Module module, VirtualFile file) {
-    String moduleFilePath = module.getModuleFilePath();
+    var moduleFilePath = module.getModuleFilePath();
     if ("".equals(moduleFilePath)) {
       // Non persistent module
       return null;
     }
-    Path baseDir = Paths.get(moduleFilePath).getParent();
-    Path filePath = Paths.get(file.getPath());
+    var baseDir = Paths.get(moduleFilePath).getParent();
+    var filePath = Paths.get(file.getPath());
     if (!filePath.startsWith(baseDir)) {
       return null;
     }
@@ -149,8 +147,8 @@ public class SonarLintAppUtils {
 
   @CheckForNull
   private static String getPathRelativeToContentRoot(Module module, VirtualFile file) {
-    ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
-    for (VirtualFile root : moduleRootManager.getContentRoots()) {
+    var moduleRootManager = ModuleRootManager.getInstance(module);
+    for (var root : moduleRootManager.getContentRoots()) {
       if (VfsUtilCore.isAncestor(root, file, true)) {
         return VfsUtilCore.getRelativePath(file, root);
       }

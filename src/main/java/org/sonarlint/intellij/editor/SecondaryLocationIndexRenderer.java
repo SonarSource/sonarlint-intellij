@@ -22,8 +22,6 @@ package org.sonarlint.intellij.editor;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorCustomElementRenderer;
 import com.intellij.openapi.editor.Inlay;
-import com.intellij.openapi.editor.colors.EditorColorsScheme;
-import com.intellij.openapi.editor.colors.FontPreferences;
 import com.intellij.openapi.editor.impl.ComplementaryFontsRegistry;
 import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
@@ -66,15 +64,15 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
   }
 
   private static FontInfo getFontInfo(@NotNull Editor editor) {
-    EditorColorsScheme colorsScheme = editor.getColorsScheme();
-    FontPreferences fontPreferences = colorsScheme.getFontPreferences();
+    var colorsScheme = editor.getColorsScheme();
+    var fontPreferences = colorsScheme.getFontPreferences();
     return ComplementaryFontsRegistry.getFontAbleToDisplay('a', Font.PLAIN, fontPreferences,
       FontInfo.getFontRenderContext(editor.getContentComponent()));
   }
 
   @Override
   public int calcWidthInPixels(@NotNull Inlay inlay) {
-    FontInfo fontInfo = getFontInfo(inlay.getEditor());
+    var fontInfo = getFontInfo(inlay.getEditor());
     return fontInfo.fontMetrics().stringWidth(index) + 2 * (HORIZONTAL_PADDING + HORIZONTAL_MARGIN);
   }
 
@@ -90,7 +88,7 @@ public class SecondaryLocationIndexRenderer implements EditorCustomElementRender
       ARC_RADIUS,
       ARC_RADIUS
     );
-    FontInfo fontInfo = getFontInfo(inlay.getEditor());
+    var fontInfo = getFontInfo(inlay.getEditor());
     g.setFont(fontInfo.getFont());
     g.setColor(selected ? SELECTED_INDEX_JB_COLOR : INDEX_JB_COLOR);
     g.drawString(index, targetRegion.x + HORIZONTAL_PADDING + HORIZONTAL_MARGIN, targetRegion.y + fontInfo.fontMetrics().getAscent() + 2);

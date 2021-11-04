@@ -25,6 +25,7 @@ import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -42,7 +43,7 @@ public class SonarLintCheckinHandlerFactoryTest {
 
   @Before
   public void setUp() {
-    when(panel.getVirtualFiles()).thenReturn(Collections.singletonList(file));
+    when(panel.getVirtualFiles()).thenReturn(List.of(file));
     when(panel.getProject()).thenReturn(project);
 
     sonarLintCheckinHandlerFactory = new SonarLintCheckinHandlerFactory();
@@ -50,7 +51,7 @@ public class SonarLintCheckinHandlerFactoryTest {
 
   @Test
   public void testFactory() {
-    CheckinHandler handler = sonarLintCheckinHandlerFactory.createHandler(panel, new CommitContext());
+    var handler = sonarLintCheckinHandlerFactory.createHandler(panel, new CommitContext());
     assertThat(handler).isInstanceOf(SonarLintCheckinHandler.class);
 
     verify(panel).getProject();

@@ -57,47 +57,47 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   }
 
   private JComponent createSonarLintPanel() {
-    JBLabel sonarlintIcon = new JBLabel(SonarLintIcons.SONARLINT_32);
-    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    JBLabel title = new JBLabel("<html><b>SonarLint " + plugin.getVersion() + "</b></html>");
-    HyperlinkLabel linkLabel = new HyperlinkLabel("https://www.sonarlint.org");
+    var sonarlintIcon = new JBLabel(SonarLintIcons.SONARLINT_32);
+    var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    var title = new JBLabel("<html><b>SonarLint " + plugin.getVersion() + "</b></html>");
+    var linkLabel = new HyperlinkLabel("https://www.sonarlint.org");
     linkLabel.addHyperlinkListener(e -> BrowserUtil.browse("https://www.sonarlint.org/intellij"));
-    JBLabel copyrightLabel = new JBLabel("<html>&copy; " + LocalDate.now().getYear() + " SonarSource</html>");
+    var copyrightLabel = new JBLabel("<html>&copy; " + LocalDate.now().getYear() + " SonarSource</html>");
 
-    JPanel infoPanel = new JPanel(new GridBagLayout());
-    GridBagConstraints c = new GridBagConstraints();
-    c.gridx = 0;
-    c.gridy = 0;
-    c.ipadx = 10;
-    c.ipady = 5;
-    c.gridwidth = 2;
-    infoPanel.add(title, c);
-    c.gridx = 0;
-    c.gridy = 1;
-    c.ipady = 2;
-    c.gridwidth = 1;
-    c.gridheight = 2;
-    c.fill = GridBagConstraints.VERTICAL;
-    infoPanel.add(sonarlintIcon, c);
-    c.gridx = 1;
-    c.gridheight = 1;
-    c.fill = GridBagConstraints.NONE;
-    infoPanel.add(linkLabel, c);
-    c.gridy = 2;
-    c.fill = GridBagConstraints.NONE;
-    infoPanel.add(copyrightLabel, c);
+    var infoPanel = new JPanel(new GridBagLayout());
+    var constraints = new GridBagConstraints();
+    constraints.gridx = 0;
+    constraints.gridy = 0;
+    constraints.ipadx = 10;
+    constraints.ipady = 5;
+    constraints.gridwidth = 2;
+    infoPanel.add(title, constraints);
+    constraints.gridx = 0;
+    constraints.gridy = 1;
+    constraints.ipady = 2;
+    constraints.gridwidth = 1;
+    constraints.gridheight = 2;
+    constraints.fill = GridBagConstraints.VERTICAL;
+    infoPanel.add(sonarlintIcon, constraints);
+    constraints.gridx = 1;
+    constraints.gridheight = 1;
+    constraints.fill = GridBagConstraints.NONE;
+    infoPanel.add(linkLabel, constraints);
+    constraints.gridy = 2;
+    constraints.fill = GridBagConstraints.NONE;
+    infoPanel.add(copyrightLabel, constraints);
 
     return infoPanel;
   }
 
   private JComponent createTelemetryPanel() {
     // tooltip
-    final HyperlinkLabel link = new HyperlinkLabel("");
+    final var link = new HyperlinkLabel("");
     link.setHyperlinkText("See a ", "sample of the data", "");
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
-        final JLabel label = new JLabel("<html><pre>{\n"
+        final var label = new JLabel("<html><pre>{\n"
           + "    \"days_since_installation\": 120,\n"
           + "    \"days_of_use\": 40,\n"
           + "    \"sonarlint_version\": \"2.9\",\n"
@@ -157,38 +157,38 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
     });
 
     // info
-    JBLabel info = new JBLabel("<html>By sharing anonymous SonarLint usage statistics, you help us understand how SonarLint is used so "
+    var info = new JBLabel("<html>By sharing anonymous SonarLint usage statistics, you help us understand how SonarLint is used so "
       + "we can improve the plugin to work even better for you. We don't collect source code, IP addresses, or any personally identifying "
       + "information. And we don't share the data with anyone else.</html>");
 
     // checkbox
     enableTelemetryCheckBox = new JCheckBox("Share anonymous SonarLint statistics");
     enableTelemetryCheckBox.setFocusable(false);
-    JPanel tickOptions = new JPanel(new VerticalFlowLayout());
+    var tickOptions = new JPanel(new VerticalFlowLayout());
     tickOptions.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
     tickOptions.add(enableTelemetryCheckBox);
 
     // all telemetry together
-    JPanel infoPanel = new JPanel(new GridBagLayout());
+    var infoPanel = new JPanel(new GridBagLayout());
     infoPanel.setBorder(IdeBorderFactory.createTitledBorder("Statistics"));
-    GridBagConstraints c = new GridBagConstraints();
-    c.gridheight = 1;
-    c.gridx = 0;
-    c.gridy = 0;
-    c.anchor = GridBagConstraints.NORTH;
-    c.fill = GridBagConstraints.HORIZONTAL;
-    c.weightx = 1.0f;
+    var constraints = new GridBagConstraints();
+    constraints.gridheight = 1;
+    constraints.gridx = 0;
+    constraints.gridy = 0;
+    constraints.anchor = GridBagConstraints.NORTH;
+    constraints.fill = GridBagConstraints.HORIZONTAL;
+    constraints.weightx = 1.0f;
 
-    infoPanel.add(info, c);
-    c.gridy = 1;
-    c.anchor = GridBagConstraints.WEST;
-    c.fill = GridBagConstraints.HORIZONTAL;
-    infoPanel.add(link, c);
-    c.gridy = 2;
-    c.weighty = 1.0f;
-    c.anchor = GridBagConstraints.WEST;
-    c.fill = GridBagConstraints.BOTH;
-    infoPanel.add(tickOptions, c);
+    infoPanel.add(info, constraints);
+    constraints.gridy = 1;
+    constraints.anchor = GridBagConstraints.WEST;
+    constraints.fill = GridBagConstraints.HORIZONTAL;
+    infoPanel.add(link, constraints);
+    constraints.gridy = 2;
+    constraints.weighty = 1.0f;
+    constraints.anchor = GridBagConstraints.WEST;
+    constraints.fill = GridBagConstraints.BOTH;
+    infoPanel.add(tickOptions, constraints);
 
     return infoPanel;
   }

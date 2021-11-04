@@ -22,7 +22,6 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -32,7 +31,6 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -61,7 +59,7 @@ public class DefaultClientInputFileTest {
     file.getParentFile().mkdirs();
     file.createNewFile();
     vFile = mock(VirtualFile.class);
-    String path = FileUtil.toSystemIndependentName(file.getAbsolutePath());
+    var path = FileUtil.toSystemIndependentName(file.getAbsolutePath());
     when(vFile.getPath()).thenReturn(path);
     // SLI-379 Mocking the true implementation, in case we try to use it, to see how it is broken
     when(vFile.getUrl()).thenReturn(VirtualFileManager.constructUrl("file", path));
@@ -83,7 +81,7 @@ public class DefaultClientInputFileTest {
     assertThat(inputFile.getClientObject()).isEqualTo(vFile);
     assertThat(inputFile.contents()).isEqualTo("test string");
     assertThat(inputFile.language()).isEqualTo(Language.JAVA);
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
+    try (var reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
       assertThat(reader.lines().collect(Collectors.joining())).isEqualTo("test string");
     }
   }
@@ -94,7 +92,7 @@ public class DefaultClientInputFileTest {
 
     assertThat(inputFile.contents()).isEqualTo("test string");
     assertThat(inputFile.language()).isNull();
-    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
+    try (var reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
       assertThat(reader.lines().collect(Collectors.joining())).isEqualTo("test string");
     }
   }

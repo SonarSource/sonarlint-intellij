@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.util.ui.UIUtil;
-import java.util.Enumeration;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import org.jetbrains.annotations.NotNull;
@@ -35,10 +34,10 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
   public int getIssueCount() {
     if (issueCount < 0) {
       issueCount = 0;
-      Enumeration children = super.children();
+      var children = super.children();
 
       while (children.hasMoreElements()) {
-        AbstractNode node = (AbstractNode) children.nextElement();
+        var node = (AbstractNode) children.nextElement();
         if (node == null) {
           continue;
         }
@@ -84,7 +83,7 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
 
   @NotNull
   protected static String spaceAndThinSpace() {
-    String thinSpace = UIUtil.getLabelFont().canDisplay('\u2009') ? String.valueOf('\u2009') : " ";
+    var thinSpace = UIUtil.getLabelFont().canDisplay('\u2009') ? String.valueOf('\u2009') : " ";
     return " " + thinSpace;
   }
 

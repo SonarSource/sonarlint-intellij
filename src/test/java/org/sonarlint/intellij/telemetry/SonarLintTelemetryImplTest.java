@@ -50,10 +50,10 @@ public class SonarLintTelemetryImplTest extends AbstractSonarLintLightTests {
   private SonarLintTelemetryImpl createTelemetry() {
     when(telemetryManager.isEnabled()).thenReturn(true);
 
-    TelemetryManagerProvider engineProvider = mock(TelemetryManagerProvider.class);
+    var engineProvider = mock(TelemetryManagerProvider.class);
     when(engineProvider.get()).thenReturn(telemetryManager);
 
-    SonarLintTelemetryImpl telemetry = new SonarLintTelemetryImpl(engineProvider);
+    var telemetry = new SonarLintTelemetryImpl(engineProvider);
     telemetry.init();
     return telemetry;
   }

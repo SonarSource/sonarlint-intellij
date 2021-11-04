@@ -21,16 +21,13 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
-
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -39,13 +36,11 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -65,34 +60,31 @@ public class SonarLintAnalyzer {
 
   public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ProgressMonitor progressMonitor) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
-    long start = System.currentTimeMillis();
-    SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
-    List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console);
+    var start = System.currentTimeMillis();
+    var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+    var contributedConfigurations = getConfigurationFromConfiguratorEP(module, filesToAnalyze, console);
 
-    Map<String, String> contributedProperties = collectContributedExtraProperties(console, contributedConfigurations);
+    var contributedProperties = collectContributedExtraProperties(console, contributedConfigurations);
 
-    Map<VirtualFile, Language> contributedLanguages = collectContributedLanguages(console, contributedConfigurations);
+    var contributedLanguages = collectContributedLanguages(console, contributedConfigurations);
 
     // configure files
-    List<ClientInputFile> inputFiles = getInputFiles(module, filesToAnalyze, contributedLanguages);
+    var inputFiles = getInputFiles(module, filesToAnalyze, contributedLanguages);
 
     // Analyze
 
     try {
-      ProjectBindingManager projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
-      SonarLintFacade facade = projectBindingManager.getFacade(module, true);
+      var projectBindingManager = SonarLintUtils.getService(myProject, ProjectBindingManager.class);
+      var facade = projectBindingManager.getFacade(module, true);
 
-      String what;
-      if (filesToAnalyze.size() == 1) {
-        what = "'" + filesToAnalyze.iterator().next().getName() + "'";
-      } else {
-        what = filesToAnalyze.size() + " files";
-      }
+      var what = filesToAnalyze.size() == 1 ?
+        String.format("'%s'", filesToAnalyze.iterator().next().getName()) :
+        String.format("%d files", filesToAnalyze.size());
 
       console.info("Analysing " + what + "...");
-      AnalysisResults result = facade.startAnalysis(module, inputFiles, listener, contributedProperties, progressMonitor);
+      var result = facade.startAnalysis(module, inputFiles, listener, contributedProperties, progressMonitor);
       console.debug("Done in " + (System.currentTimeMillis() - start) + "ms\n");
-      SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+      var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       if (result.languagePerFile().size() == 1 && result.failedAnalysisFiles().isEmpty()) {
         telemetry.analysisDoneOnSingleLanguage(result.languagePerFile().values().iterator().next(), (int) (System.currentTimeMillis() - start));
       } else {
@@ -108,9 +100,9 @@ public class SonarLintAnalyzer {
 
   @NotNull
   private static Map<String, String> collectContributedExtraProperties(SonarLintConsole console, List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations) {
-    Map<String, String> contributedProperties = new HashMap<>();
-    for (AnalysisConfigurator.AnalysisConfiguration config : contributedConfigurations) {
-      for (Map.Entry<String, String> entry : config.extraProperties.entrySet()) {
+    var contributedProperties = new HashMap<String, String>();
+    for (var config : contributedConfigurations) {
+      for (var entry : config.extraProperties.entrySet()) {
         if (contributedProperties.containsKey(entry.getKey()) && !Objects.equals(contributedProperties.get(entry.getKey()), entry.getValue())) {
           console.error("The same property " + entry.getKey() + " was contributed by multiple configurators with different values: " +
             contributedProperties.get(entry.getKey()) + " / " + entry.getValue());
@@ -123,9 +115,9 @@ public class SonarLintAnalyzer {
 
   @NotNull
   private static Map<VirtualFile, Language> collectContributedLanguages(SonarLintConsole console, List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations) {
-    Map<VirtualFile, Language> contributedLanguages = new HashMap<>();
-    for (AnalysisConfigurator.AnalysisConfiguration config : contributedConfigurations) {
-      for (Map.Entry<VirtualFile, Language> entry : config.forcedLanguages.entrySet()) {
+    var contributedLanguages = new HashMap<VirtualFile, Language>();
+    for (var config : contributedConfigurations) {
+      for (var entry : config.forcedLanguages.entrySet()) {
         if (contributedLanguages.containsKey(entry.getKey()) && !Objects.equals(contributedLanguages.get(entry.getKey()), entry.getValue())) {
           console.error("The same file " + entry.getKey() + " has its language forced by multiple configurators with different values: " +
             contributedLanguages.get(entry.getKey()) + " / " + entry.getValue());
@@ -139,12 +131,12 @@ public class SonarLintAnalyzer {
   @NotNull
   private static List<AnalysisConfigurator.AnalysisConfiguration> getConfigurationFromConfiguratorEP(Module module, Collection<VirtualFile> filesToAnalyze,
     SonarLintConsole console) {
-    List<AnalysisConfigurator.AnalysisConfiguration> contributedConfigurations = new ArrayList<>();
-    for (AnalysisConfigurator config : AnalysisConfigurator.EP_NAME.getExtensionList()) {
-      console.debug("Configuring analysis with " + config.getClass().getName());
-      contributedConfigurations.add(config.configure(module, filesToAnalyze));
-    }
-    return contributedConfigurations;
+    return AnalysisConfigurator.EP_NAME.getExtensionList().stream()
+      .map(config -> {
+        console.debug("Configuring analysis with " + config.getClass().getName());
+        return config.configure(module, filesToAnalyze);
+      })
+      .collect(Collectors.toList());
   }
 
   private List<ClientInputFile> getInputFiles(Module module, Collection<VirtualFile> filesToAnalyze, Map<VirtualFile, Language> contributedLanguages) {
@@ -156,11 +148,11 @@ public class SonarLintAnalyzer {
 
   @CheckForNull
   public ClientInputFile createClientInputFile(Module module, VirtualFile virtualFile, @Nullable Language language) {
-    boolean test = TestSourcesFilter.isTestSources(virtualFile, module.getProject());
-    Charset charset = getEncoding(virtualFile);
-    String relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
+    var test = TestSourcesFilter.isTestSources(virtualFile, module.getProject());
+    var charset = getEncoding(virtualFile);
+    var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
     if (relativePath != null) {
-      FileDocumentManager fileDocumentManager = FileDocumentManager.getInstance();
+      var fileDocumentManager = FileDocumentManager.getInstance();
       if (fileDocumentManager.isFileModified(virtualFile)) {
         return createInputFileFromDocument(virtualFile, language, test, charset, relativePath);
       } else {
@@ -173,23 +165,23 @@ public class SonarLintAnalyzer {
   private static DefaultClientInputFile createInputFileFromDocument(VirtualFile virtualFile, @org.jetbrains.annotations.Nullable Language language, boolean test, Charset charset,
     String relativePath) {
     return ReadAction.compute(() -> {
-      Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
-      String textInDocument = document != null ? document.getText() : null;
-      long documentModificationStamp = document != null ? document.getModificationStamp() : 0;
+      var document = FileDocumentManager.getInstance().getDocument(virtualFile);
+      var textInDocument = document != null ? document.getText() : null;
+      var documentModificationStamp = document != null ? document.getModificationStamp() : 0;
       return new DefaultClientInputFile(virtualFile, relativePath, test, charset, textInDocument, documentModificationStamp, language);
     });
   }
 
   private static long readDocumentModificationStamp(VirtualFile virtualFile) {
     return ReadAction.compute(() -> {
-      Document document = FileDocumentManager.getInstance().getDocument(virtualFile);
+      var document = FileDocumentManager.getInstance().getDocument(virtualFile);
       return document != null ? document.getModificationStamp() : 0;
     });
   }
 
   private Charset getEncoding(VirtualFile f) {
-    EncodingProjectManager encodingProjectManager = EncodingProjectManager.getInstance(myProject);
-    Charset encoding = encodingProjectManager.getEncoding(f, true);
+    var encodingProjectManager = EncodingProjectManager.getInstance(myProject);
+    var encoding = encodingProjectManager.getEncoding(f, true);
     if (encoding != null) {
       return encoding;
     }

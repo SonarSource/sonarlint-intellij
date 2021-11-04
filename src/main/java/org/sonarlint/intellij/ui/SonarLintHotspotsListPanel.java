@@ -19,20 +19,16 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
-
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.tree.DefaultTreeModel;
-
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
@@ -73,18 +69,13 @@ public class SonarLintHotspotsListPanel {
     if (hotspotNode == null) {
       return;
     }
-    VirtualFile file = hotspotNode.getHotspot().getPrimaryLocation().getFile();
+    var file = hotspotNode.getHotspot().getPrimaryLocation().getFile();
     if (file == null) {
       return;
     }
 
-    int offset;
-    RangeMarker range = hotspotNode.getHotspot().getPrimaryLocation().getRange();
-    if (range != null) {
-      offset = range.getStartOffset();
-    } else {
-      offset = 0;
-    }
+    var range = hotspotNode.getHotspot().getPrimaryLocation().getRange();
+    var offset = range == null ? 0 : range.getStartOffset();
     new OpenFileDescriptor(project, file, offset).navigate(true);
   }
 

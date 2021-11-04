@@ -22,7 +22,6 @@ package org.sonarlint.intellij.config.global.rules;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.actionSystem.Toggleable;
 import com.intellij.openapi.actionSystem.ex.CheckboxAction;
 import com.intellij.openapi.project.DumbAware;
@@ -76,7 +75,7 @@ class RulesFilterAction extends DefaultActionGroup implements Toggleable, DumbAw
 
     @Override
     public void update(@NotNull AnActionEvent e) {
-      final Presentation presentation = e.getPresentation();
+      final var presentation = e.getPresentation();
       presentation.setEnabled(!model.isEmpty());
     }
   }

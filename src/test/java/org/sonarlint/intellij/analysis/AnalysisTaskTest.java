@@ -25,7 +25,6 @@ import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -83,7 +82,7 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
   @Before
   public void prepare() {
     MockitoAnnotations.initMocks(this);
-    PsiFile testFile = myFixture.configureByText("MyClass.java", "public class MyClass {]");
+    var testFile = myFixture.configureByText("MyClass.java", "public class MyClass {]");
     filesToAnalyze.add(testFile.getVirtualFile());
     analysisRequest = createAnalysisRequest();
     when(progress.isCanceled()).thenReturn(false);
@@ -121,7 +120,7 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldIgnoreProjectLevelIssues() {
-    AnalysisListener listener = mock(AnalysisListener.class);
+    var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
@@ -140,7 +139,7 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldIgnoreInvalidFiles() {
-    VirtualFile vFile = filesToAnalyze.iterator().next();
+    var vFile = filesToAnalyze.iterator().next();
     WriteCommandAction.runWriteCommandAction(getProject(), () -> {
       try {
         vFile.delete(null);
@@ -148,7 +147,7 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
         fail("Cannot delete file");
       }
     });
-    AnalysisListener listener = mock(AnalysisListener.class);
+    var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
 
     task.run(progress);
@@ -160,16 +159,16 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldReportIssueForValidFile() throws Exception {
-    Issue issue = mock(Issue.class);
-    ClientInputFile clientInputFile = mock(ClientInputFile.class);
+    var issue = mock(Issue.class);
+    var clientInputFile = mock(ClientInputFile.class);
     when(issue.getInputFile()).thenReturn(clientInputFile);
-    VirtualFile virtualFile = filesToAnalyze.iterator().next();
-    LiveIssue liveIssue = mock(LiveIssue.class);
+    var virtualFile = filesToAnalyze.iterator().next();
+    var liveIssue = mock(LiveIssue.class);
     when(clientInputFile.getClientObject()).thenReturn(virtualFile);
     when(clientInputFile.getPath()).thenReturn("path");
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenReturn(liveIssue);
 
-    AnalysisListener listener = mock(AnalysisListener.class);
+    var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
@@ -187,10 +186,10 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldSkipIfFailedToFindIssueLocation() throws Exception {
-    Issue issue = buildValidIssue();
+    var issue = buildValidIssue();
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenThrow(new IssueMatcher.NoMatchException(""));
 
-    AnalysisListener listener = mock(AnalysisListener.class);
+    var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
@@ -209,10 +208,10 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void shouldSkipIfException() throws Exception {
-    Issue issue = buildValidIssue();
+    var issue = buildValidIssue();
     when(liveIssueBuilder.buildLiveIssue(any(), any())).thenThrow(new RuntimeException(""));
 
-    AnalysisListener listener = mock(AnalysisListener.class);
+    var listener = mock(AnalysisListener.class);
     getProject().getMessageBus().connect(getProject()).subscribe(AnalysisListener.TOPIC, listener);
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ProgressMonitor.class)))
       .thenAnswer((Answer<AnalysisResults>) invocation -> {
@@ -267,10 +266,10 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @NotNull
   private Issue buildValidIssue() {
-    Issue issue = mock(Issue.class);
-    ClientInputFile clientInputFile = mock(ClientInputFile.class);
+    var issue = mock(Issue.class);
+    var clientInputFile = mock(ClientInputFile.class);
     when(issue.getInputFile()).thenReturn(clientInputFile);
-    VirtualFile virtualFile = filesToAnalyze.iterator().next();
+    var virtualFile = filesToAnalyze.iterator().next();
     when(clientInputFile.getClientObject()).thenReturn(virtualFile);
     when(clientInputFile.getPath()).thenReturn("path");
     return issue;

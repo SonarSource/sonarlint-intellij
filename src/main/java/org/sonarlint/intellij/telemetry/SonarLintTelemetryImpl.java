@@ -90,7 +90,7 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
         1, TimeUnit.HOURS.toMinutes(6), TimeUnit.MINUTES);
     } catch (Exception e) {
       if (org.sonarsource.sonarlint.core.client.api.util.SonarLintUtils.isInternalDebugEnabled()) {
-        String msg = "Failed to schedule telemetry job";
+        var msg = "Failed to schedule telemetry job";
         LOGGER.error(msg, e);
         GlobalLogOutput.get().logError(msg, e);
       }

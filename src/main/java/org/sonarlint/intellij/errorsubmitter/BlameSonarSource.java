@@ -28,15 +28,12 @@ import com.intellij.util.Consumer;
 import java.awt.Component;
 import java.io.BufferedReader;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.stream.Collectors;
-
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -84,7 +81,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
 
   @NotNull
   static String buildBody(@NotNull IdeaLoggingEvent @NotNull [] events, @Nullable String additionalInfo) {
-    StringBuilder body = new StringBuilder();
+    var body = new StringBuilder();
     body.append("Environment:\n");
     body.append("* Java: ").append(System.getProperty("java.vendor")).append(" ").append(System.getProperty("java.version")).append("\n");
     body.append("* OS: ").append(System.getProperty("os.name")).append(" ").append(System.getProperty("os.arch")).append("\n");
@@ -95,12 +92,12 @@ public class BlameSonarSource extends ErrorReportSubmitter {
       body.append(additionalInfo);
       body.append("\n");
     }
-    for (IdeaLoggingEvent ideaLoggingEvent : events) {
-      final String message = ideaLoggingEvent.getMessage();
+    for (var ideaLoggingEvent : events) {
+      final var message = ideaLoggingEvent.getMessage();
       if (StringUtils.isNotBlank(message)) {
         body.append(message).append("\n");
       }
-      final String throwableText = ideaLoggingEvent.getThrowableText();
+      final var throwableText = ideaLoggingEvent.getThrowableText();
       if (StringUtils.isNotBlank(throwableText)) {
         body.append("\n```\n");
         body.append(abbreviate(throwableText));
@@ -112,9 +109,9 @@ public class BlameSonarSource extends ErrorReportSubmitter {
 
   static String abbreviate(String throwableText) {
     return new BufferedReader(new StringReader(throwableText)).lines()
-      .map(l -> {
-        String abbreviated = l;
-        for (Map.Entry<String, String> entry : packageAbbreviation.entrySet()) {
+      .map(line -> {
+        var abbreviated = line;
+        for (var entry : packageAbbreviation.entrySet()) {
           abbreviated = StringUtils.replace(abbreviated, entry.getKey(), entry.getValue());
         }
         return abbreviated;
@@ -123,28 +120,24 @@ public class BlameSonarSource extends ErrorReportSubmitter {
   }
 
   String getReportWithBodyUrl(String description) {
-    final String urlStart = COMMUNITY_NEW_TOPIC_URL + "&body=";
-    final int charsLeft = MAX_URI_LENGTH - urlStart.length();
+    final var urlStart = COMMUNITY_NEW_TOPIC_URL + "&body=";
+    final var charsLeft = MAX_URI_LENGTH - urlStart.length();
 
     return urlStart + getBoundedEncodedString(description, charsLeft);
   }
 
   String getBoundedEncodedString(String description, int maxLen) {
-    try {
-      String encoded = URLEncoder.encode(description, "UTF-8");
-      while (encoded.length() > maxLen) {
-        int lastNewline = description.lastIndexOf('\n');
-        if (lastNewline == -1) {
-          return "";
-        }
-        description = description.substring(0, lastNewline);
-        encoded = URLEncoder.encode(description, "UTF-8");
+    var encoded = URLEncoder.encode(description, StandardCharsets.UTF_8);
+    while (encoded.length() > maxLen) {
+      int lastNewline = description.lastIndexOf('\n');
+      if (lastNewline == -1) {
+        return "";
       }
-
-      return encoded;
-    } catch (UnsupportedEncodingException e) {
-      return "";
+      description = description.substring(0, lastNewline);
+      encoded = URLEncoder.encode(description, StandardCharsets.UTF_8);
     }
+
+    return encoded;
 
   }
 }

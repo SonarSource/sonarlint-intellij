@@ -29,7 +29,6 @@ import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.keymap.Keymap;
 import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.Project;
@@ -37,7 +36,6 @@ import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
-import java.util.Collection;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NonNls;
@@ -65,14 +63,14 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       return;
     }
 
-    Project project = file.getProject();
-    IssueManager issueManager = getService(project, IssueManager.class);
-    Collection<LiveIssue> issues = issueManager.getForFile(file.getVirtualFile());
+    var project = file.getProject();
+    var issueManager = getService(project, IssueManager.class);
+    var issues = issueManager.getForFile(file.getVirtualFile());
     issues.stream()
       .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
-        TextRange validTextRange = getValidTextRange(issue);
+        var validTextRange = getValidTextRange(issue);
         if (validTextRange != null) {
           addAnnotation(project, issue, validTextRange, holder);
         }
@@ -87,7 +85,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
 
   @CheckForNull
   private static TextRange getValidTextRange(LiveIssue issue) {
-    RangeMarker rangeMarker = issue.getRange();
+    var rangeMarker = issue.getRange();
     if (rangeMarker == null && issue.psiFile().isValid()) {
       return issue.psiFile().getTextRange();
     } else if (rangeMarker != null && rangeMarker.isValid()) {
@@ -118,9 +116,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static void addAnnotation(Project project, LiveIssue issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
-    String htmlMsg = getHtmlMessage(issue);
+    var htmlMsg = getHtmlMessage(issue);
 
-    Annotation annotation = annotationHolder
+    var annotation = annotationHolder
       .createAnnotation(getSeverity(issue.getSeverity()), validTextRange, issue.getMessage(), htmlMsg);
     annotation.registerFix(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
     if (!getSettingsFor(project).isBindingEnabled()) {
@@ -148,17 +146,17 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
-    RangeMarker rangeMarker = vulnerability.rangeMarker();
+    var rangeMarker = vulnerability.rangeMarker();
     if (rangeMarker == null) {
       return;
     }
-    TextRange textRange = createTextRange(rangeMarker);
+    var textRange = createTextRange(rangeMarker);
     if (textRange.isEmpty()) {
       return;
     }
-    String htmlMsg = getHtmlMessage(vulnerability);
+    var htmlMsg = getHtmlMessage(vulnerability);
 
-    Annotation annotation = annotationHolder
+    var annotation = annotationHolder
       .createAnnotation(getSeverity(vulnerability.severity()), textRange, vulnerability.message(), htmlMsg);
     annotation.registerFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability));
     annotation.setTextAttributes(getTextAttrsKey(vulnerability.severity()));
@@ -200,15 +198,15 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    * {@link com.intellij.openapi.editor.colors.CodeInsightColors}
    */
   private static String getHtmlMessage(LiveIssue issue) {
-    String shortcut = "";
-    final KeymapManager keymapManager = KeymapManager.getInstance();
+    var shortcut = "";
+    final var keymapManager = KeymapManager.getInstance();
     if (keymapManager != null && keymapManager.getActiveKeymap() != null) {
-      final Keymap keymap = keymapManager.getActiveKeymap();
+      final var keymap = keymapManager.getActiveKeymap();
       shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
     }
 
     @NonNls
-    final String link = " <a "
+    final var link = " <a "
       + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
       + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;
@@ -216,15 +214,15 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static String getHtmlMessage(LocalTaintVulnerability vulnerability) {
-    String shortcut = "";
-    final KeymapManager keymapManager = KeymapManager.getInstance();
+    var shortcut = "";
+    final var keymapManager = KeymapManager.getInstance();
     if (keymapManager != null) {
-      final Keymap keymap = keymapManager.getActiveKeymap();
+      final var keymap = keymapManager.getActiveKeymap();
       shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
     }
 
     @NonNls
-    final String link = " <a "
+    final var link = " <a "
       + "href=\"#sonarissue/" + vulnerability.ruleKey() + "\""
       + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
       + ">more...</a> " + shortcut;

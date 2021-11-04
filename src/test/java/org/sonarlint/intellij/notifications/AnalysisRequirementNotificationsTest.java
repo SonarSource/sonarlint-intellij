@@ -24,14 +24,12 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.Notifications;
 import com.intellij.notification.NotificationsAdapter;
 import com.intellij.notification.NotificationsManager;
-import com.intellij.openapi.project.Project;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -61,7 +59,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
 
     // register a listener to catch all notifications
     notifications = Lists.newCopyOnWriteArrayList();
-    Project project = getProject();
+    var project = getProject();
     project.getMessageBus().connect(project).subscribe(Notifications.TOPIC, new NotificationsAdapter() {
       @Override
       public void notify(@NotNull Notification notification) {
@@ -77,11 +75,9 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
    */
   @After
   public void expireAfterTest() {
-    NotificationsManager mgr = NotificationsManager.getNotificationsManager();
-    Notification[] notifications = mgr.getNotificationsOfType(Notification.class, getProject());
-    for (Notification notification : notifications) {
-      mgr.expire(notification);
-    }
+    var mgr = NotificationsManager.getNotificationsManager();
+    var notifications = mgr.getNotificationsOfType(Notification.class, getProject());
+    Stream.of(notifications).forEach(mgr::expire);
   }
 
   @Test
@@ -103,7 +99,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   @Test
   public void notifyIfSkippedLanguage_JRE() {
     detectedLang.put(mock(ClientInputFile.class), Language.JAVA);
-    List<PluginDetails> plugins = Collections.singletonList(new FakePluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
+    List<PluginDetails> plugins = List.of(new FakePluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.<br>See <a href=\"https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under\">how to select the JDK version the IDE will run under</a>.");
@@ -112,7 +108,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   @Test
   public void notifyIfSkippedLanguage_Node() {
     detectedLang.put(mock(ClientInputFile.class), Language.JS);
-    List<PluginDetails> plugins = Collections.singletonList(new FakePluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
+    List<PluginDetails> plugins = List.of(new FakePluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the SonarLint settings.");

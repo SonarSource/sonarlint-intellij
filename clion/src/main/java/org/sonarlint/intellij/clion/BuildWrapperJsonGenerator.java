@@ -44,7 +44,7 @@ public class BuildWrapperJsonGenerator {
   }
 
   private void appendEntry(AnalyzerConfiguration.Configuration entry) {
-    String quotedCompilerExecutable = quote(entry.compilerExecutable);
+    var quotedCompilerExecutable = quote(entry.compilerExecutable);
     builder.append("{")
       .append("\"compiler\":\"")
       .append(entry.compilerKind)
@@ -54,7 +54,7 @@ public class BuildWrapperJsonGenerator {
       .append(quotedCompilerExecutable)
       .append(",");
     builder.append("\"properties\":{");
-    boolean firstProp = true;
+    var firstProp = true;
     for (Map.Entry<String, String> prop : entry.properties.entrySet()) {
       if (!firstProp) {
         builder.append(",");
@@ -82,8 +82,8 @@ public class BuildWrapperJsonGenerator {
 
     char c;
     int i;
-    int len = string.length();
-    StringBuilder sb = new StringBuilder(len + 4);
+    var len = string.length();
+    var sb = new StringBuilder(len + 4);
     String t;
 
     sb.append('"');

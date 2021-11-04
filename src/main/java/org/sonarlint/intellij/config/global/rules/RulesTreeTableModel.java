@@ -24,13 +24,11 @@ import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import icons.SonarLintIcons;
-
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
-
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.util.CompoundIcon;
 
@@ -79,14 +77,14 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
     if (column == ICONS_COLUMN) {
       if (node instanceof RulesTreeNode.Rule) {
-        RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
-        int gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
+        var rule = (RulesTreeNode.Rule) node;
+        var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
         return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(rule.type()), SonarLintIcons.severity12(rule.severity()));
       }
       return null;
     }
     if (column == IS_ENABLED_COLUMN) {
-      RulesTreeNode<?> treeNode = (RulesTreeNode) node;
+      var treeNode = (RulesTreeNode) node;
       return treeNode.isActivated();
     }
 
@@ -101,12 +99,12 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
   @Override
   public void setValueAt(Object aValue, Object node, int column) {
     if (column == IS_ENABLED_COLUMN) {
-      boolean value = (boolean) aValue;
+      var value = (boolean) aValue;
       if (node instanceof RulesTreeNode.Rule) {
-        RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
+        var rule = (RulesTreeNode.Rule) node;
         activateRule(rule, value);
       } else if (node instanceof RulesTreeNode.Language) {
-        RulesTreeNode.Language lang = (RulesTreeNode.Language) node;
+        var lang = (RulesTreeNode.Language) node;
         activateLanguage(lang, value);
       }
 
@@ -116,16 +114,16 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   private void activateRule(RulesTreeNode.Rule rule, boolean activate) {
     rule.setIsActivated(activate);
-    RulesTreeNode.Language lang = (RulesTreeNode.Language) rule.getParent();
+    var lang = (RulesTreeNode.Language) rule.getParent();
     refreshLanguageActivation(lang);
   }
 
   void refreshLanguageActivation(RulesTreeNode.Language lang) {
-    boolean seenActive = false;
-    boolean seenInactive = false;
-    boolean isChanged = false;
+    var seenActive = false;
+    var seenInactive = false;
+    var isChanged = false;
 
-    for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
+    for (var rule : lang.childrenIterable()) {
       if (rule.isNonDefault()) {
         isChanged = true;
       }
@@ -150,7 +148,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   private void activateLanguage(RulesTreeNode.Language lang, boolean activate) {
     lang.setIsActivated(activate);
-    for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
+    for (var rule : lang.childrenIterable()) {
       rule.setIsActivated(activate);
     }
     refreshLanguageActivation(lang);
@@ -158,10 +156,10 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   public void swapAndRefresh(Object node) {
     if (node instanceof RulesTreeNode.Rule) {
-      RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
+      var rule = (RulesTreeNode.Rule) node;
       activateRule(rule, !rule.isActivated());
     } else if (node instanceof RulesTreeNode.Language) {
-      RulesTreeNode.Language lang = (RulesTreeNode.Language) node;
+      var lang = (RulesTreeNode.Language) node;
       activateLanguage(lang, lang.isActivated() == null || !lang.isActivated());
     }
     ((AbstractTableModel) treeTable.getModel()).fireTableDataChanged();

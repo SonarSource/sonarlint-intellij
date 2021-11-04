@@ -34,7 +34,7 @@ public class IssueContext {
   private String computeSummaryDescription() {
     String description;
     if (hasUniqueFlow()) {
-      int numLocations = flows.get(0).getLocations().size();
+      var numLocations = flows.get(0).getLocations().size();
       description = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
     } else {
       description = String.format(" [+%d flows]", flows().size());

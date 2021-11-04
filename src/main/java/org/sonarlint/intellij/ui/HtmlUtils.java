@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.util.text.StringUtil;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HtmlUtils {
@@ -38,16 +37,16 @@ public class HtmlUtils {
    * the non-breaking space 'nbsp'.
    */
   public static String fixPreformattedText(String htmlBody) {
-    StringBuilder builder = new StringBuilder();
-    int current = 0;
+    var builder = new StringBuilder();
+    var current = 0;
 
     while (true) {
-      int start = htmlBody.indexOf("<pre>", current);
+      var start = htmlBody.indexOf("<pre>", current);
       if (start < 0) {
         break;
       }
 
-      int end = htmlBody.indexOf("</pre>", start);
+      var end = htmlBody.indexOf("</pre>", start);
 
       if (end < 0) {
         break;
@@ -55,12 +54,12 @@ public class HtmlUtils {
 
       builder.append(htmlBody.substring(current, start));
       builder.append("<div style=\"font-family: monospace\">");
-      String preformated = htmlBody.substring(start + 5, end);
+      var preformated = htmlBody.substring(start + 5, end);
 
-      Matcher m = SPACES_BEGINNING_LINE.matcher(preformated);
-      int previous = 0;
+      var m = SPACES_BEGINNING_LINE.matcher(preformated);
+      var previous = 0;
       while (m.find()) {
-        String replacement = "<br/>" + StringUtil.repeat("&nbsp;", m.group().length());
+        var replacement = "<br/>" + StringUtil.repeat("&nbsp;", m.group().length());
         builder.append(preformated.substring(previous, m.start()));
         builder.append(replacement);
         previous = m.end();

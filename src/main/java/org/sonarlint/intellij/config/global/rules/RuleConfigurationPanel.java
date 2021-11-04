@@ -51,7 +51,6 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
-
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
@@ -59,6 +58,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -89,7 +89,6 @@ import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import javax.swing.tree.TreePath;
-
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -98,11 +97,9 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit.appendRuleAttributesHtmlTable;
@@ -127,7 +124,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private RulesParamsSeparator rulesParamsSeparator;
   private final Map<String, RulesTreeNode.Rule> allRulesStateByKey = new ConcurrentHashMap<>();
   private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();
-  private AtomicBoolean isDirty = new AtomicBoolean(false);
+  private final AtomicBoolean isDirty = new AtomicBoolean(false);
 
   public RuleConfigurationPanel() {
     createUIComponents();
@@ -150,9 +147,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void recomputeDirtyState() {
     ApplicationManager.getApplication().executeOnPooledThread(() -> {
-      Map<String, RulesTreeNode.Rule> persistedRules = loadRuleNodes(getGlobalSettings());
-      for (RulesTreeNode.Rule persisted : persistedRules.values()) {
-        final RulesTreeNode.Rule possiblyModified = allRulesStateByKey.get(persisted.getKey());
+      var persistedRules = loadRuleNodes(getGlobalSettings());
+      for (var persisted : persistedRules.values()) {
+        final var possiblyModified = allRulesStateByKey.get(persisted.getKey());
         if (!persisted.equals(possiblyModified)) {
           this.isDirty.lazySet(true);
           return;
@@ -193,7 +190,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   @NotNull
   private static Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
-    StandaloneSonarLintEngine engine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
+    var engine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
     return engine.getAllRuleDetails().stream()
       .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
       .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
@@ -209,19 +206,19 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void updateModel() {
-    TreePath[] selectionPaths = table.getTree().getSelectionPaths();
-    Map<Language, List<RulesTreeNode.Rule>> rulesByLanguage = allRulesStateByKey.values().stream()
+    var selectionPaths = table.getTree().getSelectionPaths();
+    var rulesByLanguage = allRulesStateByKey.values().stream()
       .filter(filterModel::filter)
       .collect(Collectors.groupingBy(RulesTreeNode.Rule::language));
 
-    RulesTreeNode rootNode = (RulesTreeNode) model.getRoot();
+    var rootNode = (RulesTreeNode) model.getRoot();
     rootNode.removeAllChildren();
 
-    for (Map.Entry<Language, List<RulesTreeNode.Rule>> e : rulesByLanguage.entrySet()) {
-      RulesTreeNode.Language languageNode = getOrCreateLanguageNode(e.getKey().getLabel());
+    for (var entry : rulesByLanguage.entrySet()) {
+      var languageNode = getOrCreateLanguageNode(entry.getKey().getLabel());
       languageNode.removeAllChildren();
-      for (RulesTreeNode.Rule r : e.getValue()) {
-        languageNode.add(r);
+      for (var ruleNode : entry.getValue()) {
+        languageNode.add(ruleNode);
       }
       model.refreshLanguageActivation(languageNode);
       rootNode.add(languageNode);
@@ -241,7 +238,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
-    final SonarLintGlobalSettings.Rule ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
+    final var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
     if (ruleInSettings != null) {
       return ruleInSettings.isActive();
     }
@@ -249,7 +246,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private static Map<String, String> loadNonDefaultRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
-    SonarLintGlobalSettings.Rule ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
+    var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
     if (ruleInSettings != null) {
       return ruleInSettings.getParams();
     }
@@ -257,15 +254,15 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private ActionToolbar createTreeToolbarPanel() {
-    DefaultActionGroup actions = new DefaultActionGroup();
+    var actions = new DefaultActionGroup();
 
     actions.add(new RulesFilterAction(filterModel));
     actions.addSeparator();
 
-    CommonActionsManager actionManager = CommonActionsManager.getInstance();
+    var actionManager = CommonActionsManager.getInstance();
     actions.add(actionManager.createExpandAllAction(myTreeExpander, table));
     actions.add(actionManager.createCollapseAllAction(myTreeExpander, table));
-    ActionToolbar actionToolbar = ActionManager.getInstance().createActionToolbar("SonarLintRulesTreeToolbar", actions, true);
+    var actionToolbar = ActionManager.getInstance().createActionToolbar("SonarLintRulesTreeToolbar", actions, true);
     actionToolbar.setTargetComponent(panel);
     return actionToolbar;
   }
@@ -278,12 +275,12 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     descriptionBrowser.setBorder(JBUI.Borders.empty(5));
     descriptionBrowser.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
 
-    JPanel descriptionPanel = new JPanel(new BorderLayout());
+    var descriptionPanel = new JPanel(new BorderLayout());
     descriptionPanel.setBorder(IdeBorderFactory.createTitledBorder("Rule description", false,
       JBUI.insetsLeft(12)).setShowLine(false));
     descriptionPanel.add(ScrollPaneFactory.createScrollPane(descriptionBrowser), BorderLayout.CENTER);
 
-    JBSplitter rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
+    var rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
     rightSplitter.setFirstComponent(descriptionPanel);
 
     myParamsPanel = new JPanel(new GridBagLayout());
@@ -292,35 +289,35 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     rightSplitter.setSecondComponent(myParamsPanel);
     rightSplitter.setHonorComponentsMinimumSize(true);
 
-    final JScrollPane tree = initTreeScrollPane();
+    final var tree = initTreeScrollPane();
 
-    final JPanel northPanel = new JPanel(new GridBagLayout());
+    final var northPanel = new JPanel(new GridBagLayout());
     northPanel.setBorder(JBUI.Borders.empty(2, 0));
     myRuleFilter.setPreferredSize(new Dimension(20, myRuleFilter.getPreferredSize().height));
     northPanel.add(myRuleFilter, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.BASELINE_TRAILING, GridBagConstraints.HORIZONTAL,
       JBUI.emptyInsets(), 0, 0));
     northPanel.add(createTreeToolbarPanel().getComponent(), new GridBagConstraints(1, 0, 1, 1, 1, 1, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.HORIZONTAL,
       JBUI.emptyInsets(), 0, 0));
-    JButton restoreDefaults = new JButton("Restore Defaults");
+    var restoreDefaults = new JButton("Restore Defaults");
     restoreDefaults.setToolTipText("Restore all rules to defaults activation and parameters values");
     restoreDefaults.addActionListener(l -> restoreDefaults());
     northPanel.add(restoreDefaults, new GridBagConstraints(2, 0, 1, 1, 0, 1, GridBagConstraints.BASELINE_LEADING, GridBagConstraints.NONE,
       JBUI.emptyInsets(), 0, 0));
 
-    JBSplitter mainSplitter = new OnePixelSplitter(false, DIVIDER_PROPORTION_DEFAULT, 0.01f, 0.99f);
+    var mainSplitter = new OnePixelSplitter(false, DIVIDER_PROPORTION_DEFAULT, 0.01f, 0.99f);
     mainSplitter.setSplitterProportionKey(MAIN_SPLITTER_KEY);
     mainSplitter.setFirstComponent(tree);
     mainSplitter.setSecondComponent(rightSplitter);
     mainSplitter.setHonorComponentsMinimumSize(false);
 
-    final JPanel inspectionTreePanel = new JPanel(new BorderLayout());
+    final var inspectionTreePanel = new JPanel(new BorderLayout());
     inspectionTreePanel.add(northPanel, BorderLayout.NORTH);
     inspectionTreePanel.add(mainSplitter, BorderLayout.CENTER);
 
     panel = new JBLoadingPanel(new BorderLayout(), this);
     panel.add(inspectionTreePanel, BorderLayout.CENTER);
 
-    JBLabel label = new JBLabel("<html><b>Note: </b>When a project is bound to a SonarQube server or SonarCloud, the configuration in this tab is ignored. " +
+    var label = new JBLabel("<html><b>Note: </b>When a project is bound to a SonarQube server or SonarCloud, the configuration in this tab is ignored. " +
       "In this case, rules configuration from the server applies, except for rules in the \"Secrets\" category that will always be activated.</html>");
     panel.add(label, BorderLayout.NORTH);
     return panel;
@@ -346,20 +343,17 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     table.setTreeCellRenderer(new RulesTreeTableRenderer(filterModel::getText));
     table.setRootVisible(false);
     TreeUtil.installActions(table.getTree());
-    new TreeSpeedSearch(table.getTree(), treePath -> {
-      Object node = treePath.getLastPathComponent();
-      return node.toString();
-    });
+    new TreeSpeedSearch(table.getTree(), treePath -> treePath.getLastPathComponent().toString());
 
     table.getTree().addTreeSelectionListener(e -> {
-      TreePath path = e.getNewLeadSelectionPath();
+      var path = e.getNewLeadSelectionPath();
       if (path != null && path.getLastPathComponent() instanceof RulesTreeNode.Rule) {
         updateParamsAndDescriptionPanel();
       } else {
         initOptionsAndDescriptionPanel();
       }
     });
-    JBScrollPane scrollPane = new JBScrollPane(table);
+    var scrollPane = new JBScrollPane(table);
     table.getTree().setShowsRootHandles(true);
     scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
     scrollPane.setBorder(IdeBorderFactory.createBorder(SideBorder.BOTTOM + SideBorder.LEFT + SideBorder.TOP));
@@ -389,9 +383,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void updateParamsAndDescriptionPanel() {
-    Collection<RulesTreeNode.Rule> nodes = getSelectedRuleNodes();
+    var nodes = getSelectedRuleNodes();
     if (!nodes.isEmpty()) {
-      final RulesTreeNode.Rule singleNode = getStrictlySelectedToolNode();
+      final var singleNode = getStrictlySelectedToolNode();
       if (singleNode != null) {
         updateParamsAndDescriptionPanel(singleNode);
       } else {
@@ -408,8 +402,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
-    String htmlDescription = singleNode.getHtmlDescription();
-    StringBuilder builder = new StringBuilder(htmlDescription.length() + 64);
+    var htmlDescription = singleNode.getHtmlDescription();
+    var builder = new StringBuilder(htmlDescription.length() + 64);
     appendRuleAttributesHtmlTable(singleNode.getKey(), singleNode.severity(), singleNode.type(), builder);
     builder.append(htmlDescription);
     try {
@@ -419,7 +413,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     }
 
     myParamsPanel.removeAll();
-    final JPanel configPanelAnchor = new JPanel(new GridLayout());
+    final var configPanelAnchor = new JPanel(new GridLayout());
     setConfigPanel(configPanelAnchor, singleNode);
     if (configPanelAnchor.getComponentCount() != 0) {
       rulesParamsSeparator = new RulesParamsSeparator();
@@ -438,7 +432,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void setConfigPanel(final JPanel configPanelAnchor, RulesTreeNode.Rule rule) {
     configPanelAnchor.removeAll();
-    final JComponent additionalConfigPanel = ConfigPanelState.of(getAdditionalConfigPanel(rule), rule).getPanel(rule.activated);
+    final var additionalConfigPanel = ConfigPanelState.of(getAdditionalConfigPanel(rule)).getPanel(rule.activated);
     if (additionalConfigPanel != null) {
       // assume that the panel does not need scrolling if it already contains a scrollable content
       if (UIUtil.hasScrollPane(additionalConfigPanel)) {
@@ -451,13 +445,13 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   public void selectRule(String ruleKey) {
     myRuleFilter.setFilter(ruleKey);
-    RulesTreeNode.Rule node = allRulesStateByKey.get(ruleKey);
-    TreePath path = new TreePath(node.getPath());
+    var node = allRulesStateByKey.get(ruleKey);
+    var path = new TreePath(node.getPath());
     table.getTree().setSelectionPath(path);
   }
 
   private static class ConfigPanelState {
-    private static final ConfigPanelState EMPTY = new ConfigPanelState(null, null);
+    private static final ConfigPanelState EMPTY = new ConfigPanelState(null);
 
     private final JComponent myOptionsPanel;
     private final Set<Component> myEnableRequiredComponent = new HashSet<>();
@@ -465,28 +459,19 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     private boolean myLastState = true;
     private boolean myDeafListeners;
 
-    private ConfigPanelState(@Nullable JComponent optionsPanel, @Nullable RulesTreeNode.Rule rule) {
+    private ConfigPanelState(@Nullable JComponent optionsPanel) {
       myOptionsPanel = optionsPanel;
       if (myOptionsPanel != null) {
-        Queue<Component> q = new Queue<>(1);
+        var q = new Queue<Component>(1);
         q.addLast(optionsPanel);
         while (!q.isEmpty()) {
-          final Component current = q.pullFirst();
-          current.addPropertyChangeListener("enabled", evt -> {
-            if (!myDeafListeners) {
-              final boolean newValue = (boolean) evt.getNewValue();
-              if (newValue) {
-                myEnableRequiredComponent.add(current);
-              } else {
-                myEnableRequiredComponent.remove(current);
-              }
-            }
-          });
+          final var current = q.pullFirst();
+          current.addPropertyChangeListener("enabled", getChangeListener(current));
           if (current.isEnabled()) {
             myEnableRequiredComponent.add(current);
           }
           if (current instanceof Container) {
-            for (Component child : ((Container) current).getComponents()) {
+            for (var child : ((Container) current).getComponents()) {
               q.addLast(child);
             }
           }
@@ -494,12 +479,26 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       }
     }
 
+    @NotNull
+    private PropertyChangeListener getChangeListener(Component current) {
+      return evt -> {
+        if (!myDeafListeners) {
+          final var newValue = (boolean) evt.getNewValue();
+          if (newValue) {
+            myEnableRequiredComponent.add(current);
+          } else {
+            myEnableRequiredComponent.remove(current);
+          }
+        }
+      };
+    }
+
     @CheckForNull
     private JComponent getPanel(boolean currentState) {
       if (myOptionsPanel != null && myLastState != currentState) {
         myDeafListeners = true;
         try {
-          for (Component c : myEnableRequiredComponent) {
+          for (var c : myEnableRequiredComponent) {
             c.setEnabled(currentState);
           }
           myLastState = currentState;
@@ -510,8 +509,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       return myOptionsPanel;
     }
 
-    private static ConfigPanelState of(@Nullable JComponent panel, RulesTreeNode.Rule rule) {
-      return panel == null ? EMPTY : new ConfigPanelState(panel, rule);
+    private static ConfigPanelState of(@Nullable JComponent panel) {
+      return panel == null ? EMPTY : new ConfigPanelState(panel);
     }
   }
 
@@ -520,30 +519,30 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     if (!rule.hasParameters()) {
       return null;
     }
-    final JPanel panel = new JPanel(new GridBagLayout());
+    final var configPanel = new JPanel(new GridBagLayout());
 
-    final GridBagConstraints constraints = new GridBagConstraints();
+    final var constraints = new GridBagConstraints();
     constraints.gridy = 0;
-    for (RulesTreeNode.RuleParam param : rule.getParamDetails()) {
+    for (var param : rule.getParamDetails()) {
       constraints.gridx = 0;
       constraints.fill = GridBagConstraints.HORIZONTAL;
       constraints.anchor = GridBagConstraints.BASELINE_LEADING;
       constraints.gridwidth = 1;
       switch (param.type) {
         case TEXT:
-          createTextParam(rule, panel, constraints, param);
+          createTextParam(rule, configPanel, constraints, param);
           break;
         case STRING:
-          createStringParam(rule, panel, constraints, param);
+          createStringParam(rule, configPanel, constraints, param);
           break;
         case INTEGER:
-          createIntParam(rule, panel, constraints, param);
+          createIntParam(rule, configPanel, constraints, param);
           break;
         case FLOAT:
-          createFloatParam(rule, panel, constraints, param);
+          createFloatParam(rule, configPanel, constraints, param);
           break;
         case BOOLEAN:
-          createBooleanParam(rule, panel, constraints, param);
+          createBooleanParam(rule, configPanel, constraints, param);
           break;
         default:
           GlobalLogOutput.get().log("Unknown rule parameter type: " + param.type + " for rule " + rule.getKey(), LogOutput.Level.ERROR);
@@ -552,8 +551,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     }
     // Add an empty panel to fill the space
     constraints.weighty = 1.0;
-    panel.add(new JPanel(), constraints);
-    return panel;
+    configPanel.add(new JPanel(), constraints);
+    return configPanel;
   }
 
   private void createTextParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
@@ -569,20 +568,20 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private void createIntParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
     addParamLabel(panel, constraints, param);
     // See NumberFormat.parse(), it will return a Long...
-    NumberFormat longFormat = NumberFormat.getIntegerInstance();
+    var longFormat = NumberFormat.getIntegerInstance();
     addNumberFormattedTextField(rule, panel, constraints, param, longFormat, asLong(param.defaultValue),
       asLong(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
   }
 
   private void createFloatParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
     addParamLabel(panel, constraints, param);
-    NumberFormat floatFormat = NumberFormat.getNumberInstance();
+    var floatFormat = NumberFormat.getNumberInstance();
     addNumberFormattedTextField(rule, panel, constraints, param, floatFormat, asDouble(param.defaultValue),
       asDouble(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
   }
 
   private void createBooleanParam(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
-    final JBCheckBox checkBox = new JBCheckBox(param.name, asBoolean(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
+    final var checkBox = new JBCheckBox(param.name, asBoolean(rule.getCustomParams().getOrDefault(param.key, param.defaultValue)));
     checkBox.setToolTipText(param.description);
     checkBox.addActionListener(e -> {
       final Boolean b = checkBox.isSelected();
@@ -605,7 +604,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     textComponent.getDocument().addDocumentListener(new DocumentAdapter() {
       @Override
       public void textChanged(DocumentEvent e) {
-        String value = textComponent.getText();
+        var value = textComponent.getText();
         if (!value.equals(param.defaultValue)) {
           rule.getCustomParams().put(param.key, value);
         } else {
@@ -623,7 +622,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void addNumberFormattedTextField(RulesTreeNode.Rule rule, JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param, NumberFormat numberFormat,
     Number defaultValue, Number initialValue) {
-    final JFormattedTextField valueField = new JFormattedTextField();
+    final var valueField = new JFormattedTextField();
     valueField.setToolTipText(param.description);
     valueField.setColumns(4);
     valueField.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter(numberFormat)));
@@ -633,7 +632,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       public void textChanged(DocumentEvent e) {
         try {
           valueField.commitEdit();
-          Number value = (Number) valueField.getValue();
+          var value = (Number) valueField.getValue();
           if (value.doubleValue() != defaultValue.doubleValue()) {
             rule.getCustomParams().put(param.key, String.valueOf(value));
           } else {
@@ -658,7 +657,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     panel.add(new JBLabel(param.name), constraints);
   }
 
-  private static boolean asBoolean(String value) {
+  private static boolean asBoolean(@Nullable String value) {
     return "true".equals(value);
   }
 
@@ -685,7 +684,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private RulesTreeNode.Rule getStrictlySelectedToolNode() {
-    TreePath[] paths = table.getTree().getSelectionPaths();
+    var paths = table.getTree().getSelectionPaths();
     return paths != null && paths.length == 1 && paths[0].getLastPathComponent() instanceof RulesTreeNode.Rule
       ? (RulesTreeNode.Rule) paths[0].getLastPathComponent()
       : null;
@@ -699,7 +698,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     if (paths == null) {
       return Collections.emptyList();
     }
-    final Queue<RulesTreeNode> q = new Queue<>(paths.length);
+    final var q = new Queue<RulesTreeNode>(paths.length);
     for (final TreePath path : paths) {
       if (path != null) {
         q.addLast((RulesTreeNode) path.getLastPathComponent());
@@ -709,12 +708,12 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private static List<RulesTreeNode.Rule> getRulesNodes(final Queue<RulesTreeNode> queue) {
-    final List<RulesTreeNode.Rule> nodes = new ArrayList<>();
+    final var nodes = new ArrayList<RulesTreeNode.Rule>();
     while (!queue.isEmpty()) {
-      final RulesTreeNode node = queue.pullFirst();
+      final var node = queue.pullFirst();
       if (node instanceof RulesTreeNode.Language) {
-        for (int i = 0; i < node.getChildCount(); i++) {
-          final RulesTreeNode childNode = (RulesTreeNode) node.getChildAt(i);
+        for (var i = 0; i < node.getChildCount(); i++) {
+          final var childNode = (RulesTreeNode) node.getChildAt(i);
           queue.addLast(childNode);
         }
       } else {
@@ -729,18 +728,18 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
     RulesParamsSeparator() {
       setLayout(new GridBagLayout());
-      GridBagConstraints optionsLabelConstraints = new GridBagConstraints(0, 0, 1, 1, 0, 1, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(0, 2, 0, 0), 0, 0);
+      var optionsLabelConstraints = new GridBagConstraints(0, 0, 1, 1, 0, 1, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(0, 2, 0, 0), 0, 0);
       add(new JBLabel("Options"), optionsLabelConstraints);
-      GridBagConstraints separatorConstraints = new GridBagConstraints(1, 0, 1, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, JBUI.insets(2,
+      var separatorConstraints = new GridBagConstraints(1, 0, 1, 1, 1, 1, GridBagConstraints.CENTER, GridBagConstraints.HORIZONTAL, JBUI.insets(2,
         TitledSeparator.SEPARATOR_LEFT_INSET,
         0,
         TitledSeparator.SEPARATOR_RIGHT_INSET),
         0, 0);
       add(new JSeparator(SwingConstants.HORIZONTAL), separatorConstraints);
-      GridBagConstraints defaultLabelConstraints = new GridBagConstraints(2, 0, 0, 1, 0, 1, GridBagConstraints.EAST, GridBagConstraints.NONE, JBUI.emptyInsets(), 0, 0);
+      var defaultLabelConstraints = new GridBagConstraints(2, 0, 0, 1, 0, 1, GridBagConstraints.EAST, GridBagConstraints.NONE, JBUI.emptyInsets(), 0, 0);
 
       myDefaultsLink = LinkLabel.create("Defaults", () -> {
-        RulesTreeNode.Rule node = getStrictlySelectedToolNode();
+        var node = getStrictlySelectedToolNode();
         if (node != null) {
           node.getCustomParams().clear();
           updateParamsAndDescriptionPanel(node);
@@ -756,9 +755,9 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       if (table == null) {
         return;
       }
-      RulesTreeNode.Rule node = getStrictlySelectedToolNode();
+      var node = getStrictlySelectedToolNode();
       if (node != null) {
-        boolean canReset = !node.getCustomParams().isEmpty();
+        var canReset = !node.getCustomParams().isEmpty();
         myDefaultsLink.setVisible(canReset);
         revalidate();
         repaint();

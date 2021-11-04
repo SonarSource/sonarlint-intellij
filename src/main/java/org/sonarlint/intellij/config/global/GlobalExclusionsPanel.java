@@ -28,6 +28,7 @@ import java.nio.file.FileSystems;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
@@ -75,7 +76,7 @@ public class GlobalExclusionsPanel implements ConfigurationPanel<SonarLintGlobal
       return StringUtils.stripToNull(s);
     };
 
-    Function<String, String> onEdit = value -> {
+    UnaryOperator<String> onEdit = value -> {
       String s = Messages.showInputDialog(panel, "Modify exclusion pattern", "Edit File Exclusion", null, value,
         validator);
       return StringUtils.stripToNull(s);

@@ -23,13 +23,8 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
-import com.intellij.openapi.vfs.VirtualFile;
-
-import java.util.List;
 import javax.swing.Icon;
-
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -48,7 +43,7 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
     if (status.isRunning()) {
       return false;
     }
-    ChangeListManager changeListManager = ChangeListManager.getInstance(project);
+    var changeListManager = ChangeListManager.getInstance(project);
     return !changeListManager.getAffectedFiles().isEmpty();
   }
 
@@ -58,17 +53,17 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
-    Project project = e.getProject();
+    var project = e.getProject();
 
     if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace())) {
       return;
     }
 
-    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
-    ChangeListManager changeListManager = ChangeListManager.getInstance(project);
+    var submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
+    var changeListManager = ChangeListManager.getInstance(project);
 
-    List<VirtualFile> affectedFiles = changeListManager.getAffectedFiles();
-    AnalysisCallback callback = new ShowAnalysisResultsCallable(project, affectedFiles, "SCM changed files");
+    var affectedFiles = changeListManager.getAffectedFiles();
+    var callback = new ShowAnalysisResultsCallable(project, affectedFiles, "SCM changed files");
     submitter.submitFiles(affectedFiles, TriggerType.CHANGED_FILES, callback, false);
   }
 }

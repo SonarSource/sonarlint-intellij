@@ -24,10 +24,8 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.HighlighterTargetArea;
-import com.intellij.openapi.editor.markup.MarkupModel;
 import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.editor.markup.TextAttributes;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Segment;
 import com.intellij.util.Alarm;
 import com.intellij.util.ArrayUtil;
@@ -62,8 +60,8 @@ public class RangeBlinker {
   }
 
   private void removeHighlights() {
-    MarkupModel markupModel = myEditor.getMarkupModel();
-    RangeHighlighter[] allHighlighters = markupModel.getAllHighlighters();
+    var markupModel = myEditor.getMarkupModel();
+    var allHighlighters = markupModel.getAllHighlighters();
 
     myAddedHighlighters.stream()
       .filter(h -> !ArrayUtil.contains(allHighlighters, h))
@@ -72,18 +70,18 @@ public class RangeBlinker {
   }
 
   private void startBlinking() {
-    Project project = myEditor.getProject();
+    var project = myEditor.getProject();
     if (ApplicationManager.getApplication().isDisposed() || myEditor.isDisposed() || (project != null && project.isDisposed())) {
       return;
     }
 
-    MarkupModel markupModel = myEditor.getMarkupModel();
+    var markupModel = myEditor.getMarkupModel();
     if (show) {
-      for (Segment segment : myMarkers) {
+      for (var segment : myMarkers) {
         if (segment.getEndOffset() > myEditor.getDocument().getTextLength()) {
           continue;
         }
-        RangeHighlighter highlighter = markupModel.addRangeHighlighter(segment.getStartOffset(), segment.getEndOffset(),
+        var highlighter = markupModel.addRangeHighlighter(segment.getStartOffset(), segment.getEndOffset(),
           HighlighterLayer.ADDITIONAL_SYNTAX, myAttributes,
           HighlighterTargetArea.EXACT_RANGE);
         myAddedHighlighters.add(highlighter);

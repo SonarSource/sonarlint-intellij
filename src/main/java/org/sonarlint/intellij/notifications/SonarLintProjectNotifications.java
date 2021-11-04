@@ -25,9 +25,7 @@ import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
-
 import javax.swing.event.HyperlinkEvent;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -42,6 +40,7 @@ public class SonarLintProjectNotifications {
     "SonarLint");
   private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the SonarLint Settings";
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the SonarLint project configuration";
+  private static final String TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>";
   private volatile boolean shown = false;
   private final Project myProject;
 
@@ -61,8 +60,8 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
-      "<b>SonarLint - Invalid binding</b>",
+    var notification = BINDING_PROBLEM_GROUP.createNotification(
+      TITLE_SONARLINT_INVALID_BINDING,
       "Project bound to an invalid connection" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -75,8 +74,8 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
-      "<b>SonarLint - Invalid binding</b>",
+    var notification = BINDING_PROBLEM_GROUP.createNotification(
+      TITLE_SONARLINT_INVALID_BINDING,
       "Project bound to an invalid remote project" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -89,8 +88,8 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
-      "<b>SonarLint - Invalid binding</b>",
+    var notification = BINDING_PROBLEM_GROUP.createNotification(
+      TITLE_SONARLINT_INVALID_BINDING,
       "Local storage is outdated" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -103,8 +102,8 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
-      "<b>SonarLint - Invalid binding</b>",
+    var notification = BINDING_PROBLEM_GROUP.createNotification(
+      TITLE_SONARLINT_INVALID_BINDING,
       "Missing local storage for connection '" + serverId + "'" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenGlobalSettingsAction(myProject));
@@ -117,8 +116,8 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
-      "<b>SonarLint - Invalid binding</b>",
+    var notification = BINDING_PROBLEM_GROUP.createNotification(
+      TITLE_SONARLINT_INVALID_BINDING,
       "Local storage for connection '" + serverId + "' must be updated" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenGlobalSettingsAction(myProject));
@@ -128,7 +127,7 @@ public class SonarLintProjectNotifications {
   }
 
   public void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, ServerConnection server, boolean onlyProjects) {
-    Notification notification = UPDATE_GROUP.createNotification(
+    var notification = UPDATE_GROUP.createNotification(
       "SonarLint - Binding update available",
       "Change detected for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
       NotificationType.INFORMATION, new NotificationListener.Adapter() {

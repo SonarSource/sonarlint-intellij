@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class WizardModelTest {
   @Test
   public void testCreateFromConfig() {
-    ServerConnection server = ServerConnection.newBuilder()
+    var server = ServerConnection.newBuilder()
       .setName("name")
       .setToken("token")
       .setOrganizationKey("org")
@@ -35,7 +35,7 @@ public class WizardModelTest {
       .setHostUrl("url")
       .build();
 
-    WizardModel model = new WizardModel(server);
+    var model = new WizardModel(server);
     assertThat(model.getLogin()).isNull();
     assertThat(model.getPassword()).isNull();
     assertThat(model.getToken()).isEqualTo("token");
@@ -47,7 +47,7 @@ public class WizardModelTest {
 
   @Test
   public void testExportToConfig() {
-    WizardModel model = new WizardModel();
+    var model = new WizardModel();
     model.setName("name");
     model.setOrganizationKey("org");
     model.setServerUrl("url");
@@ -57,7 +57,7 @@ public class WizardModelTest {
 
     model.setServerType(WizardModel.ServerType.SONARQUBE);
 
-    ServerConnection server = model.createConnection();
+    var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("url");
     assertThat(server.enableProxy()).isTrue();
     assertThat(server.getLogin()).isEqualTo("login");
@@ -68,7 +68,7 @@ public class WizardModelTest {
 
   @Test
   public void testExportSonarCloud() {
-    WizardModel model = new WizardModel();
+    var model = new WizardModel();
     model.setName("name");
     model.setOrganizationKey("org");
     model.setToken("token");
@@ -76,7 +76,7 @@ public class WizardModelTest {
 
     model.setServerType(WizardModel.ServerType.SONARCLOUD);
 
-    ServerConnection server = model.createConnection();
+    var server = model.createConnection();
     assertThat(server.getHostUrl()).isEqualTo("https://sonarcloud.io");
     assertThat(server.getLogin()).isNull();
     assertThat(server.getPassword()).isNull();
@@ -86,14 +86,14 @@ public class WizardModelTest {
 
   @Test
   public void testMigrationSonarCloud() {
-    ServerConnection server = ServerConnection.newBuilder()
+    var server = ServerConnection.newBuilder()
       .setName("name")
       .setToken("token")
       .setOrganizationKey("org")
       .setEnableProxy(true)
       .setHostUrl("https://www.sonarqube.com")
       .build();
-    WizardModel model = new WizardModel(server);
+    var model = new WizardModel(server);
 
     server = model.createConnection();
     assertThat(server.enableProxy()).isTrue();

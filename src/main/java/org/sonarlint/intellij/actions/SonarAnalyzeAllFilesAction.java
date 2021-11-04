@@ -25,23 +25,17 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
-import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import javax.swing.Icon;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -68,20 +62,20 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
-    Project project = e.getProject();
+    var project = e.getProject();
 
     if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace()) || !showWarning()) {
       return;
     }
 
-    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
-    Collection<VirtualFile> allFiles = getAllFiles(project);
-    AnalysisCallback callback = new ShowAnalysisResultsCallable(project, allFiles, "all project files");
+    var submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
+    var allFiles = getAllFiles(project);
+    var callback = new ShowAnalysisResultsCallable(project, allFiles, "all project files");
     submitter.submitFiles(allFiles, TriggerType.ALL, callback, false);
   }
 
   private static Collection<VirtualFile> getAllFiles(Project project) {
-    Set<VirtualFile> fileSet = new LinkedHashSet<>();
+    var fileSet = new LinkedHashSet<VirtualFile>();
     iterateFilesToAnalyze(project, vFile -> {
       fileSet.add(vFile);
       // Continue collecting other files
@@ -91,7 +85,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   private static boolean hasFiles(Project project) {
-    AtomicBoolean result = new AtomicBoolean(false);
+    var result = new AtomicBoolean(false);
     iterateFilesToAnalyze(project, vFile -> {
       result.set(true);
       // No need to iterate other files/folders
@@ -101,7 +95,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   }
 
   private static void iterateFilesToAnalyze(Project project, Predicate<VirtualFile> fileProcessor) {
-    ProjectFileIndex fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+    var fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
     fileIndex.iterateContent(vFile -> {
       if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
         return fileProcessor.test(vFile);
@@ -113,7 +107,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
 
   static boolean showWarning() {
     if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY, false)) {
-      int result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
+      var result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
           + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
         "SonarLint - Analyze All Files",
         "Proceed", "Cancel", Messages.getWarningIcon(), new DoNotShowAgain());

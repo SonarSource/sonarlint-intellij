@@ -65,7 +65,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_trigger() {
-    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
     underTest.documentChanged(createEvent(file));
 
@@ -76,8 +76,8 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_trigger_multiple_files() {
-    VirtualFile file1 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "");
-    VirtualFile file2 = createAndOpenTestVirtualFile("MyClass2.java", Language.findLanguageByID("JAVA"), "");
+    var file1 = createAndOpenTestVirtualFile("MyClass1.java", Language.findLanguageByID("JAVA"), "");
+    var file2 = createAndOpenTestVirtualFile("MyClass2.java", Language.findLanguageByID("JAVA"), "");
 
     underTest.documentChanged(createEvent(file1));
     underTest.documentChanged(createEvent(file2));
@@ -90,9 +90,9 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_cancel_previous_task() {
-    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
-    AnalysisTask analysisTask = mock(AnalysisTask.class);
+    var analysisTask = mock(AnalysisTask.class);
     when(submitter.submitFiles(any(), any(), anyBoolean())).thenReturn(analysisTask);
     when(analysisTask.isFinished()).thenReturn(false);
 
@@ -115,7 +115,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void dont_trigger_if_auto_disabled() {
-    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
     getGlobalSettings().setAutoTrigger(false);
 
     underTest.documentChanged(createEvent(file));
@@ -124,10 +124,10 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void dont_trigger_if_check_fails() {
-    Document doc = mock(Document.class);
-    VirtualFile file = createTestFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
+    var doc = mock(Document.class);
+    var file = createTestFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
 
-    DocumentEvent event = createEvent(file);
+    var event = createEvent(file);
 
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
@@ -137,7 +137,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void dont_trigger_if_project_is_closed() {
-    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
     underTest.documentChanged(createEvent(file));
 
@@ -146,10 +146,10 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void dont_trigger_if_no_vfile() {
-    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
-    Document doc = mock(Document.class);
-    DocumentEvent event = createEvent(file);
+    var doc = mock(Document.class);
+    var event = createEvent(file);
 
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(null);
@@ -166,7 +166,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void clear_and_dispose() {
-    VirtualFile file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
+    var file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "");
 
     underTest.documentChanged(createEvent(file));
     underTest.dispose();
@@ -175,7 +175,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
   }
 
   private DocumentEvent createEvent(VirtualFile file) {
-    DocumentEvent mock = mock(DocumentEvent.class);
+    var mock = mock(DocumentEvent.class);
     when(mock.getDocument()).thenReturn(FileDocumentManager.getInstance().getDocument(file));
     return mock;
   }

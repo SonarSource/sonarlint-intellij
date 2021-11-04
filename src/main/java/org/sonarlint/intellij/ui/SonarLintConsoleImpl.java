@@ -26,10 +26,8 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.serviceContainer.NonInjectable;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -76,7 +74,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
   public void error(String msg, @Nullable Throwable t) {
     error(msg);
     if (t != null) {
-      StringWriter errors = new StringWriter();
+      var errors = new StringWriter();
       t.printStackTrace(new PrintWriter(errors));
       error(errors.toString());
     }

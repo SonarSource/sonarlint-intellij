@@ -23,8 +23,10 @@ import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public enum SonarLintSeverity {
   BLOCKER(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WARNING),
@@ -33,14 +35,7 @@ public enum SonarLintSeverity {
   MINOR(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WARNING),
   INFO(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WEAK_WARNING);
 
-  private static final Map<String, SonarLintSeverity> cache;
-
-  static {
-    cache = new HashMap<>();
-    for (SonarLintSeverity s : SonarLintSeverity.values()) {
-      cache.put(s.toString(), s);
-    }
-  }
+  private static final Map<String, SonarLintSeverity> cache = Stream.of(values()).collect(Collectors.toMap(Enum::toString, Function.identity()));
 
   private final TextAttributesKey defaultTextAttributes;
   private final ProblemHighlightType highlightType;

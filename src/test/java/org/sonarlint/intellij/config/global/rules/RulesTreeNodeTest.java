@@ -32,7 +32,7 @@ import static org.mockito.Mockito.when;
 public class RulesTreeNodeTest {
   @Test
   public void getters_rule() {
-    StandaloneRuleDetails details = mock(StandaloneRuleDetails.class);
+    var details = mock(StandaloneRuleDetails.class);
     when(details.getName()).thenReturn("name");
     when(details.getKey()).thenReturn("key");
     when(details.getHtmlDescription()).thenReturn("html");
@@ -41,7 +41,7 @@ public class RulesTreeNodeTest {
     when(details.getType()).thenReturn("type");
     when(details.getLanguage()).thenReturn(Language.XOO);
 
-    RulesTreeNode.Rule node = new RulesTreeNode.Rule(details, false, new HashMap<>());
+    var node = new RulesTreeNode.Rule(details, false, new HashMap<>());
     assertThat(node.getKey()).isEqualTo("key");
     assertThat(node.getName()).isEqualTo("name");
     assertThat(node).hasToString("name");
@@ -55,14 +55,14 @@ public class RulesTreeNodeTest {
 
   @Test
   public void getters_root() {
-    RulesTreeNode.Root root = new RulesTreeNode.Root();
+    var root = new RulesTreeNode.Root();
     assertThat(root).hasToString("root");
     assertThat(root.isNonDefault()).isFalse();
   }
 
   @Test
   public void getters_language() {
-    RulesTreeNode.Language node = new RulesTreeNode.Language("lang");
+    var node = new RulesTreeNode.Language("lang");
     node.setIsNonDefault(true);
     node.setIsActivated(true);
 
@@ -73,7 +73,7 @@ public class RulesTreeNodeTest {
 
   @Test
   public void create_iterable_children() {
-    RulesTreeNode.Language parent = new RulesTreeNode.Language("lang");
+    var parent = new RulesTreeNode.Language("lang");
     RulesTreeNode.Rule n1 = new RulesTreeNode.Rule(mockRuleDetails("r1"), true, new HashMap<>());
     RulesTreeNode.Rule n2 = new RulesTreeNode.Rule(mockRuleDetails("r2"), true, new HashMap<>());
     RulesTreeNode.Rule n3 = new RulesTreeNode.Rule(mockRuleDetails("r3"), true, new HashMap<>());
@@ -88,7 +88,7 @@ public class RulesTreeNodeTest {
 
   @NotNull
   private StandaloneRuleDetails mockRuleDetails(String key) {
-    final StandaloneRuleDetails r1 = mock(StandaloneRuleDetails.class);
+    final var r1 = mock(StandaloneRuleDetails.class);
     when(r1.getKey()).thenReturn(key);
     return r1;
   }

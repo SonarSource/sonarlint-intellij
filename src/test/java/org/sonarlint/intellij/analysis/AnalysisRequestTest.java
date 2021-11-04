@@ -21,19 +21,19 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.List;
 import org.junit.Test;
 import org.sonarlint.intellij.trigger.TriggerType;
 
-import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 public class AnalysisRequestTest {
   @Test
   public void testRoundTrip() {
-    Project p = mock(Project.class);
-    VirtualFile f = mock(VirtualFile.class);
-    AnalysisRequest analysisRequest = new AnalysisRequest(p, singletonList(f), TriggerType.COMPILATION, false, mock(AnalysisCallback.class));
+    var p = mock(Project.class);
+    var f = mock(VirtualFile.class);
+    var analysisRequest = new AnalysisRequest(p, List.of(f), TriggerType.COMPILATION, false, mock(AnalysisCallback.class));
 
     assertThat(analysisRequest.files()).containsOnly(f);
     assertThat(analysisRequest.trigger()).isEqualTo(TriggerType.COMPILATION);

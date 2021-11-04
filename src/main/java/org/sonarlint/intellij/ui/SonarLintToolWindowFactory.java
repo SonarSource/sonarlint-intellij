@@ -30,16 +30,12 @@ import com.intellij.openapi.wm.ToolWindowType;
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener;
 import com.intellij.ui.JBSplitter;
 import com.intellij.ui.OnePixelSplitter;
-import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManager;
-
 import javax.swing.JComponent;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildVulnerabilitiesTabName;
@@ -58,7 +54,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
-    ContentManager contentManager = toolWindow.getContentManager();
+    var contentManager = toolWindow.getContentManager();
     addIssuesTab(project, contentManager);
     addAnalysisResultsTab(project, contentManager);
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
@@ -66,9 +62,9 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     }
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
-    SonarLintToolWindow sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
+    var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
     contentManager.addContentManagerListener(sonarLintToolWindow);
-    LocalHotspot activeHotspot = sonarLintToolWindow.getActiveHotspot();
+    var activeHotspot = sonarLintToolWindow.getActiveHotspot();
     if (activeHotspot != null) {
       sonarLintToolWindow.show(activeHotspot);
     }
@@ -76,12 +72,12 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
   public static JBSplitter createSplitter(Project project, JComponent parentComponent, Disposable parentDisposable, JComponent c1, JComponent c2, String proportionProperty,
     float defaultSplit) {
-    JBSplitter splitter = new OnePixelSplitter(splitVertically(project), proportionProperty, defaultSplit);
+    var splitter = new OnePixelSplitter(splitVertically(project), proportionProperty, defaultSplit);
     splitter.setFirstComponent(c1);
     splitter.setSecondComponent(c2);
     splitter.setHonorComponentsMinimumSize(true);
 
-    final ToolWindowManagerListener listener = new ToolWindowManagerListener() {
+    final var listener = new ToolWindowManagerListener() {
       @Override
       public void stateChanged(@NotNull ToolWindowManager toolWindowManager) {
         splitter.setOrientation(splitVertically(project));
@@ -99,20 +95,20 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   public static boolean splitVertically(Project project) {
-    final ToolWindow toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
-    boolean splitVertically = false;
+    final var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
+    var splitVertically = false;
     if (toolWindow != null) {
-      final ToolWindowAnchor anchor = toolWindow.getAnchor();
+      final var anchor = toolWindow.getAnchor();
       splitVertically = anchor == ToolWindowAnchor.LEFT || anchor == ToolWindowAnchor.RIGHT;
     }
     return splitVertically;
   }
 
   private static void addIssuesTab(Project project, @NotNull ContentManager contentManager) {
-    IssueManager issueManager = getService(project, IssueManager.class);
-    CurrentFileController scope = new CurrentFileController(project, issueManager);
-    SonarLintIssuesPanel issuesPanel = new SonarLintIssuesPanel(project, scope);
-    Content issuesContent = contentManager.getFactory()
+    var issueManager = getService(project, IssueManager.class);
+    var scope = new CurrentFileController(project, issueManager);
+    var issuesPanel = new SonarLintIssuesPanel(project, scope);
+    var issuesContent = contentManager.getFactory()
       .createContent(
         issuesPanel,
         TAB_CURRENT_FILE,
@@ -124,8 +120,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addAnalysisResultsTab(Project project, @NotNull ContentManager contentManager) {
-    SonarLintAnalysisResultsPanel resultsPanel = new SonarLintAnalysisResultsPanel(project);
-    Content analysisResultsContent = contentManager.getFactory()
+    var resultsPanel = new SonarLintAnalysisResultsPanel(project);
+    var analysisResultsContent = contentManager.getFactory()
       .createContent(
         resultsPanel,
         TAB_ANALYSIS_RESULTS,
@@ -136,8 +132,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addTaintIssuesTab(Project project, @NotNull ContentManager contentManager) {
-    TaintVulnerabilitiesPanel vulnerabilitiesPanel = new TaintVulnerabilitiesPanel(project);
-    Content analysisResultsContent = contentManager.getFactory()
+    var vulnerabilitiesPanel = new TaintVulnerabilitiesPanel(project);
+    var analysisResultsContent = contentManager.getFactory()
       .createContent(
         vulnerabilitiesPanel,
         buildVulnerabilitiesTabName(0),
@@ -148,7 +144,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {
-    Content logContent = toolWindow.getContentManager().getFactory()
+    var logContent = toolWindow.getContentManager().getFactory()
       .createContent(
         new SonarLintLogPanel(toolWindow, project),
         TAB_LOGS,

@@ -25,16 +25,12 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
@@ -72,7 +68,7 @@ public class UpdateChecker implements Disposable {
 
   void checkForUpdate(@NotNull ProgressIndicator progressIndicator) {
     ProjectBindingManager projectBindingManager;
-    GlobalLogOutput log = getService(GlobalLogOutput.class);
+    var log = getService(GlobalLogOutput.class);
     ConnectedSonarLintEngine engine;
     try {
       projectBindingManager = getService(myProject, ProjectBindingManager.class);
@@ -84,18 +80,18 @@ public class UpdateChecker implements Disposable {
     }
 
     try {
-      List<String> changelog = new ArrayList<>();
-      ServerConnection serverConnection = projectBindingManager.getServerConnection();
+      var changelog = new ArrayList<String>();
+      var serverConnection = projectBindingManager.getServerConnection();
       log.log("Check for updates from server '" + serverConnection.getName() + "'...", LogOutput.Level.INFO);
       progressIndicator.setIndeterminate(false);
       progressIndicator.setFraction(START_OF_PROJECTS_UPDATE);
-      boolean hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConnection, progressIndicator);
-      SonarLintProjectSettings projectSettings = getSettingsFor(myProject);
+      var hasGlobalUpdates = checkForGlobalUpdates(changelog, engine, serverConnection, progressIndicator);
+      var projectSettings = getSettingsFor(myProject);
       checkForProjectUpdates(changelog, engine, serverConnection, progressIndicator);
       progressIndicator.setFraction(END_OF_PROJECTS_UPDATE);
       if (!changelog.isEmpty()) {
         changelog.forEach(line -> log.log("  - " + line, LogOutput.Level.INFO));
-        SonarLintProjectNotifications notifications = getService(myProject, SonarLintProjectNotifications.class);
+        var notifications = getService(myProject, SonarLintProjectNotifications.class);
         notifications.notifyServerHasUpdates(projectSettings.getConnectionName(), engine, serverConnection, !hasGlobalUpdates);
       }
     } catch (Exception e) {
@@ -104,12 +100,12 @@ public class UpdateChecker implements Disposable {
   }
 
   private void checkForProjectUpdates(List<String> changelog, ConnectedSonarLintEngine engine, ServerConnection serverConnection, ProgressIndicator indicator) {
-    Set<String> projectKeysToUpdate = getService(myProject, ProjectBindingManager.class).getUniqueProjectKeys();
-    double indicatorValue = START_OF_PROJECTS_UPDATE;
-    double divider = projectKeysToUpdate.isEmpty() ? 1 : projectKeysToUpdate.size();
-    double stepSize = (END_OF_PROJECTS_UPDATE - START_OF_PROJECTS_UPDATE) / divider;
-    GlobalLogOutput log = getService(GlobalLogOutput.class);
-    for (String projectKey : projectKeysToUpdate) {
+    var projectKeysToUpdate = getService(myProject, ProjectBindingManager.class).getUniqueProjectKeys();
+    var indicatorValue = START_OF_PROJECTS_UPDATE;
+    var divider = projectKeysToUpdate.isEmpty() ? 1 : projectKeysToUpdate.size();
+    var stepSize = (END_OF_PROJECTS_UPDATE - START_OF_PROJECTS_UPDATE) / divider;
+    var log = getService(GlobalLogOutput.class);
+    for (var projectKey : projectKeysToUpdate) {
       log.log("Check for updates from server '" + serverConnection.getName() + "' for project '" + projectKey + "'...", LogOutput.Level.INFO);
       checkForProjectKey(changelog, engine, serverConnection, indicator, projectKey);
       indicatorValue += stepSize;

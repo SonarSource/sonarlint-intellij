@@ -20,14 +20,12 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.projectRoots.Sdk;
-import com.intellij.openapi.projectRoots.SdkModificator;
 import com.intellij.testFramework.IdeaTestUtil;
 import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.Map;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -54,7 +52,7 @@ public class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLi
 
   @Test
   public void testAddJrtFsToClasspath() {
-    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
+    final var props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
     assertThat(props).containsKeys("sonar.java.libraries", "sonar.java.test.libraries");
     assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))
       .containsExactly(FAKE_JDK_ROOT_PATH.resolve("jdk9/lib/jrt-fs.jar"));
@@ -69,7 +67,7 @@ public class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLi
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
     }
-    SdkModificator sdkModificator = jdk.getSdkModificator();
+    var sdkModificator = jdk.getSdkModificator();
     sdkModificator.setHomePath(FAKE_JDK_ROOT_PATH.resolve("jdk9").toString());
     sdkModificator.commitChanges();
     return jdk;

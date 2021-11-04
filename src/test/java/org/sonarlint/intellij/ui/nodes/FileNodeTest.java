@@ -35,7 +35,7 @@ public class FileNodeTest {
 
   @Before
   public void setUp() {
-    FileType type = mock(FileType.class);
+    var type = mock(FileType.class);
     when(type.getIcon()).thenReturn(AllIcons.FileTypes.Java);
 
     when(file.getFileType()).thenReturn(type);

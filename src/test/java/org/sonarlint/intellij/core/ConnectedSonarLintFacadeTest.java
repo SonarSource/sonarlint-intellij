@@ -49,7 +49,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_name() {
-    ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
+    var ruleDetails = mock(ConnectedRuleDetails.class);
     when(ruleDetails.getName()).thenReturn("name");
     when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
     assertThat(facade.getRuleName("rule1")).isEqualTo("name");
@@ -58,14 +58,14 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_details() {
-    ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
+    var ruleDetails = mock(ConnectedRuleDetails.class);
     when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
     assertThat(facade.getActiveRuleDetails("rule1")).isEqualTo(ruleDetails);
   }
 
   @Test
   public void should_get_description() {
-    ConnectedRuleDetails ruleDetails = mock(ConnectedRuleDetails.class);
+    var ruleDetails = mock(ConnectedRuleDetails.class);
     when(ruleDetails.getExtendedDescription()).thenReturn("desc");
     when(ruleDetails.getHtmlDescription()).thenReturn("html");
     when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
@@ -75,11 +75,11 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_start_analysis() {
-    AnalysisResults results = mock(AnalysisResults.class);
-    ArgumentCaptor<ConnectedAnalysisConfiguration> configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
+    var results = mock(AnalysisResults.class);
+    var configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
     when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
     assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
-    ConnectedAnalysisConfiguration config = configCaptor.getValue();
+    var config = configCaptor.getValue();
     assertThat(config.projectKey()).isEqualTo("projectKey");
   }
 }

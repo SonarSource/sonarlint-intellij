@@ -23,20 +23,16 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.DumbAwareAction;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.vfs.VfsUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import icons.SonarLintIcons;
-
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.swing.Icon;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -59,7 +55,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
   public void update(AnActionEvent e) {
     super.update(e);
 
-    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+    var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
     if (files == null || files.length == 0 || AbstractSonarAction.isRiderSlnOrCsproj(files)) {
       e.getPresentation().setEnabled(false);
       e.getPresentation().setVisible(false);
@@ -71,13 +67,13 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
     }
     e.getPresentation().setVisible(true);
 
-    Project project = e.getProject();
+    var project = e.getProject();
     if (project == null || !project.isInitialized() || project.isDisposed()) {
       e.getPresentation().setEnabled(false);
       return;
     }
 
-    AnalysisStatus status = SonarLintUtils.getService(project, AnalysisStatus.class);
+    var status = SonarLintUtils.getService(project, AnalysisStatus.class);
     if (status.isRunning()) {
       e.getPresentation().setEnabled(false);
       return;
@@ -88,24 +84,24 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    Project project = e.getProject();
-    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+    var project = e.getProject();
+    var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
 
     if (project == null || project.isDisposed() || files == null || files.length == 0) {
       return;
     }
 
-    boolean hasProject = Arrays.stream(files)
+    var hasProject = Stream.of(files)
       .anyMatch(f -> f.getPath().equals(project.getBasePath()));
 
     if (hasProject && !SonarAnalyzeAllFilesAction.showWarning()) {
       return;
     }
 
-    Set<VirtualFile> fileSet = Arrays.stream(files)
+    var fileSet = Stream.of(files)
       .flatMap(f -> {
         if (f.isDirectory()) {
-          CollectFilesVisitor visitor = new CollectFilesVisitor();
+          var visitor = new CollectFilesVisitor();
           VfsUtil.visitChildrenRecursively(f, visitor);
           return visitor.files.stream();
         } else {
@@ -143,7 +139,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
 
     @Override
     public boolean visitFile(@NotNull VirtualFile file) {
-      boolean projectFile = ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.getFileType());
+      var projectFile = ProjectCoreUtil.isProjectOrWorkspaceFile(file, file.getFileType());
       if (!file.isDirectory() && !file.getFileType().isBinary() && !projectFile) {
         files.add(file);
       }

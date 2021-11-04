@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.issue.hotspot;
 
-import java.util.Arrays;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 public enum SecurityHotspotCategory {
   BUFFER_OVERFLOW("buffer-overflow", "Buffer Overflow"),
@@ -59,7 +59,7 @@ public enum SecurityHotspotCategory {
   }
 
   public static Optional<SecurityHotspotCategory> findByShortName(String shortName) {
-    return Arrays.stream(SecurityHotspotCategory.values())
+    return Stream.of(SecurityHotspotCategory.values())
       .filter(securityHotspotCategory -> securityHotspotCategory.shortName.equals(shortName))
       .findFirst();
   }

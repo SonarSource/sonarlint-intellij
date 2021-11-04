@@ -21,7 +21,6 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,7 +29,6 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
-
 import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
@@ -110,9 +108,9 @@ public class DefaultClientInputFile implements ClientInputFile {
 
   @Override public String contents() throws IOException {
     if (documentBuffer == null) {
-      ByteArrayOutputStream result = new ByteArrayOutputStream();
-      try (InputStream inputStream = inputStream()) {
-        byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+      var result = new ByteArrayOutputStream();
+      try (var inputStream = inputStream()) {
+        var buffer = new byte[DEFAULT_BUFFER_SIZE];
         int length;
         while ((length = inputStream.read(buffer)) != -1) {
           result.write(buffer, 0, length);

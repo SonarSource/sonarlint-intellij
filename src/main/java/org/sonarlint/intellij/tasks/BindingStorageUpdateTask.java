@@ -22,7 +22,6 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.history.utils.RunnableAdapter;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -35,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -53,9 +51,7 @@ import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.Version;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
-import org.sonarsource.sonarlint.core.client.api.connected.UpdateResult;
 import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
-import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 
 import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -100,12 +96,12 @@ public class BindingStorageUpdateTask {
 
     try {
       indicator.setIndeterminate(false);
-      TaskProgressMonitor monitor = new TaskProgressMonitor(indicator, null);
+      var monitor = new TaskProgressMonitor(indicator, null);
 
-      EndpointParams connectedModeEndpoint = connection.getEndpointParams();
+      var connectedModeEndpoint = connection.getEndpointParams();
       if (updateGlobalStorage) {
-        UpdateResult updateResult = engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
-        Collection<SonarAnalyzer> tooOld = updateResult.analyzers().stream()
+        var updateResult = engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
+        var tooOld = updateResult.analyzers().stream()
           .filter(SonarAnalyzer::sonarlintCompatible)
           .filter(BindingStorageUpdateTask::tooOld)
           .collect(Collectors.toList());
@@ -123,7 +119,7 @@ public class BindingStorageUpdateTask {
       GlobalLogOutput.get().log("Update of storage for connection '" + connection.getName() + "' was cancelled", LogOutput.Level.INFO);
     } catch (Exception e) {
       GlobalLogOutput.get().logError("Error updating the storage for connection '" + connection.getName() + "'", e);
-      final String msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update the binding for connection '" + connection.getName() + "'");
+      final var msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update the binding for connection '" + connection.getName() + "'");
       ApplicationManager.getApplication().invokeAndWait(new RunnableAdapter() {
         @Override
         public void doRun() {
@@ -134,7 +130,7 @@ public class BindingStorageUpdateTask {
   }
 
   private static String buildMinimumVersionFailMessage(Collection<SonarAnalyzer> failingAnalyzers) {
-    String msg = "The following plugins do not meet the required minimum versions: ";
+    var msg = "The following plugins do not meet the required minimum versions: ";
 
     return msg + failingAnalyzers.stream()
       .map(BindingStorageUpdateTask::analyzerToString)
@@ -148,11 +144,11 @@ public class BindingStorageUpdateTask {
   }
 
   private static boolean tooOld(SonarAnalyzer analyzer) {
-    String minimumVersion = analyzer.minimumVersion();
-    String analyzerVersion = analyzer.version();
+    var minimumVersion = analyzer.minimumVersion();
+    var analyzerVersion = analyzer.version();
     if (minimumVersion != null && analyzerVersion != null) {
-      Version minimum = Version.create(minimumVersion);
-      Version version = Version.create(analyzerVersion);
+      var minimum = Version.create(minimumVersion);
+      var version = Version.create(analyzerVersion);
       return version.compareTo(minimum) < 0;
     }
     return false;
@@ -163,16 +159,16 @@ public class BindingStorageUpdateTask {
    * It assumes that the global storage was updated previously.
    */
   private void updateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor) {
-    Collection<Project> projectsToUpdate = collectProjectsToUpdate(connection);
+    var projectsToUpdate = collectProjectsToUpdate(connection);
 
-    List<ProjectStorageUpdateFailure> failures = tryUpdateProjectStorages(connection, monitor, projectsToUpdate);
+    var failures = tryUpdateProjectStorages(connection, monitor, projectsToUpdate);
 
     projectsToUpdate.forEach(this::updatePathPrefixesForAllModules);
     projectsToUpdate.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
     projectsToUpdate.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
 
     if (!failures.isEmpty()) {
-      String errorMsg = "Failed to update the storage for some projects: \n"
+      var errorMsg = "Failed to update the storage for some projects: \n"
         + failures.stream().map(f -> " - " + f.getReason().getMessage() + " (" + f.getProjectKey() + ")").collect(Collectors.joining("\n"));
 
       ApplicationManager.getApplication().invokeLater(new RunnableAdapter() {
@@ -185,9 +181,9 @@ public class BindingStorageUpdateTask {
   }
 
   private List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor, Collection<Project> projectsToUpdate) {
-    List<ProjectStorageUpdateFailure> failures = new ArrayList<>();
+    var failures = new ArrayList<ProjectStorageUpdateFailure>();
 
-    Set<String> projectKeysToUpdate = projectsToUpdate.stream()
+    var projectKeysToUpdate = projectsToUpdate.stream()
       .flatMap(p -> getService(p, ProjectBindingManager.class).getUniqueProjectKeys()
         .stream())
       .collect(toSet());
@@ -205,15 +201,11 @@ public class BindingStorageUpdateTask {
   }
 
   private Collection<Project> collectProjectsToUpdate(ServerConnection connection) {
-    Collection<Project> projectsToUpdate;
-    if (onlyForProject != null) {
-      projectsToUpdate = Collections.singleton(onlyForProject);
-    } else {
-      projectsToUpdate = Stream.of(ProjectManager.getInstance().getOpenProjects())
+    return onlyForProject != null ?
+      Collections.singleton(onlyForProject) :
+      Stream.of(ProjectManager.getInstance().getOpenProjects())
         .filter(p -> getSettingsFor(p).isBoundTo(connection))
         .collect(Collectors.toList());
-    }
-    return projectsToUpdate;
   }
 
   private static void notifyBindingStorageUpdated(Project project) {
@@ -222,22 +214,20 @@ public class BindingStorageUpdateTask {
 
   private void updatePathPrefixesForAllModules(Project project) {
     if (!project.isDisposed()) {
-      Module[] modules = ModuleManager.getInstance(project).getModules();
-      for (Module m : modules) {
-        getService(m, ModuleBindingManager.class).updatePathPrefixes(engine);
-      }
+      Stream.of(ModuleManager.getInstance(project).getModules())
+        .forEach(m -> getService(m, ModuleBindingManager.class).updatePathPrefixes(engine));
     }
   }
 
   private static void analyzeOpenFiles(Project project) {
     if (!project.isDisposed()) {
-      SonarLintConsole console = SonarLintConsole.get(project);
+      var console = SonarLintConsole.get(project);
       console.info("Clearing all issues because binding was updated");
 
-      IssueManager store = getService(project, IssueManager.class);
+      var store = getService(project, IssueManager.class);
       store.clearAllIssuesForAllFiles();
 
-      SonarLintSubmitter submitter = getService(project, SonarLintSubmitter.class);
+      var submitter = getService(project, SonarLintSubmitter.class);
       submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
     }
   }

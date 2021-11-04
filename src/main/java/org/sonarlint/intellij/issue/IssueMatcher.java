@@ -27,7 +27,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiDocumentManager;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
@@ -41,8 +40,8 @@ public class IssueMatcher {
   }
 
   public PsiFile findFile(VirtualFile file) throws NoMatchException {
-    PsiManager psiManager = PsiManager.getInstance(project);
-    PsiFile psiFile = psiManager.findFile(file);
+    var psiManager = PsiManager.getInstance(project);
+    var psiFile = psiManager.findFile(file);
     if (psiFile != null) {
       return psiFile;
     }
@@ -54,7 +53,7 @@ public class IssueMatcher {
    * <b>Can only be called with getLive access</b>.
    */
   public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
-    PsiFile psiFile = findFile(file);
+    var psiFile = findFile(file);
     return match(psiFile, textRange);
   }
 
@@ -62,20 +61,20 @@ public class IssueMatcher {
     ApplicationManager.getApplication().assertReadAccessAllowed();
     Preconditions.checkArgument(textRange.getStartLine() != null);
 
-    PsiDocumentManager docManager = PsiDocumentManager.getInstance(project);
-    Document doc = docManager.getDocument(file);
+    var docManager = PsiDocumentManager.getInstance(project);
+    var doc = docManager.getDocument(file);
     if (doc == null) {
       throw new NoMatchException("No document found for file: " + file.getName());
     }
 
-    TextRange range = getIssueTextRange(file, doc, textRange);
+    var range = getIssueTextRange(file, doc, textRange);
     return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
   private static TextRange getIssueTextRange(PsiFile file, Document doc, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
-    int ijStartLine = textRange.getStartLine() - 1;
-    int ijEndLine = textRange.getEndLine() - 1;
-    int lineCount = doc.getLineCount();
+    var ijStartLine = textRange.getStartLine() - 1;
+    var ijEndLine = textRange.getEndLine() - 1;
+    var lineCount = doc.getLineCount();
 
     if (ijStartLine >= doc.getLineCount()) {
       throw new NoMatchException("Start line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
@@ -84,8 +83,8 @@ public class IssueMatcher {
       throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
     }
 
-    int rangeEnd = findEndLineOffset(doc, ijEndLine, textRange.getEndLineOffset());
-    int rangeStart = findStartLineOffset(file, doc, ijStartLine, textRange.getStartLineOffset(), rangeEnd);
+    var rangeEnd = findEndLineOffset(doc, ijEndLine, textRange.getEndLineOffset());
+    var rangeStart = findStartLineOffset(file, doc, ijStartLine, textRange.getStartLineOffset(), rangeEnd);
 
     if (rangeEnd < rangeStart) {
       throw new NoMatchException("Invalid text range  (start: " + rangeStart + ", end: " + rangeEnd);
@@ -94,9 +93,9 @@ public class IssueMatcher {
   }
 
   private static int findEndLineOffset(Document doc, int ijLine, @Nullable Integer endOffset) {
-    int lineEnd = doc.getLineEndOffset(ijLine);
-    int lineStart = doc.getLineStartOffset(ijLine);
-    int lineLength = lineEnd - lineStart;
+    var lineEnd = doc.getLineEndOffset(ijLine);
+    var lineStart = doc.getLineStartOffset(ijLine);
+    var lineLength = lineEnd - lineStart;
 
     if (endOffset == null || endOffset > lineLength) {
       return lineEnd;
@@ -106,9 +105,9 @@ public class IssueMatcher {
   }
 
   private static int findStartLineOffset(PsiFile file, Document doc, int ijLine, @Nullable Integer startOffset, int rangeEnd) {
-    int ijStartOffset = (startOffset == null) ? 0 : startOffset;
-    int lineStart = doc.getLineStartOffset(ijLine);
-    int rangeStart = lineStart + ijStartOffset;
+    var ijStartOffset = (startOffset == null) ? 0 : startOffset;
+    var lineStart = doc.getLineStartOffset(ijLine);
+    var rangeStart = lineStart + ijStartOffset;
 
     if (rangeStart >= rangeEnd) {
       // we passed end
@@ -121,18 +120,18 @@ public class IssueMatcher {
     }
 
     // probably not precise issue location. Try to match next element if it's whitespace.
-    PsiElement el = file.getViewProvider().findElementAt(rangeStart);
+    var el = file.getViewProvider().findElementAt(rangeStart);
 
     if (!(el instanceof PsiWhiteSpace)) {
       return rangeStart;
     }
 
-    PsiElement next = el.getNextSibling();
+    var next = el.getNextSibling();
     if (next == null) {
       return rangeStart;
     }
 
-    int nextRangeStart = next.getTextRange().getStartOffset();
+    var nextRangeStart = next.getTextRange().getStartOffset();
 
     if (nextRangeStart >= rangeEnd) {
       // we passed the end, don't use it

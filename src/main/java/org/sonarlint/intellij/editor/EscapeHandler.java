@@ -23,7 +23,6 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
-import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -38,9 +37,9 @@ public class EscapeHandler extends EditorActionHandler {
 
   @Override
   protected void doExecute(Editor editor, @Nullable Caret caret, DataContext dataContext) {
-    Project project = editor.getProject();
+    var project = editor.getProject();
     if (project != null) {
-      EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
       if (highlighting.isActiveInEditor(editor)) {
         highlighting.removeHighlights();
         return;
@@ -55,12 +54,10 @@ public class EscapeHandler extends EditorActionHandler {
   }
 
   private static boolean isActive(Editor editor) {
-    Project project = editor.getProject();
+    var project = editor.getProject();
     if (project != null) {
-      EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-      if (highlighting.isActiveInEditor(editor)) {
-        return true;
-      }
+      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+      return highlighting.isActiveInEditor(editor);
     }
     return false;
   }

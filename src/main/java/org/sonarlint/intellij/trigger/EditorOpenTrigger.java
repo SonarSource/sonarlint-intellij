@@ -26,8 +26,8 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -41,7 +41,7 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
     if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
-    SonarLintSubmitter submitter = SonarLintUtils.getService(source.getProject(), SonarLintSubmitter.class);
+    var submitter = SonarLintUtils.getService(source.getProject(), SonarLintSubmitter.class);
     submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_OPEN, true);
   }
 
@@ -60,10 +60,10 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
     if (!ApplicationManager.getApplication().isUnitTestMode()) {
       myProject.getMessageBus().connect(myProject).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
       if (getGlobalSettings().isAutoTrigger()) {
-        VirtualFile[] openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
+        var openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
         if (openFiles.length > 0) {
-          SonarLintSubmitter submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
-          submitter.submitFiles(Arrays.asList(openFiles), TriggerType.EDITOR_OPEN, true);
+          var submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
+          submitter.submitFiles(List.of(openFiles), TriggerType.EDITOR_OPEN, true);
         }
       }
     }

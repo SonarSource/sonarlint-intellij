@@ -23,16 +23,13 @@ import com.google.common.base.Preconditions;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
@@ -63,11 +60,11 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   @Override
   protected AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ProgressMonitor progressMonitor) {
-    List<RuleKey> excluded = new ArrayList<>();
-    List<RuleKey> included = new ArrayList<>();
-    Map<RuleKey, Map<String, String>> params = new HashMap<>();
+    var excluded = new ArrayList<RuleKey>();
+    var included = new ArrayList<RuleKey>();
+    var params = new HashMap<RuleKey, Map<String, String>>();
     getGlobalSettings().getRulesByKey().forEach((k, v) -> {
-      RuleKey key = RuleKey.parse(k);
+      var key = RuleKey.parse(k);
       if (v.isActive()) {
         included.add(key);
         params.put(key, v.getParams());
@@ -76,7 +73,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       }
     });
 
-    StandaloneAnalysisConfiguration config = StandaloneAnalysisConfiguration.builder()
+    var config = StandaloneAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
       .putAllExtraProperties(props)
@@ -86,9 +83,9 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       .setModuleKey(module)
       .build();
 
-    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
+    var console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
-    final AnalysisResults analysisResults = sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    final var analysisResults = sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, sonarlint.getPluginDetails(), project);
     return analysisResults;
   }
@@ -110,7 +107,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
 
   @Override
   public String getDescription(String ruleKey) {
-    StandaloneRuleDetails details = getActiveRuleDetails(ruleKey);
+    var details = getActiveRuleDetails(ruleKey);
     if (details == null) {
       return null;
     }

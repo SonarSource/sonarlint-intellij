@@ -24,13 +24,10 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
-
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
@@ -50,9 +47,9 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Dis
 
     hotspotsListPanel = new SonarLintHotspotsListPanel(project);
     detailsPanel = new SonarLintHotspotDetailsPanel();
-    riskDescriptionPanel = new SonarLintHotspotDescriptionPanel(project);
-    vulnerabilityDescriptionPanel = new SonarLintHotspotDescriptionPanel(project);
-    fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel(project);
+    riskDescriptionPanel = new SonarLintHotspotDescriptionPanel();
+    vulnerabilityDescriptionPanel = new SonarLintHotspotDescriptionPanel();
+    fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel();
 
     hotspotDetailsTab = new JBTabbedPane();
     hotspotDetailsTab.addTab("What's the risk?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
@@ -65,7 +62,7 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Dis
   }
 
   private static JScrollPane scrollable(JComponent component) {
-    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(component, true);
+    var scrollableRulePanel = ScrollPaneFactory.createScrollPane(component, true);
     scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
@@ -75,7 +72,7 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Dis
   public void setHotspot(LocalHotspot hotspot) {
     hotspotDetailsTab.setVisible(true);
     hotspotsListPanel.setHotspot(hotspot);
-    ServerHotspot.Rule hotspotRule = hotspot.getRule();
+    var hotspotRule = hotspot.getRule();
     riskDescriptionPanel.setDescription(hotspotRule.riskDescription);
     vulnerabilityDescriptionPanel.setDescription(hotspotRule.vulnerabilityDescription);
     fixRecommendationsPanel.setDescription(hotspotRule.fixRecommendations);

@@ -25,7 +25,7 @@ import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,34 +65,34 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
   @Test
   public void testNoUnresolvedIssues() {
     future.complete(null);
-    LiveIssue issue = mock(LiveIssue.class);
+    var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
-    CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
+    var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(issueStore).set(Collections.singletonMap(file, Collections.singleton(issue)), "SCM changed files");
+    verify(issueStore).set(Map.of(file, Collections.singleton(issue)), "SCM changed files");
     verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
   }
 
   @Test
   public void testIssues() {
     future.complete(null);
-    LiveIssue issue = mock(LiveIssue.class);
+    var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
-    List<String> messages = new ArrayList<>();
+    var messages = new ArrayList<>();
     Messages.setTestDialog(msg -> {
       messages.add(msg);
       return Messages.OK;
     });
-    CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
+    var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
     assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue");
@@ -103,18 +103,18 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
   @Test
   public void testSecretsIssues() {
     future.complete(null);
-    LiveIssue issue = mock(LiveIssue.class);
+    var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
 
     when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
-    List<String> messages = new ArrayList<>();
+    var messages = new ArrayList<>();
     Messages.setTestDialog(msg -> {
       messages.add(msg);
       return Messages.OK;
     });
-    CheckinHandler.ReturnResult result = handler.beforeCheckin(null, null);
+    var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
     assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue\n" +
