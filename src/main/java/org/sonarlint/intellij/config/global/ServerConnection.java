@@ -185,7 +185,9 @@ public class ServerConnection {
   }
 
   public CompletableFuture<Void> subscribeForEvents(Set<String> projectKeys, Consumer<String> messageConsumer) {
-    return getHttpClient().getEventStream(buildEventStreamUrl(projectKeys), messageConsumer);
+    String url = buildEventStreamUrl(projectKeys);
+    System.out.println("[POC] Connecting to event stream " + url);
+    return getHttpClient().getEventStream(url, messageConsumer);
   }
 
   private String buildEventStreamUrl(Set<String> projectKeys) {

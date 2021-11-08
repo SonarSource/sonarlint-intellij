@@ -28,22 +28,53 @@ import java.util.concurrent.CompletableFuture
 class ServerEventsSubscriber {
     private val subscriptions: MutableList<Subscription> = mutableListOf()
 
+    // TODO update subscriptions when project binding changes (bound, unbound, module binding changed, ....)
     fun subscribeFor(project: Project) {
         val serverConnection = getServerConnection(project) ?: return
         val projectKeys = getBoundProjectKeys(project)
-        val result = tryConnect(project, serverConnection, projectKeys) { getService(ServerEventHandler::class.java).handle(it) }
-        if (result is Subscription) {
-            subscriptions.add(result)
-            SonarLintConsole.get(project).info("Connected to server event stream")
+        val serverSubscription = subscriptions.find { it.serverConnection == serverConnection }
+        if (serverSubscription == null) {
+            val result = tryConnect(project, serverConnection, projectKeys) {
+                getService(ServerEventHandler::class.java).handle(it)
+            }
+            if (result is Subscription) {
+                subscriptions.add(result)
+            }
+        } else {
+            serverSubscription.extendSubscription(projectKeys) {
+                getService(ServerEventHandler::class.java).handle(it)
+            }
         }
     }
 
-    private fun tryConnect(project: Project, serverConnection: ServerConnection, projectKeys: Set<String>, messageConsumer: (String) -> Unit): SubscriptionResult {
+    fun unsubscribeFor(project: Project) {
+        val serverConnection = getServerConnection(project) ?: return
+        val projectKeys = getBoundProjectKeys(project)
+
+        val serverSubscription = subscriptions.find { it.serverConnection == serverConnection } ?: return
+        serverSubscription.reduceSubscription(projectKeys) {
+            getService(ServerEventHandler::class.java).handle(it)
+        }
+        if (serverSubscription.projectKeys.isEmpty()) {
+            subscriptions.remove(serverSubscription)
+        }
+    }
+
+    private fun tryConnect(
+        project: Project,
+        serverConnection: ServerConnection,
+        projectKeys: Set<String>,
+        messageConsumer: (String) -> Unit
+    ): SubscriptionResult {
         return try {
-            Subscription(serverConnection.subscribeForEvents(projectKeys, messageConsumer))
+            Subscription(
+                serverConnection,
+                projectKeys,
+                serverConnection.subscribeForEvents(projectKeys, messageConsumer)
+            )
         } catch (e: Exception) {
             SonarLintConsole.get(project).error("Error connecting to server event stream", e)
-            SubscriptionError(e.message ?: "Error")
+            SubscriptionError()
         }
     }
 
@@ -56,7 +87,34 @@ class ServerEventsSubscriber {
 
     private sealed interface SubscriptionResult
 
-    private class Subscription(val future: CompletableFuture<Void>) : SubscriptionResult
+    private class Subscription(
+        val serverConnection: ServerConnection,
+        var projectKeys: Set<String>,
+        var future: CompletableFuture<Void>
+    ) : SubscriptionResult {
+        fun extendSubscription(newProjectKeys: Set<String>, messageConsumer: (String) -> Unit) {
+            resubscribe(projectKeys + newProjectKeys, messageConsumer)
+        }
 
-    private class SubscriptionError(val cause: String) : SubscriptionResult
+        fun reduceSubscription(oldProjectKeys: Set<String>, messageConsumer: (String) -> Unit) {
+            resubscribe(projectKeys - oldProjectKeys, messageConsumer)
+        }
+
+        fun resubscribe(newProjectKeys: Set<String>, messageConsumer: (String) -> Unit) {
+            if (projectKeys != newProjectKeys) {
+                stop()
+            }
+            if (newProjectKeys.isNotEmpty()) {
+                future = serverConnection.subscribeForEvents(projectKeys, messageConsumer)
+            }
+            projectKeys = newProjectKeys
+        }
+
+        fun stop() {
+            println("[POC] Disconnecting event stream from ${serverConnection.hostUrl}")
+            future.cancel(true)
+        }
+    }
+
+    private class SubscriptionError : SubscriptionResult
 }

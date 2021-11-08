@@ -46,8 +46,8 @@ import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
 import java.nio.CharBuffer
 import java.nio.charset.StandardCharsets
 import java.util.Base64
-import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import java.util.function.Consumer
 
 
@@ -81,7 +81,7 @@ open class ApacheHttpClient private constructor(
 
     private fun executeAsync(httpRequest: SimpleHttpRequest): CompletableFuture<Response> {
         login?.let { httpRequest.setHeader("Authorization", basic(login, password ?: "")) }
-        val futureResponse = CompletableFuture<Response>()
+        val futureResponse = CancelableHttpFuture<Response, SimpleHttpResponse>()
         val httpFuture = client.execute(httpRequest, object : FutureCallback<SimpleHttpResponse> {
             override fun completed(result: SimpleHttpResponse) {
                 futureResponse.complete(ApacheHttpResponse(httpRequest.requestUri, result))
@@ -95,10 +95,16 @@ open class ApacheHttpClient private constructor(
                 // nothing to do, the completable future is already canceled
             }
         })
-        return futureResponse.whenComplete { _, error ->
-            if (error is CancellationException) {
-                httpFuture.cancel(false)
-            }
+        futureResponse.httpFuture = httpFuture
+        return futureResponse
+    }
+
+    private class CancelableHttpFuture<R, F> : CompletableFuture<R>() {
+        lateinit var httpFuture: Future<F>
+
+        override fun cancel(mayInterruptIfRunning: Boolean): Boolean {
+            httpFuture.cancel(mayInterruptIfRunning)
+            return super.cancel(mayInterruptIfRunning)
         }
     }
 
@@ -111,8 +117,8 @@ open class ApacheHttpClient private constructor(
             .build()
         login?.let { request.setHeader("Authorization", basic(login, password ?: "")) }
         request.setHeader("Accept", "text/event-stream")
-        val futureResponse = CompletableFuture<Nothing>()
-        client.execute(
+        val futureResponse = CancelableHttpFuture<Nothing, Nothing>()
+        val httpFuture = client.execute(
             BasicRequestProducer(request, null),
             object : AbstractCharResponseConsumer<Nothing>() {
                 override fun start(
@@ -153,6 +159,7 @@ open class ApacheHttpClient private constructor(
 
             }
         )
+        futureResponse.httpFuture = httpFuture
         return futureResponse
     }
 
