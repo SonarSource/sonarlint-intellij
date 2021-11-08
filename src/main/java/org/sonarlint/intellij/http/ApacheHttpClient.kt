@@ -168,9 +168,9 @@ open class ApacheHttpClient private constructor(
     }
 
     companion object {
-        private val STREAM_CONNECTION_TIMEOUT = Timeout.ofMinutes(10)
-        private val STREAM_CONNECTION_REQUEST_TIMEOUT = Timeout.ofMinutes(10)
-        private val STREAM_RESPONSE_TIMEOUT = Timeout.ofMinutes(10)
+        private val STREAM_CONNECTION_REQUEST_TIMEOUT = Timeout.ofSeconds(10)
+        private val STREAM_CONNECTION_TIMEOUT = Timeout.ofMinutes(2)
+        private val STREAM_RESPONSE_TIMEOUT = Timeout.ofSeconds(10)
         private val CONNECTION_TIMEOUT = Timeout.ofSeconds(30)
         private val RESPONSE_TIMEOUT = Timeout.ofMinutes(10)
         private const val DATA_PREFIX = "data: "
