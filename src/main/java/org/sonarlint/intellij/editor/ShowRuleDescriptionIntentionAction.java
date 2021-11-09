@@ -23,6 +23,7 @@ import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.PriorityAction;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
@@ -59,8 +60,14 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
 
   @Override
   public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
+    var actualFile = file.getVirtualFile();
+    if (editor instanceof EditorEx) {
+      // SLI-633 - When PhpStorm detects that a string is used as a regular expression, it injects a language reference that leads the file
+      // passed here to be a completely virtual 'PHP_REGEXP_FILE' instance. However, the editor holds the reference to the actual file.
+      actualFile = ((EditorEx) editor).getVirtualFile();
+    }
     var issueManager = SonarLintUtils.getService(project, IssueManager.class);
-    var liveIssues = issueManager.getForFile(file.getVirtualFile());
+    var liveIssues = issueManager.getForFile(actualFile);
     var liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
     if (liveIssue.isEmpty()) {
       return;
