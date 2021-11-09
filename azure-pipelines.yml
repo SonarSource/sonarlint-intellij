@@ -156,10 +156,6 @@ stages:
             IDEA_VERSION: 'IC-2020.3.3'
           CLion2020:
             IDEA_VERSION: 'CL-2020.3.3'
-          IdeaEAP:
-            IDEA_VERSION: 'IC-LATEST-EAP-SNAPSHOT'
-          CLionEAP:
-            IDEA_VERSION: 'CL-LATEST-EAP-SNAPSHOT'
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
