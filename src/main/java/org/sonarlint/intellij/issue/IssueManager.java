@@ -24,7 +24,15 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.ProjectManagerListener;
+import com.intellij.openapi.vcs.BranchChangeListener;
+import com.intellij.openapi.vcs.VcsNotifier;
+import com.intellij.openapi.vcs.changes.Change;
+import com.intellij.openapi.vcs.changes.ChangeList;
+import com.intellij.openapi.vcs.changes.ChangeListListener;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.vfs.VirtualFileManager;
+import com.intellij.openapi.vfs.newvfs.BulkFileListener;
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.serviceContainer.NonInjectable;
@@ -33,6 +41,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.concurrent.ThreadSafe;
@@ -46,7 +55,9 @@ import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.issue.tracking.Tracker;
 import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.IssueStoreListener;
+import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static java.util.Collections.emptyList;
 
@@ -67,19 +78,116 @@ public class IssueManager {
   IssueManager(Project project, LiveIssueCache liveIssueCache) {
     myProject = project;
     this.liveIssueCache = liveIssueCache;
-    project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
+
+    project.getMessageBus().connect().subscribe(ChangeListListener.TOPIC, new ChangeListListener() {
       @Override
-      public void projectClosing(@NotNull Project project) {
-        try {
-          if (project == myProject) {
-            // Flush issues before project is closed, because we need to resolve module paths to compute the key
-            liveIssueCache.flushAll();
-          }
-        } catch (Exception e) {
-          SonarLintConsole.get(myProject).error("Cannot flush issues", e);
-        }
+      public void changeListAdded(ChangeList list) {
+        ChangeListListener.super.changeListAdded(list);
+        GlobalLogOutput.get().log("changeListAdded!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changeListRemoved(ChangeList list) {
+        ChangeListListener.super.changeListRemoved(list);
+        GlobalLogOutput.get().log("changeListRemoved!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changeListChanged(ChangeList list) {
+        ChangeListListener.super.changeListChanged(list);
+        GlobalLogOutput.get().log("changeListChanged!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changeListDataChanged(@NotNull ChangeList list) {
+        ChangeListListener.super.changeListDataChanged(list);
+        GlobalLogOutput.get().log("changeListDataChanged!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changeListRenamed(ChangeList list, String oldName) {
+        ChangeListListener.super.changeListRenamed(list, oldName);
+        GlobalLogOutput.get().log("changeListRenamed!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changeListCommentChanged(ChangeList list, String oldComment) {
+        ChangeListListener.super.changeListCommentChanged(list, oldComment);
+        GlobalLogOutput.get().log("changeListCommentChanged!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void defaultListChanged(ChangeList oldDefaultList, ChangeList newDefaultList) {
+        ChangeListListener.super.defaultListChanged(oldDefaultList, newDefaultList);
+        GlobalLogOutput.get().log("defaultListChanged!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void defaultListChanged(ChangeList oldDefaultList, ChangeList newDefaultList, boolean automatic) {
+        ChangeListListener.super.defaultListChanged(oldDefaultList, newDefaultList, automatic);
+        GlobalLogOutput.get().log("defaultListChanged!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changesAdded(Collection<Change> changes, ChangeList toList) {
+        ChangeListListener.super.changesAdded(changes, toList);
+        GlobalLogOutput.get().log("changesAdded!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changesRemoved(Collection<Change> changes, ChangeList fromList) {
+        ChangeListListener.super.changesRemoved(changes, fromList);
+        GlobalLogOutput.get().log("changesRemoved!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changesMoved(Collection<Change> changes, ChangeList fromList, ChangeList toList) {
+        ChangeListListener.super.changesMoved(changes, fromList, toList);
+        GlobalLogOutput.get().log("changesMoved!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void allChangeListsMappingsChanged() {
+        ChangeListListener.super.allChangeListsMappingsChanged();
+        GlobalLogOutput.get().log("allChangeListsMappingsChanged!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void unchangedFileStatusChanged() {
+        ChangeListListener.super.unchangedFileStatusChanged();
+        GlobalLogOutput.get().log("unchangedFileStatusChanged!", LogOutput.Level.ERROR);
+      }
+
+      @Override
+      public void changeListUpdateDone() {
+        ChangeListListener.super.changeListUpdateDone();
+        GlobalLogOutput.get().log("changeListUpdateDone!", LogOutput.Level.ERROR);
       }
     });
+    project.getMessageBus().connect().subscribe(BranchChangeListener.VCS_BRANCH_CHANGED, new BranchChangeListener() {
+        @Override
+        public void branchWillChange(@NotNull String branchName) {
+          GlobalLogOutput.get().log("Old branch name: " + branchName, LogOutput.Level.ERROR);
+        }
+
+        @Override
+        public void branchHasChanged(@NotNull String branchName) {
+          GlobalLogOutput.get().log("New branch name: " + branchName, LogOutput.Level.ERROR);
+        }
+      });
+      project.getMessageBus().connect().subscribe(ProjectManager.TOPIC, new ProjectManagerListener() {
+        @Override
+        public void projectClosing(@NotNull Project project) {
+          try {
+            if (project == myProject) {
+              // Flush issues before project is closed, because we need to resolve module paths to compute the key
+              liveIssueCache.flushAll();
+            }
+          } catch (Exception e) {
+            SonarLintConsole.get(myProject).error("Cannot flush issues", e);
+          }
+        }
+      });
   }
 
   public void clearAllIssuesForAllFiles() {
