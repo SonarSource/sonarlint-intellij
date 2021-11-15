@@ -57,6 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>6.3 - Quick fixes for 43 C/C++ rules.</li>
         <li>6.2 - 9 new rules for regular expressions in PHP. 1 new vulnerability detection rule for Android. Fixes for HTTP protocol issues and UI improvements.</li>
         <li>6.1 - Allow binding individual modules or attached projects to SonarQube/SonarCloud. New rules for regular expressions in PHP, JS and TS. Wordpress misconfiguration rules in PHP. 7 new rules for C++20. Many rules improvements.</li>
         <li>6.0 - Change plugin JVM runtime requirement to 11+</li>
