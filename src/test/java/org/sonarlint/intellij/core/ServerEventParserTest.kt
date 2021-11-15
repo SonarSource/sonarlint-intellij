@@ -24,10 +24,10 @@ import org.junit.Test
 
 class ServerEventParserTest {
     @Test
-    fun should_parse_heart_beat() {
+    fun should_return_null_for_unknown_events() {
         val event = ServerEventParser.parse("\r\n")
 
-        assertThat(event).isEqualTo(HeartBeatReceived)
+        assertThat(event).isNull()
     }
 
     @Test

@@ -128,9 +128,7 @@ class ServerEventsSubscriber {
         private fun handleMessage(message: String) {
             restartHeartBeatWatchdog()
             val event = ServerEventParser.parse(message) ?: return
-            if (event != HeartBeatReceived) {
-                getService(ServerEventHandler::class.java).handle(serverConnection, event)
-            }
+            getService(ServerEventHandler::class.java).handle(serverConnection, event)
         }
 
         companion object {
@@ -144,15 +142,14 @@ object ServerEventParser {
     private const val PAYLOAD_SUFFIX = "\r\n\r\n"
 
     fun parse(payload: String): Event? {
-        if (isHeartBeat(payload)) {
-            return HeartBeatReceived
-        }
+        if (isHeartBeat(payload)) return null
         val message = extractMessage(payload) ?: return null
         // only one event type for the moment
         return Gson().fromJson(message, RuleActivated::class.java)
     }
 
-    private fun isHeartBeat(payload: String) = payload == "\r\n"
+    private fun isHeartBeat(payload: String) =
+        payload == "\r" || payload == "\n" || payload == "\r\n"
 
     private fun extractMessage(eventPayload: String): String? {
         return if (isValidSSEEvent(eventPayload)) {
@@ -168,8 +165,6 @@ object ServerEventParser {
 }
 
 interface Event
-
-object HeartBeatReceived : Event
 
 data class RuleActivated(val project: String, val type: String, val content: RuleActivationContent) : Event
 
