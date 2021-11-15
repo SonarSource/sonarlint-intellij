@@ -21,26 +21,28 @@ package org.sonarlint.intellij.core
 
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.config.global.ServerConnection
 
 class ServerEventHandler {
     private var currentNotification: Notification? = null
 
-    fun handle(message: String) {
-        showBalloon(null, "Message received: $message", null)
+    fun handle(serverConnection: ServerConnection, event: Event) {
+        val text = when(event) {
+            is RuleActivated -> "Rule activated: ${event.content.ruleKey}"
+            else -> "Message received: $event"
+        }
+        showBalloon(serverConnection.name, text)
     }
 
-    private fun showBalloon(project: Project?, message: String, action: AnAction?) {
+    private fun showBalloon(connectionName: String, message: String) {
         currentNotification?.expire()
         val notification = ServerEventNotifications.GROUP.createNotification(
-            "Server event received",
+            "Event received from $connectionName",
             message,
             NotificationType.INFORMATION, null
         )
         notification.isImportant = true
-        action?.let { notification.addAction(it) }
-        notification.notify(project)
+        notification.notify(null)
         currentNotification = notification
     }
 }

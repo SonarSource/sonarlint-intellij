@@ -113,7 +113,8 @@ open class ApacheHttpClient private constructor(
         request.config = RequestConfig.custom()
             .setConnectionRequestTimeout(STREAM_CONNECTION_REQUEST_TIMEOUT)
             .setConnectTimeout(STREAM_CONNECTION_TIMEOUT)
-            .setResponseTimeout(STREAM_RESPONSE_TIMEOUT)
+            // infinite timeout, rely on heart beat check
+            .setResponseTimeout(Timeout.ZERO_MILLISECONDS)
             .build()
         login?.let { request.setHeader("Authorization", basic(login, password ?: "")) }
         request.setHeader("Accept", "text/event-stream")
@@ -132,13 +133,13 @@ open class ApacheHttpClient private constructor(
 
                 // should we close something if endOfStream?
                 override fun data(data: CharBuffer, endOfStream: Boolean) {
-                    extractMessage(data.toString())?.let { messageConsumer.accept(it) }
+                    messageConsumer.accept(data.toString())
                 }
 
                 override fun buildResult() = null
 
                 override fun failed(cause: java.lang.Exception) {
-                    // should we close something ?
+                    futureResponse.completeExceptionally(cause)
                 }
 
                 override fun releaseResources() {
@@ -150,7 +151,7 @@ open class ApacheHttpClient private constructor(
                 }
 
                 override fun failed(ex: java.lang.Exception) {
-                    futureResponse.completeExceptionally(ex)
+                    // already failed the future in the consumer above
                 }
 
                 override fun cancelled() {
@@ -169,12 +170,9 @@ open class ApacheHttpClient private constructor(
 
     companion object {
         private val STREAM_CONNECTION_REQUEST_TIMEOUT = Timeout.ofSeconds(10)
-        private val STREAM_CONNECTION_TIMEOUT = Timeout.ofMinutes(2)
-        private val STREAM_RESPONSE_TIMEOUT = Timeout.ofSeconds(10)
+        private val STREAM_CONNECTION_TIMEOUT = Timeout.ofMinutes(1)
         private val CONNECTION_TIMEOUT = Timeout.ofSeconds(30)
         private val RESPONSE_TIMEOUT = Timeout.ofMinutes(10)
-        private const val DATA_PREFIX = "data: "
-        private const val DATA_SUFFIX = "\n\n"
 
         @JvmStatic
         val default: ApacheHttpClient = ApacheHttpClient(
@@ -204,18 +202,6 @@ open class ApacheHttpClient private constructor(
                 )
                 .build()
         )
-
-        private fun extractMessage(eventPayload: String): String? {
-            return if (isValidSSEEvent(eventPayload)) {
-                eventPayload.substring(DATA_PREFIX.length, eventPayload.length - DATA_SUFFIX.length)
-            } else {
-                println("Invalid event payload: $eventPayload")
-                null
-            }
-        }
-
-        private fun isValidSSEEvent(receivedData: String) =
-            receivedData.startsWith(DATA_PREFIX) && receivedData.endsWith(DATA_SUFFIX)
 
         fun basic(username: String, password: String): String {
             val usernameAndPassword = "$username:$password"
