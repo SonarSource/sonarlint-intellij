@@ -38,7 +38,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.ProjectEngineListener
-import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
@@ -105,5 +105,5 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     private lateinit var moduleBindingManager: ModuleBindingManager
 
     @Captor
-    private lateinit var moduleInfoCaptor: ArgumentCaptor<ModuleInfo>
+    private lateinit var moduleInfoCaptor: ArgumentCaptor<ClientModuleInfo>
 }

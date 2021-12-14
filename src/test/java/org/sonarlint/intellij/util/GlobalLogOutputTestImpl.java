@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 
@@ -27,7 +27,7 @@ public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 
 
   @Override
-  public void log(String msg, LogOutput.Level level) {
+  public void log(String msg, ClientLogOutput.Level level) {
 
   }
 

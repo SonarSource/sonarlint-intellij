@@ -22,9 +22,10 @@ package org.sonarlint.intellij.issue;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.client.api.common.TextRange;
+import org.sonarsource.sonarlint.core.analysis.api.TextRange;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;

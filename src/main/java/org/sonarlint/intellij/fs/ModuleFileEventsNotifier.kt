@@ -23,9 +23,7 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

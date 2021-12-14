@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.http
 
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
-import org.sonarsource.sonarlint.core.serverapi.HttpClient
+import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import java.io.ByteArrayInputStream
 
 internal class ApacheHttpResponse(

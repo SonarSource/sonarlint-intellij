@@ -21,6 +21,7 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,8 +30,9 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.commons.Language;
 
 public class DefaultClientInputFile implements ClientInputFile {
   private static final int DEFAULT_BUFFER_SIZE = 1024 * 4;

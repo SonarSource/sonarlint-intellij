@@ -28,6 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
+import org.sonarsource.sonarlint.core.commons.progress.ProgressMonitor;
 import org.sonarsource.sonarlint.core.serverapi.organization.ServerOrganization;
 
 /**
@@ -49,7 +50,7 @@ public class GetOrganizationsTask extends Task.Modal {
     indicator.setIndeterminate(false);
 
     try {
-      organizations = connection.api().organization().listUserOrganizations(new TaskProgressMonitor(indicator, myProject));
+      organizations = connection.api().organization().listUserOrganizations(new ProgressMonitor(new TaskProgressMonitor(indicator, myProject)));
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to fetch organizations", e);
       exception = e;

@@ -23,11 +23,11 @@ import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ProjectLogOutput implements LogOutput {
+public class ProjectLogOutput implements ClientLogOutput {
   private final Project project;
 
   public ProjectLogOutput(Project project) {

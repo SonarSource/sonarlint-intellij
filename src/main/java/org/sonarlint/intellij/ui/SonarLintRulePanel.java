@@ -30,25 +30,20 @@ import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
-import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.HtmlUtils.fixPreformattedText;
-import static org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit.appendRuleAttributesHtmlTable;
 
 public class SonarLintRulePanel {
   private final Project project;
@@ -61,7 +56,7 @@ public class SonarLintRulePanel {
   public SonarLintRulePanel(Project project) {
     this.project = project;
     panel = new JPanel(new BorderLayout());
-    setRuleKey(null,null);
+    setRuleKey(null, null);
     show();
   }
 
@@ -75,45 +70,42 @@ public class SonarLintRulePanel {
       nothingToDisplay(false);
       return;
     }
+    displayLoadingMessage();
     try {
-      var facade = SonarLintUtils.getService(project, ProjectBindingManager.class).getFacade(module);
-      var rule = facade.getActiveRuleDetails(ruleKey);
+      SonarLintUtils.getService(project, ProjectBindingManager.class)
+        .getFacade(module)
+        .getActiveRuleDescription(ruleKey)
+        .thenAccept(ruleDescription -> {
+          if (ruleDescription == null) {
+            ApplicationManager.getApplication().invokeLater(() -> nothingToDisplay(true));
+            return;
+          }
+          var htmlBody = fixPreformattedText(ruleDescription.getHtml());
+          ApplicationManager.getApplication().invokeLater(() -> updateEditor(htmlBody, ruleDescription.getKey()));
+        }).get(30, TimeUnit.SECONDS);
 
-      var description = facade.getDescription(ruleKey);
-      if (rule == null || description == null) {
-        nothingToDisplay(true);
-        return;
-      }
-
-      var builder = new StringBuilder(description.length() + 64);
-      builder.append("<h2>")
-        .append(StringEscapeUtils.escapeHtml(rule.getName()))
-        .append("</h2>");
-      appendRuleAttributesHtmlTable(rule.getKey(), rule.getSeverity(), rule.getType(), builder);
-      builder.append("<br />")
-        .append(description);
-      if (rule instanceof StandaloneRuleDetails) {
-        var standaloneRuleDetails = (StandaloneRuleDetails) rule;
-        if (!standaloneRuleDetails.paramDetails().isEmpty()) {
-          builder.append(renderRuleParams(standaloneRuleDetails));
-        }
-      }
-      var htmlBody = fixPreformattedText(builder.toString());
-
-      updateEditor(htmlBody, rule.getKey());
-    } catch (InvalidBindingException e) {
+    } catch (Exception e) {
+      SonarLintConsole.get(project).error("Cannot get rule description", e);
       nothingToDisplay(true);
     }
+  }
 
+  private void displayLoadingMessage() {
+    editor = null;
+    panel.removeAll();
+
+    var txt = "Loading rule description...";
+
+    var titleComp = new JBLabel(txt, SwingConstants.CENTER);
+    panel.add(titleComp, BorderLayout.CENTER);
+    panel.revalidate();
   }
 
   private void nothingToDisplay(boolean error) {
     editor = null;
     panel.removeAll();
 
-    var txt = error ?
-      "Couldn't find an extended description for the rule" :
-      "Select an issue to see extended rule description";
+    var txt = error ? "Couldn't find the rule description" : "Select an issue to display the rule description";
 
     var titleComp = new JBLabel(txt, SwingConstants.CENTER);
     panel.add(titleComp, BorderLayout.CENTER);
@@ -170,35 +162,6 @@ public class SonarLintRulePanel {
       var configurable = new SonarLintGlobalConfigurable();
       ShowSettingsUtil.getInstance().editConfigurable(project, configurable, () -> configurable.selectRule(ruleKey));
     }
-  }
-
-  private static String renderRuleParams(StandaloneRuleDetails ruleDetails) {
-    return "<table class=\"rule-params\">" +
-      "<caption><h2>Parameters</h2></caption>" +
-      "<tr class='thead'>" +
-      "<td colspan=\"2\">" +
-      "Following parameter values can be set in <a href=\"#rule\">Rule Settings</a>. " +
-      "In connected mode, server side configuration overrides local settings." +
-      "</td>" +
-      "</tr>" +
-      ruleDetails.paramDetails().stream().map(param -> renderRuleParam(param, ruleDetails)).collect(Collectors.joining("\n")) +
-      "</table>";
-  }
-
-  private static String renderRuleParam(StandaloneRuleParam param, StandaloneRuleDetails ruleDetails) {
-    var paramDescription = param.description() != null ? ("<p>" + param.description() + "</p>") : "";
-    var paramDefaultValue = param.defaultValue();
-    var defaultValue = paramDefaultValue != null ? paramDefaultValue : "(none)";
-    var currentValue = getGlobalSettings().getRuleParamValue(ruleDetails.getKey(), param.name()).orElse(defaultValue);
-    return "<tr class='tbody'>" +
-    // The <br/> elements are added to simulate a "vertical-align: top" (not supported by Java 11 CSS renderer)
-      "<th>" + param.name() + "<br/><br/></th>" +
-      "<td>" +
-      paramDescription +
-      "<p><small>Current value: <code>" + currentValue + "</code></small></p>" +
-      "<p><small>Default value: <code>" + defaultValue + "</code></small></p>" +
-      "</td>" +
-      "</tr>";
   }
 
   public JComponent getPanel() {

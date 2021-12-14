@@ -31,8 +31,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams
-import org.sonarsource.sonarlint.core.serverapi.HttpClient
 import java.util.concurrent.CompletableFuture
 
 class ConnectionTestTaskTest : AbstractSonarLintLightTests() {

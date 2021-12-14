@@ -46,7 +46,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.net.BindException
 import java.net.InetAddress
 
@@ -70,9 +70,9 @@ class SonarLintHttpServer @NonInjectable constructor(private var nettyServer: Ne
 
     private fun displayStartStatus(port: Int) {
         if (isStarted) {
-            GlobalLogOutput.get().log("Server started on $port", LogOutput.Level.INFO)
+            GlobalLogOutput.get().log("Server started on $port", ClientLogOutput.Level.INFO)
         } else {
-            GlobalLogOutput.get().log("Cannot start the SonarLint server on $port", LogOutput.Level.ERROR)
+            GlobalLogOutput.get().log("Cannot start the SonarLint server on $port", ClientLogOutput.Level.ERROR)
         }
     }
 

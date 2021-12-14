@@ -29,13 +29,15 @@ import com.jetbrains.cidr.lang.workspace.compiler.CompilerSpecificSwitchBuilder;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompiler;
 import com.jetbrains.cidr.lang.workspace.compiler.OCCompilerKind;
 import com.jetbrains.cidr.lang.workspace.compiler.TempFilesPool;
+
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
+import org.sonarsource.sonarlint.core.commons.Language;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

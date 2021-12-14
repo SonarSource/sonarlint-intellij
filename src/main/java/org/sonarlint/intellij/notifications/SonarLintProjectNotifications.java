@@ -70,7 +70,7 @@ public class SonarLintProjectNotifications {
     shown = true;
   }
 
-  public void notifyModuleInvalid() {
+  public void notifyProjectStorageInvalid() {
     if (shown) {
       return;
     }
@@ -84,7 +84,7 @@ public class SonarLintProjectNotifications {
     shown = true;
   }
 
-  public void notifyModuleStale() {
+  public void notifyProjectStorageStale() {
     if (shown) {
       return;
     }
@@ -124,20 +124,6 @@ public class SonarLintProjectNotifications {
     notification.setImportant(true);
     notification.notify(myProject);
     shown = true;
-  }
-
-  public void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, ServerConnection server, boolean onlyProjects) {
-    var notification = UPDATE_GROUP.createNotification(
-      "SonarLint - Binding update available",
-      "Change detected for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
-      NotificationType.INFORMATION, new NotificationListener.Adapter() {
-        @Override
-        public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
-          notification.expire();
-          ServerConnectionMgmtPanel.updateServerBinding(server, engine, onlyProjects);
-        }
-      });
-    notification.notify(myProject);
   }
 
 }

@@ -20,20 +20,24 @@
 package org.sonarlint.intellij.core;
 
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
-import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -48,29 +52,72 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void should_get_rule_details() {
-    var ruleDetails = mock(ConnectedRuleDetails.class);
-    when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
-    assertThat(facade.getActiveRuleDetails("rule1")).isEqualTo(ruleDetails);
-  }
+  public void should_get_rule_description() throws Exception {
+    bindProject("projectKey");
+    when(engine.getActiveRuleDetails(any(), any(), eq("rule1"), eq("projectKey"))).thenReturn(CompletableFuture.completedFuture(ruleDetails("rule1")));
 
-  @Test
-  public void should_get_description() {
-    var ruleDetails = mock(ConnectedRuleDetails.class);
-    when(ruleDetails.getExtendedDescription()).thenReturn("desc");
-    when(ruleDetails.getHtmlDescription()).thenReturn("html");
-    when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
-    assertThat(facade.getDescription("rule1")).isEqualTo("html<br/><br/>desc");
-    assertThat(facade.getDescription("invalid")).isNull();
+    var ruleDescription = facade.getActiveRuleDescription("rule1").get();
+
+    assertThat(ruleDescription.getKey()).isEqualTo("rule1");
+    assertThat(ruleDescription.getHtml()).isEqualTo("<h2>ruleName</h2><table><tr>" +
+      "<td><img valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\" src=\"file:///type/CODE_SMELL\"/></td><td class=\"pad\"><b>Code smell</b></td>" +
+      "<td><img valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\" src=\"file:///severity/BLOCKER\"/></td>" +
+      "<td class=\"pad\"><b>Blocker</b></td><td><b>rule1</b></td></tr></table>" +
+      "<br />ruleHtmlDescription<br/><br/>ruleExtendedDescription");
   }
 
   @Test
   public void should_start_analysis() {
     var results = mock(AnalysisResults.class);
     var configCaptor = ArgumentCaptor.forClass(ConnectedAnalysisConfiguration.class);
-    when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(LogOutput.class), any(ProgressMonitor.class))).thenReturn(results);
-    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ProgressMonitor.class))).isEqualTo(results);
+    when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(ClientLogOutput.class), any(ClientProgressMonitor.class))).thenReturn(results);
+    assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ClientProgressMonitor.class))).isEqualTo(results);
     var config = configCaptor.getValue();
     assertThat(config.projectKey()).isEqualTo("projectKey");
+  }
+
+  private void bindProject(String projectKey) {
+    var connection = ServerConnection.newBuilder().setName("connectionName").setHostUrl("http://localhost:9000").build();
+    getGlobalSettings().addServerConnection(connection);
+    getProjectSettings().bindTo(connection, projectKey);
+  }
+
+  private static ConnectedRuleDetails ruleDetails(String ruleKey) {
+    return new ConnectedRuleDetails() {
+      @Override
+      public String getExtendedDescription() {
+        return "ruleExtendedDescription";
+      }
+
+      @Override
+      public String getKey() {
+        return ruleKey;
+      }
+
+      @Override
+      public String getName() {
+        return "ruleName";
+      }
+
+      @Override
+      public String getHtmlDescription() {
+        return "ruleHtmlDescription";
+      }
+
+      @Override
+      public Language getLanguage() {
+        return Language.JAVA;
+      }
+
+      @Override
+      public String getSeverity() {
+        return "BLOCKER";
+      }
+
+      @Override
+      public String getType() {
+        return "CODE_SMELL";
+      }
+    };
   }
 }

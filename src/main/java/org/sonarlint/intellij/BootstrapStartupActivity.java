@@ -24,7 +24,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.UpdateChecker;
+import org.sonarlint.intellij.core.QualityProfilesSynchronizer;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber;
@@ -49,6 +49,6 @@ public class BootstrapStartupActivity implements StartupActivity {
     }
 
     // perform on bindings load
-    SonarLintUtils.getService(project, UpdateChecker.class).init();
+    SonarLintUtils.getService(project, QualityProfilesSynchronizer.class).init();
   }
 }

@@ -44,6 +44,7 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
+
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -66,6 +67,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
+
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
@@ -73,7 +75,6 @@ import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.StateListener;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -94,7 +95,6 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   private final List<ServerConnection> connections = new ArrayList<>();
   private final Set<String> deletedServerIds = new HashSet<>();
   private ConnectedSonarLintEngine engine = null;
-  private StateListener engineListener;
 
   private void create() {
     var app = ApplicationManager.getApplication();
@@ -191,7 +191,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     updateServerButton.setAction(new AbstractAction() {
       @Override
       public void actionPerformed(ActionEvent e) {
-        actionUpdateServerTask();
+        actionUpdateConnectionStorageTask();
       }
     });
     updateServerButton.setText("Update binding");
@@ -235,7 +235,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     var copyList = new ArrayList<>(connections);
     settings.setServerConnections(copyList);
 
-    //remove them even if a server with the same name was later added
+    // remove them even if a server with the same name was later added
     unbindRemovedServers();
   }
 
@@ -268,19 +268,13 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   }
 
   private void switchTo(@Nullable ServerConnection server) {
-    if (engineListener != null) {
-      engine.removeStateListener(engineListener);
-      engineListener = null;
-      engine = null;
-    }
+    engine = null;
 
     if (server != null) {
-      engineListener = newState -> updateBindingStatusLabelAsync();
       var serverManager = getService(SonarLintEngineManager.class);
       // Initial loading of the connected engine can be long, sent to pooled thread
       ApplicationManager.getApplication().executeOnPooledThread(() -> {
         engine = serverManager.getConnectedEngine(server.getName());
-        engine.addStateListener(engineListener);
         updateBindingStatusLabelAsync();
       });
     } else {
@@ -295,46 +289,35 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
       return;
     }
     ApplicationManager.getApplication().executeOnPooledThread(() -> {
-      var state = engine.getState();
-      var statusText = getStatusText(state);
+      var statusText = getStatusText();
       ApplicationManager.getApplication().invokeLater(() -> {
         serverStatus.setText(statusText);
-        updateServerButton.setEnabled(state != ConnectedSonarLintEngine.State.UPDATING);
         // Using ModalityState#any() since we are only updating light UI stuff
       }, ModalityState.any());
     });
   }
 
-  private String getStatusText(ConnectedSonarLintEngine.State state) {
-    switch (state) {
-      case NEVER_UPDATED:
-        return "never updated";
-      case UPDATED:
-        var storageStatus = engine.getGlobalStorageStatus();
-        if (storageStatus != null) {
-          return DateUtils.toAge(storageStatus.getLastUpdateDate().getTime());
-        }
-        return "up to date";
-      case UPDATING:
-        return "updating..";
-      case NEED_UPDATE:
-        return "needs update";
-      case UNKNOWN:
-      default:
-        return "unknown";
+  private String getStatusText() {
+    var storageStatus = engine.getGlobalStorageStatus();
+    if (storageStatus == null) {
+      return "need sync (empty)";
     }
+    if (storageStatus.isStale()) {
+      return "need sync (outdated)";
+    }
+    return DateUtils.toAge(storageStatus.getLastUpdateDate().getTime());
   }
 
-  private void actionUpdateServerTask() {
-    var server = getSelectedConnection();
-    if (server == null || engine == null || engine.getState() == ConnectedSonarLintEngine.State.UPDATING) {
+  private void actionUpdateConnectionStorageTask() {
+    var connection = getSelectedConnection();
+    if (connection == null || engine == null) {
       return;
     }
 
-    updateServerBinding(server, engine, false);
+    updateConnectionStorage(connection, engine, false);
   }
 
-  public static void updateServerBinding(ServerConnection connection, ConnectedSonarLintEngine engine, boolean onlyProjects) {
+  public static void updateConnectionStorage(ServerConnection connection, ConnectedSonarLintEngine engine, boolean onlyProjects) {
     var task = new BindingStorageUpdateTask(engine, connection, !onlyProjects, true, null);
     ProgressManager.getInstance().run(task.asBackground());
   }
@@ -357,11 +340,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
 
   @Override
   public void dispose() {
-    if (engineListener != null) {
-      engine.removeStateListener(engineListener);
-      engineListener = null;
-      engine = null;
-    }
+    engine = null;
   }
 
   private class AddConnectionAction implements AnActionButtonRunnable {
@@ -403,7 +382,8 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
         var projects = String.join("<br>", projectsUsingNames);
         var response = Messages.showYesNoDialog(serversPanel,
           "<html>The following opened projects are bound to this connection:<br><b>" +
-            projects + "</b><br>Delete the connection?</html>", "Connection In Use", Messages.getWarningIcon());
+            projects + "</b><br>Delete the connection?</html>",
+          "Connection In Use", Messages.getWarningIcon());
         if (response == Messages.NO) {
           return;
         }

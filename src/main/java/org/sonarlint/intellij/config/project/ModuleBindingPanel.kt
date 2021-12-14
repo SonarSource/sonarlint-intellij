@@ -46,7 +46,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask
-import org.sonarsource.sonarlint.core.serverapi.project.ServerProject
+import org.sonarsource.sonarlint.core.serverapi.component.ServerProject
 import java.awt.BorderLayout
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout

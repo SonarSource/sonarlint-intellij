@@ -120,7 +120,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
                     jbTextField().text = TAINT_VULNERABILITY_PROJECT_KEY
                     button("OK").click()
                     // wait for binding fully established
-                    waitFor(Duration.ofSeconds(10)) { !isShowing }
+                    waitFor(Duration.ofSeconds(20)) { !isShowing }
                 }
             }
         }

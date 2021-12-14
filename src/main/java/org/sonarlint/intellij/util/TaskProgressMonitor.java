@@ -22,11 +22,13 @@ package org.sonarlint.intellij.util;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
+
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 
-public class TaskProgressMonitor extends ProgressMonitor {
+import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
+
+public class TaskProgressMonitor implements ClientProgressMonitor {
   private final ProgressIndicator indicator;
   private final ProgressManager progressManager;
   private final Project project;

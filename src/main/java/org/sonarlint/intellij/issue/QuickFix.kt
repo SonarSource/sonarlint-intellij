@@ -26,9 +26,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.client.api.common.ClientInputFileEdit
-import org.sonarsource.sonarlint.core.client.api.common.TextEdit
-import org.sonarsource.sonarlint.core.client.api.common.QuickFix as CoreQuickFix
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFileEdit
+import org.sonarsource.sonarlint.core.analysis.api.TextEdit
+import org.sonarsource.sonarlint.core.analysis.api.QuickFix as CoreQuickFix
 
 fun convert(project: Project, coreQuickFix: CoreQuickFix): QuickFix? {
     val virtualFileEdits = coreQuickFix.inputFileEdits().map { convert(it) }

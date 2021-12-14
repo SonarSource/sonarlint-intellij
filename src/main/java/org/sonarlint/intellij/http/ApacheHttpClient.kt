@@ -38,7 +38,7 @@ import org.apache.hc.core5.reactor.ssl.TlsDetails
 import org.apache.hc.core5.util.Timeout
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
+import org.sonarsource.sonarlint.core.commons.http.HttpClient.Response
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.CancellationException
@@ -49,7 +49,7 @@ class ApacheHttpClient private constructor(
   private val client: CloseableHttpAsyncClient,
   private val login: String? = null,
   private val password: String? = null
-) : org.sonarsource.sonarlint.core.serverapi.HttpClient {
+) : org.sonarsource.sonarlint.core.commons.http.HttpClient {
 
   fun withCredentials(login: String?, password: String?): ApacheHttpClient {
     return ApacheHttpClient(client, login, password)

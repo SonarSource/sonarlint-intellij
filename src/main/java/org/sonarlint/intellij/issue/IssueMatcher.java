@@ -52,12 +52,12 @@ public class IssueMatcher {
    * Tries to match an SQ issue to an IntelliJ file.
    * <b>Can only be called with getLive access</b>.
    */
-  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
+  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.analysis.api.TextRange textRange) throws NoMatchException {
     var psiFile = findFile(file);
     return match(psiFile, textRange);
   }
 
-  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
+  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.analysis.api.TextRange textRange) throws NoMatchException {
     ApplicationManager.getApplication().assertReadAccessAllowed();
     Preconditions.checkArgument(textRange.getStartLine() != null);
 
@@ -71,7 +71,7 @@ public class IssueMatcher {
     return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
-  private static TextRange getIssueTextRange(PsiFile file, Document doc, org.sonarsource.sonarlint.core.client.api.common.TextRange textRange) throws NoMatchException {
+  private static TextRange getIssueTextRange(PsiFile file, Document doc, org.sonarsource.sonarlint.core.analysis.api.TextRange textRange) throws NoMatchException {
     var ijStartLine = textRange.getStartLine() - 1;
     var ijEndLine = textRange.getEndLine() - 1;
     var lineCount = doc.getLineCount();

@@ -28,11 +28,11 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonar.api.batch.fs.InputFile
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer
-import org.sonarsource.sonarlint.core.client.api.common.ClientFileSystem
-import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileSystem
 import java.util.stream.Stream
 
-internal class ModuleFileSystem(private val project: Project, private val module: Module) : ClientFileSystem {
+internal class ModuleFileSystem(private val project: Project, private val module: Module) : ClientModuleFileSystem {
     override fun files(language: String, type: InputFile.Type): Stream<ClientInputFile> {
         return files()
             .filter { f -> f.relativePath().endsWith(language) }
