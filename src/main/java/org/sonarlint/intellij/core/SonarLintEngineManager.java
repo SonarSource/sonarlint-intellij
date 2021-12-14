@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
@@ -69,29 +68,28 @@ public class SonarLintEngineManager implements Disposable {
       });
   }
 
-  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey)
+  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String connectionId, String projectKey)
     throws InvalidBindingException {
     // Check if engine's global storage is OK
-    var state = engine.getState();
-    if (state != ConnectedSonarLintEngine.State.UPDATED) {
-      if (state == ConnectedSonarLintEngine.State.NEED_UPDATE) {
-        notifications.notifyServerStorageNeedsUpdate(serverId);
-      } else if (state == ConnectedSonarLintEngine.State.NEVER_UPDATED) {
-        notifications.notifyServerNeverUpdated(serverId);
-      }
-      throw new InvalidBindingException("Connection local storage is not updated: '" + serverId + "'");
+    var globalStorageStatus = engine.getGlobalStorageStatus();
+    if (globalStorageStatus == null) {
+      notifications.notifyServerNeverUpdated(connectionId);
+      throw new InvalidBindingException("Connection local storage is missing: '" + connectionId + "'");
+    } else if (globalStorageStatus.isStale()) {
+      notifications.notifyServerStorageNeedsUpdate(connectionId);
+      throw new InvalidBindingException("Connection local storage is outdated: '" + connectionId + "'");
     }
 
     // Check if project's storage is OK. Global storage was updated and all project's binding that were open too,
     // but we might have now opened a new project with a different binding.
-    var moduleStorageStatus = engine.getProjectStorageStatus(projectKey);
+    var projectStorageStatus = engine.getProjectStorageStatus(projectKey);
 
-    if (moduleStorageStatus == null) {
-      notifications.notifyModuleInvalid();
-      throw new InvalidBindingException("Project is bound to a project that doesn't exist: " + projectKey);
-    } else if (moduleStorageStatus.isStale()) {
-      notifications.notifyModuleStale();
-      throw new InvalidBindingException("Stale project's storage: " + projectKey);
+    if (projectStorageStatus == null) {
+      notifications.notifyProjectStorageInvalid();
+      throw new InvalidBindingException("Project local storage is missing: '" + projectKey + "'");
+    } else if (projectStorageStatus.isStale()) {
+      notifications.notifyProjectStorageStale();
+      throw new InvalidBindingException("Project local storage is outdated: '" + projectKey + "'");
     }
   }
 
@@ -168,7 +166,6 @@ public class SonarLintEngineManager implements Disposable {
   @Override
   public void dispose() {
     stopAllEngines(false);
-    Loggers.setTarget(null);
   }
 
   @Nullable

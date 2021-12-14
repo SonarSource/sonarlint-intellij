@@ -20,10 +20,11 @@
 package org.sonarlint.intellij.config.global.rules;
 
 import java.util.HashMap;
+
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.commons.Language;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -39,7 +40,7 @@ public class RulesTreeNodeTest {
     when(details.isActiveByDefault()).thenReturn(true);
     when(details.getSeverity()).thenReturn("severity");
     when(details.getType()).thenReturn("type");
-    when(details.getLanguage()).thenReturn(Language.XOO);
+    when(details.getLanguage()).thenReturn(Language.JAVA);
 
     var node = new RulesTreeNode.Rule(details, false, new HashMap<>());
     assertThat(node.getKey()).isEqualTo("key");
@@ -50,7 +51,7 @@ public class RulesTreeNodeTest {
     assertThat(node.isNonDefault()).isTrue();
     assertThat(node.severity()).isEqualTo("severity");
     assertThat(node.type()).isEqualTo("type");
-    assertThat(node.language()).isEqualTo(Language.XOO);
+    assertThat(node.language()).isEqualTo(Language.JAVA);
   }
 
   @Test

@@ -134,7 +134,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return details.getType();
     }
 
-    public org.sonarsource.sonarlint.core.client.api.common.Language language() {
+    public org.sonarsource.sonarlint.core.commons.Language language() {
       return details.getLanguage();
     }
 
@@ -153,9 +153,8 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public List<RuleParam> getParamDetails() {
-      return ((StandaloneRule) details).params()
+      return ((StandaloneRule) details).paramDetails()
         .stream()
-        .map(StandaloneRuleParam.class::cast)
         .map(RuleParam::new)
         .collect(Collectors.toList());
     }

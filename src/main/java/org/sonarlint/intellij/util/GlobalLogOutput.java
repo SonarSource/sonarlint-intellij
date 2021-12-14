@@ -21,14 +21,14 @@ package org.sonarlint.intellij.util;
 
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
-public interface GlobalLogOutput extends LogOutput {
+public interface GlobalLogOutput extends ClientLogOutput {
   static GlobalLogOutput get() {
     return SonarLintUtils.getService(GlobalLogOutput.class);
   }
 
-  void log(String msg, LogOutput.Level level);
+  void log(String msg, ClientLogOutput.Level level);
 
   void logError(String msg, @Nullable Throwable t);
 

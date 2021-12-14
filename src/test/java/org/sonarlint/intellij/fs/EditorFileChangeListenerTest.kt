@@ -36,7 +36,7 @@ import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 

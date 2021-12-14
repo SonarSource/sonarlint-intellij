@@ -32,8 +32,8 @@ import javax.swing.Icon;
 
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.http.ApacheHttpClient;
+import org.sonarsource.sonarlint.core.commons.http.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
-import org.sonarsource.sonarlint.core.serverapi.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 
 import static icons.SonarLintIcons.ICON_SONARCLOUD_16;

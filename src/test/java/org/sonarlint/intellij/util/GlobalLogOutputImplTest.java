@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -40,19 +40,19 @@ public class GlobalLogOutputImplTest extends AbstractSonarLintLightTests {
   public void should_log_to_registered_consoles() {
     var console = mock(SonarLintConsole.class);
     replaceProjectService(SonarLintConsole.class, console);
-    output.log("warn", LogOutput.Level.WARN);
+    output.log("warn", ClientLogOutput.Level.WARN);
     verify(console).info("warn");
 
-    output.log("info", LogOutput.Level.INFO);
+    output.log("info", ClientLogOutput.Level.INFO);
     verify(console).info("info");
 
-    output.log("debug", LogOutput.Level.DEBUG);
+    output.log("debug", ClientLogOutput.Level.DEBUG);
     verify(console).debug("debug");
 
-    output.log("error", LogOutput.Level.ERROR);
+    output.log("error", ClientLogOutput.Level.ERROR);
     verify(console).error("error");
 
-    output.log("trace", LogOutput.Level.TRACE);
+    output.log("trace", ClientLogOutput.Level.TRACE);
     verify(console).debug("trace");
   }
 

@@ -97,12 +97,12 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
-import static org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit.appendRuleAttributesHtmlTable;
+import static org.sonarlint.intellij.core.RuleDescription.appendRuleAttributesHtmlTable;
 
 public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String MAIN_SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
@@ -545,7 +545,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
           createBooleanParam(rule, configPanel, constraints, param);
           break;
         default:
-          GlobalLogOutput.get().log("Unknown rule parameter type: " + param.type + " for rule " + rule.getKey(), LogOutput.Level.ERROR);
+          GlobalLogOutput.get().log("Unknown rule parameter type: " + param.type + " for rule " + rule.getKey(), ClientLogOutput.Level.ERROR);
       }
       constraints.gridy++;
     }

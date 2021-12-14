@@ -24,7 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -49,44 +49,44 @@ public class ProjectLogOutputTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testDebug() {
-    logOutput.log("test", LogOutput.Level.DEBUG);
+    logOutput.log("test", ClientLogOutput.Level.DEBUG);
     verify(mockConsole).debug("test");
   }
 
   @Test
   public void testNoLogAnalysis() {
     getProjectSettings().setAnalysisLogsEnabled(false);
-    logOutput.log("test", LogOutput.Level.INFO);
+    logOutput.log("test", ClientLogOutput.Level.INFO);
     verifyZeroInteractions(mockConsole);
   }
 
   @Test
   public void testInfo() {
-    logOutput.log("test", LogOutput.Level.INFO);
+    logOutput.log("test", ClientLogOutput.Level.INFO);
     verify(mockConsole).info("test");
   }
 
   @Test
   public void testError() {
-    logOutput.log("test", LogOutput.Level.ERROR);
+    logOutput.log("test", ClientLogOutput.Level.ERROR);
     verify(mockConsole).error("test");
   }
 
   @Test
   public void testWarn() {
-    logOutput.log("test", LogOutput.Level.WARN);
+    logOutput.log("test", ClientLogOutput.Level.WARN);
     verify(mockConsole).info("test");
   }
 
   @Test
   public void testTrace() {
-    logOutput.log("test", LogOutput.Level.TRACE);
+    logOutput.log("test", ClientLogOutput.Level.TRACE);
     verify(mockConsole).debug("test");
   }
 
   @Test
   public void testNodeCommandException() {
-    logOutput.log("org.sonarsource.nodejs.NodeCommandException: Node not found :(", LogOutput.Level.DEBUG);
+    logOutput.log("org.sonarsource.nodejs.NodeCommandException: Node not found :(", ClientLogOutput.Level.DEBUG);
     verify(mockConsole).info("org.sonarsource.nodejs.NodeCommandException: Node not found :(");
   }
 }

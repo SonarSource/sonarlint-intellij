@@ -29,6 +29,7 @@ import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -91,7 +92,7 @@ public class LocalFileExclusions {
   }
 
   private void loadGlobalExclusions(SonarLintGlobalSettings settings) {
-    this.globalExclusions = new FileExclusions(new LinkedHashSet<>(settings.getFileExclusions()));
+    this.globalExclusions = new FileExclusions(Collections.emptySet(), Collections.emptySet(), new LinkedHashSet<>(settings.getFileExclusions()));
   }
 
   private void subscribeToSettingsChanges(Project project) {

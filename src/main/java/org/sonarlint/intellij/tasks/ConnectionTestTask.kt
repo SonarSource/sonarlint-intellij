@@ -23,8 +23,8 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectionValidator
-import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult
 import org.sonarsource.sonarlint.core.serverapi.ServerApiHelper
+import org.sonarsource.sonarlint.core.serverapi.system.ValidationResult
 import java.util.concurrent.CompletableFuture
 
 class ConnectionTestTask(private val server: ServerConnection) :

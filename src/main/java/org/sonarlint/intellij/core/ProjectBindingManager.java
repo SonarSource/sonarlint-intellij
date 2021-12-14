@@ -44,10 +44,10 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.util.StringUtils;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -155,7 +155,7 @@ public class ProjectBindingManager {
       notifications.notifyConnectionIdInvalid();
       throw new InvalidBindingException("Project has an invalid binding");
     } else if (projectKey == null) {
-      notifications.notifyModuleInvalid();
+      notifications.notifyProjectStorageInvalid();
       throw new InvalidBindingException("Project has an invalid binding");
     }
   }
@@ -218,7 +218,7 @@ public class ProjectBindingManager {
 
   public Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
     return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())
-      .filter(projectKey -> !StringUtils.isBlank(projectKey))
+      .filter(projectKey -> !isBlank(projectKey))
       .collect(Collectors.toSet());
   }
 }

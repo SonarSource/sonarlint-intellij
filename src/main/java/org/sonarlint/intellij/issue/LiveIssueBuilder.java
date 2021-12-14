@@ -22,13 +22,15 @@ package org.sonarlint.intellij.issue;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
@@ -61,7 +63,7 @@ public class LiveIssueBuilder {
     });
   }
 
-  private Optional<IssueContext> transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
+  private Optional<IssueContext> transformFlows(PsiFile psiFile, List<org.sonarsource.sonarlint.core.analysis.api.Flow> flows, String rule) {
     List<Flow> matchedFlows = new LinkedList<>();
 
     for (var flow : flows) {

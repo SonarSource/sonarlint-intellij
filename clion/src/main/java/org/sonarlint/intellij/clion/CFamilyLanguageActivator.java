@@ -22,7 +22,7 @@ package org.sonarlint.intellij.clion;
 import java.util.Set;
 
 import org.sonarlint.intellij.common.LanguageActivator;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
+import org.sonarsource.sonarlint.core.commons.Language;
 
 public class CFamilyLanguageActivator implements LanguageActivator {
   @Override

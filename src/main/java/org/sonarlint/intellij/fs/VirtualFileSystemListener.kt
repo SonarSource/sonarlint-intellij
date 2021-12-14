@@ -37,9 +37,9 @@ import com.intellij.util.PlatformUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.GlobalLogOutput
-import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 /**
@@ -64,7 +64,7 @@ class VirtualFileSystemListener(
                 is VFileContentChangeEvent -> ModuleFileEvent.Type.MODIFIED
                 is VFilePropertyChangeEvent -> null
                 else -> {
-                    GlobalLogOutput.get().log("Unknown file event type: $it", LogOutput.Level.DEBUG)
+                    GlobalLogOutput.get().log("Unknown file event type: $it", ClientLogOutput.Level.DEBUG)
                     null
                 }
             }

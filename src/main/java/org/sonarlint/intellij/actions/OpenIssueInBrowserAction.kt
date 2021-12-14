@@ -31,7 +31,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarsource.sonarlint.core.util.StringUtils
+import org.sonarsource.sonarlint.core.serverapi.UrlUtils
 
 class OpenIssueInBrowserAction : AbstractSonarAction(
   "Open In Browser",
@@ -67,8 +67,8 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
   }
 
   private fun buildLink(serverUrl: String, projectKey: String, issueKey: String): String {
-    val urlEncodedProjectKey = StringUtils.urlEncode(projectKey)
-    val urlEncodedIssueKey = StringUtils.urlEncode(issueKey)
+    val urlEncodedProjectKey = UrlUtils.urlEncode(projectKey)
+    val urlEncodedIssueKey = UrlUtils.urlEncode(issueKey)
     return "$serverUrl/project/issues?id=$urlEncodedProjectKey&open=$urlEncodedIssueKey"
   }
 

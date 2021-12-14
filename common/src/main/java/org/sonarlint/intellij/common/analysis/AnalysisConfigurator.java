@@ -22,10 +22,12 @@ package org.sonarlint.intellij.common.analysis;
 import com.intellij.openapi.extensions.ExtensionPointName;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
+
+import org.sonarsource.sonarlint.core.commons.Language;
 
 public interface AnalysisConfigurator {
   // Name is constructed from plugin-id.extension-point-name

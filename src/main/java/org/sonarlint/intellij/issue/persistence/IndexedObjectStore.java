@@ -24,12 +24,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collection;
 import java.util.Optional;
+
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.ObjectStore;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 /**
  * An ObjectStore without internal cache that derives the filesystem path to storage using a provided PathMapper.
@@ -94,7 +95,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
         }
       }
     }
-    GlobalLogOutput.get().log(String.format("%d entries removed from the store", counter), LogOutput.Level.DEBUG);
+    GlobalLogOutput.get().log(String.format("%d entries removed from the store", counter), ClientLogOutput.Level.DEBUG);
   }
 
   @Override

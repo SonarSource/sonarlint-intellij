@@ -22,22 +22,22 @@ package org.sonarlint.intellij.module
 import com.intellij.openapi.module.Module
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 
 class ModulesRegistry {
-    private val modules: MutableMap<Module, ModuleInfo> = LinkedHashMap()
+    private val modules: MutableMap<Module, ClientModuleInfo> = LinkedHashMap()
 
-    fun getStandaloneModules(): List<ModuleInfo> {
+    fun getStandaloneModules(): List<ClientModuleInfo> {
         return modules.filterKeys { connectionIdFor(it) == null }
             .values.toList()
     }
 
-    fun getModulesForEngine(connectionId: String): List<ModuleInfo> {
+    fun getModulesForEngine(connectionId: String): List<ClientModuleInfo> {
         return modules.filterKeys { connectionIdFor(it) == connectionId }
             .values.toList()
     }
 
-    fun add(module: Module, moduleInfo: ModuleInfo) {
+    fun add(module: Module, moduleInfo: ClientModuleInfo) {
         modules[module] = moduleInfo
     }
 

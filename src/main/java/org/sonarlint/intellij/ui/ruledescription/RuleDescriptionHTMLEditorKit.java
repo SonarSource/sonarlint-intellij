@@ -19,8 +19,6 @@
  */
 package org.sonarlint.intellij.ui.ruledescription;
 
-import com.intellij.openapi.util.text.StringUtil;
-import java.util.Locale;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.Element;
 import javax.swing.text.StyleConstants;
@@ -28,7 +26,6 @@ import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.text.html.HTML;
 import javax.swing.text.html.HTMLEditorKit;
-import org.jetbrains.annotations.Nullable;
 
 public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
 
@@ -43,25 +40,6 @@ public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
     styleSheet.addRule(".rule-params .tbody td { margin-left: 1em; padding-bottom: 1em; }");
     styleSheet.addRule(".rule-params p { margin: 0 }");
     styleSheet.addRule(".rule-params small { display: block; margin-top: 2px }");
-  }
-
-  public static void appendRuleAttributesHtmlTable(String ruleKey, String ruleSeverity, @Nullable String ruleType, StringBuilder builder) {
-    // apparently some css properties are not supported
-    var imgAttributes = "valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\"";
-
-    builder.append("<table><tr>");
-    if (ruleType != null) {
-      builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///type/").append(ruleType).append("\"/></td>")
-        .append("<td class=\"pad\"><b>").append(clean(ruleType)).append("</b></td>");
-    }
-    builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///severity/").append(ruleSeverity).append("\"/></td>")
-      .append("<td class=\"pad\"><b>").append(clean(ruleSeverity)).append("</b></td>")
-      .append("<td><b>").append(ruleKey).append("</b></td>")
-      .append("</tr></table>");
-  }
-
-  private static String clean(String txt) {
-    return StringUtil.capitalize(txt.toLowerCase(Locale.ENGLISH).replace("_", " "));
   }
 
   private static final HTMLFactory factory = new HTMLFactory() {

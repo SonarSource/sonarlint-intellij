@@ -47,11 +47,9 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
-import org.sonarsource.sonarlint.core.client.api.common.Version;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.SonarAnalyzer;
-import org.sonarsource.sonarlint.core.client.api.exceptions.CanceledException;
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.commons.progress.CanceledException;
 
 import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -100,15 +98,8 @@ public class BindingStorageUpdateTask {
 
       var connectedModeEndpoint = connection.getEndpointParams();
       if (updateGlobalStorage) {
-        var updateResult = engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
-        var tooOld = updateResult.analyzers().stream()
-          .filter(SonarAnalyzer::sonarlintCompatible)
-          .filter(BindingStorageUpdateTask::tooOld)
-          .collect(Collectors.toList());
-        if (!tooOld.isEmpty()) {
-          ApplicationManager.getApplication().invokeAndWait(() -> Messages.showWarningDialog(buildMinimumVersionFailMessage(tooOld), "Analyzers Not Loaded"), ModalityState.any());
-        }
-        GlobalLogOutput.get().log("Storage for connection '" + connection.getName() + "' updated", LogOutput.Level.INFO);
+        engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
+        GlobalLogOutput.get().log("Storage for connection '" + connection.getName() + "' updated", ClientLogOutput.Level.INFO);
       }
 
       if (updateProjectsStorage) {
@@ -116,7 +107,7 @@ public class BindingStorageUpdateTask {
       }
 
     } catch (CanceledException e) {
-      GlobalLogOutput.get().log("Update of storage for connection '" + connection.getName() + "' was cancelled", LogOutput.Level.INFO);
+      GlobalLogOutput.get().log("Update of storage for connection '" + connection.getName() + "' was cancelled", ClientLogOutput.Level.INFO);
     } catch (Exception e) {
       GlobalLogOutput.get().logError("Error updating the storage for connection '" + connection.getName() + "'", e);
       final var msg = (e.getMessage() != null) ? e.getMessage() : ("Failed to update the binding for connection '" + connection.getName() + "'");
@@ -127,31 +118,6 @@ public class BindingStorageUpdateTask {
         }
       }, ModalityState.any());
     }
-  }
-
-  private static String buildMinimumVersionFailMessage(Collection<SonarAnalyzer> failingAnalyzers) {
-    var msg = "The following plugins do not meet the required minimum versions: ";
-
-    return msg + failingAnalyzers.stream()
-      .map(BindingStorageUpdateTask::analyzerToString)
-      .collect(Collectors.joining(","));
-  }
-
-  private static String analyzerToString(SonarAnalyzer analyzer) {
-    return analyzer.key()
-      + " (installed: " + analyzer.version()
-      + ", minimum: " + analyzer.minimumVersion() + ")";
-  }
-
-  private static boolean tooOld(SonarAnalyzer analyzer) {
-    var minimumVersion = analyzer.minimumVersion();
-    var analyzerVersion = analyzer.version();
-    if (minimumVersion != null && analyzerVersion != null) {
-      var minimum = Version.create(minimumVersion);
-      var version = Version.create(analyzerVersion);
-      return version.compareTo(minimum) < 0;
-    }
-    return false;
   }
 
   /**
@@ -196,6 +162,8 @@ public class BindingStorageUpdateTask {
         failures.add(new ProjectStorageUpdateFailure(projectKeyFromModule, e));
       }
     });
+
+    engine.sync(connection.getEndpointParams(), connection.getHttpClient(), projectKeysToUpdate, monitor);
 
     return failures;
   }

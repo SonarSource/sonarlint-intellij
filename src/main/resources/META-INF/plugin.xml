@@ -208,7 +208,7 @@
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.EditorChangeTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintAnalyzer"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.ServerIssueUpdater"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.core.UpdateChecker"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.core.QualityProfilesSynchronizer"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.LocalFileExclusions"/>

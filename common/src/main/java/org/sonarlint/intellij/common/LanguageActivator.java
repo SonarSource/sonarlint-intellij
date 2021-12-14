@@ -26,5 +26,5 @@ public interface LanguageActivator {
   // Name is constructed from plugin-id.extension-point-name
   ExtensionPointName<LanguageActivator> EP_NAME = ExtensionPointName.create("org.sonarlint.idea.languageActivator");
 
-  void amendLanguages(Set<org.sonarsource.sonarlint.core.client.api.common.Language> enabledLanguages);
+  void amendLanguages(Set<org.sonarsource.sonarlint.core.commons.Language> enabledLanguages);
 }

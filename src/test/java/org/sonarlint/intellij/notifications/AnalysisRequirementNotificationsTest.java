@@ -28,19 +28,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarsource.sonarlint.core.client.api.common.Language;
+import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
-import org.sonarsource.sonarlint.core.client.api.common.SkipReason;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
-import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
+import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.plugin.commons.SkipReason;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -99,7 +97,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   @Test
   public void notifyIfSkippedLanguage_JRE() {
     detectedLang.put(mock(ClientInputFile.class), Language.JAVA);
-    List<PluginDetails> plugins = List.of(new FakePluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
+    List<PluginDetails> plugins = List.of(new PluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.<br>See <a href=\"https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under\">how to select the JDK version the IDE will run under</a>.");
@@ -108,49 +106,12 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   @Test
   public void notifyIfSkippedLanguage_Node() {
     detectedLang.put(mock(ClientInputFile.class), Language.JS);
-    List<PluginDetails> plugins = List.of(new FakePluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
+    List<PluginDetails> plugins = List.of(new PluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the SonarLint settings.");
     assertThat(notifications.get(0).getActions()).hasSize(1);
     assertThat(notifications.get(0).getActions().get(0).getTemplatePresentation().getText()).isEqualTo("Open SonarLint Settings");
-  }
-
-  private static class FakePluginDetails implements PluginDetails {
-
-    private final String key;
-    private final String name;
-    private final String version;
-    @Nullable
-    private final SkipReason skipReason;
-
-    public FakePluginDetails(String key, String name, String version, @Nullable SkipReason skipReason) {
-      this.key = key;
-      this.name = name;
-      this.version = version;
-      this.skipReason = skipReason;
-    }
-
-    @Override
-    public String key() {
-      return key;
-    }
-
-    @Override
-    public String name() {
-      return name;
-    }
-
-    @Override
-    public String version() {
-      return version;
-    }
-
-    @Override
-    public Optional<SkipReason> skipReason() {
-      return Optional.ofNullable(skipReason);
-    }
-
   }
 
 

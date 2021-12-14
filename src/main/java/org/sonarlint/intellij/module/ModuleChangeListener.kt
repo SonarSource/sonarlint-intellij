@@ -27,8 +27,7 @@ import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.messages.ProjectEngineListener
-import org.sonarlint.intellij.util.ThreadPoolExecutor
-import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
 private fun getEngineIfStarted(module: Module) =
@@ -44,21 +43,19 @@ class ModuleChangeListener(val project: Project) : ModuleListener {
     }
 }
 
-object Modules {
-    private val executor = getService(ThreadPoolExecutor::class.java)
-
+private object Modules {
     fun declareAllModules(project: Project, engine: SonarLintEngine?) {
         ModuleManager.getInstance(project).modules.forEach { declareModule(project, engine, it) }
     }
 
     fun declareModule(project: Project, engine: SonarLintEngine?, module: Module) {
-        val moduleInfo = ModuleInfo(module, ModuleFileSystem(project, module))
+        val moduleInfo = ClientModuleInfo(module, ModuleFileSystem(project, module))
         getService(ModulesRegistry::class.java).add(module, moduleInfo)
-        engine?.let { executor.execute { it.declareModule(moduleInfo) } }
+        engine?.declareModule(moduleInfo)
     }
 
     fun removeModule(engine: SonarLintEngine?, module: Module) {
-        engine?.let { executor.execute { it.stopModule(module) } }
+        engine?.stopModule(module)
         getService(ModulesRegistry::class.java).remove(module)
     }
 
