@@ -86,13 +86,6 @@ public class IssueTreeModelBuilder {
     model.nodeChanged(summary);
   }
 
-  public void updateEmptyText(String emptyText) {
-    summary.setEmptyText(emptyText);
-    if (summary.isLeaf()) {
-      model.nodeChanged(summary);
-    }
-  }
-
   private void setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
     if (!accept(file)) {
       removeFile(file);
@@ -199,7 +192,7 @@ public class IssueTreeModelBuilder {
 
       return ComparisonChain.start()
         .compare(rangeStart1, rangeStart2)
-        .compare(o1.getRuleName(), o2.getRuleName())
+        .compare(o1.getRuleKey(), o2.getRuleKey())
         .compare(o1.uid(), o2.uid())
         .result();
     }

@@ -35,7 +35,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.jetbrains.annotations.NotNull
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisCallback
@@ -64,11 +63,11 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.ruleKey },
-                { it.ruleName },
+                { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
-                tuple("java:S1220", "The default unnamed package should not be used", null),
-                tuple("java:S106", "Standard outputs should not be used directly to log anything", Pair(67, 77))
+                tuple("java:S1220", "Move this file to a named package.", null),
+                tuple("java:S106", "Replace this use of System.out or System.err by a logger.", Pair(67, 77))
             )
     }
 
@@ -81,10 +80,10 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.ruleKey },
-                { it.ruleName },
+                { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
-                tuple("python:S930", "The number and name of arguments passed to a function should match its parameters", Pair(45, 48))
+                tuple("python:S930", "Add 1 missing arguments; 'add' expects 2 positional arguments.", Pair(45, 48))
             )
     }
 
@@ -103,10 +102,10 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
         assertThat(issues)
             .extracting(
                 { it.ruleKey },
-                { it.ruleName },
+                { it.message },
                 { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
             .containsExactlyInAnyOrder(
-                tuple("python:S930", "The number and name of arguments passed to a function should match its parameters", Pair(21, 24))
+                tuple("python:S930", "Remove 1 unexpected arguments; 'add' expects 1 positional arguments.", Pair(21, 24))
             )
     }
 
@@ -145,13 +144,13 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
                 .extracting(
                     { it.psiFile().name },
                     { it.ruleKey },
-                    { it.ruleName },
+                    { it.message },
                     { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
                 .containsExactlyInAnyOrder(
-                    tuple("devenv.js", "secrets:S6290", "Amazon Web Services credentials should not be disclosed", Pair(286, 306)),
-                    tuple("devenv.js", "javascript:S2703", "Variables should be declared explicitly", Pair(62, 72)),
-                    tuple("devenv_unversionned.js", "secrets:S6290", "Amazon Web Services credentials should not be disclosed", Pair(286, 306)),
-                    tuple("devenv_unversionned.js", "javascript:S2703", "Variables should be declared explicitly", Pair(62, 72))
+                    tuple("devenv.js", "secrets:S6290", "Make sure this AWS Access Key ID is not disclosed.", Pair(286, 306)),
+                    tuple("devenv.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72)),
+                    tuple("devenv_unversionned.js", "secrets:S6290", "Make sure this AWS Access Key ID is not disclosed.", Pair(286, 306)),
+                    tuple("devenv_unversionned.js", "javascript:S2703", "Add the \"let\", \"const\" or \"var\" keyword to this declaration of \"s3Uploader\" to make it explicit.", Pair(62, 72))
                 )
         } finally {
             myVcsManager.unregisterVcs(myVcs)
