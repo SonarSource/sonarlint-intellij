@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
-import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
@@ -44,7 +43,6 @@ public class LiveIssue implements Trackable {
   private final PsiFile psiFile;
   private final Integer textRangeHash;
   private final Integer lineHash;
-  private final String ruleName;
   private final String message;
   private final String ruleKey;
   private final IssueContext context;
@@ -66,7 +64,6 @@ public class LiveIssue implements Trackable {
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
-    this.ruleName = issue.getRuleName();
     this.severity = issue.getSeverity();
     this.type = issue.getType();
     this.psiFile = psiFile;
@@ -156,10 +153,6 @@ public class LiveIssue implements Trackable {
   @Override
   public String getType() {
     return type;
-  }
-
-  public String getRuleName() {
-    return ruleName;
   }
 
   @Override
