@@ -146,7 +146,6 @@
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
-        <codeInsight.linkHandler prefix="#sonarissue/" handlerClass="org.sonarlint.intellij.editor.SonarLinkHandler"/>
         <toolWindow id="SonarLint" anchor="bottom" icon="SonarLintIcons.SONARLINT_TOOLWINDOW" factoryClass="org.sonarlint.intellij.ui.SonarLintToolWindowFactory" canCloseContents="true"/>
         <applicationConfigurable groupId="tools" id="sonarlint" displayName="SonarLint" instance="org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable"/>
         <projectConfigurable parentId="sonarlint" displayName="Project Settings" instance="org.sonarlint.intellij.config.project.SonarLintProjectConfigurable" nonDefaultProject="true"/>

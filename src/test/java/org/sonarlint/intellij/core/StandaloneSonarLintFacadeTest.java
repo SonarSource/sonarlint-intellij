@@ -47,15 +47,6 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void should_get_rule_name() {
-    var ruleDetails = mock(StandaloneRuleDetails.class);
-    when(ruleDetails.getName()).thenReturn("name");
-    when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));
-    assertThat(facade.getRuleName("rule1")).isEqualTo("name");
-    assertThat(facade.getRuleName("invalid")).isNull();
-  }
-
-  @Test
   public void should_get_rule_details() {
     var ruleDetails = mock(StandaloneRuleDetails.class);
     when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails));

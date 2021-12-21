@@ -48,15 +48,6 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void should_get_rule_name() {
-    var ruleDetails = mock(ConnectedRuleDetails.class);
-    when(ruleDetails.getName()).thenReturn("name");
-    when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);
-    assertThat(facade.getRuleName("rule1")).isEqualTo("name");
-    assertThat(facade.getRuleName("invalid")).isNull();
-  }
-
-  @Test
   public void should_get_rule_details() {
     var ruleDetails = mock(ConnectedRuleDetails.class);
     when(engine.getActiveRuleDetails("rule1", "projectKey")).thenReturn(ruleDetails);

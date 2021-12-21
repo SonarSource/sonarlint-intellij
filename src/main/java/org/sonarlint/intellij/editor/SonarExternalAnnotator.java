@@ -19,26 +19,20 @@
  */
 package org.sonarlint.intellij.editor;
 
-import com.intellij.codeInsight.hint.InspectionDescriptionLinkHandler;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
-import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
-import com.intellij.openapi.keymap.KeymapManager;
-import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
-import com.intellij.util.ui.UIUtil;
 import com.intellij.xml.util.XmlStringUtil;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
@@ -116,7 +110,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static void addAnnotation(Project project, LiveIssue issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
-    var htmlMsg = getHtmlMessage(issue);
+    var htmlMsg = getMessage(issue);
 
     var annotation = annotationHolder
       .createAnnotation(getSeverity(issue.getSeverity()), validTextRange, issue.getMessage(), htmlMsg);
@@ -154,7 +148,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (textRange.isEmpty()) {
       return;
     }
-    var htmlMsg = getHtmlMessage(vulnerability);
+    var htmlMsg = getMessage(vulnerability);
 
     var annotation = annotationHolder
       .createAnnotation(getSeverity(vulnerability.severity()), textRange, vulnerability.message(), htmlMsg);
@@ -191,42 +185,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
   }
 
-  /**
-   * Check in IntelliJ {@link com.intellij.codeInsight.daemon.impl.LocalInspectionsPass#createHighlightInfo} and
-   * {@link InspectionDescriptionLinkHandler}
-   * {@link com.intellij.codeInsight.daemon.impl.LocalInspectionsPass}
-   * {@link com.intellij.openapi.editor.colors.CodeInsightColors}
-   */
-  private static String getHtmlMessage(LiveIssue issue) {
-    var shortcut = "";
-    final var keymapManager = KeymapManager.getInstance();
-    if (keymapManager != null && keymapManager.getActiveKeymap() != null) {
-      final var keymap = keymapManager.getActiveKeymap();
-      shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
-    }
-
-    @NonNls
-    final var link = " <a "
-      + "href=\"#sonarissue/" + issue.getRuleKey() + "\""
-      + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
-      + ">more...</a> " + shortcut;
-    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.context().map(IssueContext::getSummaryDescription).orElse("") + link);
+  private static String getMessage(LiveIssue issue) {
+    return XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.context().map(IssueContext::getSummaryDescription).orElse("");
   }
 
-  private static String getHtmlMessage(LocalTaintVulnerability vulnerability) {
-    var shortcut = "";
-    final var keymapManager = KeymapManager.getInstance();
-    if (keymapManager != null) {
-      final var keymap = keymapManager.getActiveKeymap();
-      shortcut = "(" + KeymapUtil.getShortcutsText(keymap.getShortcuts(IdeActions.ACTION_SHOW_ERROR_DESCRIPTION)) + ")";
-    }
-
-    @NonNls
-    final var link = " <a "
-      + "href=\"#sonarissue/" + vulnerability.ruleKey() + "\""
-      + (UIUtil.isUnderDarcula() ? " color=\"7AB4C9\" " : "")
-      + ">more...</a> " + shortcut;
-    return XmlStringUtil.wrapInHtml(XmlStringUtil.escapeString("SonarLint: " + vulnerability.message()) + link);
+  private static String getMessage(LocalTaintVulnerability vulnerability) {
+    return XmlStringUtil.escapeString("SonarLint: " + vulnerability.message());
   }
 
   /**
