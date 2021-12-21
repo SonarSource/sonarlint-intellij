@@ -68,13 +68,4 @@ public abstract class SonarLintFacade {
   public abstract String getDescription(String ruleKey);
 
   public abstract Collection<PluginDetails> getPluginDetails();
-
-  @CheckForNull
-  public String getRuleName(String ruleKey) {
-    var details = getActiveRuleDetails(ruleKey);
-    if (details == null) {
-      return null;
-    }
-    return details.getName();
-  }
 }
