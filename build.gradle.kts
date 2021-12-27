@@ -167,7 +167,7 @@ dependencies {
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
     // Actual runtime dependency is shaded by sonarlint-core but seems invisible to IntelliJ
     compileOnly("com.google.protobuf:protobuf-java:$protobufVersion")
-    implementation("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.1.2") {
         exclude(module = "slf4j-api")
     }
     implementation(project(":common"))
