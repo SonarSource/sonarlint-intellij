@@ -28,9 +28,13 @@ import org.sonarlint.intellij.common.analysis.AnalysisConfigurator.AnalysisConfi
 class RiderAnalysisConfigurator : AnalysisConfigurator {
     override fun configure(module: Module, filesToAnalyze: Collection<VirtualFile>): AnalysisConfiguration {
         val result = AnalysisConfiguration()
-        val value = RiderDotNetActiveRuntimeHost.getInstance(module.project).dotNetCoreRuntime.value
-        if (value != null) {
-            result.extraProperties["sonar.cs.internal.dotnetCliExeLocation"] = value.cliExePath
+        val dotNetCoreRuntime = RiderDotNetActiveRuntimeHost.getInstance(module.project).dotNetCoreRuntime.value
+        if (dotNetCoreRuntime != null) {
+            result.extraProperties["sonar.cs.internal.dotnetCliExeLocation"] = dotNetCoreRuntime.cliExePath
+        }
+        val monoRuntime = RiderDotNetActiveRuntimeHost.getInstance(module.project).monoRuntime
+        if (monoRuntime != null) {
+            result.extraProperties["sonar.cs.internal.monoExeLocation"] = monoRuntime.getMonoExe().absolutePath
         }
         return result
     }
