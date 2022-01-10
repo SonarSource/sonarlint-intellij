@@ -179,7 +179,7 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
-    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.4.0.27839@jar")
+    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.6.0.28201@jar")
     "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:8.4.0.16431@jar")
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.21.1.8250@jar")
     "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.6.0.8488@jar")
