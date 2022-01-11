@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>6.4 - Java rules improvements.</li>
+        <li>6.4 - New JS/TS rules for tests. Many rules improvements.</li>
         <li>6.3.1 - Fix connected mode in Rider.</li>
         <li>6.3 - Quick fixes for 43 C/C++ rules.</li>
         <li>6.2 - 9 new rules for regular expressions in PHP. 1 new vulnerability detection rule for Android. Fixes for HTTP protocol issues and UI improvements.</li>
