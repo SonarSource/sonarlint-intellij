@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>6.4 - New JS/TS rules for tests. Support PHP 8.1. New rules for regexp in Python. Support Python 3.10. New rules for Kotlin. Support Kotlin 1.6. Support Ruby 3.0.3. 10 new rules for C++20 coroutines, quick fixes for 3 more C++ rules. Many rules improvements.</li>
+        <li>6.4 - New JS/TS rules for tests. Support PHP 8.1. New rules for regexp in Python. Support Python 3.10. New rules for Kotlin. Support Kotlin 1.6. Support Ruby 3.0.3. 10 new rules for C++20 coroutines, quick fixes for 3 more C++ rules. Support .NET 6 in Rider. Many rules improvements.</li>
         <li>6.3.1 - Fix connected mode in Rider.</li>
         <li>6.3 - Quick fixes for 43 C/C++ rules.</li>
         <li>6.2 - 9 new rules for regular expressions in PHP. 1 new vulnerability detection rule for Android. Fixes for HTTP protocol issues and UI improvements.</li>
