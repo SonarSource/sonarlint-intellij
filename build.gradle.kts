@@ -4,7 +4,6 @@ import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -179,16 +178,16 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
-    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.4.0.27839@jar")
-    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:8.4.0.16431@jar")
-    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.21.1.8250@jar")
-    "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.6.0.8488@jar")
-    "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.3.0.609@jar")
-    "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.3.2219@jar")
-    "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.4.0.2754@jar")
+    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.6.0.28201@jar")
+    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:8.7.0.17093@jar")
+    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.22.0.8482@jar")
+    "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.8.0.8883@jar")
+    "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.8.0.1093@jar")
+    "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.9.0.3429@jar")
+    "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.5.0.3009@jar")
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.1.0.41801@jar")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.28.0.39490@jar")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.29.0.41127@jar")
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766@jar")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
