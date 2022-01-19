@@ -37,7 +37,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -49,6 +48,7 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
 import static com.intellij.notification.NotificationsManager.getNotificationsManager;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
@@ -114,11 +114,11 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   protected TestEngineManager getEngineManager() {
-    return (TestEngineManager) SonarLintUtils.getService(EngineManager.class);
+    return (TestEngineManager) getService(EngineManager.class);
   }
 
   protected SonarLintConsoleTestImpl getConsole() {
-    return (SonarLintConsoleTestImpl) SonarLintUtils.getService(getProject(), SonarLintConsole.class);
+    return (SonarLintConsoleTestImpl) getService(getProject(), SonarLintConsole.class);
   }
 
   public VirtualFile createTestFile(String fileName, Language language, String text) {

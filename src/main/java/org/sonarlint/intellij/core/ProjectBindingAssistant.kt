@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core
 
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.common.util.SonarLintUtils
