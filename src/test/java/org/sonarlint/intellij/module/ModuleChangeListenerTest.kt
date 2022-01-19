@@ -34,10 +34,11 @@ import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.capture
+import org.sonarlint.intellij.core.StandaloneAnalysisEnv
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
-import org.sonarlint.intellij.messages.ProjectEngineListener
+import org.sonarlint.intellij.messages.AnalysisEnvListener
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
@@ -78,7 +79,7 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     @Test
     fun should_stop_and_recreate_modules_when_engine_changes() {
         moduleChangeListener.moduleAdded(project, module)
-        project.messageBus.syncPublisher(ProjectEngineListener.TOPIC).engineChanged(fakeEngine, otherFakeEngine)
+        project.messageBus.syncPublisher(AnalysisEnvListener.TOPIC).analysisEnvChanged(StandaloneAnalysisEnv(fakeEngine), StandaloneAnalysisEnv(otherFakeEngine))
 
         // might be called several times by the real implementation, not the one under test
         verify(fakeEngine, atLeastOnce()).stopModule(eq(module))

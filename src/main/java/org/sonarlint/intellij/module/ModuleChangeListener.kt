@@ -26,7 +26,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ModuleBindingManager
-import org.sonarlint.intellij.messages.ProjectEngineListener
+import org.sonarlint.intellij.core.AnalysisEnv
+import org.sonarlint.intellij.messages.AnalysisEnvListener
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
@@ -70,9 +71,11 @@ class ProjectClosedListener : ProjectManagerListener {
     }
 }
 
-class ModuleEngineChangeListener(private val project: Project) : ProjectEngineListener {
-    override fun engineChanged(previousEngine: SonarLintEngine?, newEngine: SonarLintEngine?) {
-        Modules.removeAllModules(project, previousEngine)
-        Modules.declareAllModules(project, newEngine)
+class BindingChangeListener(private val project: Project) : AnalysisEnvListener {
+    override fun analysisEnvChanged(previousAnalysisEnv: AnalysisEnv, newAnalysisEnv: AnalysisEnv) {
+        if (previousAnalysisEnv.engineIfStarted != newAnalysisEnv.engineIfStarted) {
+            Modules.removeAllModules(project, previousAnalysisEnv.engineIfStarted)
+            Modules.declareAllModules(project, newAnalysisEnv.engineIfStarted)
+        }
     }
 }
