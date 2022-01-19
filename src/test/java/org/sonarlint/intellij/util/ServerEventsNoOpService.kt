@@ -17,14 +17,19 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages;
+package org.sonarlint.intellij.util
 
-import com.intellij.util.messages.Topic;
-import javax.annotation.Nullable;
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
+import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.server.events.ServerEventsService
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
-public interface ProjectEngineListener {
-  Topic<ProjectEngineListener> TOPIC = Topic.create("Project engine events", ProjectEngineListener.class);
+class ServerEventsNoOpService : ServerEventsService {
+    override fun autoSubscribe(engineIfStarted: ConnectedSonarLintEngine?, serverConnection: ServerConnection) {
+        // no op
+    }
 
-  void engineChanged(@Nullable SonarLintEngine previousEngine, @Nullable SonarLintEngine newEngine);
+    override fun unsubscribe(project: Project) {
+        // no op
+    }
 }
