@@ -57,6 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>6.4.3 - Fewer false-negatives and false-positives for C/C++.</li>
         <li>6.4.2 - Fix potential UI-freeze when loading/unloading modules.</li>
         <li>6.4.1 - Fix error in connected mode if custom plugin have markdown rule description.</li>
         <li>6.4 - Automatically synchronize rules and settings from server. New JS/TS rules for tests. Support PHP 8.1. New rules for regexp in Python. Support Python 3.10. New rules for Kotlin. Support Kotlin 1.6. Support Ruby 3.0.3. 10 new rules for C++20 coroutines, quick fixes for 3 more C++ rules. Support .NET 6 in Rider. Many rules improvements.</li>
