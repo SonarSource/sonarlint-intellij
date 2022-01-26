@@ -38,7 +38,7 @@ class ModuleFileEventsNotifierTest : AbstractSonarLintLightTests() {
     fun should_notify_engine_of_events() {
         val event = ClientModuleFileEvent.of(mock(ClientInputFile::class.java), ModuleFileEvent.Type.MODIFIED)
 
-        notifier.notify(engine, module, listOf(event))
+        notifier.notifyAsync(engine, module, listOf(event))
 
         verify(engine).fireModuleFileEvent(eq(module), eq(event))
     }
@@ -49,7 +49,7 @@ class ModuleFileEventsNotifierTest : AbstractSonarLintLightTests() {
         Mockito.doThrow(RuntimeException("Boom!")).`when`(engine)
             .fireModuleFileEvent(ArgumentMatchers.any(), ArgumentMatchers.any())
 
-        notifier.notify(engine, module, listOf(event))
+        notifier.notifyAsync(engine, module, listOf(event))
 
         Assertions.assertThat(console.lastMessage).isEqualTo("Error notifying analyzer of a file event")
     }
