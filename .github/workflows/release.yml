@@ -19,7 +19,6 @@ jobs:
           distribute: false
           publish_to_binaries: false
           attach_artifacts_to_github_release: false
-          run_rules_cov: false
           slack_channel: team-sonarlint-java
         env:
           ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
