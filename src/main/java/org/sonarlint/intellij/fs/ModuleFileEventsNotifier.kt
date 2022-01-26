@@ -19,26 +19,17 @@
  */
 package org.sonarlint.intellij.fs
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
-open class ModuleFileEventsNotifier : Disposable {
+open class ModuleFileEventsNotifier {
 
     open fun notifyAsync(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
         if (events.isEmpty()) return
-        executor.submit {
-            notify(engine, module, events)
-        }
-    }
-
-    fun notify(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
-        SonarLintConsole.get(module.project).info("Processing ${events.size} file system events");
+        SonarLintConsole.get(module.project).info("Processing ${events.size} file system events")
         events.forEach {
             try {
                 engine.fireModuleFileEvent(module, it)
@@ -47,12 +38,6 @@ open class ModuleFileEventsNotifier : Disposable {
             }
         }
     }
-
-    override fun dispose() {
-        executor.shutdownNow()
-    }
-
-    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
     companion object {
         fun isPython(file: VirtualFile): Boolean {
