@@ -51,7 +51,7 @@ public class CurrentFileStatusPanel {
     var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
-      public void applied(SonarLintGlobalSettings settings) {
+      public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {
         runnable.run();
       }
     });

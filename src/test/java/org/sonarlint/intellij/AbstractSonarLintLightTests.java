@@ -22,7 +22,6 @@ package org.sonarlint.intellij;
 import com.intellij.lang.Language;
 import com.intellij.notification.Notification;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -46,7 +45,6 @@ import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.TestEngineManager;
-import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
 
@@ -166,10 +164,6 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   protected void setGlobalLevelExclusions(List<String> exclusions) {
-    var globalSettings = getGlobalSettings();
-    globalSettings.setFileExclusions(exclusions);
-    var globalConfigurationListener = ApplicationManager.getApplication()
-      .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
-    globalConfigurationListener.applied(globalSettings);
+    getGlobalSettings().setFileExclusions(exclusions);
   }
 }

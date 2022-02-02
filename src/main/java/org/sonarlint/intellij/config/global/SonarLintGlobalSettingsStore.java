@@ -47,6 +47,10 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
     initializeRulesByKey();
   }
 
+  public void save(SonarLintGlobalSettings settings) {
+    this.settings = settings;
+  }
+
   private void initializeRulesByKey() {
     settings.rulesByKey = new HashMap<>(settings.rules.stream().collect(Collectors.toMap(SonarLintGlobalSettings.Rule::getKey, Function.identity())));
   }

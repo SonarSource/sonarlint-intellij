@@ -35,7 +35,7 @@ public interface GlobalConfigurationListener {
   /**
    * Called when settings are saved (clicking "Apply" or "Ok")
    */
-  void applied(SonarLintGlobalSettings settings);
+  void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings);
 
   abstract class Adapter implements GlobalConfigurationListener {
     @Override
@@ -44,7 +44,7 @@ public interface GlobalConfigurationListener {
     }
 
     @Override
-    public void applied(SonarLintGlobalSettings settings) {
+    public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {
       // nothing done by default
     }
   }

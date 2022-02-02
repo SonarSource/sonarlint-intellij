@@ -37,6 +37,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.ServerNotificationsService
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
@@ -110,7 +111,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
     projectServerNotificationsSubscriber.start()
     connectProjectWithNotifications()
 
-    project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(globalSettings)
+    project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(SonarLintGlobalSettings(), globalSettings)
 
     verify(serverNotificationsService, timeout(5000)).register(capture(notificationConfigurationCaptor))
     val notificationConfiguration = notificationConfigurationCaptor.value
@@ -134,7 +135,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
     connectProjectWithNotifications()
     projectServerNotificationsSubscriber.start()
 
-    project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(globalSettings)
+    project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(SonarLintGlobalSettings(), globalSettings)
 
     verify(serverNotificationsService, timeout(5000)).unregister(any())
   }
