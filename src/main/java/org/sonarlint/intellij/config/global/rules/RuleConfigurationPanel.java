@@ -162,13 +162,14 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   @Override
   public void save(SonarLintGlobalSettings settings) {
-    allRulesStateByKey.values().forEach(r -> {
-      if (r.isNonDefault()) {
-        settings.getRulesByKey().computeIfAbsent(r.getKey(), k -> new SonarLintGlobalSettings.Rule(r.getKey(), r.isActivated())).setParams(r.getCustomParams());
-      } else {
-        settings.getRulesByKey().remove(r.getKey());
-      }
-    });
+    settings.setRulesByKey(allRulesStateByKey.entrySet()
+      .stream().filter(e -> e.getValue().isNonDefault())
+      .collect(Collectors.toMap(Map.Entry::getKey, e -> {
+        var ruleNode = e.getValue();
+        var rule = new SonarLintGlobalSettings.Rule(ruleNode.getKey(), ruleNode.isActivated());
+        rule.setParams(ruleNode.getCustomParams());
+        return rule;
+      })));
   }
 
   @Override

@@ -24,7 +24,6 @@ import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.NodeJsManager
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -55,19 +54,17 @@ class TelemetryClientAttributeProviderImpl : TelemetryClientAttributesProvider {
     }
 
     override fun getNonDefaultEnabledRules(): Collection<String> {
-        val rules = Settings.getGlobalSettings().rules
-            .filter(SonarLintGlobalSettings.Rule::isActive)
-            .map(SonarLintGlobalSettings.Rule::getKey)
-            .toSet()
+        val rules = Settings.getGlobalSettings().rulesByKey
+            .filterValues { it.isActive }
+            .keys
         val defaultEnabledRuleKeys = defaultEnabledRuleKeys()
         return rules.minus(defaultEnabledRuleKeys)
     }
 
     override fun getDefaultDisabledRules(): Collection<String> {
-        return Settings.getGlobalSettings().rules
-            .filter { rule: SonarLintGlobalSettings.Rule -> !rule.isActive }
-            .map(SonarLintGlobalSettings.Rule::getKey)
-            .toSet()
+        return Settings.getGlobalSettings().rulesByKey
+            .filterValues { !it.isActive }
+            .keys
     }
 
     override fun additionalAttributes() = emptyMap<String, Any>()

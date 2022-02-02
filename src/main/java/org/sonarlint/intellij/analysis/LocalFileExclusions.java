@@ -99,7 +99,7 @@ public class LocalFileExclusions {
     var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
-      public void applied(SonarLintGlobalSettings newSettings) {
+      public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {
         loadGlobalExclusions(newSettings);
       }
     });
