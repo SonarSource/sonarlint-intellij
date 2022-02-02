@@ -46,7 +46,7 @@ class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
       })
       subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener { triggerRefresh() })
       subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-        override fun applied(settings: SonarLintGlobalSettings) {
+        override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
           triggerRefresh()
         }
       })

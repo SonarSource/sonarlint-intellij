@@ -112,10 +112,10 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   }
 
   @Override
-  public void save(SonarLintGlobalSettings model) {
+  public void save(SonarLintGlobalSettings settings) {
     getComponent();
-    model.setAutoTrigger(autoTrigger.isSelected());
-    model.setNodejsPath(nodeJsPath.getText());
+    settings.setAutoTrigger(autoTrigger.isSelected());
+    settings.setNodejsPath(nodeJsPath.getText());
   }
 }
 

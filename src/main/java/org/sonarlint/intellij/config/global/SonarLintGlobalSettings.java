@@ -144,6 +144,10 @@ public final class SonarLintGlobalSettings {
     initializeRulesByKey();
   }
 
+  public void setRulesByKey(Map<String, Rule> rules) {
+    this.rulesByKey = new HashMap<>(rules);
+  }
+
   public boolean isAutoTrigger() {
     return autoTrigger;
   }

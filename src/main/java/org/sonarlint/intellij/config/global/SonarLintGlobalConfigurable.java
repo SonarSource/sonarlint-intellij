@@ -31,7 +31,6 @@ import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
@@ -39,6 +38,7 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -70,30 +70,31 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   @Override
   public boolean isModified() {
     var globalSettings = getGlobalSettings();
-    var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+    var telemetry = getService(SonarLintTelemetry.class);
     return connectionsPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
       || about.isModified(telemetry) || exclusions.isModified(globalSettings) || rules.isModified(globalSettings);
   }
 
   @Override
   public void apply() {
-    var globalSettings = getGlobalSettings();
-    var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
-    final boolean exclusionsModified = exclusions.isModified(globalSettings);
-    final boolean rulesModified = rules.isModified(globalSettings);
-    final boolean globalSettingsModified = globalPanel.isModified(globalSettings);
+    var currentSettings = getGlobalSettings();
+    var telemetry = getService(SonarLintTelemetry.class);
+    final boolean exclusionsModified = exclusions.isModified(currentSettings);
+    final boolean rulesModified = rules.isModified(currentSettings);
+    final boolean globalSettingsModified = globalPanel.isModified(currentSettings);
 
-    connectionsPanel.save(globalSettings);
-    globalPanel.save(globalSettings);
+    var newSettings = new SonarLintGlobalSettings();
+    connectionsPanel.save(newSettings);
+    globalPanel.save(newSettings);
     about.save(telemetry);
-    rules.save(globalSettings);
-    exclusions.save(globalSettings);
+    rules.save(newSettings);
+    exclusions.save(newSettings);
+    getService(SonarLintGlobalSettingsStore.class).save(newSettings);
 
-    var globalConfigurationListener = ApplicationManager.getApplication()
-      .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
-    globalConfigurationListener.applied(globalSettings);
+    ApplicationManager.getApplication().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC)
+      .applied(currentSettings, newSettings);
 
-    SonarLintUtils.getService(EngineManager.class).stopAllDeletedConnectedEnginesAsync();
+    getService(EngineManager.class).stopAllDeletedConnectedEnginesAsync();
 
     // Force reload of the node version and rules in case the nodejs path has been changed
     reset();
@@ -110,7 +111,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
     for (var project : openProjects) {
       if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
-        SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+        getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }
     }
   }
@@ -127,7 +128,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   @Override
   public void reset() {
     var globalSettings = getGlobalSettings();
-    var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+    var telemetry = getService(SonarLintTelemetry.class);
 
     connectionsPanel.load(globalSettings);
     globalPanel.load(globalSettings);
@@ -151,7 +152,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       Disposer.dispose(rules);
       rules = null;
     }
-    SonarLintUtils.getService(EngineManager.class).stopAllDeletedConnectedEnginesAsync();
+    getService(EngineManager.class).stopAllDeletedConnectedEnginesAsync();
   }
 
   private JPanel getPanel() {

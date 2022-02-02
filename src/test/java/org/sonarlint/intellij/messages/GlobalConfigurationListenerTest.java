@@ -56,13 +56,13 @@ public class GlobalConfigurationListenerTest extends AbstractSonarLintMockedTest
   @Test
   public void testApplied() {
     List<ServerConnection> servers = new LinkedList<>();
-    var bool = new AtomicBoolean(false);
+    var isAutoTrigger = new AtomicBoolean(false);
 
     GlobalConfigurationListener listener = new GlobalConfigurationListener.Adapter() {
       @Override
-      public void applied(SonarLintGlobalSettings settings) {
-        servers.addAll(settings.getServerConnections());
-        bool.set(settings.isAutoTrigger());
+      public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {
+        servers.addAll(newSettings.getServerConnections());
+        isAutoTrigger.set(newSettings.isAutoTrigger());
       }
     };
 
@@ -70,9 +70,9 @@ public class GlobalConfigurationListenerTest extends AbstractSonarLintMockedTest
     var settings = new SonarLintGlobalSettings();
     settings.setServerConnections(testList);
     settings.setAutoTrigger(true);
-    project.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).applied(settings);
+    project.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).applied(new SonarLintGlobalSettings(), settings);
 
     assertThat(servers).isEqualTo(testList);
-    assertThat(bool.get()).isTrue();
+    assertThat(isAutoTrigger.get()).isTrue();
   }
 }

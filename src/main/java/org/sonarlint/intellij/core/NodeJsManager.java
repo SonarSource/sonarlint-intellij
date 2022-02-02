@@ -39,12 +39,11 @@ public class NodeJsManager {
   private boolean nodeInit = false;
   private Path nodeJsPath = null;
   private Version nodeJsVersion = null;
-  private String previousSettingValue = "";
 
   public NodeJsManager() {
     ApplicationManager.getApplication().getMessageBus().connect().subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override public void applied(SonarLintGlobalSettings settings) {
-        if (!Objects.equals(settings.getNodejsPath(), previousSettingValue)) {
+      @Override public void applied(SonarLintGlobalSettings previousSettings, SonarLintGlobalSettings newSettings) {
+        if (!Objects.equals(newSettings.getNodejsPath(), previousSettings.getNodejsPath())) {
           clear();
           // Node.js path is passed at engine startup, so we have to restart them all to ensure the new value is taken into account
           // Don't wait for the engines to stop, to not freeze the UI
@@ -81,9 +80,8 @@ public class NodeJsManager {
   }
 
   @CheckForNull
-  private Path getNodeJsPathFromConfig() {
+  private static Path getNodeJsPathFromConfig() {
     final var nodejsPathStr = Settings.getGlobalSettings().getNodejsPath();
-    this.previousSettingValue = nodejsPathStr;
     if (StringUtils.isNotBlank(nodejsPathStr)) {
       try {
         return Paths.get(nodejsPathStr);

@@ -81,8 +81,8 @@ class ProjectServerNotificationsSubscriber : Disposable {
       registerAsync()
     })
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
-      override fun applied(settings: SonarLintGlobalSettings) {
-        registerAsync()
+      override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+          registerAsync()
       }
     })
     busConnection.subscribe(ProjectTopics.MODULES, object : ModuleListener {

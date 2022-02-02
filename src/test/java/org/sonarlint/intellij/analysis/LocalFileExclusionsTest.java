@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.ide.PowerSaveMode;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -34,7 +35,9 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -110,7 +113,7 @@ public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
   public void should_exclude_if_file_excluded_in_global_config() throws Exception {
     var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
-    setGlobalLevelExclusions(List.of("foo.php"));
+    triggerFileExclusions("foo.php");
 
     var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), false, excludeReasons::put);
     assertIsExcluded(file, nonExcludedFilesByModule, "file matches exclusions defined in the SonarLint Global Settings");
@@ -120,10 +123,16 @@ public class LocalFileExclusionsTest extends AbstractSonarLintLightTests {
   public void should_not_exclude_if_file_excluded_in_global_config_when_forced_analysis() throws Exception {
     var file = myFixture.copyFileToProject("foo.php", "foo.php");
 
-    setGlobalLevelExclusions(List.of("GLOB:foo.php"));
+    triggerFileExclusions("GLOB:foo.php");
 
     var nonExcludedFilesByModule = underTest.retainNonExcludedFilesByModules(List.of(file), true, excludeReasons::put);
     assertIsNotExcluded(file, nonExcludedFilesByModule);
+  }
+
+  private void triggerFileExclusions(String exclusionPattern) {
+    var globalSettings = new SonarLintGlobalSettings();
+    globalSettings.setFileExclusions(List.of(exclusionPattern));
+    ApplicationManager.getApplication().getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).applied(new SonarLintGlobalSettings(), globalSettings);
   }
 
   @Test
