@@ -342,6 +342,7 @@ sonarqube {
 }
 
 license {
+    header = rootProject.file("HEADER")
     mapping(
         mapOf(
             "java" to "SLASHSTAR_STYLE",
