@@ -34,6 +34,7 @@ import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.http.ContentType
 import org.apache.hc.core5.http2.HttpVersionPolicy
+import org.apache.hc.core5.reactor.IOReactorConfig
 import org.apache.hc.core5.reactor.ssl.TlsDetails
 import org.apache.hc.core5.util.Timeout
 import org.sonarlint.intellij.SonarLintPlugin
@@ -122,6 +123,7 @@ class ApacheHttpClient private constructor(
                 .build())
             .build()
         )
+        .setIOReactorConfig(IOReactorConfig.custom().setIoThreadCount(3).build())
         .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
         // SLI-629 - Force HTTP/1
         .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_1)
