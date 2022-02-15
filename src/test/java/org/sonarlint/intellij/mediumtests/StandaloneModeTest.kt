@@ -55,6 +55,22 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun should_analyze_xml_file() {
+        val fileToAnalyze = myFixture.configureByFile("src/file.xml").virtualFile
+
+        val issues = analyze(fileToAnalyze)
+
+        assertThat(issues)
+            .extracting(
+                { it.ruleKey },
+                { it.message },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+            .containsExactly(
+                tuple("xml:S1778", "Remove all characters located before \"<?xml\".", Pair(62, 67))
+            )
+    }
+
+    @Test
     fun should_analyze_java_file() {
         val fileToAnalyze = myFixture.configureByFile("src/Main.java").virtualFile
 
