@@ -52,7 +52,9 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 public class SonarLintEngineFactory {
 
-  private static final Set<Language> STANDALONE_LANGUAGES = EnumSet.of(Language.HTML,
+  private static final Set<Language> STANDALONE_LANGUAGES = EnumSet.of(
+    Language.HTML,
+    Language.XML,
     Language.JS,
     Language.KOTLIN,
     Language.PHP,
@@ -63,8 +65,7 @@ public class SonarLintEngineFactory {
 
   private static final Set<Language> CONNECTED_ADDITIONAL_LANGUAGES = EnumSet.of(
     Language.SCALA,
-    Language.SWIFT,
-    Language.XML);
+    Language.SWIFT);
 
   ConnectedSonarLintEngine createEngine(String connectionId) {
     var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
