@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.editor;
 
+import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.lang.annotation.Annotation;
 import com.intellij.lang.annotation.AnnotationHolder;
@@ -30,13 +31,12 @@ import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
-import com.intellij.xml.util.XmlStringUtil;
+import java.util.ArrayList;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
@@ -110,33 +110,28 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static void addAnnotation(Project project, LiveIssue issue, TextRange validTextRange, AnnotationHolder annotationHolder) {
-    var htmlMsg = getMessage(issue);
-
-    var annotation = annotationHolder
-      .createAnnotation(getSeverity(issue.getSeverity()), validTextRange, issue.getMessage(), htmlMsg);
-    annotation.registerFix(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
+    var intentionActions = new ArrayList<IntentionAction>();
+    intentionActions.add(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
     if (!getSettingsFor(project).isBindingEnabled()) {
-      annotation.registerFix(new DisableRuleIntentionAction(issue.getRuleKey()));
+      intentionActions.add(new DisableRuleIntentionAction(issue.getRuleKey()));
     }
+    issue.context().ifPresent(c -> intentionActions.add(new ShowLocationsIntentionAction(issue, c)));
+    issue.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
 
-    issue.context().ifPresent(c -> annotation.registerFix(new ShowLocationsIntentionAction(issue, c)));
-    issue.quickFixes().forEach(f -> annotation.registerFix(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
+    var annotationBuilder = annotationHolder
+      .newAnnotation(getSeverity(issue.getSeverity()), issue.getMessage())
+      .range(validTextRange);
+    for (IntentionAction action : intentionActions) {
+      annotationBuilder = annotationBuilder.withFix(action);
+    }
 
     if (issue.getRange() == null) {
-      annotation.setFileLevelAnnotation(true);
+      annotationBuilder = annotationBuilder.fileLevel();
     } else {
-      annotation.setTextAttributes(getTextAttrsKey(issue.getSeverity()));
+      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(issue.getSeverity()));
     }
-
-    /*
-     * 3 possible ways to set text attributes and error stripe color:
-     * - enforce text attributes ({@link Annotation#setEnforcedTextAttributes}) and we need to set everything
-     * manually (including error stripe color). This won't be configurable in a standard way and won't change based on used color scheme
-     * - rely on one of the default attributes by giving a key {@link com.intellij.openapi.editor.colors.CodeInsightColors} or your own
-     * key (SonarLintTextAttributes) to Annotation#setTextAttributes
-     * - let Annotation#getTextAttributes decide it based on highlight type and severity.
-     */
-    annotation.setHighlightType(getType(issue.getSeverity()));
+    annotationBuilder.highlightType(getType(issue.getSeverity()))
+      .create();
   }
 
   private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
@@ -148,22 +143,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (textRange.isEmpty()) {
       return;
     }
-    var htmlMsg = getMessage(vulnerability);
-
-    var annotation = annotationHolder
-      .createAnnotation(getSeverity(vulnerability.severity()), textRange, vulnerability.message(), htmlMsg);
-    annotation.registerFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability));
-    annotation.setTextAttributes(getTextAttrsKey(vulnerability.severity()));
-
-    /*
-     * 3 possible ways to set text attributes and error stripe color:
-     * - enforce text attributes ({@link Annotation#setEnforcedTextAttributes}) and we need to set everything
-     * manually (including error stripe color). This won't be configurable in a standard way and won't change based on used color scheme
-     * - rely on one of the default attributes by giving a key {@link com.intellij.openapi.editor.colors.CodeInsightColors} or your own
-     * key (SonarLintTextAttributes) to Annotation#setTextAttributes
-     * - let Annotation#getTextAttributes decide it based on highlight type and severity.
-     */
-    annotation.setHighlightType(getType(vulnerability.severity()));
+    annotationHolder.newAnnotation(getSeverity(vulnerability.severity()), vulnerability.message())
+      .range(textRange)
+      .withFix(new ShowTaintVulnerabilityRuleDescriptionIntentionAction(vulnerability))
+      .textAttributes(getTextAttrsKey(vulnerability.severity()))
+      .highlightType(getType(vulnerability.severity()))
+      .create();
   }
 
   static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
@@ -183,14 +168,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       default:
         return SonarLintTextAttributes.MAJOR;
     }
-  }
-
-  private static String getMessage(LiveIssue issue) {
-    return XmlStringUtil.escapeString("SonarLint: " + issue.getMessage()) + issue.context().map(IssueContext::getSummaryDescription).orElse("");
-  }
-
-  private static String getMessage(LocalTaintVulnerability vulnerability) {
-    return XmlStringUtil.escapeString("SonarLint: " + vulnerability.message());
   }
 
   /**
