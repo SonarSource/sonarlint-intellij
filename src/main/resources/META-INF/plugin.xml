@@ -57,6 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
+        <li>6.5 - Deprecation of Node.js 12 for JS/TS analyzes. Embed the XML analyzer. 5 new rules for Java. 9 new rules for PHP around regexes. Bug fixes, fewer FPs and improvements for many languages</li>
         <li>6.4.3 - Fewer false-negatives and false-positives for C/C++.</li>
         <li>6.4.2 - Fix potential UI-freeze when loading/unloading modules.</li>
         <li>6.4.1 - Fix error in connected mode if custom plugin have markdown rule description.</li>
