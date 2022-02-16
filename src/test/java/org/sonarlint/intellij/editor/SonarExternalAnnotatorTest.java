@@ -66,7 +66,8 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   @Test
   public void testRangeIssues() {
     createStoredIssues(5);
-    annotator.apply(psiFile, ctx, holder);
+
+    holder.applyExternalAnnotatorWithContext(psiFile, annotator, ctx);
 
     for (int i = 0; i < 5; i++) {
       assertThat(holder.get(i).getStartOffset()).isEqualTo(i);
@@ -92,7 +93,8 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   public void testFileLevelIssues() {
     when(psiFile.isValid()).thenReturn(true);
     createFileIssues(5);
-    annotator.apply(psiFile, ctx, holder);
+
+    holder.applyExternalAnnotatorWithContext(psiFile, annotator, ctx);
 
     assertThat(holder).hasSize(5);
 
