@@ -33,6 +33,7 @@ public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
     var styleSheet = this.getStyleSheet();
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
+    styleSheet.addRule("pre {padding: 10px;}");
     styleSheet.addRule(".rule-params { border: none; border-collapse: collapse; padding: 1em }");
     styleSheet.addRule(".rule-params caption { text-align: left }");
     styleSheet.addRule(".rule-params .thead td { padding-left: 0; padding-bottom: 1em; font-style: italic }");
