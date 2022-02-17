@@ -125,6 +125,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private final Map<String, RulesTreeNode.Rule> allRulesStateByKey = new ConcurrentHashMap<>();
   private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();
   private final AtomicBoolean isDirty = new AtomicBoolean(false);
+  private String selectedRuleKey;
 
   public RuleConfigurationPanel() {
     createUIComponents();
@@ -174,13 +175,13 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   public void load(SonarLintGlobalSettings settings) {
     // Loading rules may take time, so do that on a background thread
     panel.startLoading();
+    selectedRuleKey = null;
     ApplicationManager.getApplication().executeOnPooledThread(() -> {
       allRulesStateByKey.clear();
       allRulesStateByKey.putAll(loadRuleNodes(settings));
 
       UIUtil.invokeLaterIfNeeded(() -> {
-        filterModel.reset(false);
-        myRuleFilter.reset();
+        applyRuleSelection();
 
         updateModel();
         panel.stopLoading();
@@ -444,10 +445,22 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   public void selectRule(String ruleKey) {
-    myRuleFilter.setFilter(ruleKey);
-    var node = allRulesStateByKey.get(ruleKey);
-    var path = new TreePath(node.getPath());
-    table.getTree().setSelectionPath(path);
+    selectedRuleKey = ruleKey;
+    applyRuleSelection();
+  }
+
+  private void applyRuleSelection() {
+    // rule state loading happens on background thread, might not be ready to apply selection yet
+    // should be triggered after rules are loaded
+    if (selectedRuleKey != null && allRulesStateByKey.containsKey(selectedRuleKey)) {
+      myRuleFilter.setFilter(selectedRuleKey);
+      var node = allRulesStateByKey.get(selectedRuleKey);
+      var path = new TreePath(node.getPath());
+      table.getTree().setSelectionPath(path);
+    } else {
+      filterModel.reset(false);
+      myRuleFilter.reset();
+    }
   }
 
   private static class ConfigPanelState {
