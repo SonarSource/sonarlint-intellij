@@ -275,24 +275,15 @@ open class BaseUiTest {
             openProjectFileBrowserDialog {
                 selectProjectFile(projectName, isMaven)
             }
-            if (isCLion()) {
-                optionalStep {
-                    // from 2021.1+
-                    dialog("Trust CMake Project?", Duration.ofSeconds(5)) {
-                        button("Trust Project").click()
-                    }
-                }
-            } else {
-                optionalStep {
-                    // from 2021.1+
-                    dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
-                        button("Trust Project").click()
-                    }
-                }
-            }
             idea {
-                closeTipOfTheDay()
                 waitBackgroundTasksFinished()
+            }
+            if (remoteRobot.isCLion()) {
+                optionalStep {
+                    dialog("Open Project Wizard") {
+                        button("OK").click()
+                    }
+                }
             }
         }
     }

@@ -74,6 +74,8 @@ intellij {
 tasks.runIdeForUiTests {
     systemProperty("robot-server.port", "8082")
     systemProperty("sonarlint.telemetry.disabled", "true")
+    systemProperty("idea.trust.all.projects", "true")
+    systemProperty("ide.show.tips.on.startup.default.value", "false")
     systemProperty("jb.privacy.policy.text", "<!--999.999-->")
     systemProperty("jb.consents.confirmation.enabled", "false")
     systemProperty("eap.require.license", "true")
