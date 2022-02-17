@@ -43,8 +43,6 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
 
-import static org.sonarlint.intellij.ui.HtmlUtils.fixPreformattedText;
-
 public class SonarLintRulePanel {
   private final Project project;
   private final JPanel panel;
@@ -80,8 +78,7 @@ public class SonarLintRulePanel {
             ApplicationManager.getApplication().invokeLater(() -> nothingToDisplay(true));
             return;
           }
-          var htmlBody = fixPreformattedText(ruleDescription.getHtml());
-          ApplicationManager.getApplication().invokeLater(() -> updateEditor(htmlBody, ruleDescription.getKey()));
+          ApplicationManager.getApplication().invokeLater(() -> updateEditor(ruleDescription.getHtml(), ruleDescription.getKey()));
         }).get(30, TimeUnit.SECONDS);
 
     } catch (Exception e) {

@@ -32,8 +32,6 @@ import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.text.html.HTMLEditorKit;
 
-import static org.sonarlint.intellij.ui.HtmlUtils.fixPreformattedText;
-
 public class SonarLintHotspotDescriptionPanel {
   private static final int BORDER = 10;
 
@@ -46,6 +44,7 @@ public class SonarLintHotspotDescriptionPanel {
     var styleSheet = kit.getStyleSheet();
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
+    styleSheet.addRule("pre {padding: 10px;}");
 
     panel = new JPanel(new BorderLayout());
 
@@ -54,7 +53,7 @@ public class SonarLintHotspotDescriptionPanel {
   }
 
   public void setDescription(String description) {
-    var htmlBody = fixPreformattedText("<table><tr><td>" + description + "</td></tr></table>");
+    var htmlBody = "<table><tr><td>" + description + "</td></tr></table>";
     updateEditor(htmlBody);
   }
 
