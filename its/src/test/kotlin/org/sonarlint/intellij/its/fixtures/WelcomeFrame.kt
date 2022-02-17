@@ -26,9 +26,6 @@ import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.fixtures.JListFixture
-import com.intellij.remoterobot.fixtures.JTreeFixture
-import com.intellij.remoterobot.search.locators.Locator
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.log
 import com.intellij.remoterobot.stepsProcessing.step
@@ -46,19 +43,9 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
     private val openOrImportLink
         get() = actionLink(ActionLinkFixture.byText("Open or Import"))
 
-    // up to 193 in IDEA
-    private val legacyImportLinkIdea
-        get() = actionLink(ActionLinkFixture.byText("Import Project"))
-
-    // up to 193 in CLion
-    private val legacyImportLinkCLion
-        get() = actionLink(ActionLinkFixture.byText("Open"))
-
     fun openProjectButton(): ComponentFixture {
         val ideMajorVersion = remoteRobot.ideMajorVersion()
-        val isCLion = remoteRobot.isCLion()
         return when {
-            ideMajorVersion < 201 -> if (isCLion) legacyImportLinkCLion else legacyImportLinkIdea
             ideMajorVersion <= 202 -> openOrImportLink
             else -> {
                 selectTab("Projects")
@@ -95,14 +82,8 @@ class WelcomeFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) :
         log.info("Successfully opened the preferences dialog")
     }
 
-    fun selectTab(tabName: String) {
-        // TODO: Remove FIX_WHEN_MIN_IS_203
-        if (remoteRobot.ideMajorVersion() <= 202) return
+    private fun selectTab(tabName: String) {
         findElement<ComponentFixture>(byXpath("//div[@accessiblename='Welcome screen categories']")).findText(tabName).click()
-    }
-
-    fun jTree(locator: Locator, function: JTreeFixture.() -> Unit) {
-        findElement<JTreeFixture>(locator).apply(function)
     }
 
 }

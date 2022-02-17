@@ -25,10 +25,8 @@ import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.stepsProcessing.step
 import com.intellij.remoterobot.utils.WaitForConditionTimeoutException
 import com.intellij.remoterobot.utils.waitFor
-import org.sonarlint.intellij.its.utils.optionalStep
 import java.time.Duration
 
 fun RemoteRobot.idea(duration: Duration = Duration.ofSeconds(20), function: IdeaFrame.() -> Unit = {}): IdeaFrame {
@@ -41,35 +39,6 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
 
   private val ideStatusBar
     get() = find(IdeStatusBarFixture::class.java)
-
-  @JvmOverloads
-  fun dumbAware(timeout: Duration = Duration.ofMinutes(5), function: () -> Unit) {
-    step("Wait for smart mode") {
-      waitFor(duration = timeout, interval = Duration.ofSeconds(1)) {
-        runCatching { isDumbMode().not() }.getOrDefault(false)
-      }
-      function()
-      step("..wait for smart mode again") {
-        waitFor(duration = timeout, interval = Duration.ofSeconds(1)) {
-          isDumbMode().not()
-        }
-      }
-    }
-  }
-
-  private fun isDumbMode(): Boolean {
-    return callJs("!component.project || com.intellij.openapi. project.DumbService.isDumb(component.project);", true)
-  }
-
-  fun closeTipOfTheDay() {
-    dumbAware {
-      optionalStep {
-        dialog("Tip of the Day", Duration.ofSeconds(1)) {
-          button("Close").click()
-        }
-      }
-    }
-  }
 
   private fun isBackgroundTaskRunning(): Boolean {
     for (i in 0..1) {

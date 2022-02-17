@@ -148,14 +148,14 @@ stages:
       displayName: Run ITs
       strategy:
         matrix:
-          Idea2019:
-            IDEA_VERSION: 'IC-2019.3'
-          CLion2019:
-            IDEA_VERSION: 'CL-2019.3'
           Idea2020:
-            IDEA_VERSION: 'IC-2020.3.3'
+            IDEA_VERSION: 'IC-2020.1.1'
           CLion2020:
-            IDEA_VERSION: 'CL-2020.3.3'
+            IDEA_VERSION: 'CL-2020.1.1'
+          Idea2021:
+            IDEA_VERSION: 'IC-2021.3.2'
+          CLion2021:
+            IDEA_VERSION: 'CL-2021.3.3'
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
