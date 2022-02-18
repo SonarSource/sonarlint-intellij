@@ -113,19 +113,22 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     var htmlMsg = getMessage(issue);
 
     var annotation = annotationHolder
-      .createAnnotation(getSeverity(issue.getSeverity()), validTextRange, issue.getMessage(), htmlMsg);
-    annotation.registerFix(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
+      .newAnnotation(getSeverity(issue.getSeverity()), issue.getMessage())
+      .range(validTextRange)
+      .tooltip(htmlMsg);
+
+    annotation.withFix(new ShowRuleDescriptionIntentionAction(issue.getRuleKey()));
     if (!getSettingsFor(project).isBindingEnabled()) {
-      annotation.registerFix(new DisableRuleIntentionAction(issue.getRuleKey()));
+      annotation.withFix(new DisableRuleIntentionAction(issue.getRuleKey()));
     }
 
-    issue.context().ifPresent(c -> annotation.registerFix(new ShowLocationsIntentionAction(issue, c)));
-    issue.quickFixes().forEach(f -> annotation.registerFix(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
+    issue.context().ifPresent(c -> annotation.withFix(new ShowLocationsIntentionAction(issue, c)));
+    issue.quickFixes().forEach(f -> annotation.withFix(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
 
     if (issue.getRange() == null) {
-      annotation.setFileLevelAnnotation(true);
+      annotation.fileLevel();
     } else {
-      annotation.setTextAttributes(getTextAttrsKey(issue.getSeverity()));
+      annotation.textAttributes(getTextAttrsKey(issue.getSeverity()));
     }
 
     /*
@@ -136,7 +139,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
      * key (SonarLintTextAttributes) to Annotation#setTextAttributes
      * - let Annotation#getTextAttributes decide it based on highlight type and severity.
      */
-    annotation.setHighlightType(getType(issue.getSeverity()));
+    annotation.highlightType(getType(issue.getSeverity()));
+
+    annotation.create();
   }
 
   private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
