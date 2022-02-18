@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -88,9 +89,14 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
 
   private static void setMultiValuePropertyIfNonEmpty(Map<String, String> properties, String propKey, Set<String> values) {
     if (!values.isEmpty()) {
-      var joinedLibs = StringUtils.join(values, SEPARATOR);
+      var joinedLibs = StringUtils.join(values.stream().map(JavaAnalysisConfigurator::csvEscape).collect(Collectors.toList()), SEPARATOR);
       properties.put(propKey, joinedLibs);
     }
+  }
+
+  private static String csvEscape(String string) {
+    // escape only when needed
+    return string.contains(",") ? ("\"" + string + "\"") : string;
   }
 
   private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
