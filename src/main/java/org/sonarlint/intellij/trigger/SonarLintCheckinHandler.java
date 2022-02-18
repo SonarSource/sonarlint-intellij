@@ -21,6 +21,7 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.ide.util.PropertiesComponent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.options.UnnamedConfigurable;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
@@ -192,7 +193,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     SonarLintUtils.getService(project, SonarLintToolWindow.class).openAnalysisResults();
   }
 
-  private class MyRefreshableOnComponent implements RefreshableOnComponent {
+  private class MyRefreshableOnComponent implements RefreshableOnComponent, UnnamedConfigurable {
     private final JCheckBox checkBox;
 
     private MyRefreshableOnComponent(JCheckBox checkBox) {
@@ -221,8 +222,32 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     @Override
     public void restoreState() {
+      checkBox.setSelected(getSavedStateOrDefault());
+    }
+
+    private boolean getSavedStateOrDefault() {
       var props = PropertiesComponent.getInstance(project);
-      checkBox.setSelected(props.getBoolean(ACTIVATED_OPTION_NAME, getGlobalSettings().isAutoTrigger()));
+      return props.getBoolean(ACTIVATED_OPTION_NAME, getGlobalSettings().isAutoTrigger());
+    }
+
+    @Override
+    public @Nullable JComponent createComponent() {
+      return getComponent();
+    }
+
+    @Override
+    public boolean isModified() {
+      return checkBox.isSelected() != getSavedStateOrDefault();
+    }
+
+    @Override
+    public void apply() {
+      saveState();
+    }
+
+    @Override
+    public void reset() {
+      restoreState();
     }
   }
 }
