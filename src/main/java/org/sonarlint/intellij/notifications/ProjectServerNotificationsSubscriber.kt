@@ -26,7 +26,6 @@ import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
@@ -51,48 +50,54 @@ import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationT
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener
 import java.time.ZonedDateTime
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class ProjectServerNotificationsSubscriber : Disposable {
   private val project: Project
   private val notificationsService: ServerNotificationsService
   private var eventListener: EventListener? = null
   private val notificationTime: ProjectNotificationTime
+  private val executorService: ExecutorService
 
-  constructor(project: Project) : this(project, ServerNotificationsService.get())
+  constructor(project: Project) : this(project, ServerNotificationsService.get(), Executors.newSingleThreadExecutor())
 
-  constructor(project: Project, notificationsService: ServerNotificationsService) {
+  constructor(project: Project, notificationsService: ServerNotificationsService, executorService: ExecutorService) {
     this.project = project
     this.notificationsService = notificationsService
+    this.executorService = executorService
     notificationTime = ProjectNotificationTime()
   }
 
   fun start() {
-    register()
+    registerAsync()
     val busConnection = project.messageBus.connect()
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener {
       // always reset notification date, whether bound or not
       val projectState = getService(project, SonarLintProjectState::class.java)
       projectState.lastEventPolling = ZonedDateTime.now()
-      ApplicationManager.getApplication().executeOnPooledThread {
-        register()
-      }
+      registerAsync()
     })
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
       override fun applied(settings: SonarLintGlobalSettings) {
-        ApplicationManager.getApplication().executeOnPooledThread {
-          register()
-        }
+        registerAsync()
       }
     })
     busConnection.subscribe(ProjectTopics.MODULES, object : ModuleListener {
       override fun moduleAdded(project: Project, module: Module) {
-        register()
+        registerAsync()
       }
 
       override fun moduleRemoved(project: Project, module: Module) {
-        register()
+        registerAsync()
       }
     })
+  }
+
+  private fun registerAsync() {
+    if (!executorService.isShutdown) {
+      executorService.submit { register() }
+    }
   }
 
   @Synchronized private fun register() {
@@ -115,7 +120,8 @@ class ProjectServerNotificationsSubscriber : Disposable {
   }
 
   override fun dispose() {
-    unregister()
+      executorService.shutdownNow()
+      unregister()
   }
 
   private fun unregister() {
@@ -198,7 +204,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
             val editedConnection = wizard.connection
             val serverConnections = Settings.getGlobalSettings().serverConnections
             serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
-            register()
+            registerAsync()
           }
         } else if (e.project != null) {
           SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")
