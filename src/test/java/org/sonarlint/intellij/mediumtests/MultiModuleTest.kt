@@ -32,6 +32,7 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ServerNotificationsService
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber
+import org.sonarlint.intellij.util.ImmediateExecutorService
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 
 class MultiModuleTest : HeavyPlatformTestCase() {
@@ -40,7 +41,7 @@ class MultiModuleTest : HeavyPlatformTestCase() {
         val module = createModule("foo")
 
         val serverNotificationsService = Mockito.mock(ServerNotificationsService::class.java)
-        val projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService)
+        val projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService, ImmediateExecutorService())
 
         val connection = ServerConnection.newBuilder().setHostUrl("host").setName("mySq").build()
         Settings.getGlobalSettings().addServerConnection(connection);
