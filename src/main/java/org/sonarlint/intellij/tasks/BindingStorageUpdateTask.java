@@ -156,7 +156,7 @@ public class BindingStorageUpdateTask {
 
     projectKeysToUpdate.forEach(projectKeyFromModule -> {
       try {
-        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKeyFromModule, true, monitor);
+        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKeyFromModule, true, null, monitor);
       } catch (Exception e) {
         GlobalLogOutput.get().logError(e.getMessage(), e);
         failures.add(new ProjectStorageUpdateFailure(projectKeyFromModule, e));

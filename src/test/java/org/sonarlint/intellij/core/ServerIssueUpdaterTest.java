@@ -42,6 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -97,7 +98,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     var serverIssue = mock(ServerIssue.class);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), eq(null)))
+    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), isNull(), isNull()))
       .thenReturn(List.of(serverIssue));
 
     // run
@@ -112,7 +113,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void testDownloadAllServerIssues() throws InvalidBindingException {
+  public void testDownloadAllServerIssues() {
 
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
@@ -131,7 +132,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
-    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), eq(true), eq(null));
+    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), eq(true), isNull(), isNull());
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }

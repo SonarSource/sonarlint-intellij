@@ -240,7 +240,7 @@ public class ServerIssueUpdater implements Disposable {
     public void downloadAllServerIssues(String projectKey) {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
-        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, true, null);
+        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, true, null, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -267,7 +267,7 @@ public class ServerIssueUpdater implements Disposable {
     private List<ServerIssue> fetchServerIssuesForFile(ProjectBinding projectBinding, String relativePath) {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
-        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, true, null);
+        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, true, null, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
