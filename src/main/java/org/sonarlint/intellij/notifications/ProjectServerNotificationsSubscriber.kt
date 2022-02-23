@@ -30,6 +30,7 @@ import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
+import com.intellij.serviceContainer.NonInjectable
 import com.intellij.util.ui.UIUtil
 import icons.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -62,6 +63,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
 
   constructor(project: Project) : this(project, ServerNotificationsService.get(), Executors.newSingleThreadExecutor())
 
+  @NonInjectable
   constructor(project: Project, notificationsService: ServerNotificationsService, executorService: ExecutorService) {
     this.project = project
     this.notificationsService = notificationsService
