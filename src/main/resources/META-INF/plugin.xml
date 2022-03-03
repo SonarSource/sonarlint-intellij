@@ -141,6 +141,7 @@
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.lang</depends>
+    <depends>Git4Idea</depends>
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
     <depends optional="true" config-file="plugin-rider.xml">com.intellij.modules.rider</depends>
@@ -197,6 +198,7 @@
                             testServiceImplementation="org.sonarlint.intellij.util.SynchronousThreadPoolExecutor"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.vcs.VcsService"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.notifications.SonarLintProjectNotifications"/>
         <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
