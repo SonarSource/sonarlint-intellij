@@ -213,7 +213,7 @@ public class ProjectBindingManager {
     return Collections.emptySet();
   }
 
-  public Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
+  private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
     return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())
       .filter(projectKey -> !isBlank(projectKey))
       .collect(Collectors.toSet());

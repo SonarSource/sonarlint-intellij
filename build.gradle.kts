@@ -98,7 +98,7 @@ intellij {
     version.set(intellijBuildVersion)
     pluginName.set("sonarlint-intellij")
     updateSinceUntilBuild.set(false)
-    plugins.set(listOf("java"))
+    plugins.set(listOf("java", "git4idea"))
 }
 
 tasks.runPluginVerifier {
