@@ -42,9 +42,9 @@ import com.intellij.util.ui.JBUI
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject
 import java.awt.BorderLayout
@@ -186,7 +186,7 @@ class ModuleBindingPanel(private val project: Project, currentConnectionSupplier
         project: Project,
         selectedConnection: ServerConnection,
     ): Map<String, ServerProject>? {
-        val engine = getService(SonarLintEngineManager::class.java).getConnectedEngine(selectedConnection.name)
+        val engine = getService(EngineManager::class.java).getConnectedEngine(selectedConnection.name)
         val downloadTask = ServerDownloadProjectTask(project, engine, selectedConnection)
         return try {
             ProgressManager.getInstance().run(downloadTask)

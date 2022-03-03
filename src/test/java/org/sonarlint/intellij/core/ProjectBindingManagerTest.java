@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.ProgressManager;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.Before;
@@ -34,13 +35,11 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.container.model.DefaultGlobalStorageStatus;
+import org.sonarsource.sonarlint.core.container.model.DefaultProjectStorageStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
@@ -48,7 +47,6 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
   private StandaloneSonarLintEngine standaloneEngine = mock(StandaloneSonarLintEngine.class);
   private ConnectedSonarLintEngine connectedEngine = mock(ConnectedSonarLintEngine.class);
-  private SonarLintEngineManager engineManager = mock(SonarLintEngineManager.class);
 
   @Rule
   public ExpectedException exception = ExpectedException.none();
@@ -60,9 +58,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     replaceProjectService(SonarLintConsole.class, console);
     replaceProjectService(SonarLintProjectNotifications.class, notifications);
 
-    when(engineManager.getStandaloneEngine()).thenReturn(standaloneEngine);
-    when(engineManager.getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), anyString())).thenReturn(connectedEngine);
-    projectBindingManager = new ProjectBindingManager(getProject(), () -> engineManager, mock(ProgressManager.class));
+    projectBindingManager = new ProjectBindingManager(getProject(), mock(ProgressManager.class));
   }
 
   @Test
@@ -72,12 +68,14 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_connected_engine() throws InvalidBindingException {
-    getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setProjectKey("project1");
-    getProjectSettings().setConnectionName("server1");
+    connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1");
+    when(connectedEngine.getGlobalStorageStatus()).thenReturn(new DefaultGlobalStorageStatus(null, new Date(), false));
+    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(new DefaultProjectStorageStatus(new Date(), false));
+    getEngineManager().registerEngine(connectedEngine, "server1");
 
-    assertThat(projectBindingManager.getConnectedEngine()).isNotNull();
-    verify(engineManager).getConnectedEngine(any(SonarLintProjectNotifications.class), eq("server1"), eq("project1"));
+    var engine = projectBindingManager.getConnectedEngine();
+
+    assertThat(engine).isEqualTo(connectedEngine);
   }
 
   @Test
@@ -88,14 +86,14 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_create_facade_connected() throws InvalidBindingException {
-    getProjectSettings().setBindingEnabled(true);
-    getProjectSettings().setProjectKey("project1");
-    getProjectSettings().setConnectionName("server1");
+    connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1");
+    when(connectedEngine.getGlobalStorageStatus()).thenReturn(new DefaultGlobalStorageStatus(null, new Date(), false));
+    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(new DefaultProjectStorageStatus(new Date(), false));
+    getEngineManager().registerEngine(connectedEngine, "server1");
 
     var facade = projectBindingManager.getFacade(getModule());
 
     assertThat(facade).isInstanceOf(ConnectedSonarLintFacade.class);
-    verify(engineManager).getConnectedEngine(any(SonarLintProjectNotifications.class), anyString(), eq("project1"));
   }
 
   @Test
@@ -145,7 +143,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setConnectionName("server1");
     getProjectSettings().setProjectKey("key");
-    when(engineManager.getConnectedEngineIfStarted(anyString())).thenReturn(connectedEngine);
+    getEngineManager().registerEngine(connectedEngine, "server1");
 
     var engine = projectBindingManager.getEngineIfStarted();
 
@@ -155,7 +153,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_return_standalone_engine_if_started() {
     getProjectSettings().setBindingEnabled(false);
-    when(engineManager.getStandaloneEngineIfStarted()).thenReturn(standaloneEngine);
+    getEngineManager().registerEngine(standaloneEngine);
 
     var engine = projectBindingManager.getEngineIfStarted();
 
@@ -167,7 +165,6 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setBindingEnabled(true);
     getProjectSettings().setConnectionName("server1");
     getProjectSettings().setProjectKey(null);
-    when(engineManager.getConnectedEngineIfStarted("server1")).thenReturn(null);
 
     var engine = projectBindingManager.getEngineIfStarted();
 
@@ -177,7 +174,6 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_not_return_standalone_engine_if_not_started() {
     getProjectSettings().setBindingEnabled(false);
-    when(engineManager.getStandaloneEngineIfStarted()).thenReturn(null);
 
     var engine = projectBindingManager.getEngineIfStarted();
 

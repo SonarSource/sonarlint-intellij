@@ -42,17 +42,17 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintE
 import static com.intellij.openapi.progress.PerformInBackgroundOption.ALWAYS_BACKGROUND;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
-public class SonarLintEngineManager implements Disposable {
-  private final Map<String, ConnectedSonarLintEngine> connectedEngines = new HashMap<>();
+public class DefaultEngineManager implements EngineManager, Disposable {
+  protected final Map<String, ConnectedSonarLintEngine> connectedEngines = new HashMap<>();
   private final SonarLintEngineFactory factory;
-  private StandaloneSonarLintEngine standalone;
+  protected StandaloneSonarLintEngine standalone;
 
-  public SonarLintEngineManager() {
+  public DefaultEngineManager() {
     this(new SonarLintEngineFactory());
   }
 
   @NonInjectable
-  SonarLintEngineManager(SonarLintEngineFactory factory) {
+  DefaultEngineManager(SonarLintEngineFactory factory) {
     this.factory = factory;
   }
 
@@ -96,6 +96,7 @@ public class SonarLintEngineManager implements Disposable {
   /**
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
+  @Override
   public synchronized void stopAllDeletedConnectedEnginesAsync() {
     var it = connectedEngines.entrySet().iterator();
     var configuredStorageIds = getServerNames();
@@ -108,6 +109,7 @@ public class SonarLintEngineManager implements Disposable {
     }
   }
 
+  @Override
   public synchronized void stopAllEngines(boolean async) {
     AnalysisRequirementNotifications.resetCachedMessages();
     for (var entry : connectedEngines.entrySet()) {
@@ -129,11 +131,13 @@ public class SonarLintEngineManager implements Disposable {
     }
   }
 
+  @Override
   @NotNull
   public synchronized ConnectedSonarLintEngine getConnectedEngine(String connectionId) {
     return connectedEngines.computeIfAbsent(connectionId, factory::createEngine);
   }
 
+  @Override
   public synchronized StandaloneSonarLintEngine getStandaloneEngine() {
     if (standalone == null) {
       standalone = factory.createEngine();
@@ -141,6 +145,7 @@ public class SonarLintEngineManager implements Disposable {
     return standalone;
   }
 
+  @Override
   public ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId, String projectKey) throws InvalidBindingException {
     Preconditions.checkNotNull(notifications, "notifications");
     Preconditions.checkNotNull(serverId, "serverId");
@@ -168,11 +173,13 @@ public class SonarLintEngineManager implements Disposable {
     stopAllEngines(false);
   }
 
+  @Override
   @Nullable
   public ConnectedSonarLintEngine getConnectedEngineIfStarted(String connectionId) {
     return connectedEngines.get(connectionId);
   }
 
+  @Override
   @Nullable
   public SonarLintEngine getStandaloneEngineIfStarted() {
     return standalone;

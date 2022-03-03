@@ -44,6 +44,8 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
+import org.sonarlint.intellij.core.EngineManager;
+import org.sonarlint.intellij.core.TestEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.ui.SonarLintConsoleTestImpl;
@@ -67,6 +69,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   @After
   public final void restore() {
+    getEngineManager().clearAllEngines();
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
     setGlobalLevelExclusions(Collections.emptyList());
@@ -110,6 +113,10 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   public SonarLintModuleSettings getModuleSettings() {
     return getSettingsFor(getModule());
+  }
+
+  protected TestEngineManager getEngineManager() {
+    return (TestEngineManager) SonarLintUtils.getService(EngineManager.class);
   }
 
   protected SonarLintConsoleTestImpl getConsole() {
