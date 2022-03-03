@@ -177,7 +177,9 @@
         <externalAnnotator language="Swift" implementationClass="org.sonarlint.intellij.editor.SonarExternalAnnotator"/>
 
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.SonarLintEngineManager"/>
+        <applicationService serviceInterface="org.sonarlint.intellij.core.EngineManager"
+                            serviceImplementation="org.sonarlint.intellij.core.DefaultEngineManager"
+                            testServiceImplementation="org.sonarlint.intellij.core.TestEngineManager"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.SonarLintPlugin"/>
         <applicationService serviceInterface="org.sonarlint.intellij.util.GlobalLogOutput"
                             serviceImplementation="org.sonarlint.intellij.util.GlobalLogOutputImpl"

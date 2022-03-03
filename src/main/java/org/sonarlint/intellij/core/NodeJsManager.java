@@ -48,7 +48,7 @@ public class NodeJsManager {
           clear();
           // Node.js path is passed at engine startup, so we have to restart them all to ensure the new value is taken into account
           // Don't wait for the engines to stop, to not freeze the UI
-          SonarLintUtils.getService(SonarLintEngineManager.class).stopAllEngines(true);
+          SonarLintUtils.getService(EngineManager.class).stopAllEngines(true);
         }
       }
     });

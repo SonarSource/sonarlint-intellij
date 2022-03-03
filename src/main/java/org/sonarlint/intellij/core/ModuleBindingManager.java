@@ -24,10 +24,8 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.platform.ModuleAttachProcessor;
-import com.intellij.serviceContainer.NonInjectable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -36,20 +34,14 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
 import static java.util.Objects.requireNonNull;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ModuleBindingManager {
   private final Module module;
-  Supplier<SonarLintEngineManager> engineManagerSupplier;
 
   public ModuleBindingManager(Module module) {
-    this(module, () -> SonarLintUtils.getService(SonarLintEngineManager.class));
-  }
-
-  @NonInjectable
-  public ModuleBindingManager(Module module, Supplier<SonarLintEngineManager> engineManagerSupplier) {
     this.module = module;
-    this.engineManagerSupplier = engineManagerSupplier;
   }
 
   @CheckForNull
@@ -133,7 +125,7 @@ public class ModuleBindingManager {
 
   @CheckForNull
   public SonarLintEngine getEngineIfStarted() {
-    var engineManager = this.engineManagerSupplier.get();
+    var engineManager = getService(EngineManager.class);
     var moduleSettings = getSettingsFor(module);
     var projectSettings = getSettingsFor(module.getProject());
     if (moduleSettings.isProjectBindingOverridden() || projectSettings.isBound()) {

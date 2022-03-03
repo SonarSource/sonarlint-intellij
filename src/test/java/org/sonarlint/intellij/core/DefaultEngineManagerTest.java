@@ -44,9 +44,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
+public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
 
-  private SonarLintEngineManager manager;
+  private DefaultEngineManager manager;
   private SonarLintEngineFactory engineFactory;
   private SonarLintProjectNotifications notifications;
   private ConnectedSonarLintEngine connectedEngine;
@@ -65,7 +65,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(engineFactory.createEngine(anyString())).thenReturn(connectedEngine);
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
-    manager = new SonarLintEngineManager(engineFactory);
+    manager = new DefaultEngineManager(engineFactory);
     getGlobalSettings().setServerConnections(Collections.emptyList());
   }
 
@@ -119,7 +119,7 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
     getGlobalSettings().setServerConnections(List.of(createServer("server1")));
-    manager = new SonarLintEngineManager(engineFactory);
+    manager = new DefaultEngineManager(engineFactory);
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);
 

@@ -94,7 +94,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
-import org.sonarlint.intellij.core.SonarLintEngineManager;
+import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
@@ -191,7 +191,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   @NotNull
   private static Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
-    var engine = SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
+    var engine = SonarLintUtils.getService(EngineManager.class).getStandaloneEngine();
     return engine.getAllRuleDetails().stream()
       .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
       .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));

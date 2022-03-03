@@ -25,9 +25,9 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.NodeJsManager
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.SonarLintEngineManager
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails
 import org.sonarsource.sonarlint.core.telemetry.TelemetryClientAttributesProvider
 import java.util.Arrays
@@ -73,7 +73,7 @@ class TelemetryClientAttributeProviderImpl : TelemetryClientAttributesProvider {
     override fun additionalAttributes() = emptyMap<String, Any>()
 
     private fun defaultEnabledRuleKeys(): Set<String> {
-        val engineManager = SonarLintUtils.getService(SonarLintEngineManager::class.java)
+        val engineManager = SonarLintUtils.getService(EngineManager::class.java)
         return engineManager.standaloneEngine.allRuleDetails.stream()
             .filter { obj: StandaloneRuleDetails -> obj.isActiveByDefault }
             .map { obj: StandaloneRuleDetails -> obj.key }

@@ -43,9 +43,9 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
         replaceProjectService(SonarLintConsole::class.java, console)
         replaceProjectService(SonarLintProjectNotifications::class.java, notifications)
 
-        `when`(engineManager.standaloneEngine).thenReturn(standaloneEngine)
-        `when`(engineManager.getConnectedEngine(ArgumentMatchers.any(SonarLintProjectNotifications::class.java), ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(connectedEngine)
-        moduleBindingManager = ModuleBindingManager(module) { engineManager }
+        getEngineManager().registerEngine(standaloneEngine)
+        getEngineManager().registerEngine(connectedEngine, "server1")
+        moduleBindingManager = ModuleBindingManager(module)
         replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
     }
 
@@ -104,6 +104,6 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
 
     private val standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
     private val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
-    private val engineManager = mock(SonarLintEngineManager::class.java)
+    private val engineManager = mock(DefaultEngineManager::class.java)
 
 }

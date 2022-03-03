@@ -30,7 +30,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -53,17 +52,15 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ProjectBindingManager {
   private final Project myProject;
-  private final Supplier<SonarLintEngineManager> engineManagerSupplier;
   private final ProgressManager progressManager;
 
   public ProjectBindingManager(Project project) {
-    this(project, () -> getService(SonarLintEngineManager.class), ProgressManager.getInstance());
+    this(project, ProgressManager.getInstance());
   }
 
   @NonInjectable
-  ProjectBindingManager(Project project, Supplier<SonarLintEngineManager> engineManagerSupplier, ProgressManager progressManager) {
+  ProjectBindingManager(Project project, ProgressManager progressManager) {
     this.myProject = project;
-    this.engineManagerSupplier = engineManagerSupplier;
     this.progressManager = progressManager;
   }
 
@@ -78,7 +75,7 @@ public class ProjectBindingManager {
   }
 
   public SonarLintFacade getFacade(Module module, boolean logDetails) throws InvalidBindingException {
-    var engineManager = this.engineManagerSupplier.get();
+    var engineManager = getService(EngineManager.class);
     var projectSettings = getSettingsFor(myProject);
     var notifications = getService(myProject, SonarLintProjectNotifications.class);
     var console = getService(myProject, SonarLintConsole.class);
@@ -98,7 +95,7 @@ public class ProjectBindingManager {
   }
 
   private ConnectedSonarLintEngine getConnectedEngineSkipChecks() {
-    var engineManager = this.engineManagerSupplier.get();
+    var engineManager = getService(EngineManager.class);
     return engineManager.getConnectedEngine(requireNonNull(getSettingsFor(myProject).getConnectionName()));
   }
 
@@ -112,13 +109,13 @@ public class ProjectBindingManager {
     var projectKey = projectSettings.getProjectKey();
     checkBindingStatus(notifications, connectionName, projectKey);
 
-    var engineManager = this.engineManagerSupplier.get();
+    var engineManager = getService(EngineManager.class);
     return engineManager.getConnectedEngine(notifications, connectionName, projectKey);
   }
 
   @CheckForNull
   public SonarLintEngine getEngineIfStarted() {
-    var engineManager = this.engineManagerSupplier.get();
+    var engineManager = getService(EngineManager.class);
     var projectSettings = getSettingsFor(myProject);
     if (projectSettings.isBound()) {
       var connectionId = projectSettings.getConnectionName();

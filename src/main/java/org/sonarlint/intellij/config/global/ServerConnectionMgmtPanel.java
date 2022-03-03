@@ -44,7 +44,6 @@ import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
-
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -67,11 +66,10 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
-
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
+import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.core.SonarLintEngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
@@ -271,7 +269,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     engine = null;
 
     if (server != null) {
-      var serverManager = getService(SonarLintEngineManager.class);
+      var serverManager = getService(EngineManager.class);
       // Initial loading of the connected engine can be long, sent to pooled thread
       ApplicationManager.getApplication().executeOnPooledThread(() -> {
         engine = serverManager.getConnectedEngine(server.getName());
@@ -360,7 +358,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
   }
 
   private static void updateConnectionStorage(ServerConnection toUpdate) {
-    var serverManager = getService(SonarLintEngineManager.class);
+    var serverManager = getService(EngineManager.class);
     var task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(toUpdate.getName()), toUpdate, true, false, null);
     ProgressManager.getInstance().run(task.asBackground());
   }
