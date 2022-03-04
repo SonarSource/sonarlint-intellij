@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,7 +21,11 @@ package org.sonarlint.intellij.messages;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.messages.Topic;
+
+import java.util.HashSet;
 import java.util.Set;
+
+import static java.util.Collections.singletonList;
 
 /**
  * Called when issue store is updated. Should be used by UI that displays issues.
@@ -32,7 +36,7 @@ public interface IssueStoreListener {
   void filesChanged(Set<VirtualFile> changedFiles);
 
   default void fileChanged(VirtualFile virtualFile) {
-    filesChanged(Set.of(virtualFile));
+    filesChanged(new HashSet<>(singletonList(virtualFile)));
   }
 
   void allChanged();

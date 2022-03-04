@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -122,7 +123,7 @@ public class RulesFilterModel {
     if (str == null || str.isEmpty()) {
       return Collections.emptyList();
     }
-    var lower = str.toLowerCase(Locale.US);
-    return List.of(lower.split("\\s"));
+    String lower = str.toLowerCase(Locale.US);
+    return Arrays.asList(lower.split("\\s"));
   }
 }

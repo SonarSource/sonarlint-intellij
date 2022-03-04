@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,9 +21,6 @@ package org.sonarlint.intellij.core;
 
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
-
-import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,7 +31,6 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
@@ -91,39 +87,28 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void should_fail_project_storage_missing() throws InvalidBindingException {
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(globalOk);
-    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(null);
+  public void should_fail_not_updated() throws InvalidBindingException {
+    getGlobalSettings().setServerConnections(Collections.singletonList(createServer("server1")));
+    manager = new SonarLintEngineManager();
 
-    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
-
-    exception.expect(InvalidBindingException.class);
-    exception.expectMessage("Project local storage is missing: 'project1'");
-    manager.getConnectedEngine(notifications, "server1", "project1");
-  }
-
-  @Test
-  public void should_fail_global_storage_missing() throws InvalidBindingException {
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(null);
-
-    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
 
     exception.expect(InvalidBindingException.class);
-    exception.expectMessage("Connection local storage is missing: 'server1'");
+    exception.expectMessage("Connection local storage is not updated");
     manager.getConnectedEngine(notifications, "server1", "project1");
   }
 
   @Test
   public void should_pass_checks() throws InvalidBindingException {
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(globalOk);
+    when(connectedEngine.getState()).thenReturn(ConnectedSonarLintEngine.State.UPDATED);
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
-    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
+    getGlobalSettings().setServerConnections(Collections.singletonList(createServer("server1")));
     manager = new SonarLintEngineManager(engineFactory);
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);
 
     verify(engineFactory, Mockito.times(1)).createEngine("server1");
+    verify(connectedEngine).getState();
   }
 
   private static ServerConnection createServer(String name) {
@@ -131,22 +116,6 @@ public class SonarLintEngineManagerTest extends AbstractSonarLintLightTests {
   }
 
   private static ProjectStorageStatus projectOk = new ProjectStorageStatus() {
-    @Override public Date getLastUpdateDate() {
-      return new Date(System.currentTimeMillis());
-    }
-
-    @Override public boolean isStale() {
-      return false;
-    }
-  };
-
-  private static GlobalStorageStatus globalOk = new GlobalStorageStatus() {
-    @Nullable
-    @Override
-    public String getServerVersion() {
-      return null;
-    }
-
     @Override public Date getLastUpdateDate() {
       return new Date(System.currentTimeMillis());
     }

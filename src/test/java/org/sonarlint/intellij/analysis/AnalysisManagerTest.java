@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,12 +21,12 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 
+import static java.util.Collections.singletonList;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -44,14 +44,14 @@ public class AnalysisManagerTest extends LightPlatformCodeInsightFixture4TestCas
 
   @Test
   public void testUserTask() {
-    manager.submitManual(List.of(mock(VirtualFile.class)), TriggerType.ACTION, true, analysisCallback);
+    manager.submitManual(singletonList(mock(VirtualFile.class)), TriggerType.ACTION, true, analysisCallback);
 
     verify(analysisCallback).onSuccess(any());
   }
 
   @Test
   public void testRunBackground() {
-    manager.submitBackground(List.of(mock(VirtualFile.class)), TriggerType.ACTION, analysisCallback);
+    manager.submitBackground(singletonList(mock(VirtualFile.class)), TriggerType.ACTION, analysisCallback);
 
     verify(analysisCallback).onSuccess(any());
   }

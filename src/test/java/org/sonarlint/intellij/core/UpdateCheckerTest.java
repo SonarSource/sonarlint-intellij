@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,26 +20,35 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.DumbProgressIndicator;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.StorageUpdateCheckResult;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class UpdateCheckerTest extends AbstractSonarLintLightTests {
-  private QualityProfilesSynchronizer qualityProfilesSynchronizer;
+  private UpdateChecker updateChecker;
   private ServerConnection server;
+  private SonarLintProjectNotifications notifications = mock(SonarLintProjectNotifications.class);
   private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
 
   @Before
   public void before() throws InvalidBindingException {
     replaceProjectService(ProjectBindingManager.class, bindingManager);
+    replaceProjectService(SonarLintProjectNotifications.class, notifications);
 
     getProjectSettings().setProjectKey("key");
     getProjectSettings().setConnectionName("serverId");
@@ -47,15 +56,51 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     when(bindingManager.getServerConnection()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 
-    qualityProfilesSynchronizer = new QualityProfilesSynchronizer(getProject());
+    updateChecker = new UpdateChecker(getProject());
   }
 
   @Test
   public void do_nothing_if_no_engine() throws InvalidBindingException {
     when(bindingManager.getConnectedEngine()).thenThrow(new IllegalStateException());
-    qualityProfilesSynchronizer.syncQualityProfiles(DumbProgressIndicator.INSTANCE);
+    updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
 
     verifyZeroInteractions(engine);
+    verifyZeroInteractions(notifications);
+  }
+
+  @Test
+  public void do_nothing_if_no_updates() {
+    StorageUpdateCheckResult result = mock(StorageUpdateCheckResult.class);
+    when(result.needUpdate()).thenReturn(false);
+
+    when(engine.checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any())).thenReturn(result);
+    when(engine.checkIfGlobalStorageNeedUpdate(any(), any(), any())).thenReturn(result);
+
+    updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
+
+    verify(engine).checkIfGlobalStorageNeedUpdate(any(), any(), any());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any());
+
+    verifyZeroInteractions(notifications);
+  }
+
+  @Test
+  public void global_changes() {
+    StorageUpdateCheckResult result = mock(StorageUpdateCheckResult.class);
+    when(result.needUpdate()).thenReturn(true);
+    when(result.changelog()).thenReturn(Collections.singletonList("change1"));
+
+    when(engine.checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any())).thenReturn(result);
+    when(engine.checkIfGlobalStorageNeedUpdate(any(), any(), any())).thenReturn(result);
+
+    updateChecker.checkForUpdate(DumbProgressIndicator.INSTANCE);
+
+    verify(engine).checkIfGlobalStorageNeedUpdate(any(), any(), any());
+    verify(engine).checkIfProjectStorageNeedUpdate(any(), any(), anyString(), any());
+    verify(notifications).notifyServerHasUpdates("serverId", engine, server, false);
+
+    verifyNoMoreInteractions(engine);
+    verifyZeroInteractions(notifications);
   }
 
   private ServerConnection createServer() {

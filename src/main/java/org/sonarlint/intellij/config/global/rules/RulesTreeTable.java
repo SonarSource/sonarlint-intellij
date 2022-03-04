@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +28,9 @@ import com.intellij.ui.DoubleClickListener;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.table.IconTableCellRenderer;
+import java.awt.Color;
 import java.awt.Component;
+import java.awt.Point;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -38,6 +40,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
+import javax.swing.table.TableColumn;
 import javax.swing.tree.TreePath;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,7 +67,7 @@ public class RulesTreeTable extends TreeTable {
       protected boolean onDoubleClick(MouseEvent event) {
         final TreePath path = getTree().getPathForRow(getTree().getLeadSelectionRow());
         if (path != null) {
-          var node = (RulesTreeNode) path.getLastPathComponent();
+          RulesTreeNode node = (RulesTreeNode) path.getLastPathComponent();
           if (node.isLeaf()) {
             treeTableModel.swapAndRefresh(node);
           }
@@ -74,7 +77,7 @@ public class RulesTreeTable extends TreeTable {
     }.installOn(this);
 
     registerKeyboardAction(e -> {
-      final var path = getTree().getPathForRow(getTree().getLeadSelectionRow());
+      final TreePath path = getTree().getPathForRow(getTree().getLeadSelectionRow());
       if (path != null) {
         treeTableModel.swapAndRefresh(path);
       }
@@ -84,24 +87,24 @@ public class RulesTreeTable extends TreeTable {
     addMouseMotionListener(new MouseAdapter() {
       @Override
       public void mouseMoved(final MouseEvent e) {
-        var point = e.getPoint();
-        var column = columnAtPoint(point);
+        Point point = e.getPoint();
+        int column = columnAtPoint(point);
         if (column != ICONS_COLUMN) {
           return;
         }
-        var row = rowAtPoint(point);
-        final var path = getTree().getPathForRow(row);
+        int row = rowAtPoint(point);
+        final TreePath path = getTree().getPathForRow(row);
         if (path == null) {
           return;
         }
 
-        var obj = path.getLastPathComponent();
+        Object obj = path.getLastPathComponent();
 
         if (obj instanceof RulesTreeNode.Rule) {
-          var rule = (RulesTreeNode.Rule) obj;
-          var label = new JLabel();
-          var severityAndType = rule.severity() + " " + rule.type();
-          label.setText(StringUtil.capitalize(severityAndType.replace('_', ' ').toLowerCase(Locale.US)));
+          RulesTreeNode.Rule rule = (RulesTreeNode.Rule) obj;
+          JLabel label = new JLabel();
+          String l = rule.severity() + " " + rule.type();
+          label.setText(StringUtil.capitalize(l.replace('_', ' ').toLowerCase(Locale.US)));
           IdeTooltipManager.getInstance().show(new IdeTooltip(RulesTreeTable.this, point, label), false);
         }
       }
@@ -109,20 +112,20 @@ public class RulesTreeTable extends TreeTable {
   }
 
   private void setUpColumns() {
-    var isEnabledColumn = getColumnModel().getColumn(IS_ENABLED_COLUMN);
+    TableColumn isEnabledColumn = getColumnModel().getColumn(IS_ENABLED_COLUMN);
     isEnabledColumn.setMaxWidth(JBUI.scale(20 + getAdditionalPadding()));
-    var boxRenderer = new ThreeStateCheckBoxRenderer();
+    ThreeStateCheckBoxRenderer boxRenderer = new ThreeStateCheckBoxRenderer();
     boxRenderer.setOpaque(true);
     isEnabledColumn.setCellRenderer(boxRenderer);
     isEnabledColumn.setCellEditor(new ThreeStateCheckBoxRenderer());
 
-    var iconsColumn = getColumnModel().getColumn(ICONS_COLUMN);
+    TableColumn iconsColumn = getColumnModel().getColumn(ICONS_COLUMN);
     iconsColumn.setCellRenderer(new IconTableCellRenderer<Icon>() {
       @Override
       public Component getTableCellRendererComponent(JTable table, Object value, boolean selected, boolean focus, int row, int column) {
-        var component = super.getTableCellRendererComponent(table, value, false, focus, row, column);
-        var bgColor = selected ? table.getSelectionBackground() : table.getBackground();
-        component.setBackground(bgColor);
+        Component component = super.getTableCellRendererComponent(table, value, false, focus, row, column);
+        Color bg = selected ? table.getSelectionBackground() : table.getBackground();
+        component.setBackground(bg);
         ((JLabel) component).setText("");
         return component;
       }

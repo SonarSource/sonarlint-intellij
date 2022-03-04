@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,28 +19,9 @@
  */
 package org.sonarlint.intellij.config.module;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
-
 public final class SonarLintModuleSettings {
   private String sqPathPrefix = "";
   private String idePathPrefix = "";
-  private String projectKey = "";
-
-  public String getProjectKey() {
-    return projectKey;
-  }
-
-  public void setProjectKey(String projectKey) {
-    this.projectKey = projectKey;
-  }
-
-  public boolean isProjectBindingOverridden() {
-    return !isBlank(projectKey);
-  }
-
-  public void clearBindingOverride() {
-    this.projectKey = "";
-  }
 
   public String getSqPathPrefix() {
     return sqPathPrefix;

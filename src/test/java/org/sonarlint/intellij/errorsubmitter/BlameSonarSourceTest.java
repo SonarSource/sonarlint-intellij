@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -31,25 +31,25 @@ public class BlameSonarSourceTest {
 
     @Test
     public void testShortDescription() {
-        var url = underTest.getReportWithBodyUrl("a");
+        String url = underTest.getReportWithBodyUrl("a");
         assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH).isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=a");
     }
 
     @Test
     public void emptyBodyIfSingleLineTooLong() {
-        var url = underTest.getReportWithBodyUrl(StringUtil.repeat("a", 5000));
+        String url = underTest.getReportWithBodyUrl(StringUtil.repeat("a", 5000));
         assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH).isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=");
     }
 
     @Test
     public void truncateOnNewLineIfDescriptionTooLong() {
-        var url = underTest.getReportWithBodyUrl(StringUtil.repeat("1234567\n", 188));
+        String url = underTest.getReportWithBodyUrl(StringUtil.repeat("1234567\n", 188));
         assertThat(url).hasSizeLessThanOrEqualTo(BlameSonarSource.MAX_URI_LENGTH).isEqualTo("https://community.sonarsource.com/new-topic?title=Error+in+SonarLint+for+IntelliJ&category_id=6&tags=sonarlint,intellij&body=" + StringUtil.repeat("1234567%0A", 186) + "1234567");
     }
 
     @Test
     public void testAbbreviateStackTrace() {
-        var throwableText = "java.lang.Throwable: class com.intellij.openapi.roots.ProjectRootManager it is a service, use getService instead of getComponent\n" +
+        String throwableText = "java.lang.Throwable: class com.intellij.openapi.roots.ProjectRootManager it is a service, use getService instead of getComponent\n" +
                 "\tat com.intellij.openapi.diagnostic.Logger.error(Logger.java:182)\n" +
                 "\tat com.intellij.serviceContainer.ComponentManagerImpl.getComponent(ComponentManagerImpl.kt:549)\n" +
                 "\tat org.sonarsource.sonarlint.core.container.module.SonarLintModuleFileSystem.files(SonarLintModuleFileSystem.java:39)\n" +
@@ -71,7 +71,7 @@ public class BlameSonarSourceTest {
                 "\tat java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:85)\n" +
                 "\tat java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:746)";
 
-        var result = BlameSonarSource.abbreviate(throwableText);
+        String result = underTest.abbreviate(throwableText);
 
         assertThat(throwableText).hasSize(2036);
         assertThat(result).hasSize(1813).isEqualTo("java.lang.Throwable: class c.ij.oa.roots.ProjectRootManager it is a service, use getService instead of getComponent\n" +

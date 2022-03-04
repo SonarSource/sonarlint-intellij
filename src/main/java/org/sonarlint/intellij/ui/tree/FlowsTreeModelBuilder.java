@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,10 +21,13 @@ package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.editor.RangeMarker;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.issue.Flow;
+import org.sonarlint.intellij.issue.IssueContext;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
@@ -47,14 +50,14 @@ public class FlowsTreeModelBuilder {
   }
 
   public void populateForIssue(LiveIssue issue) {
-    var rangeMarker = issue.getRange();
-    var context = issue.context();
-    if (rangeMarker == null || context.isEmpty()) {
+    RangeMarker rangeMarker = issue.getRange();
+    Optional<IssueContext> context = issue.context();
+    if (rangeMarker == null || !context.isPresent()) {
       clearFlows();
       return;
     }
-    var issueContext = context.get();
-    var message = issue.getMessage();
+    IssueContext issueContext = context.get();
+    String message = issue.getMessage();
     if (issueContext.hasUniqueFlow()) {
       setSingleFlow(issueContext.flows().get(0), rangeMarker, message);
     } else {
@@ -64,36 +67,35 @@ public class FlowsTreeModelBuilder {
 
   private void setMultipleFlows(List<Flow> flows, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
-    var primaryLocationNode = new PrimaryLocationNode(rangeMarker, message, flows.get(0));
+    PrimaryLocationNode primaryLocationNode = new PrimaryLocationNode(rangeMarker, message, flows.get(0));
     summary.add(primaryLocationNode);
 
-    var flowIndex = 1;
-    for (var flow : flows) {
-      var flowNode = new FlowNode(flow, "Flow " + flowIndex);
+    int i = 1;
+    for (Flow f : flows) {
+      FlowNode flowNode = new FlowNode(f, "Flow " + i);
       primaryLocationNode.add(flowNode);
 
-      var locationIndex = 1;
-      for (var location : flow.getLocations()) {
-        var locationNode = new FlowSecondaryLocationNode(locationIndex, location, flow);
+      int j = 1;
+      for (Location location : f.getLocations()) {
+        FlowSecondaryLocationNode locationNode = new FlowSecondaryLocationNode(j, location, f);
         flowNode.add(locationNode);
-        locationIndex++;
+        j++;
       }
-      flowIndex++;
+      i++;
     }
     model.setRoot(summary);
   }
 
   private void setSingleFlow(Flow flow, RangeMarker rangeMarker, @Nullable String message) {
     summary = new SummaryNode();
-    var primaryLocation = new PrimaryLocationNode(rangeMarker, message, flow);
+    PrimaryLocationNode primaryLocation = new PrimaryLocationNode(rangeMarker, message, flow);
     primaryLocation.setBold(true);
     summary.add(primaryLocation);
 
-    var locationIndex = 1;
-    for (var location : flow.getLocations()) {
-      var locationNode = new FlowSecondaryLocationNode(locationIndex, location, flow);
+    int i = 1;
+    for (Location location : flow.getLocations()) {
+      FlowSecondaryLocationNode locationNode = new FlowSecondaryLocationNode(i++, location, flow);
       primaryLocation.add(locationNode);
-      locationIndex++;
     }
 
     model.setRoot(summary);

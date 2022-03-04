@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,11 +23,11 @@ import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ProjectLogOutput implements ClientLogOutput {
+public class ProjectLogOutput implements LogOutput {
   private final Project project;
 
   public ProjectLogOutput(Project project) {
@@ -39,7 +39,7 @@ public class ProjectLogOutput implements ClientLogOutput {
     if (project.isDisposed()) {
       return;
     }
-    var console = SonarLintUtils.getService(project, SonarLintConsole.class);
+    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     if (isNodeCommandException(msg)) {
       console.info(msg);
       AnalysisRequirementNotifications.notifyNodeCommandException(project);

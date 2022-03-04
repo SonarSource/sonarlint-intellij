@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +24,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.util.GlobalLogOutputTestImpl;
+import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,7 +42,7 @@ public class SonarLintEngineFactoryTest extends AbstractSonarLintLightTests {
 
   @Test
   public void standalone() {
-    var engine = factory.createEngine();
+    StandaloneSonarLintEngine engine = factory.createEngine();
     assertThat(engine).isNotNull();
 
     engine.stop();
@@ -50,7 +52,7 @@ public class SonarLintEngineFactoryTest extends AbstractSonarLintLightTests {
 
   @Test
   public void connected() {
-    var engine = factory.createEngine("id");
+    ConnectedSonarLintEngine engine = factory.createEngine("id");
     assertThat(engine).isNotNull();
     assertThat(engine.getGlobalStorageStatus()).isNull();
     engine.stop(true);

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,17 +23,21 @@ import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.codeInsight.intention.PriorityAction;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
+
+import java.util.Collection;
+import java.util.Optional;
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.LiveIssue;
 
 public class ShowRuleDescriptionIntentionAction implements IntentionAction, PriorityAction, Iconable {
 
@@ -60,16 +64,10 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
 
   @Override
   public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
-    var actualFile = file.getVirtualFile();
-    if (editor instanceof EditorEx) {
-      // SLI-633 - When PhpStorm detects that a string is used as a regular expression, it injects a language reference that leads the file
-      // passed here to be a completely virtual 'PHP_REGEXP_FILE' instance. However, the editor holds the reference to the actual file.
-      actualFile = ((EditorEx) editor).getVirtualFile();
-    }
-    var issueManager = SonarLintUtils.getService(project, IssueManager.class);
-    var liveIssues = issueManager.getForFile(actualFile);
-    var liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
-    if (liveIssue.isEmpty()) {
+    IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
+    Collection<LiveIssue> liveIssues = issueManager.getForFile(file.getVirtualFile());
+    Optional<LiveIssue> liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
+    if(!liveIssue.isPresent()) {
       return;
     }
     UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.trigger;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
@@ -27,8 +28,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class SonarLintCheckinHandlerFactory extends CheckinHandlerFactory {
 
+
+
   @NotNull @Override public CheckinHandler createHandler(@NotNull CheckinProjectPanel panel, @NotNull CommitContext commitContext) {
-    var project = panel.getProject();
+    Project project = panel.getProject();
     return new SonarLintCheckinHandler(project, panel);
   }
 }

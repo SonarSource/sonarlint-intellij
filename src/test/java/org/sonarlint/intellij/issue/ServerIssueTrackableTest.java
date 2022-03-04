@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,10 +22,9 @@ package org.sonarlint.intellij.issue;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.analysis.api.TextRange;
+import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ServerIssueTrackableTest {
   @Test
   public void testNulls() {
-    var trackable = new ServerIssueTrackable(new NullTestIssue());
+    ServerIssueTrackable trackable = new ServerIssueTrackable(new NullTestIssue());
 
     assertThat(trackable.getServerIssueKey()).isNull();
     assertThat(trackable.getLine()).isNull();
@@ -41,7 +40,7 @@ public class ServerIssueTrackableTest {
 
   @Test
   public void testWrapping() {
-    var trackable = new ServerIssueTrackable(new TestIssue());
+    ServerIssueTrackable trackable = new ServerIssueTrackable(new TestIssue());
 
     assertThat(trackable.getAssignee()).isEqualTo("assigneeLogin");
     assertThat(trackable.isResolved()).isTrue();

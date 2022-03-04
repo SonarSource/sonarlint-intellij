@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,16 +21,19 @@ package org.sonarlint.intellij.issue.persistence;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Optional;
 
 import org.sonarlint.intellij.util.GlobalLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.ObjectStore;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
 import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 /**
  * An ObjectStore without internal cache that derives the filesystem path to storage using a provided PathMapper.
@@ -55,11 +58,11 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
 
   @Override
   public Optional<V> read(K key) {
-    var path = pathMapper.apply(key);
+    Path path = pathMapper.apply(key);
     if (!path.toFile().exists()) {
       return Optional.empty();
     }
-    try (var is = new BufferedInputStream(Files.newInputStream(path))) {
+    try (InputStream is = new BufferedInputStream(Files.newInputStream(path))) {
       return Optional.of(reader.apply(is));
     } catch (Exception e) {
       GlobalLogOutput.get().logError("Failed to read the issue store at: " + path, e);
@@ -68,7 +71,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
   }
 
   public boolean contains(K key) {
-    var path = pathMapper.apply(key);
+    Path path = pathMapper.apply(key);
     return path.toFile().exists();
   }
 
@@ -76,7 +79,7 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
    * Deletes all entries in the index are no longer valid.
    */
   public void deleteInvalid() {
-    var counter = 0;
+    int counter = 0;
     Collection<K> keys;
     try {
       keys = index.keys();
@@ -95,25 +98,25 @@ class IndexedObjectStore<K, V> implements ObjectStore<K, V> {
         }
       }
     }
-    GlobalLogOutput.get().log(String.format("%d entries removed from the store", counter), ClientLogOutput.Level.DEBUG);
+    GlobalLogOutput.get().log(String.format("%d entries removed from the store", counter), LogOutput.Level.DEBUG);
   }
 
   @Override
   public void delete(K key) throws IOException {
-    var path = pathMapper.apply(key);
+    Path path = pathMapper.apply(key);
     Files.deleteIfExists(path);
     index.delete(key);
   }
 
   @Override
   public void write(K key, V value) throws IOException {
-    var path = pathMapper.apply(key);
+    Path path = pathMapper.apply(key);
     index.save(key, path);
-    var parent = path.getParent();
+    Path parent = path.getParent();
     if (!parent.toFile().exists()) {
       Files.createDirectories(parent);
     }
-    try (var out = Files.newOutputStream(path)) {
+    try (OutputStream out = Files.newOutputStream(path)) {
       writer.accept(out, value);
     }
   }

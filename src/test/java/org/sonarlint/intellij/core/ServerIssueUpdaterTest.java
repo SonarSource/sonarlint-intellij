@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,9 +21,11 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
+
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,7 +44,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -66,13 +67,13 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() throws InvalidBindingException {
-    var bindingManager = spy(SonarLintUtils.getService(getProject(), ProjectBindingManager.class));
+    ProjectBindingManager bindingManager = spy(SonarLintUtils.getService(getProject(), ProjectBindingManager.class));
     replaceProjectService(IssueManager.class, issueManager);
     replaceProjectService(SonarLintConsole.class, mockedConsole);
     replaceProjectService(ProjectBindingManager.class, bindingManager);
     doReturn(engine).when(bindingManager).getConnectedEngine();
     underTest = new ServerIssueUpdater(getProject());
-    getGlobalSettings().setServerConnections(List.of(ServerConnection.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
+    getGlobalSettings().setServerConnections(Collections.singletonList(ServerConnection.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
     getProjectSettings().setConnectionName(SERVER_ID);
     getProjectSettings().setProjectKey(PROJECT_KEY);
 
@@ -85,26 +86,26 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_do_nothing_if_not_connected() {
-    var file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
+    VirtualFile file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
     getProjectSettings().setBindingEnabled(false);
 
-    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), Collections.singletonList(file)), new EmptyProgressIndicator(), false);
     verifyZeroInteractions(issueManager);
   }
 
   @Test
   public void testServerIssueTracking() {
-    var file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
-    var serverIssue = mock(ServerIssue.class);
+    VirtualFile file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
+    ServerIssue serverIssue = mock(ServerIssue.class);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), isNull(), isNull()))
-      .thenReturn(List.of(serverIssue));
+    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), eq(null)))
+      .thenReturn(Collections.singletonList(serverIssue));
 
     // run
     getProjectSettings().setBindingEnabled(true);
 
-    underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), Collections.singletonList(file)), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
@@ -113,26 +114,26 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void testDownloadAllServerIssues() {
+  public void testDownloadAllServerIssues() throws InvalidBindingException {
 
     List<VirtualFile> files = new LinkedList<>();
     for (int i = 0; i < 10; i++) {
       VirtualFile file = myFixture.copyFileToProject(FOO_PHP, "foo" + i + ".php");
       files.add(file);
     }
-    var serverIssue = mock(ServerIssue.class);
+    ServerIssue serverIssue = mock(ServerIssue.class);
 
     // mock issues fetched
-    when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(List.of(serverIssue));
+    when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(Collections.singletonList(serverIssue));
 
 
     // run
     getProjectSettings().setBindingEnabled(true);
 
-    underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator(), false);
+    underTest.fetchAndMatchServerIssues(Collections.singletonMap(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
-    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), eq(true), isNull(), isNull());
+    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), eq(true), eq(null));
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }

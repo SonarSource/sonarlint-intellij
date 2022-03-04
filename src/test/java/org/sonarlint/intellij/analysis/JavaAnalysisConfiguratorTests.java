@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,12 +22,16 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.projectRoots.SdkModificator;
 import com.intellij.openapi.roots.CompilerModuleExtension;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.DependencyScope;
+import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
+import com.intellij.openapi.roots.ModuleOrderEntry;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
 import com.intellij.openapi.roots.OrderRootType;
+import com.intellij.openapi.roots.libraries.Library;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -44,6 +48,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
+import java.util.Map;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Rule;
@@ -66,7 +72,7 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
   @Rule
   public TempDirectory tempDir = new TempDirectory();
 
-  private final JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
+  private JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
   private File exportedLibInDependentModuleFile;
   private File nonExportedLibFile;
   private File guavaLibFile;
@@ -90,25 +96,25 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
       public void configureModule(@NotNull Module module, @NotNull ModifiableRootModel model, @NotNull ContentEntry contentEntry) {
         super.configureModule(module, model, contentEntry);
         try {
-          compilerOutputDirFile = tempDir.newFolder("compiler,OutputDir");
+          compilerOutputDirFile = tempDir.newFolder("compilerOutputDir");
           compilerTestOutputDirFile = tempDir.newFolder("compilerTestOutputDir");
           // Set compiler outputs
           setCompilerOutputs(model, compilerOutputDirFile, compilerTestOutputDirFile);
           // Add some libraries
           // Production lib
           guavaLibFile = tempDir.newFile(GUAVA_LIB_JAR);
-          var guavaLib = PsiTestUtil.addLibrary(model, "guava", guavaLibFile.getParent(), guavaLibFile.getName());
-          final var guavaLibOrderEntry = model.findLibraryOrderEntry(guavaLib);
+          Library guavaLib = PsiTestUtil.addLibrary(model, "guava", guavaLibFile.getParent(), guavaLibFile.getName());
+          final LibraryOrderEntry guavaLibOrderEntry = model.findLibraryOrderEntry(guavaLib);
           guavaLibOrderEntry.setScope(DependencyScope.COMPILE);
           // Test lib
           junitLibFile = tempDir.newFile(JUNIT_LIB_JAR);
-          var junitLib = PsiTestUtil.addLibrary(model, "junit", junitLibFile.getParent(), junitLibFile.getName());
-          final var junitLibOrderEntry = model.findLibraryOrderEntry(junitLib);
+          Library junitLib = PsiTestUtil.addLibrary(model, "junit", junitLibFile.getParent(), junitLibFile.getName());
+          final LibraryOrderEntry junitLibOrderEntry = model.findLibraryOrderEntry(junitLib);
           junitLibOrderEntry.setScope(DependencyScope.TEST);
 
           // Dependent module with compile scope
-          var dependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "dependent.iml"));
-          final var moduleOrderEntry = model.addModuleOrderEntry(dependentModule);
+          Module dependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "dependent.iml"));
+          final ModuleOrderEntry moduleOrderEntry = model.addModuleOrderEntry(dependentModule);
           moduleOrderEntry.setScope(DependencyScope.COMPILE);
           exportedLibInDependentModuleFile = tempDir.newFile(MY_EXPORTED_LIB_JAR);
           nonExportedLibFile = tempDir.newFile(MY_NON_EXPORTED_LIB_JAR);
@@ -123,15 +129,15 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
             setCompilerOutputs(dependentModel, dependentModCompilerOutputDirFile, dependentModCompilerTestOutputDirFile);
 
             PsiTestUtil.addLibrary(dependentModel, "myNonExportedLib", nonExportedLibFile.getParent(), nonExportedLibFile.getName());
-            var myExportedLib = PsiTestUtil.addLibrary(dependentModel, "myExportedLib", exportedLibInDependentModuleFile.getParent(),
+            Library myExportedLib = PsiTestUtil.addLibrary(dependentModel, "myExportedLib", exportedLibInDependentModuleFile.getParent(),
               exportedLibInDependentModuleFile.getName());
-            final var libraryOrderEntry = dependentModel.findLibraryOrderEntry(myExportedLib);
+            final LibraryOrderEntry libraryOrderEntry = dependentModel.findLibraryOrderEntry(myExportedLib);
             libraryOrderEntry.setExported(true);
           });
 
           // Dependent module with test scope
-          var testDependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "testDependent.iml"));
-          final var testModuleOrderEntry = model.addModuleOrderEntry(testDependentModule);
+          Module testDependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "testDependent.iml"));
+          final ModuleOrderEntry testModuleOrderEntry = model.addModuleOrderEntry(testDependentModule);
           testModuleOrderEntry.setScope(DependencyScope.TEST);
           exportedLibInTestDependentModuleFile = tempDir.newFile(MY_EXPORTED_TEST_LIB_JAR);
 
@@ -143,9 +149,9 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
             }
             setCompilerOutputs(dependentModel, testDependentModCompilerOutputDirFile, null);
 
-            var myExportedTestLib = PsiTestUtil.addLibrary(dependentModel, "myExportedTestLib", exportedLibInTestDependentModuleFile.getParent(),
+            Library myExportedTestLib = PsiTestUtil.addLibrary(dependentModel, "myExportedTestLib", exportedLibInTestDependentModuleFile.getParent(),
               exportedLibInTestDependentModuleFile.getName());
-            final var libraryOrderEntry = dependentModel.findLibraryOrderEntry(myExportedTestLib);
+            final LibraryOrderEntry libraryOrderEntry = dependentModel.findLibraryOrderEntry(myExportedTestLib);
             libraryOrderEntry.setExported(true);
           });
         } catch (IOException e) {
@@ -157,10 +163,10 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
   }
 
   private static void setCompilerOutputs(@NotNull ModifiableRootModel model, File compilerOutputDirFile, @Nullable File compilerTestOutputDirFile) {
-    final var compilerOutputDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(compilerOutputDirFile.getAbsolutePath());
+    final VirtualFile compilerOutputDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(compilerOutputDirFile.getAbsolutePath());
     model.getModuleExtension(CompilerModuleExtension.class).setCompilerOutputPath(compilerOutputDir);
     if (compilerTestOutputDirFile != null) {
-      final var compilerTestOutputDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(compilerTestOutputDirFile.getAbsolutePath());
+      final VirtualFile compilerTestOutputDir = LocalFileSystem.getInstance().refreshAndFindFileByPath(compilerTestOutputDirFile.getAbsolutePath());
       model.getModuleExtension(CompilerModuleExtension.class).setCompilerOutputPathForTests(compilerTestOutputDir);
     }
     model.getModuleExtension(CompilerModuleExtension.class).inheritCompilerOutputPath(false);
@@ -187,27 +193,30 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
 
   @Test
   public void testClasspath() {
-    final var props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
-    assertThat(props)
-      .containsEntry("sonar.java.binaries", "\"" + compilerOutputDirFile.toPath() + "\"")
-      .containsEntry("sonar.java.libraries", String.join(",",
-        guavaLibFile.toPath().toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar").toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar").toString(),
-        dependentModCompilerOutputDirFile.toPath().toString(),
-        exportedLibInDependentModuleFile.toPath().toString()))
-      .containsEntry("sonar.java.test.binaries", compilerTestOutputDirFile.toPath().toString())
-      .containsEntry("sonar.java.test.libraries", String.join(",",
-        "\"" + compilerOutputDirFile.toPath() + "\"",
-        junitLibFile.toPath().toString(),
-        guavaLibFile.toPath().toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar").toString(),
-        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar").toString(),
-        dependentModCompilerOutputDirFile.toPath().toString(),
-        exportedLibInDependentModuleFile.toPath().toString(),
-        testDependentModCompilerOutputDirFile.toPath().toString(),
-        exportedLibInTestDependentModuleFile.toPath().toString()))
-      .containsEntry("sonar.java.jdkHome", FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toString());
+    final Map<String, String> props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
+    assertThat(Stream.of(props.get("sonar.java.binaries").split(",")).map(Paths::get))
+      .containsExactly(compilerOutputDirFile.toPath());
+    assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))
+      .containsExactly(
+        guavaLibFile.toPath(),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar"),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar"),
+        dependentModCompilerOutputDirFile.toPath(),
+        exportedLibInDependentModuleFile.toPath());
+    assertThat(Stream.of(props.get("sonar.java.test.binaries").split(",")).map(Paths::get))
+      .containsExactly(compilerTestOutputDirFile.toPath());
+    assertThat(Stream.of(props.get("sonar.java.test.libraries").split(",")).map(Paths::get))
+      .containsExactly(
+        compilerOutputDirFile.toPath(),
+        junitLibFile.toPath(),
+        guavaLibFile.toPath(),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/rt.jar"),
+        FAKE_JDK_ROOT_PATH.resolve("jdk1.8/lib/another.jar"),
+        dependentModCompilerOutputDirFile.toPath(),
+        exportedLibInDependentModuleFile.toPath(),
+        testDependentModCompilerOutputDirFile.toPath(),
+        exportedLibInTestDependentModuleFile.toPath());
+    assertThat(Paths.get(props.get("sonar.java.jdkHome"))).isEqualTo(FAKE_JDK_ROOT_PATH.resolve("jdk1.8"));
   }
 
   private static Sdk addRtJarTo(@NotNull Sdk jdk) {
@@ -216,7 +225,7 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
     }
-    var sdkModificator = jdk.getSdkModificator();
+    SdkModificator sdkModificator = jdk.getSdkModificator();
     sdkModificator.setHomePath(FAKE_JDK_ROOT_PATH.resolve("jdk1.8").toString());
     sdkModificator.addRoot(findJar("jdk1.8/lib/rt.jar"), OrderRootType.CLASSES);
     sdkModificator.addRoot(findJar("jdk1.8/lib/another.jar"), OrderRootType.CLASSES);
@@ -226,9 +235,9 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
 
   @NotNull
   private static VirtualFile findJar(@NotNull String name) {
-    var path = FAKE_JDK_ROOT_PATH.resolve(name);
-    var file = VfsTestUtil.findFileByCaseSensitivePath(path.toString());
-    var jar = JarFileSystem.getInstance().getJarRootForLocalFile(file);
+    Path path = FAKE_JDK_ROOT_PATH.resolve(name);
+    VirtualFile file = VfsTestUtil.findFileByCaseSensitivePath(path.toString());
+    VirtualFile jar = JarFileSystem.getInstance().getJarRootForLocalFile(file);
     assert jar != null : "no .jar for: " + path;
     return jar;
   }

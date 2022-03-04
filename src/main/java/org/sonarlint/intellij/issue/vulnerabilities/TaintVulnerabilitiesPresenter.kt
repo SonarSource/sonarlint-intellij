@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -35,9 +35,9 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
-import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
+import org.sonarlint.intellij.util.getRelativePathOf
 
 sealed class TaintVulnerabilitiesStatus {
   fun isEmpty() = count() == 0
@@ -72,11 +72,11 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val bindingManager = getService(project, ProjectBindingManager::class.java)
     val module = project.findModuleOf(file) ?: return
     val projectBinding = getService(module, ModuleBindingManager::class.java).binding ?: return
-    val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file) ?: return
+    val relativePath = project.getRelativePathOf(file) ?: return
 
     val serverConnection = bindingManager.serverConnection
     bindingManager.connectedEngine.downloadServerIssues(serverConnection.endpointParams,
-      serverConnection.httpClient, projectBinding, relativePath, true, null, null)
+      serverConnection.httpClient, projectBinding, relativePath, true, null)
   }
 
   fun presentTaintVulnerabilitiesForOpenFiles() {

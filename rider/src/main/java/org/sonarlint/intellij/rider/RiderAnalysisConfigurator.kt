@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -28,13 +28,9 @@ import org.sonarlint.intellij.common.analysis.AnalysisConfigurator.AnalysisConfi
 class RiderAnalysisConfigurator : AnalysisConfigurator {
     override fun configure(module: Module, filesToAnalyze: Collection<VirtualFile>): AnalysisConfiguration {
         val result = AnalysisConfiguration()
-        val dotNetCoreRuntime = RiderDotNetActiveRuntimeHost.getInstance(module.project).dotNetCoreRuntime.value
-        if (dotNetCoreRuntime != null) {
-            result.extraProperties["sonar.cs.internal.dotnetCliExeLocation"] = dotNetCoreRuntime.cliExePath
-        }
-        val monoRuntime = RiderDotNetActiveRuntimeHost.getInstance(module.project).monoRuntime
-        if (monoRuntime != null) {
-            result.extraProperties["sonar.cs.internal.monoExeLocation"] = monoRuntime.getMonoExe().absolutePath
+        val value = RiderDotNetActiveRuntimeHost.getInstance(module.project).dotNetCoreRuntime.value
+        if (value != null) {
+            result.extraProperties["sonar.cs.internal.dotnetCliExeLocation"] = value.cliExePath
         }
         return result
     }

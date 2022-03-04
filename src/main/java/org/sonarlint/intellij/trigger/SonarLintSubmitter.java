@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,8 +22,8 @@ package org.sonarlint.intellij.trigger;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
@@ -56,9 +56,9 @@ public class SonarLintSubmitter {
     if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
-    var editorManager = FileEditorManager.getInstance(myProject);
-    var openFiles = editorManager.getOpenFiles();
-    submitFiles(List.of(openFiles), trigger, true);
+    FileEditorManager editorManager = FileEditorManager.getInstance(myProject);
+    VirtualFile[] openFiles = editorManager.getOpenFiles();
+    submitFiles(Arrays.asList(openFiles), trigger, true);
   }
 
   /**
@@ -71,9 +71,9 @@ public class SonarLintSubmitter {
    */
   public void submitFilesModal(Collection<VirtualFile> files, TriggerType trigger, AnalysisCallback callback) {
     if (!files.isEmpty()) {
-      var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+      SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
       console.debug("Trigger: " + trigger);
-      var analysisManager = SonarLintUtils.getService(myProject, AnalysisManager.class);
+      AnalysisManager analysisManager = SonarLintUtils.getService(myProject, AnalysisManager.class);
       analysisManager.submitManual(files, trigger, true, callback);
     }
   }
@@ -96,9 +96,9 @@ public class SonarLintSubmitter {
     // If user explicitly ask to analyze a single file, we should ignore certains exclusions
 
     if (!files.isEmpty()) {
-      var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
+      SonarLintConsole console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
       console.debug("Trigger: " + trigger);
-      var analysisManager = SonarLintUtils.getService(myProject, AnalysisManager.class);
+      AnalysisManager analysisManager = SonarLintUtils.getService(myProject, AnalysisManager.class);
       if (startInBackground) {
         return analysisManager.submitBackground(files, trigger, callback);
       } else {

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -38,7 +39,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
 
   public Iterable<T> childrenIterable() {
-    var children = children();
+    Enumeration children = children();
     return () -> new Iterator<T>() {
       @Override
       public boolean hasNext() {
@@ -134,7 +135,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return details.getType();
     }
 
-    public org.sonarsource.sonarlint.core.commons.Language language() {
+    public org.sonarsource.sonarlint.core.client.api.common.Language language() {
       return details.getLanguage();
     }
 
@@ -153,8 +154,9 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public List<RuleParam> getParamDetails() {
-      return ((StandaloneRule) details).paramDetails()
+      return ((StandaloneRule) details).params()
         .stream()
+        .map(p -> (StandaloneRuleParam) p)
         .map(RuleParam::new)
         .collect(Collectors.toList());
     }
@@ -171,7 +173,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       if (!(o instanceof Rule)) {
         return false;
       }
-      var rule = (Rule) o;
+      Rule rule = (Rule) o;
       return details.getKey().equals(rule.details.getKey()) && activated == rule.activated && nonDefaultParams.equals(rule.nonDefaultParams);
     }
 

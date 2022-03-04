@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -41,21 +41,22 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
   @Override
   public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row,
     boolean hasFocus) {
-    var component = new SimpleColoredComponent();
-    var node = (RulesTreeNode) value;
-    var background = selected ? getSelectedBackgroundColor(tree) : UIUtil.getTreeBackground();
+    SimpleColoredComponent component = new SimpleColoredComponent();
+    RulesTreeNode node = (RulesTreeNode) value;
+    Color background = selected ? getSelectedBackgroundColor(tree) : UIUtil.getTreeBackground();
     UIUtil.changeBackGround(component, background);
-    var foreground = selected ? UIUtil.getTreeSelectionForeground(true) : getUnselectedForegroundColor(node);
+    Color foreground = selected ? UIUtil.getTreeSelectionForeground(true) : getUnselectedForegroundColor(node);
 
     String text = null;
-    var style = SimpleTextAttributes.STYLE_PLAIN;
+    int style = 0;
 
     if (value instanceof RulesTreeNode.Language) {
       style = SimpleTextAttributes.STYLE_BOLD;
       text = node.toString();
     } else if (value instanceof RulesTreeNode.Rule) {
-      var rule = (RulesTreeNode.Rule) value;
+      RulesTreeNode.Rule rule = (RulesTreeNode.Rule) value;
       text = rule.getName();
+      style = SimpleTextAttributes.STYLE_PLAIN;
     }
 
     if (text != null) {
@@ -70,7 +71,7 @@ public class RulesTreeTableRenderer extends DefaultTreeRenderer {
   }
 
   private static Color getSelectedBackgroundColor(JTree tree) {
-    var reallyHasFocus = ((TreeTableTree) tree).getTreeTable().hasFocus();
+    boolean reallyHasFocus = ((TreeTableTree) tree).getTreeTable().hasFocus();
     return UIUtil.getTreeSelectionBackground(reallyHasFocus);
   }
 }

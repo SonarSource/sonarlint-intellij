@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,18 +20,20 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiFile;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
+import java.util.stream.Stream;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.TextRange;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueLocation;
 
 import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
 import static org.sonarlint.intellij.issue.QuickFixKt.convert;
@@ -47,15 +49,15 @@ public class LiveIssueBuilder {
 
   public LiveIssue buildLiveIssue(Issue issue, ClientInputFile inputFile) throws IssueMatcher.NoMatchException {
     return ReadAction.compute(() -> {
-      var psiFile = matcher.findFile(inputFile.getClientObject());
-      var textRange = issue.getTextRange();
-      var quickFixes = issue.quickFixes()
+      PsiFile psiFile = matcher.findFile(inputFile.getClientObject());
+      TextRange textRange = issue.getTextRange();
+      List<QuickFix> quickFixes = issue.quickFixes()
         .stream().map(fix -> convert(myProject, fix))
         .filter(Objects::nonNull)
         .collect(Collectors.toList());
       if (textRange != null) {
-        var rangeMarker = matcher.match(psiFile, textRange);
-        var context = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
+        RangeMarker rangeMarker = matcher.match(psiFile, textRange);
+        Optional<IssueContext> context = transformFlows(psiFile, issue.flows(), issue.getRuleKey());
         return new LiveIssue(issue, psiFile, rangeMarker, context.orElse(null), quickFixes);
       } else {
         return new LiveIssue(issue, psiFile, quickFixes);
@@ -63,18 +65,18 @@ public class LiveIssueBuilder {
     });
   }
 
-  private Optional<IssueContext> transformFlows(PsiFile psiFile, List<org.sonarsource.sonarlint.core.analysis.api.Flow> flows, String rule) {
+  private Optional<IssueContext> transformFlows(PsiFile psiFile, List<Issue.Flow> flows, String rule) {
     List<Flow> matchedFlows = new LinkedList<>();
 
-    for (var flow : flows) {
+    for (Issue.Flow f : flows) {
       List<Location> matchedLocations = new LinkedList<>();
-      for (var loc : flow.locations()) {
+      for (IssueLocation loc : f.locations()) {
         try {
-          var textRange = loc.getTextRange();
-          var locInputFile = loc.getInputFile();
+          TextRange textRange = loc.getTextRange();
+          ClientInputFile locInputFile = loc.getInputFile();
           if (textRange != null && locInputFile != null) {
-            var locPsiFile = matcher.findFile(locInputFile.getClientObject());
-            var range = matcher.match(locPsiFile, textRange);
+            PsiFile locPsiFile = matcher.findFile(locInputFile.getClientObject());
+            RangeMarker range = matcher.match(locPsiFile, textRange);
             matchedLocations.add(resolvedLocation(locPsiFile.getVirtualFile(), range, loc.getMessage(), null));
           }
         } catch (IssueMatcher.NoMatchException e) {
@@ -82,18 +84,14 @@ public class LiveIssueBuilder {
           SonarLintConsole.get(myProject)
             .debug("Failed to find secondary location of issue for file: '" + psiFile.getName() + "'. The location won't be displayed - " + e.getMessage());
         } catch (Exception e) {
-          var detailString = String.join(",",
-            rule,
-            String.valueOf(loc.getStartLine()),
-            String.valueOf(loc.getStartLineOffset()),
-            String.valueOf(loc.getEndLine()),
-            String.valueOf(loc.getEndLineOffset())
-          );
+          String detailString = Stream.of(rule,
+            String.valueOf(loc.getStartLine()), String.valueOf(loc.getStartLineOffset()), String.valueOf(loc.getEndLine()), String.valueOf(loc.getEndLineOffset()))
+            .collect(Collectors.joining(","));
           SonarLintConsole.get(myProject).error("Error finding secondary location for issue: " + detailString, e);
           return Optional.empty();
         }
       }
-      var matchedFlow = new Flow(matchedLocations);
+      Flow matchedFlow = new Flow(matchedLocations);
       matchedFlows.add(matchedFlow);
 
     }

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -25,15 +25,19 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.ui.JBSplitter;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
+
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
+
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -44,6 +48,7 @@ import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitte
 public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   private final CurrentFileController scope;
+  private final JBSplitter splitter;
 
   public SonarLintIssuesPanel(Project project, CurrentFileController scope) {
     super(project);
@@ -51,11 +56,11 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
 
     // Issues panel
     setToolbar(actions());
-    var issuesPanel = new JPanel(new BorderLayout());
+    JPanel issuesPanel = new JPanel(new BorderLayout());
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
     issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
-    var splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
+    splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
     super.setContent(splitter);
     subscribeToEvents();
   }
@@ -66,12 +71,15 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
   }
 
   private static Collection<AnAction> actions() {
-    return List.of(
-      ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"),
-      ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"),
-      ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
-      SonarLintActions.getInstance().clearIssues()
-    );
+    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
+    List<AnAction> list = new ArrayList<>();
+    list.add(ActionManager.getInstance().getAction("SonarLint.AnalyzeFiles"));
+    list.add(ActionManager.getInstance().getAction("Detekt.AnalyzeFiles"));
+    list.add(ActionManager.getInstance().getAction("SonarLint.toolwindow.Cancel"));
+    list.add(ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"));
+    list.add(sonarLintActions.clearIssues());
+
+    return list;
   }
 
   private void subscribeToEvents() {
@@ -80,9 +88,9 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
 
   public void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {
     if (file == null) {
-      treeBuilder.updateModel(Map.of(), emptyText);
+      treeBuilder.updateModel(Collections.emptyMap(), emptyText);
     } else {
-      treeBuilder.updateModel(Map.of(file, issues), emptyText);
+      treeBuilder.updateModel(Collections.singletonMap(file, issues), emptyText);
     }
     expandTree();
   }

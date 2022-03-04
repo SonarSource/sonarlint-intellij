@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -28,11 +28,11 @@ import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonar.api.batch.fs.InputFile
 import org.sonarlint.intellij.analysis.SonarLintAnalyzer
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileSystem
+import org.sonarsource.sonarlint.core.client.api.common.ClientFileSystem
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import java.util.stream.Stream
 
-internal class ModuleFileSystem(private val project: Project, private val module: Module) : ClientModuleFileSystem {
+internal class ModuleFileSystem(private val project: Project, private val module: Module) : ClientFileSystem {
     override fun files(language: String, type: InputFile.Type): Stream<ClientInputFile> {
         return files()
             .filter { f -> f.relativePath().endsWith(language) }

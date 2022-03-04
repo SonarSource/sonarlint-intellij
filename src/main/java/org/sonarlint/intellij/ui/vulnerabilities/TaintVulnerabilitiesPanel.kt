@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -29,7 +29,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.tools.SimpleActionGroup
 import com.intellij.ui.ScrollPaneFactory
@@ -58,6 +57,8 @@ import org.sonarlint.intellij.ui.nodes.LocalTaintVulnerabilityNode
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTree
 import org.sonarlint.intellij.ui.tree.TaintVulnerabilityTreeModelBuilder
 import java.awt.BorderLayout
+import java.awt.event.FocusAdapter
+import java.awt.event.FocusEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.Box
@@ -243,19 +244,11 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         val highlighting = getService(project, EditorDecorator::class.java)
         val issue = tree.getIssueFromSelectedNode()
         if (issue == null) {
-            rulePanel.setRuleKey(null, null)
+            rulePanel.setRuleKey(null)
             highlighting.removeHighlights()
         } else {
-            val file = issue.file()
-            if (file == null) {
-                // FIXME can't we find a way to get the rule description?
-                rulePanel.setRuleKey(null, null)
-                highlighting.removeHighlights()
-            } else {
-                val moduleForFile = ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(file)
-                rulePanel.setRuleKey(moduleForFile, issue.ruleKey())
-                highlighting.highlight(issue)
-            }
+            rulePanel.setRuleKey(issue.ruleKey())
+            highlighting.highlight(issue)
         }
     }
 

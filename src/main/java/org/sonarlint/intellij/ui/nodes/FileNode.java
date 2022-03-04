@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -64,7 +64,7 @@ public class FileNode extends AbstractNode {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    var fileNode = (FileNode) o;
+    FileNode fileNode = (FileNode) o;
     return Objects.equals(file, fileNode.file);
   }
 

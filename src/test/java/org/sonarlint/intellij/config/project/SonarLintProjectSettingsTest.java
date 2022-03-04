@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.config.project;
 
 import java.util.Collections;
-import java.util.Map;
 import org.assertj.core.data.MapEntry;
 import org.junit.Test;
 
@@ -29,7 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SonarLintProjectSettingsTest {
   @Test
   public void testRoundTrip() {
-    var settings = new SonarLintProjectSettings();
+    SonarLintProjectSettings settings = new SonarLintProjectSettings();
 
     settings.setBindingEnabled(true);
     assertThat(settings.isBindingEnabled()).isTrue();
@@ -49,7 +48,7 @@ public class SonarLintProjectSettingsTest {
     settings.setBindingEnabled(true);
     assertThat(settings.isBindingEnabled()).isTrue();
 
-    settings.setAdditionalProperties(Map.of("key", "value"));
+    settings.setAdditionalProperties(Collections.singletonMap("key", "value"));
     assertThat(settings.getAdditionalProperties()).containsExactly(MapEntry.entry("key", "value"));
   }
 }

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,6 +21,7 @@ package org.sonarlint.intellij;
 
 import com.intellij.lang.Language;
 import com.intellij.notification.Notification;
+import com.intellij.notification.NotificationsManager;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -30,10 +31,12 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
 import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
+
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
+
 import org.junit.After;
 import org.junit.Before;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
@@ -68,14 +71,12 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   @After
   public final void restore() {
     getGlobalSettings().setRules(Collections.emptyList());
-    getGlobalSettings().setServerConnections(Collections.emptyList());
     setGlobalLevelExclusions(Collections.emptyList());
     getProjectSettings().setProjectKey(null);
     getProjectSettings().setBindingEnabled(false);
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
-    getModuleSettings().clearBindingOverride();
     if (!getProject().isDisposed()) {
       AnalysisStatus.get(getProject()).stopRun();
     }
@@ -83,21 +84,17 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   protected void clearNotifications() {
-    var mgr = getNotificationsManager();
-    Stream.of(mgr.getNotificationsOfType(Notification.class, getProject()))
+    NotificationsManager mgr = getNotificationsManager();
+    Arrays.stream(mgr.getNotificationsOfType(Notification.class, getProject()))
       .forEach(mgr::expire);
   }
 
   protected List<Notification> getProjectNotifications() {
-    return List.of(getNotificationsManager().getNotificationsOfType(Notification.class, getProject()));
+    return Arrays.asList(getNotificationsManager().getNotificationsOfType(Notification.class, getProject()));
   }
 
   protected <T> void replaceProjectService(Class<T> clazz, T newInstance) {
     ((ComponentManagerImpl) getProject()).replaceServiceInstance(clazz, newInstance, disposable);
-  }
-
-  protected <T> void replaceModuleService(Class<T> clazz, T newInstance) {
-    ((ComponentManagerImpl) getModule()).replaceServiceInstance(clazz, newInstance, disposable);
   }
 
   public SonarLintGlobalSettings getGlobalSettings() {
@@ -121,13 +118,13 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   public VirtualFile createAndOpenTestVirtualFile(String fileName, Language language, String text) {
-    var file = createTestFile(fileName, language, text);
+    VirtualFile file = createTestFile(fileName, language, text);
     FileEditorManager.getInstance(getProject()).openFile(file, false);
     return file;
   }
 
   public PsiFile createAndOpenTestPsiFile(String fileName, Language language, String text) {
-    var file = createTestPsiFile(fileName, language, text);
+    PsiFile file = createTestPsiFile(fileName, language, text);
     FileEditorManager.getInstance(getProject()).openFile(file.getVirtualFile(), false);
     return file;
   }
@@ -137,13 +134,9 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   protected void connectProjectTo(String hostUrl, String connectionName, String projectKey) {
-    var connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
+    ServerConnection connection = ServerConnection.newBuilder().setHostUrl(hostUrl).setName(connectionName).build();
     getGlobalSettings().addServerConnection(connection);
     getProjectSettings().bindTo(connection, projectKey);
-  }
-
-  protected void connectModuleTo(String projectKey) {
-    getModuleSettings().setProjectKey(projectKey);
   }
 
   protected void connectProjectTo(ServerConnection connection, String projectKey) {
@@ -152,16 +145,16 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   }
 
   protected void setProjectLevelExclusions(List<String> exclusions) {
-    var projectSettings = getProjectSettings();
+    SonarLintProjectSettings projectSettings = getProjectSettings();
     projectSettings.setFileExclusions(exclusions);
     ProjectConfigurationListener projectListener = getProject().getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
     projectListener.changed(projectSettings);
   }
 
   protected void setGlobalLevelExclusions(List<String> exclusions) {
-    var globalSettings = getGlobalSettings();
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
     globalSettings.setFileExclusions(exclusions);
-    var globalConfigurationListener = ApplicationManager.getApplication()
+    GlobalConfigurationListener globalConfigurationListener = ApplicationManager.getApplication()
       .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings);
   }

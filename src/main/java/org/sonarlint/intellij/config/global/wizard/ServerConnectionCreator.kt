@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -41,7 +41,7 @@ open class ServerConnectionCreator {
             val serverChangeListener = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
             serverChangeListener.changed(globalSettings.serverConnections)
             val serverManager = SonarLintUtils.getService(SonarLintEngineManager::class.java)
-            val task = BindingStorageUpdateTask(serverManager.getConnectedEngine(created.name), created, true, false, null)
+            val task = BindingStorageUpdateTask(serverManager.getConnectedEngine(created.name), created, emptyMap(), false)
             ProgressManager.getInstance().run(task.asModal())
             return created
         }

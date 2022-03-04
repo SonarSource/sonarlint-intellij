@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,7 +21,10 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.project.Project;
+
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueStore;
@@ -32,12 +35,12 @@ public class SonarClearAnalysisResultsAction extends AnAction {
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
-    var project = e.getProject();
+    Project project = e.getProject();
     if (project == null) {
       return;
     }
 
-    var store = SonarLintUtils.getService(project, IssueStore.class);
+    IssueStore store = SonarLintUtils.getService(project, IssueStore.class);
     store.clear();
   }
 }

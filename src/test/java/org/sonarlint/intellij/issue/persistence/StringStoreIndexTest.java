@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@ package org.sonarlint.intellij.issue.persistence;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,7 +50,7 @@ public class StringStoreIndexTest {
 
   @Test
   public void testSave() {
-    var test1 = baseDir.resolve("p1").resolve("file1");
+    Path test1 = baseDir.resolve("p1").resolve("file1");
     index.save("key1", test1);
 
     assertThat(baseDir.resolve(StringStoreIndex.INDEX_FILENAME)).exists();
@@ -58,7 +59,7 @@ public class StringStoreIndexTest {
 
   @Test
   public void testDelete() {
-    var test1 = baseDir.resolve("p1").resolve("file1");
+    Path test1 = baseDir.resolve("p1").resolve("file1");
     index.save("key1", test1);
     index.delete("key1");
     index.delete("key2");
@@ -69,7 +70,7 @@ public class StringStoreIndexTest {
 
   @Test
   public void deleteShouldRecoverFromCorruptedIndex() throws IOException {
-    var indexFile = baseDir.resolve(StringStoreIndex.INDEX_FILENAME);
+    Path indexFile = baseDir.resolve(StringStoreIndex.INDEX_FILENAME);
     FileUtils.write(indexFile.toFile(), "not valid protobuf", StandardCharsets.UTF_8);
 
     index.delete("key1");

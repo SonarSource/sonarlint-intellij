@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +25,9 @@ import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
+
 import javax.swing.event.HyperlinkEvent;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -40,7 +42,6 @@ public class SonarLintProjectNotifications {
     "SonarLint");
   private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the SonarLint Settings";
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the SonarLint project configuration";
-  private static final String TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>";
   private volatile boolean shown = false;
   private final Project myProject;
 
@@ -60,8 +61,8 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
+    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
+      "<b>SonarLint - Invalid binding</b>",
       "Project bound to an invalid connection" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -70,12 +71,12 @@ public class SonarLintProjectNotifications {
     shown = true;
   }
 
-  public void notifyProjectStorageInvalid() {
+  public void notifyModuleInvalid() {
     if (shown) {
       return;
     }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
+    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
+      "<b>SonarLint - Invalid binding</b>",
       "Project bound to an invalid remote project" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -84,12 +85,12 @@ public class SonarLintProjectNotifications {
     shown = true;
   }
 
-  public void notifyProjectStorageStale() {
+  public void notifyModuleStale() {
     if (shown) {
       return;
     }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
+    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
+      "<b>SonarLint - Invalid binding</b>",
       "Local storage is outdated" + UPDATE_BINDING_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -102,8 +103,8 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
+    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
+      "<b>SonarLint - Invalid binding</b>",
       "Missing local storage for connection '" + serverId + "'" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenGlobalSettingsAction(myProject));
@@ -116,14 +117,28 @@ public class SonarLintProjectNotifications {
     if (shown) {
       return;
     }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
+    Notification notification = BINDING_PROBLEM_GROUP.createNotification(
+      "<b>SonarLint - Invalid binding</b>",
       "Local storage for connection '" + serverId + "' must be updated" + UPDATE_SERVER_MSG,
       NotificationType.WARNING, null);
     notification.addAction(new OpenGlobalSettingsAction(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
     shown = true;
+  }
+
+  public void notifyServerHasUpdates(String serverId, ConnectedSonarLintEngine engine, ServerConnection server, boolean onlyProjects) {
+    Notification notification = UPDATE_GROUP.createNotification(
+      "SonarLint - Binding update available",
+      "Change detected for " + (server.isSonarCloud() ? "SonarCloud" : "SonarQube") + " connection '" + serverId + "'. <a href=\"#update\">Update binding now</a>",
+      NotificationType.INFORMATION, new NotificationListener.Adapter() {
+        @Override
+        public void hyperlinkActivated(@NotNull Notification notification, @NotNull HyperlinkEvent event) {
+          notification.expire();
+          ServerConnectionMgmtPanel.updateServerBinding(server, engine, onlyProjects);
+        }
+      });
+    notification.notify(myProject);
   }
 
 }

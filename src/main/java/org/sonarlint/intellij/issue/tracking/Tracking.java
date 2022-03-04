@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,8 +24,6 @@ import java.util.Collection;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class Tracking<RAW extends Trackable, BASE extends Trackable> {
 
@@ -49,9 +47,13 @@ public class Tracking<RAW extends Trackable, BASE extends Trackable> {
    * is called.
    */
   public Iterable<RAW> getUnmatchedRaws() {
-    return raws.stream()
-      .filter(Predicate.not(rawToBase::containsKey))
-      .collect(Collectors.toList());
+    List<RAW> result = new ArrayList<>();
+    for (RAW r : raws) {
+      if (!rawToBase.containsKey(r)) {
+        result.add(r);
+      }
+    }
+    return result;
   }
 
   public Map<RAW, BASE> getMatchedRaws() {
@@ -66,9 +68,13 @@ public class Tracking<RAW extends Trackable, BASE extends Trackable> {
    * The base issues that are not matched by a raw issue and that need to be closed.
    */
   public Iterable<BASE> getUnmatchedBases() {
-    return bases.stream()
-      .filter(Predicate.not(baseToRaw::containsKey))
-      .collect(Collectors.toList());
+    List<BASE> result = new ArrayList<>();
+    for (BASE b : bases) {
+      if (!baseToRaw.containsKey(b)) {
+        result.add(b);
+      }
+    }
+    return result;
   }
 
   boolean containsUnmatchedBase(BASE base) {

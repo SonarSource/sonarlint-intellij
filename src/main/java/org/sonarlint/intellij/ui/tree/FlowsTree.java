@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,9 +23,11 @@ import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiDocumentManager;
+import com.intellij.psi.PsiFile;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.event.TreeExpansionEvent;
@@ -33,7 +35,9 @@ import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.Location;
@@ -56,13 +60,13 @@ public class FlowsTree extends Tree {
     setCellRenderer(new TreeCellRenderer());
     this.selectionModel.addTreeSelectionListener(e -> {
       if (e.getSource() != null) {
-        var selectedNode = getSelectedNode();
+        DefaultMutableTreeNode selectedNode = getSelectedNode();
         if (selectedNode != null) {
           highlightInEditor(selectedNode);
         }
       }
     });
-    var listener = new TreeWillExpandListener() {
+    TreeWillExpandListener l = new TreeWillExpandListener() {
       @Override
       public void treeWillExpand(TreeExpansionEvent event) {
         // expansion is always allowed
@@ -75,7 +79,7 @@ public class FlowsTree extends Tree {
         }
       }
     };
-    addTreeWillExpandListener(listener);
+    addTreeWillExpandListener(l);
     getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 
     EditSourceOnDoubleClickHandler.install(this, () -> navigateToEditor(getSelectedNode()));
@@ -83,21 +87,21 @@ public class FlowsTree extends Tree {
   }
 
   public void expandAll() {
-    for (var i = 0; i < getRowCount(); i++) {
+    for (int i = 0; i < getRowCount(); i++) {
       expandRow(i);
     }
   }
 
   private void highlightInEditor(DefaultMutableTreeNode node) {
-    var highlighter = SonarLintUtils.getService(project, EditorDecorator.class);
+    EditorDecorator highlighter = SonarLintUtils.getService(project, EditorDecorator.class);
     if (node instanceof FlowNode) {
-      var flowNode = (FlowNode) node;
+      FlowNode flowNode = (FlowNode) node;
       highlighter.highlightFlow(flowNode.getFlow());
     } else if (node instanceof FlowSecondaryLocationNode) {
-      var locationNode = (FlowSecondaryLocationNode) node;
+      FlowSecondaryLocationNode locationNode = (FlowSecondaryLocationNode) node;
       highlighter.highlightSecondaryLocation(locationNode.getSecondaryLocation(), locationNode.getAssociatedFlow());
     } else if (node instanceof PrimaryLocationNode) {
-      var primaryLocationNode = (PrimaryLocationNode) node;
+      PrimaryLocationNode primaryLocationNode = (PrimaryLocationNode) node;
       highlighter.highlightPrimaryLocation(primaryLocationNode.rangeMarker(), primaryLocationNode.message(), primaryLocationNode.getAssociatedFlow());
     }
   }
@@ -108,17 +112,17 @@ public class FlowsTree extends Tree {
     }
     RangeMarker rangeMarker = null;
     if (node instanceof FlowNode) {
-      var flowNode = (FlowNode) node;
+      FlowNode flowNode = (FlowNode) node;
       rangeMarker = flowNode.getFlow().getLocations().stream().findFirst().map(Location::getRange).orElse(null);
     } else if (node instanceof PrimaryLocationNode) {
-      var locationNode = (PrimaryLocationNode) node;
+      PrimaryLocationNode locationNode = (PrimaryLocationNode) node;
       rangeMarker = locationNode.rangeMarker();
     }
     if (rangeMarker == null || !rangeMarker.isValid()) {
       return;
     }
 
-    var psiFile = PsiDocumentManager.getInstance(project).getPsiFile(rangeMarker.getDocument());
+    PsiFile psiFile = PsiDocumentManager.getInstance(project).getPsiFile(rangeMarker.getDocument());
     if (psiFile != null && psiFile.isValid()) {
       new OpenFileDescriptor(project, psiFile.getVirtualFile(), rangeMarker.getStartOffset()).navigate(false);
     }
@@ -126,7 +130,7 @@ public class FlowsTree extends Tree {
 
   @CheckForNull
   private DefaultMutableTreeNode getSelectedNode() {
-    var path = getSelectionPath();
+    TreePath path = getSelectionPath();
     if (path == null) {
       return null;
     }

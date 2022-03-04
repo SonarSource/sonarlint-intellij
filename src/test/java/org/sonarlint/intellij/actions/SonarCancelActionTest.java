@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,10 +21,12 @@ package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.project.impl.ProjectManagerImpl;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.testFramework.HeavyPlatformTestCase;
+import java.io.File;
 import java.io.IOException;
 import org.jdom.JDOMException;
 import org.junit.Test;
@@ -50,7 +52,7 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
 
   @Test
   public void testCancel() {
-    var status = AnalysisStatus.get(getProject());
+    AnalysisStatus status = AnalysisStatus.get(getProject());
 
     status.stopRun();
     status.tryRun();
@@ -69,16 +71,16 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
     assertThat(presentation.isVisible()).isTrue();
     assertThat(presentation.isEnabled()).isFalse();
 
-    var status = AnalysisStatus.get(getProject());
+    AnalysisStatus status = AnalysisStatus.get(getProject());
     status.tryRun();
     sonarCancelAction.update(event);
     assertThat(presentation.isEnabled()).isTrue();
 
-    var projectDir = FileUtil.createTempDirectory("project", null);
-    var project = ProjectManager.getInstance().createProject("project", projectDir.getAbsolutePath());
+    File projectDir = FileUtil.createTempDirectory("project", null);
+    Project project = ProjectManager.getInstance().createProject("project", projectDir.getAbsolutePath());
     disposeOnTearDown(project);
-    var projectManager = ProjectManager.getInstance();
-    var reloaded = projectManager.loadAndOpenProject(projectDir);
+    ProjectManager projectManager = ProjectManager.getInstance();
+    Project reloaded = projectManager.loadAndOpenProject(projectDir);
     disposeOnTearDown(reloaded);
     event = SonarLintTestUtils.createAnActionEvent(reloaded);
     when(event.getPresentation()).thenReturn(presentation);
@@ -98,14 +100,14 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
 
   @Test
   public void testDisableIfNotRunning() {
-    var status = mock(AnalysisStatus.class);
+    AnalysisStatus status = mock(AnalysisStatus.class);
     when(status.isRunning()).thenReturn(false);
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
   }
 
   @Test
   public void testDisableIfCanceled() {
-    var status = mock(AnalysisStatus.class);
+    AnalysisStatus status = mock(AnalysisStatus.class);
     when(status.isRunning()).thenReturn(true);
     when(status.isCanceled()).thenReturn(true);
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isFalse();
@@ -113,7 +115,7 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
 
   @Test
   public void testEnableIfRunning() {
-    var status = mock(AnalysisStatus.class);
+    AnalysisStatus status = mock(AnalysisStatus.class);
     when(status.isRunning()).thenReturn(true);
     assertThat(sonarCancelAction.isEnabled(event, getProject(), status)).isTrue();
   }

@@ -4,6 +4,7 @@ import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
 import org.jetbrains.intellij.tasks.RunPluginVerifierTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jfrog.gradle.plugin.artifactory.dsl.PublisherConfig
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
@@ -14,17 +15,17 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 plugins {
-    kotlin("jvm") version "1.5.31"
-    id("org.jetbrains.intellij") version "1.2.1"
-    id("org.sonarqube") version "3.3"
+    kotlin("jvm") version "1.4.30"
+    id("org.jetbrains.intellij") version "1.1.2"
+    id("org.sonarqube") version "3.1.1"
     java
     jacoco
-    id("com.github.hierynomus.license") version "0.16.1"
-    id("com.jfrog.artifactory") version "4.24.20"
-    id("com.google.protobuf") version "0.8.17"
+    id("com.github.hierynomus.license") version "0.15.0"
+    id("com.jfrog.artifactory") version "4.21.0"
+    id("com.google.protobuf") version "0.8.16"
     idea
     signing
-    id("de.undercouch.download") version "4.1.2"
+    id("de.undercouch.download") version "4.1.1"
 }
 
 buildscript {
@@ -61,7 +62,6 @@ allprojects {
     }
 
     repositories {
-        mavenCentral()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             content { excludeGroup("typescript") }
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
@@ -71,6 +71,10 @@ allprojects {
                 }
             }
         }
+        mavenCentral()
+        maven("http://repo.duowan.com:8181/nexus/content/groups/public")
+        maven("repo")
+        google()
         ivy("https://repox.jfrog.io/repox/api/npm/npm") {
             patternLayout {
                 artifact("[organization]/-/[module]-[revision].[ext]")
@@ -86,10 +90,10 @@ allprojects {
         }
     }
 
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+    tasks.withType<KotlinCompile> {
         kotlinOptions {
-            apiVersion = "1.3"
             jvmTarget = "11"
+            apiVersion = "1.3"
         }
     }
 }
@@ -103,7 +107,7 @@ intellij {
 
 tasks.runPluginVerifier {
     // Test oldest supported, and latest
-    ideVersions.set(listOf("IC-2020.1.1", "IC-2021.3"))
+    ideVersions.set(listOf("IC-2019.3.5", "IC-2021.1"))
     failureLevel.set(
         EnumSet.complementOf(
             EnumSet.of(
@@ -126,6 +130,19 @@ protobuf {
     protoc {
         // Download from repositories. Must be the same as the one used in sonarlint-core
         artifact = "com.google.protobuf:protoc:$protobufVersion"
+    }
+}
+
+// The protobuf version embedded into the IntelliJ distribution is conflicting with the one we use in our plugin, so we have to exclude it
+// Note that the version (3.5.1) may change when updating the traget IDE we use for compilation, so this will have to be kept up to date.
+project.afterEvaluate {
+    sourceSets {
+        main {
+            compileClasspath -= files(File(intellij.getIdeaDependency(project).classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
+        }
+        test {
+            runtimeClasspath -= files(File(intellij.getIdeaDependency(project).classes, "lib/protobuf-java-3.5.1.jar").getAbsolutePath())
+        }
     }
 }
 
@@ -152,11 +169,11 @@ tasks.runIde {
 configurations {
     create("sqplugins") { isTransitive = false }
     create("typescript") { isCanBeConsumed = false }
-    all {
-        // Allows using project dependencies instead of IDE dependencies during compilation and test running
-        resolutionStrategy {
-            sortArtifacts(ResolutionStrategy.SortOrder.DEPENDENCY_FIRST)
-        }
+}
+
+configurations.all {
+    resolutionStrategy {
+        force("org.javassist:javassist:3.23.1-GA")
     }
 }
 
@@ -164,34 +181,39 @@ dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
-    // Actual runtime dependency is shaded by sonarlint-core but seems invisible to IntelliJ
-    compileOnly("com.google.protobuf:protobuf-java:$protobufVersion")
-    implementation("org.apache.httpcomponents.client5:httpclient5:5.1.2") {
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.0.3") {
         exclude(module = "slf4j-api")
     }
     implementation(project(":common"))
-    runtimeOnly(project(":clion"))
-    runtimeOnly(project(":rider"))
+    implementation(project(":clion"))
+    implementation(project(":rider"))
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.16.1")
     testImplementation("org.mockito:mockito-core:2.19.0")
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
-    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.8.1.28740@jar")
-    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:8.8.0.17228@jar")
-    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.23.0.8726@jar")
-    "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.10.0.9380@jar")
-    "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.9.0.1147@jar")
-    "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.9.0.3429@jar")
-    "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.6.0.3106@jar")
-    "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.5.0.3376@jar")
-    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.1.0.41903@jar")
+    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.3.0.27589@jar")
+    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:8.1.0.15788@jar")
+    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.18.0.7718@jar")
+    "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.6.0.8488@jar")
+    "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.0.0.29@jar")
+    "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.8.3.2219@jar")
+    "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.4.0.2754@jar")
+    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.0.0.34628@jar")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.30.0.42324@jar")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.26.0.36731@jar")
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766@jar")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
+
+    implementation("io.gitlab.arturbosch.detekt:detekt-tooling:1.19.0")
+    implementation("io.gitlab.arturbosch.detekt:detekt-core:1.19.0")
+    implementation("io.gitlab.arturbosch.detekt:detekt-rules:1.19.0")
+    implementation("io.gitlab.arturbosch.detekt:detekt-formatting:1.19.0")
+    implementation("io.gitlab.arturbosch.detekt:detekt-api:1.19.0")
+    implementation("org.javassist:javassist:3.23.1-GA")
+
 }
 
 tasks {
@@ -330,7 +352,7 @@ tasks {
     jacocoTestReport {
         classDirectories.setFrom(files("build/classes/java/main-instrumented"))
         reports {
-            xml.required.set(true)
+            xml.setEnabled(true)
         }
     }
 }
@@ -342,7 +364,6 @@ sonarqube {
 }
 
 license {
-    header = rootProject.file("HEADER")
     mapping(
         mapOf(
             "java" to "SLASHSTAR_STYLE",

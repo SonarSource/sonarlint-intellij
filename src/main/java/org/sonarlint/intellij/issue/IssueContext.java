@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@ public class IssueContext {
   private String computeSummaryDescription() {
     String description;
     if (hasUniqueFlow()) {
-      var numLocations = flows.get(0).getLocations().size();
+      int numLocations = flows.get(0).getLocations().size();
       description = String.format(" [+%d %s]", numLocations, SonarLintUtils.pluralize("location", numLocations));
     } else {
       description = String.format(" [+%d flows]", flows().size());

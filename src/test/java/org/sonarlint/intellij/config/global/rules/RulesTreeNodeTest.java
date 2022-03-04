@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,11 +20,10 @@
 package org.sonarlint.intellij.config.global.rules;
 
 import java.util.HashMap;
-
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
-import org.sonarsource.sonarlint.core.commons.Language;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -33,16 +32,16 @@ import static org.mockito.Mockito.when;
 public class RulesTreeNodeTest {
   @Test
   public void getters_rule() {
-    var details = mock(StandaloneRuleDetails.class);
+    StandaloneRuleDetails details = mock(StandaloneRuleDetails.class);
     when(details.getName()).thenReturn("name");
     when(details.getKey()).thenReturn("key");
     when(details.getHtmlDescription()).thenReturn("html");
     when(details.isActiveByDefault()).thenReturn(true);
     when(details.getSeverity()).thenReturn("severity");
     when(details.getType()).thenReturn("type");
-    when(details.getLanguage()).thenReturn(Language.JAVA);
+    when(details.getLanguage()).thenReturn(Language.XOO);
 
-    var node = new RulesTreeNode.Rule(details, false, new HashMap<>());
+    RulesTreeNode.Rule node = new RulesTreeNode.Rule(details, false, new HashMap<>());
     assertThat(node.getKey()).isEqualTo("key");
     assertThat(node.getName()).isEqualTo("name");
     assertThat(node).hasToString("name");
@@ -51,19 +50,19 @@ public class RulesTreeNodeTest {
     assertThat(node.isNonDefault()).isTrue();
     assertThat(node.severity()).isEqualTo("severity");
     assertThat(node.type()).isEqualTo("type");
-    assertThat(node.language()).isEqualTo(Language.JAVA);
+    assertThat(node.language()).isEqualTo(Language.XOO);
   }
 
   @Test
   public void getters_root() {
-    var root = new RulesTreeNode.Root();
+    RulesTreeNode.Root root = new RulesTreeNode.Root();
     assertThat(root).hasToString("root");
     assertThat(root.isNonDefault()).isFalse();
   }
 
   @Test
   public void getters_language() {
-    var node = new RulesTreeNode.Language("lang");
+    RulesTreeNode.Language node = new RulesTreeNode.Language("lang");
     node.setIsNonDefault(true);
     node.setIsActivated(true);
 
@@ -74,7 +73,7 @@ public class RulesTreeNodeTest {
 
   @Test
   public void create_iterable_children() {
-    var parent = new RulesTreeNode.Language("lang");
+    RulesTreeNode.Language parent = new RulesTreeNode.Language("lang");
     RulesTreeNode.Rule n1 = new RulesTreeNode.Rule(mockRuleDetails("r1"), true, new HashMap<>());
     RulesTreeNode.Rule n2 = new RulesTreeNode.Rule(mockRuleDetails("r2"), true, new HashMap<>());
     RulesTreeNode.Rule n3 = new RulesTreeNode.Rule(mockRuleDetails("r3"), true, new HashMap<>());
@@ -89,7 +88,7 @@ public class RulesTreeNodeTest {
 
   @NotNull
   private StandaloneRuleDetails mockRuleDetails(String key) {
-    final var r1 = mock(StandaloneRuleDetails.class);
+    final StandaloneRuleDetails r1 = mock(StandaloneRuleDetails.class);
     when(r1.getKey()).thenReturn(key);
     return r1;
   }

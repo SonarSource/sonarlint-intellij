@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -48,15 +48,15 @@ public class TaskProgressMonitorTest {
     monitor.setMessage("message");
     verify(wrapped).setText("message");
 
-    var mockRunnable = mock(Runnable.class);
+    Runnable mockRunnable = mock(Runnable.class);
     monitor.executeNonCancelableSection(mockRunnable);
     verify(progressManager).executeNonCancelableSection(mockRunnable);
   }
 
   @Test
   public void cancel_if_project_disposed() {
-    var project = mock(Project.class);
-    var monitor = new TaskProgressMonitor(wrapped, progressManager, project, () -> false);
+    Project project = mock(Project.class);
+    TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, project, () -> false);
 
     when(project.isDisposed()).thenReturn(false);
     assertThat(monitor.isCanceled()).isFalse();
@@ -67,6 +67,7 @@ public class TaskProgressMonitorTest {
 
   @Test
   public void cancel_if_flag_set() {
+    Project project = mock(Project.class);
     TaskProgressMonitor monitor = new TaskProgressMonitor(wrapped, progressManager, null, () -> true);
 
     assertThat(monitor.isCanceled()).isTrue();

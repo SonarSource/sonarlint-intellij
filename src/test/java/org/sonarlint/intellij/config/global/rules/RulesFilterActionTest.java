@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -47,7 +47,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void show_only_changed() {
-    var changed = findAction("Changed");
+    AnAction changed = findAction("Changed");
 
     presentation.putClientProperty(SELECTED_PROPERTY, true);
 
@@ -59,7 +59,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void show_only_disabled() {
-    var disabled = findAction("Disabled");
+    AnAction disabled = findAction("Disabled");
 
     presentation.putClientProperty(SELECTED_PROPERTY, true);
 
@@ -71,7 +71,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void show_only_enabled() {
-    var enabled = findAction("Enabled");
+    AnAction enabled = findAction("Enabled");
 
     presentation.putClientProperty(SELECTED_PROPERTY, true);
 
@@ -83,7 +83,7 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
 
   @Test
   public void reset_filter() {
-    var reset = findAction("Filter");
+    AnAction reset = findAction("Filter");
     reset.actionPerformed(event);
     verify(model).reset(true);
 
@@ -96,6 +96,6 @@ public class RulesFilterActionTest extends LightPlatformCodeInsightFixture4TestC
     return Arrays.stream(action.getChildActionsOrStubs())
       .filter(a -> a.getTemplatePresentation().getText() != null && a.getTemplatePresentation().getText().contains(text))
       .findFirst()
-      .orElseThrow(() -> new IllegalStateException("Action not found: " + text));
+      .get();
   }
 }

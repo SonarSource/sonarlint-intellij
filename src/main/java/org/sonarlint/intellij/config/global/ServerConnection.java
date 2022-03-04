@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +32,8 @@ import javax.swing.Icon;
 
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.http.ApacheHttpClient;
-import org.sonarsource.sonarlint.core.commons.http.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
+import org.sonarsource.sonarlint.core.serverapi.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 
 import static icons.SonarLintIcons.ICON_SONARCLOUD_16;
@@ -92,7 +92,7 @@ public class ServerConnection {
     if (!(o instanceof ServerConnection)) {
       return false;
     }
-    var other = (ServerConnection) o;
+    ServerConnection other = (ServerConnection) o;
 
     return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
       Comparing.equal(getPassword(), other.getPassword()) &&
@@ -176,7 +176,7 @@ public class ServerConnection {
   }
 
   public HttpClient getHttpClient() {
-    var userToken = getToken();
+    String userToken = getToken();
     return ApacheHttpClient.getDefault().withCredentials(isBlank(userToken) ? getLogin() : userToken, getPassword());
   }
 

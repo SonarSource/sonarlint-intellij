@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -28,9 +28,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -44,34 +47,34 @@ public class SonarClearIssuesAction extends AnAction {
 
   @Override
   public void actionPerformed(AnActionEvent e) {
-    var project = e.getProject();
+    Project project = e.getProject();
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      var issueManager = SonarLintUtils.getService(project, IssueManager.class);
-      var codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
+      IssueManager issueManager = SonarLintUtils.getService(project, IssueManager.class);
+      DaemonCodeAnalyzer codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
 
       ApplicationManager.getApplication().runReadAction(() -> {
         issueManager.clearAllIssuesForAllFiles();
 
         // run annotator to remove highlighting of issues
-        var editorManager = FileEditorManager.getInstance(project);
-        var openFiles = editorManager.getOpenFiles();
-        var psiFiles = findFiles(project, openFiles);
+        FileEditorManager editorManager = FileEditorManager.getInstance(project);
+        VirtualFile[] openFiles = editorManager.getOpenFiles();
+        Collection<PsiFile> psiFiles = findFiles(project, openFiles);
         psiFiles.forEach(codeAnalyzer::restart);
       });
     }
   }
 
   public Collection<PsiFile> findFiles(Project project, VirtualFile[] files) {
-    var psiManager = PsiManager.getInstance(project);
-    var psiFiles = new ArrayList<PsiFile>(files.length);
+    PsiManager psiManager = PsiManager.getInstance(project);
+    List<PsiFile> psiFiles = new ArrayList<>(files.length);
 
-    for (var vFile : files) {
+    for (VirtualFile vFile : files) {
       if (!vFile.isValid()) {
         continue;
       }
-      var psiFile = psiManager.findFile(vFile);
+      PsiFile psiFile = psiManager.findFile(vFile);
       if (psiFile != null) {
         psiFiles.add(psiFile);
       } else {

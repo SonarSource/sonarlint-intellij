@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -29,15 +29,15 @@ import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
 public class SonarLintToolWindowFixture {
   public static SonarLintToolWindowFixture createFor(Project project) {
-    var manager = new ToolWindowManagerImpl(project) {
+    ToolWindowManagerImpl manager = new ToolWindowManagerImpl(project) {
       @Override
       protected void fireStateChanged() {
       }
     };
-    var frame = new ProjectFrameHelper(new IdeFrameImpl(), null);
+    ProjectFrameHelper frame = new ProjectFrameHelper(new IdeFrameImpl(), null);
     frame.init();
     manager.init(frame);
-    for (var extension : ToolWindowEP.EP_NAME.getExtensionList()) {
+    for (ToolWindowEP extension : ToolWindowEP.EP_NAME.getExtensionList()) {
       if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(extension.id)) {
         manager.initToolWindow(extension);
       }

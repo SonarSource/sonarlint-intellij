@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -42,11 +42,11 @@ public class ExclusionItem {
 
   @CheckForNull
   public static ExclusionItem parse(String text) {
-    var i = text.indexOf(':');
+    int i = text.indexOf(':');
     if (i < 0) {
       return null;
     }
-    var item = text.substring(i + 1);
+    String item = text.substring(i + 1);
     if (StringUtils.trimToNull(item) == null) {
       return null;
     }

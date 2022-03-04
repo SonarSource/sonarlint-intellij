@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,8 +24,10 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
 import com.intellij.openapi.editor.markup.HighlighterTargetArea;
+import com.intellij.openapi.editor.markup.MarkupModel;
 import com.intellij.openapi.editor.markup.RangeHighlighter;
 import com.intellij.openapi.editor.markup.TextAttributes;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Segment;
 import com.intellij.util.Alarm;
 import com.intellij.util.ArrayUtil;
@@ -60,8 +62,8 @@ public class RangeBlinker {
   }
 
   private void removeHighlights() {
-    var markupModel = myEditor.getMarkupModel();
-    var allHighlighters = markupModel.getAllHighlighters();
+    MarkupModel markupModel = myEditor.getMarkupModel();
+    RangeHighlighter[] allHighlighters = markupModel.getAllHighlighters();
 
     myAddedHighlighters.stream()
       .filter(h -> !ArrayUtil.contains(allHighlighters, h))
@@ -70,18 +72,18 @@ public class RangeBlinker {
   }
 
   private void startBlinking() {
-    var project = myEditor.getProject();
+    Project project = myEditor.getProject();
     if (ApplicationManager.getApplication().isDisposed() || myEditor.isDisposed() || (project != null && project.isDisposed())) {
       return;
     }
 
-    var markupModel = myEditor.getMarkupModel();
+    MarkupModel markupModel = myEditor.getMarkupModel();
     if (show) {
-      for (var segment : myMarkers) {
+      for (Segment segment : myMarkers) {
         if (segment.getEndOffset() > myEditor.getDocument().getTextLength()) {
           continue;
         }
-        var highlighter = markupModel.addRangeHighlighter(segment.getStartOffset(), segment.getEndOffset(),
+        RangeHighlighter highlighter = markupModel.addRangeHighlighter(segment.getStartOffset(), segment.getEndOffset(),
           HighlighterLayer.ADDITIONAL_SYNTAX, myAttributes,
           HighlighterTargetArea.EXACT_RANGE);
         myAddedHighlighters.add(highlighter);

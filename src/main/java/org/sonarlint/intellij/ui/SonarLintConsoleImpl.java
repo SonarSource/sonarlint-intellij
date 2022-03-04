@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +26,10 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.serviceContainer.NonInjectable;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
@@ -74,7 +76,7 @@ public class SonarLintConsoleImpl implements SonarLintConsole, Disposable {
   public void error(String msg, @Nullable Throwable t) {
     error(msg);
     if (t != null) {
-      var errors = new StringWriter();
+      StringWriter errors = new StringWriter();
       t.printStackTrace(new PrintWriter(errors));
       error(errors.toString());
     }

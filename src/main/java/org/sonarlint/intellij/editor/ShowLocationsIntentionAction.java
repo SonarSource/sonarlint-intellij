@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -27,7 +27,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ui.UIUtil;
+
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
@@ -58,7 +60,7 @@ public class ShowLocationsIntentionAction implements IntentionAction, PriorityAc
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     SonarLintUtils.getService(project, EditorDecorator.class).highlightIssue(issue);
-    var sonarLintToolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
+    SonarLintToolWindow sonarLintToolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
     UIUtil.invokeLaterIfNeeded(() -> sonarLintToolWindow.showIssueLocations(issue));
 
   }

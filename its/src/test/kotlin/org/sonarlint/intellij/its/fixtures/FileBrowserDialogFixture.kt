@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA ITs
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -39,6 +39,8 @@ fun RemoteRobot.fileBrowserDialog(
 fun RemoteRobot.openProjectFileBrowserDialog(function: FileBrowserDialogFixture.() -> Unit = {}) = fileBrowserDialog(arrayOf(
   // 2020+
   "Open File or Project",
+  // up to 2019.3
+  "Select File or Directory to Import"
 )).apply(function)
 
 

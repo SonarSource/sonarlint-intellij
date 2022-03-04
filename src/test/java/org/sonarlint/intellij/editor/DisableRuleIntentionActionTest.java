@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -75,7 +75,7 @@ public class DisableRuleIntentionActionTest extends AbstractSonarLintLightTests 
   @Test
   public void should_disable_rule_in_settings_when_invoked() {
     getGlobalSettings().setAutoTrigger(true);
-    var file = PsiFileFactory.getInstance(getProject())
+    PsiFile file = PsiFileFactory.getInstance(getProject())
       .createFileFromText("MyClass.java", Language.findLanguageByID("JAVA"), "public class MyClass {}", true, false);
     FileEditorManager.getInstance(getProject()).openFile(file.getVirtualFile(),false);
 

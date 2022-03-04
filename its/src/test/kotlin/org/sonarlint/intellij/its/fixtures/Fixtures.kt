@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA ITs
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -43,8 +43,6 @@ fun ContainerFixture.jbTextFields() = findAll<JTextFieldFixture>(byXpath("//div[
 fun ContainerFixture.jRadioButtons() = findAll<JRadioButtonFixture>(byXpath("//div[@class='JRadioButton']"))
 
 fun ContainerFixture.jbTextField() = findElement<JTextFieldFixture>(byXpath("//div[@class='JBTextField']"))
-
-fun ContainerFixture.jbTable() = findElement<JBTableFixture>(byXpath("//div[@class='JBTable']"))
 
 fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JTextField']"))
 

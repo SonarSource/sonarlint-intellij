@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,6 +23,7 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKey;
+import com.intellij.openapi.project.Project;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -39,12 +40,12 @@ public class DisableRuleAction extends AnAction {
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
-    var project = e.getProject();
+    Project project = e.getProject();
     if (project == null) {
       return;
     }
 
-    var issue = e.getData(ISSUE_DATA_KEY);
+    LiveIssue issue = e.getData(ISSUE_DATA_KEY);
     if (issue != null) {
       disableRule(issue.getRuleKey());
       SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
@@ -54,19 +55,19 @@ public class DisableRuleAction extends AnAction {
 
   @Override
   public void update(AnActionEvent e) {
-    var project = e.getProject();
+    Project project = e.getProject();
     if (project == null) {
       e.getPresentation().setEnabled(false);
       e.getPresentation().setVisible(false);
       return;
     }
 
-    var issue = e.getData(ISSUE_DATA_KEY);
-    var visible = !getSettingsFor(project).isBindingEnabled() && issue != null;
+    LiveIssue issue = e.getData(ISSUE_DATA_KEY);
+    boolean visible = !getSettingsFor(project).isBindingEnabled() && issue != null;
     e.getPresentation().setVisible(visible);
 
-    var explicitlyDisabled = issue != null && getGlobalSettings().isRuleExplicitlyDisabled(issue.getRuleKey());
-    var enabled = visible && !explicitlyDisabled;
+    boolean explicitlyDisabled = issue != null && getGlobalSettings().isRuleExplicitlyDisabled(issue.getRuleKey());
+    boolean enabled = visible && !explicitlyDisabled;
     e.getPresentation().setEnabled(enabled);
   }
 

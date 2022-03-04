@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +25,6 @@ import com.intellij.openapi.vcs.changes.CommitContext;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,7 +42,7 @@ public class SonarLintCheckinHandlerFactoryTest {
 
   @Before
   public void setUp() {
-    when(panel.getVirtualFiles()).thenReturn(List.of(file));
+    when(panel.getVirtualFiles()).thenReturn(Collections.singletonList(file));
     when(panel.getProject()).thenReturn(project);
 
     sonarLintCheckinHandlerFactory = new SonarLintCheckinHandlerFactory();
@@ -51,7 +50,7 @@ public class SonarLintCheckinHandlerFactoryTest {
 
   @Test
   public void testFactory() {
-    var handler = sonarLintCheckinHandlerFactory.createHandler(panel, new CommitContext());
+    CheckinHandler handler = sonarLintCheckinHandlerFactory.createHandler(panel, new CommitContext());
     assertThat(handler).isInstanceOf(SonarLintCheckinHandler.class);
 
     verify(panel).getProject();

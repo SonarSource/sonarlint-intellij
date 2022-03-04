@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,10 +19,8 @@
  */
 package org.sonarlint.intellij.core
 
-import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -41,7 +39,7 @@ open class ProjectBindingAssistant(private val title: String,
 
     open fun bind(projectKey: String, serverUrl: String): BoundProject? {
         val connection = findOrCreateConnectionTo(serverUrl) ?: return null
-        return findFirstBoundProjectAmongOpened(projectKey, connection) ?: selectAndBindProject(projectKey, connection)
+        return findBoundProjectAmongOpened(projectKey, connection) ?: selectAndBindProject(projectKey, connection)
     }
 
     private fun findOrCreateConnectionTo(serverUrl: String): ServerConnection? {
@@ -56,18 +54,14 @@ open class ProjectBindingAssistant(private val title: String,
         return if (confirmed) connectionCreator.createThroughWizard(serverUrl) else null
     }
 
-    private fun findFirstBoundProjectAmongOpened(projectKey: String, connection: ServerConnection): BoundProject? {
-        val project = projectManager.openProjects.find { it.hasAnyModuleBoundTo(projectKey) }
+    private fun findBoundProjectAmongOpened(projectKey: String, connection: ServerConnection): BoundProject? {
+        val project = projectManager.openProjects.find { getSettingsFor(it).isBoundTo(projectKey, connection) }
         return if (project != null) BoundProject(project, connection) else null
-    }
-
-    private fun Project.hasAnyModuleBoundTo(projectKey: String): Boolean {
-        return SonarLintUtils.getService(this, ProjectBindingManager::class.java).uniqueProjectKeys.contains(projectKey)
     }
 
     private fun selectAndBindProject(projectKey: String, connection: ServerConnection): BoundProject? {
         val selectedProject = selectProject(projectKey, connection.hostUrl) ?: return null
-        if (getSettingsFor(selectedProject).isBoundTo(connection) && selectedProject.hasAnyModuleBoundTo(projectKey)) {
+        if (getSettingsFor(selectedProject).isBoundTo(projectKey, connection)) {
             return BoundProject(selectedProject, connection)
         }
         return bindProject(selectedProject, projectKey, connection)
@@ -88,7 +82,7 @@ open class ProjectBindingAssistant(private val title: String,
     private fun bindProject(project: Project, projectKey: String, connection: ServerConnection): BoundProject? {
         val confirmed = modalPresenter.showConfirmModal(title, "You are going to bind current project to '${connection.hostUrl}'. Do you agree?", "Yes")
         if (confirmed) {
-            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
+            getService(project, ProjectBindingManager::class.java).bindTo(connection, projectKey)
             return BoundProject(project, connection)
         }
         return null

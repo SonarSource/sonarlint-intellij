@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,10 +20,12 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
+
 import java.awt.BorderLayout;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
@@ -31,29 +33,33 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
+
+import static org.sonarlint.intellij.ui.HtmlUtils.fixPreformattedText;
 
 public class SonarLintHotspotDescriptionPanel {
   private static final int BORDER = 10;
 
+  private final Project project;
   private final JPanel panel;
   private final HTMLEditorKit kit;
   private JEditorPane editor;
 
-  public SonarLintHotspotDescriptionPanel() {
+  public SonarLintHotspotDescriptionPanel(Project project) {
+    this.project = project;
     this.kit = new HTMLEditorKit();
-    var styleSheet = kit.getStyleSheet();
+    StyleSheet styleSheet = kit.getStyleSheet();
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
-    styleSheet.addRule("pre {padding: 10px;}");
 
     panel = new JPanel(new BorderLayout());
 
-    var titleComp = new JLabel("Select a hotspot to see more details", SwingConstants.CENTER);
+    JComponent titleComp = new JLabel("Select a hotspot to see more details", SwingConstants.CENTER);
     panel.add(titleComp, BorderLayout.CENTER);
   }
 
   public void setDescription(String description) {
-    var htmlBody = "<table><tr><td>" + description + "</td></tr></table>";
+    String htmlBody = fixPreformattedText("<table><tr><td>" + description + "</td></tr></table>");
     updateEditor(htmlBody);
   }
 
@@ -71,7 +77,7 @@ public class SonarLintHotspotDescriptionPanel {
   }
 
   private JEditorPane createEditor() {
-    var newEditor = new JEditorPane();
+    JEditorPane newEditor = new JEditorPane();
     newEditor.setEditorKit(kit);
     newEditor.setBorder(JBUI.Borders.empty(BORDER));
     newEditor.setEditable(false);

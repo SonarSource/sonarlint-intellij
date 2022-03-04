@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -33,12 +33,11 @@ import org.apache.hc.client5.http.impl.routing.SystemDefaultRoutePlanner
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder
 import org.apache.hc.core5.concurrent.FutureCallback
 import org.apache.hc.core5.http.ContentType
-import org.apache.hc.core5.http2.HttpVersionPolicy
 import org.apache.hc.core5.reactor.ssl.TlsDetails
 import org.apache.hc.core5.util.Timeout
 import org.sonarlint.intellij.SonarLintPlugin
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarsource.sonarlint.core.commons.http.HttpClient.Response
+import org.sonarsource.sonarlint.core.serverapi.HttpClient.Response
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 import java.util.concurrent.CancellationException
@@ -49,7 +48,7 @@ class ApacheHttpClient private constructor(
   private val client: CloseableHttpAsyncClient,
   private val login: String? = null,
   private val password: String? = null
-) : org.sonarsource.sonarlint.core.commons.http.HttpClient {
+) : org.sonarsource.sonarlint.core.serverapi.HttpClient {
 
   fun withCredentials(login: String?, password: String?): ApacheHttpClient {
     return ApacheHttpClient(client, login, password)
@@ -118,13 +117,11 @@ class ApacheHttpClient private constructor(
             .setTlsStrategy(
               ClientTlsStrategyBuilder.create()
                 .setSslContext(CertificateManager.getInstance().sslContext)
-                .setTlsDetailsFactory { TlsDetails(it.session, it.applicationProtocol) }
+                .setTlsDetailsFactory { TlsDetails(it.session, it.supportedProtocols[0]) }
                 .build())
             .build()
         )
         .setUserAgent("SonarLint IntelliJ " + getService(SonarLintPlugin::class.java).version)
-        // SLI-629 - Force HTTP/1
-        .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_1)
 
         // proxy settings
         .setRoutePlanner(SystemDefaultRoutePlanner(CommonProxy.getInstance()))

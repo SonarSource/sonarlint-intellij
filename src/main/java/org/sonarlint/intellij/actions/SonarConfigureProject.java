@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -34,7 +34,7 @@ public class SonarConfigureProject extends AbstractSonarAction {
   @Override
   public void actionPerformed(AnActionEvent e) {
     if (e.getProject() != null) {
-      var configurable = new SonarLintProjectConfigurable(e.getProject());
+      SonarLintProjectConfigurable configurable = new SonarLintProjectConfigurable(e.getProject());
       ShowSettingsUtil.getInstance().editConfigurable(e.getProject(), configurable);
     }
   }

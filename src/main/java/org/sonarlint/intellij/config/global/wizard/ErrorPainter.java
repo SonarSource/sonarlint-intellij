@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,6 +26,7 @@ import com.intellij.openapi.wm.IdeGlassPaneUtil;
 import com.intellij.util.ui.UIUtil;
 import java.awt.Component;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.util.HashSet;
 import java.util.Set;
 import javax.swing.JComponent;
@@ -38,10 +39,10 @@ public class ErrorPainter extends AbstractPainter {
 
   @Override
   public void executePaint(Component component, Graphics2D g) {
-    for (var comp : componentsWithErrors) {
-      var width = comp.getWidth();
-      var point = SwingUtilities.convertPoint(comp, width, 0, component);
-      AllIcons.General.Error.paintIcon(component, g, point.x - 8, point.y - 8);
+    for (JComponent comp : componentsWithErrors) {
+      int w = comp.getWidth();
+      Point p = SwingUtilities.convertPoint(comp, w, 0, component);
+      AllIcons.General.Error.paintIcon(component, g, p.x - 8, p.y - 8);
     }
   }
 

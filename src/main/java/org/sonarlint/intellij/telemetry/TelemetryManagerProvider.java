@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,8 +21,10 @@ package org.sonarlint.intellij.telemetry;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.intellij.openapi.application.PathManager;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.http.ApacheHttpClient;
@@ -37,8 +39,8 @@ public class TelemetryManagerProvider {
   private static final String OLD_STORAGE_FILENAME = "sonarlint_usage";
 
   public TelemetryManager get() {
-    var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
-    var client = new TelemetryHttpClient(PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry(), ApacheHttpClient.getDefault());
+    SonarLintPlugin plugin = SonarLintUtils.getService(SonarLintPlugin.class);
+    TelemetryHttpClient client = new TelemetryHttpClient(PRODUCT, plugin.getVersion(), SonarLintUtils.getIdeVersionForTelemetry(), ApacheHttpClient.getDefault());
     return new TelemetryManager(getStorageFilePath(), client, new TelemetryClientAttributeProviderImpl());
   }
 

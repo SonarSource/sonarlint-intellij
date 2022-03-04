@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,8 +21,10 @@ package org.sonarlint.intellij.issue.tracking;
 
 import com.intellij.openapi.application.ApplicationManager;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.annotation.Nullable;
@@ -32,7 +34,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
 
   public Tracking<RAW, BASE> track(Input<RAW> rawInput, Input<BASE> baseInput) {
     return ApplicationManager.getApplication().<Tracking<RAW, BASE>>runReadAction(() -> {
-      var tracking = new Tracking<>(rawInput, baseInput);
+      Tracking<RAW, BASE> tracking = new Tracking<>(rawInput, baseInput);
 
       // 1. match issues with same rule, same line and same text range hash, but not necessarily with same message
       match(tracking, LineAndTextRangeHashKeyFactory.INSTANCE);
@@ -65,19 +67,22 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       return;
     }
 
-    var baseSearch = new HashMap<SearchKey, List<BASE>>();
-    for (var base : tracking.getUnmatchedBases()) {
-      var searchKey = factory.apply(base);
-      baseSearch.computeIfAbsent(searchKey, k -> new ArrayList<>()).add(base);
+    Map<SearchKey, List<BASE>> baseSearch = new HashMap<>();
+    for (BASE base : tracking.getUnmatchedBases()) {
+      SearchKey searchKey = factory.apply(base);
+      if (!baseSearch.containsKey(searchKey)) {
+        baseSearch.put(searchKey, new ArrayList<>());
+      }
+      baseSearch.get(searchKey).add(base);
     }
 
-    for (var raw : tracking.getUnmatchedRaws()) {
-      var rawKey = factory.apply(raw);
-      var bases = baseSearch.get(rawKey);
+    for (RAW raw : tracking.getUnmatchedRaws()) {
+      SearchKey rawKey = factory.apply(raw);
+      Collection<BASE> bases = baseSearch.get(rawKey);
       if (bases != null && !bases.isEmpty()) {
         // TODO taking the first one. Could be improved if there are more than 2 issues on the same line.
         // Message could be checked to take the best one.
-        var match = bases.iterator().next();
+        BASE match = bases.iterator().next();
         tracking.match(raw, match);
         baseSearch.get(rawKey).remove(match);
       }
@@ -115,7 +120,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      var that = (LineAndTextRangeHashKey) o;
+      LineAndTextRangeHashKey that = (LineAndTextRangeHashKey) o;
       // start with most discriminant field
       return Objects.equals(line, that.line)
         && Objects.equals(textRangeHash, that.textRangeHash)
@@ -162,7 +167,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      var that = (LineAndLineHashKey) o;
+      LineAndLineHashKey that = (LineAndLineHashKey) o;
       // start with most discriminant field
       return Objects.equals(line, that.line)
         && Objects.equals(lineHash, that.lineHash)
@@ -207,7 +212,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      var that = (LineHashKey) o;
+      LineHashKey that = (LineHashKey) o;
       // start with most discriminant field
       return Objects.equals(lineHash, that.lineHash)
         && ruleKey.equals(that.ruleKey);
@@ -252,7 +257,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      var that = (TextRangeHashAndMessageKey) o;
+      TextRangeHashAndMessageKey that = (TextRangeHashAndMessageKey) o;
       // start with most discriminant field
       return Objects.equals(textRangeHash, that.textRangeHash)
         && message.equals(that.message)
@@ -299,7 +304,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      var that = (LineAndMessageKey) o;
+      LineAndMessageKey that = (LineAndMessageKey) o;
       // start with most discriminant field
       return Objects.equals(line, that.line)
         && message.equals(that.message)
@@ -344,7 +349,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
       if (this.getClass() != o.getClass()) {
         return false;
       }
-      var that = (TextRangeHashKey) o;
+      TextRangeHashKey that = (TextRangeHashKey) o;
       // start with most discriminant field
       return Objects.equals(textRangeHash, that.textRangeHash)
         && ruleKey.equals(that.ruleKey);
@@ -383,7 +388,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
         return false;
       }
 
-      var that = (ServerIssueSearchKey) o;
+      ServerIssueSearchKey that = (ServerIssueSearchKey) o;
 
       return !SonarLintUtils.isBlank(serverIssueKey) && !SonarLintUtils.isBlank(that.serverIssueKey) && serverIssueKey.equals(that.serverIssueKey);
     }

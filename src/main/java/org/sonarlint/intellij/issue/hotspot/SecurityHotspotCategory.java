@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,8 +19,8 @@
  */
 package org.sonarlint.intellij.issue.hotspot;
 
+import java.util.Arrays;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 public enum SecurityHotspotCategory {
   BUFFER_OVERFLOW("buffer-overflow", "Buffer Overflow"),
@@ -59,7 +59,7 @@ public enum SecurityHotspotCategory {
   }
 
   public static Optional<SecurityHotspotCategory> findByShortName(String shortName) {
-    return Stream.of(SecurityHotspotCategory.values())
+    return Arrays.stream(SecurityHotspotCategory.values())
       .filter(securityHotspotCategory -> securityHotspotCategory.shortName.equals(shortName))
       .findFirst();
   }

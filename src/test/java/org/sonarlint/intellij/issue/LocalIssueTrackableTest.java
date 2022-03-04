@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class LocalIssueTrackableTest {
   @Test
   public void testWrapping() {
-    var issue = Sonarlint.Issues.Issue.newBuilder()
+    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
       .setServerIssueKey("key")
       .setAssignee("assignee")
       .setLine(10)
@@ -38,7 +38,7 @@ public class LocalIssueTrackableTest {
       .setRuleKey("ruleKey")
       .build();
 
-    var trackable = new LocalIssueTrackable(issue);
+    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
     assertThat(trackable.getAssignee()).isEqualTo("assignee");
     assertThat(trackable.getMessage()).isEqualTo("msg");
     assertThat(trackable.getServerIssueKey()).isEqualTo("key");
@@ -52,10 +52,10 @@ public class LocalIssueTrackableTest {
 
   @Test
   public void testNulls() {
-    var issue = Sonarlint.Issues.Issue.newBuilder()
+    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
       .build();
 
-    var trackable = new LocalIssueTrackable(issue);
+    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
     assertThat(trackable.getServerIssueKey()).isNull();
     assertThat(trackable.getLine()).isNull();
     assertThat(trackable.getCreationDate()).isNull();
@@ -63,19 +63,19 @@ public class LocalIssueTrackableTest {
 
   @Test(expected = UnsupportedOperationException.class)
   public void severityNotStored() {
-    var issue = Sonarlint.Issues.Issue.newBuilder()
+    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
       .build();
 
-    var trackable = new LocalIssueTrackable(issue);
+    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
     trackable.getSeverity();
   }
 
   @Test(expected = UnsupportedOperationException.class)
   public void typeNotStored() {
-    var issue = Sonarlint.Issues.Issue.newBuilder()
+    Sonarlint.Issues.Issue issue = Sonarlint.Issues.Issue.newBuilder()
       .build();
 
-    var trackable = new LocalIssueTrackable(issue);
+    LocalIssueTrackable trackable = new LocalIssueTrackable(issue);
     trackable.getType();
   }
 }

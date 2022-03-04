@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -92,7 +92,7 @@ public class RulesFilterModelTest {
 
   @Test
   public void should_apply_filter() {
-    var rule = mock(RulesTreeNode.Rule.class);
+    RulesTreeNode.Rule rule = mock(RulesTreeNode.Rule.class);
     when(rule.getName()).thenReturn("my rule");
     when(rule.getKey()).thenReturn("my:rule");
     assertThat(model.filter(rule)).isTrue();

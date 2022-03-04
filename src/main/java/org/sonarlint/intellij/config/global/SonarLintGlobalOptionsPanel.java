@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,9 +19,11 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import com.intellij.openapi.fileChooser.FileChooserDescriptor;
 import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory;
 import com.intellij.openapi.ui.TextFieldWithBrowseButton;
 import com.intellij.ui.components.JBTextField;
+
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -32,14 +34,14 @@ import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.core.NodeJsManager;
-import org.sonarsource.sonarlint.core.commons.Version;
+import org.sonarsource.sonarlint.core.client.api.common.Version;
 
 public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
-  private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave " +
-    "this field blank to let SonarLint look for it using your PATH environment variable.";
+  private static final String NODE_JS_TOOLTIP = "SonarLint requires Node.js to analyze some languages. You can provide an explicit path for the node executable here or leave this field blank to let SonarLint look for it using your PATH environment variable.";
   private JPanel rootPane;
   private JCheckBox autoTrigger;
   private JBTextField nodeJsPath;
@@ -56,40 +58,40 @@ public class SonarLintGlobalOptionsPanel implements ConfigurationPanel<SonarLint
   }
 
   private JPanel createTopPanel() {
-    var optionsPanel = new JPanel(new GridBagLayout());
+    JPanel optionsPanel = new JPanel(new GridBagLayout());
     optionsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
 
-    var constraints = new GridBagConstraints();
-    constraints.fill = GridBagConstraints.HORIZONTAL;
+    GridBagConstraints c = new GridBagConstraints();
+    c.fill = GridBagConstraints.HORIZONTAL;
 
     autoTrigger = new JCheckBox("Automatically trigger analysis");
     autoTrigger.setFocusable(false);
-    constraints.gridx = 0;
-    constraints.gridy = 0;
-    constraints.gridwidth = 3;
-    constraints.anchor = GridBagConstraints.WEST;
-    optionsPanel.add(autoTrigger, constraints);
+    c.gridx = 0;
+    c.gridy = 0;
+    c.gridwidth = 3;
+    c.anchor = GridBagConstraints.WEST;
+    optionsPanel.add(autoTrigger, c);
 
-    constraints.gridx = 0;
-    constraints.gridy = 1;
-    constraints.gridwidth = 1;
-    var label = new JLabel("Node.js path: ");
+    c.gridx = 0;
+    c.gridy = 1;
+    c.gridwidth = 1;
+    JLabel label = new JLabel("Node.js path: ");
     label.setToolTipText(NODE_JS_TOOLTIP);
-    optionsPanel.add(label, constraints);
+    optionsPanel.add(label, c);
     nodeJsPath = new JBTextField();
-    var nodeJsPathWithBrowse = new TextFieldWithBrowseButton(nodeJsPath);
+    TextFieldWithBrowseButton nodeJsPathWithBrowse = new TextFieldWithBrowseButton(nodeJsPath);
     nodeJsPathWithBrowse.setToolTipText(NODE_JS_TOOLTIP);
-    var fileChooser = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
+    FileChooserDescriptor fileChooser = FileChooserDescriptorFactory.createSingleLocalFileDescriptor();
     nodeJsPathWithBrowse.addBrowseFolderListener("Select Node.js Binary", "Select Node.js binary to be used by SonarLint", null, fileChooser);
-    constraints.gridx = 1;
-    constraints.gridy = 1;
-    constraints.weightx = 1.0;
-    optionsPanel.add(nodeJsPathWithBrowse, constraints);
+    c.gridx = 1;
+    c.gridy = 1;
+    c.weightx = 1.0;
+    optionsPanel.add(nodeJsPathWithBrowse, c);
     nodeJsVersion = new JLabel();
-    constraints.gridx = 2;
-    constraints.gridy = 1;
-    constraints.weightx = 0.0;
-    optionsPanel.add(nodeJsVersion, constraints);
+    c.gridx = 2;
+    c.gridy = 1;
+    c.weightx = 0.0;
+    optionsPanel.add(nodeJsVersion, c);
     return optionsPanel;
   }
 

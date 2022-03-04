@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,11 +24,13 @@ import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
 import com.intellij.ui.treeStructure.treetable.TreeTableTree;
 import icons.SonarLintIcons;
+
 import javax.swing.Icon;
 import javax.swing.JTree;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.util.CompoundIcon;
 
@@ -77,14 +79,14 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
     if (column == ICONS_COLUMN) {
       if (node instanceof RulesTreeNode.Rule) {
-        var rule = (RulesTreeNode.Rule) node;
-        var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
+        RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
+        int gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
         return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(rule.type()), SonarLintIcons.severity12(rule.severity()));
       }
       return null;
     }
     if (column == IS_ENABLED_COLUMN) {
-      var treeNode = (RulesTreeNode) node;
+      RulesTreeNode<?> treeNode = (RulesTreeNode) node;
       return treeNode.isActivated();
     }
 
@@ -99,12 +101,12 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
   @Override
   public void setValueAt(Object aValue, Object node, int column) {
     if (column == IS_ENABLED_COLUMN) {
-      var value = (boolean) aValue;
+      boolean value = (boolean) aValue;
       if (node instanceof RulesTreeNode.Rule) {
-        var rule = (RulesTreeNode.Rule) node;
+        RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
         activateRule(rule, value);
       } else if (node instanceof RulesTreeNode.Language) {
-        var lang = (RulesTreeNode.Language) node;
+        RulesTreeNode.Language lang = (RulesTreeNode.Language) node;
         activateLanguage(lang, value);
       }
 
@@ -114,16 +116,16 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   private void activateRule(RulesTreeNode.Rule rule, boolean activate) {
     rule.setIsActivated(activate);
-    var lang = (RulesTreeNode.Language) rule.getParent();
+    RulesTreeNode.Language lang = (RulesTreeNode.Language) rule.getParent();
     refreshLanguageActivation(lang);
   }
 
   void refreshLanguageActivation(RulesTreeNode.Language lang) {
-    var seenActive = false;
-    var seenInactive = false;
-    var isChanged = false;
+    boolean seenActive = false;
+    boolean seenInactive = false;
+    boolean isChanged = false;
 
-    for (var rule : lang.childrenIterable()) {
+    for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
       if (rule.isNonDefault()) {
         isChanged = true;
       }
@@ -148,7 +150,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   private void activateLanguage(RulesTreeNode.Language lang, boolean activate) {
     lang.setIsActivated(activate);
-    for (var rule : lang.childrenIterable()) {
+    for (RulesTreeNode.Rule rule : lang.childrenIterable()) {
       rule.setIsActivated(activate);
     }
     refreshLanguageActivation(lang);
@@ -156,10 +158,10 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
 
   public void swapAndRefresh(Object node) {
     if (node instanceof RulesTreeNode.Rule) {
-      var rule = (RulesTreeNode.Rule) node;
+      RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
       activateRule(rule, !rule.isActivated());
     } else if (node instanceof RulesTreeNode.Language) {
-      var lang = (RulesTreeNode.Language) node;
+      RulesTreeNode.Language lang = (RulesTreeNode.Language) node;
       activateLanguage(lang, lang.isActivated() == null || !lang.isActivated());
     }
     ((AbstractTableModel) treeTable.getModel()).fireTableDataChanged();

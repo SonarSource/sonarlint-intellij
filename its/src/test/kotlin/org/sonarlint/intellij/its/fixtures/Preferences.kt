@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA ITs
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -56,8 +56,17 @@ open class PreferencesDialog(
         findElement<JTreeFixture>(byXpath("//div[@class='MyTree']")).apply(function)
     }
 
-    fun errorMessage(message: String) {
-        jLabel(JLabelFixture.byContainsText(message))
+    override fun pressOk() {
+        super.pressOk()
+
+        assertValidSettings()
+    }
+
+    fun assertValidSettings() {
+        val invalidSettingsLabel = jLabels(JLabelFixture.byContainsText("Cannot Save Settings"))
+        if (invalidSettingsLabel.isNotEmpty()) {
+            throw IllegalStateException("Could not save settings: ${invalidSettingsLabel.first().value}")
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,7 +23,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.List;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -57,7 +57,7 @@ public class ExcludeFileActionLightTests extends AbstractSonarLintLightTests {
 
   @Test
   public void dont_add_exclusion_if_already_exists() {
-    getProjectSettings().setFileExclusions(List.of("FILE:foo.php"));
+    getProjectSettings().setFileExclusions(Collections.singletonList("FILE:foo.php"));
 
     action.actionPerformed(e);
 

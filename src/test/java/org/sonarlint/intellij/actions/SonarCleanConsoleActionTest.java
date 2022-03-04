@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -32,13 +32,14 @@ public class SonarCleanConsoleActionTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testAction() {
-    var event = mock(AnActionEvent.class);
-    var console = mock(SonarLintConsole.class);
+    AnActionEvent event = mock(AnActionEvent.class);
+    SonarLintConsole console = mock(SonarLintConsole.class);
+
 
     when(event.getProject()).thenReturn(getProject());
     replaceProjectService(SonarLintConsole.class, console);
 
-    var clean = new SonarCleanConsoleAction(null, null, null);
+    SonarCleanConsoleAction clean = new SonarCleanConsoleAction(null, null, null);
 
     clean.actionPerformed(event);
     verify(console).clear();
@@ -46,8 +47,8 @@ public class SonarCleanConsoleActionTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testNoOpIfNoProject() {
-    var event = mock(AnActionEvent.class);
-    var clean = new SonarCleanConsoleAction(null, null, null);
+    AnActionEvent event = mock(AnActionEvent.class);
+    SonarCleanConsoleAction clean = new SonarCleanConsoleAction(null, null, null);
     clean.actionPerformed(event);
   }
 }

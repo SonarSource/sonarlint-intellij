@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,16 +22,15 @@ package org.sonarlint.intellij.actions
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
-import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils
+import org.sonarsource.sonarlint.core.util.StringUtils
 
 class OpenIssueInBrowserAction : AbstractSonarAction(
   "Open In Browser",
@@ -54,11 +53,8 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
     val project = e.project ?: return
     val issue = e.getData(TAINT_VULNERABILITY_DATA_KEY)
     val key = issue?.key() ?: return
-    val localFile = issue.file() ?: return
-    val localFileModule = ModuleUtil.findModuleForFile(localFile, project) ?: return
     val serverUrl = serverConnection(project)?.hostUrl ?: return
-    val projectKey = getService(localFileModule, ModuleBindingManager::class.java).resolveProjectKey() ?: return
-    BrowserUtil.browse(buildLink(serverUrl, projectKey, key))
+    BrowserUtil.browse(buildLink(serverUrl, getSettingsFor(project).projectKey!!, key))
     getService(SonarLintTelemetry::class.java).taintVulnerabilitiesInvestigatedRemotely()
   }
 
@@ -67,8 +63,8 @@ class OpenIssueInBrowserAction : AbstractSonarAction(
   }
 
   private fun buildLink(serverUrl: String, projectKey: String, issueKey: String): String {
-    val urlEncodedProjectKey = UrlUtils.urlEncode(projectKey)
-    val urlEncodedIssueKey = UrlUtils.urlEncode(issueKey)
+    val urlEncodedProjectKey = StringUtils.urlEncode(projectKey)
+    val urlEncodedIssueKey = StringUtils.urlEncode(issueKey)
     return "$serverUrl/project/issues?id=$urlEncodedProjectKey&open=$urlEncodedIssueKey"
   }
 

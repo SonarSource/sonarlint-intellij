@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -35,7 +35,8 @@ import javax.swing.tree.DefaultTreeModel;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +49,7 @@ public class IssueTreeModelBuilderTest {
 
   @Test
   public void createModel() {
-    var model = treeBuilder.createModel();
+    DefaultTreeModel model = treeBuilder.createModel();
     assertThat(model.getRoot()).isNotNull();
   }
 
@@ -63,14 +64,14 @@ public class IssueTreeModelBuilderTest {
     addFile(data, "file3", 2);
 
     treeBuilder.updateModel(data, "empty");
-    var first = treeBuilder.getNextIssue((AbstractNode) model.getRoot());
-    assertThat(first).isNotNull();
+    IssueNode first = treeBuilder.getNextIssue((AbstractNode) model.getRoot());
+    assertNode(first, "file1", 1);
 
-    var second = treeBuilder.getNextIssue(first);
-    assertThat(second).isNotNull();
+    IssueNode second = treeBuilder.getNextIssue(first);
+    assertNode(second, "file1", 0);
 
-    var third = treeBuilder.getNextIssue(second);
-    assertThat(second).isNotNull();
+    IssueNode third = treeBuilder.getNextIssue(second);
+    assertNode(third, "file2", 1);
 
     assertThat(treeBuilder.getPreviousIssue(third)).isEqualTo(second);
     assertThat(treeBuilder.getPreviousIssue(second)).isEqualTo(first);
@@ -94,16 +95,21 @@ public class IssueTreeModelBuilderTest {
     assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));
   }
 
+  private void assertNode(IssueNode node, String file, int number) {
+    assertThat(node).isNotNull();
+    assertThat(node.issue().getRuleName()).isEqualTo("rule" + number);
+  }
+
   private void addFile(Map<VirtualFile, Collection<LiveIssue>> data, String fileName, int numIssues) {
-    var file = mock(VirtualFile.class);
+    VirtualFile file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(fileName);
     when(file.isValid()).thenReturn(true);
 
-    var psiFile = mock(PsiFile.class);
+    PsiFile psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
     List<LiveIssue> issueList = new LinkedList<>();
 
-    for (var i = 0; i < numIssues; i++) {
+    for (int i = 0; i < numIssues; i++) {
       issueList.add(mockIssuePointer(fileName, i, "rule" + i, "MAJOR", (long) i));
     }
 
@@ -111,22 +117,23 @@ public class IssueTreeModelBuilderTest {
   }
 
   private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, String severity, @Nullable Long creationDate) {
-    var issue = mock(Issue.class);
-    var psiFile = mock(PsiFile.class);
+    Issue issue = mock(Issue.class);
+    PsiFile psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
-    var f = mockFile(path);
+    ClientInputFile f = mockFile(path);
     when(issue.getInputFile()).thenReturn(f);
     when(issue.getRuleKey()).thenReturn(rule);
+    when(issue.getRuleName()).thenReturn(rule);
     when(issue.getSeverity()).thenReturn(severity);
-    var marker = mock(RangeMarker.class);
+    RangeMarker marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
-    var ip = new LiveIssue(issue, psiFile, Collections.emptyList());
+    LiveIssue ip = new LiveIssue(issue, psiFile, Collections.emptyList());
     ip.setCreationDate(creationDate);
     return ip;
   }
 
   private static ClientInputFile mockFile(String path) {
-    var file = mock(ClientInputFile.class);
+    ClientInputFile file = mock(ClientInputFile.class);
     when(file.getPath()).thenReturn(path);
     when(file.getCharset()).thenReturn(Charset.defaultCharset());
     when(file.isTest()).thenReturn(false);

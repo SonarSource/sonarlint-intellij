@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,21 +26,29 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.GuiUtils;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
+import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
+
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 import javax.swing.Box;
+import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -75,7 +83,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private void subscribeToEvents() {
-    var busConnection = project.getMessageBus().connect(project);
+    MessageBusConnection busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
       @Override
       public void applied(SonarLintGlobalSettings settings) {
@@ -103,13 +111,15 @@ public class AutoTriggerStatusPanel {
       return;
     }
 
-    var selectedFile = SonarLintUtils.getSelectedFile(project);
+    VirtualFile selectedFile = SonarLintUtils.getSelectedFile(project);
     if (selectedFile != null) {
       // Computing server exclusions may take time, so lets move from EDT to pooled thread
       ApplicationManager.getApplication().executeOnPooledThread(() -> {
-        var localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
+        LocalFileExclusions localFileExclusions = SonarLintUtils.getService(project, LocalFileExclusions.class);
         try {
-          var nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> switchCard(FILE_DISABLED));
+          Map<Module, Collection<VirtualFile>> nonExcluded = localFileExclusions.retainNonExcludedFilesByModules(Collections.singleton(selectedFile), false, (f, r) -> {
+            switchCard(FILE_DISABLED);
+          });
           if (!nonExcluded.isEmpty()) {
             switchCard(AUTO_TRIGGER_ENABLED);
           }
@@ -127,21 +137,21 @@ public class AutoTriggerStatusPanel {
     layout = new CardLayout();
     panel = new JPanel(layout);
 
-    var gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
+    GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE,
       JBUI.insets(2, 2, 2, 2), 0, 0);
 
-    var enabledCard = new JPanel(new GridBagLayout());
-    var disabledCard = new JPanel(new GridBagLayout());
-    var notThisFileCard = new JPanel(new GridBagLayout());
+    JPanel enabledCard = new JPanel(new GridBagLayout());
+    JPanel disabledCard = new JPanel(new GridBagLayout());
+    JPanel notThisFileCard = new JPanel(new GridBagLayout());
 
-    var infoIcon = SonarLintIcons.INFO;
-    var link = new HyperlinkLabel("");
+    Icon infoIcon = SonarLintIcons.INFO;
+    HyperlinkLabel link = new HyperlinkLabel("");
     link.setIcon(infoIcon);
     link.setUseIconAsLink(true);
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
-        final var label = new JLabel("<html>" + TOOLTIP + "</html>");
+        final JLabel label = new JLabel("<html>" + TOOLTIP + "</html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.getInformationColor());
         label.setOpaque(true);
@@ -152,9 +162,9 @@ public class AutoTriggerStatusPanel {
     disabledCard.add(new JLabel(SonarLintIcons.WARN), gc);
     notThisFileCard.add(link, gc);
 
-    var enabledLabel = new JLabel("Automatic analysis is enabled");
-    var disabledLabel = new JLabel("On-the-fly analysis is disabled - issues are not automatically displayed");
-    var notThisFileLabel = new JLabel("This file is not automatically analyzed");
+    JLabel enabledLabel = new JLabel("Automatic analysis is enabled");
+    JLabel disabledLabel = new JLabel("On-the-fly analysis is disabled - issues are not automatically displayed");
+    JLabel notThisFileLabel = new JLabel("This file is not automatically analyzed");
     notThisFileLabel.setToolTipText(TOOLTIP);
 
     enabledCard.add(enabledLabel, gc);

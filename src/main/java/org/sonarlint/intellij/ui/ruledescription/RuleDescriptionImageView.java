@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -35,10 +35,6 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class RuleDescriptionImageView extends ImageView {
-
-  public static final String PREFIX_SEVERITY = "/severity/";
-  public static final String PREFIX_TYPE = "/type/";
-
   public RuleDescriptionImageView(Element elem) {
     super(elem);
     cacheImage(getImageURL());
@@ -48,17 +44,17 @@ public class RuleDescriptionImageView extends ImageView {
     if (url == null) {
       return;
     }
-    var path = url.getPath();
+    String path = url.getPath();
     if (path == null) {
       return;
     }
 
     Icon icon;
-    if (path.startsWith(PREFIX_SEVERITY)) {
-      var severity = path.substring(PREFIX_SEVERITY.length());
+    if (path.startsWith("/severity/")) {
+      String severity = url.getPath().substring(10);
       icon = SonarLintIcons.severity(severity);
-    } else if (path.startsWith(PREFIX_TYPE)) {
-      var type = path.substring(PREFIX_TYPE.length());
+    } else if (path.startsWith("/type/")) {
+      String type = url.getPath().substring(6);
       icon = SonarLintIcons.type(type);
     } else {
       return;
@@ -68,7 +64,7 @@ public class RuleDescriptionImageView extends ImageView {
     if (JBUIScale.isUsrHiDPI()) {
       icon = IconUtil.scale(icon, null, 0.5f);
     }
-    var cache = (Dictionary<URL, Image>) getDocument().getProperty("imageCache");
+    Dictionary<URL, Image> cache = (Dictionary<URL, Image>) getDocument().getProperty("imageCache");
     if (cache == null) {
       cache = new Hashtable<>();
     }

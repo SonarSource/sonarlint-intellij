@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,19 +22,22 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+import javax.annotation.CheckForNull;
+
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
+import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -46,15 +49,16 @@ public abstract class SonarLintFacade {
   }
 
   protected abstract AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
-    IssueListener issueListener, ClientProgressMonitor progressMonitor);
+    IssueListener issueListener, ProgressMonitor progressMonitor);
 
-  public abstract CompletableFuture<RuleDescription> getActiveRuleDescription(String ruleKey);
+  @CheckForNull
+  public abstract RuleDetails getActiveRuleDetails(String ruleKey);
 
   public synchronized AnalysisResults startAnalysis(Module module, List<ClientInputFile> inputFiles, IssueListener issueListener,
-                                                    Map<String, String> additionalProps, ClientProgressMonitor progressMonitor) {
-    var baseDir = Paths.get(project.getBasePath());
-    var workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
-    var props = new HashMap<String, String>();
+    Map<String, String> additionalProps, ProgressMonitor progressMonitor) {
+    Path baseDir = Paths.get(project.getBasePath());
+    Path workDir = baseDir.resolve(Project.DIRECTORY_STORE_FOLDER).resolve("sonarlint").toAbsolutePath();
+    Map<String, String> props = new HashMap<>();
     props.putAll(additionalProps);
     props.putAll(getSettingsFor(project).getAdditionalProperties());
     return analyze(module, baseDir, workDir, inputFiles, props, issueListener, progressMonitor);
@@ -62,5 +66,17 @@ public abstract class SonarLintFacade {
 
   public abstract Collection<VirtualFile> getExcluded(Module module, Collection<VirtualFile> files, Predicate<VirtualFile> testPredicate);
 
+  @CheckForNull
+  public abstract String getDescription(String ruleKey);
+
   public abstract Collection<PluginDetails> getPluginDetails();
+
+  @CheckForNull
+  public String getRuleName(String ruleKey) {
+    RuleDetails details = getActiveRuleDetails(ruleKey);
+    if (details == null) {
+      return null;
+    }
+    return details.getName();
+  }
 }

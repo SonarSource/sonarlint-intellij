@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,13 +19,14 @@
  */
 package org.sonarlint.intellij.core;
 
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-import org.sonarsource.sonarlint.core.analysis.api.TextRange;
+import org.sonarsource.sonarlint.core.client.api.common.TextRange;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 import static org.sonarlint.intellij.issue.LocationKt.fileOnlyLocation;
@@ -47,9 +48,9 @@ public class SecurityHotspotMatcher {
   }
 
   public Location matchLocation(ServerHotspot serverHotspot) {
-    for (var contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
+    for (VirtualFile contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
       if (contentRoot.isDirectory()) {
-        var matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
+        VirtualFile matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
         if (matchedFile != null) {
           return matchTextRange(matchedFile, serverHotspot.textRange, serverHotspot.message);
         }
@@ -63,17 +64,13 @@ public class SecurityHotspotMatcher {
     return unknownLocation(serverHotspot.message, serverHotspot.filePath);
   }
 
-  private Location matchTextRange(VirtualFile matchedFile, ServerHotspot.TextRange textRange, String message) {
+  private Location matchTextRange(VirtualFile matchedFile, TextRange textRange, String message) {
     try {
-      var rangeMarker = issueMatcher.match(matchedFile, convert(textRange));
+      RangeMarker rangeMarker = issueMatcher.match(matchedFile, textRange);
       return resolvedLocation(matchedFile, rangeMarker, message, null);
     } catch (IssueMatcher.NoMatchException e) {
       return fileOnlyLocation(matchedFile, message);
     }
-  }
-
-  private static TextRange convert(ServerHotspot.TextRange textRange) {
-    return new TextRange(textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
 }

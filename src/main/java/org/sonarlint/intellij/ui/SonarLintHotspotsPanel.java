@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,10 +24,13 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
+
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
@@ -47,9 +50,9 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Dis
 
     hotspotsListPanel = new SonarLintHotspotsListPanel(project);
     detailsPanel = new SonarLintHotspotDetailsPanel();
-    riskDescriptionPanel = new SonarLintHotspotDescriptionPanel();
-    vulnerabilityDescriptionPanel = new SonarLintHotspotDescriptionPanel();
-    fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel();
+    riskDescriptionPanel = new SonarLintHotspotDescriptionPanel(project);
+    vulnerabilityDescriptionPanel = new SonarLintHotspotDescriptionPanel(project);
+    fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel(project);
 
     hotspotDetailsTab = new JBTabbedPane();
     hotspotDetailsTab.addTab("What's the risk?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
@@ -62,7 +65,7 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Dis
   }
 
   private static JScrollPane scrollable(JComponent component) {
-    var scrollableRulePanel = ScrollPaneFactory.createScrollPane(component, true);
+    JScrollPane scrollableRulePanel = ScrollPaneFactory.createScrollPane(component, true);
     scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
     scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
     scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
@@ -72,7 +75,7 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Dis
   public void setHotspot(LocalHotspot hotspot) {
     hotspotDetailsTab.setVisible(true);
     hotspotsListPanel.setHotspot(hotspot);
-    var hotspotRule = hotspot.getRule();
+    ServerHotspot.Rule hotspotRule = hotspot.getRule();
     riskDescriptionPanel.setDescription(hotspotRule.riskDescription);
     vulnerabilityDescriptionPanel.setDescription(hotspotRule.vulnerabilityDescription);
     fixRecommendationsPanel.setDescription(hotspotRule.fixRecommendations);

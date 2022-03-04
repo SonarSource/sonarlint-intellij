@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,7 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -38,21 +38,21 @@ public class GlobalLogOutputImplTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_log_to_registered_consoles() {
-    var console = mock(SonarLintConsole.class);
+    SonarLintConsole console = mock(SonarLintConsole.class);
     replaceProjectService(SonarLintConsole.class, console);
-    output.log("warn", ClientLogOutput.Level.WARN);
+    output.log("warn", LogOutput.Level.WARN);
     verify(console).info("warn");
 
-    output.log("info", ClientLogOutput.Level.INFO);
+    output.log("info", LogOutput.Level.INFO);
     verify(console).info("info");
 
-    output.log("debug", ClientLogOutput.Level.DEBUG);
+    output.log("debug", LogOutput.Level.DEBUG);
     verify(console).debug("debug");
 
-    output.log("error", ClientLogOutput.Level.ERROR);
+    output.log("error", LogOutput.Level.ERROR);
     verify(console).error("error");
 
-    output.log("trace", ClientLogOutput.Level.TRACE);
+    output.log("trace", LogOutput.Level.TRACE);
     verify(console).debug("trace");
   }
 

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -45,7 +45,7 @@ public class SonarLintHotspotDetailsPanel {
   public SonarLintHotspotDetailsPanel() {
     panel = new JPanel();
     panel.setBorder(BorderFactory.createEmptyBorder(MARGIN, MARGIN, MARGIN, MARGIN));
-    var gridLayout = new GridBagLayout();
+    GridBagLayout gridLayout = new GridBagLayout();
     panel.setLayout(gridLayout);
     panel.add(new JLabel("Category"), position(0, 0));
     categoryLabel = new JLabel("");
@@ -66,7 +66,7 @@ public class SonarLintHotspotDetailsPanel {
   }
 
   private static GridBagConstraints position(int row, int column) {
-    var constraints = new GridBagConstraints();
+    GridBagConstraints constraints = new GridBagConstraints();
     constraints.insets = JBUI.insets(PADDING);
     constraints.anchor = GridBagConstraints.FIRST_LINE_START;
     constraints.weightx = COLUMNS_PROPORTION;

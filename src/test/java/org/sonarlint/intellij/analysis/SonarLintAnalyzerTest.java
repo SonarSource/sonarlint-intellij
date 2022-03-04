@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,18 +20,17 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.module.Module;
-
+import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
-import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
+import org.sonarsource.sonarlint.core.container.model.DefaultAnalysisResult;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -51,17 +50,17 @@ public class SonarLintAnalyzerTest extends AbstractSonarLintLightTests {
   public void prepare() throws InvalidBindingException {
     replaceProjectService(ProjectBindingManager.class, projectBindingManager);
     analyzer = new SonarLintAnalyzer(getProject());
-    when(projectBindingManager.getFacade(getModule(), true)).thenReturn(facade);
-    when(facade.startAnalysis(any(Module.class), anyList(), any(IssueListener.class), anyMap(), any(ClientProgressMonitor.class))).thenReturn(new AnalysisResults());
+    when(projectBindingManager.getFacade(true)).thenReturn(facade);
+    when(facade.startAnalysis(any(Module.class), anyList(), any(IssueListener.class), anyMap(), any(ProgressMonitor.class))).thenReturn(new DefaultAnalysisResult());
   }
 
   @Test
   public void testAnalysis() {
-    var file = myFixture.copyFileToProject("foo.php", "foo.php");
-    var listener = mock(IssueListener.class);
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    IssueListener listener = mock(IssueListener.class);
 
-    analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ClientProgressMonitor.class));
+    analyzer.analyzeModule(getModule(), Collections.singleton(file), listener, mock(ProgressMonitor.class));
 
-    verify(facade).startAnalysis(eq(getModule()), anyList(), eq(listener), anyMap(), any(ClientProgressMonitor.class));
+    verify(facade).startAnalysis(eq(getModule()), anyList(), eq(listener), anyMap(), any(ProgressMonitor.class));
   }
 }

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@ import com.intellij.util.PlatformUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.SonarLintAppUtils
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
+import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 import java.util.Timer
 import java.util.TimerTask

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,8 +21,8 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
+import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
-import java.util.List;
 import java.util.function.Predicate;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +34,7 @@ import org.sonarlint.intellij.core.SonarLintFacade;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
@@ -51,7 +52,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Before
   public void start() throws InvalidBindingException {
-    when(bindingManager.getFacade(any())).thenReturn(facade);
+    when(bindingManager.getFacade()).thenReturn(facade);
     when(facade.getExcluded(any(Module.class), anyCollection(), any(Predicate.class))).thenReturn(Collections.emptySet());
     getGlobalSettings().setAutoTrigger(true);
     submitter = new SonarLintSubmitter(getProject());
@@ -61,16 +62,16 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Test
   public void should_submit_open_files() {
-    var f1 = myFixture.copyFileToProject("foo.php", "foo.php");
+    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(analysisManager).submitBackground(List.of(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
+    verify(analysisManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test
   public void should_submit_manual() {
-    var f1 = myFixture.copyFileToProject("foo.php", "foo.php");
+    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
 
     final AnalysisCallback analysisCallback = mock(AnalysisCallback.class);
     submitter.submitFilesModal(singleton(f1), TriggerType.CONFIG_CHANGE, analysisCallback);
@@ -79,13 +80,13 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
 
   @Test
   public void should_submit_open_files_auto() {
-    var f1 = myFixture.copyFileToProject("foo.php", "foo.php");
+    VirtualFile f1 = myFixture.copyFileToProject("foo.php", "foo.php");
     FileEditorManager.getInstance(getProject()).openFile(f1, false);
 
-    setProjectLevelExclusions(List.of("GLOB:foo.php"));
+    setProjectLevelExclusions(singletonList("GLOB:foo.php"));
 
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verify(analysisManager).submitBackground(List.of(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
+    verify(analysisManager).submitBackground(singletonList(f1), TriggerType.CONFIG_CHANGE, NO_OP_CALLBACK);
   }
 
   @Test

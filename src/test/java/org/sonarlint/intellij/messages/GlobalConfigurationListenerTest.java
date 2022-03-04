@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -56,7 +56,7 @@ public class GlobalConfigurationListenerTest extends AbstractSonarLintMockedTest
   @Test
   public void testApplied() {
     List<ServerConnection> servers = new LinkedList<>();
-    var bool = new AtomicBoolean(false);
+    AtomicBoolean bool = new AtomicBoolean(false);
 
     GlobalConfigurationListener listener = new GlobalConfigurationListener.Adapter() {
       @Override
@@ -67,7 +67,7 @@ public class GlobalConfigurationListenerTest extends AbstractSonarLintMockedTest
     };
 
     project.getMessageBus().connect().subscribe(GlobalConfigurationListener.TOPIC, listener);
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.setServerConnections(testList);
     settings.setAutoTrigger(true);
     project.getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC).applied(settings);

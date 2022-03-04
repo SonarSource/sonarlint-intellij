@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -31,12 +31,12 @@ public class SummaryNodeTest {
 
   @Test
   public void testText() {
-    var child1 = mock(AbstractNode.class);
+    AbstractNode child1 = mock(AbstractNode.class);
     when(child1.getIssueCount()).thenReturn(3);
 
     node.add(child1);
 
-    var renderer = mock(TreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("Found 3 issues in 1 file");
@@ -44,7 +44,7 @@ public class SummaryNodeTest {
 
   @Test
   public void testNoIssues() {
-    var renderer = mock(TreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("No issues to display");
@@ -52,7 +52,7 @@ public class SummaryNodeTest {
 
   @Test
   public void testEmptyText() {
-    var renderer = mock(TreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.setEmptyText("Empty");
     node.render(renderer);
 

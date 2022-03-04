@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -38,7 +38,7 @@ public class PrimaryLocationNodeTest {
 
   @Before
   public void setUp() {
-    var doc = new MockDocument();
+    MockDocument doc = new MockDocument();
     doc.replaceText("my document test", System.currentTimeMillis());
     when(range.getDocument()).thenReturn(doc);
     when(range.isValid()).thenReturn(true);
@@ -49,7 +49,7 @@ public class PrimaryLocationNodeTest {
   @Test
   public void testRenderer() {
     node = new PrimaryLocationNode(3, range, "msg", new Flow(Collections.emptyList()));
-    var renderer = mock(TreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);
@@ -61,7 +61,7 @@ public class PrimaryLocationNodeTest {
   @Test
   public void testNoMessage() {
     node = new PrimaryLocationNode(3, range, "...", new Flow(Collections.emptyList()));
-    var renderer = mock(TreeCellRenderer.class);
+    TreeCellRenderer renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("(1, 3) ", SimpleTextAttributes.GRAY_ATTRIBUTES, false);

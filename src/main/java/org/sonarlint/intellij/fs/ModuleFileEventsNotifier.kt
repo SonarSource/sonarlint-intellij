@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,17 +19,28 @@
  */
 package org.sonarlint.intellij.fs
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
+import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
-open class ModuleFileEventsNotifier {
+open class ModuleFileEventsNotifier : Disposable {
 
     open fun notifyAsync(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
         if (events.isEmpty()) return
-        SonarLintConsole.get(module.project).info("Processing ${events.size} file system events")
+        executor.submit {
+            notify(engine, module, events)
+        }
+    }
+
+    fun notify(engine: SonarLintEngine, module: Module, events: List<ClientModuleFileEvent>) {
+        SonarLintConsole.get(module.project).info("Processing ${events.size} file system events");
         events.forEach {
             try {
                 engine.fireModuleFileEvent(module, it)
@@ -38,6 +49,12 @@ open class ModuleFileEventsNotifier {
             }
         }
     }
+
+    override fun dispose() {
+        executor.shutdownNow()
+    }
+
+    private val executor: ExecutorService = Executors.newSingleThreadExecutor()
 
     companion object {
         fun isPython(file: VirtualFile): Boolean {

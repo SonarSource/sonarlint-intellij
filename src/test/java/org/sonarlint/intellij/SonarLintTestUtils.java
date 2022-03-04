@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -38,13 +38,13 @@ public class SonarLintTestUtils {
   }
 
   public static AnActionEvent createAnActionEvent(@Nullable Project project) {
-    var event = mock(AnActionEvent.class);
+    AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(project);
     return event;
   }
 
   public static Issue createIssue(int id) {
-    var issue = mock(Issue.class);
+    Issue issue = mock(Issue.class);
     when(issue.getRuleKey()).thenReturn(Integer.toString(id));
     when(issue.getMessage()).thenReturn("issue " + id);
     return issue;

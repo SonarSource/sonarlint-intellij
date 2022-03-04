@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -48,7 +48,7 @@ public class AbstractNodeTest {
 
   @Test
   public void testInsertion() {
-    var summaryNode = new SummaryNode();
+    SummaryNode summaryNode = new SummaryNode();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("name")), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("file")), nameComparator)).isZero();
     assertThat(summaryNode.insertFileNode(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
@@ -63,9 +63,9 @@ public class AbstractNodeTest {
 
   @Test
   public void testFileCount() {
-    var child1 = mock(AbstractNode.class);
-    var child2 = mock(AbstractNode.class);
-    var child3 = mock(AbstractNode.class);
+    AbstractNode child1 = mock(AbstractNode.class);
+    AbstractNode child2 = mock(AbstractNode.class);
+    AbstractNode child3 = mock(AbstractNode.class);
 
     when(child1.getIssueCount()).thenReturn(1);
 
@@ -87,7 +87,7 @@ public class AbstractNodeTest {
   private final Comparator<FileNode> nameComparator = Comparator.comparing(f -> f.file().getName());
 
   private VirtualFile mockFile(String name) {
-    var file = mock(VirtualFile.class);
+    VirtualFile file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(name);
     return file;
   }

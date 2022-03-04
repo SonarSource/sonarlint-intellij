@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -27,6 +27,7 @@ import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.IdeActions;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -35,10 +36,13 @@ import com.intellij.ui.PopupHandler;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
+
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreePath;
+
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
@@ -63,7 +67,7 @@ public class IssueTree extends Tree implements DataProvider {
     this.setCellRenderer(new TreeCellRenderer());
     this.expandRow(0);
 
-    var group = new DefaultActionGroup();
+    DefaultActionGroup group = new DefaultActionGroup();
     group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
     group.addSeparator();
     group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
@@ -89,13 +93,13 @@ public class IssueTree extends Tree implements DataProvider {
     } else if (PlatformDataKeys.VIRTUAL_FILE.is(dataId)) {
       return getSelectedFile();
     } else if (PlatformDataKeys.PSI_FILE.is(dataId)) {
-      var file = getSelectedFile();
+      VirtualFile file = getSelectedFile();
       if (file != null && file.isValid()) {
         return PsiManager.getInstance(project).findFile(file);
       }
       return null;
     } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
-      var f = getSelectedFile();
+      VirtualFile f = getSelectedFile();
       // return empty so that it doesn't find it in parent components
       return f != null && f.isValid() ? (new VirtualFile[] {f}) : new VirtualFile[0];
     } else if (DisableRuleAction.ISSUE_DATA_KEY.is(dataId)) {
@@ -107,13 +111,13 @@ public class IssueTree extends Tree implements DataProvider {
 
   @CheckForNull
   private OpenFileDescriptor navigate() {
-    var issue = getSelectedIssue();
+    LiveIssue issue = getSelectedIssue();
     if (issue == null || !issue.isValid()) {
       return null;
     }
 
     int offset;
-    var range = issue.getRange();
+    RangeMarker range = issue.getRange();
     if (range != null) {
       offset = range.getStartOffset();
     } else {
@@ -124,7 +128,7 @@ public class IssueTree extends Tree implements DataProvider {
 
   @CheckForNull
   private LiveIssue getSelectedIssue() {
-    var node = getSelectedNode();
+    DefaultMutableTreeNode node = getSelectedNode();
     if (!(node instanceof IssueNode)) {
       return null;
     }
@@ -133,17 +137,17 @@ public class IssueTree extends Tree implements DataProvider {
 
   @CheckForNull
   private VirtualFile getSelectedFile() {
-    var node = getSelectedNode();
+    DefaultMutableTreeNode node = getSelectedNode();
     if (!(node instanceof FileNode)) {
       return null;
     }
-    var fileNode = (FileNode) node;
+    FileNode fileNode = (FileNode) node;
     return fileNode.file();
   }
 
   @CheckForNull
   private DefaultMutableTreeNode getSelectedNode() {
-    var path = getSelectionPath();
+    TreePath path = getSelectionPath();
     if (path == null) {
       return null;
     }

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -38,6 +38,7 @@ import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,8 +67,7 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   @Test
   public void testRangeIssues() {
     createStoredIssues(5);
-
-    holder.applyExternalAnnotatorWithContext(psiFile, annotator, ctx);
+    annotator.apply(psiFile, ctx, holder);
 
     for (int i = 0; i < 5; i++) {
       assertThat(holder.get(i).getStartOffset()).isEqualTo(i);
@@ -93,8 +93,7 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   public void testFileLevelIssues() {
     when(psiFile.isValid()).thenReturn(true);
     createFileIssues(5);
-
-    holder.applyExternalAnnotatorWithContext(psiFile, annotator, ctx);
+    annotator.apply(psiFile, ctx, holder);
 
     assertThat(holder).hasSize(5);
 
@@ -128,13 +127,13 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   }
 
   private static LiveIssue createFileStoredIssue(int id, PsiFile file) {
-    var issue = SonarLintTestUtils.createIssue(id);
+    Issue issue = SonarLintTestUtils.createIssue(id);
     return new LiveIssue(issue, file, null, null, Collections.emptyList());
   }
 
   private LiveIssue createRangeStoredIssue(int id, int rangeStart, int rangeEnd, String text) {
-    var issue = SonarLintTestUtils.createIssue(id);
-    var range = mock(RangeMarker.class);
+    Issue issue = SonarLintTestUtils.createIssue(id);
+    RangeMarker range = mock(RangeMarker.class);
 
     when(range.getStartOffset()).thenReturn(rangeStart);
     when(range.getEndOffset()).thenReturn(rangeEnd);

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,14 +26,18 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
+
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.project.ExclusionItem;
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -54,14 +58,14 @@ public class ExcludeFileAction extends DumbAwareAction {
   public void update(AnActionEvent e) {
     super.update(e);
 
-    var project = e.getProject();
+    Project project = e.getProject();
     if (project == null || !project.isInitialized() || project.isDisposed()) {
       e.getPresentation().setEnabled(false);
       e.getPresentation().setVisible(true);
       return;
     }
 
-    var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
     if (!ActionPlaces.isPopupPlace(e.getPlace()) || files == null || files.length == 0 || AbstractSonarAction.isRiderSlnOrCsproj(files)) {
       e.getPresentation().setEnabled(false);
       e.getPresentation().setVisible(false);
@@ -70,9 +74,9 @@ public class ExcludeFileAction extends DumbAwareAction {
 
     e.getPresentation().setVisible(true);
 
-    var exclusions = List.copyOf(getSettingsFor(project).getFileExclusions());
+    List<String> exclusions = new ArrayList<>(getSettingsFor(project).getFileExclusions());
 
-    var anyFileToAdd = toStringStream(project, files)
+    boolean anyFileToAdd = toStringStream(project, files)
       .anyMatch(path -> !exclusions.contains(path));
 
     if (!anyFileToAdd) {
@@ -81,31 +85,31 @@ public class ExcludeFileAction extends DumbAwareAction {
   }
 
   @Override public void actionPerformed(AnActionEvent e) {
-    var project = e.getProject();
-    var files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
+    Project project = e.getProject();
+    VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
 
     if (project == null || project.isDisposed() || files == null || files.length == 0) {
       return;
     }
 
-    var settings = getSettingsFor(project);
-    var exclusions = new ArrayList<>(settings.getFileExclusions());
+    SonarLintProjectSettings settings = getSettingsFor(project);
+    List<String> exclusions = new ArrayList<>(settings.getFileExclusions());
 
-    var newExclusions = toStringStream(project, files)
+    List<String> newExclusions = toStringStream(project, files)
       .filter(path -> !exclusions.contains(path))
       .collect(Collectors.toList());
 
     if (!newExclusions.isEmpty()) {
       exclusions.addAll(newExclusions);
       settings.setFileExclusions(exclusions);
-      var projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
+      ProjectConfigurationListener projectListener = project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
       projectListener.changed(settings);
       SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
     }
   }
 
   private static Stream<String> toStringStream(Project project, VirtualFile[] files) {
-    return Stream.of(files)
+    return Arrays.stream(files)
       .map(vf -> toExclusion(project, vf))
       .filter(Objects::nonNull)
       .filter(exclusion -> !exclusion.item().isEmpty())
@@ -114,7 +118,7 @@ public class ExcludeFileAction extends DumbAwareAction {
 
   @CheckForNull
   private static ExclusionItem toExclusion(Project project, VirtualFile virtualFile) {
-    var relativeFilePath = SonarLintAppUtils.getRelativePathForAnalysis(project, virtualFile);
+    String relativeFilePath = SonarLintAppUtils.getRelativePathForAnalysis(project, virtualFile);
     if (relativeFilePath == null) {
       return null;
     }

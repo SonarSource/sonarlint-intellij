@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,7 +20,9 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.google.common.collect.ComparisonChain;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Ordering;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Comparator;
@@ -32,6 +34,7 @@ import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -43,7 +46,7 @@ import org.sonarlint.intellij.ui.nodes.SummaryNode;
  * Should be optimize to minimize the recreation of portions of the tree.
  */
 public class IssueTreeModelBuilder {
-  private static final List<String> SEVERITY_ORDER = List.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
+  private static final List<String> SEVERITY_ORDER = ImmutableList.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private final IssueTreeIndex index;
@@ -75,15 +78,22 @@ public class IssueTreeModelBuilder {
   public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map, String emptyText) {
     summary.setEmptyText(emptyText);
 
-    var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
+    List<VirtualFile> toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
 
     toRemove.forEach(this::removeFile);
 
-    for (var e : map.entrySet()) {
+    for (Map.Entry<VirtualFile, Collection<LiveIssue>> e : map.entrySet()) {
       setFileIssues(e.getKey(), e.getValue());
     }
 
     model.nodeChanged(summary);
+  }
+
+  public void updateEmptyText(String emptyText) {
+    summary.setEmptyText(emptyText);
+    if (summary.isLeaf()) {
+      model.nodeChanged(summary);
+    }
   }
 
   private void setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
@@ -92,14 +102,14 @@ public class IssueTreeModelBuilder {
       return;
     }
 
-    var filtered = filter(issues);
+    List<LiveIssue> filtered = filter(issues);
     if (filtered.isEmpty()) {
       removeFile(file);
       return;
     }
 
-    var newFile = false;
-    var fNode = index.getFileNode(file);
+    boolean newFile = false;
+    FileNode fNode = index.getFileNode(file);
     if (fNode == null) {
       newFile = true;
       fNode = new FileNode(file);
@@ -109,9 +119,9 @@ public class IssueTreeModelBuilder {
     setIssues(fNode, filtered);
 
     if (newFile) {
-      var parent = getFilesParent();
-      var idx = parent.insertFileNode(fNode, new FileNodeComparator());
-      var newIdx = new int[]{idx};
+      SummaryNode parent = getFilesParent();
+      int idx = parent.insertFileNode(fNode, new FileNodeComparator());
+      int[] newIdx = {idx};
       model.nodesWereInserted(parent, newIdx);
       model.nodeChanged(parent);
     } else {
@@ -120,7 +130,7 @@ public class IssueTreeModelBuilder {
   }
 
   private void removeFile(VirtualFile file) {
-    var node = index.getFileNode(file);
+    FileNode node = index.getFileNode(file);
 
     if (node != null) {
       index.remove(node.file());
@@ -132,14 +142,14 @@ public class IssueTreeModelBuilder {
     node.removeAllChildren();
 
     // 15ms for 500 issues -> to improve?
-    var issues = new TreeSet<>(ISSUE_COMPARATOR);
+    TreeSet<LiveIssue> set = new TreeSet<>(ISSUE_COMPARATOR);
 
-    for (var issue : issuePointers) {
-      issues.add(issue);
+    for (LiveIssue issue : issuePointers) {
+      set.add(issue);
     }
 
-    for (var issue : issues) {
-      var iNode = new IssueNode(issue);
+    for (LiveIssue issue : set) {
+      IssueNode iNode = new IssueNode(issue);
       node.add(iNode);
     }
   }
@@ -171,28 +181,28 @@ public class IssueTreeModelBuilder {
 
   static class IssueComparator implements Comparator<LiveIssue> {
     @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
-      var creationDateOrdering = Ordering.natural().reverse().nullsLast();
-      var dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
+      Ordering<Long> creationDateOrdering = Ordering.natural().reverse().nullsLast();
+      int dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
 
       if (dateCompare != 0) {
         return dateCompare;
       }
 
-      var severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getSeverity(), o2.getSeverity());
+      int severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getSeverity(), o2.getSeverity());
 
       if (severityCompare != 0) {
         return severityCompare;
       }
 
-      var r1 = o1.getRange();
-      var r2 = o2.getRange();
+      RangeMarker r1 = o1.getRange();
+      RangeMarker r2 = o2.getRange();
 
-      var rangeStart1 = (r1 == null) ? -1 : r1.getStartOffset();
-      var rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
+      int rangeStart1 = (r1 == null) ? -1 : r1.getStartOffset();
+      int rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
 
       return ComparisonChain.start()
         .compare(rangeStart1, rangeStart2)
-        .compare(o1.getRuleKey(), o2.getRuleKey())
+        .compare(o1.getRuleName(), o2.getRuleName())
         .compare(o1.uid(), o2.uid())
         .result();
     }
@@ -204,7 +214,7 @@ public class IssueTreeModelBuilder {
       return firstIssueDown(startNode);
     }
 
-    var next = getNextNode(startNode);
+    Object next = getNextNode(startNode);
 
     if (next == null) {
       // no next node in the entire tree
@@ -215,12 +225,12 @@ public class IssueTreeModelBuilder {
       return (IssueNode) next;
     }
 
-    return firstIssueDown(next);
+    return firstIssueDown((AbstractNode) next);
   }
 
   @CheckForNull
   public IssueNode getPreviousIssue(AbstractNode startNode) {
-    var next = getPreviousNode(startNode);
+    Object next = getPreviousNode(startNode);
 
     if (next == null) {
       // no next node in the entire tree
@@ -231,7 +241,7 @@ public class IssueTreeModelBuilder {
       return (IssueNode) next;
     }
 
-    return lastIssueDown(next);
+    return lastIssueDown((AbstractNode) next);
   }
 
   /**
@@ -244,7 +254,7 @@ public class IssueTreeModelBuilder {
     }
 
     if (node.getChildCount() > 0) {
-      var firstChild = node.getFirstChild();
+      TreeNode firstChild = node.getFirstChild();
       return firstIssueDown((AbstractNode) firstChild);
     }
 
@@ -260,7 +270,7 @@ public class IssueTreeModelBuilder {
       return (IssueNode) node;
     }
 
-    var lastChild = node.getLastChild();
+    TreeNode lastChild = node.getLastChild();
 
     if (lastChild == null) {
       return null;
@@ -271,12 +281,12 @@ public class IssueTreeModelBuilder {
 
   @CheckForNull
   private static AbstractNode getPreviousNode(AbstractNode startNode) {
-    var parent = (AbstractNode) startNode.getParent();
+    AbstractNode parent = (AbstractNode) startNode.getParent();
 
     if (parent == null) {
       return null;
     }
-    var previous = parent.getChildBefore(startNode);
+    TreeNode previous = parent.getChildBefore(startNode);
     if (previous == null) {
       return getPreviousNode(parent);
     }
@@ -289,12 +299,12 @@ public class IssueTreeModelBuilder {
    */
   @CheckForNull
   private static AbstractNode getNextNode(AbstractNode startNode) {
-    var parent = (AbstractNode) startNode.getParent();
+    AbstractNode parent = (AbstractNode) startNode.getParent();
 
     if (parent == null) {
       return null;
     }
-    var after = parent.getChildAfter(startNode);
+    TreeNode after = parent.getChildAfter(startNode);
     if (after == null) {
       return getNextNode(parent);
     }

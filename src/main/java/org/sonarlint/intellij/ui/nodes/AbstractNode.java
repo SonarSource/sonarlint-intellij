@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.util.ui.UIUtil;
+import java.util.Enumeration;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import org.jetbrains.annotations.NotNull;
@@ -34,10 +35,10 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
   public int getIssueCount() {
     if (issueCount < 0) {
       issueCount = 0;
-      var children = super.children();
+      Enumeration children = super.children();
 
       while (children.hasMoreElements()) {
-        var node = (AbstractNode) children.nextElement();
+        AbstractNode node = (AbstractNode) children.nextElement();
         if (node == null) {
           continue;
         }
@@ -83,7 +84,7 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
 
   @NotNull
   protected static String spaceAndThinSpace() {
-    var thinSpace = UIUtil.getLabelFont().canDisplay('\u2009') ? String.valueOf('\u2009') : " ";
+    String thinSpace = UIUtil.getLabelFont().canDisplay('\u2009') ? String.valueOf('\u2009') : " ";
     return " " + thinSpace;
   }
 

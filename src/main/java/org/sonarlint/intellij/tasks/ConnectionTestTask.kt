@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,8 +23,8 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.Task
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectionValidator
+import org.sonarsource.sonarlint.core.client.api.connected.ValidationResult
 import org.sonarsource.sonarlint.core.serverapi.ServerApiHelper
-import org.sonarsource.sonarlint.core.serverapi.system.ValidationResult
 import java.util.concurrent.CompletableFuture
 
 class ConnectionTestTask(private val server: ServerConnection) :

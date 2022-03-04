@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.issue;
 
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
@@ -43,6 +44,7 @@ public class LiveIssue implements Trackable {
   private final PsiFile psiFile;
   private final Integer textRangeHash;
   private final Integer lineHash;
+  private final String ruleName;
   private final String message;
   private final String ruleKey;
   private final IssueContext context;
@@ -64,6 +66,7 @@ public class LiveIssue implements Trackable {
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
+    this.ruleName = issue.getRuleName();
     this.severity = issue.getSeverity();
     this.type = issue.getType();
     this.psiFile = psiFile;
@@ -73,12 +76,12 @@ public class LiveIssue implements Trackable {
     this.quickFixes = quickFixes;
 
     if (range != null) {
-      var document = range.getDocument();
+      Document document = range.getDocument();
       this.textRangeHash = checksum(document.getText(new TextRange(range.getStartOffset(), range.getEndOffset())));
 
-      var line = range.getDocument().getLineNumber(range.getStartOffset());
-      var lineStartOffset = document.getLineStartOffset(line);
-      var lineEndOffset = document.getLineEndOffset(line);
+      int line = range.getDocument().getLineNumber(range.getStartOffset());
+      int lineStartOffset = document.getLineStartOffset(line);
+      int lineEndOffset = document.getLineEndOffset(line);
       this.lineHash = checksum(document.getText(new TextRange(lineStartOffset, lineEndOffset)));
     } else {
       this.textRangeHash = null;
@@ -101,7 +104,7 @@ public class LiveIssue implements Trackable {
   @Override
   public Integer getLine() {
     if (range != null) {
-      return ReadAction.compute(() -> isValid() ? (range.getDocument().getLineNumber(range.getStartOffset()) + 1) : null);
+      return ReadAction.compute(() -> isValid() ? range.getDocument().getLineNumber(range.getStartOffset()) + 1 : null);
     }
 
     return null;
@@ -153,6 +156,10 @@ public class LiveIssue implements Trackable {
   @Override
   public String getType() {
     return type;
+  }
+
+  public String getRuleName() {
+    return ruleName;
   }
 
   @Override

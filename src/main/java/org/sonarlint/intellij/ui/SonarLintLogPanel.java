@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.execution.ui.ConsoleView;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionToolbar;
@@ -30,7 +31,9 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.util.messages.MessageBusConnection;
+
 import javax.swing.Box;
+
 import org.sonarlint.intellij.actions.ToolWindowLogAnalysisAction;
 import org.sonarlint.intellij.actions.ToolWindowVerboseModeAction;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -61,10 +64,10 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   }
 
   private void addToolbar() {
-    var actionGroup = createActionGroup();
+    ActionGroup actionGroup = createActionGroup();
     mainToolbar = ActionManager.getInstance().createActionToolbar(ID, actionGroup, false);
     mainToolbar.setTargetComponent(this);
-    var toolBarBox = Box.createHorizontalBox();
+    Box toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());
 
     super.setToolbar(toolBarBox);
@@ -72,22 +75,23 @@ public class SonarLintLogPanel extends SimpleToolWindowPanel {
   }
 
   private static ActionGroup createActionGroup() {
-    var sonarLintActions = SonarLintActions.getInstance();
-    var actionGroup = new SimpleActionGroup();
+    SonarLintActions sonarLintActions = SonarLintActions.getInstance();
+    SimpleActionGroup actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.configure());
+    actionGroup.add(sonarLintActions.showAnalyzers());
     actionGroup.add(sonarLintActions.cleanConsole());
     return actionGroup;
   }
 
   private void addLogActions() {
-    var group = new DefaultActionGroup();
+    DefaultActionGroup group = new DefaultActionGroup();
     group.add(new ToolWindowLogAnalysisAction());
     group.add(new ToolWindowVerboseModeAction());
     ((ToolWindowEx) toolWindow).setAdditionalGearActions(group);
   }
 
   private void addConsole() {
-    var consoleView = SonarLintUtils.getService(project, SonarLintConsole.class).getConsoleView();
+    ConsoleView consoleView = SonarLintUtils.getService(project, SonarLintConsole.class).getConsoleView();
     if (consoleView != null) {
       super.setContent(consoleView.getComponent());
     }

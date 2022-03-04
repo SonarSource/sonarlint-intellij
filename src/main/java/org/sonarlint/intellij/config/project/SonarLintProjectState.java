@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +25,7 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.XmlSerializerUtil;
 import com.intellij.util.xmlb.annotations.Tag;
 import java.time.Instant;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import javax.annotation.CheckForNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +39,7 @@ public class SonarLintProjectState implements PersistentStateComponent<SonarLint
   @CheckForNull
   public ZonedDateTime getLastEventPolling() {
     if (lastEventPolling != null) {
-      return ZonedDateTime.ofInstant(Instant.ofEpochMilli(lastEventPolling), ZoneId.systemDefault());
+      return ZonedDateTime.ofInstant(Instant.ofEpochMilli(lastEventPolling), ZoneOffset.systemDefault());
     }
     return null;
   }

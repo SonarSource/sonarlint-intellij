@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.notifications;
 
+import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
@@ -32,7 +33,7 @@ public class SecretsNotifications {
   }
 
   public static void sendNotification(Project project) {
-    var notification = GROUP.createNotification(
+    Notification notification = GROUP.createNotification(
       "SonarLint: secret(s) detected",
       "SonarLint detected some secrets in one of the open files. " +
         "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +

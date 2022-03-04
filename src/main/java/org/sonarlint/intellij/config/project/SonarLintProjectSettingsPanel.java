@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,18 +20,16 @@
 package org.sonarlint.intellij.config.project;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.module.Module;
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBTabbedPane;
 import java.awt.BorderLayout;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import javax.swing.JPanel;
+import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
+import static java.util.Optional.ofNullable;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintProjectSettingsPanel implements Disposable {
@@ -47,10 +45,10 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     propsPanel = new SonarLintProjectPropertiesPanel();
     exclusionsPanel = new ProjectExclusionsPanel(project);
     root = new JPanel(new BorderLayout());
-    var tabs = new JBTabbedPane();
+    JBTabbedPane tabs = new JBTabbedPane();
 
     rootBindPane = new JPanel(new BorderLayout());
-    rootBindPane.add(bindPanel.create(project), BorderLayout.NORTH);
+    rootBindPane.add(bindPanel.create(project));
 
     rootPropertiesPane = new JPanel(new BorderLayout());
     rootPropertiesPane.add(propsPanel.create(), BorderLayout.CENTER);
@@ -66,56 +64,60 @@ public class SonarLintProjectSettingsPanel implements Disposable {
     return root;
   }
 
-  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings, Map<Module, String> moduleOverrides) {
+  public void load(List<ServerConnection> servers, SonarLintProjectSettings projectSettings) {
     propsPanel.setAnalysisProperties(projectSettings.getAdditionalProperties());
-    bindPanel.load(servers, projectSettings, moduleOverrides);
+    bindPanel.load(servers, projectSettings.isBindingEnabled(), projectSettings.getConnectionName(), projectSettings.getProjectKey());
     exclusionsPanel.load(projectSettings);
   }
 
-  public void save(Project project, SonarLintProjectSettings projectSettings) throws ConfigurationException {
-    var selectedProjectKey = bindPanel.getSelectedProjectKey();
-    var selectedConnection = bindPanel.getSelectedConnection();
-    var bindingEnabled = bindPanel.isBindingEnabled();
-    var moduleBindings = bindPanel.getModuleBindings();
-    if (bindingEnabled) {
-      if (selectedConnection == null) {
-        throw new ConfigurationException("Connection should not be empty");
-      }
-      if (selectedProjectKey == null || selectedProjectKey.isBlank()) {
-        throw new ConfigurationException("Project key should not be empty");
-      }
-      for (var binding : moduleBindings) {
-        var moduleProjectKey = binding.getSonarProjectKey();
-        if (moduleProjectKey == null || moduleProjectKey.isBlank()) {
-          throw new ConfigurationException("Project key for module '" + binding.getModule().getName() + "' should not be empty");
-        }
-      }
-    }
+  public void save(Project project, SonarLintProjectSettings projectSettings) {
     projectSettings.setAdditionalProperties(propsPanel.getProperties());
     exclusionsPanel.save(projectSettings);
 
-    var bindingManager = getService(project, ProjectBindingManager.class);
-    if (bindingEnabled) {
-      var moduleBindingsMap = moduleBindings
-        .stream().collect(Collectors.toMap(ModuleBindingPanel.ModuleBinding::getModule, ModuleBindingPanel.ModuleBinding::getSonarProjectKey));
-      bindingManager.bindTo(selectedConnection, selectedProjectKey, moduleBindingsMap);
+    ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
+    ServerConnection connection = bindPanel.getSelectedConnection();
+    String projectKey = bindPanel.getSelectedProjectKey();
+    if (bindPanel.isBindingEnabled() && connection != null && projectKey != null) {
+      bindingManager.bindTo(connection, projectKey);
     } else {
       bindingManager.unbind();
     }
   }
 
-  public boolean areExclusionsModified(SonarLintProjectSettings projectSettings) {
-    return exclusionsPanel.isModified(projectSettings);
+  private boolean bindingChanged(SonarLintProjectSettings projectSettings) {
+    if (projectSettings.isBindingEnabled() ^ bindPanel.isBindingEnabled()) {
+      return true;
+    }
+
+    if (bindPanel.isBindingEnabled()) {
+      if (!StringUtils.equals(projectSettings.getConnectionName(), ofNullable(bindPanel.getSelectedConnection()).map(ServerConnection::getName).orElse(null))) {
+        return true;
+      }
+
+      if (!StringUtils.equals(projectSettings.getProjectKey(), bindPanel.getSelectedProjectKey())) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   public boolean isModified(SonarLintProjectSettings projectSettings) {
-    return bindPanel.isModified(projectSettings)
-      || exclusionsPanel.isModified(projectSettings)
-      || propsPanel.isModified(projectSettings);
+    if (!propsPanel.getProperties().equals(projectSettings.getAdditionalProperties())) {
+      return true;
+    }
+
+    if (isExclusionsModified(projectSettings)) {
+      return true;
+    }
+    return bindingChanged(projectSettings);
   }
 
-  @Override
-  public void dispose() {
+  public boolean isExclusionsModified(SonarLintProjectSettings projectSettings) {
+    return exclusionsPanel.isModified(projectSettings);
+  }
+
+  @Override public void dispose() {
     if (bindPanel != null) {
       bindPanel = null;
     }

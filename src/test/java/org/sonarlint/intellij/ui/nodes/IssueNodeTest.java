@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -34,19 +34,19 @@ public class IssueNodeTest {
 
   @Test
   public void testCount() {
-    var i = createIssue(System.currentTimeMillis(), "rule");
+    LiveIssue i = createIssue(System.currentTimeMillis(), "rule");
     node = new IssueNode(i);
     assertThat(node.getIssueCount()).isEqualTo(1);
     assertThat(node.issue()).isEqualTo(i);
   }
 
   private static LiveIssue createIssue(long date, String message) {
-    var file = mock(PsiFile.class);
+    PsiFile file = mock(PsiFile.class);
     when(file.isValid()).thenReturn(true);
-    var issue = mock(Issue.class);
+    Issue issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn(message);
     when(issue.getSeverity()).thenReturn("MAJOR");
-    var issuePointer = new LiveIssue(issue, file, Collections.emptyList());
+    LiveIssue issuePointer = new LiveIssue(issue, file, Collections.emptyList());
     issuePointer.setCreationDate(date);
     return issuePointer;
   }

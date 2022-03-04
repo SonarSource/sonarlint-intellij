@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.http
 
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
-import org.sonarsource.sonarlint.core.commons.http.HttpClient
+import org.sonarsource.sonarlint.core.serverapi.HttpClient
 import java.io.ByteArrayInputStream
 
 internal class ApacheHttpResponse(
@@ -32,7 +32,7 @@ internal class ApacheHttpResponse(
 
   override fun bodyAsString(): String = response.bodyText
 
-  override fun bodyAsStream() = ByteArrayInputStream(response.bodyBytes ?: ByteArray(0))
+  override fun bodyAsStream() = ByteArrayInputStream(response.bodyBytes)
 
   override fun close() {
     // nothing to do

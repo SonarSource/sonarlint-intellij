@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,7 +19,7 @@
  */
 package org.sonarlint.intellij.util;
 
-import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 
 public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 
@@ -27,7 +27,7 @@ public class GlobalLogOutputTestImpl implements GlobalLogOutput {
 
 
   @Override
-  public void log(String msg, ClientLogOutput.Level level) {
+  public void log(String msg, LogOutput.Level level) {
 
   }
 

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -34,21 +34,18 @@ import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.capture
-import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.ProjectEngineListener
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
+import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
 @RunWith(MockitoJUnitRunner::class)
 class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     @Before
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
-        replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
-        `when`(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
+        `when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
         moduleChangeListener = ModuleChangeListener(project)
     }
 
@@ -56,7 +53,7 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     fun should_declare_module_on_engine_when_module_added_to_project() {
         moduleChangeListener.moduleAdded(project, module)
 
-        verify(moduleFakeEngine).declareModule(capture(moduleInfoCaptor))
+        verify(fakeEngine).declareModule(capture(moduleInfoCaptor))
         val moduleInfo = moduleInfoCaptor.value
         assertThat(moduleInfo.key()).isEqualTo(module)
     }
@@ -65,14 +62,14 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     fun should_stop_module_on_engine_when_module_removed_from_project() {
         moduleChangeListener.moduleRemoved(project, module)
 
-        verify(moduleFakeEngine).stopModule(eq(module))
+        verify(fakeEngine).stopModule(eq(module))
     }
 
     @Test
     fun should_stop_modules_on_engine_when_project_is_closed() {
         ApplicationManager.getApplication().messageBus.syncPublisher(ProjectManager.TOPIC).projectClosing(project)
 
-        verify(moduleFakeEngine).stopModule(eq(module))
+        verify(fakeEngine).stopModule(eq(module))
     }
 
     @Test
@@ -98,12 +95,6 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     @Mock
     private lateinit var otherFakeEngine: SonarLintEngine
 
-    @Mock
-    private lateinit var moduleFakeEngine: ConnectedSonarLintEngine
-
-    @Mock
-    private lateinit var moduleBindingManager: ModuleBindingManager
-
     @Captor
-    private lateinit var moduleInfoCaptor: ArgumentCaptor<ClientModuleInfo>
+    private lateinit var moduleInfoCaptor: ArgumentCaptor<ModuleInfo>
 }

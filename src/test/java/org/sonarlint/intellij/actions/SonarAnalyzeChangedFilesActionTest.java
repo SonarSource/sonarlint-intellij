@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,7 +23,6 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -65,7 +64,7 @@ public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTe
     assertThat(action.isEnabled(event, getProject(), status)).isFalse();
 
     status.stopRun();
-    when(changeListManager.getAffectedFiles()).thenReturn(List.of(mock(VirtualFile.class)));
+    when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(mock(VirtualFile.class)));
     assertThat(action.isEnabled(event, getProject(), status)).isTrue();
   }
 
@@ -83,10 +82,10 @@ public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTe
     VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
 
     when(event.getProject()).thenReturn(getProject());
-    when(changeListManager.getAffectedFiles()).thenReturn(List.of(file));
+    when(changeListManager.getAffectedFiles()).thenReturn(Collections.singletonList(file));
 
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(eq(List.of(file)), eq(TriggerType.CHANGED_FILES), any(AnalysisCallback.class), eq(false));
+    verify(submitter).submitFiles(eq(Collections.singletonList(file)), eq(TriggerType.CHANGED_FILES), any(AnalysisCallback.class), eq(false));
   }
 }

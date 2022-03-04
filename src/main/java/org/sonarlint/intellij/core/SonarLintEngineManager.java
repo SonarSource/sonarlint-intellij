@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,17 +26,20 @@ import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.serviceContainer.NonInjectable;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonar.api.utils.log.Loggers;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static com.intellij.openapi.progress.PerformInBackgroundOption.ALWAYS_BACKGROUND;
@@ -68,28 +71,29 @@ public class SonarLintEngineManager implements Disposable {
       });
   }
 
-  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String connectionId, String projectKey)
+  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String serverId, String projectKey)
     throws InvalidBindingException {
     // Check if engine's global storage is OK
-    var globalStorageStatus = engine.getGlobalStorageStatus();
-    if (globalStorageStatus == null) {
-      notifications.notifyServerNeverUpdated(connectionId);
-      throw new InvalidBindingException("Connection local storage is missing: '" + connectionId + "'");
-    } else if (globalStorageStatus.isStale()) {
-      notifications.notifyServerStorageNeedsUpdate(connectionId);
-      throw new InvalidBindingException("Connection local storage is outdated: '" + connectionId + "'");
+    ConnectedSonarLintEngine.State state = engine.getState();
+    if (state != ConnectedSonarLintEngine.State.UPDATED) {
+      if (state == ConnectedSonarLintEngine.State.NEED_UPDATE) {
+        notifications.notifyServerStorageNeedsUpdate(serverId);
+      } else if (state == ConnectedSonarLintEngine.State.NEVER_UPDATED) {
+        notifications.notifyServerNeverUpdated(serverId);
+      }
+      throw new InvalidBindingException("Connection local storage is not updated: '" + serverId + "'");
     }
 
     // Check if project's storage is OK. Global storage was updated and all project's binding that were open too,
     // but we might have now opened a new project with a different binding.
-    var projectStorageStatus = engine.getProjectStorageStatus(projectKey);
+    ProjectStorageStatus moduleStorageStatus = engine.getProjectStorageStatus(projectKey);
 
-    if (projectStorageStatus == null) {
-      notifications.notifyProjectStorageInvalid();
-      throw new InvalidBindingException("Project local storage is missing: '" + projectKey + "'");
-    } else if (projectStorageStatus.isStale()) {
-      notifications.notifyProjectStorageStale();
-      throw new InvalidBindingException("Project local storage is outdated: '" + projectKey + "'");
+    if (moduleStorageStatus == null) {
+      notifications.notifyModuleInvalid();
+      throw new InvalidBindingException("Project is bound to a project that doesn't exist: " + projectKey);
+    } else if (moduleStorageStatus.isStale()) {
+      notifications.notifyModuleStale();
+      throw new InvalidBindingException("Stale project's storage: " + projectKey);
     }
   }
 
@@ -97,12 +101,12 @@ public class SonarLintEngineManager implements Disposable {
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
   public synchronized void stopAllDeletedConnectedEnginesAsync() {
-    var it = connectedEngines.entrySet().iterator();
-    var configuredStorageIds = getServerNames();
+    Iterator<Map.Entry<String, ConnectedSonarLintEngine>> it = connectedEngines.entrySet().iterator();
+    Set<String> configuredStorageIds = getServerNames();
     while (it.hasNext()) {
-      var entry = it.next();
-      if (!configuredStorageIds.contains(entry.getKey())) {
-        doInBackground("Stop SonarLint engine '" + entry.getKey() + "'", () -> entry.getValue().stop(false));
+      Map.Entry<String, ConnectedSonarLintEngine> e = it.next();
+      if (!configuredStorageIds.contains(e.getKey())) {
+        doInBackground("Stop SonarLint engine '" + e.getKey() + "'", () -> e.getValue().stop(false));
         it.remove();
       }
     }
@@ -110,17 +114,19 @@ public class SonarLintEngineManager implements Disposable {
 
   public synchronized void stopAllEngines(boolean async) {
     AnalysisRequirementNotifications.resetCachedMessages();
-    for (var entry : connectedEngines.entrySet()) {
+    for (Map.Entry<String, ConnectedSonarLintEngine> e : connectedEngines.entrySet()) {
       if (async) {
-        doInBackground("Stop SonarLint engine '" + entry.getKey() + "'", () -> entry.getValue().stop(false));
+        String key = e.getKey();
+        ConnectedSonarLintEngine engine = e.getValue();
+        doInBackground("Stop SonarLint engine '" + key + "'", () -> engine.stop(false));
       } else {
-        entry.getValue().stop(false);
+        e.getValue().stop(false);
       }
     }
     connectedEngines.clear();
     if (standalone != null) {
       if (async) {
-        var standaloneCopy = this.standalone;
+        StandaloneSonarLintEngine standaloneCopy = this.standalone;
         doInBackground("Stop standalone SonarLint engine", standaloneCopy::stop);
       } else {
         standalone.stop();
@@ -129,7 +135,6 @@ public class SonarLintEngineManager implements Disposable {
     }
   }
 
-  @NotNull
   public synchronized ConnectedSonarLintEngine getConnectedEngine(String connectionId) {
     return connectedEngines.computeIfAbsent(connectionId, factory::createEngine);
   }
@@ -146,13 +151,13 @@ public class SonarLintEngineManager implements Disposable {
     Preconditions.checkNotNull(serverId, "serverId");
     Preconditions.checkNotNull(projectKey, "projectKey");
 
-    var configuredStorageIds = getServerNames();
+    Set<String> configuredStorageIds = getServerNames();
     if (!configuredStorageIds.contains(serverId)) {
       notifications.notifyConnectionIdInvalid();
       throw new InvalidBindingException("Invalid server name: " + serverId);
     }
 
-    var engine = getConnectedEngine(serverId);
+    ConnectedSonarLintEngine engine = getConnectedEngine(serverId);
     checkConnectedEngineStatus(engine, notifications, serverId, projectKey);
     return engine;
   }
@@ -166,6 +171,7 @@ public class SonarLintEngineManager implements Disposable {
   @Override
   public void dispose() {
     stopAllEngines(false);
+    Loggers.setTarget(null);
   }
 
   @Nullable

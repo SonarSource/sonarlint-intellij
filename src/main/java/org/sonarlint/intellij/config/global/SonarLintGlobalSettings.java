@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -167,9 +167,9 @@ public final class SonarLintGlobalSettings {
   }
 
   public void setServerConnections(List<ServerConnection> servers) {
-    this.servers = servers.stream()
+    this.servers = Collections.unmodifiableList(servers.stream()
       .filter(s -> !SonarLintUtils.isBlank(s.getName()))
-      .collect(Collectors.toUnmodifiableList());
+      .collect(Collectors.toList()));
   }
 
   public void addServerConnection(ServerConnection connection) {
@@ -189,7 +189,7 @@ public final class SonarLintGlobalSettings {
   }
 
   public void setFileExclusions(List<String> fileExclusions) {
-    this.fileExclusions = List.copyOf(fileExclusions);
+    this.fileExclusions = Collections.unmodifiableList(new ArrayList<>(fileExclusions));
   }
 
   /**

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,16 +35,16 @@ public class TelemetryManagerProviderTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testCreation() throws Exception {
-    var path = temporaryFolder.newFolder().toPath().resolve("usage");
+    Path path = temporaryFolder.newFolder().toPath().resolve("usage");
 
-    var engineProvider = new TelemetryManagerProvider() {
+    TelemetryManagerProvider engineProvider = new TelemetryManagerProvider() {
       @Override
       Path getStorageFilePath() {
         return path;
       }
     };
 
-    var telemetry = engineProvider.get();
+    TelemetryManager telemetry = engineProvider.get();
     assertThat(path).doesNotExist();
     telemetry.analysisDoneOnMultipleFiles();
     assertThat(path).exists();

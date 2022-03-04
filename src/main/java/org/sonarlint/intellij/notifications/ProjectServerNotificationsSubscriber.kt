@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,18 +19,15 @@
  */
 package org.sonarlint.intellij.notifications
 
-import com.intellij.ProjectTopics
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.project.ModuleListener
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
-import com.intellij.serviceContainer.NonInjectable
 import com.intellij.util.ui.UIUtil
 import icons.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -39,6 +36,7 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectState
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.ServerNotificationsService
@@ -51,55 +49,40 @@ import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationT
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
 import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener
 import java.time.ZonedDateTime
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.function.Supplier
 
 class ProjectServerNotificationsSubscriber : Disposable {
   private val project: Project
   private val notificationsService: ServerNotificationsService
   private var eventListener: EventListener? = null
   private val notificationTime: ProjectNotificationTime
-  private val executorService: ExecutorService
 
-  constructor(project: Project) : this(project, ServerNotificationsService.get(), Executors.newSingleThreadExecutor())
+  constructor(project: Project) : this(project, ServerNotificationsService.get())
 
-  @NonInjectable
-  constructor(project: Project, notificationsService: ServerNotificationsService, executorService: ExecutorService) {
+  constructor(project: Project, notificationsService: ServerNotificationsService) {
     this.project = project
     this.notificationsService = notificationsService
-    this.executorService = executorService
     notificationTime = ProjectNotificationTime()
   }
 
   fun start() {
-    registerAsync()
+    register()
     val busConnection = project.messageBus.connect()
     busConnection.subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener {
       // always reset notification date, whether bound or not
       val projectState = getService(project, SonarLintProjectState::class.java)
       projectState.lastEventPolling = ZonedDateTime.now()
-      registerAsync()
+      ApplicationManager.getApplication().executeOnPooledThread {
+        register()
+      }
     })
     busConnection.subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
       override fun applied(settings: SonarLintGlobalSettings) {
-        registerAsync()
+        ApplicationManager.getApplication().executeOnPooledThread {
+          register()
+        }
       }
     })
-    busConnection.subscribe(ProjectTopics.MODULES, object : ModuleListener {
-      override fun moduleAdded(project: Project, module: Module) {
-        registerAsync()
-      }
-
-      override fun moduleRemoved(project: Project, module: Module) {
-        registerAsync()
-      }
-    })
-  }
-
-  private fun registerAsync() {
-    if (!executorService.isShutdown) {
-      executorService.submit { register() }
-    }
   }
 
   @Synchronized private fun register() {
@@ -110,9 +93,8 @@ class ProjectServerNotificationsSubscriber : Disposable {
         eventListener = EventListener(it.isSonarCloud, it.name)
         try {
           if (notificationsService.isSupported(it)) {
-            getService(project, ProjectBindingManager::class.java).uniqueProjectKeys.forEach { projectKey ->
-              notificationsService.register(createConfiguration(projectKey, it))
-            }
+            val config = createConfiguration(Settings.getSettingsFor(project), it)
+            notificationsService.register(config)
           }
         } catch (e: Exception) {
           SonarLintConsole.get(project)
@@ -122,8 +104,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
   }
 
   override fun dispose() {
-      executorService.shutdownNow()
-      unregister()
+    unregister()
   }
 
   private fun unregister() {
@@ -133,8 +114,9 @@ class ProjectServerNotificationsSubscriber : Disposable {
     }
   }
 
-  private fun createConfiguration(projectKey: String, server: ServerConnection): NotificationConfiguration {
-    return NotificationConfiguration(eventListener, notificationTime, projectKey, { server.endpointParams }, { server.httpClient })
+  private fun createConfiguration(settings: SonarLintProjectSettings, server: ServerConnection): NotificationConfiguration {
+    val projectKey = settings.projectKey
+    return NotificationConfiguration(eventListener, notificationTime, projectKey, Supplier { server.endpointParams }, Supplier { server.httpClient })
   }
 
   /**
@@ -206,7 +188,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
             val editedConnection = wizard.connection
             val serverConnections = Settings.getGlobalSettings().serverConnections
             serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
-            registerAsync()
+            register()
           }
         } else if (e.project != null) {
           SonarLintConsole.get(e.project!!).error("Unable to find connection with name: $connectionName")

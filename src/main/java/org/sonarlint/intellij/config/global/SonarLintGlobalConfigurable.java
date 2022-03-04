@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,15 +21,18 @@ package org.sonarlint.intellij.config.global;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.options.Configurable;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.components.JBTabbedPane;
+
 import java.awt.BorderLayout;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+
 import org.jetbrains.annotations.Nls;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
@@ -69,16 +72,16 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public boolean isModified() {
-    var globalSettings = getGlobalSettings();
-    var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     return connectionsPanel.isModified(globalSettings) || globalPanel.isModified(globalSettings)
       || about.isModified(telemetry) || exclusions.isModified(globalSettings) || rules.isModified(globalSettings);
   }
 
   @Override
   public void apply() {
-    var globalSettings = getGlobalSettings();
-    var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
     final boolean exclusionsModified = exclusions.isModified(globalSettings);
     final boolean rulesModified = rules.isModified(globalSettings);
     final boolean globalSettingsModified = globalPanel.isModified(globalSettings);
@@ -89,7 +92,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
     rules.save(globalSettings);
     exclusions.save(globalSettings);
 
-    var globalConfigurationListener = ApplicationManager.getApplication()
+    GlobalConfigurationListener globalConfigurationListener = ApplicationManager.getApplication()
       .getMessageBus().syncPublisher(GlobalConfigurationListener.TOPIC);
     globalConfigurationListener.applied(globalSettings);
 
@@ -106,9 +109,9 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
   }
 
   public static void analyzeOpenFiles(boolean unboundOnly) {
-    var openProjects = ProjectManager.getInstance().getOpenProjects();
+    Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
 
-    for (var project : openProjects) {
+    for (Project project : openProjects) {
       if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
         SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }
@@ -126,8 +129,8 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
   @Override
   public void reset() {
-    var globalSettings = getGlobalSettings();
-    var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
+    SonarLintGlobalSettings globalSettings = getGlobalSettings();
+    SonarLintTelemetry telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
 
     connectionsPanel.load(globalSettings);
     globalPanel.load(globalSettings);
@@ -162,7 +165,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
       globalPanel = new SonarLintGlobalOptionsPanel();
       connectionsPanel = new ServerConnectionMgmtPanel();
 
-      var settingsPanel = new JPanel(new BorderLayout());
+      JPanel settingsPanel = new JPanel(new BorderLayout());
       settingsPanel.add(globalPanel.getComponent(), BorderLayout.NORTH);
       settingsPanel.add(connectionsPanel.getComponent(), BorderLayout.CENTER);
 

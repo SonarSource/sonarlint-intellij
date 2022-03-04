@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static java.util.Collections.singletonList;
+
 public class MatchedFlowsAdapter {
   public static Optional<IssueContext> adapt(List<Flow> flows) {
     return flows.isEmpty()
@@ -36,7 +38,7 @@ public class MatchedFlowsAdapter {
   private static List<Flow> adaptFlows(List<Flow> flows) {
     return flows.stream().anyMatch(Flow::hasMoreThanOneLocation)
       ? reverse(flows)
-      : List.of(groupToSingleFlow(flows));
+      : singletonList(groupToSingleFlow(flows));
   }
 
   private static Flow groupToSingleFlow(List<Flow> flows) {
@@ -48,7 +50,7 @@ public class MatchedFlowsAdapter {
 
   private static List<Flow> reverse(List<Flow> flows) {
     return flows.stream().map(f -> {
-      var reorderedLocations = new ArrayList<>(f.getLocations());
+      ArrayList<Location> reorderedLocations = new ArrayList<>(f.getLocations());
       Collections.reverse(reorderedLocations);
       return new Flow(reorderedLocations);
     }).collect(Collectors.toList());

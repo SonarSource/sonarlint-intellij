@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,6 +23,7 @@ import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
+import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -37,9 +38,9 @@ public class EscapeHandler extends EditorActionHandler {
 
   @Override
   protected void doExecute(Editor editor, @Nullable Caret caret, DataContext dataContext) {
-    var project = editor.getProject();
+    Project project = editor.getProject();
     if (project != null) {
-      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+      EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
       if (highlighting.isActiveInEditor(editor)) {
         highlighting.removeHighlights();
         return;
@@ -54,10 +55,12 @@ public class EscapeHandler extends EditorActionHandler {
   }
 
   private static boolean isActive(Editor editor) {
-    var project = editor.getProject();
+    Project project = editor.getProject();
     if (project != null) {
-      var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
-      return highlighting.isActiveInEditor(editor);
+      EditorDecorator highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+      if (highlighting.isActiveInEditor(editor)) {
+        return true;
+      }
     }
     return false;
   }

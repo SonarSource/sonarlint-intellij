@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,10 +47,9 @@ public class IssueStoreTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void testSet() {
-    Map<VirtualFile, Collection<LiveIssue>> issues = Map.of(
-      mock(VirtualFile.class), List.of(mock(LiveIssue.class)),
-      mock(VirtualFile.class), List.of(mock(LiveIssue.class))
-    );
+    Map<VirtualFile, Collection<LiveIssue>> issues = new HashMap<>();
+    issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
+    issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
     issueStore.set(issues, "3 files");
     assertThat(issueStore.lastAnalysisDate())
@@ -78,10 +77,9 @@ public class IssueStoreTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void testClear() {
-    Map<VirtualFile, Collection<LiveIssue>> issues = Map.of(
-      mock(VirtualFile.class), List.of(mock(LiveIssue.class)),
-      mock(VirtualFile.class), List.of(mock(LiveIssue.class))
-    );
+    Map<VirtualFile, Collection<LiveIssue>> issues = new HashMap<>();
+    issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
+    issues.put(mock(VirtualFile.class), Collections.singletonList(mock(LiveIssue.class)));
 
     issueStore.set(issues, "3 files");
     issueStore.clear();

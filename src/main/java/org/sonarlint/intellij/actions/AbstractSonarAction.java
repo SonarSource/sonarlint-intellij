@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,23 +23,25 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.stream.Stream;
+
+import java.util.Arrays;
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 
 public abstract class AbstractSonarAction extends AnAction {
-  protected AbstractSonarAction() {
+  public AbstractSonarAction() {
     super();
   }
 
-  protected AbstractSonarAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+  public AbstractSonarAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);
   }
 
   @Override
   public void update(AnActionEvent e) {
-    var p = e.getProject();
+    Project p = e.getProject();
 
     if (isVisible(e.getPlace())) {
       e.getPresentation().setVisible(true);
@@ -52,13 +54,13 @@ public abstract class AbstractSonarAction extends AnAction {
     if (p == null || !p.isInitialized() || p.isDisposed()) {
       e.getPresentation().setEnabled(false);
     } else {
-      var status = AnalysisStatus.get(p);
+      AnalysisStatus status = AnalysisStatus.get(p);
       e.getPresentation().setEnabled(isEnabled(e, p, status));
     }
   }
 
   static boolean isRiderSlnOrCsproj(VirtualFile[] files) {
-    return Stream.of(files)
+    return Arrays.stream(files)
       .allMatch(f -> f.getName().endsWith(".sln") || f.getName().endsWith(".csproj"));
   }
 

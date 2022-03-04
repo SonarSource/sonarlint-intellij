@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,11 +20,14 @@
 package org.sonarlint.intellij.issue.persistence;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+
 import org.sonarlint.intellij.proto.Sonarlint;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 
@@ -47,7 +50,7 @@ class StringStoreIndex implements StoreIndex<String> {
     if (!indexFilePath.toFile().exists()) {
       return Collections.emptyMap();
     }
-    try (var stream = Files.newInputStream(indexFilePath)) {
+    try (InputStream stream = Files.newInputStream(indexFilePath)) {
       return Sonarlint.StorageIndex.parseFrom(stream).getMappedPathByKeyMap();
     } catch (IOException e) {
       GlobalLogOutput.get().logError("Unable to read SonarLint issue store.", e);
@@ -57,8 +60,8 @@ class StringStoreIndex implements StoreIndex<String> {
 
   @Override
   public synchronized void save(String storageKey, Path path) {
-    var relativeMappedPath = storeBasePath.relativize(path).toString();
-    var builder = Sonarlint.StorageIndex.newBuilder();
+    String relativeMappedPath = storeBasePath.relativize(path).toString();
+    Sonarlint.StorageIndex.Builder builder = Sonarlint.StorageIndex.newBuilder();
     builder.putAllMappedPathByKey(load());
     builder.putMappedPathByKey(storageKey, relativeMappedPath);
     save(builder.build());
@@ -66,14 +69,14 @@ class StringStoreIndex implements StoreIndex<String> {
 
   @Override
   public synchronized void delete(String storageKey) {
-    var builder = Sonarlint.StorageIndex.newBuilder();
+    Sonarlint.StorageIndex.Builder builder = Sonarlint.StorageIndex.newBuilder();
     builder.putAllMappedPathByKey(load());
     builder.removeMappedPathByKey(storageKey);
     save(builder.build());
   }
 
   private void save(Sonarlint.StorageIndex index) {
-    try (var stream = Files.newOutputStream(indexFilePath)) {
+    try (OutputStream stream = Files.newOutputStream(indexFilePath)) {
       index.writeTo(stream);
     } catch (IOException e) {
       // Don't log in the SonarLint console as the problem can occurs when stopping the IDE

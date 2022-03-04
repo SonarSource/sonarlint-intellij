@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -34,10 +34,10 @@ public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintLightT
 
   @Test
   public void clear() {
-    var issueStore = mock(IssueStore.class);
+    IssueStore issueStore = mock(IssueStore.class);
     replaceProjectService(IssueStore.class, issueStore);
 
-    var event = mock(AnActionEvent.class);
+    AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(getProject());
     action.actionPerformed(event);
 
@@ -46,7 +46,7 @@ public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintLightT
 
   @Test
   public void noProject() {
-    var event = mock(AnActionEvent.class);
+    AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
     action.actionPerformed(event);
   }

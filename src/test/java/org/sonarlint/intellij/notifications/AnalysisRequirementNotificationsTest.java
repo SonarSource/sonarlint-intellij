@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,21 +24,25 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.Notifications;
 import com.intellij.notification.NotificationsAdapter;
 import com.intellij.notification.NotificationsManager;
+import com.intellij.openapi.project.Project;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.Optional;
+
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.plugin.commons.SkipReason;
+import org.sonarsource.sonarlint.core.client.api.common.SkipReason;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -57,7 +61,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
 
     // register a listener to catch all notifications
     notifications = Lists.newCopyOnWriteArrayList();
-    var project = getProject();
+    Project project = getProject();
     project.getMessageBus().connect(project).subscribe(Notifications.TOPIC, new NotificationsAdapter() {
       @Override
       public void notify(@NotNull Notification notification) {
@@ -73,9 +77,11 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
    */
   @After
   public void expireAfterTest() {
-    var mgr = NotificationsManager.getNotificationsManager();
-    var notifications = mgr.getNotificationsOfType(Notification.class, getProject());
-    Stream.of(notifications).forEach(mgr::expire);
+    NotificationsManager mgr = NotificationsManager.getNotificationsManager();
+    Notification[] notifications = mgr.getNotificationsOfType(Notification.class, getProject());
+    for (Notification notification : notifications) {
+      mgr.expire(notification);
+    }
   }
 
   @Test
@@ -97,7 +103,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   @Test
   public void notifyIfSkippedLanguage_JRE() {
     detectedLang.put(mock(ClientInputFile.class), Language.JAVA);
-    List<PluginDetails> plugins = List.of(new PluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
+    List<PluginDetails> plugins = Collections.singletonList(new FakePluginDetails("java", "Java", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.JRE, "1.8", "11")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Java runtime version 11 or later to analyze Java code. Current version is 1.8.<br>See <a href=\"https://intellij-support.jetbrains.com/hc/en-us/articles/206544879-Selecting-the-JDK-version-the-IDE-will-run-under\">how to select the JDK version the IDE will run under</a>.");
@@ -106,12 +112,49 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   @Test
   public void notifyIfSkippedLanguage_Node() {
     detectedLang.put(mock(ClientInputFile.class), Language.JS);
-    List<PluginDetails> plugins = List.of(new PluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
+    List<PluginDetails> plugins = Collections.singletonList(new FakePluginDetails("javascript", "JS/TS", "1.0", new SkipReason.UnsatisfiedRuntimeRequirement(SkipReason.UnsatisfiedRuntimeRequirement.RuntimeRequirement.NODEJS, "7.2", "8.0")));
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, plugins, getProject());
     assertThat(notifications).hasSize(1);
     assertThat(notifications.get(0).getContent()).isEqualTo("SonarLint requires Node.js runtime version 8.0 or later to analyze JavaScript code. Current version is 7.2.<br>Please configure the Node.js path in the SonarLint settings.");
     assertThat(notifications.get(0).getActions()).hasSize(1);
     assertThat(notifications.get(0).getActions().get(0).getTemplatePresentation().getText()).isEqualTo("Open SonarLint Settings");
+  }
+
+  private static class FakePluginDetails implements PluginDetails {
+
+    private final String key;
+    private final String name;
+    private final String version;
+    @Nullable
+    private final SkipReason skipReason;
+
+    public FakePluginDetails(String key, String name, String version, @Nullable SkipReason skipReason) {
+      this.key = key;
+      this.name = name;
+      this.version = version;
+      this.skipReason = skipReason;
+    }
+
+    @Override
+    public String key() {
+      return key;
+    }
+
+    @Override
+    public String name() {
+      return name;
+    }
+
+    @Override
+    public String version() {
+      return version;
+    }
+
+    @Override
+    public Optional<SkipReason> skipReason() {
+      return Optional.ofNullable(skipReason);
+    }
+
   }
 
 

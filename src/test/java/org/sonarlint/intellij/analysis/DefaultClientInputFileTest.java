@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@ package org.sonarlint.intellij.analysis;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -31,12 +32,13 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
-import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -59,7 +61,7 @@ public class DefaultClientInputFileTest {
     file.getParentFile().mkdirs();
     file.createNewFile();
     vFile = mock(VirtualFile.class);
-    var path = FileUtil.toSystemIndependentName(file.getAbsolutePath());
+    String path = FileUtil.toSystemIndependentName(file.getAbsolutePath());
     when(vFile.getPath()).thenReturn(path);
     // SLI-379 Mocking the true implementation, in case we try to use it, to see how it is broken
     when(vFile.getUrl()).thenReturn(VirtualFileManager.constructUrl("file", path));
@@ -81,7 +83,7 @@ public class DefaultClientInputFileTest {
     assertThat(inputFile.getClientObject()).isEqualTo(vFile);
     assertThat(inputFile.contents()).isEqualTo("test string");
     assertThat(inputFile.language()).isEqualTo(Language.JAVA);
-    try (var reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
       assertThat(reader.lines().collect(Collectors.joining())).isEqualTo("test string");
     }
   }
@@ -92,7 +94,7 @@ public class DefaultClientInputFileTest {
 
     assertThat(inputFile.contents()).isEqualTo("test string");
     assertThat(inputFile.language()).isNull();
-    try (var reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
+    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputFile.inputStream()))) {
       assertThat(reader.lines().collect(Collectors.joining())).isEqualTo("test string");
     }
   }

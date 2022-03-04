@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -44,7 +44,7 @@ public class BuildWrapperJsonGenerator {
   }
 
   private void appendEntry(AnalyzerConfiguration.Configuration entry) {
-    var quotedCompilerExecutable = quote(entry.compilerExecutable);
+    String quotedCompilerExecutable = quote(entry.compilerExecutable);
     builder.append("{")
       .append("\"compiler\":\"")
       .append(entry.compilerKind)
@@ -54,7 +54,7 @@ public class BuildWrapperJsonGenerator {
       .append(quotedCompilerExecutable)
       .append(",");
     builder.append("\"properties\":{");
-    var firstProp = true;
+    boolean firstProp = true;
     for (Map.Entry<String, String> prop : entry.properties.entrySet()) {
       if (!firstProp) {
         builder.append(",");
@@ -82,8 +82,8 @@ public class BuildWrapperJsonGenerator {
 
     char c;
     int i;
-    var len = string.length();
-    var sb = new StringBuilder(len + 4);
+    int len = string.length();
+    StringBuilder sb = new StringBuilder(len + 4);
     String t;
 
     sb.append('"');

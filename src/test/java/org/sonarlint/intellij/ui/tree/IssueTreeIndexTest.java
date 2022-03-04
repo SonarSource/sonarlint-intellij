@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -76,7 +76,7 @@ public class IssueTreeIndexTest {
   }
 
   private VirtualFile createFile(String name) {
-    var newFile = mock(VirtualFile.class);
+    VirtualFile newFile = mock(VirtualFile.class);
     when(newFile.getName()).thenReturn(name);
     return newFile;
   }

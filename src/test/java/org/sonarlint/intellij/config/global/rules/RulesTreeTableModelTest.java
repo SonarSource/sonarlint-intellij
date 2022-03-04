@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -57,8 +57,8 @@ public class RulesTreeTableModelTest {
     lang.add(rule);
 
     // just to not give NPE when firing changes
-    var treeTableTree = mock(TreeTableTree.class);
-    var treeTable = mock(TreeTable.class);
+    TreeTableTree treeTableTree = mock(TreeTableTree.class);
+    TreeTable treeTable = mock(TreeTable.class);
     when(treeTableTree.getTreeTable()).thenReturn(treeTable);
     when(treeTable.getModel()).thenReturn(tableModel);
     model.setTree(treeTableTree);

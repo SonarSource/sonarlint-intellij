@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -45,6 +45,7 @@ public class SonarLintActions {
   private final AnAction configureAction;
   private final AnAction analyzeChangedFilesAction;
   private final AnAction analyzeAllFilesAction;
+  private final AnAction showAnalyzersAction;
 
   public SonarLintActions() {
     this(ActionManager.getInstance());
@@ -52,16 +53,17 @@ public class SonarLintActions {
 
   @NonInjectable
   SonarLintActions(ActionManager actionManager) {
-    var analyzeMenu = actionManager.getAction("AnalyzeMenu");
+    AnAction analyzeMenu = actionManager.getAction("AnalyzeMenu");
     // some flavors of IDEA don't have the analyze menu
     if (analyzeMenu instanceof DefaultActionGroup) {
-      var sonarLintAnalyzeMenu = actionManager.getAction("SonarLint.AnalyzeMenu");
-      var analyzeMenuGroup = (DefaultActionGroup) analyzeMenu;
+      AnAction sonarLintAnalyzeMenu = actionManager.getAction("SonarLint.AnalyzeMenu");
+      DefaultActionGroup analyzeMenuGroup = (DefaultActionGroup) analyzeMenu;
       analyzeMenuGroup.add(sonarLintAnalyzeMenu);
     }
 
     cancelAction = actionManager.getAction("SonarLint.toolwindow.Cancel");
     configureAction = actionManager.getAction("SonarLint.toolwindow.Configure");
+    showAnalyzersAction = actionManager.getAction("SonarLint.toolwindow.Analyzers");
 
     clearResultsAction = new SonarClearAnalysisResultsAction("Clear Project Files Issues",
       "Clear analysis results",
@@ -112,4 +114,7 @@ public class SonarLintActions {
     return analyzeAllFilesAction;
   }
 
+  public AnAction showAnalyzers() {
+    return showAnalyzersAction;
+  }
 }

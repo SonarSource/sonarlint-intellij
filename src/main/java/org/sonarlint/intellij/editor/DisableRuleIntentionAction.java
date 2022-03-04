@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +26,9 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Iconable;
 import com.intellij.psi.PsiFile;
+
 import javax.swing.Icon;
+
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -57,7 +59,7 @@ public class DisableRuleIntentionAction implements IntentionAction, LowPriorityA
 
   @Override public void invoke(@NotNull Project project, Editor editor, PsiFile file) {
     getGlobalSettings().disableRule(ruleKey);
-    var submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
+    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 

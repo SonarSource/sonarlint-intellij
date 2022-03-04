@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,6 +22,7 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.ToggleAction;
 import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.project.Project;
 
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -32,13 +33,13 @@ public class ToolWindowLogAnalysisAction extends ToggleAction implements DumbAwa
 
   @Override
   public boolean isSelected(AnActionEvent event) {
-    var p = event.getProject();
+    Project p = event.getProject();
     return p != null && getSettingsFor(p).isAnalysisLogsEnabled();
   }
 
   @Override
   public void setSelected(AnActionEvent event, boolean flag) {
-    var p = event.getProject();
+    Project p = event.getProject();
     if (p != null) {
       getSettingsFor(p).setAnalysisLogsEnabled(flag);
     }

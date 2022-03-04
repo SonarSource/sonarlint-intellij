@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,8 +19,9 @@
  */
 package org.sonarlint.intellij.config.global;
 
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
@@ -37,13 +38,13 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void testRoundTrip() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     assertThat(settings.isAutoTrigger()).isTrue();
     assertThat(settings.getNodejsPath()).isBlank();
 
-    var server = ServerConnection.newBuilder().setName("name").build();
+    ServerConnection server = ServerConnection.newBuilder().setName("name").build();
 
-    settings.setServerConnections(List.of(server));
+    settings.setServerConnections(Collections.singletonList(server));
     assertThat(settings.getServerConnections()).containsOnly(server);
 
     settings.setAutoTrigger(false);
@@ -55,16 +56,18 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void testLoadStateOldFormat() {
-    var state = new SonarLintGlobalSettings();
-    var includedRules = Collections.singleton(RULE);
-    var excludedRules = Collections.singleton(RULE1);
+    SonarLintGlobalSettings state = new SonarLintGlobalSettings();
+    HashSet<String> includedRules = new HashSet<>();
+    includedRules.add(RULE);
+    HashSet<String> excludedRules = new HashSet<>();
+    excludedRules.add(RULE1);
     state.setIncludedRules(includedRules);
     state.setExcludedRules(excludedRules);
 
-    var settingsStore = new SonarLintGlobalSettingsStore();
+    SonarLintGlobalSettingsStore settingsStore = new SonarLintGlobalSettingsStore();
     settingsStore.loadState(state);
 
-    var rules = state.getRulesByKey();
+    Map<String, SonarLintGlobalSettings.Rule> rules = state.getRulesByKey();
     assertThat(rules).containsOnlyKeys(RULE, RULE1);
     assertThat(rules.get(RULE).isActive).isTrue();
     assertThat(rules.get(RULE1).isActive).isFalse();
@@ -73,59 +76,57 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void testLoadStateNewFormat() {
-    var state = new SonarLintGlobalSettings();
-    var settingsStore = new SonarLintGlobalSettingsStore();
-    var activeRuleWithParam = new SonarLintGlobalSettings.Rule(RULE, true);
-    activeRuleWithParam.setParams(Map.of("paramKey", "paramValue"));
-    var inactiveRule = new SonarLintGlobalSettings.Rule(RULE1, false);
-    state.setRules(List.of(activeRuleWithParam, inactiveRule));
+    SonarLintGlobalSettings state = new SonarLintGlobalSettings();
+    SonarLintGlobalSettingsStore settingsStore = new SonarLintGlobalSettingsStore();
+    SonarLintGlobalSettings.Rule activeRuleWithParam = new SonarLintGlobalSettings.Rule(RULE, true);
+    activeRuleWithParam.setParams(Collections.singletonMap("paramKey", "paramValue"));
+    SonarLintGlobalSettings.Rule inactiveRule = new SonarLintGlobalSettings.Rule(RULE1, false);
+    state.setRules(Arrays.asList(activeRuleWithParam, inactiveRule));
 
     settingsStore.loadState(state);
 
-    SonarLintGlobalSettings reloadedState = settingsStore.getState();
+    assertThat(settingsStore.getState().isRuleExplicitlyDisabled(RULE1)).isTrue();
+    assertThat(settingsStore.getState().isRuleExplicitlyDisabled(RULE)).isFalse();
+    assertThat(settingsStore.getState().isRuleExplicitlyDisabled("unknown")).isFalse();
 
-    assertThat(reloadedState.isRuleExplicitlyDisabled(RULE1)).isTrue();
-    assertThat(reloadedState.isRuleExplicitlyDisabled(RULE)).isFalse();
-    assertThat(reloadedState.isRuleExplicitlyDisabled("unknown")).isFalse();
-
-    assertThat(reloadedState.getRulesByKey()).containsOnly(
+    assertThat(settingsStore.getState().getRulesByKey()).containsOnly(
             entry(RULE, activeRuleWithParam),
             entry(RULE1, inactiveRule)
     );
-    assertThat(reloadedState.getRulesByKey().get(RULE).getParams()).containsExactly(entry("paramKey", "paramValue"));
-    assertThat(reloadedState.getRulesByKey().get(RULE).isActive()).isTrue();
+    assertThat(settingsStore.getState().getRulesByKey().get(RULE).getParams()).containsExactly(entry("paramKey", "paramValue"));
+    assertThat(settingsStore.getState().getRulesByKey().get(RULE).isActive()).isTrue();
   }
 
     @Test
   public void testRuleParamAccessors() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.setRuleParam(RULE, PARAM, VALUE);
     assertThat(settings.getRuleParamValue(RULE, PARAM)).isPresent().hasValue(VALUE);
   }
 
   @Test
   public void testRuleIsNotLoaded() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     assertThat(settings.getRuleParamValue(RULE, PARAM).isPresent()).isFalse();
   }
 
   @Test
   public void testDisableRule() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.disableRule(RULE);
     assertThat(settings.isRuleExplicitlyDisabled(RULE)).isTrue();
   }
 
   @Test
   public void testEnableRule() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.enableRule(RULE);
     assertThat(settings.isRuleExplicitlyDisabled(RULE)).isFalse();
   }
 
   @Test
   public void testResetRuleParam() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.setRuleParam(RULE, PARAM, VALUE);
     assertThat(settings.getRuleParamValue(RULE, PARAM)).isPresent().hasValue(VALUE);
     settings.resetRuleParam(RULE, PARAM);
@@ -134,7 +135,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void testAddConnection() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
 
     settings.addServerConnection(ServerConnection.newBuilder().setHostUrl("host").setName("name").build());
 
@@ -145,7 +146,7 @@ public class SonarLintGlobalSettingsTest extends AbstractSonarLintMockedTests {
 
   @Test
   public void getConnectionTo_should_ignore_trailing_slashes() {
-    var settings = new SonarLintGlobalSettings();
+    SonarLintGlobalSettings settings = new SonarLintGlobalSettings();
     settings.addServerConnection(ServerConnection.newBuilder().setHostUrl("http://host/").setName("name").build());
 
     assertThat(settings.getConnectionsTo("http://host"))

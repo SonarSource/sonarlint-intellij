@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,22 +22,22 @@ package org.sonarlint.intellij.module
 import com.intellij.openapi.module.Module
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
+import org.sonarsource.sonarlint.core.client.api.common.ModuleInfo
 
 class ModulesRegistry {
-    private val modules: MutableMap<Module, ClientModuleInfo> = LinkedHashMap()
+    private val modules: MutableMap<Module, ModuleInfo> = LinkedHashMap()
 
-    fun getStandaloneModules(): List<ClientModuleInfo> {
+    fun getStandaloneModules(): List<ModuleInfo> {
         return modules.filterKeys { connectionIdFor(it) == null }
             .values.toList()
     }
 
-    fun getModulesForEngine(connectionId: String): List<ClientModuleInfo> {
+    fun getModulesForEngine(connectionId: String): List<ModuleInfo> {
         return modules.filterKeys { connectionIdFor(it) == connectionId }
             .values.toList()
     }
 
-    fun add(module: Module, moduleInfo: ClientModuleInfo) {
+    fun add(module: Module, moduleInfo: ModuleInfo) {
         modules[module] = moduleInfo
     }
 

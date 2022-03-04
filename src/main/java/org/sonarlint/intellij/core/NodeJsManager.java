@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -32,7 +32,7 @@ import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarsource.sonarlint.core.NodeJsHelper;
-import org.sonarsource.sonarlint.core.commons.Version;
+import org.sonarsource.sonarlint.core.client.api.common.Version;
 
 public class NodeJsManager {
 
@@ -62,7 +62,7 @@ public class NodeJsManager {
 
   private synchronized void initNodeIfNeeded() {
     if (!nodeInit) {
-      var helper = new NodeJsHelper();
+      NodeJsHelper helper = new NodeJsHelper();
       helper.detect(getNodeJsPathFromConfig());
       this.nodeInit = true;
       this.nodeJsPath = helper.getNodeJsPath();
@@ -82,7 +82,7 @@ public class NodeJsManager {
 
   @CheckForNull
   private Path getNodeJsPathFromConfig() {
-    final var nodejsPathStr = Settings.getGlobalSettings().getNodejsPath();
+    final String nodejsPathStr = Settings.getGlobalSettings().getNodejsPath();
     this.previousSettingValue = nodejsPathStr;
     if (StringUtils.isNotBlank(nodejsPathStr)) {
       try {

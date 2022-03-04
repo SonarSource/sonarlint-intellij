@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -21,106 +21,53 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.ModuleRootManager;
-import com.intellij.platform.ModuleAttachProcessor;
-import com.intellij.serviceContainer.NonInjectable;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.config.module.SonarLintModuleSettings;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 
-import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class ModuleBindingManager {
   private final Module module;
-  Supplier<SonarLintEngineManager> engineManagerSupplier;
 
   public ModuleBindingManager(Module module) {
-    this(module, () -> SonarLintUtils.getService(SonarLintEngineManager.class));
-  }
-
-  @NonInjectable
-  public ModuleBindingManager(Module module, Supplier<SonarLintEngineManager> engineManagerSupplier) {
     this.module = module;
-    this.engineManagerSupplier = engineManagerSupplier;
   }
 
   @CheckForNull
   public ProjectBinding getBinding() {
-    var projectKey = resolveProjectKey();
-    if (projectKey != null) {
-      var moduleSettings = getSettingsFor(module);
-      return new ProjectBinding(projectKey, moduleSettings.getSqPathPrefix(), moduleSettings.getIdePathPrefix());
+    String projectKey = getSettingsFor(module.getProject()).getProjectKey();
+    if (projectKey == null) {
+      return null;
     }
-    return null;
+    SonarLintModuleSettings settings = getSettingsFor(module);
+    return new ProjectBinding(projectKey, settings.getSqPathPrefix(), settings.getIdePathPrefix());
   }
 
-  @CheckForNull
-  public String resolveProjectKey() {
-    if (isBindingOverrideAllowed()) {
-      var moduleSettings = getSettingsFor(module);
-      if (moduleSettings.isProjectBindingOverridden()) {
-        return moduleSettings.getProjectKey();
-      }
-    }
-    var projectSettings = getSettingsFor(module.getProject());
-    var defaultProjectKey = projectSettings.getProjectKey();
-    if (projectSettings.isBound()) {
-      return defaultProjectKey;
-    }
-    return null;
-  }
-
-  /**
-   * Module level binding override is allowed if:
-   * <li>the IDE supports module or attached projects</li>
-   * <li>there is more than one module/at least one attached project</li>
-   * <li>the current module is not the primary project</li>
-   */
-  public boolean isBindingOverrideAllowed() {
-    return SonarLintUtils.isModuleLevelBindingEnabled()
-            && hasProjectMoreThanOneModule()
-            && isNotPrimaryProject();
-  }
-
-  /**
-   * In some IDEs (PyCharm, PHPStorm, ..) there is the possibility to attach additional projects to the "primary" project.
-   * We only want to allow overriding the binding for attached projects.
-   */
-  private boolean isNotPrimaryProject() {
-    return !module.equals(ModuleAttachProcessor.getPrimaryModule(module.getProject()));
-  }
-
-  private boolean hasProjectMoreThanOneModule() {
-    return ModuleManager.getInstance(module.getProject()).getModules().length > 1;
-  }
-
-  public void updatePathPrefixes(ConnectedSonarLintEngine engine) {
-    var projectKey = resolveProjectKey();
+  public void updateBinding(ConnectedSonarLintEngine engine) {
+    String projectKey = getSettingsFor(module.getProject()).getProjectKey();
     if (projectKey == null) {
       throw new IllegalStateException("Project is not bound");
     }
-    var moduleFiles = collectPathsForModule();
-    var projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
-    var settings = getSettingsFor(module);
+    List<String> moduleFiles = collectPathsForModule();
+    ProjectBinding projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
+    SonarLintModuleSettings settings = getSettingsFor(module);
     settings.setIdePathPrefix(projectBinding.idePathPrefix());
     settings.setSqPathPrefix(projectBinding.sqPathPrefix());
   }
 
   private List<String> collectPathsForModule() {
     return ApplicationManager.getApplication().<List<String>>runReadAction(() -> {
-      var paths = new ArrayList<String>();
-      var moduleRootManager = ModuleRootManager.getInstance(module);
+      List<String> paths = new ArrayList<>();
+      ModuleRootManager moduleRootManager = ModuleRootManager.getInstance(module);
       moduleRootManager.getFileIndex().iterateContent(virtualFile -> {
         if (!virtualFile.isDirectory()) {
-          var path = SonarLintAppUtils.getRelativePathForAnalysis(module, virtualFile);
+          String path = SonarLintAppUtils.getPathRelativeToProjectBaseDir(module.getProject(), virtualFile);
           if (path != null) {
             paths.add(path);
           }
@@ -130,21 +77,4 @@ public class ModuleBindingManager {
       return paths;
     });
   }
-
-  @CheckForNull
-  public SonarLintEngine getEngineIfStarted() {
-    var engineManager = this.engineManagerSupplier.get();
-    var moduleSettings = getSettingsFor(module);
-    var projectSettings = getSettingsFor(module.getProject());
-    if (moduleSettings.isProjectBindingOverridden() || projectSettings.isBound()) {
-      var connectionId = projectSettings.getConnectionName();
-      return engineManager.getConnectedEngineIfStarted(requireNonNull(connectionId));
-    }
-    return engineManager.getStandaloneEngineIfStarted();
-  }
-
-  public void unbind() {
-    getSettingsFor(module).clearBindingOverride();
-  }
-
 }

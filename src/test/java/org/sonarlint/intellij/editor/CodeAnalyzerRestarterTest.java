@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,10 +23,11 @@ import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
-import java.util.List;
+import java.util.Arrays;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -46,14 +47,14 @@ public class CodeAnalyzerRestarterTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() {
-    var connection = mock(MessageBusConnection.class);
+    MessageBusConnection connection = mock(MessageBusConnection.class);
     when(bus.connect(getProject())).thenReturn(connection);
     analyzerRestarter = new CodeAnalyzerRestarter(getProject(), codeAnalyzer);
   }
 
   @Test
   public void should_not_restart_invalid() {
-    var vFile1 = mock(VirtualFile.class);
+    VirtualFile vFile1 = mock(VirtualFile.class);
     when(vFile1.isValid()).thenReturn(false);
 
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {vFile1});
@@ -65,8 +66,8 @@ public class CodeAnalyzerRestarterTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_restart_all_open() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
-    var file2 = createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "public class Bar {}");
+    PsiFile file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
+    PsiFile file2 = createAndOpenTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "public class Bar {}");
 
     analyzerRestarter.refreshOpenFiles();
 
@@ -77,10 +78,10 @@ public class CodeAnalyzerRestarterTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_restart_files() {
-    var file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
-    var file2 = createTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "public class Bar {}");
+    PsiFile file1 = createAndOpenTestPsiFile("Foo.java", Language.findLanguageByID("JAVA"), "public class Foo {}");
+    PsiFile file2 = createTestPsiFile("Bar.java", Language.findLanguageByID("JAVA"), "public class Bar {}");
 
-    analyzerRestarter.refreshFiles(List.of(file1.getVirtualFile(), file2.getVirtualFile()));
+    analyzerRestarter.refreshFiles(Arrays.asList(file1.getVirtualFile(), file2.getVirtualFile()));
 
     verify(codeAnalyzer).restart(file1);
     verifyNoMoreInteractions(codeAnalyzer);

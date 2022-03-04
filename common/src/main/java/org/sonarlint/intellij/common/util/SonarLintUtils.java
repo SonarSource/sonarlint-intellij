@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,26 +24,37 @@ import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationNamesInfo;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleServiceManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.openapi.roots.SourceFolder;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.PlatformUtils;
+
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Transparency;
-import java.util.List;
+import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.JavaModuleSourceRootTypes;
+import org.jetbrains.jps.model.java.JavaResourceRootProperties;
+import org.jetbrains.jps.model.java.JavaSourceRootProperties;
 
 public class SonarLintUtils {
 
@@ -56,35 +67,37 @@ public class SonarLintUtils {
   }
 
   public static <T> T getService(Class<T> clazz) {
-    var t = ServiceManager.getService(clazz);
-    logAndThrowIfServiceNotFound(t, clazz.getName());
+    T t = ServiceManager.getService(clazz);
+    if (t == null) {
+      LOG.error("Could not find service: " + clazz.getName());
+      throw new IllegalArgumentException("Class not found: " + clazz.getName());
+    }
 
     return t;
   }
 
   public static <T> T getService(@NotNull Project project, Class<T> clazz) {
-    var t = ServiceManager.getService(project, clazz);
-    logAndThrowIfServiceNotFound(t, clazz.getName());
+    T t = ServiceManager.getService(project, clazz);
+    if (t == null) {
+      LOG.error("Could not find service: " + clazz.getName());
+      throw new IllegalArgumentException("Class not found: " + clazz.getName());
+    }
 
     return t;
   }
 
   public static <T> T getService(@NotNull Module module, Class<T> clazz) {
-    var t = ModuleServiceManager.getService(module, clazz);
-    logAndThrowIfServiceNotFound(t, clazz.getName());
+    T t = ModuleServiceManager.getService(module, clazz);
+    if (t == null) {
+      LOG.error("Could not find service: " + clazz.getName());
+      throw new IllegalArgumentException("Class not found: " + clazz.getName());
+    }
 
     return t;
   }
 
-  private static <T> void logAndThrowIfServiceNotFound(T t, String name) {
-    if (t == null) {
-      LOG.error("Could not find service: " + name);
-      throw new IllegalArgumentException("Class not found: " + name);
-    }
-  }
-
   public static boolean isSonarCloudAlias(@Nullable String url) {
-    return List.of(SONARCLOUD_ALIAS).contains(url);
+    return Arrays.asList(SONARCLOUD_ALIAS).contains(url);
   }
 
   public static boolean isEmpty(@Nullable String str) {
@@ -110,13 +123,13 @@ public class SonarLintUtils {
     if (icon instanceof ImageIcon) {
       return ((ImageIcon) icon).getImage();
     } else {
-      var w = icon.getIconWidth();
-      var h = icon.getIconHeight();
-      var ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-      var gd = ge.getDefaultScreenDevice();
-      var gc = gd.getDefaultConfiguration();
-      var image = gc.createCompatibleImage(w, h, Transparency.TRANSLUCENT);
-      var g = image.createGraphics();
+      int w = icon.getIconWidth();
+      int h = icon.getIconHeight();
+      GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+      GraphicsDevice gd = ge.getDefaultScreenDevice();
+      GraphicsConfiguration gc = gd.getDefaultConfiguration();
+      BufferedImage image = gc.createCompatibleImage(w, h, Transparency.TRANSLUCENT);
+      Graphics2D g = image.createGraphics();
       icon.paintIcon(null, g, 0, 0);
       g.dispose();
       return image;
@@ -133,12 +146,12 @@ public class SonarLintUtils {
     if (project.isDisposed()) {
       return null;
     }
-    var editorManager = FileEditorManager.getInstance(project);
+    FileEditorManager editorManager = FileEditorManager.getInstance(project);
 
-    var editor = editorManager.getSelectedTextEditor();
+    Editor editor = editorManager.getSelectedTextEditor();
     if (editor != null) {
-      var doc = editor.getDocument();
-      var docManager = FileDocumentManager.getInstance();
+      Document doc = editor.getDocument();
+      FileDocumentManager docManager = FileDocumentManager.getInstance();
       return docManager.getFile(doc);
     }
 
@@ -147,8 +160,8 @@ public class SonarLintUtils {
 
   public static boolean isGeneratedSource(SourceFolder sourceFolder) {
     // copied from JavaProjectRootsUtil. Don't use that class because it's not available in other flavors of Intellij
-    var properties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
-    var resourceProperties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.RESOURCES);
+    JavaSourceRootProperties properties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.SOURCES);
+    JavaResourceRootProperties resourceProperties = sourceFolder.getJpsElement().getProperties(JavaModuleSourceRootTypes.RESOURCES);
     return (properties != null && properties.isForGeneratedSources()) || (resourceProperties != null && resourceProperties.isForGeneratedSources());
   }
 
@@ -157,8 +170,8 @@ public class SonarLintUtils {
     if (source == null) {
       return null;
     }
-    for (var entry : ModuleRootManager.getInstance(module).getContentEntries()) {
-      for (var folder : entry.getSourceFolders()) {
+    for (ContentEntry entry : ModuleRootManager.getInstance(module).getContentEntries()) {
+      for (SourceFolder folder : entry.getSourceFolders()) {
         if (source.equals(folder.getFile())) {
           return folder;
         }
@@ -190,9 +203,9 @@ public class SonarLintUtils {
   public static String getIdeVersionForTelemetry() {
     String ideVersion = null;
     try {
-      var appInfo = getAppInfo();
+      ApplicationInfo appInfo = getAppInfo();
       ideVersion = appInfo.getVersionName() + " " + appInfo.getFullVersion();
-      var edition = ApplicationNamesInfo.getInstance().getEditionName();
+      String edition = ApplicationNamesInfo.getInstance().getEditionName();
       if (edition != null) {
         ideVersion += " (" + edition + ")";
       }
@@ -206,12 +219,8 @@ public class SonarLintUtils {
     return ApplicationInfo.getInstance();
   }
 
-  public static boolean isTaintVulnerabilitiesEnabled() {
+  public static boolean enableTaintVulnerabilities() {
     // No Taint Vulnerabilities in C/C++ for the time being
     return !PlatformUtils.isCLion();
-  }
-
-  public static boolean isModuleLevelBindingEnabled() {
-    return !PlatformUtils.isRider() && !PlatformUtils.isCLion() && !PlatformUtils.isAppCode();
   }
 }

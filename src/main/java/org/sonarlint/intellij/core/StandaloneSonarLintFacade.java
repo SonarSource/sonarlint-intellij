@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,27 +23,29 @@ import com.google.common.base.Preconditions;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
+
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.util.ProjectLogOutput;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
+import org.sonarsource.sonarlint.core.client.api.common.ProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.common.RuleKey;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.AnalysisResults;
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
-import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
@@ -60,12 +62,12 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
 
   @Override
   protected AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
-    IssueListener issueListener, ClientProgressMonitor progressMonitor) {
-    var excluded = new ArrayList<RuleKey>();
-    var included = new ArrayList<RuleKey>();
-    var params = new HashMap<RuleKey, Map<String, String>>();
+    IssueListener issueListener, ProgressMonitor progressMonitor) {
+    List<RuleKey> excluded = new ArrayList<>();
+    List<RuleKey> included = new ArrayList<>();
+    Map<RuleKey, Map<String, String>> params = new HashMap<>();
     getGlobalSettings().getRulesByKey().forEach((k, v) -> {
-      var key = RuleKey.parse(k);
+      RuleKey key = RuleKey.parse(k);
       if (v.isActive()) {
         included.add(key);
         params.put(key, v.getParams());
@@ -74,7 +76,7 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       }
     });
 
-    var config = StandaloneAnalysisConfiguration.builder()
+    StandaloneAnalysisConfiguration config = StandaloneAnalysisConfiguration.builder()
       .setBaseDir(baseDir)
       .addInputFiles(inputFiles)
       .putAllExtraProperties(props)
@@ -84,9 +86,9 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
       .setModuleKey(module)
       .build();
 
-    var console = SonarLintUtils.getService(project, SonarLintConsole.class);
+    SonarLintConsole console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Starting analysis with configuration:\n" + config.toString());
-    final var analysisResults = sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
+    final AnalysisResults analysisResults = sonarlint.analyze(config, issueListener, new ProjectLogOutput(project), progressMonitor);
     AnalysisRequirementNotifications.notifyOnceForSkippedPlugins(analysisResults, sonarlint.getPluginDetails(), project);
     return analysisResults;
   }
@@ -102,11 +104,16 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   }
 
   @Override
-  public CompletableFuture<RuleDescription> getActiveRuleDescription(String ruleKey) {
-    return CompletableFuture.completedFuture(
-      sonarlint.getRuleDetails(ruleKey)
-        .map(details -> RuleDescription.from(details.getKey(), details.getName(), details.getSeverity(), details.getType(), details.getHtmlDescription(),
-          details.paramDetails().stream().map(p -> new RuleDescription.Param(p.name(), p.description(), p.defaultValue())).collect(Collectors.toList())))
-        .orElse(null));
+  public StandaloneRuleDetails getActiveRuleDetails(String ruleKey) {
+    return sonarlint.getRuleDetails(ruleKey).orElse(null);
+  }
+
+  @Override
+  public String getDescription(String ruleKey) {
+    StandaloneRuleDetails details = getActiveRuleDetails(ruleKey);
+    if (details == null) {
+      return null;
+    }
+    return details.getHtmlDescription();
   }
 }

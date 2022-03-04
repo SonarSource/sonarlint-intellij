@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,7 +24,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.QualityProfilesSynchronizer;
+import org.sonarlint.intellij.core.UpdateChecker;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber;
@@ -44,11 +44,11 @@ public class BootstrapStartupActivity implements StartupActivity {
     SonarLintUtils.getService(project, ProjectServerNotificationsSubscriber.class).start();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
-    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+    if (SonarLintUtils.enableTaintVulnerabilities()) {
       SonarLintUtils.getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
     }
 
     // perform on bindings load
-    SonarLintUtils.getService(project, QualityProfilesSynchronizer.class).init();
+    SonarLintUtils.getService(project, UpdateChecker.class).init();
   }
 }

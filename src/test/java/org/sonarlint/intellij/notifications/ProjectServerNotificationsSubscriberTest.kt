@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +40,6 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ServerNotificationsService
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
-import org.sonarlint.intellij.util.ImmediateExecutorService
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 
 @RunWith(MockitoJUnitRunner::class)
@@ -54,7 +53,9 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   @Before
   fun setup() {
     serverNotificationsService = mock(ServerNotificationsService::class.java)
-    projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService, ImmediateExecutorService())
+    projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService)
+    projectSettings.unbind()
+    globalSettings.serverConnections = emptyList()
     clearNotifications()
   }
 

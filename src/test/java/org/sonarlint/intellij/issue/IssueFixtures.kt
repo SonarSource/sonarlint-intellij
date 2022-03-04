@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -24,12 +24,11 @@ import com.intellij.openapi.editor.RangeMarker
 import com.intellij.psi.PsiFile
 import org.sonarlint.intellij.analysis.DefaultClientInputFile
 import org.sonarlint.intellij.util.getDocument
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFileEdit
-import org.sonarsource.sonarlint.core.analysis.api.Flow
-import org.sonarsource.sonarlint.core.analysis.api.QuickFix
-import org.sonarsource.sonarlint.core.analysis.api.TextEdit
-import org.sonarsource.sonarlint.core.analysis.api.TextRange
+import org.sonarsource.sonarlint.core.client.api.common.ClientInputFileEdit
+import org.sonarsource.sonarlint.core.client.api.common.QuickFix
+import org.sonarsource.sonarlint.core.client.api.common.TextEdit
+import org.sonarsource.sonarlint.core.client.api.common.TextRange
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
 
 fun aLiveIssue(
@@ -50,7 +49,8 @@ fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = o
     override fun getSeverity() = "MAJOR"
     override fun getType() = "BUG"
     override fun getRuleKey() = "ruleKey"
-    override fun flows() = mutableListOf<Flow>()
+    override fun getRuleName() = "ruleName"
+    override fun flows() = mutableListOf<Issue.Flow>()
     override fun quickFixes() = mutableListOf<QuickFix>()
 }
 

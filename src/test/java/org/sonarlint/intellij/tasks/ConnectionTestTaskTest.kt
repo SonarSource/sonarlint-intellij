@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +31,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams
+import org.sonarsource.sonarlint.core.serverapi.HttpClient
 import java.util.concurrent.CompletableFuture
 
 class ConnectionTestTaskTest : AbstractSonarLintLightTests() {

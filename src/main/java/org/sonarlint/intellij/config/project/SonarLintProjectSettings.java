@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -103,8 +103,8 @@ public final class SonarLintProjectSettings {
     return isBindingEnabled() && this.projectKey != null && connectionName != null;
   }
 
-  public boolean isBoundTo(ServerConnection connection) {
-    return isBindingEnabled() && connection.getName().equals(connectionName);
+  public boolean isBoundTo(String projectKey, ServerConnection connection) {
+    return isBindingEnabled() && projectKey.equals(this.projectKey) && connection.getName().equals(connectionName);
   }
 
   public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey) {

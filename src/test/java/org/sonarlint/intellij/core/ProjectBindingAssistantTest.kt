@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -23,7 +23,10 @@ import com.intellij.openapi.project.ProjectManager
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.*
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -113,7 +116,6 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
         globalSettings.addServerConnection(connection)
         projectSettings.bindTo(connection, "projectKey")
         `when`(projectManager.openProjects).thenReturn(arrayOf(project))
-        `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("projectKey"))
 
         val boundProject = assistant.bind("projectKey", "serverUrl")
 
@@ -121,34 +123,16 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun `it should return an open bound project if it has at least one module bound to project key`() {
+    fun `it should return a selected bound project`() {
         val connection = ServerConnection.newBuilder().setHostUrl("serverUrl").setName("connectionName").build()
         globalSettings.addServerConnection(connection)
-        projectSettings.bindTo(connection, "another_projectKey")
-        moduleSettings.setProjectKey("projectKey")
-        `when`(projectManager.openProjects).thenReturn(arrayOf(project))
-        `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("projectKey"))
-
-        val boundProject = assistant.bind("projectKey", "serverUrl")
-
-        assertThat(boundProject).isEqualTo(BoundProject(project, connection))
-        verify(bindingManager, never()).bindTo(any(), any(), any())
-    }
-
-    @Test
-    fun `it should return a selected bound project if it has at least one module bound to project key`() {
-        val connection = ServerConnection.newBuilder().setHostUrl("serverUrl").setName("connectionName").build()
-        globalSettings.addServerConnection(connection)
-        projectSettings.bindTo(connection, "another_projectKey")
-        moduleSettings.setProjectKey("projectKey")
+        projectSettings.bindTo(connection, "projectKey")
         `when`(modalPresenter.showConfirmModal(eq("title"), any(), eq("Select project"))).thenReturn(true)
         `when`(projectSelectionDialog.selectProject()).thenReturn(project)
-        `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("projectKey"))
 
         val boundProject = assistant.bind("projectKey", "serverUrl")
 
         assertThat(boundProject).isEqualTo(BoundProject(project, connection))
-        verify(bindingManager, never()).bindTo(any(), any(), any())
     }
 
     @Test
@@ -157,7 +141,6 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
         globalSettings.addServerConnection(connection)
         projectSettings.bindTo(connection, "projectKey")
         `when`(modalPresenter.showConfirmModal(eq("title"), any(), eq("Select project"))).thenReturn(false)
-        `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("projectKey"))
 
         val boundProject = assistant.bind("projectKey", "serverUrl")
 
@@ -171,7 +154,6 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
         projectSettings.bindTo(connection, "projectKey")
         `when`(modalPresenter.showConfirmModal(eq("title"), any(), eq("Select project"))).thenReturn(true)
         `when`(projectSelectionDialog.selectProject()).thenReturn(null)
-        `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("projectKey"))
 
         val boundProject = assistant.bind("projectKey", "serverUrl")
 
@@ -189,23 +171,7 @@ class ProjectBindingAssistantTest : AbstractSonarLintLightTests() {
         val boundProject = assistant.bind("projectKey", "serverUrl")
 
         assertThat(boundProject).isEqualTo(BoundProject(project, connection))
-        verify(bindingManager).bindTo(connection, "projectKey", emptyMap())
-    }
-
-    @Test
-    fun `it should bind selected project if bound to a different project`() {
-        val connection = ServerConnection.newBuilder().setHostUrl("serverUrl").setName("connectionName").build()
-        globalSettings.addServerConnection(connection)
-        projectSettings.bindTo(connection, "another_projectKey")
-        `when`(modalPresenter.showConfirmModal(eq("title"), any(), eq("Select project"))).thenReturn(true)
-        `when`(projectSelectionDialog.selectProject()).thenReturn(project)
-        `when`(modalPresenter.showConfirmModal("title", "You are going to bind current project to 'serverUrl'. Do you agree?", "Yes")).thenReturn(true)
-        `when`(bindingManager.uniqueProjectKeys).thenReturn(setOf("another_projectKey"))
-
-        val boundProject = assistant.bind("projectKey", "serverUrl")
-
-        assertThat(boundProject).isEqualTo(BoundProject(project, connection))
-        verify(bindingManager).bindTo(connection, "projectKey", emptyMap())
+        verify(bindingManager).bindTo(connection, "projectKey")
     }
 
     @Test

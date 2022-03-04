@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -22,7 +22,6 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -54,11 +53,11 @@ public class AnalysisResultsTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testContainsIssues() {
-    var file = mock(VirtualFile.class);
-    var issue = mock(LiveIssue.class);
+    VirtualFile file = mock(VirtualFile.class);
+    LiveIssue issue = mock(LiveIssue.class);
     when(issues.lastAnalysisDate()).thenReturn(Instant.now());
     when(issues.wasAnalyzed()).thenReturn(true);
-    when(issues.issues()).thenReturn(Map.of(file, Collections.singleton(issue)));
+    when(issues.issues()).thenReturn(Collections.singletonMap(file, Collections.singleton(issue)));
 
     assertThat(analysisResults.getLastAnalysisDate()).isNotNull();
     assertThat(analysisResults.getEmptyText()).isEqualTo("No issues found");

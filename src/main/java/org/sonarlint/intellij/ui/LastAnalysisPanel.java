@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -82,17 +82,17 @@ public class LastAnalysisPanel {
     lastAnalysisLabel = new JLabel("");
     noAnalysisLabel = new JLabel("No analysis done");
 
-    var gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(2, 2, 2, 2), 0, 0);
+    GridBagConstraints gc = new GridBagConstraints(GridBagConstraints.RELATIVE, 0, 1, 1, 0, 0, GridBagConstraints.WEST, GridBagConstraints.NONE, JBUI.insets(2, 2, 2, 2), 0, 0);
     gc.fill = GridBagConstraints.HORIZONTAL;
     gc.weightx = 1;
 
-    var noAnalysisCard = new JPanel(new GridBagLayout());
+    JPanel noAnalysisCard = new JPanel(new GridBagLayout());
     noAnalysisCard.add(new JLabel(SonarLintIcons.INFO));
     noAnalysisCard.add(noAnalysisLabel, gc);
     noAnalysisCard.add(Box.createHorizontalBox(), gc);
     panel.add(noAnalysisCard, NO_ANALYSIS);
 
-    var withAnalysisCard = new JPanel(new GridBagLayout());
+    JPanel withAnalysisCard = new JPanel(new GridBagLayout());
     withAnalysisCard.add(lastAnalysisLabel, gc);
     withAnalysisCard.add(Box.createHorizontalBox(), gc);
     panel.add(withAnalysisCard, WITH_ANALYSIS);

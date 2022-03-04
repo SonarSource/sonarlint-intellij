@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -20,9 +20,6 @@
 package org.sonarlint.intellij.config.module;
 
 import com.intellij.openapi.module.Module;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.ModuleBindingManager;
-
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
@@ -45,7 +42,7 @@ public class SonarLintModulePanel {
   }
 
   public void load() {
-    String projectKey = SonarLintUtils.getService(module, ModuleBindingManager.class).resolveProjectKey();;
+    String projectKey = getSettingsFor(module.getProject()).getProjectKey();
     if (projectKey != null) {
       SonarLintModuleSettings settings = getSettingsFor(module);
       idePathText.setText(settings.getIdePathPrefix());

@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,14 +19,18 @@
  */
 package org.sonarlint.intellij.ui.nodes;
 
+import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.util.ui.UIUtil;
 import icons.SonarLintIcons;
+
 import java.util.Locale;
 import javax.annotation.Nonnull;
 import javax.swing.Icon;
+
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
@@ -47,13 +51,13 @@ public class IssueNode extends AbstractNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
-    var severity = StringUtil.capitalize(issue.getSeverity().toLowerCase(Locale.ENGLISH));
-    var type = issue.getType();
+    String severity = StringUtil.capitalize(issue.getSeverity().toLowerCase(Locale.ENGLISH));
+    String type = issue.getType();
 
     if (type != null) {
-      var typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
+      String typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
       renderer.setIconToolTip(severity + " " + typeStr);
-      var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
+      int gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
     } else {
       renderer.setIconToolTip(severity);
@@ -74,7 +78,7 @@ public class IssueNode extends AbstractNode {
 
     if (issue.getCreationDate() != null) {
       renderer.append(" ");
-      var creationDate = DateUtils.toAge(issue.getCreationDate());
+      String creationDate = DateUtils.toAge(issue.getCreationDate());
       renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
   }
@@ -97,7 +101,7 @@ public class IssueNode extends AbstractNode {
   }
 
   private static String issueCoordinates(@Nonnull LiveIssue issue) {
-    var range = issue.getRange();
+    RangeMarker range = issue.getRange();
     if (range == null) {
       return "(0, 0) ";
     }
@@ -106,9 +110,9 @@ public class IssueNode extends AbstractNode {
       return "(-, -) ";
     }
 
-    var doc = range.getDocument();
-    var line = doc.getLineNumber(range.getStartOffset());
-    var offset = range.getStartOffset() - doc.getLineStartOffset(line);
+    Document doc = range.getDocument();
+    int line = doc.getLineNumber(range.getStartOffset());
+    int offset = range.getStartOffset() - doc.getLineStartOffset(line);
     return String.format("(%d, %d) ", line + 1, offset);
   }
 }

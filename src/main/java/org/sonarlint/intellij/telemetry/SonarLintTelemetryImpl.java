@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -25,15 +25,12 @@ import com.intellij.ide.AppLifecycleListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.serviceContainer.NonInjectable;
-
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.commons.Language;
-import org.sonarsource.sonarlint.core.telemetry.InternalDebug;
+import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.telemetry.TelemetryManager;
 
 public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleListener {
@@ -92,8 +89,8 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
       this.scheduledFuture = JobScheduler.getScheduler().scheduleWithFixedDelay(this::upload,
         1, TimeUnit.HOURS.toMinutes(6), TimeUnit.MINUTES);
     } catch (Exception e) {
-      if (InternalDebug.isEnabled()) {
-        var msg = "Failed to schedule telemetry job";
+      if (org.sonarsource.sonarlint.core.client.api.util.SonarLintUtils.isInternalDebugEnabled()) {
+        String msg = "Failed to schedule telemetry job";
         LOGGER.error(msg, e);
         GlobalLogOutput.get().logError(msg, e);
       }

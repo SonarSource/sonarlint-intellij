@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -29,7 +29,7 @@ class PathStoreKeyValidator implements StoreKeyValidator<String> {
   }
 
   @Override public Boolean apply(String relativeFilePath) {
-    var virtualFile = projectBaseDir.findFileByRelativePath(relativeFilePath);
+    VirtualFile virtualFile = projectBaseDir.findFileByRelativePath(relativeFilePath);
     return virtualFile != null && virtualFile.isValid();
   }
 }

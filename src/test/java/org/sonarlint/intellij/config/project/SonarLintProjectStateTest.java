@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class SonarLintProjectStateTest extends AbstractSonarLintLightTests {
   @Test
   public void testEmpty() {
-    var state = new SonarLintProjectState();
+    SonarLintProjectState state = new SonarLintProjectState();
     assertThat(state.getLastEventPolling()).isNull();
   }
 
   @Test
   public void testSet() {
-    var state = new SonarLintProjectState();
+    SonarLintProjectState state = new SonarLintProjectState();
     state.setLastEventPolling(ZonedDateTime.now());
     assertThat(state.getLastEventPolling()).isBeforeOrEqualTo(ZonedDateTime.now());
     assertThat(state.getLastEventPolling()).isAfter(ZonedDateTime.now().minusSeconds(3));
@@ -42,13 +42,13 @@ public class SonarLintProjectStateTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testSerialization() {
-    var state = new SonarLintProjectState();
+    SonarLintProjectState state = new SonarLintProjectState();
     state.setLastEventPolling(ZonedDateTime.now().minusHours(2));
 
-    var copy = state.getState();
+    SonarLintProjectState copy = state.getState();
     assertThat(copy.getLastEventPolling()).isEqualTo(state.getLastEventPolling());
 
-    var loaded = new SonarLintProjectState();
+    SonarLintProjectState loaded = new SonarLintProjectState();
     loaded.loadState(state);
     assertThat(loaded.getLastEventPolling()).isEqualTo(state.getLastEventPolling());
   }

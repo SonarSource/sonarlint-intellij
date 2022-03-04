@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -19,10 +19,12 @@
  */
 package org.sonarlint.intellij.issue.persistence;
 
+import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +34,7 @@ import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.LiveIssue;
 
+import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -58,8 +61,8 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_save_and_read_cache_only() {
-    var file = myFixture.copyFileToProject("foo.php", "foo.php");
-    var issue = createTestIssue("r1");
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    LiveIssue issue = createTestIssue("r1");
     cache.insertIssue(file, issue);
 
     assertThat(cache.contains(file)).isTrue();
@@ -72,11 +75,11 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_return_contains_even_if_empty() {
-    var file = myFixture.copyFileToProject("foo.php", "foo.php");
-    var issue = createTestIssue("r1");
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    LiveIssue issue = createTestIssue("r1");
 
     cache.insertIssue(file, issue);
-    cache.removeIssues(file, List.of(issue));
+    cache.removeIssues(file, singletonList(issue));
 
     assertThat(cache.contains(file)).isTrue();
     assertThat(cache.getLive(file)).isEmpty();
@@ -84,12 +87,12 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_not_fallback_persistence() {
-    var file = myFixture.copyFileToProject("foo.php", "foo.php");
-    var issue1 = createTestIssue("r1");
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "foo.php");
+    LiveIssue issue1 = createTestIssue("r1");
 
     cache.insertIssue(file, issue1);
 
-    var cacheMiss = myFixture.copyFileToProject("foo.php", "foo2.php");
+    VirtualFile cacheMiss = myFixture.copyFileToProject("foo.php", "foo2.php");
     assertThat(cache.getLive(cacheMiss)).isNull();
 
     verifyZeroInteractions(store);
@@ -97,14 +100,14 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_flush_if_full() throws IOException {
-    var issue1 = createTestIssue("r1");
-    var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
+    LiveIssue issue1 = createTestIssue("r1");
+    VirtualFile file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
     cache.insertIssue(file0, issue1);
-    var file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
+    VirtualFile file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
     cache.insertIssue(file1, issue1);
 
-    for (var i = 2; i < MAX_ENTRIES_FOR_TEST; i++) {
-      var file = myFixture.copyFileToProject("foo.php", "foo" + i + ".php");
+    for (int i = 2; i < MAX_ENTRIES_FOR_TEST; i++) {
+      VirtualFile file = myFixture.copyFileToProject("foo.php", "foo" + i + ".php");
       cache.insertIssue(file, issue1);
     }
 
@@ -113,7 +116,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
     verifyZeroInteractions(store);
 
-    var file = myFixture.copyFileToProject("foo.php", "anotherfile.php");
+    VirtualFile file = myFixture.copyFileToProject("foo.php", "anotherfile.php");
     cache.insertIssue(file, issue1);
 
     verify(store).save(eq("foo1.php"), anyCollection());
@@ -124,8 +127,8 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_clear_store() {
-    var issue1 = createTestIssue("r1");
-    var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
+    LiveIssue issue1 = createTestIssue("r1");
+    VirtualFile file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
     cache.insertIssue(file0, issue1);
 
     cache.clear();
@@ -135,12 +138,12 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_clear_specific_files() throws IOException {
-    var issue1 = createTestIssue("r1");
-    var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
+    LiveIssue issue1 = createTestIssue("r1");
+    VirtualFile file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
     cache.insertIssue(file0, issue1);
 
-    var issue2 = createTestIssue("r2");
-    var file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
+    LiveIssue issue2 = createTestIssue("r2");
+    VirtualFile file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
     cache.insertIssue(file1, issue2);
 
     cache.clear(file1);
@@ -151,10 +154,10 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_flush_all() throws IOException {
-    var issue1 = createTestIssue("r1");
-    var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
+    LiveIssue issue1 = createTestIssue("r1");
+    VirtualFile file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
     cache.insertIssue(file0, issue1);
-    var file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
+    VirtualFile file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
     cache.insertIssue(file1, issue1);
 
     cache.flushAll();
@@ -168,8 +171,8 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
   public void handle_error_flush() throws IOException {
     doThrow(new IOException()).when(store).save(anyString(), anyCollection());
 
-    var issue1 = createTestIssue("r1");
-    var file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
+    LiveIssue issue1 = createTestIssue("r1");
+    VirtualFile file0 = myFixture.copyFileToProject("foo.php", "foo0.php");
     cache.insertIssue(file0, issue1);
 
     assertThrows(IllegalStateException.class, () -> cache.flushAll());
@@ -179,20 +182,20 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
   public void error_remove_eldest() throws IOException {
     doThrow(new IOException()).when(store).save(anyString(), anyCollection());
 
-    var issue1 = createTestIssue("r1");
-    for (var i = 0; i < MAX_ENTRIES_FOR_TEST; i++) {
-      var file = myFixture.copyFileToProject("foo.php", "foo" + i + ".php");
+    LiveIssue issue1 = createTestIssue("r1");
+    for (int i = 0; i < MAX_ENTRIES_FOR_TEST; i++) {
+      VirtualFile file = myFixture.copyFileToProject("foo.php", "foo" + i + ".php");
       cache.insertIssue(file, issue1);
     }
 
-    var extraFile = myFixture.copyFileToProject("foo.php", "another.php");
+    VirtualFile extraFile = myFixture.copyFileToProject("foo.php", "another.php");
     assertThrows(IllegalStateException.class, () -> cache.insertIssue(extraFile, issue1));
   }
 
   @Test
   public void testConcurrentAccess() throws Exception {
-    var file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
-    var file2 = myFixture.copyFileToProject("foo.php", "foo2.php");
+    VirtualFile file1 = myFixture.copyFileToProject("foo.php", "foo1.php");
+    VirtualFile file2 = myFixture.copyFileToProject("foo.php", "foo2.php");
 
     Runnable r = () -> {
       cache.clear(file1);
@@ -210,7 +213,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
         assertThat(live).extracting(LiveIssue::getRuleKey).isSubsetOf("r1", "r2");
       }
     };
-    var executor = Executors.newFixedThreadPool(10);
+    ExecutorService executor = Executors.newFixedThreadPool(10);
     List<Future<?>> tasks = new ArrayList<>();
     IntStream.range(1, 100).forEach(i -> tasks.add(executor.submit(r)));
     for (Future<?> task : tasks) {
@@ -220,9 +223,10 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
   }
 
   private LiveIssue createTestIssue(String ruleKey) {
-    var issue = mock(LiveIssue.class);
+    LiveIssue issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn(ruleKey);
     when(issue.getAssignee()).thenReturn("assignee");
+    when(issue.getRuleName()).thenReturn(ruleKey);
     when(issue.getSeverity()).thenReturn("MAJOR");
     when(issue.getMessage()).thenReturn("msg");
 

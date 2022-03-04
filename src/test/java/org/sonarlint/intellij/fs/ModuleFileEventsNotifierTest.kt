@@ -1,6 +1,6 @@
 /*
  * SonarLint for IntelliJ IDEA
- * Copyright (C) 2015-2022 SonarSource
+ * Copyright (C) 2015-2021 SonarSource
  * sonarlint@sonarsource.com
  *
  * This program is free software; you can redistribute it and/or
@@ -27,9 +27,9 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.eq
-import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile
-import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
+import org.sonarsource.sonarlint.core.client.api.common.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
+import org.sonarsource.sonarlint.core.client.api.common.analysis.ClientInputFile
 import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 class ModuleFileEventsNotifierTest : AbstractSonarLintLightTests() {
@@ -38,7 +38,7 @@ class ModuleFileEventsNotifierTest : AbstractSonarLintLightTests() {
     fun should_notify_engine_of_events() {
         val event = ClientModuleFileEvent.of(mock(ClientInputFile::class.java), ModuleFileEvent.Type.MODIFIED)
 
-        notifier.notifyAsync(engine, module, listOf(event))
+        notifier.notify(engine, module, listOf(event))
 
         verify(engine).fireModuleFileEvent(eq(module), eq(event))
     }
@@ -49,7 +49,7 @@ class ModuleFileEventsNotifierTest : AbstractSonarLintLightTests() {
         Mockito.doThrow(RuntimeException("Boom!")).`when`(engine)
             .fireModuleFileEvent(ArgumentMatchers.any(), ArgumentMatchers.any())
 
-        notifier.notifyAsync(engine, module, listOf(event))
+        notifier.notify(engine, module, listOf(event))
 
         Assertions.assertThat(console.lastMessage).isEqualTo("Error notifying analyzer of a file event")
     }
