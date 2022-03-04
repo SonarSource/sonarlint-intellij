@@ -54,6 +54,7 @@ import com.intellij.util.ui.tree.TreeUtil;
 
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.detekt.CheckList;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
@@ -64,6 +65,7 @@ import org.sonarsource.sonarlint.core.client.api.common.Language;
 import org.sonarsource.sonarlint.core.client.api.common.LogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import java.awt.BorderLayout;
@@ -105,8 +107,11 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.NumberFormatter;
 import javax.swing.tree.TreePath;
 
+import io.gitlab.arturbosch.detekt.api.Rule;
+
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit.appendRuleAttributesHtmlTable;
+import static org.sonarsource.sonarlint.core.client.api.common.Language.KOTLIN;
 
 public class DetektRuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
     private static final String MAIN_SPLITTER_KEY = "sonarlint_detekt_rule_configuration_splitter";
@@ -196,15 +201,63 @@ public class DetektRuleConfigurationPanel implements Disposable, ConfigurationPa
 
     @NotNull
     private static Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
-        StandaloneSonarLintEngine engine =
-            SonarLintUtils.getService(SonarLintEngineManager.class).getStandaloneEngine();
-        return engine.getAllRuleDetails().stream()
-            .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
-            .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
+        return getAllRuleDetails();
     }
 
-    private static getAllRuleDetails() {
+    private static Map<String, RulesTreeNode.Rule> getAllRuleDetails() {
+        return CheckList.Companion.allChecks().stream()
+            .map(r -> {
+                StandaloneRuleDetails details = new StandaloneRuleDetails() {
+                    @Override
+                    public boolean isActiveByDefault() {
+                        return true;
+                    }
 
+                    @Override
+                    public String[] getTags() {
+                        return new String[0];
+                    }
+
+                    @Override
+                    public Collection<StandaloneRuleParam> paramDetails() {
+                        return null;
+                    }
+
+                    @Override
+                    public String getKey() {
+                        return r.getRule().getRuleId();
+                    }
+
+                    @Override
+                    public String getName() {
+                        return r.getRule().getRuleId();
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public String getHtmlDescription() {
+                        return r.getRule().getIssue().getDescription();
+                    }
+
+                    @Override
+                    public Language getLanguage() {
+                        return KOTLIN;
+                    }
+
+                    @Override
+                    public String getSeverity() {
+                        return "major";
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public String getType() {
+                        return r.getRule().getIssue().getSeverity().name();
+                    }
+                };
+                return new RulesTreeNode.Rule(details, true, Collections.emptyMap());
+            })
+            .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
     }
 
     private void restoreDefaults() {

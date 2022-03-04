@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.config.global.rules;
 
+import com.intellij.openapi.util.IconLoader;
 import com.intellij.ui.scale.JBUIScale;
 import com.intellij.ui.treeStructure.treetable.TreeTable;
 import com.intellij.ui.treeStructure.treetable.TreeTableModel;
@@ -81,7 +82,7 @@ public class RulesTreeTableModel extends DefaultTreeModel implements TreeTableMo
       if (node instanceof RulesTreeNode.Rule) {
         RulesTreeNode.Rule rule = (RulesTreeNode.Rule) node;
         int gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-        return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(rule.type()), SonarLintIcons.severity12(rule.severity()));
+        return new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, IconLoader.getIcon("/images/severity/major12.png"));
       }
       return null;
     }
