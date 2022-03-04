@@ -252,7 +252,7 @@ public class DetektRuleConfigurationPanel implements Disposable, ConfigurationPa
                     @CheckForNull
                     @Override
                     public String getType() {
-                        return r.getRule().getIssue().getSeverity().name();
+                        return "bug";
                     }
                 };
                 return new RulesTreeNode.Rule(details, true, Collections.emptyMap());
