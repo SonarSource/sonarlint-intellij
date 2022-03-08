@@ -24,6 +24,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.jetbrains.annotations.Nls
 import io.gitlab.arturbosch.detekt.api.Rule
+import org.sonarlint.intellij.actions.detekt.api.ICheck
+import org.sonarlint.intellij.config.Settings
 
 /**
  * @author dengqu
@@ -42,12 +44,12 @@ class ZhenaiKotlinInspection(private val ruleName: String) : LocalInspectionTool
 
     private val defaultLevel: HighlightDisplayLevel
 
-    private val rule: Rule
+    private val check: ICheck
 
     init {
-        rule = CheckList.getSlangCheck(ruleName)!!.getRule()
-        displayName = rule.ruleId
-        staticDescription = rule.ruleId
+        check = CheckList.getSlangCheck(ruleName)!!
+        displayName = check.getRule().ruleId
+        staticDescription = check.getRule().ruleId
         defaultLevel = HighlightDisplayLevels.MAJOR
     }
 
@@ -62,8 +64,13 @@ class ZhenaiKotlinInspection(private val ruleName: String) : LocalInspectionTool
         if (file == null || !file.virtualFile.canonicalPath!!.endsWith(".kt")) {
             return null
         }
-        println("checkFile ${rule.ruleId} $isOnTheFly")
-        val invoker = ZhenaiKotlinInspectionInvoker(file, manager, rule)
+        val isActive =
+            Settings.getGlobalSettings().detektRulesByKey.get("${check.repositoryName()}:${check.getRule().ruleId}")?.isActive ?: true
+        println("checkFile ${check.getRule().ruleId} $isOnTheFly $isActive")
+        if (!isActive) {
+            return null
+        }
+        val invoker = ZhenaiKotlinInspectionInvoker(file, manager, check.getRule())
         invoker.doInvoke()
         return invoker.getRuleProblems()
     }
@@ -100,7 +107,7 @@ class ZhenaiKotlinInspection(private val ruleName: String) : LocalInspectionTool
 
     override fun getShortName(): String {
 
-        var shortName = "Alibaba" + rule.ruleId
+        var shortName = "Alibaba" + check.getRule().ruleId
         val index = shortName.lastIndexOf("Rule")
         if (index > NumberConstants.INDEX_0) {
             shortName = shortName.substring(NumberConstants.INDEX_0, index)

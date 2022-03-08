@@ -16,4 +16,12 @@ class CustomCheck(rule: Rule) : ICheck {
     override fun getRule(): Rule {
         return mRule
     }
+
+    override fun repositoryName(): String {
+        return "detekt"
+    }
+
+    override fun language(): String {
+        return "kotlin"
+    }
 }

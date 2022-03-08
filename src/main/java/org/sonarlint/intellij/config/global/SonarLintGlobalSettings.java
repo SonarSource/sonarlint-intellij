@@ -57,6 +57,11 @@ public final class SonarLintGlobalSettings {
   private boolean taintVulnerabilitiesTabDisclaimerDismissed;
   private boolean secretsNeverBeenAnalysed = true;
 
+  @XCollection(propertyElementName = "detektRules", elementName = "rule")
+  Collection<Rule> detektRules = new HashSet<>();
+  @Transient
+  Map<String, Rule> detektRulesByKey = new HashMap<>();
+
   public void rememberNotificationOnSecretsBeenSent() {
     setSecretsNeverBeenAnalysed(false);
   }
@@ -122,6 +127,10 @@ public final class SonarLintGlobalSettings {
   public Map<String, Rule> getRulesByKey() {
     migrateOldStyleRuleActivations();
     return rulesByKey;
+  }
+
+  public Map<String, Rule> getDetektRulesByKey() {
+    return detektRulesByKey;
   }
 
   private void migrateOldStyleRuleActivations() {

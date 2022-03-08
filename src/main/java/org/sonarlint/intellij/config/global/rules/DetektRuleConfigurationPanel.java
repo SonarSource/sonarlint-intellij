@@ -54,6 +54,14 @@ import com.intellij.util.ui.tree.TreeUtil;
 
 import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
+import org.sonar.api.rule.RuleKey;
+import org.sonar.api.rule.RuleScope;
+import org.sonar.api.rule.RuleStatus;
+import org.sonar.api.rules.RuleType;
+import org.sonar.api.server.debt.DebtRemediationFunction;
+import org.sonar.api.server.rule.RuleParamType;
+import org.sonar.api.server.rule.RulesDefinition;
+import org.sonar.api.server.rule.internal.DefaultNewParam;
 import org.sonarlint.intellij.actions.detekt.CheckList;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
@@ -67,6 +75,7 @@ import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRule;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -172,11 +181,11 @@ public class DetektRuleConfigurationPanel implements Disposable, ConfigurationPa
     public void save(SonarLintGlobalSettings settings) {
         allRulesStateByKey.values().forEach(r -> {
             if (r.isNonDefault()) {
-                settings.getRulesByKey()
+                settings.getDetektRulesByKey()
                     .computeIfAbsent(r.getKey(), k -> new SonarLintGlobalSettings.Rule(r.getKey(), r.isActivated()))
                     .setParams(r.getCustomParams());
             } else {
-                settings.getRulesByKey().remove(r.getKey());
+                settings.getDetektRulesByKey().remove(r.getKey());
             }
         });
     }
@@ -201,61 +210,200 @@ public class DetektRuleConfigurationPanel implements Disposable, ConfigurationPa
 
     @NotNull
     private static Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
-        return getAllRuleDetails();
+        return getAllRuleDetails(settings);
     }
 
-    private static Map<String, RulesTreeNode.Rule> getAllRuleDetails() {
+    private static Map<String, RulesTreeNode.Rule> getAllRuleDetails(SonarLintGlobalSettings settings) {
         return CheckList.Companion.allChecks().stream()
             .map(r -> {
-                StandaloneRuleDetails details = new StandaloneRuleDetails() {
-                    @Override
-                    public boolean isActiveByDefault() {
-                        return true;
-                    }
+
+                RulesDefinition.Rule rule = new RulesDefinition.Rule() {
 
                     @Override
-                    public String[] getTags() {
-                        return new String[0];
-                    }
+                    public RulesDefinition.Repository repository() {
+                        return new RulesDefinition.Repository() {
+                            @Override
+                            public String name() {
+                                return r.repositoryName();
+                            }
 
-                    @Override
-                    public Collection<StandaloneRuleParam> paramDetails() {
-                        return null;
-                    }
+                            @Override
+                            public boolean isExternal() {
+                                return false;
+                            }
 
-                    @Override
-                    public String getKey() {
-                        return r.getRule().getRuleId();
-                    }
+                            @Override
+                            public String key() {
+                                return r.repositoryName();
+                            }
 
-                    @Override
-                    public String getName() {
-                        return r.getRule().getRuleId();
+                            @Override
+                            public String language() {
+                                return r.language();
+                            }
+
+                            @CheckForNull
+                            @Override
+                            public RulesDefinition.Rule rule(String s) {
+                                return null;
+                            }
+
+                            @Override
+                            public List<RulesDefinition.Rule> rules() {
+                                return null;
+                            }
+                        };
                     }
 
                     @CheckForNull
                     @Override
-                    public String getHtmlDescription() {
-                        return r.getRule().getIssue().getDescription();
+                    public String pluginKey() {
+                        return r.getRule().getRuleId();
                     }
 
                     @Override
-                    public Language getLanguage() {
-                        return KOTLIN;
+                    public String key() {
+                        return r.getRule().getRuleId();
                     }
 
                     @Override
-                    public String getSeverity() {
+                    public String name() {
+                        return r.getRule().getRuleId();
+                    }
+
+                    @Override
+                    public RuleScope scope() {
+                        return RuleScope.defaultScope();
+                    }
+
+                    @Override
+                    public RuleType type() {
+                        return RuleType.BUG;
+                    }
+
+                    @Override
+                    public String severity() {
                         return "major";
                     }
 
                     @CheckForNull
                     @Override
-                    public String getType() {
-                        return "bug";
+                    public String htmlDescription() {
+                        return r.getRule().getIssue().getDescription();
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public String markdownDescription() {
+                        return null;
+                    }
+
+                    @Override
+                    public boolean template() {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean activatedByDefault() {
+                        return true;
+                    }
+
+                    @Override
+                    public RuleStatus status() {
+                        return RuleStatus.defaultStatus();
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public String debtSubCharacteristic() {
+                        return null;
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public DebtRemediationFunction debtRemediationFunction() {
+                        return null;
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public String effortToFixDescription() {
+                        return null;
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public String gapDescription() {
+                        return null;
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public RulesDefinition.Param param(String s) {
+                        return null;
+                    }
+
+                    @Override
+                    public List<RulesDefinition.Param> params() {
+                        List<RulesDefinition.Param> params = new ArrayList<>();
+                        RulesDefinition.Param param = new RulesDefinition.Param() {
+
+                            @Override
+                            public String key() {
+                                return "test";
+                            }
+
+                            @Override
+                            public String name() {
+                                return "test";
+                            }
+
+                            @Nullable
+                            @Override
+                            public String description() {
+                                return "test";
+                            }
+
+                            @Nullable
+                            @Override
+                            public String defaultValue() {
+                                return "true";
+                            }
+
+                            @Override
+                            public RuleParamType type() {
+                                return RuleParamType.BOOLEAN;
+                            }
+                        };
+                        params.add(param);
+                        return params;
+                    }
+
+                    @Override
+                    public Set<String> tags() {
+                        Set<String> tags = new HashSet<>();
+                        return tags;
+                    }
+
+                    @Override
+                    public Set<String> securityStandards() {
+                        return null;
+                    }
+
+                    @Override
+                    public Set<RuleKey> deprecatedRuleKeys() {
+                        return null;
+                    }
+
+                    @CheckForNull
+                    @Override
+                    public String internalKey() {
+                        return null;
                     }
                 };
-                return new RulesTreeNode.Rule(details, true, Collections.emptyMap());
+                StandaloneRule standaloneRule = new StandaloneRule(rule);
+                return new RulesTreeNode.Rule(standaloneRule, loadRuleActivation(settings, standaloneRule),
+                    Collections.emptyMap());
             })
             .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
     }
@@ -302,7 +450,8 @@ public class DetektRuleConfigurationPanel implements Disposable, ConfigurationPa
     }
 
     private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
-        final SonarLintGlobalSettings.Rule ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
+        System.out.println("loadRuleActivation key ="  + ruleDetails.getKey());
+        final SonarLintGlobalSettings.Rule ruleInSettings = settings.getDetektRulesByKey().get(ruleDetails.getKey());
         if (ruleInSettings != null) {
             return ruleInSettings.isActive();
         }

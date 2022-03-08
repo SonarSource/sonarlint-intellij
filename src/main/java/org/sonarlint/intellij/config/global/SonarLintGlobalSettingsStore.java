@@ -38,6 +38,7 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
   @Override
   public SonarLintGlobalSettings getState() {
     this.settings.rules = this.settings.rulesByKey.values();
+    this.settings.detektRules = this.settings.detektRulesByKey.values();
     return settings;
   }
 
@@ -49,5 +50,8 @@ public final class SonarLintGlobalSettingsStore implements PersistentStateCompon
 
   private void initializeRulesByKey() {
     settings.rulesByKey = new HashMap<>(settings.rules.stream().collect(Collectors.toMap(SonarLintGlobalSettings.Rule::getKey, Function.identity())));
+    settings.detektRulesByKey =
+        new HashMap<>(settings.detektRules.stream().collect(Collectors.toMap(SonarLintGlobalSettings.Rule::getKey,
+        Function.identity())));
   }
 }

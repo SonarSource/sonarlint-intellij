@@ -21,4 +21,8 @@ interface ICheck {
      * @return
      */
     fun getRule(): Rule
+
+    fun repositoryName(): String
+
+    fun language(): String
 }

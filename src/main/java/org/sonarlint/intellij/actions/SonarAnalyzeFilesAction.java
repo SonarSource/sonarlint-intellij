@@ -110,11 +110,6 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
         Project project = e.getProject();
         VirtualFile[] files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY);
 
-        List<Path> pathList = new ArrayList<>();
-        for (VirtualFile file : files) {
-            pathList.add(new File(file.getPath()).toPath());
-            System.out.println("file =" + file + ",path=" + file.getPath());
-        }
         if (project == null || project.isDisposed() || files == null || files.length == 0) {
             return;
         }
@@ -125,36 +120,6 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
         if (hasProject && !SonarAnalyzeAllFilesAction.showWarning()) {
             return;
         }
-
-        Config defaultConfig =
-            DefaultConfigurationProvider.Companion.load(DefaultConfigurationProvider.class.getClassLoader()).get();
-
-        Iterator ite = ServiceLoader.load(RuleSetProvider.class, Config.class.getClassLoader()).iterator();
-        while (ite.hasNext()) {
-            RuleSetProvider provider = (RuleSetProvider) ite.next();
-            /// System.out.println("provider =" + provider);
-            Config subConfig = defaultConfig.subConfig(provider.getRuleSetId());
-            List<BaseRule> rules = provider.instance(subConfig).getRules();
-            for (BaseRule rule : rules) {
-                // System.out.println("rule =" + rule.getRuleId());
-                if (rule.getRuleId().equals("parameter-list-wrapping")) {
-                    // System.out.println("find rule --------------------------------------------");
-                }
-            }
-        }
-
-        Rule[] rules = new StandardRuleSetProvider().get().getRules();
-        for (Rule rule : rules) {
-            // System.out.println("rule1 =" + rule.getId());
-            if (rule.getId().equals("parameter-list-wrapping")) {
-                //System.out.println("find rule --------------------------------------------");
-            }
-        }
-
-        ProcessingSpec spec = DetektConfigurationKt.createSpec(Paths.get(project.getBasePath()),pathList);
-        AnalysisResult resutl = DetektProvider.Companion.load(DetektProvider.class.getClassLoader()).get(spec).run();
-        System.out.println("resutl --------------------------------------------" + resutl);
-
         Set<VirtualFile> fileSet = Arrays.stream(files)
             .flatMap(f -> {
                 if (f.isDirectory()) {
