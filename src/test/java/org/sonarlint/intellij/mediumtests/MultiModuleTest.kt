@@ -19,15 +19,14 @@
  */
 package org.sonarlint.intellij.mediumtests
 
-import com.intellij.testFramework.HeavyPlatformTestCase
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito
+import org.sonarlint.intellij.AbstractSonarLintHeavyTest
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ServerNotificationsService
@@ -35,7 +34,7 @@ import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber
 import org.sonarlint.intellij.util.ImmediateExecutorService
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 
-class MultiModuleTest : HeavyPlatformTestCase() {
+class MultiModuleTest : AbstractSonarLintHeavyTest() {
 
     fun test_it_should_register_at_start_when_module_override_binding_and_server_supports_notifications() {
         val module = createModule("foo")
@@ -43,16 +42,14 @@ class MultiModuleTest : HeavyPlatformTestCase() {
         val serverNotificationsService = Mockito.mock(ServerNotificationsService::class.java)
         val projectServerNotificationsSubscriber = ProjectServerNotificationsSubscriber(project, serverNotificationsService, ImmediateExecutorService())
 
-        val connection = ServerConnection.newBuilder().setHostUrl("host").setName("mySq").build()
-        Settings.getGlobalSettings().addServerConnection(connection);
-        Settings.getSettingsFor(project).bindTo(connection, "projectKey1");
-        Settings.getSettingsFor(module).projectKey = "moduleProjectKey";
+        connectProjectTo(ServerConnection.newBuilder().setHostUrl("host").setName("mySq").build(), "projectKey1")
+        connectModuleTo(module, "moduleProjectKey")
 
         Mockito.`when`(serverNotificationsService.isSupported(any())).thenReturn(true)
 
         projectServerNotificationsSubscriber.start()
 
-        val notificationConfigurationCaptor = ArgumentCaptor.forClass(NotificationConfiguration::class.java);
+        val notificationConfigurationCaptor = ArgumentCaptor.forClass(NotificationConfiguration::class.java)
 
         Mockito.verify(serverNotificationsService, Mockito.times(2)).register(capture(notificationConfigurationCaptor))
         val notificationConfigurations = notificationConfigurationCaptor.allValues
@@ -64,21 +61,17 @@ class MultiModuleTest : HeavyPlatformTestCase() {
     fun test_should_return_project_key_for_module_binding_override() {
         val secondModule = createModule("foo")
 
-        Settings.getSettingsFor(project).setBindingEnabled(true)
-        Settings.getSettingsFor(project).setProjectKey("project1")
-        Settings.getSettingsFor(project).setConnectionName("server1")
-        Settings.getSettingsFor(secondModule).setProjectKey("project2")
+        connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1")
+        connectModuleTo(secondModule, "project2")
 
-        assertThat(SonarLintUtils.getService(myModule, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("project1")
+        assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("project1")
         assertThat(SonarLintUtils.getService(secondModule, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("project2")
     }
 
     fun test_should_ignore_module_binding_if_only_one_module() {
-        Settings.getSettingsFor(project).setBindingEnabled(true)
-        Settings.getSettingsFor(project).setProjectKey("project1")
-        Settings.getSettingsFor(project).setConnectionName("server1")
-        Settings.getSettingsFor(myModule).setProjectKey("ignored")
+        connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1")
+        connectModuleTo("ignored")
 
-        assertThat(SonarLintUtils.getService(myModule, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("project1")
+        assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("project1")
     }
 }
