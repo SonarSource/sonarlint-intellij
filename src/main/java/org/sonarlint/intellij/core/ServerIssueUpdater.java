@@ -52,6 +52,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.ServerIssueTrackable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.vcs.VcsService;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
 import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
@@ -151,13 +152,14 @@ public class ServerIssueUpdater implements Disposable {
     var futuresList = new ArrayList<Future<Void>>();
     var updatedProjects = ConcurrentHashMap.newKeySet();
     for (var e : filesPerModule.entrySet()) {
-      var projectKey = getService(e.getKey(), ModuleBindingManager.class).resolveProjectKey();
+      var module = e.getKey();
+      var projectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
       Runnable task = () -> {
         if (updatedProjects.add(projectKey)) {
-          issueUpdater.downloadAllServerIssues(Objects.requireNonNull(projectKey));
+          issueUpdater.downloadAllServerIssues(module, Objects.requireNonNull(projectKey));
         }
-        var binding = getProjectBinding(e.getKey());
-        var relativePathPerFile = getRelativePaths(e.getKey().getProject(), e.getValue());
+        var binding = getProjectBinding(module);
+        var relativePathPerFile = getRelativePaths(module.getProject(), e.getValue());
 
         for (var entry : relativePathPerFile.entrySet()) {
           issueUpdater.fetchAndMatchFile(binding, entry.getKey(), entry.getValue());
@@ -169,19 +171,18 @@ public class ServerIssueUpdater implements Disposable {
     return futuresList;
   }
 
-  private ProjectBinding getProjectBinding(Module module) {
+  private static ProjectBinding getProjectBinding(Module module) {
     var moduleBindingManager = getService(module, ModuleBindingManager.class);
     return moduleBindingManager.getBinding();
   }
 
   private List<Future<Void>> fetchAndMatchServerIssues(String projectKey, Module module, Collection<VirtualFile> files, ServerConnection server, ConnectedSonarLintEngine engine) {
     var futureList = new LinkedList<Future<Void>>();
-    var binding = getProjectBinding(module);
     var relativePathPerFile = getRelativePaths(module.getProject(), files);
     var issueUpdater = new IssueUpdater(server, engine);
 
     for (var e : relativePathPerFile.entrySet()) {
-      Runnable task = () -> issueUpdater.downloadAndMatchFile(binding, e.getKey(), e.getValue());
+      Runnable task = () -> issueUpdater.downloadAndMatchFile(module, e.getKey(), e.getValue());
       futureList.add(submit(task, projectKey, e.getValue()));
     }
     return futureList;
@@ -232,15 +233,16 @@ public class ServerIssueUpdater implements Disposable {
       matchFile(virtualFile, serverIssues);
     }
 
-    public void downloadAndMatchFile(ProjectBinding projectBinding, VirtualFile virtualFile, String relativePath) {
-      var serverIssues = fetchServerIssuesForFile(projectBinding, relativePath);
+    private void downloadAndMatchFile(Module module, VirtualFile virtualFile, String relativePath) {
+      var serverIssues = fetchServerIssuesForFile(module, relativePath);
       matchFile(virtualFile, serverIssues);
     }
 
-    public void downloadAllServerIssues(String projectKey) {
+    private void downloadAllServerIssues(Module module, String projectKey) {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
-        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, true, null, null);
+        var branchName = getService(myProject, VcsService.class).resolveServerBranchName(module);
+        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, true, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -264,10 +266,12 @@ public class ServerIssueUpdater implements Disposable {
       }
     }
 
-    private List<ServerIssue> fetchServerIssuesForFile(ProjectBinding projectBinding, String relativePath) {
+    private List<ServerIssue> fetchServerIssuesForFile(Module module, String relativePath) {
+      var projectBinding = getProjectBinding(module);
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
-        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, true, null, null);
+        var branchName = getService(myProject, VcsService.class).resolveServerBranchName(module);
+        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, true, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());

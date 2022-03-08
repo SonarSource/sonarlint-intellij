@@ -22,6 +22,7 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.history.utils.RunnableAdapter;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -33,7 +34,9 @@ import com.intellij.util.messages.Topic;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
@@ -41,17 +44,16 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
-import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
+import org.sonarlint.intellij.vcs.VcsService;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 import org.sonarsource.sonarlint.core.commons.progress.CanceledException;
 
-import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -149,21 +151,28 @@ public class BindingStorageUpdateTask {
   private List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor, Collection<Project> projectsToUpdate) {
     var failures = new ArrayList<ProjectStorageUpdateFailure>();
 
-    var projectKeysToUpdate = projectsToUpdate.stream()
-      .flatMap(p -> getService(p, ProjectBindingManager.class).getUniqueProjectKeys()
-        .stream())
-      .collect(toSet());
+    Map<String, String> branchByProjectKey = new HashMap<>();
+    for (Project project : projectsToUpdate) {
+      var vcsService = getService(project, VcsService.class);
+      var modules = ModuleManager.getInstance(project).getModules();
+      for (Module module : modules) {
+        var projectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
+        var serverBranchName = vcsService.resolveServerBranchName(module);
+        // in theory it's possible that different (key, branch) pairs can exist
+        branchByProjectKey.put(projectKey, serverBranchName);
+      }
+    }
 
-    projectKeysToUpdate.forEach(projectKeyFromModule -> {
+    branchByProjectKey.forEach((projectKey, branchName) -> {
       try {
-        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKeyFromModule, true, null, monitor);
+        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey, true, branchName, monitor);
       } catch (Exception e) {
         GlobalLogOutput.get().logError(e.getMessage(), e);
-        failures.add(new ProjectStorageUpdateFailure(projectKeyFromModule, e));
+        failures.add(new ProjectStorageUpdateFailure(projectKey, e));
       }
     });
 
-    engine.sync(connection.getEndpointParams(), connection.getHttpClient(), projectKeysToUpdate, monitor);
+    engine.sync(connection.getEndpointParams(), connection.getHttpClient(), branchByProjectKey.keySet(), monitor);
 
     return failures;
   }
