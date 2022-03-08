@@ -38,6 +38,7 @@ import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
+import org.sonarlint.intellij.vcs.VcsService
 
 sealed class TaintVulnerabilitiesStatus {
   fun isEmpty() = count() == 0
@@ -75,8 +76,9 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file) ?: return
 
     val serverConnection = bindingManager.serverConnection
+    val branchName = getService(project, VcsService::class.java).resolveServerBranchName(module)
     bindingManager.connectedEngine.downloadServerIssues(serverConnection.endpointParams,
-      serverConnection.httpClient, projectBinding, relativePath, true, null, null)
+      serverConnection.httpClient, projectBinding, relativePath, true, branchName, null)
   }
 
   fun presentTaintVulnerabilitiesForOpenFiles() {
