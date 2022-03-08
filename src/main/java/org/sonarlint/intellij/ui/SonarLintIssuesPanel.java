@@ -53,7 +53,7 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
     setToolbar(actions());
     var issuesPanel = new JPanel(new BorderLayout());
     issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
-    issuesPanel.add(new AutoTriggerStatusPanel(project).getPanel(), BorderLayout.SOUTH);
+    issuesPanel.add(new CurrentFileStatusPanel(project).getPanel(), BorderLayout.SOUTH);
 
     var splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
     super.setContent(splitter);

@@ -21,11 +21,8 @@ package org.sonarlint.intellij.ui;
 
 import com.intellij.codeInsight.hint.HintManager;
 import com.intellij.codeInsight.hint.HintUtil;
-import com.intellij.ide.PowerSaveMode;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
-import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.GuiUtils;
 import com.intellij.ui.HyperlinkAdapter;
@@ -41,13 +38,9 @@ import javax.swing.Box;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.LocalFileExclusions;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
@@ -67,29 +60,11 @@ public class AutoTriggerStatusPanel {
     this.project = project;
     createPanel();
     switchCards();
-    subscribeToEvents();
+    CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
   }
 
   public JPanel getPanel() {
     return panel;
-  }
-
-  private void subscribeToEvents() {
-    var busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(GlobalConfigurationListener.TOPIC, new GlobalConfigurationListener.Adapter() {
-      @Override
-      public void applied(SonarLintGlobalSettings settings) {
-        switchCards();
-      }
-    });
-    busConnection.subscribe(ProjectConfigurationListener.TOPIC, s -> switchCards());
-    busConnection.subscribe(PowerSaveMode.TOPIC, this::switchCards);
-    busConnection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, new FileEditorManagerListener() {
-      @Override
-      public void selectionChanged(@NotNull FileEditorManagerEvent event) {
-        switchCards();
-      }
-    });
   }
 
   private void switchCard(String cardName) {
