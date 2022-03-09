@@ -157,7 +157,7 @@ public class CurrentFileConnectedModePanel {
   private void updateConnectedCard(VirtualFile selectedFile, ServerConnection serverConnection) {
     var module = illegalStateIfNull(ModuleUtilCore.findModuleForFile(selectedFile, project),"Could not find module for file " + selectedFile);
     var projectKey = illegalStateIfNull(getService(module, ModuleBindingManager.class).resolveProjectKey(),"Could not find project key for module " + module);
-    var branchName = illegalStateIfNull(getService(project, VcsService.class).resolveServerBranchName(module),"Could not match server branch for module " + module);
+    var branchName = getService(project, VcsService.class).resolveServerBranchName(module);
     var connectedTooltip = new TooltipWithClickableLinks.ForBrowser(connectedCard, buildTooltipHtml(serverConnection, projectKey, branchName));
     IdeTooltipManager.getInstance().setCustomTooltip(connectedCard, connectedTooltip);
   }
@@ -170,19 +170,19 @@ public class CurrentFileConnectedModePanel {
     return checkForNull;
   }
 
-  private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, String branchName) {
-    var projectOverviewUrl =
-      String.format("%s/dashboard?id=%s&branch=%s",
-        serverConnection.getHostUrl(),
-        URLEncoder.encode(projectKey, StandardCharsets.UTF_8),
-        URLEncoder.encode(branchName, StandardCharsets.UTF_8)
-      );
+  private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, @Nullable String branchName) {
+    var projectOverviewUrl = String.format("%s/dashboard?id=%s", serverConnection.getHostUrl(), URLEncoder.encode(projectKey, StandardCharsets.UTF_8));
+    var branchParagraph = "<p>Synchronized with the project's main branch</p>";
+    if (branchName != null) {
+      projectOverviewUrl += String.format("&branch=%s", URLEncoder.encode(branchName, StandardCharsets.UTF_8));
+      branchParagraph = String.format("<p>Synchronized with branch '%s'</p>", escapeHtml(branchName));
+    }
     return String.format(
       "<h3>Connected to %s</h3>" +
       "<p>Bound to project '%s' on connection '%s'</p>" +
-      "<p>Synchronized with branch '%s'</p>" +
+      "%s" +
       "<p><a href=\"%s\">Open Project Overview</a></p>",
-      serverConnection.getProductName(), escapeHtml(projectKey), escapeHtml(serverConnection.getName()), escapeHtml(branchName), projectOverviewUrl);
+      serverConnection.getProductName(), escapeHtml(projectKey), escapeHtml(serverConnection.getName()), branchParagraph, projectOverviewUrl);
   }
 
   private void switchCard(String cardName) {
