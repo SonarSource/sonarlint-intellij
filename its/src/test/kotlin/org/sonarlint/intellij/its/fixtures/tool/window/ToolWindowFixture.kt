@@ -29,6 +29,7 @@ import com.intellij.remoterobot.fixtures.FixtureName
 import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
+import org.assertj.core.api.Assertions
 import org.sonarlint.intellij.its.fixtures.findElement
 import java.time.Duration
 
@@ -54,6 +55,9 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
 
   fun content(classType: String, function: TabContentFixture.() -> Unit = {}) =
     findElement<TabContentFixture>(byXpath("tab with content of type $classType", "//div[@class='$classType']")).apply(function)
+
+  fun findCard(classType: String) =
+    findElement<ComponentFixture>(byXpath("card with type $classType", "//div[@class='$classType']"))
 
   fun ensureOpen() {
     try {
