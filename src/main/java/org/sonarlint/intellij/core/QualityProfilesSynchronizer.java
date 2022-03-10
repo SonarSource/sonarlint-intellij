@@ -29,6 +29,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -81,6 +82,7 @@ public class QualityProfilesSynchronizer implements Disposable {
       var projectKeysToSync = getService(myProject, ProjectBindingManager.class).getUniqueProjectKeys();
       log.log("Sync quality profiles...", ClientLogOutput.Level.INFO);
       engine.sync(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKeysToSync, new TaskProgressMonitor(progressIndicator, myProject));
+      myProject.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished();
     } catch (Exception e) {
       log.log("There was an error while synchronizing quality profiles: " + e.getMessage(), ClientLogOutput.Level.WARN);
     }

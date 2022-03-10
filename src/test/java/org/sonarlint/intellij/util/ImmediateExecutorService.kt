@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit
 
 class ImmediateExecutorService : ExecutorService {
     override fun execute(command: Runnable) {
+        command.run()
     }
 
     override fun shutdown() {

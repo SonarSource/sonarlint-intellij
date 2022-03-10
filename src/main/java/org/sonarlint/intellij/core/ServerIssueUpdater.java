@@ -241,7 +241,7 @@ public class ServerIssueUpdater implements Disposable {
     private void downloadAllServerIssues(Module module, String projectKey) {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
-        var branchName = getService(myProject, VcsService.class).resolveServerBranchName(module);
+        var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
         engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, true, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
@@ -270,7 +270,7 @@ public class ServerIssueUpdater implements Disposable {
       var projectBinding = getProjectBinding(module);
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
-        var branchName = getService(myProject, VcsService.class).resolveServerBranchName(module);
+        var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
         return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, true, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);

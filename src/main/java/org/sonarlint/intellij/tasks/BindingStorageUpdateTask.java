@@ -45,6 +45,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -157,7 +158,7 @@ public class BindingStorageUpdateTask {
       var modules = ModuleManager.getInstance(project).getModules();
       for (Module module : modules) {
         var projectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
-        var serverBranchName = vcsService.resolveServerBranchName(module);
+        var serverBranchName = vcsService.getServerBranchName(module);
         // in theory it's possible that different (key, branch) pairs can exist
         branchByProjectKey.put(projectKey, serverBranchName);
       }
@@ -173,6 +174,7 @@ public class BindingStorageUpdateTask {
     });
 
     engine.sync(connection.getEndpointParams(), connection.getHttpClient(), branchByProjectKey.keySet(), monitor);
+    projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished());
 
     return failures;
   }

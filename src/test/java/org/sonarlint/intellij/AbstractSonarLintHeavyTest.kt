@@ -20,11 +20,14 @@
 package org.sonarlint.intellij
 
 import com.intellij.openapi.module.Module
+import com.intellij.serviceContainer.ComponentManagerImpl
 import com.intellij.testFramework.HeavyPlatformTestCase
 import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.EngineManager
+import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.TestEngineManager
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -47,5 +50,13 @@ abstract class AbstractSonarLintHeavyTest : HeavyPlatformTestCase() {
     protected fun connectProjectTo(connection: ServerConnection, projectKey: String) {
         Settings.getGlobalSettings().addServerConnection(connection)
         Settings.getSettingsFor(project).bindTo(connection, projectKey)
+    }
+
+    protected fun unbindProject() {
+        getService(project, ProjectBindingManager::class.java).unbind()
+    }
+
+    protected open fun <T : Any> replaceProjectService(clazz: Class<T>, newInstance: T) {
+        (project as ComponentManagerImpl).replaceServiceInstance(clazz, newInstance, project)
     }
 }
