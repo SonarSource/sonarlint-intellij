@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>6.6 - Subscribe for server events to update active rules and settings.</li>
+        <li>6.6 - Subscribe for server events to update active rules and settings. Quick fixes for 15 C/C++ rules.</li>
         <li>6.5.1 - Fix error message at startup.</li>
         <li>6.5 - Deprecation of Node.js 12 for JS/TS analyzes. Embed the XML analyzer. 5 new rules for Java. 9 new rules for PHP around regexes. Bug fixes, fewer FPs and improvements for many languages</li>
         <li>6.4.3 - Fewer false-negatives and false-positives for C/C++.</li>
