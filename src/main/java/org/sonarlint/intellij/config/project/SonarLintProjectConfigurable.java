@@ -35,6 +35,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
+import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -93,6 +94,8 @@ public class SonarLintProjectConfigurable implements Configurable, Configurable.
       var projectSettings = getSettingsFor(project);
       boolean exclusionsModified = panel.areExclusionsModified(projectSettings);
       panel.save(project, projectSettings);
+      project.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
+
       if (exclusionsModified) {
         getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
       }

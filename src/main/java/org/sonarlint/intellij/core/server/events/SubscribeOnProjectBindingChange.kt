@@ -20,18 +20,18 @@
 package org.sonarlint.intellij.core.server.events
 
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.ProjectBinding
+import org.sonarlint.intellij.messages.ProjectBindingListener
 
-class SubscribeOnProjectOpenedOrClosed : ProjectManagerListener {
-    override fun projectOpened(project: Project) {
-        getService(ServerEventsService::class.java).autoSubscribe(
-            getService(project, ProjectBindingManager::class.java).binding ?: return
-        )
-    }
-
-    override fun projectClosing(project: Project) {
-        getService(ServerEventsService::class.java).unsubscribe(project)
+class SubscribeOnProjectBindingChange(project: Project) : ProjectBindingListener {
+    override fun bindingChanged(previousBinding: ProjectBinding?, newBinding: ProjectBinding?) {
+        if (previousBinding != null && previousBinding.connectionName != newBinding?.connectionName) {
+            // we need to resubscribe for the previous engine as the project keys might have changed
+            getService(ServerEventsService::class.java).autoSubscribe(previousBinding)
+        }
+        if (newBinding != null) {
+            getService(ServerEventsService::class.java).autoSubscribe(newBinding)
+        }
     }
 }

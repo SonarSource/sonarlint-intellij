@@ -176,6 +176,12 @@ public final class SonarLintGlobalSettings {
       .collect(Collectors.toUnmodifiableList());
   }
 
+  public Optional<ServerConnection> getServerConnectionByName(String name) {
+    return servers.stream()
+      .filter(s -> name.equals(s.getName()))
+      .findFirst();
+  }
+
   public void addServerConnection(ServerConnection connection) {
     ArrayList<ServerConnection> sonarQubeServers = new ArrayList<>(servers);
     sonarQubeServers.add(connection);

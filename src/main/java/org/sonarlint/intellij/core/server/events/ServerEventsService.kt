@@ -22,9 +22,10 @@ package org.sonarlint.intellij.core.server.events
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.core.AnalysisEnv
-import org.sonarlint.intellij.core.ConnectedAnalysisEnv
+import org.sonarlint.intellij.core.EngineManager
+import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.ProjectLogOutput
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
@@ -32,11 +33,16 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.util.Optional
 
 interface ServerEventsService {
-    fun autoSubscribe(analysisEnv: AnalysisEnv) {
-        if (analysisEnv is ConnectedAnalysisEnv) {
-            autoSubscribe(analysisEnv.engineIfStarted, analysisEnv.connection)
+    fun autoSubscribe(binding: ProjectBinding) {
+        Settings.getGlobalSettings().getServerConnectionByName(binding.connectionName).ifPresent { connection ->
+            val engineManager = getService(EngineManager::class.java)
+            autoSubscribe(
+                engineManager.getConnectedEngineIfStarted(binding.connectionName),
+                connection
+            )
         }
     }
+
     fun autoSubscribe(engineIfStarted: ConnectedSonarLintEngine?, serverConnection: ServerConnection)
     fun unsubscribe(project: Project)
 }
