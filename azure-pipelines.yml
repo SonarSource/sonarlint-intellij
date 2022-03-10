@@ -1,5 +1,6 @@
 trigger:
 - master
+- branch-dogfood
 
 pool:
   vmImage: 'ubuntu-latest'
@@ -254,7 +255,7 @@ stages:
     burgrType: 'dogfood'
     stageName: 'update_dogfood_repo'
     stageDisplayName: Update internal dogfooding plugin repo
-    stageCondition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'master'))
+    stageCondition: and(succeeded(), eq(variables['Build.SourceBranchName'], 'branch-dogfood'))
     stageDependencies: promote
     jobs:
     - job: updateInternalSite
