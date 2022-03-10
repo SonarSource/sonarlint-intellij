@@ -45,6 +45,9 @@ public class SonarLintIcons {
   public static final Icon WARN = IconLoader.getIcon("/images/warn.png");
   public static final Icon SCM = IconLoader.getIcon("/images/toolWindowChanges.png");
   public static final Icon PROJECT = IconLoader.getIcon("/images/ideaProject.png");
+  public static final Icon NOT_CONNECTED = IconLoader.getIcon("/images/not_connected.svg");
+  public static final Icon CONNECTED = IconLoader.getIcon("/images/connected.svg");
+  public static final Icon CONNECTION_ERROR = IconLoader.getIcon("/images/io_error.svg");
 
   private static final Map<String, Icon> SEVERITY_ICONS = new HashMap<>();
   private static final Map<String, Icon> SEVERITY_ICONS_12 = new HashMap<>();

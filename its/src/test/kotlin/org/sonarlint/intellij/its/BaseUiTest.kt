@@ -142,7 +142,7 @@ open class BaseUiTest {
                     ensureOpen()
                     tabTitleContains("Current file") { select() }
                     content("SonarLintIssuesPanel") {
-                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).isTrue() }
+                        expectedMessages.forEach { Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue() }
                     }
                 }
             }
@@ -167,9 +167,21 @@ open class BaseUiTest {
         with(remoteRobot) {
             idea {
                 toolWindow("SonarLint") {
+                    ensureOpen()
                     content("SonarLintIssuesPanel") {
                         Assertions.assertThat(hasText(expectedMessage)).isTrue()
                     }
+                }
+            }
+        }
+    }
+
+    protected fun verifyCurrentFileShowsCard(expectedClass: String) {
+        with(remoteRobot) {
+            idea {
+                toolWindow("SonarLint") {
+                    ensureOpen()
+                    Assertions.assertThat(findCard(expectedClass)).isNotNull
                 }
             }
         }

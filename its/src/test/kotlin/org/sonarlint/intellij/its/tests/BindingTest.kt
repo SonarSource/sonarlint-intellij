@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jTextField
@@ -63,10 +64,19 @@ class BindingTest : BaseUiTest() {
     fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
         // scala should only be supported in connected mode
         openExistingProject("sample-scala", true)
-        bindProjectAndModuleInFileSettings()
+        verifyCurrentFileShowsCard("EmptyCard")
 
         openFile("HelloProject.scala")
+        verifyCurrentFileShowsCard("NotConnectedCard")
 
+        bindProjectAndModuleInFileSettings()
+        verifyCurrentFileShowsCard("ConnectedCard")
+        // Wait for re-analysis to happen
+        with(remoteRobot) {
+            idea {
+                waitBackgroundTasksFinished()
+            }
+        }
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "HelloProject.scala",
