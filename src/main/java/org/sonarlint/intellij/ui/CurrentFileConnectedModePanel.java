@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -58,6 +57,7 @@ public class CurrentFileConnectedModePanel {
 
   private static final String CONNECTED_MODE_DOCUMENTATION_URL = "https://github.com/SonarSource/sonarlint-intellij/wiki/Bind-to-SonarQube-or-SonarCloud";
 
+  private static final String EMPTY = "Empty";
   private static final String NOT_CONNECTED = "Not Connected";
   private static final String CONNECTED = "Connected";
   private static final String ERROR = "Error";
@@ -65,7 +65,7 @@ public class CurrentFileConnectedModePanel {
 
   private JPanel panel;
   private CardLayout layout;
-  private JLabel connectedCard;
+  private ConnectedCard connectedCard;
 
   CurrentFileConnectedModePanel(Project project) {
     this.project = project;
@@ -79,11 +79,12 @@ public class CurrentFileConnectedModePanel {
     layout = new CardLayout();
     panel = new JPanel(layout);
 
-    connectedCard = new JLabel(SonarLintIcons.CONNECTED);
+    connectedCard = new ConnectedCard();
 
-    panel.add(createNotConnectedCard(), NOT_CONNECTED);
+    panel.add(new EmptyCard(), EMPTY);
+    panel.add(new NotConnectedCard(), NOT_CONNECTED);
     panel.add(connectedCard, CONNECTED);
-    panel.add(createErrorCard(), ERROR);
+    panel.add(new ErrorCard(), ERROR);
 
     panel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
     var clickListener = new MouseAdapter() {
@@ -99,37 +100,65 @@ public class CurrentFileConnectedModePanel {
     layout.show(panel, NOT_CONNECTED);
   }
 
-  @NotNull
-  private static JLabel createNotConnectedCard() {
-    var notConnectedCard = new JLabel(SonarLintIcons.NOT_CONNECTED);
-    var notConnectedTooltip = new TooltipWithClickableLinks.ForBrowser(notConnectedCard,
-      "<h3>Not Connected</h3>" +
-        "<p>Click to synchronize your project with SonarQube or SonarCloud.</p>" +
-        "<p><a href=\"" + CONNECTED_MODE_DOCUMENTATION_URL + "\">Learn More</a></p>"
-    );
-    IdeTooltipManager.getInstance().setCustomTooltip(notConnectedCard, notConnectedTooltip);
-    return notConnectedCard;
+  static class EmptyCard extends JLabel {
+    private EmptyCard() {
+      super("");
+    }
   }
 
-  @NotNull
-  private JLabel createErrorCard() {
-    var errorCard = new JLabel(SonarLintIcons.CONNECTION_ERROR);
-    var errorTooltip = new TooltipWithClickableLinks(errorCard,
-      "<h3>Connected Mode Error</h3>" +
-        "<p>There was an issue, please check for additional details in the SonarLint Log.</p>" +
-        "<p><a href=\"#\">Open Log</a></p>",
-      new HyperlinkAdapter() {
-        @Override
-        protected void hyperlinkActivated(HyperlinkEvent e) {
-          var contentManager = ToolWindowManager.getInstance(project)
-            .getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID)
-            .getContentManager();
-          contentManager.setSelectedContent(contentManager.findContent(SonarLintToolWindowFactory.TAB_LOGS));
+  static class NotConnectedCard extends JLabel {
+    private NotConnectedCard() {
+      super(SonarLintIcons.NOT_CONNECTED);
+      var notConnectedTooltip = new TooltipWithClickableLinks.ForBrowser(this,
+        "<h3>Not Connected</h3>" +
+          "<p>Click to synchronize your project with SonarQube or SonarCloud.</p>" +
+          "<p><a href=\"" + CONNECTED_MODE_DOCUMENTATION_URL + "\">Learn More</a></p>"
+      );
+      IdeTooltipManager.getInstance().setCustomTooltip(this, notConnectedTooltip);
+    }
+  }
+
+  class ErrorCard extends JLabel {
+    private ErrorCard() {
+      super(SonarLintIcons.CONNECTION_ERROR);
+      var errorTooltip = new TooltipWithClickableLinks(this,
+        "<h3>Connected Mode Error</h3>" +
+          "<p>There was an issue, please check for additional details in the SonarLint Log.</p>" +
+          "<p><a href=\"#\">Open Log</a></p>",
+        new HyperlinkAdapter() {
+          @Override
+          protected void hyperlinkActivated(HyperlinkEvent e) {
+            var contentManager = ToolWindowManager.getInstance(project)
+              .getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID)
+              .getContentManager();
+            contentManager.setSelectedContent(contentManager.findContent(SonarLintToolWindowFactory.TAB_LOGS));
+          }
         }
+      );
+      IdeTooltipManager.getInstance().setCustomTooltip(this, errorTooltip);
+    }
+  }
+
+  class ConnectedCard extends JLabel {
+    private ConnectedCard() {
+      super(SonarLintIcons.CONNECTED);
+    }
+
+    private void updateTooltip(VirtualFile selectedFile, ServerConnection serverConnection) {
+      var module = illegalStateIfNull(ModuleUtilCore.findModuleForFile(selectedFile, project),"Could not find module for file " + selectedFile);
+      var projectKey = illegalStateIfNull(getService(module, ModuleBindingManager.class).resolveProjectKey(),"Could not find project key for module " + module);
+      var branchName = getService(project, VcsService.class).resolveServerBranchName(module);
+      var connectedTooltip = new TooltipWithClickableLinks.ForBrowser(connectedCard, buildTooltipHtml(serverConnection, projectKey, branchName));
+      IdeTooltipManager.getInstance().setCustomTooltip(connectedCard, connectedTooltip);
+    }
+
+    private <T> T illegalStateIfNull(@Nullable T checkForNull, String messageIfNull) {
+      if (checkForNull == null) {
+        SonarLintConsole.get(project).error(messageIfNull);
+        throw new IllegalStateException(messageIfNull);
       }
-    );
-    IdeTooltipManager.getInstance().setCustomTooltip(errorCard, errorTooltip);
-    return errorCard;
+      return checkForNull;
+    }
   }
 
   private void switchCards() {
@@ -142,32 +171,18 @@ public class CurrentFileConnectedModePanel {
         var projectBindingManager = getService(project, ProjectBindingManager.class);
         projectBindingManager.tryGetServerConnection().ifPresentOrElse(serverConnection -> {
           try {
-            updateConnectedCard(selectedFile, serverConnection);
+            connectedCard.updateTooltip(selectedFile, serverConnection);
             switchCard(CONNECTED);
           } catch(IllegalStateException e) {
             switchCard(ERROR);
           }
-        }, () -> switchCard(NOT_CONNECTED));
+        },
+        // No connection settings for project
+        () -> switchCard(NOT_CONNECTED));
       });
     } else {
-      switchCard(NOT_CONNECTED);
+      switchCard(EMPTY);
     }
-  }
-
-  private void updateConnectedCard(VirtualFile selectedFile, ServerConnection serverConnection) {
-    var module = illegalStateIfNull(ModuleUtilCore.findModuleForFile(selectedFile, project),"Could not find module for file " + selectedFile);
-    var projectKey = illegalStateIfNull(getService(module, ModuleBindingManager.class).resolveProjectKey(),"Could not find project key for module " + module);
-    var branchName = getService(project, VcsService.class).resolveServerBranchName(module);
-    var connectedTooltip = new TooltipWithClickableLinks.ForBrowser(connectedCard, buildTooltipHtml(serverConnection, projectKey, branchName));
-    IdeTooltipManager.getInstance().setCustomTooltip(connectedCard, connectedTooltip);
-  }
-
-  private <T> T illegalStateIfNull(@Nullable T checkForNull, String messageIfNull) {
-    if (checkForNull == null) {
-      SonarLintConsole.get(project).error(messageIfNull);
-      throw new IllegalStateException(messageIfNull);
-    }
-    return checkForNull;
   }
 
   private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, @Nullable String branchName) {
