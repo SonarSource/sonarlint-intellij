@@ -25,14 +25,14 @@ import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ModuleBindingManager
-import org.sonarlint.intellij.core.AnalysisEnv
-import org.sonarlint.intellij.messages.AnalysisEnvListener
+import org.sonarlint.intellij.core.ProjectBinding
+import org.sonarlint.intellij.messages.ProjectBindingListener
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 
-private fun getEngineIfStarted(module: Module) =
-    getService(module, ModuleBindingManager::class.java).engineIfStarted
+private fun getEngineIfStarted(module: Module) = getService(module, ModuleBindingManager::class.java).engineIfStarted
 
 class ModuleChangeListener(val project: Project) : ModuleListener {
     override fun moduleAdded(project: Project, module: Module) {
@@ -71,11 +71,17 @@ class ProjectClosedListener : ProjectManagerListener {
     }
 }
 
-class BindingChangeListener(private val project: Project) : AnalysisEnvListener {
-    override fun analysisEnvChanged(previousAnalysisEnv: AnalysisEnv, newAnalysisEnv: AnalysisEnv) {
-        if (previousAnalysisEnv.engineIfStarted != newAnalysisEnv.engineIfStarted) {
-            Modules.removeAllModules(project, previousAnalysisEnv.engineIfStarted)
-            Modules.declareAllModules(project, newAnalysisEnv.engineIfStarted)
+class MoveModulesOnBindingChange(private val project: Project) : ProjectBindingListener {
+    override fun bindingChanged(previousBinding: ProjectBinding?, newBinding: ProjectBinding?) {
+        if (previousBinding?.connectionName != newBinding?.connectionName) {
+            Modules.removeAllModules(project, getEngineIfStarted(previousBinding))
+            Modules.declareAllModules(project, getEngineIfStarted(newBinding))
         }
+    }
+
+    private fun getEngineIfStarted(binding: ProjectBinding?): SonarLintEngine? {
+        val engineManager = getService(EngineManager::class.java)
+        return if (binding == null) engineManager.standaloneEngineIfStarted
+        else engineManager.getConnectedEngineIfStarted(binding.connectionName)
     }
 }

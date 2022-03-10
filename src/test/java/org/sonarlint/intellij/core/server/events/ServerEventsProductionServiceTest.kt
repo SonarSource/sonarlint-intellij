@@ -23,62 +23,34 @@ import org.junit.Test
 import org.mockito.Mockito.clearInvocations
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyZeroInteractions
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.core.StandaloneAnalysisEnv
-import org.sonarlint.intellij.core.ConnectedAnalysisEnv
+import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.eq
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
 class ServerEventsProductionServiceTest : AbstractSonarLintLightTests() {
     private val service = ServerEventsProductionService()
 
     @Test
-    fun should_not_subscribe_in_standalone_mode() {
-        val engine = mock(SonarLintEngine::class.java)
-
-        service.autoSubscribe(StandaloneAnalysisEnv(engine))
-
-        verifyZeroInteractions(engine)
-    }
-
-    @Test
     fun should_subscribe_when_project_bound_and_engine_started() {
         val engine = mock(ConnectedSonarLintEngine::class.java)
-        val connection = ServerConnection.newBuilder().setName("connectionName").setHostUrl("url").setToken("token").build()
+        engineManager.registerEngine(engine, "connectionName")
+        val connection =
+            ServerConnection.newBuilder().setName("connectionName").setHostUrl("url").setToken("token").build()
         connectProjectTo(connection, "projectKey")
 
-        service.autoSubscribe(ConnectedAnalysisEnv(engine, connection, setOf("projectKey")))
+        service.autoSubscribe(ProjectBinding("connectionName", "projectKey", emptyMap()))
 
         verify(engine).subscribeForEvents(any(), any(), eq(setOf("projectKey")), any())
     }
 
     @Test
-    fun should_not_subscribe_when_not_connected() {
-        val engine = mock(ConnectedSonarLintEngine::class.java)
-
-        service.autoSubscribe(StandaloneAnalysisEnv(engine))
-
-        verifyZeroInteractions(engine)
-    }
-
-    @Test
-    fun should_not_subscribe_for_unbound_project() {
-        val engine = mock(ConnectedSonarLintEngine::class.java)
-        val connection = ServerConnection.newBuilder().setName("connectionName").setHostUrl("url").setToken("token").build()
-
-        service.autoSubscribe(ConnectedAnalysisEnv(engine, connection, setOf("projectKey")))
-
-        verify(engine).subscribeForEvents(any(), any(), eq(emptySet()), any())
-    }
-
-    @Test
     fun should_unsubscribe_for_project() {
         val engine = mock(ConnectedSonarLintEngine::class.java)
-        val connection = ServerConnection.newBuilder().setName("connectionName").setHostUrl("url").setToken("token").build()
+        val connection =
+            ServerConnection.newBuilder().setName("connectionName").setHostUrl("url").setToken("token").build()
         connectProjectTo(connection, "projectKey")
         engineManager.registerEngine(engine, "connectionName")
         service.autoSubscribe(engine, connection)

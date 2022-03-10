@@ -37,8 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.messages.AnalysisEnvListener;
-import org.sonarlint.intellij.messages.ProjectConfigurationListener;
+import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
@@ -158,55 +157,43 @@ public class ProjectBindingManager {
   }
 
   @CheckForNull
-  public ConnectedAnalysisEnv getConnectedAnalysisEnv() {
-    if (getSettingsFor(myProject).isBound()) {
-      return tryGetServerConnection()
-        .map(connection -> new ConnectedAnalysisEnv(getConnectedEngineSkipChecks(), connection, getUniqueProjectKeys()))
-        .orElse(null);
+  public ProjectBinding getBinding() {
+    if (isBindingValid()) {
+      var settings = getSettingsFor(myProject);
+      return new ProjectBinding(settings.getConnectionName(), settings.getProjectKey(), getModuleOverrides());
     }
     return null;
   }
 
-  private StandaloneAnalysisEnv getStandaloneAnalysisEnv() {
-    return new StandaloneAnalysisEnv(getEngineIfStarted());
-  }
-
-  public AnalysisEnv getAnalysisEnv() {
-    var connectedAnalysisEnv = getConnectedAnalysisEnv();
-    return connectedAnalysisEnv != null ? connectedAnalysisEnv : getStandaloneAnalysisEnv();
-  }
-
   public void bindTo(@NotNull ServerConnection connection, @NotNull String projectKey, Map<Module, String> moduleBindingsOverrides) {
-    var previousAnalysisEnv = getAnalysisEnv();
+    var previousBinding = getBinding();
+
     var projectSettings = getSettingsFor(myProject);
     projectSettings.bindTo(connection, projectKey);
     moduleBindingsOverrides.forEach((module, overriddenProjectKey) -> getSettingsFor(module).setProjectKey(overriddenProjectKey));
-
     var modulesToClearOverride = allModules().stream()
       .filter(m -> !moduleBindingsOverrides.containsKey(m));
     unbind(modulesToClearOverride.collect(Collectors.toList()));
 
     SonarLintProjectNotifications.get(myProject).reset();
-    var newAnalysisEnv = getAnalysisEnv();
-    if (!previousAnalysisEnv.equals(newAnalysisEnv)) {
-      myProject.getMessageBus().syncPublisher(AnalysisEnvListener.TOPIC).analysisEnvChanged(previousAnalysisEnv, newAnalysisEnv);
+    var newBinding = getBinding();
+    if (previousBinding != newBinding) {
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
     }
     var task = new BindingStorageUpdateTask(getConnectedEngineSkipChecks(), connection, false, true, myProject);
     progressManager.run(task.asModal());
-    myProject.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings);
   }
 
   public void unbind() {
-    var previousAnalysisEnv = getAnalysisEnv();
+    var previousBinding = getBinding();
+
     var projectSettings = getSettingsFor(myProject);
     projectSettings.unbind();
     unbind(allModules());
+
     SonarLintProjectNotifications.get(myProject).reset();
-    var projectListener = myProject.getMessageBus().syncPublisher(ProjectConfigurationListener.TOPIC);
-    projectListener.changed(projectSettings);
-    var standaloneAnalysisEnv = getStandaloneAnalysisEnv();
-    if (!previousAnalysisEnv.equals(standaloneAnalysisEnv)) {
-      myProject.getMessageBus().syncPublisher(AnalysisEnvListener.TOPIC).analysisEnvChanged(previousAnalysisEnv, standaloneAnalysisEnv);
+    if (previousBinding != null) {
+      myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, null);
     }
   }
 

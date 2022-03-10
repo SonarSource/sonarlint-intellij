@@ -149,8 +149,8 @@
 
     <projectListeners>
         <listener class="org.sonarlint.intellij.module.ModuleChangeListener" topic="com.intellij.openapi.project.ModuleListener"/>
-        <listener class="org.sonarlint.intellij.module.BindingChangeListener" topic="org.sonarlint.intellij.messages.AnalysisEnvListener"/>
-        <listener class="org.sonarlint.intellij.core.server.events.SubscribeOnAnalysisEnvChange" topic="org.sonarlint.intellij.messages.AnalysisEnvListener"/>
+        <listener class="org.sonarlint.intellij.module.MoveModulesOnBindingChange" topic="org.sonarlint.intellij.messages.ProjectBindingListener"/>
+        <listener class="org.sonarlint.intellij.core.server.events.SubscribeOnProjectBindingChange" topic="org.sonarlint.intellij.messages.AnalysisEnvListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">

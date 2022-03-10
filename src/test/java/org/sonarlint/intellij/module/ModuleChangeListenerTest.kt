@@ -30,18 +30,19 @@ import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.atLeastOnce
+import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.capture
-import org.sonarlint.intellij.core.StandaloneAnalysisEnv
 import org.sonarlint.intellij.core.ModuleBindingManager
+import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
-import org.sonarlint.intellij.messages.AnalysisEnvListener
+import org.sonarlint.intellij.messages.PROJECT_BINDING_TOPIC
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
-import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
+import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
 
 @RunWith(MockitoJUnitRunner::class)
 class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
@@ -77,13 +78,18 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     }
 
     @Test
-    fun should_stop_and_recreate_modules_when_engine_changes() {
+    fun should_stop_and_recreate_modules_when_binding_changes() {
         moduleChangeListener.moduleAdded(project, module)
-        project.messageBus.syncPublisher(AnalysisEnvListener.TOPIC).analysisEnvChanged(StandaloneAnalysisEnv(fakeEngine), StandaloneAnalysisEnv(otherFakeEngine))
+        val standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
+        val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
+        engineManager.registerEngine(standaloneEngine)
+        engineManager.registerEngine(connectedEngine, "connection1")
+        project.messageBus.syncPublisher(PROJECT_BINDING_TOPIC)
+            .bindingChanged(null, ProjectBinding("connection1", "projectKey", emptyMap()))
 
         // might be called several times by the real implementation, not the one under test
-        verify(fakeEngine, atLeastOnce()).stopModule(eq(module))
-        verify(otherFakeEngine, atLeastOnce()).declareModule(capture(moduleInfoCaptor))
+        verify(standaloneEngine, atLeastOnce()).stopModule(eq(module))
+        verify(connectedEngine, atLeastOnce()).declareModule(capture(moduleInfoCaptor))
         val moduleInfo = moduleInfoCaptor.value
         assertThat(moduleInfo.key()).isEqualTo(module)
     }
@@ -92,12 +98,6 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
 
     @Mock
     private lateinit var projectBindingManager: ProjectBindingManager
-
-    @Mock
-    private lateinit var fakeEngine: SonarLintEngine
-
-    @Mock
-    private lateinit var otherFakeEngine: SonarLintEngine
 
     @Mock
     private lateinit var moduleFakeEngine: ConnectedSonarLintEngine

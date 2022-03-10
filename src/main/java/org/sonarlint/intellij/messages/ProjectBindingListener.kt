@@ -17,19 +17,16 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core.server.events
+package org.sonarlint.intellij.messages
 
-import com.intellij.openapi.project.Project
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.AnalysisEnv
-import org.sonarlint.intellij.messages.AnalysisEnvListener
+import com.intellij.util.messages.Topic
+import org.sonarlint.intellij.core.ProjectBinding
 
-class SubscribeOnAnalysisEnvChange(project: Project) : AnalysisEnvListener {
-    override fun analysisEnvChanged(previousAnalysisEnv: AnalysisEnv, newAnalysisEnv: AnalysisEnv) {
-        if (previousAnalysisEnv.engineIfStarted != newAnalysisEnv.engineIfStarted) {
-            // we need to resubscribe for the previous analysis env as the project keys might have changed
-            getService(ServerEventsService::class.java).autoSubscribe(previousAnalysisEnv)
-        }
-        getService(ServerEventsService::class.java).autoSubscribe(newAnalysisEnv)
-    }
+val PROJECT_BINDING_TOPIC = Topic.create(
+    "Project binding events",
+    ProjectBindingListener::class.java
+)
+
+interface ProjectBindingListener {
+    fun bindingChanged(previousBinding: ProjectBinding?, newBinding: ProjectBinding?)
 }
