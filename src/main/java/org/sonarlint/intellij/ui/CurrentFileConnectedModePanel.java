@@ -48,6 +48,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.util.SonarLintActions;
+import org.sonarlint.intellij.vcs.VcsListenerKt;
 import org.sonarlint.intellij.vcs.VcsService;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
@@ -72,7 +73,8 @@ public class CurrentFileConnectedModePanel {
     createPanel();
     switchCards();
     CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
-    // TODO Also subscribe to branch management service event
+    project.getMessageBus().connect(project).subscribe(VcsListenerKt.getVCS_TOPIC(),
+      (module, branchName) -> GuiUtils.invokeLaterIfNeeded(this::switchCards, ModalityState.defaultModalityState()));
   }
 
   private void createPanel() {
@@ -91,8 +93,7 @@ public class CurrentFileConnectedModePanel {
       @Override
       public void mouseClicked(MouseEvent e) {
         ActionManager.getInstance().tryToExecute(
-          SonarLintActions.getInstance().configure(), e, panel, null, true
-        );
+          SonarLintActions.getInstance().configure(), e, panel, null, true);
       }
     };
     Stream.of(panel.getComponents()).forEach(c -> c.addMouseListener(clickListener));
@@ -112,8 +113,7 @@ public class CurrentFileConnectedModePanel {
       var notConnectedTooltip = new TooltipWithClickableLinks.ForBrowser(this,
         "<h3>Not Connected</h3>" +
           "<p>Click to synchronize your project with SonarQube or SonarCloud.</p>" +
-          "<p><a href=\"" + CONNECTED_MODE_DOCUMENTATION_URL + "\">Learn More</a></p>"
-      );
+          "<p><a href=\"" + CONNECTED_MODE_DOCUMENTATION_URL + "\">Learn More</a></p>");
       IdeTooltipManager.getInstance().setCustomTooltip(this, notConnectedTooltip);
     }
   }
@@ -133,8 +133,7 @@ public class CurrentFileConnectedModePanel {
               .getContentManager();
             contentManager.setSelectedContent(contentManager.findContent(SonarLintToolWindowFactory.TAB_LOGS));
           }
-        }
-      );
+        });
       IdeTooltipManager.getInstance().setCustomTooltip(this, errorTooltip);
     }
   }
@@ -145,9 +144,9 @@ public class CurrentFileConnectedModePanel {
     }
 
     private void updateTooltip(VirtualFile selectedFile, ServerConnection serverConnection) {
-      var module = illegalStateIfNull(ModuleUtilCore.findModuleForFile(selectedFile, project),"Could not find module for file " + selectedFile);
-      var projectKey = illegalStateIfNull(getService(module, ModuleBindingManager.class).resolveProjectKey(),"Could not find project key for module " + module);
-      var branchName = getService(project, VcsService.class).resolveServerBranchName(module);
+      var module = illegalStateIfNull(ModuleUtilCore.findModuleForFile(selectedFile, project), "Could not find module for file " + selectedFile);
+      var projectKey = illegalStateIfNull(getService(module, ModuleBindingManager.class).resolveProjectKey(), "Could not find project key for module " + module);
+      var branchName = getService(project, VcsService.class).getServerBranchName(module);
       var connectedTooltip = new TooltipWithClickableLinks.ForBrowser(connectedCard, buildTooltipHtml(serverConnection, projectKey, branchName));
       IdeTooltipManager.getInstance().setCustomTooltip(connectedCard, connectedTooltip);
     }
@@ -173,12 +172,12 @@ public class CurrentFileConnectedModePanel {
           try {
             connectedCard.updateTooltip(selectedFile, serverConnection);
             switchCard(CONNECTED);
-          } catch(IllegalStateException e) {
+          } catch (IllegalStateException e) {
             switchCard(ERROR);
           }
         },
-        // No connection settings for project
-        () -> switchCard(NOT_CONNECTED));
+          // No connection settings for project
+          () -> switchCard(NOT_CONNECTED));
       });
     } else {
       switchCard(EMPTY);
@@ -194,9 +193,9 @@ public class CurrentFileConnectedModePanel {
     }
     return String.format(
       "<h3>Connected to %s</h3>" +
-      "<p>Bound to project '%s' on connection '%s'</p>" +
-      "%s" +
-      "<p><a href=\"%s\">Open Project Overview</a></p>",
+        "<p>Bound to project '%s' on connection '%s'</p>" +
+        "%s" +
+        "<p><a href=\"%s\">Open Project Overview</a></p>",
       serverConnection.getProductName(), escapeHtml(projectKey), escapeHtml(serverConnection.getName()), branchParagraph, projectOverviewUrl);
   }
 

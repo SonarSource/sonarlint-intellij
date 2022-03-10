@@ -76,7 +76,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file) ?: return
 
     val serverConnection = bindingManager.serverConnection
-    val branchName = getService(project, VcsService::class.java).resolveServerBranchName(module)
+    val branchName = getService(project, VcsService::class.java).getServerBranchName(module)
     bindingManager.connectedEngine.downloadServerIssues(serverConnection.endpointParams,
       serverConnection.httpClient, projectBinding, relativePath, true, branchName, null)
   }

@@ -17,8 +17,15 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core
+package org.sonarlint.intellij.messages
 
-import com.intellij.openapi.module.Module
+import com.intellij.util.messages.Topic
 
-data class ProjectBinding(val connectionName: String, val projectKey: String, val moduleBindingsOverrides: Map<Module, String>)
+var PROJECT_SYNC_TOPIC = Topic.create(
+    "Project synchronization events",
+    ProjectSynchronizationListener::class.java
+)
+
+interface ProjectSynchronizationListener {
+    fun synchronizationFinished()
+}
