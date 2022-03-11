@@ -68,11 +68,10 @@ class CLionTests : BaseUiTest() {
         openFile("main.cpp")
 
         verifyCurrentFileTabContainsMessages(
-            "Found 5 issues in 1 file",
+            "Found 4 issues in 1 file",
             "main.cpp",
             "array designators are a C99 extension",
             "Replace this macro by \"const\", \"constexpr\" or an \"enum\".",
-            "Replace this usage of \"std::cout\" by a logger.",
             "Use \"std::array\" or \"std::vector\" instead of a C-style array.",
             "unused variable 's'"
         )
