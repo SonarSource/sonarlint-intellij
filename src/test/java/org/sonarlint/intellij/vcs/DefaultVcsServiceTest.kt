@@ -31,6 +31,7 @@ import org.junit.Test
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.sonarlint.intellij.AbstractSonarLintHeavyTest
+import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.messages.PROJECT_BINDING_TOPIC
@@ -41,14 +42,14 @@ import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import java.nio.file.Paths
 import java.util.Optional
 
-internal class VcsServiceTest : AbstractSonarLintHeavyTest() {
+internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
 
     private val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
-    private lateinit var vcsService: VcsService
+    private lateinit var vcsService: DefaultVcsService
 
     override fun setUp() {
         super.setUp()
-        vcsService = VcsService(project, ImmediateExecutorService())
+        vcsService = DefaultVcsService(project, ImmediateExecutorService())
         replaceProjectService(VcsService::class.java, vcsService)
     }
 

@@ -22,12 +22,11 @@ package org.sonarlint.intellij.vcs
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.serviceContainer.NonInjectable
-import git4idea.repo.GitRepository
-import git4idea.repo.GitRepositoryChangeListener
-import git4idea.repo.GitRepositoryManager
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider
+import org.sonarlint.intellij.common.vcs.VcsListener.TOPIC
+import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -37,13 +36,13 @@ import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class VcsService @NonInjectable constructor(private val project: Project, private val executor: ExecutorService) : Disposable {
+class DefaultVcsService @NonInjectable constructor(private val project: Project, private val executor: ExecutorService) : VcsService, Disposable {
     private val logger = SonarLintLogger.get()
     private val resolvedBranchPerModule: MutableMap<Module, String?> = mutableMapOf()
 
     constructor(project: Project) : this(project, Executors.newSingleThreadExecutor())
 
-    fun getServerBranchName(module: Module): String? {
+    override fun getServerBranchName(module: Module): String? {
         if (resolvedBranchPerModule.containsKey(module)) {
             return resolvedBranchPerModule[module]
         }
@@ -56,63 +55,24 @@ class VcsService @NonInjectable constructor(private val project: Project, privat
         val bindingManager = getService(project, ProjectBindingManager::class.java)
         val validConnectedEngine = bindingManager.validConnectedEngine ?: return null
         val projectKey = getService(module, ModuleBindingManager::class.java).resolveProjectKey() ?: return null
-        val repositoryManager = GitRepositoryManager.getInstance(project)
-        val moduleRepositories = ModuleRootManager.getInstance(module)
-            .contentRoots
-            .mapNotNull { root -> repositoryManager.getRepositoryForRoot(root) }
-            .toSet()
-        if (moduleRepositories.isEmpty()) {
+        val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
+        val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module, logger) }.toList()
+        if (repositories.isEmpty()) {
             return null
         }
-        if (moduleRepositories.size > 1) {
-            logger.warn("Several candidate Git repositories detected for module $module, cannot resolve branch")
+        if (repositories.size > 1) {
+            logger.warn("Several candidate Vcs repositories detected for module $module, cannot choose one")
             return null
         }
-
-        val serverBranches = validConnectedEngine.getServerBranches(projectKey)
-        val repository = moduleRepositories.first()
-        return electBestMatchingServerBranchForCurrentHead(
-            repository, serverBranches.branchNames, serverBranches.mainBranchName.orElse(null)
-        )
+        val repo = repositories.first()
+        return repo.electBestMatchingServerBranchForCurrentHead(validConnectedEngine.getServerBranches(projectKey))
     }
 
-    private fun electBestMatchingServerBranchForCurrentHead(
-        repo: GitRepository, serverCandidateNames: Set<String>, serverMainBranch: String?
-    ): String? {
-        return try {
-            val currentBranch = repo.currentBranchName
-            if (currentBranch != null && serverCandidateNames.contains(currentBranch)) {
-                return currentBranch
-            }
-            val head = repo.currentRevision ?: // Could be the case if no commit has been made in the repo
-            return null
-            val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
-            for (serverBranchName in serverCandidateNames) {
-                val localBranch = repo.branches.findLocalBranch(serverBranchName) ?: continue
-                val localBranchHash = repo.branches.getHash(localBranch) ?: continue
-                val distance = GitUtils.distance(project, repo, head, localBranchHash.asString()) ?: continue
-                branchesPerDistance.computeIfAbsent(distance) { HashSet() }.add(serverBranchName)
-            }
-            if (branchesPerDistance.isEmpty()) {
-                return null
-            }
-            val minDistance = branchesPerDistance.keys.stream().min(Comparator.naturalOrder()).get()
-            val bestCandidates: Set<String?> = branchesPerDistance[minDistance]!!
-            if (serverMainBranch != null && bestCandidates.contains(serverMainBranch)) {
-                // Favor the main branch when there are multiple candidates with the same distance
-                serverMainBranch
-            } else bestCandidates.first()
-        } catch (e: Exception) {
-            logger.error("Couldn't find best matching branch", e)
-            null
-        }
-    }
-
-    internal fun clearCache() {
+    override fun clearCache() {
         resolvedBranchPerModule.clear()
     }
 
-    internal fun refreshCacheAsync() {
+    override fun refreshCacheAsync() {
         if (!executor.isShutdown) {
             executor.execute { refreshCache() }
         }
@@ -123,7 +83,7 @@ class VcsService @NonInjectable constructor(private val project: Project, privat
             val newBranchName = resolveServerBranchName(module)
             resolvedBranchPerModule[module] = newBranchName
             if (previousBranchName != newBranchName) {
-                project.messageBus.syncPublisher(VCS_TOPIC).resolvedServerBranchChanged(module, newBranchName)
+                project.messageBus.syncPublisher(TOPIC).resolvedServerBranchChanged(module, newBranchName)
             }
         }
     }
@@ -141,13 +101,6 @@ class RefreshCacheOnBindingChange(private val project: Project) : ProjectBinding
         } else {
             vcsService.refreshCacheAsync()
         }
-    }
-}
-
-class RefreshCacheOnRepositoryChange(private val project: Project) : GitRepositoryChangeListener {
-    override fun repositoryChanged(repository: GitRepository) {
-        val vcsService = getService(project, VcsService::class.java)
-        vcsService.refreshCacheAsync()
     }
 }
 

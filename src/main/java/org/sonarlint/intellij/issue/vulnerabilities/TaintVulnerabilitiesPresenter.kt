@@ -32,13 +32,13 @@ import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
-import org.sonarlint.intellij.vcs.VcsService
 
 sealed class TaintVulnerabilitiesStatus {
   fun isEmpty() = count() == 0

@@ -44,12 +44,12 @@ import javax.swing.event.HyperlinkEvent;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.common.vcs.VcsListener;
+import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.util.SonarLintActions;
-import org.sonarlint.intellij.vcs.VcsListenerKt;
-import org.sonarlint.intellij.vcs.VcsService;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -73,7 +73,7 @@ public class CurrentFileConnectedModePanel {
     createPanel();
     switchCards();
     CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
-    project.getMessageBus().connect(project).subscribe(VcsListenerKt.getVCS_TOPIC(),
+    project.getMessageBus().connect(project).subscribe(VcsListener.TOPIC,
       (module, branchName) -> GuiUtils.invokeLaterIfNeeded(this::switchCards, ModalityState.defaultModalityState()));
   }
 

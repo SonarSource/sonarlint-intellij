@@ -172,6 +172,7 @@ dependencies {
     implementation(project(":common"))
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":rider"))
+    runtimeOnly(project(":git"))
     testImplementation("junit:junit:4.12")
     testImplementation("org.assertj:assertj-core:3.16.1")
     testImplementation("org.mockito:mockito-core:2.19.0")
