@@ -142,7 +142,7 @@
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.lang</depends>
-    <depends>Git4Idea</depends>
+    <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-java.xml">com.intellij.modules.java</depends>
     <depends optional="true" config-file="plugin-clion.xml">com.intellij.modules.clion</depends>
     <depends optional="true" config-file="plugin-rider.xml">com.intellij.modules.rider</depends>
@@ -150,9 +150,10 @@
     <projectListeners>
         <listener class="org.sonarlint.intellij.module.ModuleChangeListener" topic="com.intellij.openapi.project.ModuleListener"/>
         <listener class="org.sonarlint.intellij.module.MoveModulesOnBindingChange" topic="org.sonarlint.intellij.messages.ProjectBindingListener"/>
-        <listener class="org.sonarlint.intellij.vcs.RefreshCacheOnRepositoryChange" topic="git4idea.repo.GitRepositoryChangeListener"/>
         <listener class="org.sonarlint.intellij.vcs.RefreshCacheOnBindingChange" topic="org.sonarlint.intellij.messages.ProjectBindingListener"/>
         <listener class="org.sonarlint.intellij.vcs.RefreshCacheOnProjectSync" topic="org.sonarlint.intellij.messages.ProjectSynchronizationListener"/>
+        <!-- should belong to plugin-git.xml but moved here because of this bug https://youtrack.jetbrains.com/issue/IDEA-231568 (can be moved back when min version 2020.2) -->
+        <listener class="org.sonarlint.intellij.git.RefreshVcsCacheOnRepositoryChange" topic="git4idea.repo.GitRepositoryChangeListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -205,7 +206,8 @@
                             testServiceImplementation="org.sonarlint.intellij.util.SynchronousThreadPoolExecutor"/>
 
         <projectService serviceImplementation="org.sonarlint.intellij.core.ProjectBindingManager"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.vcs.VcsService"/>
+        <projectService serviceInterface="org.sonarlint.intellij.common.vcs.VcsService"
+                        serviceImplementation="org.sonarlint.intellij.vcs.DefaultVcsService"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.notifications.SonarLintProjectNotifications"/>
         <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
@@ -241,6 +243,7 @@
         <extensionPoint name="analysisConfiguration" interface="org.sonarlint.intellij.common.analysis.AnalysisConfigurator" dynamic="true"/>
         <extensionPoint name="languageActivator" interface="org.sonarlint.intellij.common.LanguageActivator" dynamic="true"/>
         <extensionPoint name="fileExclusionContributor" interface="org.sonarlint.intellij.common.analysis.FileExclusionContributor" dynamic="true"/>
+        <extensionPoint name="vcsProvider" interface="org.sonarlint.intellij.common.vcs.ModuleVcsRepoProvider" dynamic="true"/>
     </extensionPoints>
 
     <applicationListeners>

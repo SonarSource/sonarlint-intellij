@@ -17,16 +17,10 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.vcs
+package org.sonarlint.intellij.common.vcs
 
-import com.intellij.openapi.module.Module
-import com.intellij.util.messages.Topic
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 
-var VCS_TOPIC = Topic.create(
-    "Vcs events",
-    VcsListener::class.java
-)
-
-interface VcsListener {
-    fun resolvedServerBranchChanged(module: Module, branchName: String?)
+interface VcsRepo {
+    fun electBestMatchingServerBranchForCurrentHead(projectBranches: ProjectBranches) : String?
 }
