@@ -12,7 +12,7 @@ class ModuleGitRepoProvider : ModuleVcsRepoProvider {
         val repositoryManager = GitRepositoryManager.getInstance(module.project)
         val moduleRepositories = ModuleRootManager.getInstance(module)
             .contentRoots
-            .mapNotNull { root -> repositoryManager.getRepositoryForRoot(root) }
+            .mapNotNull { root -> repositoryManager.getRepositoryForFile(root) }
             .toSet()
         if (moduleRepositories.isEmpty()) {
             return null
