@@ -33,11 +33,16 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 abstract class AbstractSonarLintHeavyTest : HeavyPlatformTestCase() {
+
+    override fun setUp() {
+        super.setUp()
+        getEngineManager().clearAllEngines()
+    }
     protected fun getTestDataPath(): Path =
         Paths.get("src/test/testData/${javaClass.simpleName}").toAbsolutePath()
 
     protected fun getEngineManager() =
-        SonarLintUtils.getService(EngineManager::class.java) as TestEngineManager
+        getService(EngineManager::class.java) as TestEngineManager
 
     protected fun connectModuleTo(projectKey: String) {
         connectModuleTo(module, projectKey)
