@@ -23,9 +23,8 @@ import com.intellij.ide.IdeTooltipManager;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.module.ModuleUtilCore;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.GuiUtils;
 import com.intellij.ui.HyperlinkAdapter;
@@ -50,6 +49,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.util.SonarLintActions;
+import org.sonarlint.intellij.util.SonarLintAppUtils;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -143,8 +143,7 @@ public class CurrentFileConnectedModePanel {
       super(SonarLintIcons.CONNECTED);
     }
 
-    private void updateTooltip(VirtualFile selectedFile, ServerConnection serverConnection) {
-      var module = illegalStateIfNull(ModuleUtilCore.findModuleForFile(selectedFile, project), "Could not find module for file " + selectedFile);
+    private void updateTooltip(Module module, ServerConnection serverConnection) {
       var projectKey = illegalStateIfNull(getService(module, ModuleBindingManager.class).resolveProjectKey(), "Could not find project key for module " + module);
       var branchName = getService(project, VcsService.class).getServerBranchName(module);
       var connectedTooltip = new TooltipWithClickableLinks.ForBrowser(connectedCard, buildTooltipHtml(serverConnection, projectKey, branchName));
@@ -170,8 +169,13 @@ public class CurrentFileConnectedModePanel {
         var projectBindingManager = getService(project, ProjectBindingManager.class);
         projectBindingManager.tryGetServerConnection().ifPresentOrElse(serverConnection -> {
           try {
-            connectedCard.updateTooltip(selectedFile, serverConnection);
-            switchCard(CONNECTED);
+            var module = SonarLintAppUtils.findModuleForFile(selectedFile, project);
+            if (module == null) {
+              switchCard(EMPTY);
+            } else {
+              connectedCard.updateTooltip(module, serverConnection);
+              switchCard(CONNECTED);
+            }
           } catch (IllegalStateException e) {
             switchCard(ERROR);
           }
