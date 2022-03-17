@@ -27,6 +27,7 @@ import org.assertj.core.api.Assertions
 import org.assertj.swing.timing.Pause
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.extension.ExtendWith
+import org.junit.jupiter.api.fail
 import org.sonarlint.intellij.its.fixtures.DialogFixture
 import org.sonarlint.intellij.its.fixtures.IdeaFrame
 import org.sonarlint.intellij.its.fixtures.PreferencesDialog
@@ -83,7 +84,32 @@ open class BaseUiTest {
                     }
                 }
             }
+            failTestIfUncaughtExceptions()
         }
+    }
+
+    private fun failTestIfUncaughtExceptions() {
+        val uncaughtExceptions = getUncaughtExceptions()
+        val shouldFailTest = uncaughtExceptions.any { e -> e.contains("sonarlint", true) || e.contains("sonarsource", true) }
+        uncaughtExceptions.forEach { e -> println("Uncaught error during the test: $e") }
+        clearExceptions()
+        if (shouldFailTest) {
+            fail("There were uncaught exceptions during the test, see logs")
+        }
+    }
+
+    private fun getUncaughtExceptions(): List<String> {
+        return remoteRobot.callJs(
+            """
+        const result = new ArrayList()
+        com.intellij.diagnostic.MessagePool.getInstance().getFatalErrors(true, true)
+            .forEach((error) => result.add("message=" + error.getMessage() + ", stacktrace=" + error.getThrowableText()))
+        result
+    """)
+    }
+
+    private fun clearExceptions() {
+        remoteRobot.runJs("com.intellij.diagnostic.MessagePool.getInstance().clearErrors()")
     }
 
     private fun sonarlintLogPanel(remoteRobot: RemoteRobot, function: TabContentFixture.() -> Unit = {}) {
