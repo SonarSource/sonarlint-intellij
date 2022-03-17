@@ -27,14 +27,12 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.common.vcs.VcsListener
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask
-import org.sonarlint.intellij.util.SonarLintAppUtils
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.getOpenFiles
 
