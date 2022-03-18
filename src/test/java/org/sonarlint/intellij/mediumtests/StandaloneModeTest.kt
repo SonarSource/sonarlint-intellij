@@ -21,6 +21,7 @@ package org.sonarlint.intellij.mediumtests
 
 import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.vcs.FileStatusManager
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.changes.ChangeListManagerGate
 import com.intellij.openapi.vcs.changes.ChangeListManagerImpl
@@ -148,6 +149,7 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
             dirtyScopeManager.fileDirty(fileToAnalyze_ignored)
             dirtyScopeManager.fileDirty(fileToAnalyze_unversionned)
             myChangeListManager.waitEverythingDoneInTestMode()
+            FileStatusManager.getInstance(project).fileStatusesChanged()
 
             // Ensure previous code worked as expected
             assertThat(myChangeListManager.isIgnoredFile(fileToAnalyze_ignored)).isTrue()
