@@ -25,11 +25,17 @@ import org.sonarlint.intellij.core.server.events.ServerEventsService
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
 class ServerEventsNoOpService : ServerEventsService {
+    val subscriptions: MutableList<Pair<ConnectedSonarLintEngine?, ServerConnection>> = mutableListOf()
+
     override fun autoSubscribe(engineIfStarted: ConnectedSonarLintEngine?, serverConnection: ServerConnection) {
-        // no op
+        subscriptions.add(Pair(engineIfStarted, serverConnection))
     }
 
     override fun unsubscribe(project: Project) {
         // no op
+    }
+
+    fun clearSubscriptions() {
+        subscriptions.clear()
     }
 }

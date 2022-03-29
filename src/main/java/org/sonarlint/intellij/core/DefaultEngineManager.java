@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.core.server.events.ServerEventsService;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.AnalysisRequirementNotifications;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
@@ -40,6 +41,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
 
 import static com.intellij.openapi.progress.PerformInBackgroundOption.ALWAYS_BACKGROUND;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class DefaultEngineManager implements EngineManager, Disposable {
@@ -134,7 +136,14 @@ public class DefaultEngineManager implements EngineManager, Disposable {
   @Override
   @NotNull
   public synchronized ConnectedSonarLintEngine getConnectedEngine(String connectionId) {
-    return connectedEngines.computeIfAbsent(connectionId, factory::createEngine);
+    return connectedEngines.computeIfAbsent(connectionId, this::createConnectedEngine);
+  }
+
+  @NotNull
+  private ConnectedSonarLintEngine createConnectedEngine(String connectionId) {
+    var engine = factory.createEngine(connectionId);
+    getGlobalSettings().getServerConnectionByName(connectionId).ifPresent(connection -> getService(ServerEventsService.class).autoSubscribe(engine, connection));
+    return engine;
   }
 
   @Override
