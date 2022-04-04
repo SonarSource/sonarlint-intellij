@@ -50,7 +50,7 @@
             <br/>
             <p>
                 SonarLint requires your IDE to be run with a JVM 11+ (this is the case for all recent JetBrains IDE);
-                the analysis of JavaScript and TypeScript requires Node.js >= 10.12 to be installed on your computer.
+                the analysis of JavaScript and TypeScript requires Node.js >= 12.22 to be installed on your computer.
             </p>
         </html>
       ]]></description>
@@ -59,7 +59,7 @@
       <ul>
         <li>6.6 - Synchronize issues and taint vulnerabilities from the appropriate branch in connected mode. Subscribe for server events to update active rules. Quick fixes for 15 C/C++ and 23 JS/TS rules. Support TypeScript 4.5. Drop support for Node 10. One more rule for C#. Performance improvements in Rider.</li>
         <li>6.5.1 - Fix error message at startup.</li>
-        <li>6.5 - Deprecation of Node.js 12 for JS/TS analyzes. Embed the XML analyzer. 5 new rules for Java. 9 new rules for PHP around regexes. Bug fixes, fewer FPs and improvements for many languages</li>
+        <li>6.5 - Deprecation of Node.js &lt; 12.22 for JS/TS analyzes. Embed the XML analyzer. 5 new rules for Java. 9 new rules for PHP around regexes. Bug fixes, fewer FPs and improvements for many languages</li>
         <li>6.4.3 - Fewer false-negatives and false-positives for C/C++.</li>
         <li>6.4.2 - Fix potential UI-freeze when loading/unloading modules.</li>
         <li>6.4.1 - Fix error in connected mode if custom plugin have markdown rule description.</li>
