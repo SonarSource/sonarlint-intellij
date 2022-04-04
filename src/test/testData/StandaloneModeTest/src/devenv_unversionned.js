@@ -59,17 +59,17 @@ qq(window).attach("load", function() {
         },
         callbacks: {
             onError: errorHandler,
-            onUpload: function(id, filename) {
+            onUpload: function(id, _filename) {
                 this.setParams({
                     "hey": "hi ɛ $ hmm \\ hi",
                     "ho": "foobar"
                 }, id);
 
             },
-            onStatusChange: function(id, oldS, newS) {
+            onStatusChange: function(id, _oldS, newS) {
                 qq.log("id: " + id + " " + newS);
             },
-            onComplete: function(id, name, response) {
+            onComplete: function(_id, _name, response) {
                 qq.log(response);
             }
         }

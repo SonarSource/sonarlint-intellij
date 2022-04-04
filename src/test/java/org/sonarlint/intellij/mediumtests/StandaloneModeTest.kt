@@ -128,15 +128,15 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
     @Test
     fun should_find_secrets_excluding_vcs_ignored_files() {
         val fileToAnalyze = myFixture.configureByFile("src/devenv.js").virtualFile
-        val fileToAnalyze_ignored = myFixture.configureByFile("src/devenv_ignored.js").virtualFile
-        val fileToAnalyze_unversionned = myFixture.configureByFile("src/devenv_unversionned.js").virtualFile
+        val fileToAnalyzeIgnored = myFixture.configureByFile("src/devenv_ignored.js").virtualFile
+        val fileToAnalyzeUnversionned = myFixture.configureByFile("src/devenv_unversionned.js").virtualFile
 
         val myVcsManager = ProjectLevelVcsManager.getInstance(project) as ProjectLevelVcsManagerImpl
         val myVcs = MockAbstractVcs(project)
         try {
-            myVcs.setChangeProvider(MyMockChangeProvider())
+            myVcs.changeProvider = MyMockChangeProvider()
             myVcsManager.registerVcs(myVcs)
-            myVcsManager.setDirectoryMapping("", myVcs.getName())
+            myVcsManager.setDirectoryMapping("", myVcs.name)
             myVcsManager.waitForInitialized()
 
 
@@ -146,16 +146,16 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
             myChangeListManager.waitEverythingDoneInTestMode()
 
             // Now force a specific status update for some files. It will ask the MyMockChangeProvider
-            dirtyScopeManager.fileDirty(fileToAnalyze_ignored)
-            dirtyScopeManager.fileDirty(fileToAnalyze_unversionned)
+            dirtyScopeManager.fileDirty(fileToAnalyzeIgnored)
+            dirtyScopeManager.fileDirty(fileToAnalyzeUnversionned)
             myChangeListManager.waitEverythingDoneInTestMode()
             FileStatusManager.getInstance(project).fileStatusesChanged()
 
             // Ensure previous code worked as expected
-            assertThat(myChangeListManager.isIgnoredFile(fileToAnalyze_ignored)).isTrue()
-            assertThat(myChangeListManager.isUnversioned(fileToAnalyze_unversionned)).isTrue()
+            assertThat(myChangeListManager.isIgnoredFile(fileToAnalyzeIgnored)).isTrue
+            assertThat(myChangeListManager.isUnversioned(fileToAnalyzeUnversionned)).isTrue
 
-            val issues = analyze(fileToAnalyze, fileToAnalyze_ignored, fileToAnalyze_unversionned, triggerType = TriggerType.ALL)
+            val issues = analyze(fileToAnalyze, fileToAnalyzeIgnored, fileToAnalyzeUnversionned, triggerType = TriggerType.ALL)
 
             assertThat(issues)
                 .extracting(
@@ -252,7 +252,7 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
             @NotNull progress: ProgressIndicator,
             @NotNull addGate: ChangeListManagerGate,
         ) {
-            for (path in dirtyScope.getDirtyFiles()) {
+            for (path in dirtyScope.dirtyFiles) {
                 if (path.name.contains("_ignored"))
                     builder.processIgnoredFile(path)
                 else if (path.name.contains("_unversionned"))
