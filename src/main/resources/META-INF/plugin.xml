@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>6.7 - Quick fixes for 3 C/C++ and 30 JS/TS rules. 17 new rules for Python (8 for regular expressions). Support for TypeScript 4.6. Activate one JS rule by default (S1172). Remove legacy C/C++ rule keys. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>6.7 - Quick fixes for 3 C/C++ and 30 JS/TS rules. 17 new rules for Python (8 for regular expressions). Support for TypeScript 4.6. Activate JS rule S1172 by default. Activate C# rule S2222 by default. Remove legacy C/C++ rule keys. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>6.6 - Synchronize issues and taint vulnerabilities from the appropriate branch in connected mode. Subscribe for server events to update active rules. Quick fixes for 15 C/C++ and 23 JS/TS rules. Support TypeScript 4.5. Drop support for Node 10. One more rule for C#. Performance improvements in Rider.</li>
         <li>6.5.1 - Fix error message at startup.</li>
         <li>6.5 - Deprecation of Node.js &lt; 12.22 for JS/TS analyzes. Embed the XML analyzer. 5 new rules for Java. 9 new rules for PHP around regexes. Bug fixes, fewer FPs and improvements for many languages</li>
