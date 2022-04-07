@@ -156,6 +156,8 @@ stages:
             IDEA_VERSION: 'IC-2021.3.2'
           CLion2021:
             IDEA_VERSION: 'CL-2021.3.3'
+          IdeaEAP:
+            IDEA_VERSION: 'IC-221.5080.169'
       steps:
       - checkout: self
         fetchDepth: 1
