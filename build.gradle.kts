@@ -25,6 +25,7 @@ plugins {
     idea
     signing
     id("de.undercouch.download") version "4.1.2"
+    id("org.cyclonedx.bom") version "1.5.0"
 }
 
 buildscript {
@@ -58,6 +59,7 @@ allprojects {
         plugin("idea")
         plugin("java")
         plugin("org.jetbrains.intellij")
+        plugin("org.cyclonedx.bom")
     }
 
     repositories {
@@ -91,6 +93,18 @@ allprojects {
             apiVersion = "1.3"
             jvmTarget = "11"
         }
+    }
+
+    val bomFile = layout.buildDirectory.file("reports/bom.json")
+    tasks.withType<org.cyclonedx.gradle.CycloneDxTask>().configureEach {
+        includeConfigs += setOf("runtimeClasspath", "sqplugins_deps", "typescript")
+        outputs.file(bomFile)
+        outputs.upToDateWhen { false }
+    }
+    artifacts.add("archives", bomFile.get().asFile) {
+        type = "json"
+        classifier = "cyclonedx"
+        builtBy("cyclonedxBom")
     }
 }
 
@@ -150,7 +164,11 @@ tasks.runIde {
 }
 
 configurations {
-    create("sqplugins") { isTransitive = false }
+    var sqplugins = create("sqplugins") { isTransitive = false }
+    create("sqplugins_deps") {
+        extendsFrom(sqplugins)
+        isTransitive = true
+    }
     create("typescript") { isCanBeConsumed = false }
     all {
         // Allows using project dependencies instead of IDE dependencies during compilation and test running
@@ -179,18 +197,18 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
-    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.11.0.29148@jar")
-    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:9.1.0.17747@jar")
-    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.23.0.8726@jar")
-    "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.12.0.9583@jar")
-    "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.9.0.1147@jar")
-    "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.9.0.3429@jar")
-    "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.6.0.3106@jar")
-    "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.5.0.3376@jar")
-    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.3.0.45903@jar")
+    "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.11.0.29148")
+    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:9.1.0.17747")
+    "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.23.0.8726")
+    "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.12.0.9583")
+    "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.9.0.1147")
+    "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.9.0.3429")
+    "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.6.0.3106")
+    "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.5.0.3376")
+    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.3.0.45903")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.32.0.44918@jar")
-        "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766@jar")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.32.0.44918")
+        "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
 }
@@ -287,7 +305,7 @@ tasks {
             copyOmnisharp(destinationDir, pluginName)
         }
     }
-    
+
     val buildPluginBlockmap by registering {
         inputs.file(buildPlugin.get().archiveFile)
         doLast {
@@ -372,12 +390,12 @@ artifactory {
         defaults(delegateClosureOf<GroovyObject> {
             setProperty(
                 "properties", mapOf(
-                "vcs.revision" to System.getenv("BUILD_SOURCEVERSION"),
-                "vcs.branch" to (System.getenv("SYSTEM_PULLREQUEST_TARGETBRANCH")
-                    ?: System.getenv("BUILD_SOURCEBRANCHNAME")),
-                "build.name" to "sonarlint-intellij",
-                "build.number" to System.getenv("BUILD_BUILDID")
-            )
+                    "vcs.revision" to System.getenv("BUILD_SOURCEVERSION"),
+                    "vcs.branch" to (System.getenv("SYSTEM_PULLREQUEST_TARGETBRANCH")
+                        ?: System.getenv("BUILD_SOURCEBRANCHNAME")),
+                    "build.name" to "sonarlint-intellij",
+                    "build.number" to System.getenv("BUILD_BUILDID")
+                )
             )
             invokeMethod("publishConfigs", "archives")
             setProperty("publishPom", true) // Publish generated POM files to Artifactory (true by default)
