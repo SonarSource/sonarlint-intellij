@@ -323,6 +323,11 @@ open class BaseUiTest {
                     }
                 }
             }
+            idea {
+                // corresponding system property has been introduced around middle of 2020
+                // removable at some point when raising minimal version
+                closeTipOfTheDay()
+            }
         }
     }
 
