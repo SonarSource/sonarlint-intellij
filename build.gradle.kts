@@ -102,6 +102,7 @@ allprojects {
         outputs.upToDateWhen { false }
     }
     artifacts.add("archives", bomFile.get().asFile) {
+        name = "sonarlint-intellij"
         type = "json"
         classifier = "cyclonedx"
         builtBy("cyclonedxBom")
