@@ -30,6 +30,7 @@ plugins {
 
 buildscript {
     repositories {
+        mavenLocal()
         mavenCentral()
     }
     dependencies {
@@ -63,6 +64,8 @@ allprojects {
     }
 
     repositories {
+        // uncomment when testing a local artifact (SLCORE, analyzer)
+        mavenLocal()
         mavenCentral()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             content { excludeGroup("typescript") }
@@ -188,7 +191,9 @@ dependencies {
     implementation("org.apache.httpcomponents.client5:httpclient5:5.1.2") {
         exclude(module = "slf4j-api")
     }
+    compileOnly(files("/home/dam/.m2/repository/org/sonarsource/javascript/sonar-javascript-plugin/9.3.0-SNAPSHOT/sonar-javascript-plugin-9.3.0-SNAPSHOT.jar"))
     implementation(project(":common"))
+    implementation(project(":sonar-duplications"))
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
@@ -198,8 +203,10 @@ dependencies {
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
+
+    // if depending on a local SNAPSHOT version of an analyzer, use e.g. 9.3.0+
     "sqplugins"("org.sonarsource.java:sonar-java-plugin:7.11.0.29148")
-    "sqplugins"("org.sonarsource.javascript:sonar-javascript-plugin:9.1.0.17747")
+    "sqplugins"(files("/home/dam/.m2/repository/org/sonarsource/javascript/sonar-javascript-plugin/9.3.0-SNAPSHOT/sonar-javascript-plugin-9.3.0-SNAPSHOT.jar"))
     "sqplugins"("org.sonarsource.php:sonar-php-plugin:3.23.0.8726")
     "sqplugins"("org.sonarsource.python:sonar-python-plugin:3.12.0.9583")
     "sqplugins"("org.sonarsource.kotlin:sonar-kotlin-plugin:2.9.0.1147")

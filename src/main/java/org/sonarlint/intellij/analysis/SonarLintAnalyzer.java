@@ -27,6 +27,11 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,6 +42,15 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.sonar.duplications.block.Block;
+import org.sonar.duplications.block.BlockChunker;
+import org.sonar.duplications.java.JavaStatementBuilder;
+import org.sonar.duplications.java.JavaTokenProducer;
+import org.sonar.duplications.statement.Statement;
+import org.sonar.duplications.statement.StatementChunker;
+import org.sonar.duplications.token.TokenChunker;
+import org.sonarlint.intellij.analysis.cpd.CpdSettings;
+import org.sonarlint.intellij.analysis.cpd.SonarCpdBlockIndex;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -53,6 +67,7 @@ import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 public class SonarLintAnalyzer {
 
   private final Project myProject;
+  private final SonarCpdBlockIndex index = new SonarCpdBlockIndex(new CpdSettings());
 
   public SonarLintAnalyzer(Project project) {
     myProject = project;
@@ -70,6 +85,8 @@ public class SonarLintAnalyzer {
 
     // configure files
     var inputFiles = getInputFiles(module, filesToAnalyze, contributedLanguages);
+
+    createIndex(inputFiles, console);
 
     // Analyze
 
@@ -186,5 +203,36 @@ public class SonarLintAnalyzer {
       return encoding;
     }
     return Charset.defaultCharset();
+  }
+  private static final int BLOCK_SIZE = 3;
+
+  private void createIndex(List<ClientInputFile> sourceFiles, SonarLintConsole console) {
+    TokenChunker tokenChunker = JavaTokenProducer.build();
+    StatementChunker statementChunker = JavaStatementBuilder.build();
+    BlockChunker blockChunker = new BlockChunker(BLOCK_SIZE);
+
+    for (ClientInputFile inputFile : sourceFiles) {
+      console.debug("Populating index from " + inputFile);
+      String resourceEffectiveKey = inputFile.uri().toString();
+
+      List<Statement> statements;
+
+      try (InputStream is = inputFile.inputStream();
+           Reader reader = new InputStreamReader(is, inputFile.getCharset())) {
+        statements = statementChunker.chunk(tokenChunker.chunk(reader));
+      } catch (FileNotFoundException e) {
+        throw new IllegalStateException("Cannot find file " + inputFile.relativePath(), e);
+      } catch (IOException e) {
+        throw new IllegalStateException("Exception handling file: " + inputFile.relativePath(), e);
+      }
+
+      List<Block> blocks;
+      try {
+        blocks = blockChunker.chunk(resourceEffectiveKey, statements);
+      } catch (Exception e) {
+        throw new IllegalStateException("Cannot process file " + inputFile.relativePath(), e);
+      }
+      index.insert(inputFile, blocks);
+    }
   }
 }

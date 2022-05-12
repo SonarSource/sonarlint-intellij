@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.util.Objects;
 import javax.annotation.Nullable;
 
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
@@ -135,5 +136,18 @@ public class DefaultClientInputFile implements ClientInputFile {
   @Override
   public Language language() {
     return language;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DefaultClientInputFile that = (DefaultClientInputFile) o;
+    return test == that.test && documentModificationStamp == that.documentModificationStamp && path.equals(that.path) && relativePath.equals(that.relativePath) && charset.equals(that.charset) && vFile.equals(that.vFile) && Objects.equals(documentBuffer, that.documentBuffer) && language == that.language && uri.equals(that.uri);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(path, relativePath, test, charset, vFile, documentBuffer, language, uri, documentModificationStamp);
   }
 }
