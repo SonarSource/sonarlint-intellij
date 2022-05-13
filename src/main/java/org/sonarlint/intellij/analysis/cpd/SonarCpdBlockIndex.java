@@ -19,11 +19,14 @@
  */
 package org.sonarlint.intellij.analysis.cpd;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import org.sonar.api.batch.fs.InputFile;
+import java.util.stream.Collectors;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.duplications.block.Block;
@@ -38,54 +41,47 @@ public class SonarCpdBlockIndex extends AbstractCloneIndex {
   private static final Logger LOG = Loggers.get(SonarCpdBlockIndex.class);
   private final CloneIndex mem = new PackedMemoryCloneIndex();
   // Files already tokenized
-  private final Set<ClientInputFile> indexedFiles = new HashSet<>();
-  private final CpdSettings settings;
-
-  public SonarCpdBlockIndex(CpdSettings settings) {
-    this.settings = settings;
-  }
+  private final Map<String, List<ClientInputFile>> filesHavingBlockHash = new HashMap<>();
 
   public void insert(ClientInputFile inputFile, Collection<Block> blocks) {
-//    if (settings.isCrossProjectDuplicationEnabled()) {
-//      int id = ((DefaultInputFile) inputFile).scannerId();
-//      if (publisher.getWriter().hasComponentData(FileStructure.Domain.CPD_TEXT_BLOCKS, id)) {
-//        throw new UnsupportedOperationException("Trying to save CPD tokens twice for the same file is not supported: " + inputFile.absolutePath());
-//      }
-//      final ScannerReport.CpdTextBlock.Builder builder = ScannerReport.CpdTextBlock.newBuilder();
-//      publisher.getWriter().writeCpdTextBlocks(id, blocks.stream().map(block -> {
-//        builder.clear();
-//        builder.setStartLine(block.getStartLine());
-//        builder.setEndLine(block.getEndLine());
-//        builder.setStartTokenIndex(block.getStartUnit());
-//        builder.setEndTokenIndex(block.getEndUnit());
-//        builder.setHash(block.getBlockHash().toHexString());
-//        return builder.build();
-//      }).collect(Collectors.toList()));
-//    }
+    // if (settings.isCrossProjectDuplicationEnabled()) {
+    // int id = ((DefaultInputFile) inputFile).scannerId();
+    // if (publisher.getWriter().hasComponentData(FileStructure.Domain.CPD_TEXT_BLOCKS, id)) {
+    // throw new UnsupportedOperationException("Trying to save CPD tokens twice for the same file is not supported: " +
+    // inputFile.absolutePath());
+    // }
+    // final ScannerReport.CpdTextBlock.Builder builder = ScannerReport.CpdTextBlock.newBuilder();
+    // publisher.getWriter().writeCpdTextBlocks(id, blocks.stream().map(block -> {
+    // builder.clear();
+    // builder.setStartLine(block.getStartLine());
+    // builder.setEndLine(block.getEndLine());
+    // builder.setStartTokenIndex(block.getStartUnit());
+    // builder.setEndTokenIndex(block.getEndUnit());
+    // builder.setHash(block.getBlockHash().toHexString());
+    // return builder.build();
+    // }).collect(Collectors.toList()));
+    // }
     for (Block block : blocks) {
       mem.insert(block);
+      var files = filesHavingBlockHash.computeIfAbsent(block.getHashHex(), k -> new ArrayList<>());
+      files.add(inputFile);
     }
     if (blocks.isEmpty()) {
       LOG.debug("Not enough content in '{}' to have CPD blocks, it will not be part of the duplication detection", inputFile.relativePath());
     }
-    indexedFiles.add(inputFile);
-  }
-
-  public int noIndexedFiles() {
-    return indexedFiles.size();
-  }
-
-  public boolean isIndexed(InputFile inputFile) {
-    return indexedFiles.contains(inputFile);
-  }
-
-  public Collection<Block> getByInputFile(String resourceKey) {
-    return mem.getByResourceId(resourceKey);
   }
 
   @Override
   public Collection<Block> getBySequenceHash(ByteArray hash) {
     return mem.getBySequenceHash(hash);
+  }
+
+  public Set<String> getUniqueBlockHashes() {
+    return filesHavingBlockHash.keySet();
+  }
+
+  public Collection<ClientInputFile> getFilesWithBlockHash(String hash) {
+    return filesHavingBlockHash.getOrDefault(hash, new ArrayList<>());
   }
 
   @Override
@@ -108,4 +104,9 @@ public class SonarCpdBlockIndex extends AbstractCloneIndex {
     return mem.noResources();
   }
 
+  public List<Block> getBlocks(ClientInputFile inputFile, String blockHash) {
+    return mem.getByResourceId(inputFile.uri().toString())
+      .stream().filter(b -> b.getHashHex().equals(blockHash))
+      .collect(Collectors.toList());
+  }
 }
