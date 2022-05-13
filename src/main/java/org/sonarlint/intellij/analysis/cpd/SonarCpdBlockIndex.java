@@ -22,6 +22,7 @@ package org.sonarlint.intellij.analysis.cpd;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +42,7 @@ public class SonarCpdBlockIndex extends AbstractCloneIndex {
   private static final Logger LOG = Loggers.get(SonarCpdBlockIndex.class);
   private final CloneIndex mem = new PackedMemoryCloneIndex();
   // Files already tokenized
-  private final Map<String, List<ClientInputFile>> filesHavingBlockHash = new HashMap<>();
+  private final Map<String, Set<ClientInputFile>> filesHavingBlockHash = new HashMap<>();
 
   public void insert(ClientInputFile inputFile, Collection<Block> blocks) {
     // if (settings.isCrossProjectDuplicationEnabled()) {
@@ -63,7 +64,7 @@ public class SonarCpdBlockIndex extends AbstractCloneIndex {
     // }
     for (Block block : blocks) {
       mem.insert(block);
-      var files = filesHavingBlockHash.computeIfAbsent(block.getHashHex(), k -> new ArrayList<>());
+      var files = filesHavingBlockHash.computeIfAbsent(block.getHashHex(), k -> new HashSet<>());
       files.add(inputFile);
     }
     if (blocks.isEmpty()) {
@@ -81,7 +82,7 @@ public class SonarCpdBlockIndex extends AbstractCloneIndex {
   }
 
   public Collection<ClientInputFile> getFilesWithBlockHash(String hash) {
-    return filesHavingBlockHash.getOrDefault(hash, new ArrayList<>());
+    return filesHavingBlockHash.getOrDefault(hash, new HashSet<>());
   }
 
   @Override

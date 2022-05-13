@@ -18,7 +18,7 @@ class DuplicationsTreeModelBuilder {
     fun updateModel(duplications: MutableList<Duplication>) {
         val map = duplications.associate {
             it.occurrences[0].inputFile to DuplicationNode(
-                DuplicationNodeModel(it.occurrences[0].inputFile, it.occurrences.flatMap { o -> o.blocks }.toMutableList())
+                DuplicationNodeModel(it.occurrences[0].inputFile, it.occurrences.map { o -> o.block }.toMutableList())
             )
         }
         index.keys

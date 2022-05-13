@@ -28,30 +28,30 @@ public class Duplication {
 
   public static class Occurrence {
     private final ClientInputFile inputFile;
-    private final List<Block> blocks;
+    private final Block block;
 
-    public Occurrence(ClientInputFile inputFile, List<Block> blocks) {
+    public Occurrence(ClientInputFile inputFile, Block block) {
       this.inputFile = inputFile;
-      this.blocks = blocks;
+      this.block = block;
     }
 
     public ClientInputFile getInputFile() {
       return inputFile;
     }
 
-    public List<Block> getBlocks() {
-      return blocks;
+    public Block getBlock() {
+      return block;
     }
 
     public int getInvolvedLinesCount() {
-      return blocks.stream().mapToInt(b -> b.getEndLine() - b.getStartLine() + 1).sum();
+      return block.getEndLine() - block.getStartLine() + 1;
     }
 
     @Override
     public String toString() {
       return "Occurrence{" +
         "inputFile=" + inputFile +
-        ", blocks=" + blocks +
+        ", block=" + block +
         '}';
     }
   }

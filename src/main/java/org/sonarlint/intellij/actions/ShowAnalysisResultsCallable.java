@@ -83,7 +83,7 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   private static void displayDuplications(Project project, Collection<ClientInputFile> allFiles) {
     var console = SonarLintConsole.get(project);
     var report = computeDuplications(allFiles, console);
-    if (report.hasAnyDuplication()) {
+    if (!report.hasAnyDuplication()) {
       console.info("No duplication found during analysis");
     } else {
       console.info("Some duplications were found during analysis: " + report.getBlockDuplications());
@@ -140,13 +140,13 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
     var duplications = new ArrayList<Duplication>();
     index.getUniqueBlockHashes().forEach(hash -> {
       var files = index.getFilesWithBlockHash(hash);
-      if (!files.isEmpty()) {
-        var occurrences = files.stream()
-          .map(f -> new Duplication.Occurrence(f, index.getBlocks(f, hash)))
-          .collect(Collectors.toList());
-        if (occurrences.size() > 1) {
-          duplications.add(new Duplication(occurrences));
-        }
+      var occurrencesList = new ArrayList<Duplication.Occurrence>();
+      for (ClientInputFile file: files) {
+        var blocks = index.getBlocks(file, hash);
+        occurrencesList.addAll(blocks.stream().map(it -> new Duplication.Occurrence(file, it)).collect(Collectors.toList()));
+      }
+      if(occurrencesList.size() > 1) {
+        duplications.add(new Duplication(occurrencesList));
       }
     });
     return duplications;
