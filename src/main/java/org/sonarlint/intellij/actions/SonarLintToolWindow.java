@@ -28,6 +28,7 @@ import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
+import java.util.Optional;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
@@ -207,14 +208,14 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     getService(project, EditorDecorator.class).removeHighlights();
   }
 
-  public void showDuplicationDensityInReport(DuplicationReport report) {
+  public void showDuplicationDensityInReport(Optional<Float> duplicationDensityThreshold, DuplicationReport report) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       toolWindow.show(() -> {
         var reportContent = selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS);
         if (reportContent != null) {
           var reportPanel = (SonarLintAnalysisResultsPanel) reportContent.getComponent();
-          reportPanel.showDuplicationDensity(report.getDensity());
+          reportPanel.showDuplicationDensity(duplicationDensityThreshold, report.getDensity());
         }
       });
       var contentManager = toolWindow.getContentManager();

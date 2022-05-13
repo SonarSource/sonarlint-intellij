@@ -184,6 +184,7 @@ configurations {
 
 dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
+    implementation("org.sonarsource.sonarqube:sonar-ws:8.5.1.38104")
     implementation("commons-lang:commons-lang:2.6")
     compileOnly("com.google.code.findbugs:jsr305:2.0.2")
     // Actual runtime dependency is shaded by sonarlint-core but seems invisible to IntelliJ

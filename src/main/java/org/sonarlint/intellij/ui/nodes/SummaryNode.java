@@ -28,6 +28,7 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 public class SummaryNode extends AbstractNode {
   private String emptyText;
   private Optional<Float> density = Optional.empty();
+  private Optional<Float> duplicationDensityThreshold = Optional.empty();
 
   public SummaryNode() {
     super();
@@ -48,7 +49,7 @@ public class SummaryNode extends AbstractNode {
 
     return String.format("Found %d %s in %d %s%s", issues, issues == 1 ? "issue" : "issues", files,
       files == 1 ? "file" : "files",
-      density.map(d -> String.format(" (Duplication is %.2f%%)", d * 100)).orElse(""));
+      density.map(d -> String.format(" (Duplication is %.2f%%, QG limit is %.2f)", d * 100, duplicationDensityThreshold.orElse(0.f))).orElse(""));
   }
 
   public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {
@@ -74,8 +75,9 @@ public class SummaryNode extends AbstractNode {
     renderer.append(getText());
   }
 
-  public void showDuplicationDensity(float density) {
+  public void showDuplicationDensity(Optional<Float> duplicationDensityThreshold, float density) {
     this.density = Optional.of(density);
+    this.duplicationDensityThreshold = duplicationDensityThreshold;
     this.setDirty();
   }
 }

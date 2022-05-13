@@ -29,6 +29,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,10 +44,12 @@ import org.sonarlint.intellij.analysis.cpd.Duplication;
 import org.sonarlint.intellij.analysis.cpd.DuplicationReport;
 import org.sonarlint.intellij.analysis.cpd.SonarCpdBlockIndex;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class ShowAnalysisResultsCallable implements AnalysisCallback {
   private final Project project;
@@ -65,22 +68,23 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
 
   @Override
   public void onSuccess(List<ModuleAnalysisResult> results, Set<VirtualFile> failedVirtualFiles) {
-    var issueManager = SonarLintUtils.getService(project, IssueManager.class);
+    var issueManager = getService(project, IssueManager.class);
     var map = affectedFiles.stream()
       .filter(f -> !failedVirtualFiles.contains(f))
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
-    var issueStore = SonarLintUtils.getService(project, IssueStore.class);
+    var issueStore = getService(project, IssueStore.class);
     issueStore.set(map, whatAnalyzed);
     showAnalysisResultsTab();
-    displayDuplications(project, results.stream().flatMap(r -> r.getInputFiles().stream()).collect(Collectors.toList()));
+    var duplicationDensityThreshold = getService(project, ProjectBindingManager.class).getDuplicationDensityThreshold();
+    displayDuplications(project, duplicationDensityThreshold, results.stream().flatMap(r -> r.getInputFiles().stream()).collect(Collectors.toList()));
   }
 
   private void showAnalysisResultsTab() {
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
+    UIUtil.invokeLaterIfNeeded(() -> getService(project, SonarLintToolWindow.class)
       .openAnalysisResults());
   }
 
-  private static void displayDuplications(Project project, Collection<ClientInputFile> allFiles) {
+  private static void displayDuplications(Project project, Optional<Float> duplicationDensityThreshold, Collection<ClientInputFile> allFiles) {
     var console = SonarLintConsole.get(project);
     var report = computeDuplications(allFiles, console);
     if (!report.hasAnyDuplication()) {
@@ -89,8 +93,8 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
       console.info("Some duplications were found during analysis: " + report.getBlockDuplications());
       console.info("Duplication density is: " + report.getDensity());
     }
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
-      .showDuplicationDensityInReport(report));
+    UIUtil.invokeLaterIfNeeded(() -> getService(project, SonarLintToolWindow.class)
+      .showDuplicationDensityInReport(duplicationDensityThreshold, report));
   }
 
   private static final int BLOCK_SIZE = 4;

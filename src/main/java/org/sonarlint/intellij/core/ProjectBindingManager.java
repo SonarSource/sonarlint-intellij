@@ -43,6 +43,7 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.serverapi.ServerApiHelper;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -224,5 +225,23 @@ public class ProjectBindingManager {
     return modules.stream().map(module -> getService(module, ModuleBindingManager.class).resolveProjectKey())
       .filter(projectKey -> !isBlank(projectKey))
       .collect(Collectors.toSet());
+  }
+
+  public Optional<Float> getDuplicationDensityThreshold() {
+    if (isBindingValid()) {
+      try {
+        var api = new QualityGatesApi(new ServerApiHelper(getServerConnection().getEndpointParams(), getServerConnection().getHttpClient()));
+        var qgId = api.getId(getBinding().getProjectKey());
+        var qualityGate = api.getQualityGate(qgId);
+        return qualityGate.getConditions()
+          .stream().filter(c -> c.getMetricKey().equals(""))
+          .findAny()
+          .map(Condition::getThreshold)
+          .map(Float::parseFloat);
+      } catch (InvalidBindingException e) {
+        e.printStackTrace();
+      }
+    }
+    return Optional.empty();
   }
 }

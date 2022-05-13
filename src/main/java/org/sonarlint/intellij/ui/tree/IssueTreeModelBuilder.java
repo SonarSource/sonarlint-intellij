@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -158,8 +159,8 @@ public class IssueTreeModelBuilder {
     return file.isValid();
   }
 
-  public void showDuplicationDensity(float density) {
-    summary.showDuplicationDensity(density);
+  public void showDuplicationDensity(Optional<Float> duplicationDensityThreshold, float density) {
+    summary.showDuplicationDensity(duplicationDensityThreshold, density);
   }
 
   private static class FileNodeComparator implements Comparator<FileNode> {

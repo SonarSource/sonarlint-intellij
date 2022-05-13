@@ -26,6 +26,7 @@ import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
+import java.util.Optional;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.messages.AnalysisResultsListener;
 import org.sonarlint.intellij.messages.StatusListener;
@@ -98,7 +99,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     lastAnalysisPanel.dispose();
   }
 
-  public void showDuplicationDensity(float density) {
-    treeBuilder.showDuplicationDensity(density);
+  public void showDuplicationDensity(Optional<Float> duplicationDensityThreshold, float density) {
+    treeBuilder.showDuplicationDensity(duplicationDensityThreshold, density);
   }
 }
