@@ -39,6 +39,7 @@ import org.junit.Before
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisCallback
+import org.sonarlint.intellij.analysis.ModuleAnalysisResult
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.issue.IssueManager
 import org.sonarlint.intellij.issue.LiveIssue
@@ -273,7 +274,7 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
     }
 
     class EmptyAnalysisCallback : AnalysisCallback {
-        override fun onSuccess(failedVirtualFiles: MutableSet<VirtualFile>) {
+        override fun onSuccess(results: MutableList<ModuleAnalysisResult>, failedVirtualFiles: MutableSet<VirtualFile>) {
         }
 
         override fun onError(e: Throwable) {

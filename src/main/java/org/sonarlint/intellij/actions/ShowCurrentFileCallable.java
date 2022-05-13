@@ -22,8 +22,10 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
+import java.util.List;
 import java.util.Set;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.ModuleAnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class ShowCurrentFileCallable implements AnalysisCallback {
@@ -38,7 +40,7 @@ public class ShowCurrentFileCallable implements AnalysisCallback {
   }
 
   @Override
-  public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+  public void onSuccess(List<ModuleAnalysisResult> results, Set<VirtualFile> failedVirtualFiles) {
     showCurrentFileTab();
   }
 

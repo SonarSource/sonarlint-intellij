@@ -158,6 +158,10 @@ public class IssueTreeModelBuilder {
     return file.isValid();
   }
 
+  public void showDuplicationDensity(float density) {
+    summary.showDuplicationDensity(density);
+  }
+
   private static class FileNodeComparator implements Comparator<FileNode> {
     @Override public int compare(FileNode o1, FileNode o2) {
       int c = o1.file().getName().compareTo(o2.file().getName());

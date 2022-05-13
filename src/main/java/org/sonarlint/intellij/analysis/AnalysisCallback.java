@@ -20,10 +20,11 @@
 package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.List;
 import java.util.Set;
 
 public interface AnalysisCallback {
-  void onSuccess(Set<VirtualFile> failedVirtualFiles);
+  void onSuccess(List<ModuleAnalysisResult> results, Set<VirtualFile> failedVirtualFiles);
 
   void onError(Throwable e);
 }

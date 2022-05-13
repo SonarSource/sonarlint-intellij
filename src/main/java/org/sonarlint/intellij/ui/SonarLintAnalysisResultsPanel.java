@@ -97,4 +97,8 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
   public void dispose() {
     lastAnalysisPanel.dispose();
   }
+
+  public void showDuplicationDensity(float density) {
+    treeBuilder.showDuplicationDensity(density);
+  }
 }

@@ -29,6 +29,7 @@ import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisManager;
 import org.sonarlint.intellij.analysis.AnalysisTask;
+import org.sonarlint.intellij.analysis.ModuleAnalysisResult;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -37,7 +38,7 @@ import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 public class SonarLintSubmitter {
   static final AnalysisCallback NO_OP_CALLBACK = new AnalysisCallback() {
     @Override
-    public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+    public void onSuccess(List<ModuleAnalysisResult> results, Set<VirtualFile> failedVirtualFiles) {
       // Ignore
     }
 

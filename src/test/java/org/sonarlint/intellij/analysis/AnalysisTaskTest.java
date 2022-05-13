@@ -25,14 +25,12 @@ import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -89,7 +87,8 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
     analysisRequest = createAnalysisRequest();
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class))).thenReturn(analysisResults);
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class)))
+      .thenReturn(new ModuleAnalysisResult(analysisResults, getModule(), Collections.emptyList()));
 
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
@@ -232,7 +231,8 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testAnalysisError() {
-    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class));
+    doThrow(new IllegalStateException("error")).when(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class),
+      any(ClientProgressMonitor.class));
     task.run(progress);
 
     // never called because of error

@@ -11,6 +11,14 @@ public class Duplication {
     this.occurrences = occurrences;
   }
 
+  public int getInvolvedLinesCount() {
+    return occurrences.stream().mapToInt(Occurrence::getInvolvedLinesCount).sum();
+  }
+
+  public List<Occurrence> getOccurrences() {
+    return occurrences;
+  }
+
   @Override
   public String toString() {
     return "Duplication{" +
@@ -33,6 +41,10 @@ public class Duplication {
 
     public List<Block> getBlocks() {
       return blocks;
+    }
+
+    public int getInvolvedLinesCount() {
+      return blocks.stream().mapToInt(b -> b.getEndLine() - b.getStartLine() + 1).sum();
     }
 
     @Override

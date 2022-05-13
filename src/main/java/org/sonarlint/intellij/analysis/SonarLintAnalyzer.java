@@ -27,12 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.encoding.EncodingProjectManager;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -42,13 +37,6 @@ import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.sonar.duplications.block.Block;
-import org.sonar.duplications.block.BlockChunker;
-import org.sonar.duplications.java.JavaStatementBuilder;
-import org.sonar.duplications.java.JavaTokenProducer;
-import org.sonar.duplications.statement.Statement;
-import org.sonarlint.intellij.analysis.cpd.Duplication;
-import org.sonarlint.intellij.analysis.cpd.SonarCpdBlockIndex;
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -56,7 +44,6 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.commons.Language;
@@ -70,7 +57,7 @@ public class SonarLintAnalyzer {
     myProject = project;
   }
 
-  public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ClientProgressMonitor progressMonitor) {
+  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ClientProgressMonitor progressMonitor) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     var start = System.currentTimeMillis();
     var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
@@ -82,13 +69,6 @@ public class SonarLintAnalyzer {
 
     // configure files
     var inputFiles = getInputFiles(module, filesToAnalyze, contributedLanguages);
-
-    var duplications = computeDuplications(inputFiles, console);
-    if (duplications.isEmpty()) {
-      console.info("No duplication found during analysis");
-    } else {
-      console.info("Some duplications were found during analysis: " + duplications);
-    }
 
     // Analyze
 
@@ -108,7 +88,7 @@ public class SonarLintAnalyzer {
         telemetry.analysisDoneOnMultipleFiles();
       }
 
-      return result;
+      return new ModuleAnalysisResult(result, module, inputFiles);
     } catch (InvalidBindingException e) {
       // should not happen, as analysis should not have been submitted in this case.
       throw new IllegalStateException(e);
@@ -203,62 +183,5 @@ public class SonarLintAnalyzer {
       return encoding;
     }
     return Charset.defaultCharset();
-  }
-
-  private static final int BLOCK_SIZE = 4;
-
-  private static List<Duplication> computeDuplications(List<ClientInputFile> inputFiles, SonarLintConsole console) {
-    var index = new SonarCpdBlockIndex();
-    indexBlocks(index, inputFiles, console);
-    return findDuplications(index);
-  }
-
-  private static void indexBlocks(SonarCpdBlockIndex index, List<ClientInputFile> sourceFiles, SonarLintConsole console) {
-    var tokenChunker = JavaTokenProducer.build();
-    var statementChunker = JavaStatementBuilder.build();
-    var blockChunker = new BlockChunker(BLOCK_SIZE);
-
-    for (ClientInputFile inputFile : sourceFiles) {
-      if (!inputFile.relativePath().endsWith(".java")) {
-        continue;
-      }
-      console.debug("Populating index from " + inputFile);
-      var resourceEffectiveKey = inputFile.uri().toString();
-
-      List<Statement> statements;
-
-      try (var is = inputFile.inputStream();
-        Reader reader = new InputStreamReader(is, inputFile.getCharset())) {
-        statements = statementChunker.chunk(tokenChunker.chunk(reader));
-      } catch (FileNotFoundException e) {
-        throw new IllegalStateException("Cannot find file " + inputFile.relativePath(), e);
-      } catch (IOException e) {
-        throw new IllegalStateException("Exception handling file: " + inputFile.relativePath(), e);
-      }
-
-      List<Block> blocks;
-      try {
-        blocks = blockChunker.chunk(resourceEffectiveKey, statements);
-      } catch (Exception e) {
-        throw new IllegalStateException("Cannot process file " + inputFile.relativePath(), e);
-      }
-      index.insert(inputFile, blocks);
-    }
-  }
-
-  private static List<Duplication> findDuplications(SonarCpdBlockIndex index) {
-    var duplications = new ArrayList<Duplication>();
-    index.getUniqueBlockHashes().forEach(hash -> {
-      var files = index.getFilesWithBlockHash(hash);
-      if (!files.isEmpty()) {
-        var occurrences = files.stream()
-          .map(f -> new Duplication.Occurrence(f, index.getBlocks(f, hash)))
-          .collect(Collectors.toList());
-        if (occurrences.size() > 1) {
-          duplications.add(new Duplication(occurrences));
-        }
-      }
-    });
-    return duplications;
   }
 }

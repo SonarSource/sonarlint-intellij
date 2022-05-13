@@ -29,7 +29,6 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -43,7 +42,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -60,7 +58,6 @@ import org.sonarlint.intellij.notifications.SecretsNotifications;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
@@ -145,7 +142,7 @@ public class AnalysisTask extends Task.Backgroundable {
       });
 
       if (allFilesToAnalyze.isEmpty()) {
-        request.callback().onSuccess(Collections.emptySet());
+        request.callback().onSuccess(Collections.emptyList(), Collections.emptySet());
         return;
       }
 
@@ -177,7 +174,7 @@ public class AnalysisTask extends Task.Backgroundable {
         SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
       }
 
-      request.callback().onSuccess(failedVirtualFiles);
+      request.callback().onSuccess(results, failedVirtualFiles);
     } catch (CanceledException | ProcessCanceledException e1) {
       var console = SonarLintConsole.get(request.project());
       console.info("Analysis canceled");
@@ -360,7 +357,7 @@ public class AnalysisTask extends Task.Backgroundable {
     return cancelled || indicator.isCanceled() || myProject.isDisposed() || Thread.currentThread().isInterrupted() || AnalysisStatus.get(myProject).isCanceled();
   }
 
-  private List<AnalysisResults> analyzePerModule(Project project, ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule, IssueListener listener) {
+  private List<ModuleAnalysisResult> analyzePerModule(Project project, ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule, IssueListener listener) {
     SonarLintAnalyzer analyzer = SonarLintUtils.getService(project, SonarLintAnalyzer.class);
 
     indicator.setIndeterminate(true);
@@ -379,7 +376,7 @@ public class AnalysisTask extends Task.Backgroundable {
     }
 
     var progressMonitor = new TaskProgressMonitor(indicator, myProject, () -> cancelled);
-    var results = new LinkedList<AnalysisResults>();
+    var results = new LinkedList<ModuleAnalysisResult>();
 
     for (var entry : filesByModule.entrySet()) {
       results.add(analyzer.analyzeModule(entry.getKey(), entry.getValue(), listener, progressMonitor));

@@ -36,6 +36,7 @@ import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -47,6 +48,7 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.ModuleAnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;
@@ -88,7 +90,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     try {
       var error = new AtomicBoolean(false);
       var callback = new AnalysisCallback() {
-        @Override public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+        @Override public void onSuccess(List<ModuleAnalysisResult> results, Set<VirtualFile> failedVirtualFiles) {
           // do nothing
         }
 

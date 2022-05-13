@@ -46,13 +46,13 @@ public class AnalysisManagerTest extends LightPlatformCodeInsightFixture4TestCas
   public void testUserTask() {
     manager.submitManual(List.of(mock(VirtualFile.class)), TriggerType.ACTION, true, analysisCallback);
 
-    verify(analysisCallback).onSuccess(any());
+    verify(analysisCallback).onSuccess(any(), any());
   }
 
   @Test
   public void testRunBackground() {
     manager.submitBackground(List.of(mock(VirtualFile.class)), TriggerType.ACTION, analysisCallback);
 
-    verify(analysisCallback).onSuccess(any());
+    verify(analysisCallback).onSuccess(any(), any());
   }
 }

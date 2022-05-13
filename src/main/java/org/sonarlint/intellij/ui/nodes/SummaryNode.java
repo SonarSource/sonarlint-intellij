@@ -21,11 +21,13 @@ package org.sonarlint.intellij.ui.nodes;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class SummaryNode extends AbstractNode {
   private String emptyText;
+  private Optional<Float> density = Optional.empty();
 
   public SummaryNode() {
     super();
@@ -36,7 +38,7 @@ public class SummaryNode extends AbstractNode {
     this.emptyText = emptyText;
   }
 
-  public String getText() {
+  private String getText() {
     var issues = getIssueCount();
     var files = getChildCount();
 
@@ -44,7 +46,9 @@ public class SummaryNode extends AbstractNode {
       return emptyText;
     }
 
-    return String.format("Found %d %s in %d %s", issues, issues == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
+    return String.format("Found %d %s in %d %s%s", issues, issues == 1 ? "issue" : "issues", files,
+      files == 1 ? "file" : "files",
+      density.map(d -> String.format(" (Duplication is %.2f%%)", d * 100)).orElse(""));
   }
 
   public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {
@@ -65,7 +69,13 @@ public class SummaryNode extends AbstractNode {
     return insertIdx;
   }
 
-  @Override public void render(TreeCellRenderer renderer) {
+  @Override
+  public void render(TreeCellRenderer renderer) {
     renderer.append(getText());
+  }
+
+  public void showDuplicationDensity(float density) {
+    this.density = Optional.of(density);
+    this.setDirty();
   }
 }

@@ -37,6 +37,7 @@ import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
+import org.sonarlint.intellij.ui.SonarLintAnalysisResultsPanel;
 import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
@@ -127,12 +128,14 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     ((TaintVulnerabilitiesPanel)content.getComponent()).setSelectedVulnerability(vulnerability);
   }
 
-  private static void selectTab(ToolWindow toolWindow, String tabId) {
+  private static Content selectTab(ToolWindow toolWindow, String tabId) {
     var contentManager = toolWindow.getContentManager();
     var content = contentManager.findContent(tabId);
     if (content != null) {
       contentManager.setSelectedContent(content);
+      return content;
     }
+    return null;
   }
 
   private void showIssue(LiveIssue liveIssue, Consumer<SonarLintIssuesPanel> selectTab) {
@@ -199,5 +202,18 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   public void contentRemoved(@NotNull ContentManagerEvent event) {
     // only hotspots tab is removable
     getService(project, EditorDecorator.class).removeHighlights();
+  }
+
+  public void showDuplicationDensityInReport(float density) {
+    var toolWindow = getToolWindow();
+    if (toolWindow != null) {
+      toolWindow.show(() -> {
+        var reportContent = selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS);
+        if (reportContent != null) {
+          var reportPanel = (SonarLintAnalysisResultsPanel) reportContent.getComponent();
+          reportPanel.showDuplicationDensity(density);
+        }
+      });
+    }
   }
 }
