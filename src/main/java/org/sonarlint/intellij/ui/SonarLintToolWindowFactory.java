@@ -36,6 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.ui.duplications.DuplicationsPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildVulnerabilitiesTabName;
@@ -52,6 +53,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TAB_ANALYSIS_RESULTS = "Report";
   public static final String TAB_TAINT_VULNERABILITIES = "Taint vulnerabilities";
 
+  public static final String TAB_DUPLICATIONS = "Duplications";
+
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
     var contentManager = toolWindow.getContentManager();
@@ -60,6 +63,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       addTaintIssuesTab(project, contentManager);
     }
+    addDuplicationsTab(project, contentManager);
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
     var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
@@ -152,4 +156,17 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     logContent.setCloseable(false);
     toolWindow.getContentManager().addContent(logContent);
   }
+
+  private static void addDuplicationsTab(Project project, @NotNull ContentManager contentManager) {
+    var duplicationsPanel = new DuplicationsPanel(project);
+    var analysisResultsContent = contentManager.getFactory()
+      .createContent(
+        duplicationsPanel,
+        TAB_DUPLICATIONS,
+        false);
+    analysisResultsContent.setCloseable(false);
+    contentManager.addDataProvider(duplicationsPanel);
+    contentManager.addContent(analysisResultsContent);
+  }
+
 }

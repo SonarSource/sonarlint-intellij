@@ -90,7 +90,7 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
       console.info("Duplication density is: " + report.getDensity());
     }
     UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
-      .showDuplicationDensityInReport(report.getDensity()));
+      .showDuplicationDensityInReport(report));
   }
 
   private static final int BLOCK_SIZE = 4;

@@ -31,6 +31,7 @@ import com.intellij.util.ui.UIUtil;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.analysis.cpd.DuplicationReport;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
@@ -41,9 +42,11 @@ import org.sonarlint.intellij.ui.SonarLintAnalysisResultsPanel;
 import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+import org.sonarlint.intellij.ui.duplications.DuplicationsPanel;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.TAB_DUPLICATIONS;
 
 public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   private static final String TAB_HOTSPOTS = "Security Hotspots";
@@ -204,16 +207,22 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     getService(project, EditorDecorator.class).removeHighlights();
   }
 
-  public void showDuplicationDensityInReport(float density) {
+  public void showDuplicationDensityInReport(DuplicationReport report) {
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
       toolWindow.show(() -> {
         var reportContent = selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS);
         if (reportContent != null) {
           var reportPanel = (SonarLintAnalysisResultsPanel) reportContent.getComponent();
-          reportPanel.showDuplicationDensity(density);
+          reportPanel.showDuplicationDensity(report.getDensity());
         }
       });
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(TAB_DUPLICATIONS);
+      if (report.hasAnyDuplication()) {
+        ((DuplicationsPanel) content.getComponent()).updateContent(report.getBlockDuplications());
+      }
+
     }
   }
 }
