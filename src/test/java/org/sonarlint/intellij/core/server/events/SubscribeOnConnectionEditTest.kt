@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core.server.events
 
-import com.intellij.openapi.application.ApplicationManager.getApplication
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
@@ -28,7 +27,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
-import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.util.ServerEventsNoOpService
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
@@ -49,8 +47,7 @@ class SubscribeOnConnectionEditTest : AbstractSonarLintLightTests() {
         val connection = ServerConnection.newBuilder().setName("connectionName").setToken("token2").build()
         connectProjectTo(connection, "projectKey")
 
-        getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-            .applied(previousGlobalSettings, globalSettings)
+        SubscribeOnConnectionEdit().applied(previousGlobalSettings, globalSettings)
 
         val service = getService(ServerEventsService::class.java) as ServerEventsNoOpService
         assertThat(service.subscriptions)
@@ -64,8 +61,7 @@ class SubscribeOnConnectionEditTest : AbstractSonarLintLightTests() {
         val connection = ServerConnection.newBuilder().setName("connectionName").build()
         connectProjectTo(connection, "projectKey")
 
-        project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
-            .applied(SonarLintGlobalSettings(), globalSettings)
+        SubscribeOnConnectionEdit().applied(SonarLintGlobalSettings(), globalSettings)
 
         val service = getService(ServerEventsService::class.java) as ServerEventsNoOpService
         assertThat(service.subscriptions).isEmpty()
