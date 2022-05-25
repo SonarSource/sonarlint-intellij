@@ -208,7 +208,7 @@ dependencies {
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.5.0.3376")
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.3.0.45903")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.32.0.44918")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.34.0.48468")
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
