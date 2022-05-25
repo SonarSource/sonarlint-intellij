@@ -234,7 +234,7 @@ public class ProjectBindingManager {
         var qgId = api.getId(getBinding().getProjectKey());
         var qualityGate = api.getQualityGate(qgId);
         return qualityGate.getConditions()
-          .stream().filter(c -> c.getMetricKey().equals(""))
+          .stream().filter(c -> c.getMetricKey().equals("new_duplicated_lines_density"))
           .findAny()
           .map(Condition::getThreshold)
           .map(Float::parseFloat);
