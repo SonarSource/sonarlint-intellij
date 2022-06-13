@@ -29,17 +29,13 @@ import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
-import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
@@ -48,12 +44,11 @@ import org.sonarsource.sonarlint.plugin.api.module.file.ModuleFileEvent
 
 private const val FILE_NAME = "main.py"
 
-@RunWith(MockitoJUnitRunner::class)
 class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
     @Before
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
-        `when`(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
+        whenever(projectBindingManager.engineIfStarted).thenReturn(fakeEngine)
         file = myFixture.copyFileToProject(FILE_NAME, FILE_NAME)
         reset(fileEventsNotifier)
         virtualFileSystemListener = VirtualFileSystemListener(fileEventsNotifier)
@@ -135,7 +130,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
     @Test
     fun should_not_notify_engine_if_not_started() {
-        `when`(projectBindingManager.engineIfStarted).thenReturn(null)
+        whenever(projectBindingManager.engineIfStarted).thenReturn(null)
         val vFileEvent = VFileDeleteEvent(null, file, false)
 
         virtualFileSystemListener.after(listOf(vFileEvent))
@@ -166,26 +161,24 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
     }
 
     private fun assertEventNotified(type: ModuleFileEvent.Type, fileName: String, file: VirtualFile = this.file, relativePath: String = fileName) {
-        verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), capture(eventsCaptor))
-        val events = eventsCaptor.value
-        assertThat(events).hasSize(1)
-        val event = events[0]
-        assertThat(event.type()).isEqualTo(type)
-        val inputFile = event.target()
-        assertThat(inputFile.contents()).contains("content")
-        assertThat(inputFile.relativePath()).isEqualTo(relativePath)
-        assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
-        assertThat(inputFile.path).isEqualTo("/src/$relativePath")
+        argumentCaptor<List<ClientModuleFileEvent>>().apply {
+            verify(fileEventsNotifier).notifyAsync(eq(fakeEngine), eq(module), capture())
+
+            val events = firstValue
+            assertThat(events).hasSize(1)
+            val event = events[0]
+            assertThat(event.type()).isEqualTo(type)
+            val inputFile = event.target()
+            assertThat(inputFile.contents()).contains("content")
+            assertThat(inputFile.relativePath()).isEqualTo(relativePath)
+            assertThat(inputFile.getClientObject<Any>() as VirtualFile).isEqualTo(file)
+            assertThat(inputFile.path).isEqualTo("/src/$relativePath")
+        }
     }
 
-    @Captor
-    private lateinit var eventsCaptor: ArgumentCaptor<List<ClientModuleFileEvent>>
-    @Mock
-    private lateinit var projectBindingManager: ProjectBindingManager
-    @Mock
-    private lateinit var fakeEngine: SonarLintEngine
-    @Mock
-    private lateinit var fileEventsNotifier: ModuleFileEventsNotifier
+    private var projectBindingManager: ProjectBindingManager = mock()
+    private var fakeEngine: SonarLintEngine = mock()
+    private var fileEventsNotifier: ModuleFileEventsNotifier = mock()
     private lateinit var file: VirtualFile
     private lateinit var virtualFileSystemListener: VirtualFileSystemListener
 }

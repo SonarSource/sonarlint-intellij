@@ -25,14 +25,12 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.mockito.ArgumentCaptor
-import org.mockito.Mock
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.any
@@ -66,19 +64,11 @@ private fun aRemoteHotspot(textRange: ServerHotspot.TextRange): ServerHotspot {
   )
 }
 
-@RunWith(MockitoJUnitRunner::class)
 class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
-  @Mock
-  lateinit var projectBindingAssistant: ProjectBindingAssistant
-
-  @Mock
-  lateinit var toolWindow: SonarLintToolWindow
-
-  @Mock
-  lateinit var highlighter: EditorDecorator
-
-  @Mock
-  private lateinit var telemetry: SonarLintTelemetry
+  var projectBindingAssistant: ProjectBindingAssistant = mock()
+  var toolWindow: SonarLintToolWindow = mock()
+  var highlighter: EditorDecorator = mock()
+  private var telemetry: SonarLintTelemetry = mock()
 
   private lateinit var requestHandler: SecurityHotspotShowRequestHandler
 
@@ -99,7 +89,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
   @Test
   fun it_should_do_nothing_when_there_is_no_bound_project() {
-    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(null)
+    whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(null)
 
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
@@ -109,7 +99,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
   @Test
   fun it_should_show_a_balloon_notification_when_an_error_occurs_when_fetching_hotspot_details() {
     val connection = aServerConnectionReturningHotspot(null)
-    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
+    whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
 
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
@@ -127,7 +117,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
   fun it_should_partially_display_a_hotspot_and_a_balloon_notification_if_file_is_not_found() {
     val remoteHotspot = aRemoteHotspot(ServerHotspot.TextRange(1, 14, 1, 20))
     val connection = aServerConnectionReturningHotspot(remoteHotspot)
-    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
+    whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
 
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
@@ -142,7 +132,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
   fun it_should_open_a_hotspot_file_if_found() {
     val remoteHotspot = aRemoteHotspot(ServerHotspot.TextRange(1, 14, 1, 20))
     val connection = aServerConnectionReturningHotspot(remoteHotspot)
-    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
+    whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
     val file = myFixture.copyFileToProject(FILE_PATH)
 
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
@@ -164,7 +154,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
   fun it_should_show_a_balloon_notification_when_the_text_range_does_not_match() {
     val remoteHotspot = aRemoteHotspot(ServerHotspot.TextRange(10, 14, 10, 20))
     val connection = aServerConnectionReturningHotspot(remoteHotspot)
-    `when`(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
+    whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
     val file = myFixture.copyFileToProject(FILE_PATH)
 
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
@@ -186,12 +176,12 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
   private fun aServerConnectionReturningHotspot(serverHotspot: ServerHotspot?): ServerConnection {
     val serverConnection = mock(ServerConnection::class.java)
-    `when`(serverConnection.hostUrl).thenReturn(CONNECTED_URL)
+    whenever(serverConnection.hostUrl).thenReturn(CONNECTED_URL)
     val serverApi = mock(ServerApi::class.java)
-    `when`(serverConnection.api()).thenReturn(serverApi)
+    whenever(serverConnection.api()).thenReturn(serverApi)
     val hotspotApi = mock(HotspotApi::class.java)
-    `when`(serverApi.hotspot()).thenReturn(hotspotApi)
-    `when`(hotspotApi.fetch(any())).thenReturn(Optional.ofNullable(serverHotspot))
+    whenever(serverApi.hotspot()).thenReturn(hotspotApi)
+    whenever(hotspotApi.fetch(any())).thenReturn(Optional.ofNullable(serverHotspot))
     return serverConnection
   }
 }

@@ -23,16 +23,14 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.verifyNoInteractions
-import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.any
 import org.sonarlint.intellij.capture
@@ -44,13 +42,9 @@ import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.util.ImmediateExecutorService
 import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
 
-@RunWith(MockitoJUnitRunner::class)
 class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   private lateinit var serverNotificationsService: ServerNotificationsService
   private lateinit var projectServerNotificationsSubscriber: ProjectServerNotificationsSubscriber
-
-  @Captor
-  private lateinit var notificationConfigurationCaptor: ArgumentCaptor<NotificationConfiguration>
 
   @Before
   fun setup() {
@@ -62,13 +56,14 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   @Test
   fun it_should_register_at_start_when_project_bound_and_server_supports_notifications() {
     connectProjectTo("host", "name", "projectKey")
-    `when`(serverNotificationsService.isSupported(any())).thenReturn(true)
+    whenever(serverNotificationsService.isSupported(any())).thenReturn(true)
 
     projectServerNotificationsSubscriber.start()
 
-    verify(serverNotificationsService).register(capture(notificationConfigurationCaptor))
-    val notificationConfiguration = notificationConfigurationCaptor.value
-    assertThat(notificationConfiguration.projectKey()).isEqualTo("projectKey")
+    argumentCaptor<NotificationConfiguration>().apply {
+      verify(serverNotificationsService).register(capture())
+      assertThat(firstValue.projectKey()).isEqualTo("projectKey")
+    }
   }
 
   @Test
@@ -90,7 +85,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   @Test
   fun it_should_not_register_at_start_when_project_bound_but_server_does_not_support_notifications() {
     connectProjectTo("host", "name", "projectKey")
-    `when`(serverNotificationsService.isSupported(any())).thenReturn(false)
+    whenever(serverNotificationsService.isSupported(any())).thenReturn(false)
 
     projectServerNotificationsSubscriber.start()
 
@@ -113,9 +108,10 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     project.messageBus.syncPublisher(GlobalConfigurationListener.TOPIC).applied(SonarLintGlobalSettings(), globalSettings)
 
-    verify(serverNotificationsService, timeout(5000)).register(capture(notificationConfigurationCaptor))
-    val notificationConfiguration = notificationConfigurationCaptor.value
-    assertThat(notificationConfiguration.projectKey()).isEqualTo("projectKey")
+    argumentCaptor<NotificationConfiguration>().apply {
+      verify(serverNotificationsService, timeout(5000)).register(capture())
+      assertThat(firstValue.projectKey()).isEqualTo("projectKey")
+    }
   }
 
   @Test
@@ -125,9 +121,10 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     project.messageBus.syncPublisher(ProjectConfigurationListener.TOPIC).changed(projectSettings)
 
-    verify(serverNotificationsService, timeout(5000)).register(capture(notificationConfigurationCaptor))
-    val notificationConfiguration = notificationConfigurationCaptor.value
-    assertThat(notificationConfiguration.projectKey()).isEqualTo("projectKey")
+    argumentCaptor<NotificationConfiguration>().apply {
+      verify(serverNotificationsService, timeout(5000)).register(capture())
+      assertThat(firstValue.projectKey()).isEqualTo("projectKey")
+    }
   }
 
   @Test
@@ -143,7 +140,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   @Test
   fun it_should_unregister_when_disposed() {
     connectProjectTo("host", "name", "projectKey")
-    `when`(serverNotificationsService.isSupported(any())).thenReturn(true)
+    whenever(serverNotificationsService.isSupported(any())).thenReturn(true)
     projectServerNotificationsSubscriber.start()
 
     projectServerNotificationsSubscriber.dispose()
@@ -155,10 +152,12 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   fun it_should_display_a_balloon_when_receiving_a_notification() {
     connectProjectWithNotifications()
     projectServerNotificationsSubscriber.start()
-    verify(serverNotificationsService).register(capture(notificationConfigurationCaptor))
-    val listener = notificationConfigurationCaptor.value.listener()
+    argumentCaptor<NotificationConfiguration>().apply {
+      verify(serverNotificationsService).register(capture())
+      val listener = firstValue.listener()
 
-    listener.handle(aServerNotification("category", "message", "link", "projectKey"))
+      listener.handle(aServerNotification("category", "message", "link", "projectKey"))
+    }
 
     assertThat(projectNotifications)
       .extracting("title", "content")
@@ -167,6 +166,6 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
   private fun connectProjectWithNotifications() {
     connectProjectTo("host", "name", "projectKey")
-    `when`(serverNotificationsService.isSupported(any())).thenReturn(true)
+    whenever(serverNotificationsService.isSupported(any())).thenReturn(true)
   }
 }
