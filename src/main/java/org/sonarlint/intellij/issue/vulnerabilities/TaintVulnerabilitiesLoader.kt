@@ -32,7 +32,7 @@ import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
 import org.sonarlint.intellij.util.getRelativePathOf
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
-import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue
+import org.sonarsource.sonarlint.core.serverconnection.ServerTaintIssue
 
 private const val SECURITY_REPOSITORY_HINT = "security"
 
@@ -55,7 +55,7 @@ object TaintVulnerabilitiesLoader {
     }
   }
 
-  private fun loadServerTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<ServerIssue> {
+  private fun loadServerTaintVulnerabilitiesForFile(file: VirtualFile, project: Project, connectedEngine: ConnectedSonarLintEngine): List<ServerTaintIssue> {
     val module = project.findModuleOf(file) ?: return emptyList()
     val moduleBindingManager = getService(module, ModuleBindingManager::class.java)
     val projectBinding = moduleBindingManager.binding
@@ -66,9 +66,9 @@ object TaintVulnerabilitiesLoader {
       return emptyList()
     }
     return try {
-      connectedEngine.getServerIssues(projectBinding, filePath)
+      connectedEngine.getServerTaintIssues(projectBinding, filePath)
         .filter { it.ruleKey().contains(SECURITY_REPOSITORY_HINT) }
-        .filter { it.resolution().isEmpty() }
+        .filter { !it.resolved() }
     } catch(e: Exception) {
       // can happen if binding is invalid, user should already be notified
       SonarLintConsole.get(project).debug("Unable to load server issues: " + e.message)

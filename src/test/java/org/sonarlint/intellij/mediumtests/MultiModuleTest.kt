@@ -32,7 +32,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ServerNotificationsService
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber
 import org.sonarlint.intellij.util.ImmediateExecutorService
-import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
+import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.NotificationConfiguration
 
 class MultiModuleTest : AbstractSonarLintHeavyTest() {
 

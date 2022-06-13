@@ -54,7 +54,6 @@ public class LiveIssue implements Trackable {
   private Long creationDate;
   private String serverIssueKey;
   private boolean resolved;
-  private String assignee;
 
   public LiveIssue(Issue issue, PsiFile psiFile, List<QuickFix> quickFixes) {
     this(issue, psiFile, null, null, quickFixes);
@@ -67,7 +66,6 @@ public class LiveIssue implements Trackable {
     this.severity = issue.getSeverity();
     this.type = issue.getType();
     this.psiFile = psiFile;
-    this.assignee = "";
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;
     this.quickFixes = quickFixes;
@@ -105,11 +103,6 @@ public class LiveIssue implements Trackable {
     }
 
     return null;
-  }
-
-  @Override
-  public String getAssignee() {
-    return assignee;
   }
 
   @Override
@@ -181,10 +174,6 @@ public class LiveIssue implements Trackable {
 
   public void setResolved(boolean resolved) {
     this.resolved = resolved;
-  }
-
-  public void setAssignee(String assignee) {
-    this.assignee = assignee;
   }
 
   public void setSeverity(String severity) {

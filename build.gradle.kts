@@ -63,6 +63,7 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             content { excludeGroup("typescript") }
@@ -90,7 +91,7 @@ allprojects {
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            apiVersion = "1.3"
+            apiVersion = "1.7"
             jvmTarget = "11"
         }
     }

@@ -135,18 +135,14 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     assertThat(issue1.getType()).isEqualTo("localType");
   }
 
-
   @Test
   public void should_track_server_issue_based_on_rule_key() {
     var serverIssue = createRangeStoredIssue(1, "issue 1", 10);
-    var newAssignee = "newAssignee";
-    serverIssue.setAssignee(newAssignee);
     serverIssue.setResolved(true);
 
     underTest.matchWithServerIssues(file1, Collections.singleton(serverIssue));
 
     assertThat(issue1.isResolved()).isTrue();
-    assertThat(issue1.getAssignee()).isEqualTo(newAssignee);
   }
 
   @Test
@@ -160,8 +156,6 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     serverIssue.setResolved(true);
     serverIssue.setSeverity("sev");
     serverIssue.setType("type");
-    var newAssignee = "newAssignee";
-    serverIssue.setAssignee(newAssignee);
     underTest.matchWithServerIssues(file1, List.of(serverIssue));
 
     // the local issue is preserved ...
@@ -170,7 +164,6 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     assertThat(issue1.isResolved()).isTrue();
     assertThat(issue1.getSeverity()).isEqualTo("sev");
     assertThat(issue1.getType()).isEqualTo("type");
-    assertThat(issue1.getAssignee()).isEqualTo(newAssignee);
   }
 
   @Test

@@ -22,7 +22,7 @@ package org.sonarlint.intellij.common.vcs
 import com.intellij.openapi.module.Module
 
 interface VcsService {
-    fun getServerBranchName(module: Module): String?
+    fun getServerBranchName(module: Module): String
     fun clearCache()
     fun refreshCacheAsync()
 }

@@ -19,10 +19,14 @@
  */
 package org.sonarlint.intellij.issue;
 
+import java.util.Optional;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
+
 import org.sonarlint.intellij.issue.tracking.Trackable;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
+
+import static java.util.Optional.ofNullable;
 
 public class ServerIssueTrackable implements Trackable {
 
@@ -35,7 +39,7 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public Integer getLine() {
-    return serverIssue.getStartLine();
+    return ofNullable(serverIssue.getTextRange()).map(ServerIssue.TextRange::getStartLine).orElse(null);
   }
 
   @Override
@@ -46,13 +50,13 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public Integer getTextRangeHash() {
-    return null;
+    return ofNullable(serverIssue.getRangeHash()).map(String::hashCode).orElse(null);
   }
 
   @CheckForNull
   @Override
   public Integer getLineHash() {
-    return serverIssue.lineHash().hashCode();
+    return ofNullable(serverIssue.getLineHash()).map(String::hashCode).orElse(null);
   }
 
   @Override
@@ -63,7 +67,7 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public String getServerIssueKey() {
-    return !serverIssue.key().isEmpty() ? serverIssue.key() : null;
+    return serverIssue.getKey();
   }
 
   @CheckForNull
@@ -74,11 +78,7 @@ public class ServerIssueTrackable implements Trackable {
 
   @Override
   public boolean isResolved() {
-    return !serverIssue.resolution().isEmpty();
-  }
-
-  @Override public String getAssignee() {
-    return serverIssue.assigneeLogin();
+    return serverIssue.resolved();
   }
 
   @Override public String getSeverity() {

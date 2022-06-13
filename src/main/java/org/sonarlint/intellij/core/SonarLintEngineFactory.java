@@ -67,7 +67,7 @@ public class SonarLintEngineFactory {
     Language.SCALA,
     Language.SWIFT);
 
-  ConnectedSonarLintEngine createEngine(String connectionId) {
+  ConnectedSonarLintEngine createEngine(String connectionId, boolean isSonarCloud) {
     var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
     enabledLanguages.addAll(CONNECTED_ADDITIONAL_LANGUAGES);
 
@@ -75,7 +75,8 @@ public class SonarLintEngineFactory {
 
     var modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
 
-    var configBuilder = ConnectedGlobalConfiguration.builder()
+    var configBuilder = isSonarCloud ? ConnectedGlobalConfiguration.sonarCloudBuilder() : ConnectedGlobalConfiguration.sonarQubeBuilder();
+    configBuilder
       .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
       .setConnectionId(connectionId)
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));

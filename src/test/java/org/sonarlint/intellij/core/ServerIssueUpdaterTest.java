@@ -21,9 +21,11 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,9 +36,9 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
+import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
+import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -98,7 +100,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     var serverIssue = mock(ServerIssue.class);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), eq(true), isNull(), isNull()))
+    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), isNull(), isNull()))
       .thenReturn(List.of(serverIssue));
 
     // run
@@ -125,14 +127,13 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     // mock issues fetched
     when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(List.of(serverIssue));
 
-
     // run
     getProjectSettings().setBindingEnabled(true);
 
     underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
-    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), eq(true), isNull(), isNull());
+    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), isNull(), isNull());
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }

@@ -79,7 +79,6 @@ class IssuePersistenceTest : AbstractSonarLintLightTests() {
 
         assertThat(issues).hasSize(1)
         val issue = issues!!.iterator().next()
-        assertThat(issue.assignee).isEmpty()
         assertThat(issue.ruleKey).isEqualTo("ruleKey")
         assertThat(issue.message).isEqualTo("message")
         assertThat(issue.line).isEqualTo(1)

@@ -78,7 +78,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val serverConnection = bindingManager.serverConnection
     val branchName = getService(project, VcsService::class.java).getServerBranchName(module)
     bindingManager.connectedEngine.downloadServerIssues(serverConnection.endpointParams,
-      serverConnection.httpClient, projectBinding, relativePath, true, branchName, null)
+      serverConnection.httpClient, projectBinding, relativePath, branchName, null)
   }
 
   fun presentTaintVulnerabilitiesForOpenFiles() {

@@ -46,10 +46,10 @@ import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications.SERVER_NOTIFICATIONS_GROUP
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
-import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
-import org.sonarsource.sonarlint.core.client.api.notifications.LastNotificationTime
-import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
-import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotificationListener
+import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.LastNotificationTime
+import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.NotificationConfiguration
+import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.ServerNotification
+import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.ServerNotificationListener
 import java.time.ZonedDateTime
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

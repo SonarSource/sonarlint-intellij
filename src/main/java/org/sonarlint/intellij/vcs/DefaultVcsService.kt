@@ -38,34 +38,35 @@ import java.util.concurrent.Executors
 
 class DefaultVcsService @NonInjectable constructor(private val project: Project, private val executor: ExecutorService) : VcsService, Disposable {
     private val logger = SonarLintLogger.get()
-    private val resolvedBranchPerModule: MutableMap<Module, String?> = mutableMapOf()
+    private val resolvedBranchPerModule: MutableMap<Module, String> = mutableMapOf()
 
     constructor(project: Project) : this(project, Executors.newSingleThreadExecutor())
 
-    override fun getServerBranchName(module: Module): String? {
+    override fun getServerBranchName(module: Module): String {
         if (resolvedBranchPerModule.containsKey(module)) {
-            return resolvedBranchPerModule[module]
+            return resolvedBranchPerModule[module]!!
         }
         val branchName = resolveServerBranchName(module)
         resolvedBranchPerModule[module] = branchName
         return branchName
     }
 
-    private fun resolveServerBranchName(module: Module): String? {
+    private fun resolveServerBranchName(module: Module): String {
         val bindingManager = getService(project, ProjectBindingManager::class.java)
-        val validConnectedEngine = bindingManager.validConnectedEngine ?: return null
-        val projectKey = getService(module, ModuleBindingManager::class.java).resolveProjectKey() ?: return null
+        val validConnectedEngine = bindingManager.validConnectedEngine ?: return "unknown"
+        val projectKey = getService(module, ModuleBindingManager::class.java).resolveProjectKey() ?: return "unknown"
+        val serverBranches = validConnectedEngine.getServerBranches(projectKey)
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
         val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module, logger) }.toList()
         if (repositories.isEmpty()) {
-            return null
+            return serverBranches.getMainBranchName().orElse("unknown")
         }
         if (repositories.size > 1) {
             logger.warn("Several candidate Vcs repositories detected for module $module, cannot choose one")
-            return null
+            return "unknown"
         }
         val repo = repositories.first()
-        return repo.electBestMatchingServerBranchForCurrentHead(validConnectedEngine.getServerBranches(projectKey))
+        return repo.electBestMatchingServerBranchForCurrentHead(serverBranches) ?: "unknown"
     }
 
     override fun clearCache() {
