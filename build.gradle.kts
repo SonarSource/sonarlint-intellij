@@ -366,8 +366,13 @@ license {
     mapping(
         mapOf(
             "java" to "SLASHSTAR_STYLE",
-            "kt" to "SLASHSTAR_STYLE"
+            "kt" to "SLASHSTAR_STYLE",
+            "svg" to "XML_STYLE",
+            "form" to "XML_STYLE"
         )
+    )
+    excludes(
+        listOf("**/*.jar", "**/*.png", "**/README")
     )
     strictCheck = true
 }
