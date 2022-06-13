@@ -20,19 +20,17 @@
 package org.sonarlint.intellij.issue;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.issues.FileLevelServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.issues.LineLevelServerIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ServerIssueTrackableTest {
   @Test
   public void testNulls() {
-    var trackable = new ServerIssueTrackable(new ServerIssue("issueUuid", true, "ruleKey", "msg", (String) null, "filePath", Instant.now(), "MAJOR", "BUG", (Integer) null));
+    var trackable = new ServerIssueTrackable(new FileLevelServerIssue("issueUuid", true, "ruleKey", "msg", "filePath", Instant.now(), "MAJOR", "BUG"));
 
     assertThat(trackable.getServerIssueKey()).isNull();
     assertThat(trackable.getLine()).isNull();
@@ -40,7 +38,7 @@ public class ServerIssueTrackableTest {
 
   @Test
   public void testWrapping() {
-    var trackable = new ServerIssueTrackable(new ServerIssue("key", true, "ruleKey", "message", "lineHash", "filePath", Instant.ofEpochMilli(1_000_000), "severity", "type", 100));
+    var trackable = new ServerIssueTrackable(new LineLevelServerIssue("key", true, "ruleKey", "message", "lineHash", "filePath", Instant.ofEpochMilli(1_000_000), "severity", "type", 100));
 
     assertThat(trackable.isResolved()).isTrue();
     assertThat(trackable.getRuleKey()).isEqualTo("ruleKey");
@@ -49,7 +47,7 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getCreationDate()).isEqualTo(1_000_000);
     assertThat(trackable.getServerIssueKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(100);
-    assertThat(trackable.getSeverity()).isEqualTo("severity");
+    assertThat(trackable.getUserSeverity()).isEqualTo("severity");
     assertThat(trackable.getType()).isEqualTo("type");
   }
 

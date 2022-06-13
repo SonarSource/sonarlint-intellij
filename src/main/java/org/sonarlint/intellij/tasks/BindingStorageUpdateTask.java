@@ -31,14 +31,16 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.util.messages.Topic;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -152,28 +154,30 @@ public class BindingStorageUpdateTask {
   private List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor, Collection<Project> projectsToUpdate) {
     var failures = new ArrayList<ProjectStorageUpdateFailure>();
 
-    Map<String, String> branchByProjectKey = new HashMap<>();
+    Set<String> projectKeys = new HashSet<>();
     for (Project project : projectsToUpdate) {
       var vcsService = getService(project, VcsService.class);
       var modules = ModuleManager.getInstance(project).getModules();
       for (Module module : modules) {
         var projectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
-        var serverBranchName = vcsService.getServerBranchName(module);
-        // in theory it's possible that different (key, branch) pairs can exist
-        branchByProjectKey.put(projectKey, serverBranchName);
+        projectKeys.add(projectKey);
       }
     }
 
-    branchByProjectKey.forEach((projectKey, branchName) -> {
+    Set<String> projectKeysToSync = new HashSet<>();
+    projectKeys.forEach(projectKey -> {
       try {
-        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey, branchName, monitor);
+        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey,  monitor);
+        projectKeysToSync.add(projectKey);
       } catch (Exception e) {
         GlobalLogOutput.get().logError(e.getMessage(), e);
         failures.add(new ProjectStorageUpdateFailure(projectKey, e));
       }
     });
 
-    engine.sync(connection.getEndpointParams(), connection.getHttpClient(), branchByProjectKey.keySet(), monitor);
+    // Only sync project that have been successfully updated before
+    engine.sync(connection.getEndpointParams(), connection.getHttpClient(), projectKeysToSync, monitor);
+
     projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished());
 
     return failures;

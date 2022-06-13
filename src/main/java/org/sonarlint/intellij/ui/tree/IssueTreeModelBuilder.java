@@ -178,7 +178,7 @@ public class IssueTreeModelBuilder {
         return dateCompare;
       }
 
-      var severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getSeverity(), o2.getSeverity());
+      var severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getUserSeverity(), o2.getUserSeverity());
 
       if (severityCompare != 0) {
         return severityCompare;

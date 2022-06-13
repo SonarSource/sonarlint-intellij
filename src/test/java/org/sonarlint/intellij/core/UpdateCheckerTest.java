@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class UpdateCheckerTest extends AbstractSonarLintLightTests {
-  private QualityProfilesSynchronizer qualityProfilesSynchronizer;
+  private ConnectedModeStorageSynchronizer connectedModeStorageSynchronizer;
   private ServerConnection server;
   private ProjectBindingManager bindingManager = mock(ProjectBindingManager.class);
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
@@ -47,13 +47,13 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     when(bindingManager.getServerConnection()).thenReturn(server);
     when(bindingManager.getConnectedEngine()).thenReturn(engine);
 
-    qualityProfilesSynchronizer = new QualityProfilesSynchronizer(getProject());
+    connectedModeStorageSynchronizer = new ConnectedModeStorageSynchronizer(getProject());
   }
 
   @Test
   public void do_nothing_if_no_engine() throws InvalidBindingException {
     when(bindingManager.getConnectedEngine()).thenThrow(new IllegalStateException());
-    qualityProfilesSynchronizer.syncQualityProfiles(DumbProgressIndicator.INSTANCE);
+    connectedModeStorageSynchronizer.sync(DumbProgressIndicator.INSTANCE);
 
     verifyNoInteractions(engine);
   }

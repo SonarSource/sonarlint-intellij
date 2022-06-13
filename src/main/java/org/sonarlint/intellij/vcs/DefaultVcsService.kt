@@ -58,16 +58,16 @@ class DefaultVcsService @NonInjectable constructor(private val project: Project,
         val serverBranches = validConnectedEngine.getServerBranches(projectKey)
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
         val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module, logger) }.toList()
+        val mainServerBranch = serverBranches.mainBranchName.orElse("master")
         if (repositories.isEmpty()) {
             logger.warn("No VCS repository found for module $module")
-            return serverBranches.mainBranchName.orElse("unknown")
+            return mainServerBranch
         }
         if (repositories.size > 1) {
-            logger.warn("Several candidate Vcs repositories detected for module $module, cannot choose one")
-            return "unknown"
+            logger.warn("Several candidate Vcs repositories detected for module $module, choosing first")
         }
         val repo = repositories.first()
-        return repo.electBestMatchingServerBranchForCurrentHead(serverBranches) ?: "unknown"
+        return repo.electBestMatchingServerBranchForCurrentHead(serverBranches) ?: mainServerBranch
     }
 
     override fun clearCache() {

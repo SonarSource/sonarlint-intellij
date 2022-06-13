@@ -26,6 +26,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.serviceContainer.NonInjectable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -36,6 +37,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.ProjectBindingListenerKt;
@@ -218,6 +220,58 @@ public class ProjectBindingManager {
       return getUniqueProjectKeysForModules(allModules());
     }
     return Collections.emptySet();
+  }
+
+  public Set<ProjectKeyAndBranch> getUniqueProjectKeysAndBranchesPairs() {
+    var projectSettings = getSettingsFor(myProject);
+    if (projectSettings.isBound()) {
+      VcsService vcsService = getService(myProject, VcsService.class);
+      return allModules().stream().map(module -> {
+        ModuleBindingManager moduleBindingManager = getService(module, ModuleBindingManager.class);
+        var projectKey = moduleBindingManager.resolveProjectKey();
+        if (projectKey != null) {
+          var branchName = vcsService.getServerBranchName(module);
+          return new ProjectKeyAndBranch(projectKey, branchName);
+        }
+        return null;
+      })
+        .filter(Objects::nonNull)
+        .collect(Collectors.toSet());
+    }
+    return Set.of();
+  }
+
+  public class ProjectKeyAndBranch {
+    private final String projectKey;
+    private final String branchName;
+
+    public ProjectKeyAndBranch(String projectKey, String branchName) {
+      this.projectKey = projectKey;
+      this.branchName = branchName;
+    }
+
+    public String getProjectKey() {
+      return projectKey;
+    }
+
+    public String getBranchName() {
+      return branchName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o)
+        return true;
+      if (o == null || getClass() != o.getClass())
+        return false;
+      ProjectKeyAndBranch that = (ProjectKeyAndBranch) o;
+      return projectKey.equals(that.projectKey) && branchName.equals(that.branchName);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(projectKey, branchName);
+    }
   }
 
   private static Set<String> getUniqueProjectKeysForModules(Collection<Module> modules) {
