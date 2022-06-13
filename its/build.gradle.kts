@@ -20,9 +20,9 @@ val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
 compileTestKotlin.kotlinOptions.jvmTarget = "11"
 
 repositories {
-    mavenCentral()
     maven("https://repox.jfrog.io/repox/sonarsource")
     maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies")
+    mavenCentral()
 }
 
 val remoteRobotVersion = "0.11.4"
@@ -35,8 +35,9 @@ dependencies {
     testImplementation("org.sonarsource.sonarqube:sonar-ws:8.5.1.38104")
     testImplementation("com.intellij.remoterobot:remote-robot:$remoteRobotVersion")
     testImplementation("com.intellij.remoterobot:remote-fixtures:$remoteRobotVersion")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.0")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.0")
+    testImplementation(platform("org.junit:junit-bom:5.8.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.assertj:assertj-core:3.23.1")
 }
 
 tasks.test {
