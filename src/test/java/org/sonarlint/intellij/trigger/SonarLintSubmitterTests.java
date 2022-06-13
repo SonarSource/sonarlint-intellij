@@ -21,9 +21,11 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.module.Module;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;

@@ -49,8 +49,6 @@ public interface Trackable {
 
   boolean isResolved();
 
-  String getAssignee();
-
   String getSeverity();
 
   @Nullable

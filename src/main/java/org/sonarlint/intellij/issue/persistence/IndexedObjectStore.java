@@ -26,11 +26,11 @@ import java.util.Collection;
 import java.util.Optional;
 
 import org.sonarlint.intellij.util.GlobalLogOutput;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.ObjectStore;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
+import org.sonarsource.sonarlint.core.commons.objectstore.ObjectStore;
+import org.sonarsource.sonarlint.core.commons.objectstore.PathMapper;
+import org.sonarsource.sonarlint.core.commons.objectstore.Reader;
+import org.sonarsource.sonarlint.core.commons.objectstore.Writer;
 
 /**
  * An ObjectStore without internal cache that derives the filesystem path to storage using a provided PathMapper.

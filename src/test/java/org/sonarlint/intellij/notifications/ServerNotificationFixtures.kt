@@ -19,15 +19,9 @@
  */
 package org.sonarlint.intellij.notifications
 
-import org.sonarsource.sonarlint.core.client.api.notifications.ServerNotification
+import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.ServerNotification
 import java.time.ZonedDateTime
 
 fun aServerNotification(category: String, message: String, link: String, projectKey: String, time: ZonedDateTime = ZonedDateTime.now()) : ServerNotification {
-  return object: ServerNotification {
-    override fun category() = category
-    override fun message() = message
-    override fun link() = link
-    override fun projectKey() = projectKey
-    override fun time() = time
-  }
+  return ServerNotification(category, message, link, projectKey, time)
 }

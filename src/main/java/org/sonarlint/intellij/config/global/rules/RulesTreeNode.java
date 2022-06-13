@@ -32,7 +32,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamType;
-import org.sonarsource.sonarlint.core.container.standalone.rule.StandaloneRule;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
@@ -153,7 +152,7 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
     }
 
     public List<RuleParam> getParamDetails() {
-      return ((StandaloneRule) details).paramDetails()
+      return details.paramDetails()
         .stream()
         .map(RuleParam::new)
         .collect(Collectors.toList());

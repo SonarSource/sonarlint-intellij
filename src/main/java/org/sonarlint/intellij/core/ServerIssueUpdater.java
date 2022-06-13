@@ -25,6 +25,7 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsService;
@@ -54,9 +56,9 @@ import org.sonarlint.intellij.issue.ServerIssueTrackable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
-import org.sonarsource.sonarlint.core.client.api.exceptions.DownloadException;
+import org.sonarsource.sonarlint.core.serverconnection.DownloadException;
+import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
+import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -242,7 +244,7 @@ public class ServerIssueUpdater implements Disposable {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
         var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
-        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, true, branchName, null);
+        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -271,7 +273,7 @@ public class ServerIssueUpdater implements Disposable {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
         var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
-        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, true, branchName, null);
+        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());

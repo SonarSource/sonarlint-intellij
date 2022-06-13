@@ -23,7 +23,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.Before
 import org.junit.Test
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.timeout
@@ -40,7 +39,7 @@ import org.sonarlint.intellij.core.ServerNotificationsService
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
 import org.sonarlint.intellij.util.ImmediateExecutorService
-import org.sonarsource.sonarlint.core.client.api.common.NotificationConfiguration
+import org.sonarsource.sonarlint.core.serverconnection.smartnotifications.NotificationConfiguration
 
 class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   private lateinit var serverNotificationsService: ServerNotificationsService

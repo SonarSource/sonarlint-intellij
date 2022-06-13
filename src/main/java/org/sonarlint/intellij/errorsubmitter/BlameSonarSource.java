@@ -80,7 +80,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
   }
 
   @NotNull
-  static String buildBody(@NotNull IdeaLoggingEvent @NotNull [] events, @Nullable String additionalInfo) {
+  static String buildBody(@NotNull IdeaLoggingEvent[] events, @Nullable String additionalInfo) {
     var body = new StringBuilder();
     body.append("Environment:\n");
     body.append("* Java: ").append(System.getProperty("java.vendor")).append(" ").append(System.getProperty("java.version")).append("\n");

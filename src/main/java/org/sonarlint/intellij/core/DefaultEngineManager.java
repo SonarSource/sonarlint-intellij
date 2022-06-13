@@ -141,9 +141,14 @@ public class DefaultEngineManager implements EngineManager, Disposable {
 
   @NotNull
   private ConnectedSonarLintEngine createConnectedEngine(String connectionId) {
-    var engine = factory.createEngine(connectionId);
-    getGlobalSettings().getServerConnectionByName(connectionId).ifPresent(connection -> getService(ServerEventsService.class).autoSubscribe(engine, connection));
-    return engine;
+    var configOpt = getGlobalSettings().getServerConnectionByName(connectionId);
+    if (configOpt.isPresent()) {
+      var config = configOpt.get();
+      var engine = factory.createEngine(connectionId, config.isSonarCloud());
+      getService(ServerEventsService.class).autoSubscribe(engine, config);
+      return engine;
+    }
+    throw new IllegalStateException("Unable to find a configured connection with id '" + connectionId + "'");
   }
 
   @Override
@@ -155,19 +160,19 @@ public class DefaultEngineManager implements EngineManager, Disposable {
   }
 
   @Override
-  public ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String serverId, String projectKey) throws InvalidBindingException {
+  public ConnectedSonarLintEngine getConnectedEngine(SonarLintProjectNotifications notifications, String connectionId, String projectKey) throws InvalidBindingException {
     Preconditions.checkNotNull(notifications, "notifications");
-    Preconditions.checkNotNull(serverId, "serverId");
+    Preconditions.checkNotNull(connectionId, "connectionId");
     Preconditions.checkNotNull(projectKey, "projectKey");
 
     var configuredStorageIds = getServerNames();
-    if (!configuredStorageIds.contains(serverId)) {
+    if (!configuredStorageIds.contains(connectionId)) {
       notifications.notifyConnectionIdInvalid();
-      throw new InvalidBindingException("Invalid server name: " + serverId);
+      throw new InvalidBindingException("Invalid server name: " + connectionId);
     }
 
-    var engine = getConnectedEngine(serverId);
-    checkConnectedEngineStatus(engine, notifications, serverId, projectKey);
+    var engine = getConnectedEngine(connectionId);
+    checkConnectedEngineStatus(engine, notifications, connectionId, projectKey);
     return engine;
   }
 
