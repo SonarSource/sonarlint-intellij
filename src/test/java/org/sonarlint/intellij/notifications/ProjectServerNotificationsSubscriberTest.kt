@@ -31,7 +31,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.timeout
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyZeroInteractions
+import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.any
@@ -75,7 +75,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
   fun it_should_not_register_at_start_when_project_not_bound() {
     projectServerNotificationsSubscriber.start()
 
-    verifyZeroInteractions(serverNotificationsService)
+    verifyNoInteractions(serverNotificationsService)
   }
 
   @Test
@@ -84,7 +84,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     projectServerNotificationsSubscriber.start()
 
-    verifyZeroInteractions(serverNotificationsService)
+    verifyNoInteractions(serverNotificationsService)
   }
 
   @Test
@@ -103,7 +103,7 @@ class ProjectServerNotificationsSubscriberTest : AbstractSonarLintLightTests() {
 
     projectServerNotificationsSubscriber.start()
 
-    verifyZeroInteractions(serverNotificationsService)
+    verifyNoInteractions(serverNotificationsService)
   }
 
   @Test

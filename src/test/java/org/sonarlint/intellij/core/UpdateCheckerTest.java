@@ -28,7 +28,7 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class UpdateCheckerTest extends AbstractSonarLintLightTests {
@@ -55,7 +55,7 @@ public class UpdateCheckerTest extends AbstractSonarLintLightTests {
     when(bindingManager.getConnectedEngine()).thenThrow(new IllegalStateException());
     qualityProfilesSynchronizer.syncQualityProfiles(DumbProgressIndicator.INSTANCE);
 
-    verifyZeroInteractions(engine);
+    verifyNoInteractions(engine);
   }
 
   private ServerConnection createServer() {

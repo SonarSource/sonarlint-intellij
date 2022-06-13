@@ -23,14 +23,16 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collections;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
@@ -64,7 +66,7 @@ public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
 
     editorTrigger.fileOpened(editorManager, file);
 
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
@@ -72,6 +74,6 @@ public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
     editorTrigger.fileClosed(editorManager, file);
     editorTrigger.selectionChanged(new FileEditorManagerEvent(editorManager, null, null, null, null));
 
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions  (submitter);
   }
 }

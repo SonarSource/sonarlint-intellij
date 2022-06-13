@@ -62,8 +62,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class AnalysisTaskTest extends AbstractSonarLintLightTests {
@@ -154,9 +154,9 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verifyZeroInteractions(sonarLintAnalyzer);
+    verifyNoInteractions(sonarLintAnalyzer);
     verify(issueManagerMock, never()).insertNewIssue(any(), any());
-    verifyZeroInteractions(liveIssueBuilder);
+    verifyNoInteractions(liveIssueBuilder);
   }
 
   @Test
@@ -236,7 +236,7 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
     task.run(progress);
 
     // never called because of error
-    verifyZeroInteractions(liveIssueBuilder);
+    verifyNoInteractions(liveIssueBuilder);
   }
 
   @Test
@@ -247,7 +247,7 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
     verify(sonarLintConsole).info("Analysis canceled");
 
     // never called because of cancel
-    verifyZeroInteractions(liveIssueBuilder);
+    verifyNoInteractions(liveIssueBuilder);
   }
 
   @Test

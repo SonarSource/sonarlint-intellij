@@ -37,7 +37,7 @@ import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeFilesActionTest extends AbstractSonarLintLightTests {
@@ -69,14 +69,14 @@ public class SonarAnalyzeFilesActionTest extends AbstractSonarLintLightTests {
   @Test
   public void should_do_nothing_if_no_file() {
     editorFileAction.actionPerformed(event);
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
   public void should_do_nothing_if_no_project() {
     when(event.getProject()).thenReturn(null);
     editorFileAction.actionPerformed(event);
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
