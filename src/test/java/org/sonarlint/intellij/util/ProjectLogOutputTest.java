@@ -28,8 +28,8 @@ import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class ProjectLogOutputTest extends AbstractSonarLintLightTests {
   private final SonarLintConsole mockConsole = mock(SonarLintConsole.class);
@@ -57,7 +57,7 @@ public class ProjectLogOutputTest extends AbstractSonarLintLightTests {
   public void testNoLogAnalysis() {
     getProjectSettings().setAnalysisLogsEnabled(false);
     logOutput.log("test", ClientLogOutput.Level.INFO);
-    verifyZeroInteractions(mockConsole);
+    verifyNoInteractions(mockConsole);
   }
 
   @Test

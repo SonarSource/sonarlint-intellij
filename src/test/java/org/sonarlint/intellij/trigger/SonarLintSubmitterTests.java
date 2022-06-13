@@ -38,7 +38,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.sonarlint.intellij.trigger.SonarLintSubmitter.NO_OP_CALLBACK;
 
@@ -92,7 +92,7 @@ public class SonarLintSubmitterTests extends AbstractSonarLintLightTests {
   public void should_not_submit_if_auto_disable() {
     getGlobalSettings().setAutoTrigger(false);
     submitter.submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
-    verifyZeroInteractions(analysisManager);
+    verifyNoInteractions(analysisManager);
   }
 
 }

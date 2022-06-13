@@ -32,7 +32,7 @@ import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import static com.intellij.openapi.actionSystem.ActionPlaces.EDITOR_POPUP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
@@ -60,7 +60,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
@@ -70,7 +70,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test

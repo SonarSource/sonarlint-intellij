@@ -26,15 +26,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
+
 import java.util.List;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class CodeAnalyzerRestarterTest extends AbstractSonarLintLightTests {
@@ -59,8 +61,8 @@ public class CodeAnalyzerRestarterTest extends AbstractSonarLintLightTests {
     when(fileEditorManager.getOpenFiles()).thenReturn(new VirtualFile[] {vFile1});
 
     analyzerRestarter.refreshOpenFiles();
-    verifyZeroInteractions(codeAnalyzer);
-    verifyZeroInteractions(psiManager);
+    verifyNoInteractions(codeAnalyzer);
+    verifyNoInteractions(psiManager);
   }
 
   @Test

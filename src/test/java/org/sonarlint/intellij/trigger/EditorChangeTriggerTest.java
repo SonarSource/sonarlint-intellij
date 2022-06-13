@@ -41,8 +41,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
@@ -119,7 +119,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     getGlobalSettings().setAutoTrigger(false);
 
     underTest.documentChanged(createEvent(file));
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
@@ -132,7 +132,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(event.getDocument()).thenReturn(doc);
     when(docManager.getFile(doc)).thenReturn(file);
     underTest.documentChanged(event);
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
@@ -141,7 +141,7 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
 
     underTest.documentChanged(createEvent(file));
 
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
@@ -155,13 +155,13 @@ public class EditorChangeTriggerTest extends AbstractSonarLintLightTests {
     when(docManager.getFile(doc)).thenReturn(null);
 
     underTest.documentChanged(event);
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
   public void nothing_to_do_before_doc_change() {
     underTest.beforeDocumentChange(null);
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test

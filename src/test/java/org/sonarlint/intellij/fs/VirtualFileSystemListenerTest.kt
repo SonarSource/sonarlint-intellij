@@ -36,7 +36,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.reset
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyZeroInteractions
+import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.capture
@@ -130,7 +130,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verifyZeroInteractions(fileEventsNotifier)
+        verifyNoInteractions(fileEventsNotifier)
     }
 
     @Test
@@ -140,7 +140,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verifyZeroInteractions(fileEventsNotifier)
+        verifyNoInteractions(fileEventsNotifier)
     }
 
     @Test
@@ -150,7 +150,7 @@ class VirtualFileSystemListenerTest : AbstractSonarLintLightTests() {
 
         virtualFileSystemListener.after(listOf(vFileEvent))
 
-        verifyZeroInteractions(fileEventsNotifier)
+        verifyNoInteractions(fileEventsNotifier)
     }
 
     @Test

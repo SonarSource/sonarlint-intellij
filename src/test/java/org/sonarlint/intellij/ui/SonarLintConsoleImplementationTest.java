@@ -29,7 +29,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 public class SonarLintConsoleImplementationTest extends AbstractSonarLintLightTests {
   private ConsoleView consoleView = mock(ConsoleView.class);
@@ -62,7 +62,7 @@ public class SonarLintConsoleImplementationTest extends AbstractSonarLintLightTe
 
     assertThat(console.debugEnabled()).isFalse();
     console.debug("debug msg");
-    verifyZeroInteractions(consoleView);
+    verifyNoInteractions(consoleView);
   }
 
   @Test

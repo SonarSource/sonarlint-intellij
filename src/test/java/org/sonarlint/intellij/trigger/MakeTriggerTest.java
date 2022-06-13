@@ -29,7 +29,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class MakeTriggerTest extends AbstractSonarLintLightTests {
@@ -63,7 +63,7 @@ public class MakeTriggerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_do_nothing_on_generate() {
     trigger.fileGenerated("output", "relative");
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
@@ -72,19 +72,19 @@ public class MakeTriggerTest extends AbstractSonarLintLightTests {
     trigger.compilationFinished(false, 0, 0, context);
     trigger.buildFinished(mock(Project.class), UUID.randomUUID(), true);
 
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
   public void should_not_trigger_if_not_automake() {
     when(context.getProject()).thenReturn(mock(Project.class));
     trigger.buildFinished(getProject(), UUID.randomUUID(), false);
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 
   @Test
   public void other_events_should_be_noop() {
     trigger.buildStarted(getProject(), UUID.randomUUID(), true);
-    verifyZeroInteractions(submitter);
+    verifyNoInteractions(submitter);
   }
 }

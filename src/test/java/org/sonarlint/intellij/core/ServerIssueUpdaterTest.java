@@ -49,7 +49,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
@@ -89,7 +89,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     getProjectSettings().setBindingEnabled(false);
 
     underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
-    verifyZeroInteractions(issueManager);
+    verifyNoInteractions(issueManager);
   }
 
   @Test

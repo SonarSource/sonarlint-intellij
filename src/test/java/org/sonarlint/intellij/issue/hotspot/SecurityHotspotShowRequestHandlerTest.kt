@@ -31,7 +31,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyZeroInteractions
+import org.mockito.Mockito.verifyNoInteractions
 import org.mockito.junit.MockitoJUnitRunner
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.actions.SonarLintToolWindow
@@ -103,7 +103,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
-    verifyZeroInteractions(toolWindow)
+    verifyNoInteractions(toolWindow)
   }
 
   @Test
@@ -132,7 +132,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
     requestHandler.open(PROJECT_KEY, HOTSPOT_KEY, CONNECTED_URL)
 
     verify(toolWindow).show(eq(LocalHotspot(Location(null, null, "Very hotspot", "MyFile.java", null), remoteHotspot)))
-    verifyZeroInteractions(highlighter)
+    verifyNoInteractions(highlighter)
     assertThat(projectNotifications)
       .extracting("title", "content")
       .containsExactly(tuple("Error opening security hotspot", "Cannot find hotspot file in the project."))

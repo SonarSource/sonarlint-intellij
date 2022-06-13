@@ -39,8 +39,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
@@ -67,7 +67,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
 
     assertThat(cache.contains(myFixture.copyFileToProject("foo.php", "foo2.php"))).isFalse();
 
-    verifyZeroInteractions(store);
+    verifyNoInteractions(store);
   }
 
   @Test
@@ -92,7 +92,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
     var cacheMiss = myFixture.copyFileToProject("foo.php", "foo2.php");
     assertThat(cache.getLive(cacheMiss)).isNull();
 
-    verifyZeroInteractions(store);
+    verifyNoInteractions(store);
   }
 
   @Test
@@ -111,7 +111,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
     // oldest access should be foo1.php after this
     assertThat(cache.getLive(file0)).containsOnly(issue1);
 
-    verifyZeroInteractions(store);
+    verifyNoInteractions(store);
 
     var file = myFixture.copyFileToProject("foo.php", "anotherfile.php");
     cache.insertIssue(file, issue1);
