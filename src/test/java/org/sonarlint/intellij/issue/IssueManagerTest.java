@@ -93,7 +93,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     assertThat(previousIssues).isEmpty();
 
     assertThat(trackedIssue.getCreationDate()).isEqualTo(1000);
-    assertThat(trackedIssue.getSeverity()).isEqualTo("severity");
+    assertThat(trackedIssue.getUserSeverity()).isEqualTo("severity");
     assertThat(trackedIssue.getType()).isEqualTo("type");
   }
 
@@ -131,7 +131,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
     // issue1 has been changed
     assertThat(issue1.getServerIssueKey()).isEqualTo(serverIssueKey);
-    assertThat(issue1.getSeverity()).isEqualTo("serverSeverity");
+    assertThat(issue1.getUserSeverity()).isEqualTo("serverSeverity");
     assertThat(issue1.getType()).isEqualTo("localType");
   }
 
@@ -162,7 +162,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     assertThat(issue1.getLine()).isEqualTo(localLine);
     // ... + the change from the server is copied
     assertThat(issue1.isResolved()).isTrue();
-    assertThat(issue1.getSeverity()).isEqualTo("sev");
+    assertThat(issue1.getUserSeverity()).isEqualTo("sev");
     assertThat(issue1.getType()).isEqualTo("type");
   }
 
@@ -187,7 +187,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
     // keep old creation date and severity
     assertThat(issue1.getCreationDate()).isEqualTo(1000L);
-    assertThat(issue1.getSeverity()).isEqualTo("sev");
+    assertThat(issue1.getUserSeverity()).isEqualTo("sev");
   }
 
   @Test

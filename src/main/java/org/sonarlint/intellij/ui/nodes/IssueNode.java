@@ -47,7 +47,7 @@ public class IssueNode extends AbstractNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
-    var severity = StringUtil.capitalize(issue.getSeverity().toLowerCase(Locale.ENGLISH));
+    var severity = StringUtil.capitalize(issue.getUserSeverity().toLowerCase(Locale.ENGLISH));
     var type = issue.getType();
 
     if (type != null) {

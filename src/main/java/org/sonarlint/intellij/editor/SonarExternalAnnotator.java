@@ -106,7 +106,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     issue.quickFixes().forEach(f -> intentionActions.add(new ApplyQuickFixIntentionAction(f, issue.getRuleKey())));
 
     var annotationBuilder = annotationHolder
-      .newAnnotation(getSeverity(issue.getSeverity()), issue.getMessage())
+      .newAnnotation(getSeverity(issue.getUserSeverity()), issue.getMessage())
       .range(validTextRange);
     for (IntentionAction action : intentionActions) {
       annotationBuilder = annotationBuilder.withFix(action);
@@ -115,9 +115,9 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     if (issue.getRange() == null) {
       annotationBuilder = annotationBuilder.fileLevel();
     } else {
-      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(issue.getSeverity()));
+      annotationBuilder = annotationBuilder.textAttributes(getTextAttrsKey(issue.getUserSeverity()));
     }
-    annotationBuilder.highlightType(getType(issue.getSeverity()))
+    annotationBuilder.highlightType(getType(issue.getUserSeverity()))
       .create();
   }
 

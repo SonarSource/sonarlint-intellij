@@ -38,7 +38,7 @@ import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
-import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -73,6 +73,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     replaceProjectService(SonarLintConsole.class, mockedConsole);
     replaceProjectService(ProjectBindingManager.class, bindingManager);
     doReturn(engine).when(bindingManager).getConnectedEngine();
+    doReturn(engine).when(bindingManager).getValidConnectedEngine();
     underTest = new ServerIssueUpdater(getProject());
     getGlobalSettings().setServerConnections(List.of(ServerConnection.newBuilder().setName(SERVER_ID).setHostUrl("http://dummyserver:9000").build()));
     getProjectSettings().setConnectionName(SERVER_ID);
@@ -100,7 +101,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     var serverIssue = mock(ServerIssue.class);
 
     // mock issues downloaded
-    when(engine.downloadServerIssues(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), isNull(), isNull()))
+    when(engine.downloadAllServerIssuesForFile(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), isNull(), isNull()))
       .thenReturn(List.of(serverIssue));
 
     // run
@@ -125,7 +126,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     var serverIssue = mock(ServerIssue.class);
 
     // mock issues fetched
-    when(engine.getServerIssues(eq(PROJECT_BINDING), anyString())).thenReturn(List.of(serverIssue));
+    when(engine.getServerIssues(eq(PROJECT_BINDING), anyString(), anyString())).thenReturn(List.of(serverIssue));
 
     // run
     getProjectSettings().setBindingEnabled(true);
@@ -133,7 +134,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator(), false);
 
     verify(issueManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
-    verify(engine).downloadServerIssues(any(), any(), eq(PROJECT_KEY), isNull(), isNull());
+    verify(engine).downloadAllServerIssues(any(), any(), eq(PROJECT_KEY), anyString(), isNull());
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
   }

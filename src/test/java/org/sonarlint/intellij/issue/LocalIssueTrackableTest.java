@@ -65,7 +65,7 @@ public class LocalIssueTrackableTest {
       .build();
 
     var trackable = new LocalIssueTrackable(issue);
-    trackable.getSeverity();
+    trackable.getUserSeverity();
   }
 
   @Test(expected = UnsupportedOperationException.class)

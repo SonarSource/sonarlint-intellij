@@ -19,27 +19,34 @@
  */
 package org.sonarlint.intellij.issue;
 
-import java.util.Optional;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
 import org.sonarlint.intellij.issue.tracking.Trackable;
-import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.issues.LineLevelServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.issues.RangeLevelServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
 
 import static java.util.Optional.ofNullable;
 
 public class ServerIssueTrackable implements Trackable {
 
-  private final ServerIssue serverIssue;
+  private final ServerIssue<?> serverIssue;
 
-  public ServerIssueTrackable(ServerIssue serverIssue) {
+  public ServerIssueTrackable(ServerIssue<?> serverIssue) {
     this.serverIssue = serverIssue;
   }
 
   @CheckForNull
   @Override
   public Integer getLine() {
-    return ofNullable(serverIssue.getTextRange()).map(ServerIssue.TextRange::getStartLine).orElse(null);
+    if (serverIssue instanceof LineLevelServerIssue) {
+      return ((LineLevelServerIssue) serverIssue).getLine();
+    }
+    if (serverIssue instanceof RangeLevelServerIssue) {
+      return ((RangeLevelServerIssue) serverIssue).getTextRange().getStartLine();
+    }
+    return null;
   }
 
   @Override
@@ -50,18 +57,24 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public Integer getTextRangeHash() {
-    return ofNullable(serverIssue.getRangeHash()).map(String::hashCode).orElse(null);
+    if (serverIssue instanceof RangeLevelServerIssue) {
+      return ((RangeLevelServerIssue) serverIssue).getRangeHash().hashCode();
+    }
+    return null;
   }
 
   @CheckForNull
   @Override
   public Integer getLineHash() {
-    return ofNullable(serverIssue.getLineHash()).map(String::hashCode).orElse(null);
+    if (serverIssue instanceof LineLevelServerIssue) {
+      return ((LineLevelServerIssue) serverIssue).getLineHash().hashCode();
+    }
+    return null;
   }
 
   @Override
   public String getRuleKey() {
-    return serverIssue.ruleKey();
+    return serverIssue.getRuleKey();
   }
 
   @CheckForNull
@@ -73,19 +86,19 @@ public class ServerIssueTrackable implements Trackable {
   @CheckForNull
   @Override
   public Long getCreationDate() {
-    return serverIssue.creationDate().toEpochMilli();
+    return serverIssue.getCreationDate().toEpochMilli();
   }
 
   @Override
   public boolean isResolved() {
-    return serverIssue.resolved();
+    return serverIssue.isResolved();
   }
 
-  @Override public String getSeverity() {
-    return serverIssue.severity();
+  @Override public String getUserSeverity() {
+    return serverIssue.getUserSeverity();
   }
 
   @Nullable @Override public String getType() {
-    return serverIssue.type();
+    return serverIssue.getType();
   }
 }
