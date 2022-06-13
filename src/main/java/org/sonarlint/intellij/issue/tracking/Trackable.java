@@ -49,8 +49,8 @@ public interface Trackable {
 
   boolean isResolved();
 
-  String getSeverity();
+  @CheckForNull
+  String getUserSeverity();
 
-  @Nullable
   String getType();
 }

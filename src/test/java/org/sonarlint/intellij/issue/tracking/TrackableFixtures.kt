@@ -28,6 +28,6 @@ fun aTrackable() = object : Trackable {
     override fun getServerIssueKey() = "serverKey"
     override fun getCreationDate() = 1000L
     override fun isResolved() = false
-    override fun getSeverity() = "severity"
+    override fun getUserSeverity() = "severity"
     override fun getType() = "type"
 }

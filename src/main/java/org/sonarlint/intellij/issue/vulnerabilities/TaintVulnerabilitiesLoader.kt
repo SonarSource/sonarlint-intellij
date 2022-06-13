@@ -24,6 +24,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBindingManager
@@ -60,13 +61,14 @@ object TaintVulnerabilitiesLoader {
     val moduleBindingManager = getService(module, ModuleBindingManager::class.java)
     val projectBinding = moduleBindingManager.binding
       ?: throw InvalidBindingException("Module ${module.name} is not bound")
+    val branchName = getService<VcsService>(project, VcsService::class.java).getServerBranchName(module)
     val filePath = project.getRelativePathOf(file)
     if (filePath == null) {
       SonarLintConsole.get(project).debug("Filepath for file ${file.canonicalPath} was not resolved.")
       return emptyList()
     }
     return try {
-      connectedEngine.getServerTaintIssues(projectBinding, filePath)
+      connectedEngine.getServerTaintIssues(projectBinding, branchName, filePath)
         .filter { it.ruleKey().contains(SECURITY_REPOSITORY_HINT) }
         .filter { !it.resolved() }
     } catch(e: Exception) {

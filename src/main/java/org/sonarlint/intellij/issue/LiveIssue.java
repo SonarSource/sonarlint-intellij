@@ -139,7 +139,7 @@ public class LiveIssue implements Trackable {
   }
 
   @Override
-  public String getSeverity() {
+  public String getUserSeverity() {
     return severity;
   }
 

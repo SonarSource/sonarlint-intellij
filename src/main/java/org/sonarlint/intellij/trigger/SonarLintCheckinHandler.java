@@ -132,7 +132,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var numBlockerIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
       .filter(Predicate.not(LiveIssue::isResolved))
-      .filter(i -> "BLOCKER".equals(i.getSeverity()))
+      .filter(i -> "BLOCKER".equals(i.getUserSeverity()))
       .count();
 
     if (numIssues == 0) {

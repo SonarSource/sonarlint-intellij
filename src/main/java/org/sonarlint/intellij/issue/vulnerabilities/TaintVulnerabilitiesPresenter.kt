@@ -77,7 +77,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
 
     val serverConnection = bindingManager.serverConnection
     val branchName = getService(project, VcsService::class.java).getServerBranchName(module)
-    bindingManager.connectedEngine.downloadServerIssues(serverConnection.endpointParams,
+    bindingManager.connectedEngine.downloadAllServerIssuesForFile(serverConnection.endpointParams,
       serverConnection.httpClient, projectBinding, relativePath, branchName, null)
   }
 

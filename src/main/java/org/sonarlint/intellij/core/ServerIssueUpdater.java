@@ -58,7 +58,7 @@ import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverconnection.DownloadException;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
-import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -156,6 +156,7 @@ public class ServerIssueUpdater implements Disposable {
     for (var e : filesPerModule.entrySet()) {
       var module = e.getKey();
       var projectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
+      var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
       Runnable task = () -> {
         if (updatedProjects.add(projectKey)) {
           issueUpdater.downloadAllServerIssues(module, Objects.requireNonNull(projectKey));
@@ -164,7 +165,7 @@ public class ServerIssueUpdater implements Disposable {
         var relativePathPerFile = getRelativePaths(module.getProject(), e.getValue());
 
         for (var entry : relativePathPerFile.entrySet()) {
-          issueUpdater.fetchAndMatchFile(binding, entry.getKey(), entry.getValue());
+          issueUpdater.fetchAndMatchFile(binding, branchName, entry.getKey(), entry.getValue());
         }
       };
       futuresList.add(submit(task, Objects.requireNonNull(projectKey), null));
@@ -230,8 +231,8 @@ public class ServerIssueUpdater implements Disposable {
       this.engine = engine;
     }
 
-    public void fetchAndMatchFile(ProjectBinding projectBinding, VirtualFile virtualFile, String relativePath) {
-      var serverIssues = engine.getServerIssues(projectBinding, relativePath);
+    public void fetchAndMatchFile(ProjectBinding projectBinding, String branchName, VirtualFile virtualFile, String relativePath) {
+      var serverIssues = engine.getServerIssues(projectBinding, branchName, relativePath);
       matchFile(virtualFile, serverIssues);
     }
 
@@ -244,7 +245,7 @@ public class ServerIssueUpdater implements Disposable {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
         var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
-        engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
+        engine.downloadAllServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -270,15 +271,15 @@ public class ServerIssueUpdater implements Disposable {
 
     private List<ServerIssue> fetchServerIssuesForFile(Module module, String relativePath) {
       var projectBinding = getProjectBinding(module);
+      SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
+      var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
       try {
-        SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
-        var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
-        return engine.downloadServerIssues(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, branchName, null);
+        engine.downloadAllServerIssuesForFile(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
-        return engine.getServerIssues(projectBinding, relativePath);
       }
+      return engine.getServerIssues(projectBinding, branchName, relativePath);
     }
   }
 }

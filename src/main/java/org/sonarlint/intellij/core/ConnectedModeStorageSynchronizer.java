@@ -21,14 +21,17 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.concurrency.JobScheduler;
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.vcs.VcsListener;
 import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -38,41 +41,49 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class QualityProfilesSynchronizer implements Disposable {
+public class ConnectedModeStorageSynchronizer implements Disposable {
 
   private final Project myProject;
   private ScheduledFuture<?> scheduledTask;
 
-  public QualityProfilesSynchronizer(Project project) {
+  public ConnectedModeStorageSynchronizer(Project project) {
     myProject = project;
+    project.getMessageBus().connect(project).subscribe(VcsListener.TOPIC, this::updateIssues);
   }
 
   public void init() {
     var syncPeriod = Long.parseLong(StringUtils.defaultIfBlank(System.getenv("SONARLINT_INTERNAL_SYNC_PERIOD"), "3600"));
-    scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::syncQualityProfiles, 1, syncPeriod, TimeUnit.SECONDS);
+    scheduledTask = JobScheduler.getScheduler().scheduleWithFixedDelay(this::sync, 1, syncPeriod, TimeUnit.SECONDS);
   }
 
-  private void syncQualityProfiles() {
+  private void sync() {
+    if (!getSettingsFor(myProject).isBound()) {
+      return;
+    }
     ProgressManager.getInstance()
       .run(new Task.Backgroundable(myProject, "Checking SonarLint Binding Updates") {
         public void run(@NotNull ProgressIndicator progressIndicator) {
-          QualityProfilesSynchronizer.this.syncQualityProfiles(progressIndicator);
+          ConnectedModeStorageSynchronizer.this.sync(progressIndicator);
         }
       });
 
   }
 
-  void syncQualityProfiles(@NotNull ProgressIndicator progressIndicator) {
-    ProjectBindingManager projectBindingManager;
+  void sync(@NotNull ProgressIndicator progressIndicator) {
     var log = getService(GlobalLogOutput.class);
+    ProjectBindingManager projectBindingManager = getService(myProject, ProjectBindingManager.class);
+    if (!projectBindingManager.isBindingValid()) {
+      log.log("Invalid bindind for project", ClientLogOutput.Level.WARN);
+      return;
+    }
     ConnectedSonarLintEngine engine;
     try {
-      projectBindingManager = getService(myProject, ProjectBindingManager.class);
       engine = projectBindingManager.getConnectedEngine();
     } catch (Exception e) {
       // happens if project is not bound, binding is invalid, storages are not updated, ...
-      log.log("Couldn't get a connected engine to sync quality profiles: " + e.getMessage(), ClientLogOutput.Level.DEBUG);
+      log.log("Couldn't get a connected engine to sync: " + e.getMessage(), ClientLogOutput.Level.DEBUG);
       return;
     }
 
@@ -80,8 +91,12 @@ public class QualityProfilesSynchronizer implements Disposable {
       var serverConnection = projectBindingManager.getServerConnection();
       progressIndicator.setIndeterminate(false);
       var projectKeysToSync = getService(myProject, ProjectBindingManager.class).getUniqueProjectKeys();
-      log.log("Sync quality profiles...", ClientLogOutput.Level.INFO);
       engine.sync(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKeysToSync, new TaskProgressMonitor(progressIndicator, myProject));
+
+      var projectAndBranchesToSync = getService(myProject, ProjectBindingManager.class).getUniqueProjectKeysAndBranchesPairs();
+      projectAndBranchesToSync.forEach(pb -> {
+        engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), new TaskProgressMonitor(progressIndicator, myProject));
+      });
       myProject.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished();
     } catch (Exception e) {
       log.log("There was an error while synchronizing quality profiles: " + e.getMessage(), ClientLogOutput.Level.WARN);
@@ -89,6 +104,42 @@ public class QualityProfilesSynchronizer implements Disposable {
 
     var submitter = getService(myProject, SonarLintSubmitter.class);
     submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
+  }
+
+  private void updateIssues(Module module, String branchName) {
+    // TODO refactor to avoid duplicate
+    var log = getService(GlobalLogOutput.class);
+    ProjectBindingManager projectBindingManager = getService(myProject, ProjectBindingManager.class);
+    if (!projectBindingManager.isBindingValid()) {
+      log.log("Invalid bindind for project", ClientLogOutput.Level.WARN);
+      return;
+    }
+    var moduleProjectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
+    if (moduleProjectKey == null) {
+      return;
+    }
+    ConnectedSonarLintEngine engine;
+    try {
+      engine = projectBindingManager.getConnectedEngine();
+    } catch (Exception e) {
+      // happens if project is not bound, binding is invalid, storages are not updated, ...
+      log.log("Couldn't get a connected engine to sync: " + e.getMessage(), ClientLogOutput.Level.DEBUG);
+      return;
+    }
+
+    ProgressManager.getInstance()
+      .run(new Task.Backgroundable(myProject, "Pull server issues after switching branch") {
+        public void run(@NotNull ProgressIndicator progressIndicator) {
+          try {
+            var serverConnection = projectBindingManager.getServerConnection();
+            progressIndicator.setIndeterminate(false);
+            engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), moduleProjectKey, branchName, new TaskProgressMonitor(progressIndicator, myProject));
+          } catch (Exception e) {
+            log.log("There was an error while synchronizing issues: " + e.getMessage(), ClientLogOutput.Level.WARN);
+          }
+        }
+      });
+
   }
 
   @Override

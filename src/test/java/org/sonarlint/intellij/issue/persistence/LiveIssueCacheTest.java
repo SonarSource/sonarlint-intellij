@@ -222,7 +222,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
   private LiveIssue createTestIssue(String ruleKey) {
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn(ruleKey);
-    when(issue.getSeverity()).thenReturn("MAJOR");
+    when(issue.getUserSeverity()).thenReturn("MAJOR");
     when(issue.getMessage()).thenReturn("msg");
 
     return issue;
