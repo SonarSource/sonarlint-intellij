@@ -34,9 +34,9 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.GlobalStorageStatus;
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectStorageStatus;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.serverconnection.GlobalStorageStatus;
+import org.sonarsource.sonarlint.core.serverconnection.ProjectStorageStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -62,7 +62,7 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
     connectedEngine = mock(ConnectedSonarLintEngine.class);
     standaloneEngine = mock(StandaloneSonarLintEngine.class);
 
-    when(engineFactory.createEngine(anyString())).thenReturn(connectedEngine);
+    when(engineFactory.createEngine(anyString(), false)).thenReturn(connectedEngine);
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
     manager = new DefaultEngineManager(engineFactory);
@@ -80,7 +80,7 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
   public void should_get_connected() {
     assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
     assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
-    verify(engineFactory, Mockito.times(1)).createEngine("server1");
+    verify(engineFactory, Mockito.times(1)).createEngine("server1", false);
   }
 
   @Test
@@ -123,36 +123,14 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);
 
-    verify(engineFactory, Mockito.times(1)).createEngine("server1");
+    verify(engineFactory, Mockito.times(1)).createEngine("server1", false);
   }
 
   private static ServerConnection createServer(String name) {
     return ServerConnection.newBuilder().setName(name).build();
   }
 
-  private static ProjectStorageStatus projectOk = new ProjectStorageStatus() {
-    @Override public Date getLastUpdateDate() {
-      return new Date(System.currentTimeMillis());
-    }
+  private static ProjectStorageStatus projectOk = new ProjectStorageStatus(new Date(System.currentTimeMillis()), false);
 
-    @Override public boolean isStale() {
-      return false;
-    }
-  };
-
-  private static GlobalStorageStatus globalOk = new GlobalStorageStatus() {
-    @Nullable
-    @Override
-    public String getServerVersion() {
-      return null;
-    }
-
-    @Override public Date getLastUpdateDate() {
-      return new Date(System.currentTimeMillis());
-    }
-
-    @Override public boolean isStale() {
-      return false;
-    }
-  };
+  private static GlobalStorageStatus globalOk = new GlobalStorageStatus(null, new Date(System.currentTimeMillis()), false);
 }

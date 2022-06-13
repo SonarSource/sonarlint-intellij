@@ -76,7 +76,7 @@ public class SonarLintEngineFactory {
     new EmbeddedPlugin(Language.RUBY, "Ruby", "sonar-ruby-plugin-*.jar"),
     new EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"));
 
-  ConnectedSonarLintEngine createEngine(String connectionId) {
+  ConnectedSonarLintEngine createEngine(String connectionId, boolean isSonarCloud) {
     var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
     enabledLanguages.addAll(CONNECTED_ADDITIONAL_LANGUAGES);
 
@@ -84,7 +84,8 @@ public class SonarLintEngineFactory {
 
     var modulesRegistry = SonarLintUtils.getService(ModulesRegistry.class);
 
-    var configBuilder = ConnectedGlobalConfiguration.builder()
+    var configBuilder = isSonarCloud ? ConnectedGlobalConfiguration.sonarCloudBuilder() : ConnectedGlobalConfiguration.sonarQubeBuilder();
+    configBuilder
       .addEnabledLanguages(enabledLanguages.toArray(new Language[0]))
       .setConnectionId(connectionId)
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));

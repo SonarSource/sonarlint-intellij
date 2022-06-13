@@ -39,10 +39,10 @@ import org.sonarlint.intellij.util.ProjectLogOutput;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.PluginDetails;
-import org.sonarsource.sonarlint.core.client.api.common.RuleKey;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.commons.RuleKey;
 import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;

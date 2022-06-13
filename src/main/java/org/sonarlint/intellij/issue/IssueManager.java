@@ -196,14 +196,12 @@ public class IssueManager {
     // FIXME should we not reset those fields when unbinding a project?
     rawMatched.setServerIssueKey(previousMatched.getServerIssueKey());
     rawMatched.setResolved(previousMatched.isResolved());
-    rawMatched.setAssignee(previousMatched.getAssignee());
   }
 
   private static void copyAttributesFromServer(LiveIssue liveIssue, Trackable serverIssue) {
     liveIssue.setCreationDate(serverIssue.getCreationDate());
     liveIssue.setServerIssueKey(serverIssue.getServerIssueKey());
     liveIssue.setResolved(serverIssue.isResolved());
-    liveIssue.setAssignee(serverIssue.getAssignee());
     liveIssue.setSeverity(serverIssue.getSeverity());
     if (serverIssue.getType() != null) {
       // old SQ servers won't return this field
@@ -215,7 +213,6 @@ public class IssueManager {
     // we keep creation date from the old server issue
     issue.setServerIssueKey(null);
     issue.setResolved(false);
-    issue.setAssignee("");
   }
 
   public void insertNewIssue(VirtualFile file, LiveIssue liveIssue) {

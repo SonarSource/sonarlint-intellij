@@ -83,41 +83,6 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   }
 
   private static ConnectedRuleDetails ruleDetails(String ruleKey) {
-    return new ConnectedRuleDetails() {
-      @Override
-      public String getExtendedDescription() {
-        return "ruleExtendedDescription";
-      }
-
-      @Override
-      public String getKey() {
-        return ruleKey;
-      }
-
-      @Override
-      public String getName() {
-        return "ruleName";
-      }
-
-      @Override
-      public String getHtmlDescription() {
-        return "ruleHtmlDescription";
-      }
-
-      @Override
-      public Language getLanguage() {
-        return Language.JAVA;
-      }
-
-      @Override
-      public String getSeverity() {
-        return "BLOCKER";
-      }
-
-      @Override
-      public String getType() {
-        return "CODE_SMELL";
-      }
-    };
+    return new ConnectedRuleDetails(ruleKey, "ruleName", "ruleHtmlDescription", "BLOCKER", "CODE_SMELL", Language.JAVA, "ruleExtendedDescription");
   }
 }

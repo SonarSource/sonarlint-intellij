@@ -28,6 +28,7 @@ import com.intellij.openapi.roots.TestSourcesFilter;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -41,6 +42,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.analysis.ExcludeResult;
 import org.sonarlint.intellij.common.analysis.FileExclusionContributor;
@@ -53,7 +55,7 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.messages.ProjectConfigurationListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarsource.sonarlint.core.client.api.common.FileExclusions;
+import org.sonarsource.sonarlint.core.client.api.common.ClientFileExclusions;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
@@ -61,8 +63,8 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 public class LocalFileExclusions {
   private final Project myProject;
 
-  private FileExclusions projectExclusions;
-  private FileExclusions globalExclusions;
+  private ClientFileExclusions projectExclusions;
+  private ClientFileExclusions globalExclusions;
 
   public LocalFileExclusions(Project project) {
     this.myProject = project;
@@ -88,11 +90,11 @@ public class LocalFileExclusions {
     var projectDirExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.DIRECTORY);
     var projectGlobExclusions = getExclusionsOfType(projectExclusionsItems, ExclusionItem.Type.GLOB);
 
-    this.projectExclusions = new FileExclusions(projectFileExclusions, projectDirExclusions, projectGlobExclusions);
+    this.projectExclusions = new ClientFileExclusions(projectFileExclusions, projectDirExclusions, projectGlobExclusions);
   }
 
   private void loadGlobalExclusions(SonarLintGlobalSettings settings) {
-    this.globalExclusions = new FileExclusions(Collections.emptySet(), Collections.emptySet(), new LinkedHashSet<>(settings.getFileExclusions()));
+    this.globalExclusions = new ClientFileExclusions(Collections.emptySet(), Collections.emptySet(), new LinkedHashSet<>(settings.getFileExclusions()));
   }
 
   private void subscribeToSettingsChanges(Project project) {

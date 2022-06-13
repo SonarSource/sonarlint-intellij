@@ -21,7 +21,9 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.project.Project;
+
 import java.util.UUID;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;

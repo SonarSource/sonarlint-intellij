@@ -82,90 +82,28 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
   }
 
   private static StandaloneRuleDetails ruleDetails(String ruleKey) {
-    return new StandaloneRuleDetails() {
-      @Override
-      public boolean isActiveByDefault() {
-        return true;
-      }
-
-      @Override
-      public String[] getTags() {
-        return new String[] {"tag"};
-      }
-
-      @Override
-      public Collection<StandaloneRuleParam> paramDetails() {
-        return List.of(aParam());
-      }
-
-      @Override
-      public String getKey() {
-        return ruleKey;
-      }
-
-      @Override
-      public String getName() {
-        return "ruleName";
-      }
-
-      @Override
-      public String getHtmlDescription() {
-        return "ruleDescription";
-      }
-
-      @Override
-      public Language getLanguage() {
-        return Language.JAVA;
-      }
-
-      @Override
-      public String getSeverity() {
-        return "MAJOR";
-      }
-
-      @Override
-      public String getType() {
-        return "BUG";
-      }
-    };
+    var rule = mock(StandaloneRuleDetails.class);
+    when(rule.isActiveByDefault()).thenReturn(true);
+    when(rule.getTags()).thenReturn(new String[] {"tag"});
+    when(rule.paramDetails()).thenReturn(List.of(aParam()));
+    when(rule.getKey()).thenReturn(ruleKey);
+    when(rule.getName()).thenReturn("ruleName");
+    when(rule.getHtmlDescription()).thenReturn("ruleDescription");
+    when(rule.getLanguage()).thenReturn(Language.JAVA);
+    when(rule.getSeverity()).thenReturn("MAJOR");
+    when(rule.getType()).thenReturn("BUG");
+    return rule;
   }
 
   private static StandaloneRuleParam aParam() {
-    return new StandaloneRuleParam() {
-      @Override
-      public String key() {
-        return "paramKey";
-      }
-
-      @Override
-      public String name() {
-        return "paramName";
-      }
-
-      @Override
-      public String description() {
-        return "paramDescription";
-      }
-
-      @Override
-      public String defaultValue() {
-        return "paramDefaultValue";
-      }
-
-      @Override
-      public StandaloneRuleParamType type() {
-        return StandaloneRuleParamType.STRING;
-      }
-
-      @Override
-      public boolean multiple() {
-        return false;
-      }
-
-      @Override
-      public List<String> possibleValues() {
-        return List.of("YES", "NO", "MAYBE");
-      }
-    };
+    var param = mock(StandaloneRuleParam.class);
+    when(param.key()).thenReturn("paramKey");
+    when(param.name()).thenReturn("paramName");
+    when(param.description()).thenReturn("paramDescription");
+    when(param.defaultValue()).thenReturn("paramDefaultValue");
+    when(param.type()).thenReturn(StandaloneRuleParamType.STRING);
+    when(param.multiple()).thenReturn(false);
+    when(param.possibleValues()).thenReturn(List.of("YES", "NO", "MAYBE"));
+    return param;
   }
 }

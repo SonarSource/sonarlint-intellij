@@ -25,15 +25,14 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
-import org.sonarsource.sonarlint.core.analysis.api.TextRange;
-import org.sonarsource.sonarlint.core.client.api.connected.ServerIssue;
+import org.sonarsource.sonarlint.core.serverconnection.ServerIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ServerIssueTrackableTest {
   @Test
   public void testNulls() {
-    var trackable = new ServerIssueTrackable(new NullTestIssue());
+    var trackable = new ServerIssueTrackable(new ServerIssue("issueUuid", true, "ruleKey", "msg", (String) null, "filePath", Instant.now(), "MAJOR", "BUG", (Integer) null));
 
     assertThat(trackable.getServerIssueKey()).isNull();
     assertThat(trackable.getLine()).isNull();
@@ -41,9 +40,8 @@ public class ServerIssueTrackableTest {
 
   @Test
   public void testWrapping() {
-    var trackable = new ServerIssueTrackable(new TestIssue());
+    var trackable = new ServerIssueTrackable(new ServerIssue("key", true, "ruleKey", "message", "lineHash", "filePath", Instant.ofEpochMilli(1_000_000), "severity", "type", 100));
 
-    assertThat(trackable.getAssignee()).isEqualTo("assigneeLogin");
     assertThat(trackable.isResolved()).isTrue();
     assertThat(trackable.getRuleKey()).isEqualTo("ruleKey");
     assertThat(trackable.getMessage()).isEqualTo("message");
@@ -55,71 +53,4 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getType()).isEqualTo("type");
   }
 
-  private static class NullTestIssue extends TestIssue {
-    @Override public String key() {
-      return "";
-    }
-
-    @Override
-    public TextRange getTextRange() {
-      return null;
-    }
-  }
-
-  private static class TestIssue implements ServerIssue {
-    @Override public String key() {
-      return "key";
-    }
-
-    @Override public String resolution() {
-      return "resolution";
-    }
-
-    @Override public String ruleKey() {
-      return "ruleKey";
-    }
-
-    @Override public String lineHash() {
-      return "lineHash";
-    }
-
-    @Override public String getMessage() {
-      return "message";
-    }
-
-    @Override public String assigneeLogin() {
-      return "assigneeLogin";
-    }
-
-    @Override public String getFilePath() {
-      return "filePath";
-    }
-
-    @Nullable
-    @Override
-    public String getCodeSnippet() {
-      return "snippet";
-    }
-
-    @Override public String severity() {
-      return "severity";
-    }
-
-    @Override public String type() {
-      return "type";
-    }
-
-    @Override public Instant creationDate() {
-      return Instant.ofEpochMilli(1_000_000);
-    }
-
-    @Override
-    public List<Flow> getFlows() {
-      return new ArrayList<>();
-    }
-
-    @Override public TextRange getTextRange() {
-      return new TextRange(100);
-    }
-  }
 }

@@ -30,6 +30,8 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
+
 import javax.annotation.Nullable;
 
 public class IssueMatcher {
@@ -52,14 +54,23 @@ public class IssueMatcher {
    * Tries to match an SQ issue to an IntelliJ file.
    * <b>Can only be called with getLive access</b>.
    */
-  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.analysis.api.TextRange textRange) throws NoMatchException {
+  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.serverconnection.ServerTaintIssue.TextRange textRange) throws NoMatchException {
     var psiFile = findFile(file);
-    return match(psiFile, textRange);
+    return match(psiFile, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
+  }
+
+  public RangeMarker match(VirtualFile file, ServerHotspot.TextRange textRange) throws NoMatchException {
+    var psiFile = findFile(file);
+    return match(psiFile, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
   public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.analysis.api.TextRange textRange) throws NoMatchException {
+    return match(file, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
+  }
+
+  private RangeMarker match(PsiFile file, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine, @Nullable Integer endLineOffset) throws NoMatchException {
     ApplicationManager.getApplication().assertReadAccessAllowed();
-    Preconditions.checkArgument(textRange.getStartLine() != null);
+    Preconditions.checkArgument(startLine != null);
 
     var docManager = PsiDocumentManager.getInstance(project);
     var doc = docManager.getDocument(file);
@@ -67,13 +78,13 @@ public class IssueMatcher {
       throw new NoMatchException("No document found for file: " + file.getName());
     }
 
-    var range = getIssueTextRange(file, doc, textRange);
+    var range = getIssueTextRange(file, doc, startLine, startLineOffset, endLine, endLineOffset);
     return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
-  private static TextRange getIssueTextRange(PsiFile file, Document doc, org.sonarsource.sonarlint.core.analysis.api.TextRange textRange) throws NoMatchException {
-    var ijStartLine = textRange.getStartLine() - 1;
-    var ijEndLine = textRange.getEndLine() - 1;
+  private static TextRange getIssueTextRange(PsiFile file, Document doc, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine, @Nullable Integer endLineOffset) throws NoMatchException {
+    var ijStartLine = startLine - 1;
+    var ijEndLine = endLine - 1;
     var lineCount = doc.getLineCount();
 
     if (ijStartLine >= doc.getLineCount()) {
@@ -83,8 +94,8 @@ public class IssueMatcher {
       throw new NoMatchException("End line number (" + ijStartLine + ") larger than lines in file: " + lineCount);
     }
 
-    var rangeEnd = findEndLineOffset(doc, ijEndLine, textRange.getEndLineOffset());
-    var rangeStart = findStartLineOffset(file, doc, ijStartLine, textRange.getStartLineOffset(), rangeEnd);
+    var rangeEnd = findEndLineOffset(doc, ijEndLine, endLineOffset);
+    var rangeStart = findStartLineOffset(file, doc, ijStartLine, startLineOffset, rangeEnd);
 
     if (rangeEnd < rangeStart) {
       throw new NoMatchException("Invalid text range  (start: " + rangeStart + ", end: " + rangeEnd);

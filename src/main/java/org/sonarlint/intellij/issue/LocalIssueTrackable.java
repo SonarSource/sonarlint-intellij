@@ -68,10 +68,6 @@ public class LocalIssueTrackable implements Trackable {
     return issue.getResolved();
   }
 
-  @Override public String getAssignee() {
-    return issue.getAssignee();
-  }
-
   @Override public String getSeverity() {
     throw new UnsupportedOperationException();
   }

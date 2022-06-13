@@ -21,6 +21,7 @@ package org.sonarlint.intellij.issue.persistence;
 
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.project.Project;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
@@ -34,10 +35,10 @@ import com.intellij.project.ProjectKt;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LocalIssueTrackable;
 import org.sonarlint.intellij.proto.Sonarlint;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.HashingPathMapper;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
-import org.sonarsource.sonarlint.core.client.api.util.FileUtils;
+import org.sonarsource.sonarlint.core.commons.objectstore.HashingPathMapper;
+import org.sonarsource.sonarlint.core.commons.objectstore.Reader;
+import org.sonarsource.sonarlint.core.commons.objectstore.Writer;
+import org.sonarsource.sonarlint.core.serverconnection.FileUtils;
 
 public class IssuePersistence {
   private final Path storeBasePath;
@@ -132,9 +133,6 @@ public class IssuePersistence {
       .setMessage(liveIssue.getMessage())
       .setResolved(liveIssue.isResolved());
 
-    if (liveIssue.getAssignee() != null) {
-      builder.setAssignee(liveIssue.getAssignee());
-    }
     if (liveIssue.getCreationDate() != null) {
       builder.setCreationDate(liveIssue.getCreationDate());
     }

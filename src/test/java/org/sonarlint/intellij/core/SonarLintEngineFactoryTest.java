@@ -50,7 +50,7 @@ public class SonarLintEngineFactoryTest extends AbstractSonarLintLightTests {
 
   @Test
   public void connected() {
-    var engine = factory.createEngine("id");
+    var engine = factory.createEngine("id", false);
     assertThat(engine).isNotNull();
     assertThat(engine.getGlobalStorageStatus()).isNull();
     engine.stop(true);

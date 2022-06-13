@@ -22,17 +22,17 @@ package org.sonarlint.intellij.issue.persistence;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.PathMapper;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Reader;
-import org.sonarsource.sonarlint.core.client.api.connected.objectstore.Writer;
+import org.sonarsource.sonarlint.core.commons.objectstore.PathMapper;
+import org.sonarsource.sonarlint.core.commons.objectstore.Reader;
+import org.sonarsource.sonarlint.core.commons.objectstore.Writer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;

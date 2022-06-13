@@ -62,6 +62,7 @@ allprojects {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
         maven("https://repox.jfrog.io/repox/sonarsource") {
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
@@ -81,7 +82,7 @@ allprojects {
 
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
         kotlinOptions {
-            apiVersion = "1.3"
+            apiVersion = "1.7"
             jvmTarget = "11"
         }
     }

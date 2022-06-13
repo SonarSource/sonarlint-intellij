@@ -25,7 +25,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-import org.sonarsource.sonarlint.core.analysis.api.TextRange;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 import static org.sonarlint.intellij.issue.LocationKt.fileOnlyLocation;
@@ -65,15 +64,11 @@ public class SecurityHotspotMatcher {
 
   private Location matchTextRange(VirtualFile matchedFile, ServerHotspot.TextRange textRange, String message) {
     try {
-      var rangeMarker = issueMatcher.match(matchedFile, convert(textRange));
+      var rangeMarker = issueMatcher.match(matchedFile, textRange);
       return resolvedLocation(matchedFile, rangeMarker, message, null);
     } catch (IssueMatcher.NoMatchException e) {
       return fileOnlyLocation(matchedFile, message);
     }
-  }
-
-  private static TextRange convert(ServerHotspot.TextRange textRange) {
-    return new TextRange(textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
 }

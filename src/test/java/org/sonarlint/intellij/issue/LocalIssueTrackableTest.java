@@ -29,7 +29,6 @@ public class LocalIssueTrackableTest {
   public void testWrapping() {
     var issue = Sonarlint.Issues.Issue.newBuilder()
       .setServerIssueKey("key")
-      .setAssignee("assignee")
       .setLine(10)
       .setChecksum(20)
       .setMessage("msg")
@@ -39,7 +38,6 @@ public class LocalIssueTrackableTest {
       .build();
 
     var trackable = new LocalIssueTrackable(issue);
-    assertThat(trackable.getAssignee()).isEqualTo("assignee");
     assertThat(trackable.getMessage()).isEqualTo("msg");
     assertThat(trackable.getServerIssueKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(10);

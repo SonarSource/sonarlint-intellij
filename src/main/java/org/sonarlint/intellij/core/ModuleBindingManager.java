@@ -31,7 +31,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBinding;
+import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
 
 import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;

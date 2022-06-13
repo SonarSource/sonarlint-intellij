@@ -19,7 +19,6 @@ message Issues {
         int32 checksum = 5;
 
         // values carried forward
-        string assignee = 6;
         int64 creationDate = 7;
         bool resolved = 8;
     }
