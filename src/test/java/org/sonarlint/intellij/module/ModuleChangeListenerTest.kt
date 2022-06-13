@@ -33,6 +33,9 @@ import org.mockito.Mockito.atLeastOnce
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.capture
 import org.sonarlint.intellij.core.ModuleBindingManager
@@ -40,17 +43,17 @@ import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.messages.PROJECT_BINDING_TOPIC
+import org.sonarsource.sonarlint.core.analysis.api.ClientModuleFileEvent
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
 
-@RunWith(MockitoJUnitRunner::class)
 class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     @Before
     fun prepare() {
         replaceProjectService(ProjectBindingManager::class.java, projectBindingManager)
         replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
-        `when`(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
+        whenever(moduleBindingManager.engineIfStarted).thenReturn(moduleFakeEngine)
         moduleChangeListener = ModuleChangeListener(project)
     }
 
@@ -58,9 +61,10 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
     fun should_declare_module_on_engine_when_module_added_to_project() {
         moduleChangeListener.moduleAdded(project, module)
 
-        verify(moduleFakeEngine).declareModule(capture(moduleInfoCaptor))
-        val moduleInfo = moduleInfoCaptor.value
-        assertThat(moduleInfo.key()).isEqualTo(module)
+        argumentCaptor<ClientModuleInfo>().apply {
+            verify(moduleFakeEngine).declareModule(capture())
+            assertThat(firstValue.key()).isEqualTo(module)
+        }
     }
 
     @Test
@@ -89,22 +93,14 @@ class ModuleChangeListenerTest : AbstractSonarLintLightTests() {
 
         // might be called several times by the real implementation, not the one under test
         verify(standaloneEngine, atLeastOnce()).stopModule(eq(module))
-        verify(connectedEngine, atLeastOnce()).declareModule(capture(moduleInfoCaptor))
-        val moduleInfo = moduleInfoCaptor.value
-        assertThat(moduleInfo.key()).isEqualTo(module)
+        argumentCaptor<ClientModuleInfo>().apply {
+            verify(connectedEngine, atLeastOnce()).declareModule(capture())
+            assertThat(firstValue.key()).isEqualTo(module)
+        }
     }
 
     private lateinit var moduleChangeListener: ModuleChangeListener
-
-    @Mock
-    private lateinit var projectBindingManager: ProjectBindingManager
-
-    @Mock
-    private lateinit var moduleFakeEngine: ConnectedSonarLintEngine
-
-    @Mock
-    private lateinit var moduleBindingManager: ModuleBindingManager
-
-    @Captor
-    private lateinit var moduleInfoCaptor: ArgumentCaptor<ClientModuleInfo>
+    private var projectBindingManager: ProjectBindingManager = mock()
+    private var moduleFakeEngine: ConnectedSonarLintEngine = mock()
+    private var moduleBindingManager: ModuleBindingManager = mock()
 }
