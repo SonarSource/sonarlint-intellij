@@ -171,12 +171,6 @@ configurations {
         isTransitive = true
     }
     create("typescript") { isCanBeConsumed = false }
-    all {
-        // Allows using project dependencies instead of IDE dependencies during compilation and test running
-        resolutionStrategy {
-            sortArtifacts(ResolutionStrategy.SortOrder.DEPENDENCY_FIRST)
-        }
-    }
 }
 
 dependencies {
