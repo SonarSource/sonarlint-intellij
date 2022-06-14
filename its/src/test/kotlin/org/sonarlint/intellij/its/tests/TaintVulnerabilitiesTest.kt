@@ -21,6 +21,9 @@ package org.sonarlint.intellij.its.tests
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
+import com.intellij.remoterobot.fixtures.ContainerFixture
+import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.utils.Locators
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
@@ -116,7 +119,11 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
                         }
                         button("OK").click()
                     }
-                    comboBox("Connection:").selectItem("Orchestrator")
+                    comboBox("Connection:").click()
+                    remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
+                        waitFor(Duration.ofSeconds(5)) { hasText("Orchestrator") }
+                        findText("Orchestrator").click()
+                    }
                     jbTextField().text = TAINT_VULNERABILITY_PROJECT_KEY
                     button("OK").click()
                     // wait for binding fully established

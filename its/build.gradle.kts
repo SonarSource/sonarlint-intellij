@@ -25,7 +25,7 @@ repositories {
     mavenCentral()
 }
 
-val remoteRobotVersion = "0.11.4"
+val remoteRobotVersion = "0.11.14"
 
 dependencies {
     testImplementation("org.sonarsource.orchestrator:sonar-orchestrator:3.35.1.2719") {

@@ -20,8 +20,12 @@
 package org.sonarlint.intellij.its.tests
 
 import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltipText
+import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JButtonFixture.Companion.byText
+import com.intellij.remoterobot.search.locators.byXpath
+import com.intellij.remoterobot.utils.Locators
 import com.intellij.remoterobot.utils.keyboard
+import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
 import com.sonar.orchestrator.build.SonarScanner
 import com.sonar.orchestrator.container.Server
@@ -52,6 +56,8 @@ import org.sonarqube.ws.client.settings.SetRequest
 import org.sonarqube.ws.client.users.CreateRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
+import java.time.Duration
+import java.time.Duration.ofSeconds
 
 class BindingTest : BaseUiTest() {
 
@@ -126,7 +132,11 @@ class BindingTest : BaseUiTest() {
             pressOk()
             errorMessage("Connection should not be empty")
 
-            comboBox("Connection:").selectItem("Orchestrator")
+            comboBox("Connection:").click()
+            remoteRobot.find<ContainerFixture>(byXpath("//div[@class='CustomComboPopup']")).apply {
+                waitFor(ofSeconds(5)) { hasText("Orchestrator") }
+                findText("Orchestrator").click()
+            }
             pressOk()
             errorMessage("Project key should not be empty")
 
