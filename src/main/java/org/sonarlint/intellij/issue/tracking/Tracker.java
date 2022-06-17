@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import javax.annotation.Nullable;
+
+import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class Tracker<RAW extends Trackable, BASE extends Trackable> {
@@ -93,13 +95,17 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     SearchKey apply(Trackable trackable);
   }
 
+  static String workaround(String fullOrPartialRuleKey) {
+    return fullOrPartialRuleKey.contains(":") ? StringUtils.substringAfter(fullOrPartialRuleKey, ":") : fullOrPartialRuleKey;
+  }
+
   private static class LineAndTextRangeHashKey implements SearchKey {
     private final String ruleKey;
     private final Integer textRangeHash;
     private final Integer line;
 
     LineAndTextRangeHashKey(Trackable trackable) {
-      this.ruleKey = trackable.getRuleKey();
+      this.ruleKey = workaround(trackable.getRuleKey());
       this.line = trackable.getLine();
       this.textRangeHash = trackable.getTextRangeHash();
     }
@@ -146,7 +152,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     private final Integer lineHash;
 
     LineAndLineHashKey(Trackable trackable) {
-      this.ruleKey = trackable.getRuleKey();
+      this.ruleKey = workaround(trackable.getRuleKey());
       this.line = trackable.getLine();
       this.lineHash = trackable.getLineHash();
     }
@@ -192,7 +198,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     private final Integer lineHash;
 
     LineHashKey(Trackable trackable) {
-      this.ruleKey = trackable.getRuleKey();
+      this.ruleKey = workaround(trackable.getRuleKey());
       this.lineHash = trackable.getLineHash();
     }
 
@@ -236,7 +242,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     private final Integer textRangeHash;
 
     TextRangeHashAndMessageKey(Trackable trackable) {
-      this.ruleKey = trackable.getRuleKey();
+      this.ruleKey = workaround(trackable.getRuleKey());
       this.message = trackable.getMessage();
       this.textRangeHash = trackable.getTextRangeHash();
     }
@@ -283,7 +289,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     private final Integer line;
 
     LineAndMessageKey(Trackable trackable) {
-      this.ruleKey = trackable.getRuleKey();
+      this.ruleKey = workaround(trackable.getRuleKey());
       this.message = trackable.getMessage();
       this.line = trackable.getLine();
     }
@@ -329,7 +335,7 @@ public class Tracker<RAW extends Trackable, BASE extends Trackable> {
     private final Integer textRangeHash;
 
     TextRangeHashKey(Trackable trackable) {
-      this.ruleKey = trackable.getRuleKey();
+      this.ruleKey = workaround(trackable.getRuleKey());
       this.textRangeHash = trackable.getTextRangeHash();
     }
 

@@ -202,11 +202,11 @@ public class IssueManager {
     liveIssue.setCreationDate(serverIssue.getCreationDate());
     liveIssue.setServerIssueKey(serverIssue.getServerIssueKey());
     liveIssue.setResolved(serverIssue.isResolved());
-    liveIssue.setSeverity(serverIssue.getUserSeverity());
-    if (serverIssue.getType() != null) {
-      // old SQ servers won't return this field
-      liveIssue.setType(serverIssue.getType());
+    String userSeverity = serverIssue.getUserSeverity();
+    if (userSeverity != null) {
+      liveIssue.setSeverity(userSeverity);
     }
+    liveIssue.setType(serverIssue.getType());
   }
 
   private static void wipeServerIssueDetails(LiveIssue issue) {
