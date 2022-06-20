@@ -32,7 +32,9 @@ import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectBindingListener
 import org.sonarlint.intellij.messages.ProjectSynchronizationListener
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
+import java.util.Optional
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -52,13 +54,13 @@ class DefaultVcsService @NonInjectable constructor(private val project: Project,
     }
 
     private fun resolveServerBranchName(module: Module): String {
-        val bindingManager = getService(project, ProjectBindingManager::class.java)
-        val validConnectedEngine = bindingManager.validConnectedEngine ?: return "unknown"
-        val projectKey = getService(module, ModuleBindingManager::class.java).resolveProjectKey() ?: return "unknown"
-        val serverBranches = validConnectedEngine.getServerBranches(projectKey)
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
         val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module, logger) }.toList()
-        val mainServerBranch = serverBranches.mainBranchName.orElse("master")
+        val bindingManager = getService(project, ProjectBindingManager::class.java)
+        val projectKey = getService(module, ModuleBindingManager::class.java).resolveProjectKey()
+        val validConnectedEngine = bindingManager.validConnectedEngine
+        val serverBranches = if (projectKey != null && validConnectedEngine != null) validConnectedEngine.getServerBranches(projectKey) else ProjectBranches(setOf("master"), "master")
+        val mainServerBranch = serverBranches.mainBranchName
         if (repositories.isEmpty()) {
             logger.warn("No VCS repository found for module $module")
             return mainServerBranch

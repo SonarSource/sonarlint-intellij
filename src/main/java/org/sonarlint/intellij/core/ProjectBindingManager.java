@@ -130,7 +130,7 @@ public class ProjectBindingManager {
     return getSettingsFor(myProject).isBound() && tryGetServerConnection().isPresent();
   }
 
-  public @Nullable ConnectedSonarLintEngine getValidConnectedEngine() {
+  public @CheckForNull ConnectedSonarLintEngine getValidConnectedEngine() {
     return isBindingValid() ? getConnectedEngineSkipChecks() : null;
   }
 

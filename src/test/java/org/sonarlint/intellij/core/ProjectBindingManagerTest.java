@@ -126,7 +126,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
     getProjectSettings().setBindingEnabled(true);
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
-    assertThat(projectBindingManager.getFacade(getModule())).isNotNull();
+    projectBindingManager.getFacade(getModule());
   }
 
   @Test
@@ -137,7 +137,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
 
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project has an invalid binding");
-    assertThat(projectBindingManager.getFacade(getModule())).isNotNull();
+    projectBindingManager.getFacade(getModule());
   }
 
   @Test
@@ -185,6 +185,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_store_project_binding_in_settings() {
     var connection = ServerConnection.newBuilder().setName("name").build();
+    getGlobalSettings().setServerConnections(List.of(connection));
 
     projectBindingManager.bindTo(connection, "projectKey", Collections.emptyMap());
 
@@ -195,6 +196,7 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_store_project_and_module_bindings_in_settings() {
     var connection = ServerConnection.newBuilder().setName("name").build();
+    getGlobalSettings().setServerConnections(List.of(connection));
     projectBindingManager.bindTo(connection, "projectKey", Map.of(getModule(), "moduleProjectKey"));
 
     assertThat(getProjectSettings().isBoundTo(connection)).isTrue();

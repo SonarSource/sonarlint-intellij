@@ -68,10 +68,10 @@ class MultiModuleTest : AbstractSonarLintHeavyTest() {
         assertThat(SonarLintUtils.getService(secondModule, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("project2")
     }
 
-    fun test_should_ignore_module_binding_if_only_one_module() {
+    fun test_should_consider_module_binding_if_only_one_module_but_was_previously_overriden() {
         connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1")
-        connectModuleTo("ignored")
+        connectModuleTo("overriden")
 
-        assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("project1")
+        assertThat(SonarLintUtils.getService(module, ModuleBindingManager::class.java).resolveProjectKey()).isEqualTo("overriden")
     }
 }

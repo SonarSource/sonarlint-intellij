@@ -25,6 +25,7 @@ import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.roots.ModuleRootManager;
 import com.intellij.platform.ModuleAttachProcessor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -79,7 +80,10 @@ public class ModuleBindingManager {
   public boolean isBindingOverrideAllowed() {
     return SonarLintUtils.isModuleLevelBindingEnabled()
             && hasProjectMoreThanOneModule()
-            && isNotPrimaryProject();
+            && isNotPrimaryProject()
+            ||
+            // If binding was once overriden on a module, we want to keep using it, even if the project is now back to one module
+            hasOneModuleAlreadyOverriden();
   }
 
   /**
@@ -92,6 +96,10 @@ public class ModuleBindingManager {
 
   private boolean hasProjectMoreThanOneModule() {
     return ModuleManager.getInstance(module.getProject()).getModules().length > 1;
+  }
+
+  private boolean hasOneModuleAlreadyOverriden() {
+    return Arrays.stream(ModuleManager.getInstance(module.getProject()).getModules()).anyMatch(m -> getSettingsFor(m).isProjectBindingOverridden());
   }
 
   public void updatePathPrefixes(ConnectedSonarLintEngine engine) {

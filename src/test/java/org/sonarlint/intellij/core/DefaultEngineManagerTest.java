@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import org.jetbrains.annotations.Nullable;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -40,6 +39,7 @@ import org.sonarsource.sonarlint.core.serverconnection.ProjectStorageStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,7 +62,7 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
     connectedEngine = mock(ConnectedSonarLintEngine.class);
     standaloneEngine = mock(StandaloneSonarLintEngine.class);
 
-    when(engineFactory.createEngine(anyString(), false)).thenReturn(connectedEngine);
+    when(engineFactory.createEngine(anyString(), eq(false))).thenReturn(connectedEngine);
     when(engineFactory.createEngine()).thenReturn(standaloneEngine);
 
     manager = new DefaultEngineManager(engineFactory);
@@ -78,6 +78,8 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_connected() {
+    getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
+
     assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
     assertThat(manager.getConnectedEngine("server1")).isEqualTo(connectedEngine);
     verify(engineFactory, Mockito.times(1)).createEngine("server1", false);
@@ -95,7 +97,7 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
     when(connectedEngine.getGlobalStorageStatus()).thenReturn(globalOk);
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(null);
 
-    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
+    getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
 
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Project local storage is missing: 'project1'");
@@ -106,7 +108,7 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
   public void should_fail_global_storage_missing() throws InvalidBindingException {
     when(connectedEngine.getGlobalStorageStatus()).thenReturn(null);
 
-    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
+    getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
 
     exception.expect(InvalidBindingException.class);
     exception.expectMessage("Connection local storage is missing: 'server1'");
@@ -118,7 +120,7 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
     when(connectedEngine.getGlobalStorageStatus()).thenReturn(globalOk);
     when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
 
-    getGlobalSettings().setServerConnections(List.of(createServer("server1")));
+    getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
     manager = new DefaultEngineManager(engineFactory);
 
     assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);
@@ -126,7 +128,7 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
     verify(engineFactory, Mockito.times(1)).createEngine("server1", false);
   }
 
-  private static ServerConnection createServer(String name) {
+  private static ServerConnection createConnection(String name) {
     return ServerConnection.newBuilder().setName(name).build();
   }
 
