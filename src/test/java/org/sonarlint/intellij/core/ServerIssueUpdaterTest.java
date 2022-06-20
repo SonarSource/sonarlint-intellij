@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.junit.After;
 import org.junit.Before;
@@ -36,6 +37,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
 import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
@@ -100,8 +102,9 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     var file = myFixture.copyFileToProject(FOO_PHP, FOO_PHP);
     var serverIssue = mock(ServerIssue.class);
 
-    // mock issues downloaded
-    when(engine.downloadAllServerIssuesForFile(any(EndpointParams.class), any(), eq(PROJECT_BINDING), eq(FOO_PHP), isNull(), isNull()))
+    // mock issues read from storage
+    when(engine.getServerBranches(PROJECT_KEY)).thenReturn(new ProjectBranches(Set.of("master"), "master"));
+    when(engine.getServerIssues(eq(PROJECT_BINDING), eq("master"), eq(FOO_PHP)))
       .thenReturn(List.of(serverIssue));
 
     // run
@@ -127,6 +130,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
     // mock issues fetched
     when(engine.getServerIssues(eq(PROJECT_BINDING), anyString(), anyString())).thenReturn(List.of(serverIssue));
+    when(engine.getServerBranches(PROJECT_KEY)).thenReturn(new ProjectBranches(Set.of("master"), "master"));
 
     // run
     getProjectSettings().setBindingEnabled(true);

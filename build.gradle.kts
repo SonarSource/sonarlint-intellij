@@ -177,6 +177,7 @@ dependencies {
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
     testImplementation("junit:junit:4.12")
+    testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.23.1")
     testImplementation("org.mockito:mockito-core:4.6.1")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")

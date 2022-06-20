@@ -67,7 +67,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   @After
   public final void restore() {
-    getEngineManager().clearAllEngines();
+    getEngineManager().stopAllEngines(false);
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
     setGlobalLevelExclusions(Collections.emptyList());

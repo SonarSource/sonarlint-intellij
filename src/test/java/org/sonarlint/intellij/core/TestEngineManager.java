@@ -31,8 +31,4 @@ public class TestEngineManager extends DefaultEngineManager {
     standalone = engine;
   }
 
-  public void clearAllEngines() {
-    standalone = null;
-    connectedEngines.clear();
-  }
 }

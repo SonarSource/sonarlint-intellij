@@ -53,7 +53,8 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_get_rule_description() throws Exception {
-    when(engine.getRuleDetails("rule1")).thenReturn(Optional.of(ruleDetails("rule1")));
+    Optional<StandaloneRuleDetails> rule1 = Optional.of(ruleDetails("rule1"));
+    when(engine.getRuleDetails("rule1")).thenReturn(rule1);
 
     var ruleDescription = facade.getActiveRuleDescription("rule1").get();
 
@@ -85,7 +86,8 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
     var rule = mock(StandaloneRuleDetails.class);
     when(rule.isActiveByDefault()).thenReturn(true);
     when(rule.getTags()).thenReturn(new String[] {"tag"});
-    when(rule.paramDetails()).thenReturn(List.of(aParam()));
+    StandaloneRuleParam aParam = aParam();
+    when(rule.paramDetails()).thenReturn(List.of(aParam));
     when(rule.getKey()).thenReturn(ruleKey);
     when(rule.getName()).thenReturn("ruleName");
     when(rule.getHtmlDescription()).thenReturn("ruleDescription");

@@ -36,7 +36,7 @@ abstract class AbstractSonarLintHeavyTest : HeavyPlatformTestCase() {
 
     override fun setUp() {
         super.setUp()
-        getEngineManager().clearAllEngines()
+        getEngineManager().stopAllEngines(false)
     }
     protected fun getTestDataPath(): Path =
         Paths.get("src/test/testData/${javaClass.simpleName}").toAbsolutePath()

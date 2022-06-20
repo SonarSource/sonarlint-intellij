@@ -29,8 +29,11 @@ import com.intellij.testFramework.PsiTestUtil
 import git4idea.GitVcs
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.mockito.Mockito.`when`
+import org.mockito.Mockito.anyString
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
+import org.mockito.Mockito.verify
+import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintHeavyTest
 import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -42,6 +45,7 @@ import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEng
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import java.nio.file.Paths
 import java.util.Optional
+import kotlin.test.assertFailsWith
 
 internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
 
@@ -57,46 +61,42 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
 
     @Test
     fun test_should_not_resolve_server_branch_when_project_is_not_bound() {
-        val resolvedBranchName = vcsService.getServerBranchName(module)
-
-        assertThat(resolvedBranchName).isNull()
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
     }
 
     @Test
     fun test_should_not_resolve_server_branch_when_project_is_not_a_git_repo() {
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
         connectModuleTo(module, "moduleKey")
-        `when`(connectedEngine.getServerBranches("moduleKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
-                Optional.of("master")
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
 
-        val resolvedBranchName = vcsService.getServerBranchName(module)
-
-        assertThat(resolvedBranchName).isNull()
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
     }
 
     @Test
-    fun test_should_not_resolve_server_branch_when_module_have_different_git_repo_as_content_roots() {
+    fun test_should_resolve_server_branch_from_first_repo_when_module_have_different_git_repo_as_content_roots() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module, "contentRoot1")
         addContentRootWithGitRepo(module, "contentRoot2")
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
         connectModuleTo(module, "moduleKey")
-        `when`(connectedEngine.getServerBranches("moduleKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
-                Optional.of("master")
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
 
         val resolvedBranchName = vcsService.getServerBranchName(module)
 
-        assertThat(resolvedBranchName).isNull()
+        assertThat(resolvedBranchName).isEqualTo("master")
     }
 
     @Test
@@ -105,10 +105,10 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         addContentRootWithGitRepo(module)
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
         connectModuleTo(module, "moduleKey")
-        `when`(connectedEngine.getServerBranches("moduleKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
-                Optional.of("master")
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
@@ -124,24 +124,18 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         addContentRootWithGitRepo(module)
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
         connectModuleTo(module, "moduleKey")
-        `when`(connectedEngine.getServerBranches("moduleKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
-                Optional.of("master")
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
-        vcsService.getServerBranchName(module)
-        `when`(connectedEngine.getServerBranches("moduleKey")).thenReturn(
-            ProjectBranches(
-                emptySet(),
-                Optional.empty()
-            )
-        )
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("branch1")
 
-        val cachedBranchName = vcsService.getServerBranchName(module)
+        verify(connectedEngine, times(1)).getServerBranches(anyString())
 
-        assertThat(cachedBranchName).isEqualTo("branch1")
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("branch1")
     }
 
     @Test
@@ -150,10 +144,10 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         addContentRootWithGitRepo(module)
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
         connectModuleTo(module, "moduleKey")
-        `when`(connectedEngine.getServerBranches("moduleKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("moduleKey")).thenReturn(
             ProjectBranches(
                 setOf("master"),
-                Optional.of("master")
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
@@ -169,72 +163,58 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
-        `when`(connectedEngine.getServerBranches("projectKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
-                Optional.of("master")
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
-        vcsService.getServerBranchName(module)
-        `when`(connectedEngine.getServerBranches("projectKey")).thenReturn(
-            ProjectBranches(
-                emptySet(),
-                Optional.empty()
-            )
-        )
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("branch1")
 
         unbindProject()
-        val resolvedBranchName = vcsService.getServerBranchName(module)
 
-        assertThat(resolvedBranchName).isNull()
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
     }
 
     @Test
     fun test_should_refresh_cache_when_project_is_bound() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
-        `when`(connectedEngine.getServerBranches("projectKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
-                Optional.of("master")
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
-        vcsService.getServerBranchName(module)
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
 
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
         project.messageBus.syncPublisher(PROJECT_BINDING_TOPIC)
             .bindingChanged(null, ProjectBinding("connection", "projectKey", emptyMap()))
 
-        `when`(connectedEngine.getServerBranches("projectKey")).thenReturn(
-            ProjectBranches(
-                emptySet(),
-                Optional.empty()
-            )
-        )
-        val resolvedBranchName = vcsService.getServerBranchName(module)
-
-        assertThat(resolvedBranchName).isEqualTo("branch1")
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("branch1")
     }
 
     @Test
     fun test_should_refresh_cache_when_project_is_synchronized() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
-        `when`(connectedEngine.getServerBranches("projectKey")).thenReturn(
+        whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
             ProjectBranches(
-                emptySet(),
-                Optional.empty()
+                setOf("master"),
+                "master"
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
-        vcsService.getServerBranchName(module)
-        `when`(connectedEngine.getServerBranches("projectKey")).thenReturn(
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
+
+        whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
             ProjectBranches(
                 setOf("master", "branch1"),
-                Optional.of("master")
+                "master"
             )
         )
         project.messageBus.syncPublisher(PROJECT_SYNC_TOPIC)

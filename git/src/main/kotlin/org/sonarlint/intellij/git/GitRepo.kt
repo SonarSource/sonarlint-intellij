@@ -32,14 +32,14 @@ import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 class GitRepo(private val repo: GitRepository, private val project: Project, private val logger: SonarLintLogger) : VcsRepo {
     override fun electBestMatchingServerBranchForCurrentHead(projectBranches: ProjectBranches): String? {
         val serverCandidateNames = projectBranches.branchNames
-        val serverMainBranch = projectBranches.mainBranchName.orElseGet { null }
+        val serverMainBranch = projectBranches.mainBranchName
         return try {
             val currentBranch = repo.currentBranchName
             if (currentBranch != null && serverCandidateNames.contains(currentBranch)) {
                 return currentBranch
             }
-            val head = repo.currentRevision ?: // Could be the case if no commit has been made in the repo
-            return null
+            val head = repo.currentRevision ?: return null // Could be the case if no commit has been made in the repo
+
             val branchesPerDistance: MutableMap<Int, MutableSet<String>> = HashMap()
             for (serverBranchName in serverCandidateNames) {
                 val localBranch = repo.branches.findLocalBranch(serverBranchName) ?: continue
@@ -52,7 +52,7 @@ class GitRepo(private val repo: GitRepository, private val project: Project, pri
             }
             val minDistance = branchesPerDistance.keys.stream().min(Comparator.naturalOrder()).get()
             val bestCandidates: Set<String?> = branchesPerDistance[minDistance]!!
-            if (serverMainBranch != null && bestCandidates.contains(serverMainBranch)) {
+            if (bestCandidates.contains(serverMainBranch)) {
                 // Favor the main branch when there are multiple candidates with the same distance
                 serverMainBranch
             } else bestCandidates.first()

@@ -125,14 +125,13 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     var serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setSeverity("serverSeverity");
-    // old SQ servers don't give type
-    serverIssue.setType(null);
+    serverIssue.setType("serverType");
     underTest.matchWithServerIssues(file1, List.of(serverIssue));
 
     // issue1 has been changed
     assertThat(issue1.getServerIssueKey()).isEqualTo(serverIssueKey);
     assertThat(issue1.getUserSeverity()).isEqualTo("serverSeverity");
-    assertThat(issue1.getType()).isEqualTo("localType");
+    assertThat(issue1.getType()).isEqualTo("serverType");
   }
 
   @Test
