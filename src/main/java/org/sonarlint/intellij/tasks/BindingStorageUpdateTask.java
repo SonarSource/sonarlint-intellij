@@ -22,7 +22,6 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.history.utils.RunnableAdapter;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.ProgressIndicator;
@@ -172,18 +171,23 @@ public class BindingStorageUpdateTask {
     });
     engine.sync(connection.getEndpointParams(), connection.getHttpClient(), allProjectKeysToSync, monitor);
 
-    /*var allProjectAndBranchesToSync = new HashSet<ProjectBindingManager.ProjectKeyAndBranch>();
+    updateAllProjectIssuesForCurrentBranch(engine, connection, monitor, projectsToUpdate);
+
+    projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished());
+
+    return failures;
+  }
+
+  private static void updateAllProjectIssuesForCurrentBranch(ConnectedSonarLintEngine engine, ServerConnection connection, TaskProgressMonitor monitor,
+    Collection<Project> projectsToUpdate) {
+    var allProjectAndBranchesToSync = new HashSet<ProjectBindingManager.ProjectKeyAndBranch>();
     for (Project project : projectsToUpdate) {
       ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
       var projectAndBranchesToSync = bindingManager.getUniqueProjectKeysAndBranchesPairs();
       allProjectAndBranchesToSync.addAll(projectAndBranchesToSync);
     }
     allProjectAndBranchesToSync
-      .forEach(pb -> engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor));*/
-
-    projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished());
-
-    return failures;
+      .forEach(pb -> engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor));
   }
 
   private Collection<Project> collectProjectsToUpdate(ServerConnection connection) {
