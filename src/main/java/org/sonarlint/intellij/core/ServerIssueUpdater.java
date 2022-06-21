@@ -139,15 +139,23 @@ public class ServerIssueUpdater implements Disposable {
 
       // submit tasks
       var updateTasks = fetchAndMatchServerIssues(filesPerModule, connection, engine, downloadAll);
+      Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(updateTasks));
       if (waitForCompletion) {
-        waitForTasks(updateTasks);
+        try {
+          waitForTasksTask.get(1, TimeUnit.MINUTES);
+        } catch (TimeoutException ex) {
+          waitForTasksTask.cancel(true);
+          SonarLintConsole.get(myProject).error("Wait task expired", ex);
+        } catch (Exception ex) {
+          SonarLintConsole.get(myProject).error("Wait task failed", ex);
+        }
       }
     } catch (InvalidBindingException e) {
       // ignore, do nothing
     }
   }
 
-  private void waitForTasks(List<Future<Void>> updateTasks) {
+  private void waitForTasks(List<Future<?>> updateTasks) {
     for (var f : updateTasks) {
       try {
         f.get(20, TimeUnit.SECONDS);
@@ -158,11 +166,14 @@ public class ServerIssueUpdater implements Disposable {
         SonarLintConsole.get(myProject).error("ServerIssueUpdater task failed", ex);
       }
     }
+    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+      SonarLintUtils.getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
+    }
   }
 
-  private List<Future<Void>> fetchAndMatchServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule,
+  private List<Future<?>> fetchAndMatchServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule,
     ServerConnection connection, ConnectedSonarLintEngine engine, boolean downloadAll) {
-    var futureList = new LinkedList<Future<Void>>();
+    var futureList = new LinkedList<Future<?>>();
 
     if (!downloadAll) {
       for (var e : filesPerModule.entrySet()) {
@@ -175,10 +186,10 @@ public class ServerIssueUpdater implements Disposable {
     return futureList;
   }
 
-  private List<Future<Void>> downloadAndMatchAllServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule, ServerConnection server,
+  private List<Future<?>> downloadAndMatchAllServerIssues(Map<Module, Collection<VirtualFile>> filesPerModule, ServerConnection server,
     ConnectedSonarLintEngine engine) {
     var issueUpdater = new IssueUpdater(server, engine);
-    var futuresList = new ArrayList<Future<Void>>();
+    var futuresList = new ArrayList<Future<?>>();
     var updatedProjects = ConcurrentHashMap.newKeySet();
     for (var e : filesPerModule.entrySet()) {
       var module = e.getKey();
@@ -206,8 +217,8 @@ public class ServerIssueUpdater implements Disposable {
     return moduleBindingManager.getBinding();
   }
 
-  private List<Future<Void>> fetchAndMatchServerIssues(String projectKey, Module module, Collection<VirtualFile> files, ServerConnection server, ConnectedSonarLintEngine engine) {
-    var futureList = new LinkedList<Future<Void>>();
+  private List<Future<?>> fetchAndMatchServerIssues(String projectKey, Module module, Collection<VirtualFile> files, ServerConnection server, ConnectedSonarLintEngine engine) {
+    var futureList = new LinkedList<Future<?>>();
     var relativePathPerFile = getRelativePaths(module.getProject(), files);
     var issueUpdater = new IssueUpdater(server, engine);
 
@@ -232,9 +243,9 @@ public class ServerIssueUpdater implements Disposable {
     });
   }
 
-  private Future<Void> submit(Runnable task, String projectKey, @Nullable String moduleRelativePath) {
+  private Future<?> submit(Runnable task, String projectKey, @Nullable String moduleRelativePath) {
     try {
-      return this.executorService.submit(task, null);
+      return this.executorService.submit(task);
     } catch (RejectedExecutionException e) {
       SonarLintConsole.get(myProject).error("fetch and match server issues rejected for projectKey=" + projectKey + ", filepath=" + moduleRelativePath, e);
       return CompletableFuture.completedFuture(null);
@@ -273,7 +284,6 @@ public class ServerIssueUpdater implements Disposable {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
         var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
         engine.downloadAllServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
-        getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -303,7 +313,6 @@ public class ServerIssueUpdater implements Disposable {
       var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
       try {
         engine.downloadAllServerIssuesForFile(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, branchName, null);
-        getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
