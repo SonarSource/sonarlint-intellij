@@ -19,36 +19,22 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.intellij.codeInsight.hint.HintManager;
-import com.intellij.codeInsight.hint.HintUtil;
-import com.intellij.icons.AllIcons;
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.AnActionButton;
 import com.intellij.ui.AnActionButtonRunnable;
 import com.intellij.ui.CollectionListModel;
 import com.intellij.ui.ColoredListCellRenderer;
-import com.intellij.ui.HyperlinkAdapter;
-import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.ToolbarDecorator;
-import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
-import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
+
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -58,41 +44,31 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import javax.swing.AbstractAction;
-import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-import javax.swing.event.HyperlinkEvent;
+
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
-import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
-import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
-import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
+public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String LABEL_NO_SERVERS = "Add a connection to SonarQube or SonarCloud";
 
   // UI
   private JPanel panel;
   private JPanel serversPanel;
   private JBList<ServerConnection> connectionList;
-  private JLabel serverStatus;
-  private JButton updateServerButton;
 
   // Model
   private GlobalConfigurationListener connectionChangeListener;
   private final List<ServerConnection> connections = new ArrayList<>();
   private final Set<String> deletedServerIds = new HashSet<>();
-  private ConnectedSonarLintEngine engine = null;
 
   private void create() {
     var app = ApplicationManager.getApplication();
@@ -107,11 +83,6 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
         }
       }
     });
-    connectionList.addListSelectionListener(e -> {
-      if (!e.getValueIsAdjusting()) {
-        onServerSelect();
-      }
-    });
 
     serversPanel = new JPanel(new BorderLayout());
 
@@ -124,9 +95,6 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     toolbarDecorator.setRemoveAction(new RemoveServerAction());
 
     serversPanel.add(toolbarDecorator.createPanel(), BorderLayout.CENTER);
-    var splitter = new Splitter(true);
-    splitter.setFirstComponent(serversPanel);
-    splitter.setSecondComponent(createServerStatus());
 
     var emptyLabel = new JBLabel("No connection selected", SwingConstants.CENTER);
     var emptyPanel = new JPanel(new BorderLayout());
@@ -135,7 +103,7 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     var border = IdeBorderFactory.createTitledBorder("SonarQube / SonarCloud connections");
     panel = new JPanel(new BorderLayout());
     panel.setBorder(border);
-    panel.add(splitter);
+    panel.add(serversPanel);
 
     connectionList.setCellRenderer(new ColoredListCellRenderer<>() {
       @Override
@@ -151,53 +119,6 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
         }
       }
     });
-  }
-
-  private JPanel createServerStatus() {
-    var serverStatusPanel = new JPanel(new GridBagLayout());
-
-    var serverStatusLabel = new JLabel("Local update: ");
-    updateServerButton = new JButton();
-    serverStatus = new JLabel();
-
-    final var link = new HyperlinkLabel("");
-    link.setIcon(AllIcons.General.ContextHelp);
-    link.setUseIconAsLink(true);
-    link.addHyperlinkListener(new HyperlinkAdapter() {
-      @Override
-      protected void hyperlinkActivated(HyperlinkEvent e) {
-        final var label = new JLabel("<html>Click to fetch data from the selected connection, such as the list of projects,<br>"
-          + " rules, quality profiles, etc. This needs to be done before being able to select a project.</html>");
-        label.setBorder(HintUtil.createHintBorder());
-        label.setBackground(HintUtil.getInformationColor());
-        label.setOpaque(true);
-        HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
-      }
-    });
-
-    var flow1 = new JPanel(new FlowLayout(FlowLayout.LEADING));
-    flow1.add(serverStatusLabel);
-    flow1.add(serverStatus);
-
-    var flow2 = new JPanel(new FlowLayout(FlowLayout.LEADING));
-    flow2.add(updateServerButton);
-    flow2.add(link);
-
-    serverStatusPanel.add(flow1, new GridBagConstraints(0, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, JBUI.insets(0, 0, 0, 0), 0, 0));
-    serverStatusPanel.add(flow2, new GridBagConstraints(1, 0, 1, 1, 0.5, 1, GridBagConstraints.LINE_START, 0, JBUI.insets(0, 0, 0, 0), 0, 0));
-
-    updateServerButton.setAction(new AbstractAction() {
-      @Override
-      public void actionPerformed(ActionEvent e) {
-        actionUpdateConnectionStorageTask();
-      }
-    });
-    updateServerButton.setText("Update binding");
-    updateServerButton.setToolTipText("Update local data: quality profile, settings, ...");
-
-    var alignedPanel = new JPanel(new BorderLayout());
-    alignedPanel.add(serverStatusPanel, BorderLayout.NORTH);
-    return alignedPanel;
   }
 
   private void unbindRemovedServers() {
@@ -261,65 +182,6 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
     return connections;
   }
 
-  private void onServerSelect() {
-    switchTo(getSelectedConnection());
-  }
-
-  private void switchTo(@Nullable ServerConnection server) {
-    engine = null;
-
-    if (server != null) {
-      var serverManager = getService(EngineManager.class);
-      // Initial loading of the connected engine can be long, sent to pooled thread
-      ApplicationManager.getApplication().executeOnPooledThread(() -> {
-        engine = serverManager.getConnectedEngine(server.getName());
-        updateBindingStatusLabelAsync();
-      });
-    } else {
-      serverStatus.setText("[ no connection selected ]");
-      updateServerButton.setEnabled(false);
-    }
-  }
-
-  private void updateBindingStatusLabelAsync() {
-    if (engine == null) {
-      serverStatus.setText("checking...");
-      return;
-    }
-    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-      var statusText = getStatusText();
-      ApplicationManager.getApplication().invokeLater(() -> {
-        serverStatus.setText(statusText);
-        // Using ModalityState#any() since we are only updating light UI stuff
-      }, ModalityState.any());
-    });
-  }
-
-  private String getStatusText() {
-    var storageStatus = engine.getGlobalStorageStatus();
-    if (storageStatus == null) {
-      return "need sync (empty)";
-    }
-    if (storageStatus.isStale()) {
-      return "need sync (outdated)";
-    }
-    return DateUtils.toAge(storageStatus.getLastUpdateDate().getTime());
-  }
-
-  private void actionUpdateConnectionStorageTask() {
-    var connection = getSelectedConnection();
-    if (connection == null || engine == null) {
-      return;
-    }
-
-    updateConnectionStorage(connection, engine, false);
-  }
-
-  public static void updateConnectionStorage(ServerConnection connection, ConnectedSonarLintEngine engine, boolean onlyProjects) {
-    var task = new BindingStorageUpdateTask(engine, connection, !onlyProjects, true, null);
-    ProgressManager.getInstance().run(task.asBackground());
-  }
-
   private void editSelectedConnection() {
     var selectedConnection = getSelectedConnection();
     int selectedIndex = connectionList.getSelectedIndex();
@@ -331,14 +193,8 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
         ((CollectionListModel<ServerConnection>) connectionList.getModel()).setElementAt(editedConnection, selectedIndex);
         connections.set(connections.indexOf(selectedConnection), editedConnection);
         connectionChangeListener.changed(connections);
-        updateConnectionStorage(editedConnection);
       }
     }
-  }
-
-  @Override
-  public void dispose() {
-    engine = null;
   }
 
   private class AddConnectionAction implements AnActionButtonRunnable {
@@ -352,15 +208,8 @@ public class ServerConnectionMgmtPanel implements Disposable, ConfigurationPanel
         ((CollectionListModel<ServerConnection>) connectionList.getModel()).add(created);
         connectionList.setSelectedIndex(connectionList.getModel().getSize() - 1);
         connectionChangeListener.changed(connections);
-        updateConnectionStorage(created);
       }
     }
-  }
-
-  private static void updateConnectionStorage(ServerConnection toUpdate) {
-    var serverManager = getService(EngineManager.class);
-    var task = new BindingStorageUpdateTask(serverManager.getConnectedEngine(toUpdate.getName()), toUpdate, true, false, null);
-    ProgressManager.getInstance().run(task.asBackground());
   }
 
   private class RemoveServerAction implements AnActionButtonRunnable {
