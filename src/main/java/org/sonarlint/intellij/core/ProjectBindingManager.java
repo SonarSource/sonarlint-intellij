@@ -184,7 +184,7 @@ public class ProjectBindingManager {
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
     }
-    var task = new BindingStorageUpdateTask(connection, true, myProject);
+    var task = new BindingStorageUpdateTask(connection, myProject);
     progressManager.run(task.asModal());
   }
 

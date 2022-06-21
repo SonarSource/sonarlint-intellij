@@ -47,6 +47,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ModuleBindingManager;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
@@ -62,20 +63,18 @@ import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class BindingStorageUpdateTask {
   private final ServerConnection connection;
-  private final boolean updateProjectsStorage;
   private final Project onlyForProject;
   @Nullable
   private final Runnable onComplete;
 
-  public BindingStorageUpdateTask(ServerConnection connection, boolean updateProjectsStorage, @Nullable Project onlyForProject, @Nullable Runnable onComplete) {
+  public BindingStorageUpdateTask(ServerConnection connection, @Nullable Project onlyForProject, @Nullable Runnable onComplete) {
     this.connection = connection;
-    this.updateProjectsStorage = updateProjectsStorage;
     this.onlyForProject = onlyForProject;
     this.onComplete = onComplete;
   }
 
-  public BindingStorageUpdateTask(ServerConnection connection, boolean updateProjectsStorage, @Nullable Project onlyForProject) {
-    this(connection, updateProjectsStorage, onlyForProject, null);
+  public BindingStorageUpdateTask(ServerConnection connection, @Nullable Project onlyForProject) {
+    this(connection, onlyForProject, null);
   }
 
   public Task.Modal asModal() {
@@ -106,13 +105,7 @@ public class BindingStorageUpdateTask {
       var serverManager = getService(EngineManager.class);
       var engine = serverManager.getConnectedEngine(connection.getName());
 
-      var connectedModeEndpoint = connection.getEndpointParams();
-      engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
-      GlobalLogOutput.get().log("Storage for connection '" + connection.getName() + "' updated", ClientLogOutput.Level.INFO);
-
-      if (updateProjectsStorage) {
-        updateProjectStorages(engine, connection, monitor);
-      }
+      updateProjectStorages(engine, connection, monitor);
 
     } catch (CanceledException e) {
       GlobalLogOutput.get().log("Update of storage for connection '" + connection.getName() + "' was cancelled", ClientLogOutput.Level.INFO);
@@ -162,28 +155,31 @@ public class BindingStorageUpdateTask {
     Collection<Project> projectsToUpdate) {
     var failures = new ArrayList<ProjectStorageUpdateFailure>();
 
-    Set<String> projectKeys = new HashSet<>();
+    Set<String> allProjectKeysToSync = new HashSet<>();
     for (Project project : projectsToUpdate) {
-      var modules = ModuleManager.getInstance(project).getModules();
-      for (Module module : modules) {
-        var projectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
-        projectKeys.add(projectKey);
-      }
+      ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
+      var projectKeysToSync = bindingManager.getUniqueProjectKeys();
+      allProjectKeysToSync.addAll(projectKeysToSync);
     }
 
-    Set<String> projectKeysToSync = new HashSet<>();
-    projectKeys.forEach(projectKey -> {
+    allProjectKeysToSync.forEach(projectKey -> {
       try {
         engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey, monitor);
-        projectKeysToSync.add(projectKey);
       } catch (Exception e) {
         GlobalLogOutput.get().logError(e.getMessage(), e);
         failures.add(new ProjectStorageUpdateFailure(projectKey, e));
       }
     });
+    engine.sync(connection.getEndpointParams(), connection.getHttpClient(), allProjectKeysToSync, monitor);
 
-    // Only sync project that have been successfully updated before
-    engine.sync(connection.getEndpointParams(), connection.getHttpClient(), projectKeysToSync, monitor);
+    /*var allProjectAndBranchesToSync = new HashSet<ProjectBindingManager.ProjectKeyAndBranch>();
+    for (Project project : projectsToUpdate) {
+      ProjectBindingManager bindingManager = getService(project, ProjectBindingManager.class);
+      var projectAndBranchesToSync = bindingManager.getUniqueProjectKeysAndBranchesPairs();
+      allProjectAndBranchesToSync.addAll(projectAndBranchesToSync);
+    }
+    allProjectAndBranchesToSync
+      .forEach(pb -> engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor));*/
 
     projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished());
 

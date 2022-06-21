@@ -37,8 +37,6 @@ open class ServerConnectionCreator {
             globalSettings.addServerConnection(created)
             val serverChangeListener = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
             serverChangeListener.changed(globalSettings.serverConnections)
-            val task = BindingStorageUpdateTask(created, false, null)
-            ProgressManager.getInstance().run(task.asModal())
             return created
         }
         return null
