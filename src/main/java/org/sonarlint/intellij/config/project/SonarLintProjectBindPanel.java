@@ -46,10 +46,8 @@ import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
 
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -291,7 +289,7 @@ public class SonarLintProjectBindPanel {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {
         final var label = new JLabel("<html>Click to fetch and cache data from the selected connection, such as"
-                + " rules, quality profiles, etc.</html>");
+          + " rules, quality profiles, etc.</html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.getInformationColor());
         label.setOpaque(true);
@@ -343,10 +341,8 @@ public class SonarLintProjectBindPanel {
     ApplicationManager.getApplication().invokeLater(() -> storageStatus.setText("loading..."));
     ApplicationManager.getApplication().executeOnPooledThread(() -> {
       var statusText = getStatusText();
-      ApplicationManager.getApplication().invokeLater(() -> {
-        storageStatus.setText(statusText);
-        // Using ModalityState#any() since we are only updating light UI stuff
-      }, ModalityState.any());
+      // Using ModalityState#any() since we are only updating light UI stuff
+      ApplicationManager.getApplication().invokeLater(() -> storageStatus.setText(statusText), ModalityState.any());
     });
   }
 

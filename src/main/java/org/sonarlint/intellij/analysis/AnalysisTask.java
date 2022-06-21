@@ -47,7 +47,6 @@ import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.exception.InvalidBindingException;
@@ -69,7 +68,6 @@ import org.sonarsource.sonarlint.core.commons.Language;
 import org.sonarsource.sonarlint.core.commons.progress.CanceledException;
 
 import static java.util.stream.Collectors.toList;
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 
 public class AnalysisTask extends Task.Backgroundable {

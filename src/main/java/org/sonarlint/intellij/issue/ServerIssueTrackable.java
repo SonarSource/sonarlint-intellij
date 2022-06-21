@@ -27,8 +27,6 @@ import org.sonarsource.sonarlint.core.serverconnection.issues.LineLevelServerIss
 import org.sonarsource.sonarlint.core.serverconnection.issues.RangeLevelServerIssue;
 import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
 
-import static java.util.Optional.ofNullable;
-
 public class ServerIssueTrackable implements Trackable {
 
   private final ServerIssue<?> serverIssue;

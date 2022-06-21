@@ -84,7 +84,7 @@ public class SonarLintUtils {
   }
 
   public static boolean isSonarCloudAlias(@Nullable String url) {
-    return url != null ? List.of(SONARCLOUD_ALIAS).contains(url) : false;
+    return url != null && List.of(SONARCLOUD_ALIAS).contains(url);
   }
 
   public static boolean isEmpty(@Nullable String str) {

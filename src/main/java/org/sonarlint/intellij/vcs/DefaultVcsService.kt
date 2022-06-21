@@ -34,7 +34,6 @@ import org.sonarlint.intellij.messages.ProjectBindingListener
 import org.sonarlint.intellij.messages.ProjectSynchronizationListener
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
-import java.util.Optional
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 

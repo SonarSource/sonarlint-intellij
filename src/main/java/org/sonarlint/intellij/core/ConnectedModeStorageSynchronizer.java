@@ -26,6 +26,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
+
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -94,9 +95,8 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
       engine.sync(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKeysToSync, new TaskProgressMonitor(progressIndicator, myProject));
 
       var projectAndBranchesToSync = getService(myProject, ProjectBindingManager.class).getUniqueProjectKeysAndBranchesPairs();
-      projectAndBranchesToSync.forEach(pb -> {
-        engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), new TaskProgressMonitor(progressIndicator, myProject));
-      });
+      projectAndBranchesToSync.forEach(pb -> engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(),
+        new TaskProgressMonitor(progressIndicator, myProject)));
       myProject.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished();
     } catch (Exception e) {
       log.log("There was an error while synchronizing quality profiles: " + e.getMessage(), ClientLogOutput.Level.WARN);
@@ -107,7 +107,6 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
   }
 
   private void updateIssues(Module module, String branchName) {
-    // TODO refactor to avoid duplicate
     var log = getService(GlobalLogOutput.class);
     ProjectBindingManager projectBindingManager = getService(myProject, ProjectBindingManager.class);
     if (!projectBindingManager.isBindingValid()) {
@@ -133,7 +132,8 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
           try {
             var serverConnection = projectBindingManager.getServerConnection();
             progressIndicator.setIndeterminate(false);
-            engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), moduleProjectKey, branchName, new TaskProgressMonitor(progressIndicator, myProject));
+            engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), moduleProjectKey, branchName,
+              new TaskProgressMonitor(progressIndicator, myProject));
           } catch (Exception e) {
             log.log("There was an error while synchronizing issues: " + e.getMessage(), ClientLogOutput.Level.WARN);
           }

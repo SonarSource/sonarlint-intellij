@@ -78,12 +78,12 @@ public class ModuleBindingManager {
    * <li>the current module is not the primary project</li>
    */
   public boolean isBindingOverrideAllowed() {
-    return SonarLintUtils.isModuleLevelBindingEnabled()
-            && hasProjectMoreThanOneModule()
-            && isNotPrimaryProject()
-            ||
-            // If binding was once overriden on a module, we want to keep using it, even if the project is now back to one module
-            hasOneModuleAlreadyOverriden();
+    return (SonarLintUtils.isModuleLevelBindingEnabled()
+      && hasProjectMoreThanOneModule()
+      && isNotPrimaryProject())
+      ||
+      // If binding was once overriden on a module, we want to keep using it, even if the project is now back to one module
+      hasOneModuleAlreadyOverriden();
   }
 
   /**

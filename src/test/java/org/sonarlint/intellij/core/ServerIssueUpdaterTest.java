@@ -38,7 +38,6 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches;
-import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
 import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
 
@@ -104,7 +103,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
     // mock issues read from storage
     when(engine.getServerBranches(PROJECT_KEY)).thenReturn(new ProjectBranches(Set.of("master"), "master"));
-    when(engine.getServerIssues(eq(PROJECT_BINDING), eq("master"), eq(FOO_PHP)))
+    when(engine.getServerIssues(PROJECT_BINDING, "master", FOO_PHP))
       .thenReturn(List.of(serverIssue));
 
     // run

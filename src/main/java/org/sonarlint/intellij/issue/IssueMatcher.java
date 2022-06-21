@@ -30,9 +30,10 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
-import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 import javax.annotation.Nullable;
+
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 public class IssueMatcher {
   private final Project project;
@@ -68,7 +69,8 @@ public class IssueMatcher {
     return match(file, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
-  private RangeMarker match(PsiFile file, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine, @Nullable Integer endLineOffset) throws NoMatchException {
+  private RangeMarker match(PsiFile file, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine, @Nullable Integer endLineOffset)
+    throws NoMatchException {
     ApplicationManager.getApplication().assertReadAccessAllowed();
     Preconditions.checkArgument(startLine != null);
 
@@ -82,7 +84,8 @@ public class IssueMatcher {
     return doc.createRangeMarker(range.getStartOffset(), range.getEndOffset());
   }
 
-  private static TextRange getIssueTextRange(PsiFile file, Document doc, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine, @Nullable Integer endLineOffset) throws NoMatchException {
+  private static TextRange getIssueTextRange(PsiFile file, Document doc, @Nullable Integer startLine, @Nullable Integer startLineOffset, @Nullable Integer endLine,
+    @Nullable Integer endLineOffset) throws NoMatchException {
     var ijStartLine = startLine - 1;
     var ijEndLine = endLine - 1;
     var lineCount = doc.getLineCount();
