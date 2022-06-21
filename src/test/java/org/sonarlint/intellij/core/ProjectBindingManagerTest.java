@@ -71,8 +71,6 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_get_connected_engine() throws InvalidBindingException {
     connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1");
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(new GlobalStorageStatus(null, new Date(), false));
-    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(new ProjectStorageStatus(new Date(), false));
     getEngineManager().registerEngine(connectedEngine, "server1");
 
     var engine = projectBindingManager.getConnectedEngine();
@@ -89,8 +87,6 @@ public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_create_facade_connected() throws InvalidBindingException {
     connectProjectTo(ServerConnection.newBuilder().setName("server1").build(), "project1");
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(new GlobalStorageStatus(null, new Date(), false));
-    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(new ProjectStorageStatus(new Date(), false));
     getEngineManager().registerEngine(connectedEngine, "server1");
 
     var facade = projectBindingManager.getFacade(getModule());

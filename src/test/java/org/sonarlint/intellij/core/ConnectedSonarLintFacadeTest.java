@@ -73,7 +73,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
     when(engine.analyze(configCaptor.capture(), any(IssueListener.class), any(ClientLogOutput.class), any(ClientProgressMonitor.class))).thenReturn(results);
     assertThat(facade.startAnalysis(getModule(), Collections.emptyList(), mock(IssueListener.class), Collections.emptyMap(), mock(ClientProgressMonitor.class))).isEqualTo(results);
     var config = configCaptor.getValue();
-    assertThat(config.projectKey()).isEqualTo("projectKey");
+    assertThat(config.getProjectKey()).isEqualTo("projectKey");
   }
 
   private void bindProject(String projectKey) {

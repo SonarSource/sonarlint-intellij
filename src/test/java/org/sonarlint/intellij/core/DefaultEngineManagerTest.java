@@ -92,42 +92,6 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
     manager.getConnectedEngine(notifications, "server1", "project1");
   }
 
-  @Test
-  public void should_fail_project_storage_missing() throws InvalidBindingException {
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(globalOk);
-    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(null);
-
-    getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
-
-    exception.expect(InvalidBindingException.class);
-    exception.expectMessage("Project local storage is missing: 'project1'");
-    manager.getConnectedEngine(notifications, "server1", "project1");
-  }
-
-  @Test
-  public void should_fail_global_storage_missing() throws InvalidBindingException {
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(null);
-
-    getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
-
-    exception.expect(InvalidBindingException.class);
-    exception.expectMessage("Connection local storage is missing: 'server1'");
-    manager.getConnectedEngine(notifications, "server1", "project1");
-  }
-
-  @Test
-  public void should_pass_checks() throws InvalidBindingException {
-    when(connectedEngine.getGlobalStorageStatus()).thenReturn(globalOk);
-    when(connectedEngine.getProjectStorageStatus("project1")).thenReturn(projectOk);
-
-    getGlobalSettings().setServerConnections(List.of(createConnection("server1")));
-    manager = new DefaultEngineManager(engineFactory);
-
-    assertThat(manager.getConnectedEngine(notifications, "server1", "project1")).isEqualTo(connectedEngine);
-
-    verify(engineFactory, Mockito.times(1)).createEngine("server1", false);
-  }
-
   private static ServerConnection createConnection(String name) {
     return ServerConnection.newBuilder().setName(name).build();
   }
