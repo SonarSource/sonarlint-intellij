@@ -44,7 +44,6 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ModuleBindingManager;
@@ -202,7 +201,7 @@ public class BindingStorageUpdateTask {
     project.getMessageBus().syncPublisher(Listener.TOPIC).updateFinished();
   }
 
-  private void updatePathPrefixesForAllModules(ConnectedSonarLintEngine engine, Project project) {
+  private static void updatePathPrefixesForAllModules(ConnectedSonarLintEngine engine, Project project) {
     if (!project.isDisposed()) {
       Stream.of(ModuleManager.getInstance(project).getModules())
         .forEach(m -> getService(m, ModuleBindingManager.class).updatePathPrefixes(engine));
