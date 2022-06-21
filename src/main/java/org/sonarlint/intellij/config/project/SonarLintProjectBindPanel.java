@@ -19,8 +19,12 @@
  */
 package org.sonarlint.intellij.config.project;
 
+import com.intellij.codeInsight.hint.HintManager;
+import com.intellij.codeInsight.hint.HintUtil;
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.DataManager;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -31,14 +35,21 @@ import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.projectImport.ProjectAttachProcessor;
 import com.intellij.ui.ColoredListCellRenderer;
+import com.intellij.ui.HyperlinkAdapter;
+import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.SimpleTextAttributes;
+import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBTextField;
+import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
+
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
@@ -54,18 +65,23 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
+import javax.swing.event.HyperlinkEvent;
+
 import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
 import org.sonarlint.intellij.core.EngineManager;
+import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
+import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.NONE;
 import static java.awt.GridBagConstraints.WEST;
 import static java.util.Optional.ofNullable;
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintProjectBindPanel {
   private static final String CONNECTION_EMPTY_TEXT = "<No connections configured>";
@@ -82,6 +98,11 @@ public class SonarLintProjectBindPanel {
   private JBTextField projectKeyTextField;
   private JButton searchProjectButton;
 
+  // Storage status
+  private JButton updateStorageButton;
+  private JLabel storageStatus;
+  private JLabel storageStatusLabel;
+
   private Project project;
   private JLabel connectionListLabel;
   private JLabel projectKeyLabel;
@@ -90,15 +111,13 @@ public class SonarLintProjectBindPanel {
   public JPanel create(Project project) {
     this.project = project;
     rootPanel = new JPanel(new BorderLayout());
-    boolean pluralizeProject = ProjectAttachProcessor.canAttachToProject() && ModuleManager.getInstance(project).getModules().length > 1;
-    bindEnable = new JBCheckBox("Bind project"+ (pluralizeProject ? "s" : "") + " to SonarQube / SonarCloud", true);
-    bindEnable.addItemListener(new BindItemListener());
     createBindPanel();
 
-    rootPanel.add(bindEnable, BorderLayout.NORTH);
-    rootPanel.add(bindPanel, BorderLayout.CENTER);
+    rootPanel.add(bindPanel, BorderLayout.NORTH);
+
     moduleBindingPanel = new ModuleBindingPanel(project, () -> isBindingEnabled() ? getSelectedConnection() : null);
-    rootPanel.add(moduleBindingPanel.getRootPanel(), BorderLayout.SOUTH);
+    rootPanel.add(moduleBindingPanel.getRootPanel(), BorderLayout.CENTER);
+
     return rootPanel;
   }
 
@@ -142,6 +161,8 @@ public class SonarLintProjectBindPanel {
     projectKeyTextField.setEnabled(connectionSelected);
     projectKeyTextField.setEditable(connectionSelected);
     searchProjectButton.setEnabled(connectionSelected);
+    updateStorageButton.setEnabled(connectionSelected);
+    updateBindingStatusLabelAsync();
   }
 
   /**
@@ -215,6 +236,10 @@ public class SonarLintProjectBindPanel {
 
     bindPanel = new JPanel(new GridBagLayout());
 
+    boolean pluralizeProject = ProjectAttachProcessor.canAttachToProject() && ModuleManager.getInstance(project).getModules().length > 1;
+    bindEnable = new JBCheckBox("Bind project" + (pluralizeProject ? "s" : "") + " to SonarQube / SonarCloud", true);
+    bindEnable.addItemListener(new BindItemListener());
+
     configureConnectionButton = new JButton();
     configureConnectionButton.setAction(new AbstractAction() {
       @Override
@@ -255,25 +280,109 @@ public class SonarLintProjectBindPanel {
 
     connectionListLabel.setLabelFor(connectionComboBox);
 
+    storageStatusLabel = new JLabel("Last storage update: ");
+    updateStorageButton = new JButton();
+    storageStatus = new JLabel();
+
+    final var link = new HyperlinkLabel("");
+    link.setIcon(AllIcons.General.ContextHelp);
+    link.setUseIconAsLink(true);
+    link.addHyperlinkListener(new HyperlinkAdapter() {
+      @Override
+      protected void hyperlinkActivated(HyperlinkEvent e) {
+        final var label = new JLabel("<html>Click to fetch and cache data from the selected connection, such as"
+                + " rules, quality profiles, etc.</html>");
+        label.setBorder(HintUtil.createHintBorder());
+        label.setBackground(HintUtil.getInformationColor());
+        label.setOpaque(true);
+        HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
+      }
+    });
+
+    var storageStatusPanel = new JPanel(new HorizontalLayout(5));
+    storageStatusPanel.add(storageStatusLabel);
+    storageStatusPanel.add(storageStatus);
+
+    var updateStoragePanel = new JPanel(new HorizontalLayout(5));
+    updateStoragePanel.add(updateStorageButton);
+    updateStoragePanel.add(link);
+
+    updateStorageButton.setAction(new AbstractAction() {
+      @Override
+      public void actionPerformed(ActionEvent e) {
+        actionUpdateConnectionStorageTask();
+      }
+    });
+    updateStorageButton.setText("Update local storage");
+    updateStorageButton.setToolTipText("Fetch and cache data from server: quality profile, settings, ...");
+
     var insets = JBUI.insets(2, 0, 0, 0);
 
-    bindPanel.add(connectionListLabel, new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-      WEST, NONE, insets, 0, 0));
-    bindPanel.add(connectionComboBox, new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
-      WEST, HORIZONTAL, insets, 0, 0));
-    bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+    bindPanel.add(bindEnable, new GridBagConstraints(0, 0, 3, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
 
-    bindPanel.add(projectKeyLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+    bindPanel.add(connectionListLabel, new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
       WEST, NONE, insets, 0, 0));
-    bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+    bindPanel.add(connectionComboBox, new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
-    bindPanel.add(searchProjectButton, new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
+    bindPanel.add(configureConnectionButton, new GridBagConstraints(2, 1, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
 
-    // Consume extra space
-    bindPanel.add(new JPanel(), new GridBagConstraints(0, 2, 3, 1, 0.0, 1.0,
+    bindPanel.add(projectKeyLabel, new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+      WEST, NONE, insets, 0, 0));
+    bindPanel.add(projectKeyTextField, new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
+    bindPanel.add(searchProjectButton, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
+      WEST, HORIZONTAL, insets, 0, 0));
+
+    bindPanel.add(storageStatusPanel, new GridBagConstraints(0, 3, 2, 1, 1.0, 0.0, WEST, 0, insets, 0, 0));
+    bindPanel.add(updateStoragePanel, new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0, WEST, HORIZONTAL, insets, 0, 0));
+  }
+
+  private void updateBindingStatusLabelAsync() {
+    ApplicationManager.getApplication().invokeLater(() -> storageStatus.setText("loading..."));
+    ApplicationManager.getApplication().executeOnPooledThread(() -> {
+      var statusText = getStatusText();
+      ApplicationManager.getApplication().invokeLater(() -> {
+        storageStatus.setText(statusText);
+        // Using ModalityState#any() since we are only updating light UI stuff
+      }, ModalityState.any());
+    });
+  }
+
+  private String getStatusText() {
+    var connection = getSelectedConnection();
+    if (connection == null) {
+      return "";
+    }
+    var serverManager = getService(EngineManager.class);
+    var engine = serverManager.getConnectedEngineIfStarted(connection.getName());
+    if (engine == null) {
+      return "unknown";
+    }
+    var globalStorageStatus = engine.getGlobalStorageStatus();
+    if (globalStorageStatus == null) {
+      return "need sync (empty)";
+    }
+    if (globalStorageStatus.isStale()) {
+      return "need sync (outdated)";
+    }
+    return DateUtils.toAge(globalStorageStatus.getLastUpdateDate().getTime());
+  }
+
+  private void actionUpdateConnectionStorageTask() {
+    var connection = getSelectedConnection();
+    if (connection == null) {
+      return;
+    }
+
+    var task = new BindingStorageUpdateTask(connection, true, project, () -> {
+      this.updateBindingStatusLabelAsync();
+      ApplicationManager.getApplication().invokeLater(() -> updateStorageButton.setEnabled(true));
+    });
+    storageStatus.setText("update in progress...");
+    updateStorageButton.setEnabled(false);
+    ProgressManager.getInstance().run(task.asBackground());
   }
 
   /**
@@ -377,6 +486,13 @@ public class SonarLintProjectBindPanel {
       connectionComboBox.setEnabled(bound);
       configureConnectionButton.setEnabled(bound);
       moduleBindingPanel.setEnabled(bound);
+      updateStorageButton.setEnabled(bound);
+      storageStatusLabel.setEnabled(bound);
+      storageStatus.setVisible(bound);
+
+      if (bound) {
+        onConnectionSelected();
+      }
     }
   }
 }

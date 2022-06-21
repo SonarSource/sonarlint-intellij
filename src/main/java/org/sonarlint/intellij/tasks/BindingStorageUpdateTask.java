@@ -46,6 +46,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
@@ -61,23 +62,25 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
 public class BindingStorageUpdateTask {
-  private final ConnectedSonarLintEngine engine;
   private final ServerConnection connection;
-  private final boolean updateGlobalStorage;
   private final boolean updateProjectsStorage;
   private final Project onlyForProject;
+  @Nullable
+  private final Runnable onComplete;
 
-  public BindingStorageUpdateTask(ConnectedSonarLintEngine engine, ServerConnection connection, boolean updateGlobalStorage, boolean updateProjectsStorage,
-    @Nullable Project onlyForProject) {
-    this.engine = engine;
+  public BindingStorageUpdateTask(ServerConnection connection, boolean updateProjectsStorage, @Nullable Project onlyForProject, @Nullable Runnable onComplete) {
     this.connection = connection;
-    this.updateGlobalStorage = updateGlobalStorage;
     this.updateProjectsStorage = updateProjectsStorage;
     this.onlyForProject = onlyForProject;
+    this.onComplete = onComplete;
+  }
+
+  public BindingStorageUpdateTask(ServerConnection connection, boolean updateProjectsStorage, @Nullable Project onlyForProject) {
+    this(connection, updateProjectsStorage, onlyForProject, null);
   }
 
   public Task.Modal asModal() {
-    return new Task.Modal(null, "Updating storage for connection '" + connection.getName() + "'", true) {
+    return new Task.Modal(null, "Updating local storage for connection '" + connection.getName() + "'", true) {
       @Override
       public void run(@NotNull ProgressIndicator indicator) {
         BindingStorageUpdateTask.this.run(indicator);
@@ -86,7 +89,7 @@ public class BindingStorageUpdateTask {
   }
 
   public Task.Backgroundable asBackground() {
-    return new Task.Backgroundable(null, "Updating storage for connection '" + connection.getName() + "'", true, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
+    return new Task.Backgroundable(null, "Updating local storage for connection '" + connection.getName() + "'", true, PerformInBackgroundOption.ALWAYS_BACKGROUND) {
       @Override
       public void run(@NotNull ProgressIndicator indicator) {
         BindingStorageUpdateTask.this.run(indicator);
@@ -95,20 +98,21 @@ public class BindingStorageUpdateTask {
   }
 
   public void run(@NotNull ProgressIndicator indicator) {
-    indicator.setText("Update in progress...");
+    indicator.setText("Local storage update...");
 
     try {
       indicator.setIndeterminate(false);
       var monitor = new TaskProgressMonitor(indicator, null);
 
+      var serverManager = getService(EngineManager.class);
+      var engine = serverManager.getConnectedEngine(connection.getName());
+
       var connectedModeEndpoint = connection.getEndpointParams();
-      if (updateGlobalStorage) {
-        engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
-        GlobalLogOutput.get().log("Storage for connection '" + connection.getName() + "' updated", ClientLogOutput.Level.INFO);
-      }
+      engine.update(connectedModeEndpoint, connection.getHttpClient(), monitor);
+      GlobalLogOutput.get().log("Storage for connection '" + connection.getName() + "' updated", ClientLogOutput.Level.INFO);
 
       if (updateProjectsStorage) {
-        updateProjectStorages(connection, monitor);
+        updateProjectStorages(engine, connection, monitor);
       }
 
     } catch (CanceledException e) {
@@ -122,6 +126,10 @@ public class BindingStorageUpdateTask {
           Messages.showErrorDialog((Project) null, msg, "Binding Update Failed");
         }
       }, ModalityState.any());
+    } finally {
+      if (onComplete != null) {
+        onComplete.run();
+      }
     }
   }
 
@@ -129,12 +137,12 @@ public class BindingStorageUpdateTask {
    * Updates all known projects belonging to a connection. Except if project class attribute is provided.
    * It assumes that the global storage was updated previously.
    */
-  private void updateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor) {
+  private void updateProjectStorages(ConnectedSonarLintEngine engine, ServerConnection connection, TaskProgressMonitor monitor) {
     var projectsToUpdate = collectProjectsToUpdate(connection);
 
-    var failures = tryUpdateProjectStorages(connection, monitor, projectsToUpdate);
+    var failures = tryUpdateProjectStorages(engine, connection, monitor, projectsToUpdate);
 
-    projectsToUpdate.forEach(this::updatePathPrefixesForAllModules);
+    projectsToUpdate.forEach(p -> updatePathPrefixesForAllModules(engine, p));
     projectsToUpdate.forEach(BindingStorageUpdateTask::analyzeOpenFiles);
     projectsToUpdate.forEach(BindingStorageUpdateTask::notifyBindingStorageUpdated);
 
@@ -151,12 +159,12 @@ public class BindingStorageUpdateTask {
     }
   }
 
-  private List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ServerConnection connection, TaskProgressMonitor monitor, Collection<Project> projectsToUpdate) {
+  private List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ConnectedSonarLintEngine engine, ServerConnection connection, TaskProgressMonitor monitor,
+    Collection<Project> projectsToUpdate) {
     var failures = new ArrayList<ProjectStorageUpdateFailure>();
 
     Set<String> projectKeys = new HashSet<>();
     for (Project project : projectsToUpdate) {
-      var vcsService = getService(project, VcsService.class);
       var modules = ModuleManager.getInstance(project).getModules();
       for (Module module : modules) {
         var projectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
@@ -167,7 +175,7 @@ public class BindingStorageUpdateTask {
     Set<String> projectKeysToSync = new HashSet<>();
     projectKeys.forEach(projectKey -> {
       try {
-        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey,  monitor);
+        engine.updateProject(connection.getEndpointParams(), connection.getHttpClient(), projectKey, monitor);
         projectKeysToSync.add(projectKey);
       } catch (Exception e) {
         GlobalLogOutput.get().logError(e.getMessage(), e);
@@ -184,9 +192,8 @@ public class BindingStorageUpdateTask {
   }
 
   private Collection<Project> collectProjectsToUpdate(ServerConnection connection) {
-    return onlyForProject != null ?
-      Collections.singleton(onlyForProject) :
-      Stream.of(ProjectManager.getInstance().getOpenProjects())
+    return onlyForProject != null ? Collections.singleton(onlyForProject)
+      : Stream.of(ProjectManager.getInstance().getOpenProjects())
         .filter(p -> getSettingsFor(p).isBoundTo(connection))
         .collect(Collectors.toList());
   }
@@ -195,7 +202,7 @@ public class BindingStorageUpdateTask {
     project.getMessageBus().syncPublisher(Listener.TOPIC).updateFinished();
   }
 
-  private void updatePathPrefixesForAllModules(Project project) {
+  private void updatePathPrefixesForAllModules(ConnectedSonarLintEngine engine, Project project) {
     if (!project.isDisposed()) {
       Stream.of(ModuleManager.getInstance(project).getModules())
         .forEach(m -> getService(m, ModuleBindingManager.class).updatePathPrefixes(engine));

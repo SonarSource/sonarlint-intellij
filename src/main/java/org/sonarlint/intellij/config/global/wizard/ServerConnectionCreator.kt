@@ -21,10 +21,8 @@ package org.sonarlint.intellij.config.global.wizard
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressManager
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask
 
@@ -39,8 +37,7 @@ open class ServerConnectionCreator {
             globalSettings.addServerConnection(created)
             val serverChangeListener = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
             serverChangeListener.changed(globalSettings.serverConnections)
-            val serverManager = SonarLintUtils.getService(EngineManager::class.java)
-            val task = BindingStorageUpdateTask(serverManager.getConnectedEngine(created.name), created, true, false, null)
+            val task = BindingStorageUpdateTask(created, false, null)
             ProgressManager.getInstance().run(task.asModal())
             return created
         }
