@@ -79,36 +79,6 @@ public class SonarLintProjectNotifications {
     shown = true;
   }
 
-  public void notifyProjectStorageStale() {
-    if (shown) {
-      return;
-    }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
-      NO_SUBTITLE,
-      "Local storage is outdated" + UPDATE_BINDING_MSG,
-      NotificationType.WARNING);
-    notification.addAction(new OpenProjectSettingsAction(myProject));
-    notification.setImportant(true);
-    notification.notify(myProject);
-    shown = true;
-  }
-
-  public void notifyServerNeverUpdated(String serverId) {
-    if (shown) {
-      return;
-    }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
-      NO_SUBTITLE,
-      "Missing local storage for connection '" + serverId + "'" + UPDATE_SERVER_MSG,
-      NotificationType.WARNING);
-    notification.addAction(new OpenGlobalSettingsAction(myProject));
-    notification.setImportant(true);
-    notification.notify(myProject);
-    shown = true;
-  }
-
   public void notifyServerStorageNeedsUpdate(String serverId) {
     if (shown) {
       return;

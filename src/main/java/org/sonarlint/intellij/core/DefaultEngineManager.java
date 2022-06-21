@@ -70,31 +70,6 @@ public class DefaultEngineManager implements EngineManager, Disposable {
       });
   }
 
-  private static void checkConnectedEngineStatus(ConnectedSonarLintEngine engine, SonarLintProjectNotifications notifications, String connectionId, String projectKey)
-    throws InvalidBindingException {
-    // Check if engine's global storage is OK
-    var globalStorageStatus = engine.getGlobalStorageStatus();
-    if (globalStorageStatus == null) {
-      notifications.notifyServerNeverUpdated(connectionId);
-      throw new InvalidBindingException("Connection local storage is missing: '" + connectionId + "'");
-    } else if (globalStorageStatus.isStale()) {
-      notifications.notifyServerStorageNeedsUpdate(connectionId);
-      throw new InvalidBindingException("Connection local storage is outdated: '" + connectionId + "'");
-    }
-
-    // Check if project's storage is OK. Global storage was updated and all project's binding that were open too,
-    // but we might have now opened a new project with a different binding.
-    var projectStorageStatus = engine.getProjectStorageStatus(projectKey);
-
-    if (projectStorageStatus == null) {
-      notifications.notifyProjectStorageInvalid();
-      throw new InvalidBindingException("Project local storage is missing: '" + projectKey + "'");
-    } else if (projectStorageStatus.isStale()) {
-      notifications.notifyProjectStorageStale();
-      throw new InvalidBindingException("Project local storage is outdated: '" + projectKey + "'");
-    }
-  }
-
   /**
    * Immediately removes and asynchronously stops all {@link ConnectedSonarLintEngine} corresponding to server IDs that were removed.
    */
@@ -171,9 +146,7 @@ public class DefaultEngineManager implements EngineManager, Disposable {
       throw new InvalidBindingException("Invalid server name: " + connectionId);
     }
 
-    var engine = getConnectedEngine(connectionId);
-    checkConnectedEngineStatus(engine, notifications, connectionId, projectKey);
-    return engine;
+    return getConnectedEngine(connectionId);
   }
 
   private static Set<String> getServerNames() {

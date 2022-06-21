@@ -54,6 +54,7 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.ServerIssueTrackable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverconnection.DownloadException;
@@ -272,6 +273,7 @@ public class ServerIssueUpdater implements Disposable {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
         var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
         engine.downloadAllServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
+        getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());
@@ -301,6 +303,7 @@ public class ServerIssueUpdater implements Disposable {
       var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
       try {
         engine.downloadAllServerIssuesForFile(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, branchName, null);
+        getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
         console.info(e.getMessage());

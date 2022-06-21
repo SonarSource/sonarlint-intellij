@@ -35,8 +35,6 @@ import org.sonarlint.intellij.util.getRelativePathOf
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.serverconnection.ServerTaintIssue
 
-private const val SECURITY_REPOSITORY_HINT = "security"
-
 object TaintVulnerabilitiesLoader {
 
   fun getTaintVulnerabilitiesByOpenedFiles(project: Project): TaintVulnerabilitiesStatus {
@@ -69,8 +67,6 @@ object TaintVulnerabilitiesLoader {
     }
     return try {
       connectedEngine.getServerTaintIssues(projectBinding, branchName, filePath)
-        .filter { it.ruleKey().contains(SECURITY_REPOSITORY_HINT) }
-        .filter { !it.resolved() }
     } catch(e: Exception) {
       // can happen if binding is invalid, user should already be notified
       SonarLintConsole.get(project).debug("Unable to load server issues: " + e.message)

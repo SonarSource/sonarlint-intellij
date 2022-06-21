@@ -98,8 +98,6 @@ public class SonarLintProjectBindPanel {
 
   // Storage status
   private JButton updateStorageButton;
-  private JLabel storageStatus;
-  private JLabel storageStatusLabel;
 
   private Project project;
   private JLabel connectionListLabel;
@@ -160,7 +158,6 @@ public class SonarLintProjectBindPanel {
     projectKeyTextField.setEditable(connectionSelected);
     searchProjectButton.setEnabled(connectionSelected);
     updateStorageButton.setEnabled(connectionSelected);
-    updateBindingStatusLabelAsync();
   }
 
   /**
@@ -278,9 +275,7 @@ public class SonarLintProjectBindPanel {
 
     connectionListLabel.setLabelFor(connectionComboBox);
 
-    storageStatusLabel = new JLabel("Last storage update: ");
     updateStorageButton = new JButton();
-    storageStatus = new JLabel();
 
     final var link = new HyperlinkLabel("");
     link.setIcon(AllIcons.General.ContextHelp);
@@ -296,10 +291,6 @@ public class SonarLintProjectBindPanel {
         HintManager.getInstance().showHint(label, RelativePoint.getSouthWestOf(link), HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE, -1);
       }
     });
-
-    var storageStatusPanel = new JPanel(new HorizontalLayout(5));
-    storageStatusPanel.add(storageStatusLabel);
-    storageStatusPanel.add(storageStatus);
 
     var updateStoragePanel = new JPanel(new HorizontalLayout(5));
     updateStoragePanel.add(updateStorageButton);
@@ -333,37 +324,7 @@ public class SonarLintProjectBindPanel {
     bindPanel.add(searchProjectButton, new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
       WEST, HORIZONTAL, insets, 0, 0));
 
-    bindPanel.add(storageStatusPanel, new GridBagConstraints(0, 3, 2, 1, 1.0, 0.0, WEST, 0, insets, 0, 0));
     bindPanel.add(updateStoragePanel, new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0, WEST, HORIZONTAL, insets, 0, 0));
-  }
-
-  private void updateBindingStatusLabelAsync() {
-    ApplicationManager.getApplication().invokeLater(() -> storageStatus.setText("loading..."));
-    ApplicationManager.getApplication().executeOnPooledThread(() -> {
-      var statusText = getStatusText();
-      // Using ModalityState#any() since we are only updating light UI stuff
-      ApplicationManager.getApplication().invokeLater(() -> storageStatus.setText(statusText), ModalityState.any());
-    });
-  }
-
-  private String getStatusText() {
-    var connection = getSelectedConnection();
-    if (connection == null) {
-      return "";
-    }
-    var serverManager = getService(EngineManager.class);
-    var engine = serverManager.getConnectedEngineIfStarted(connection.getName());
-    if (engine == null) {
-      return "unknown";
-    }
-    var globalStorageStatus = engine.getGlobalStorageStatus();
-    if (globalStorageStatus == null) {
-      return "need sync (empty)";
-    }
-    if (globalStorageStatus.isStale()) {
-      return "need sync (outdated)";
-    }
-    return DateUtils.toAge(globalStorageStatus.getLastUpdateDate().getTime());
   }
 
   private void actionUpdateConnectionStorageTask() {
@@ -372,11 +333,7 @@ public class SonarLintProjectBindPanel {
       return;
     }
 
-    var task = new BindingStorageUpdateTask(connection, true, project, () -> {
-      this.updateBindingStatusLabelAsync();
-      ApplicationManager.getApplication().invokeLater(() -> updateStorageButton.setEnabled(true));
-    });
-    storageStatus.setText("update in progress...");
+    var task = new BindingStorageUpdateTask(connection, project, () -> ApplicationManager.getApplication().invokeLater(() -> updateStorageButton.setEnabled(true)));
     updateStorageButton.setEnabled(false);
     ProgressManager.getInstance().run(task.asBackground());
   }
@@ -483,8 +440,6 @@ public class SonarLintProjectBindPanel {
       configureConnectionButton.setEnabled(bound);
       moduleBindingPanel.setEnabled(bound);
       updateStorageButton.setEnabled(bound);
-      storageStatusLabel.setEnabled(bound);
-      storageStatus.setVisible(bound);
 
       if (bound) {
         onConnectionSelected();
