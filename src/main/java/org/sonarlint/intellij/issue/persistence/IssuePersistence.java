@@ -24,9 +24,13 @@ import com.intellij.openapi.project.Project;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.annotation.CheckForNull;
+
+import com.intellij.project.ProjectKt;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.LocalIssueTrackable;
 import org.sonarlint.intellij.proto.Sonarlint;
@@ -86,8 +90,11 @@ public class IssuePersistence {
   }
 
   private Path getBasePath() {
-    var ideaDir = new File(myProject.getBasePath(), Project.DIRECTORY_STORE_FOLDER).toPath();
-    return ideaDir.resolve("sonarlint").resolve("issuestore");
+    var ideaDir = ProjectKt.getStateStore(myProject).getDirectoryStorePath();
+    if (ideaDir == null) {
+      ideaDir = new File(myProject.getBasePath(), Project.DIRECTORY_STORE_FOLDER).toPath();
+    }
+    return ideaDir.resolve("sonarlint/issuestore");
   }
 
   public synchronized void clean() {
