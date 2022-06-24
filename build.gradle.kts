@@ -197,7 +197,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.10.0.3710")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.6.0.3106")
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.5.0.3376")
-    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.4.0.49785")
+    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.4.0.50747")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.35.0.50389")
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766")
@@ -208,21 +208,21 @@ dependencies {
 
 tasks {
 
-    val downloadOmnisharpLinuxZipFile by registering(Download::class) {
-        src("https://github.com/OmniSharp/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-linux-x64.zip")
-        dest(File(buildDir, "omnisharp-$omnisharpVersion-linux-x64.zip"))
+    val downloadOmnisharpMonoZipFile by registering(Download::class) {
+        src("https://github.com/henryju/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-mono.zip")
+        dest(File(buildDir, "omnisharp-$omnisharpVersion-mono.zip"))
         overwrite(false)
     }
 
-    val downloadOmnisharpOsxZipFile by registering(Download::class) {
-        src("https://github.com/OmniSharp/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-osx.zip")
-        dest(File(buildDir, "omnisharp-$omnisharpVersion-osx.zip"))
+    val downloadOmnisharpWinZipFile by registering(Download::class) {
+        src("https://github.com/henryju/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-net472.zip")
+        dest(File(buildDir, "omnisharp-$omnisharpVersion-net472.zip"))
         overwrite(false)
     }
 
-    val downloadOmnisharpWindowsZipFile by registering(Download::class) {
-        src("https://github.com/OmniSharp/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-win-x64.zip")
-        dest(File(buildDir, "omnisharp-$omnisharpVersion-win-x64.zip"))
+    val downloadOmnisharpNet6ZipFile by registering(Download::class) {
+        src("https://github.com/henryju/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-net6.0.zip")
+        dest(File(buildDir, "omnisharp-$omnisharpVersion-net6.zip"))
         overwrite(false)
     }
 
@@ -235,41 +235,21 @@ tasks {
 
     fun copyOmnisharp(destinationDir: File, pluginName: Property<String>) {
         copy {
-            from(zipTree(downloadOmnisharpLinuxZipFile.get().dest))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/linux"))
-            exclude("run")
-        }
-        // Workaround for https://github.com/OmniSharp/omnisharp-roslyn/pull/1979
-        copy {
-            from(zipTree(downloadOmnisharpLinuxZipFile.get().dest))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/linux"))
-            include("run")
-            filter {
-                it.replace("export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \${config_file}\"", "export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \\\"\${config_file}\\\"\"")
-            }
+            from(zipTree(downloadOmnisharpMonoZipFile.get().dest))
+            into(file("$destinationDir/${pluginName.get()}/omnisharp/mono"))
         }
         copy {
-            from(zipTree(downloadOmnisharpOsxZipFile.get().dest))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/osx"))
-            exclude("run")
-        }
-        // Workaround for https://github.com/OmniSharp/omnisharp-roslyn/pull/1979
-        copy {
-            from(zipTree(downloadOmnisharpOsxZipFile.get().dest))
-            into(file("$destinationDir/${pluginName.get()}/omnisharp/osx"))
-            include("run")
-            filter {
-                it.replace("export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \${config_file}\"", "export MONO_ENV_OPTIONS=\"--assembly-loader=strict --config \\\"\${config_file}\\\"\"")
-            }
-        }
-        copy {
-            from(zipTree(downloadOmnisharpWindowsZipFile.get().dest))
+            from(zipTree(downloadOmnisharpWinZipFile.get().dest))
             into(file("$destinationDir/${pluginName.get()}/omnisharp/win"))
+        }
+        copy {
+            from(zipTree(downloadOmnisharpNet6ZipFile.get().dest))
+            into(file("$destinationDir/${pluginName.get()}/omnisharp/net6"))
         }
     }
 
     prepareSandbox {
-        dependsOn(downloadOmnisharpLinuxZipFile, downloadOmnisharpOsxZipFile, downloadOmnisharpWindowsZipFile)
+        dependsOn(downloadOmnisharpMonoZipFile, downloadOmnisharpWinZipFile, downloadOmnisharpNet6ZipFile)
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
@@ -277,7 +257,7 @@ tasks {
     }
 
     prepareTestingSandbox {
-        dependsOn(downloadOmnisharpLinuxZipFile, downloadOmnisharpOsxZipFile, downloadOmnisharpWindowsZipFile)
+        dependsOn(downloadOmnisharpMonoZipFile, downloadOmnisharpWinZipFile, downloadOmnisharpNet6ZipFile)
         doLast {
             copyPlugins(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
