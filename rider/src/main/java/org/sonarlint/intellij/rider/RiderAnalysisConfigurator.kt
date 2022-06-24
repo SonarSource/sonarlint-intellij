@@ -21,6 +21,7 @@ package org.sonarlint.intellij.rider
 
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
+import com.jetbrains.rider.projectView.solutionFile
 import com.jetbrains.rider.runtime.RiderDotNetActiveRuntimeHost
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator.AnalysisConfiguration
@@ -35,6 +36,11 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
         val monoRuntime = RiderDotNetActiveRuntimeHost.getInstance(module.project).monoRuntime
         if (monoRuntime != null) {
             result.extraProperties["sonar.cs.internal.monoExeLocation"] = monoRuntime.getMonoExe().absolutePath
+        }
+        val solutionFile = module.project.solutionFile
+        if (solutionFile.isFile && solutionFile.extension.equals("sln", true)) {
+            // OmniSharp can load solution
+            result.extraProperties["sonar.cs.internal.solutionPath"] = module.project.solutionFile.absolutePath
         }
         return result
     }
