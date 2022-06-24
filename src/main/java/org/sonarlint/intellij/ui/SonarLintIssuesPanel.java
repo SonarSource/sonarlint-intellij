@@ -23,10 +23,15 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
+import icons.SonarLintIcons;
+
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.util.Collection;
@@ -34,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
+
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -43,6 +49,7 @@ import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitte
 
 public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
+  public static final String SONARLINT_TOOLWINDOW_ID = "SonarLint";
   private final CurrentFileController scope;
 
   public SonarLintIssuesPanel(Project project, CurrentFileController scope) {
@@ -85,6 +92,21 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
       treeBuilder.updateModel(Map.of(file, issues), emptyText);
     }
     expandTree();
+    updateIcon(file, issues);
+  }
+
+  private void updateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues) {
+    ApplicationManager.getApplication().invokeLater(() -> {
+      var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARLINT_TOOLWINDOW_ID);
+      if (toolWindow != null) {
+        doUpdateIcon(file, issues, toolWindow);
+      }
+    }, project.getDisposed());
+  }
+
+  private static void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {
+    boolean empty = file == null || issues.isEmpty();
+    toolWindow.setIcon(empty ? SonarLintIcons.SONARLINT_TOOLWINDOW_EMPTY : SonarLintIcons.SONARLINT_TOOLWINDOW);
   }
 
   private void expandTree() {

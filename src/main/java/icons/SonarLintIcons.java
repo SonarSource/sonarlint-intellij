@@ -34,6 +34,7 @@ public class SonarLintIcons {
 
   public static final Icon SONARLINT_TOOLWINDOW = getIcon("/images/sonarlintToolWindow.svg");
   public static final Icon SONARLINT_ACTION = getIcon("/images/sonarlintAction.svg");
+  public static final Icon SONARLINT_TOOLWINDOW_EMPTY = getIcon("/images/sonarlintToolWindowEmpty.svg");
 
   public static final Icon SONARLINT = getIcon("/images/sonarlint.png");
   public static final Icon SONARLINT_32 = getIcon("/images/sonarlint@2x.png");
