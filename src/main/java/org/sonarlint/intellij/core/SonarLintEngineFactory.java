@@ -21,7 +21,6 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.PathManager;
-import com.intellij.openapi.util.SystemInfo;
 import com.intellij.util.PlatformUtils;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -202,24 +201,15 @@ public class SonarLintEngineFactory {
     var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     var extraProps = new HashMap<String, String>();
     if (PlatformUtils.isRider()) {
-      addOmnisharpServerPath(plugin, extraProps);
+      addOmnisharpServerPaths(plugin, extraProps);
     }
     return extraProps;
   }
 
-  private static void addOmnisharpServerPath(SonarLintPlugin plugin, Map<String, String> extraProps) {
-    String osDir;
-    if (SystemInfo.isWindows) {
-      osDir = "win";
-    } else if (SystemInfo.isMac) {
-      osDir = "osx";
-    } else if (SystemInfo.isLinux) {
-      osDir = "linux";
-    } else {
-      GlobalLogOutput.get().log("Unsupported platform for Omnisharp", ClientLogOutput.Level.WARN);
-      return;
-    }
-    extraProps.put("sonar.cs.internal.omnisharpLocation", plugin.getPath().resolve("omnisharp").resolve(osDir).toString());
+  private static void addOmnisharpServerPaths(SonarLintPlugin plugin, Map<String, String> extraProps) {
+    extraProps.put("sonar.cs.internal.omnisharpMonoLocation", plugin.getPath().resolve("omnisharp/mono").toString());
+    extraProps.put("sonar.cs.internal.omnisharpWinLocation", plugin.getPath().resolve("omnisharp/win").toString());
+    extraProps.put("sonar.cs.internal.omnisharpNet6Location", plugin.getPath().resolve("omnisharp/net6").toString());
   }
 
   private static class EmbeddedPlugin {
