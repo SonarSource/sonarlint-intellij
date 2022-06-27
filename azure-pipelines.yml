@@ -45,6 +45,7 @@ stages:
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         env:
+          CI: true # needed for gradle-intellij-plugin to skip downloading sources
           ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
           ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
           ARTIFACTORY_DEPLOY_USERNAME: $(ARTIFACTORY_DEPLOY_USERNAME)
@@ -88,6 +89,7 @@ stages:
           testRunTitle: 'UTs on Windows'
           jdkVersionOption: '1.11'
         env:
+          CI: true # needed for gradle-intellij-plugin to skip downloading sources
           ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
           ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
         displayName: 'Run UTs'
@@ -97,6 +99,7 @@ stages:
           tasks: :runPluginVerifier
           jdkVersionOption: '1.11'
         env:
+          CI: true # needed for gradle-intellij-plugin to skip downloading sources
           ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
           ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
         displayName: 'Run plugin verifier'
@@ -221,6 +224,7 @@ stages:
           testRunTitle: 'Run ITs on $(IDEA_VERSION)'
           jdkVersionOption: '1.11'
         env:
+          CI: true # needed for gradle-intellij-plugin to skip downloading sources
           ARTIFACTORY_API_KEY: $(ARTIFACTORY_API_KEY)
           GITHUB_TOKEN: $(GITHUB_TOKEN)
           DISPLAY: :10
