@@ -12,7 +12,7 @@ resources:
     - repository: commonTemplates
       type: git
       name: pipelines-yaml-templates
-      ref:  refs/tags/v1.0.16
+      ref:  refs/heads/dp/mend
 
 
 stages:
@@ -64,7 +64,7 @@ stages:
     burgrName: 'validate'
     burgrType: 'validate'
     stageName: 'validate'
-    stageDisplayName: Run UTs and trigger SonarQube analysis
+    stageDisplayName: Run UTs and trigger SonarQube and WhiteSource analysis
     jobs:
     - job: test_windows
       displayName: Run unit tests on Windows
@@ -107,8 +107,8 @@ stages:
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         displayName: 'Stop Gradle daemon'
-    - job: sonarqube
-      displayName: SonarQube analysis on Next
+    - job: sonarqubeAndWhiteSource
+      displayName: SonarQube analysis on Next and WhiteSource analysis
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
@@ -136,6 +136,24 @@ stages:
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         displayName: 'Stop Gradle daemon'
+
+      - bash: |
+          set -euo pipefail
+          VERSION=$(cat gradle.properties | grep version | awk -F= '{print $2}')
+          echo "Current project version is $VERSION"
+          echo "##vso[task.setvariable variable=WHITESOURCE_PROJECT_VERSION]$VERSION"
+        name: getWhiteSourceProjectVersion
+        displayName: Get WhiteSource project version
+
+      - template: whitesource.yml@commonTemplates
+        parameters:
+          productName : 'SonarLint/IntelliJ'
+          # the projectName has to match the repo name for the releasability check to work
+          projectName : 'SonarSource/sonarlint-intellij'
+          projectVersion: '$(WHITESOURCE_PROJECT_VERSION)'
+          configFilePath: '$(Build.SourcesDirectory)/whitesource/wss-unified-agent.config'
+
+
 - template: stage-with-burgr-notifications.yml@commonTemplates
   parameters:
     burgrName: 'qa'
