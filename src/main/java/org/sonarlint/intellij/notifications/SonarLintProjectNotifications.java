@@ -19,28 +19,21 @@
  */
 package org.sonarlint.intellij.notifications;
 
-import com.intellij.notification.Notification;
-import com.intellij.notification.NotificationDisplayType;
 import com.intellij.notification.NotificationGroup;
-import com.intellij.notification.NotificationListener;
+import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
-import javax.swing.event.HyperlinkEvent;
-import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.config.global.ServerConnectionMgmtPanel;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 
 public class SonarLintProjectNotifications {
-  private static final NotificationGroup BINDING_PROBLEM_GROUP = NotificationGroup.balloonGroup("SonarLint: Server Binding Errors");
-  private static final NotificationGroup UPDATE_GROUP = NotificationGroup.balloonGroup("SonarLint: Configuration update");
-  // this constructor invokation has to remain in Java code, else the Kotlin overload with default arguments is used by compiler
-  public static final NotificationGroup SERVER_NOTIFICATIONS_GROUP = new NotificationGroup("SonarLint: Server Notifications", NotificationDisplayType.STICKY_BALLOON, true,
-    "SonarLint");
+  private static final NotificationGroup BINDING_PROBLEM_GROUP = NotificationGroupManager.getInstance()
+    .getNotificationGroup("SonarLint: Server Binding Errors");
+  public static final NotificationGroup SERVER_NOTIFICATIONS_GROUP = NotificationGroupManager.getInstance()
+    .getNotificationGroup("SonarLint: Server Notifications");
   private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the SonarLint Settings";
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the SonarLint project configuration";
   private static final String TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>";
+  private static final String NO_SUBTITLE = null;
   private volatile boolean shown = false;
   private final Project myProject;
 
@@ -62,8 +55,9 @@ public class SonarLintProjectNotifications {
     }
     var notification = BINDING_PROBLEM_GROUP.createNotification(
       TITLE_SONARLINT_INVALID_BINDING,
+      NO_SUBTITLE,
       "Project bound to an invalid connection" + UPDATE_BINDING_MSG,
-      NotificationType.WARNING, null);
+      NotificationType.WARNING);
     notification.addAction(new OpenProjectSettingsAction(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -76,8 +70,9 @@ public class SonarLintProjectNotifications {
     }
     var notification = BINDING_PROBLEM_GROUP.createNotification(
       TITLE_SONARLINT_INVALID_BINDING,
+      NO_SUBTITLE,
       "Project bound to an invalid remote project" + UPDATE_BINDING_MSG,
-      NotificationType.WARNING, null);
+      NotificationType.WARNING);
     notification.addAction(new OpenProjectSettingsAction(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -90,8 +85,9 @@ public class SonarLintProjectNotifications {
     }
     var notification = BINDING_PROBLEM_GROUP.createNotification(
       TITLE_SONARLINT_INVALID_BINDING,
+      NO_SUBTITLE,
       "Local storage is outdated" + UPDATE_BINDING_MSG,
-      NotificationType.WARNING, null);
+      NotificationType.WARNING);
     notification.addAction(new OpenProjectSettingsAction(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -104,8 +100,9 @@ public class SonarLintProjectNotifications {
     }
     var notification = BINDING_PROBLEM_GROUP.createNotification(
       TITLE_SONARLINT_INVALID_BINDING,
+      NO_SUBTITLE,
       "Missing local storage for connection '" + serverId + "'" + UPDATE_SERVER_MSG,
-      NotificationType.WARNING, null);
+      NotificationType.WARNING);
     notification.addAction(new OpenGlobalSettingsAction(myProject));
     notification.setImportant(true);
     notification.notify(myProject);
@@ -118,8 +115,9 @@ public class SonarLintProjectNotifications {
     }
     var notification = BINDING_PROBLEM_GROUP.createNotification(
       TITLE_SONARLINT_INVALID_BINDING,
+      NO_SUBTITLE,
       "Local storage for connection '" + serverId + "' must be updated" + UPDATE_SERVER_MSG,
-      NotificationType.WARNING, null);
+      NotificationType.WARNING);
     notification.addAction(new OpenGlobalSettingsAction(myProject));
     notification.setImportant(true);
     notification.notify(myProject);

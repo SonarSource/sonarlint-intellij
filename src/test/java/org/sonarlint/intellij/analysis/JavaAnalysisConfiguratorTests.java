@@ -90,8 +90,8 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
       @Override
       public void configureModule(@NotNull Module module, @NotNull ModifiableRootModel model, @NotNull ContentEntry contentEntry) {
         super.configureModule(module, model, contentEntry);
-        compilerOutputDirFile = tempDir.newFolder("compiler,OutputDir");
-        compilerTestOutputDirFile = tempDir.newFolder("compilerTestOutputDir");
+        compilerOutputDirFile = tempDir.newDirectory("compiler,OutputDir");
+        compilerTestOutputDirFile = tempDir.newDirectory("compilerTestOutputDir");
         // Set compiler outputs
         setCompilerOutputs(model, compilerOutputDirFile, compilerTestOutputDirFile);
         // Add some libraries
@@ -110,8 +110,8 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
         nonExportedLibFile = tempDir.newFile(MY_NON_EXPORTED_LIB_JAR);
 
         ModuleRootModificationUtil.updateModel(dependentModule, dependentModel -> {
-          dependentModCompilerOutputDirFile = tempDir.newFolder("depCompilerOutputDir");
-          dependentModCompilerTestOutputDirFile = tempDir.newFolder("depCompilerTestOutputDir");
+          dependentModCompilerOutputDirFile = tempDir.newDirectory("depCompilerOutputDir");
+          dependentModCompilerTestOutputDirFile = tempDir.newDirectory("depCompilerTestOutputDir");
           setCompilerOutputs(dependentModel, dependentModCompilerOutputDirFile, dependentModCompilerTestOutputDirFile);
 
           addLibrary(nonExportedLibFile, "myNonExportedLib", dependentModel, DependencyScope.COMPILE, false);
@@ -125,7 +125,7 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
         exportedLibInTestDependentModuleFile = tempDir.newFile(MY_EXPORTED_TEST_LIB_JAR);
 
         ModuleRootModificationUtil.updateModel(testDependentModule, dependentModel -> {
-          testDependentModCompilerOutputDirFile = tempDir.newFolder("testDepCompilerOutputDir");
+          testDependentModCompilerOutputDirFile = tempDir.newDirectory("testDepCompilerOutputDir");
           setCompilerOutputs(dependentModel, testDependentModCompilerOutputDirFile, null);
 
           addLibrary(exportedLibInTestDependentModuleFile, "myExportedTestLib", dependentModel, DependencyScope.COMPILE, true);

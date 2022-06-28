@@ -21,6 +21,7 @@ package org.sonarlint.intellij.notifications;
 
 import com.intellij.notification.NotificationAction;
 import com.intellij.notification.NotificationGroup;
+import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationListener;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
@@ -40,7 +41,8 @@ import static java.util.stream.Collectors.toSet;
 
 public class AnalysisRequirementNotifications {
 
-  private static final NotificationGroup ANALYZER_REQUIREMENT_GROUP = NotificationGroup.balloonGroup("SonarLint: Analyzer Requirement");
+  private static final NotificationGroup ANALYZER_REQUIREMENT_GROUP = NotificationGroupManager.getInstance()
+    .getNotificationGroup("SonarLint: Analyzer Requirement");
 
   private static final Set<String> alreadyNotified = new HashSet<>();
 

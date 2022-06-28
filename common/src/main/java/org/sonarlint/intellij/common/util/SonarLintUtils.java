@@ -21,8 +21,8 @@ package org.sonarlint.intellij.common.util;
 
 import com.intellij.lang.Language;
 import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ApplicationNamesInfo;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
@@ -56,14 +56,14 @@ public class SonarLintUtils {
   }
 
   public static <T> T getService(Class<T> clazz) {
-    var t = ServiceManager.getService(clazz);
+    var t = ApplicationManager.getApplication().getService(clazz);
     logAndThrowIfServiceNotFound(t, clazz.getName());
 
     return t;
   }
 
   public static <T> T getService(@NotNull Project project, Class<T> clazz) {
-    var t = ServiceManager.getService(project, clazz);
+    var t = project.getService(clazz);
     logAndThrowIfServiceNotFound(t, clazz.getName());
 
     return t;

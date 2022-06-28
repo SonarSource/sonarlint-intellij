@@ -20,12 +20,14 @@
 package org.sonarlint.intellij.notifications;
 
 import com.intellij.notification.NotificationGroup;
+import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.project.Project;
 
 public class SecretsNotifications {
 
-  public static final NotificationGroup GROUP = NotificationGroup.balloonGroup("SonarLint: Secrets detection");
+  public static final NotificationGroup GROUP = NotificationGroupManager.getInstance()
+    .getNotificationGroup("SonarLint: Secrets detection");
 
   private SecretsNotifications() {
     // utility class

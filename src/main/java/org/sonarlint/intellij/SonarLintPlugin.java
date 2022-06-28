@@ -20,7 +20,7 @@
 package org.sonarlint.intellij;
 
 import com.intellij.ide.plugins.IdeaPluginDescriptor;
-import com.intellij.ide.plugins.PluginManager;
+import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.extensions.PluginId;
 import java.nio.file.Path;
@@ -34,12 +34,12 @@ public class SonarLintPlugin implements Disposable {
   }
 
   public Path getPath() {
-    return getPlugin().getPath().toPath();
+    return getPlugin().getPluginPath();
   }
 
   private IdeaPluginDescriptor getPlugin() {
     if (plugin == null) {
-      plugin = PluginManager.getPlugin(PluginId.getId("org.sonarlint.idea"));
+      plugin = PluginManagerCore.getPlugin(PluginId.getId("org.sonarlint.idea"));
     }
     return plugin;
   }

@@ -254,7 +254,7 @@ open class BaseUiTest {
             tree {
                 waitUntilLoaded()
                 // little trick to check if the search has been applied
-                waitFor(Duration.ofSeconds(10), Duration.ofSeconds(1)) { collectRows().size in 1..8 }
+                waitFor(Duration.ofSeconds(10), Duration.ofSeconds(1)) { collectRows().size in 1..10 }
                 clickPath("Tools", "SonarLint")
             }
 

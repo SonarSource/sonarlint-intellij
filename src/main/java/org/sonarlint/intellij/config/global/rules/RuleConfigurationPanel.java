@@ -39,14 +39,13 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.SideBorder;
 import com.intellij.ui.TitledSeparator;
 import com.intellij.ui.TreeSpeedSearch;
+import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBLoadingPanel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.fields.ExpandableTextField;
-import com.intellij.ui.components.labels.LinkLabel;
-import com.intellij.util.containers.Queue;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
@@ -61,6 +60,7 @@ import java.awt.GridLayout;
 import java.beans.PropertyChangeListener;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -476,10 +476,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     private ConfigPanelState(@Nullable JComponent optionsPanel) {
       myOptionsPanel = optionsPanel;
       if (myOptionsPanel != null) {
-        var q = new Queue<Component>(1);
+        var q = new ArrayDeque<Component>(1);
         q.addLast(optionsPanel);
         while (!q.isEmpty()) {
-          final var current = q.pullFirst();
+          final var current = q.pollFirst();
           current.addPropertyChangeListener("enabled", getChangeListener(current));
           if (current.isEnabled()) {
             myEnableRequiredComponent.add(current);
@@ -712,7 +712,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     if (paths == null) {
       return Collections.emptyList();
     }
-    final var q = new Queue<RulesTreeNode>(paths.length);
+    final var q = new ArrayDeque<RulesTreeNode>(paths.length);
     for (final TreePath path : paths) {
       if (path != null) {
         q.addLast((RulesTreeNode) path.getLastPathComponent());
@@ -721,10 +721,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     return getRulesNodes(q);
   }
 
-  private static List<RulesTreeNode.Rule> getRulesNodes(final Queue<RulesTreeNode> queue) {
+  private static List<RulesTreeNode.Rule> getRulesNodes(final ArrayDeque<RulesTreeNode> queue) {
     final var nodes = new ArrayList<RulesTreeNode.Rule>();
     while (!queue.isEmpty()) {
-      final var node = queue.pullFirst();
+      final var node = queue.pollFirst();
       if (node instanceof RulesTreeNode.Language) {
         for (var i = 0; i < node.getChildCount(); i++) {
           final var childNode = (RulesTreeNode) node.getChildAt(i);
@@ -738,7 +738,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private class RulesParamsSeparator extends JPanel {
-    private final LinkLabel<?> myDefaultsLink;
+    private final ActionLink myDefaultsLink;
 
     RulesParamsSeparator() {
       setLayout(new GridBagLayout());
@@ -752,7 +752,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       add(new JSeparator(SwingConstants.HORIZONTAL), separatorConstraints);
       var defaultLabelConstraints = new GridBagConstraints(2, 0, 0, 1, 0, 1, GridBagConstraints.EAST, GridBagConstraints.NONE, JBUI.emptyInsets(), 0, 0);
 
-      myDefaultsLink = LinkLabel.create("Defaults", () -> {
+      myDefaultsLink = new ActionLink("Defaults", event -> {
         var node = getStrictlySelectedToolNode();
         if (node != null) {
           node.getCustomParams().clear();

@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.ProjectCoreUtil;
-import com.intellij.openapi.vfs.VfsUtil;
+import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
 import icons.SonarLintIcons;
@@ -94,7 +94,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
     var hasProject = Stream.of(files)
       .anyMatch(f -> f.getPath().equals(project.getBasePath()));
 
-    if (hasProject && !SonarAnalyzeAllFilesAction.showWarning()) {
+    if (hasProject && !SonarAnalyzeAllFilesAction.showWarning(project)) {
       return;
     }
 
@@ -102,7 +102,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       .flatMap(f -> {
         if (f.isDirectory()) {
           var visitor = new CollectFilesVisitor();
-          VfsUtil.visitChildrenRecursively(f, visitor);
+          VfsUtilCore.visitChildrenRecursively(f, visitor);
           return visitor.files.stream();
         } else {
           return Stream.of(f);

@@ -19,6 +19,8 @@
  */
 package org.sonarlint.intellij.issue.hotspot
 
+import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -84,10 +86,11 @@ open class SecurityHotspotShowRequestHandler(
   }
 
   open fun showBalloon(project: Project, message: String, action: AnAction) {
-    val notification = SecurityHotspotNotifications.GROUP.createNotification(
+    val notification = GROUP.createNotification(
       NOTIFICATION_TITLE,
+      null,
       message,
-      NotificationType.ERROR, null
+      NotificationType.ERROR
     )
     notification.isImportant = true
     notification.addAction(action)
@@ -97,5 +100,9 @@ open class SecurityHotspotShowRequestHandler(
   private fun openFile(project: Project, location: Location) {
     OpenFileDescriptor(project, location.file!!, location.range?.startOffset ?: 0)
       .navigate(true)
+  }
+
+  companion object {
+      val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Open in IDE")
   }
 }

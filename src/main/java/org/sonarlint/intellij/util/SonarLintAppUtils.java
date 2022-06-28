@@ -51,7 +51,7 @@ public class SonarLintAppUtils {
       if (!project.isOpen()) {
         return null;
       }
-      return ProjectFileIndex.SERVICE.getInstance(project).getModuleForFile(file, false);
+      return ProjectFileIndex.getInstance(project).getModuleForFile(file, false);
     });
   }
 

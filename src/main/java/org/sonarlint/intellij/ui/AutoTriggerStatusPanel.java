@@ -24,7 +24,6 @@ import com.intellij.codeInsight.hint.HintUtil;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
-import com.intellij.ui.GuiUtils;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.awt.RelativePoint;
@@ -68,7 +67,7 @@ public class AutoTriggerStatusPanel {
   }
 
   private void switchCard(String cardName) {
-    GuiUtils.invokeLaterIfNeeded(() -> layout.show(panel, cardName), ModalityState.defaultModalityState());
+    ApplicationManager.getApplication().invokeLater(() -> layout.show(panel, cardName), ModalityState.defaultModalityState());
   }
 
   private void switchCards() {
