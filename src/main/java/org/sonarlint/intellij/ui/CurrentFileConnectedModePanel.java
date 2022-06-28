@@ -26,7 +26,6 @@ import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindowManager;
-import com.intellij.ui.GuiUtils;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.TooltipWithClickableLinks;
 import icons.SonarLintIcons;
@@ -74,7 +73,7 @@ public class CurrentFileConnectedModePanel {
     switchCards();
     CurrentFileStatusPanel.subscribeToEventsThatAffectCurrentFile(project, this::switchCards);
     project.getMessageBus().connect(project).subscribe(VcsListener.TOPIC,
-      (module, branchName) -> GuiUtils.invokeLaterIfNeeded(this::switchCards, ModalityState.defaultModalityState()));
+      (module, branchName) -> ApplicationManager.getApplication().invokeLater(this::switchCards, ModalityState.defaultModalityState()));
   }
 
   private void createPanel() {
@@ -204,7 +203,7 @@ public class CurrentFileConnectedModePanel {
   }
 
   private void switchCard(String cardName) {
-    GuiUtils.invokeLaterIfNeeded(() -> layout.show(panel, cardName), ModalityState.defaultModalityState());
+    ApplicationManager.getApplication().invokeLater(() -> layout.show(panel, cardName), ModalityState.defaultModalityState());
   }
 
   JPanel getPanel() {

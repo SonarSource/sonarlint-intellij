@@ -240,6 +240,19 @@
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <postStartupActivity implementation="org.sonarlint.intellij.fs.EditorFileChangeListener"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.SonarLintSubmitter"/>
+        <notificationGroup id="SonarLint: Server Binding Errors"
+                           displayType="BALLOON"/>
+        <notificationGroup id="SonarLint: Analyzer Requirement"
+                           displayType="BALLOON"/>
+        <notificationGroup id="SonarLint: Secrets detection"
+                           displayType="BALLOON"/>
+        <notificationGroup id="SonarLint: Taint vulnerabilities"
+                           displayType="BALLOON"/>
+        <notificationGroup id="SonarLint: Open in IDE"
+                           displayType="BALLOON"/>
+        <notificationGroup id="SonarLint: Server Notifications"
+                           displayType="STICKY_BALLOON"/>
+
     </extensions>
 
     <extensionPoints>

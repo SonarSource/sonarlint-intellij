@@ -21,7 +21,7 @@ package org.sonarlint.intellij.java;
 
 import com.intellij.compiler.CompilerConfiguration;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.module.EffectiveLanguageLevelUtil;
+import com.intellij.openapi.module.LanguageLevelUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.projectRoots.JdkUtil;
 import com.intellij.openapi.projectRoots.Sdk;
@@ -101,7 +101,7 @@ public class JavaAnalysisConfigurator implements AnalysisConfigurator {
 
   private static void configureJavaSourceTarget(final Module ijModule, Map<String, String> properties) {
     var languageLevel = ApplicationManager.getApplication()
-      .<LanguageLevel>runReadAction(() -> EffectiveLanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
+      .<LanguageLevel>runReadAction(() -> LanguageLevelUtil.getEffectiveLanguageLevel(ijModule));
     final var languageLevelStr = getLanguageLevelOption(languageLevel);
     var bytecodeTarget = CompilerConfiguration.getInstance(ijModule.getProject()).getBytecodeTargetLevel(ijModule);
     if (isEmpty(bytecodeTarget)) {

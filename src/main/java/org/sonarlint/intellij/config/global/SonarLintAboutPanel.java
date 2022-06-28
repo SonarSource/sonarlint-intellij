@@ -93,7 +93,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
   private JComponent createTelemetryPanel() {
     // tooltip
     final var link = new HyperlinkLabel("");
-    link.setHyperlinkText("See a ", "sample of the data", "");
+    link.setTextWithHyperlink("See a <hyperlink>sample of the data</hyperlink>");
     link.addHyperlinkListener(new HyperlinkAdapter() {
       @Override
       protected void hyperlinkActivated(HyperlinkEvent e) {

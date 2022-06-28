@@ -19,15 +19,17 @@
  */
 package org.sonarlint.intellij.issue.vulnerabilities
 
+import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.ui.GuiUtils
 import org.sonarlint.intellij.actions.RefreshTaintVulnerabilitiesAction
 import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.ui.SonarLintConsole
@@ -93,7 +95,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
           }
           val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
           currentVulnerabilitiesByFile = if (status is FoundTaintVulnerabilities) status.byFile else emptyMap()
-          GuiUtils.invokeLaterIfNeeded({
+          ApplicationManager.getApplication().invokeLater({
             getService(project, SonarLintToolWindow::class.java).populateTaintVulnerabilitiesTab(status)
             // annotate the code with intention actions
             if (!status.isEmpty()) {
@@ -105,7 +107,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
   }
 
   private fun showBalloon(project: Project, message: String, action: AnAction) {
-    val notification = TaintVulnerabilitiesNotifications.GROUP.createNotification(
+    val notification = GROUP.createNotification(
       "Taint vulnerabilities",
       message,
       NotificationType.ERROR, null)
@@ -113,5 +115,9 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     notification.addAction(action)
     notification.notify(project)
   }
+
+    companion object {
+        val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Taint vulnerabilities")
+    }
 
 }

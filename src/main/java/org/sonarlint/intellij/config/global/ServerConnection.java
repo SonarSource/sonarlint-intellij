@@ -19,17 +19,14 @@
  */
 package org.sonarlint.intellij.config.global;
 
-import com.google.common.base.Objects;
-import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
-
+import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import javax.swing.Icon;
-
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.http.ApacheHttpClient;
 import org.sonarsource.sonarlint.core.commons.http.HttpClient;
@@ -94,19 +91,19 @@ public class ServerConnection {
     }
     var other = (ServerConnection) o;
 
-    return Comparing.equal(getHostUrl(), other.getHostUrl()) &&
-      Comparing.equal(getPassword(), other.getPassword()) &&
-      Comparing.equal(getToken(), other.getToken()) &&
-      Comparing.equal(getLogin(), other.getLogin()) &&
-      Comparing.equal(getName(), other.getName()) &&
-      Comparing.equal(getOrganizationKey(), other.getOrganizationKey()) &&
-      Comparing.equal(enableProxy(), other.enableProxy()) &&
-      Comparing.equal(isDisableNotifications(), other.isDisableNotifications());
+    return Objects.equals(getHostUrl(), other.getHostUrl()) &&
+      Objects.equals(getPassword(), other.getPassword()) &&
+      Objects.equals(getToken(), other.getToken()) &&
+      Objects.equals(getLogin(), other.getLogin()) &&
+      Objects.equals(getName(), other.getName()) &&
+      Objects.equals(getOrganizationKey(), other.getOrganizationKey()) &&
+      Objects.equals(enableProxy(), other.enableProxy()) &&
+      Objects.equals(isDisableNotifications(), other.isDisableNotifications());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hashCode(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, disableNotifications);
+    return Objects.hash(getHostUrl(), getPassword(), getToken(), getLogin(), getOrganizationKey(), getName(), enableProxy, disableNotifications);
   }
 
   public boolean isDisableNotifications() {
