@@ -144,6 +144,11 @@ stages:
           set -euo pipefail
           VERSION=$(cat gradle.properties | grep version | awk -F= '{print $2}')
           echo "Current project version is $VERSION"
+
+          # Remove -SNAPSHOT suffix
+          VERSION=`echo $VERSION | sed "s/-.*//g"`
+
+          echo "WhiteSource project version is $VERSION"          
           echo "##vso[task.setvariable variable=WHITESOURCE_PROJECT_VERSION]$VERSION"
         name: getWhiteSourceProjectVersion
         displayName: Get WhiteSource project version
