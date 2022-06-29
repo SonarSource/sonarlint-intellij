@@ -26,13 +26,11 @@ import com.intellij.lang.annotation.AnnotationHolder;
 import com.intellij.lang.annotation.ExternalAnnotator;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.editor.colors.TextAttributesKey;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.psi.PsiFile;
 import java.util.ArrayList;
-import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -64,7 +62,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .filter(issue -> !issue.isResolved())
       .forEach(issue -> {
         // reject ranges that are no longer valid. It probably means that they were deleted from the file, or the file was deleted
-        var validTextRange = getValidTextRange(issue);
+        var validTextRange = issue.getValidTextRange();
         if (validTextRange != null) {
           addAnnotation(project, issue, validTextRange, holder);
         }
@@ -75,17 +73,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
         .getOrDefault(file.getVirtualFile(), emptyList())
         .forEach(vulnerability -> addAnnotation(vulnerability, holder));
     }
-  }
-
-  @CheckForNull
-  private static TextRange getValidTextRange(LiveIssue issue) {
-    var rangeMarker = issue.getRange();
-    if (rangeMarker == null && issue.psiFile().isValid()) {
-      return issue.psiFile().getTextRange();
-    } else if (rangeMarker != null && rangeMarker.isValid()) {
-      return createTextRange(rangeMarker);
-    }
-    return null;
   }
 
   private static boolean shouldSkip(@NotNull PsiFile file) {
@@ -135,12 +122,8 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
   }
 
   private static void addAnnotation(LocalTaintVulnerability vulnerability, AnnotationHolder annotationHolder) {
-    var rangeMarker = vulnerability.rangeMarker();
-    if (rangeMarker == null) {
-      return;
-    }
-    var textRange = createTextRange(rangeMarker);
-    if (textRange.isEmpty()) {
+    var textRange = vulnerability.getValidTextRange();
+    if (textRange == null) {
       return;
     }
     annotationHolder.newAnnotation(getSeverity(vulnerability.severity()), vulnerability.message())
@@ -194,10 +177,6 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     return SonarLintSeverity.byName(severity).highlightSeverity();
-  }
-
-  private static TextRange createTextRange(RangeMarker rangeMarker) {
-    return new TextRange(rangeMarker.getStartOffset(), rangeMarker.getEndOffset());
   }
 
   public static class AnnotationContext {

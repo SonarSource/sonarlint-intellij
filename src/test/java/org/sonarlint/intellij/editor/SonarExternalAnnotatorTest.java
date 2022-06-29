@@ -31,6 +31,7 @@ import com.intellij.psi.PsiFile;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -107,6 +108,43 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
     }
   }
 
+  @Test
+  public void should_not_annotate_issue_with_invalid_text_range_offset() {
+    when(psiFile.isValid()).thenReturn(true);
+    var range = mock(RangeMarker.class);
+    when(range.getStartOffset()).thenReturn(1);
+    when(range.getEndOffset()).thenReturn(0);
+    when(range.isValid()).thenReturn(true);
+    when(range.getDocument()).thenReturn(document);
+    when(document.getText(any(TextRange.class))).thenReturn("foo");
+    var issueWithWrongTextRange = mock(LiveIssue.class);
+    when(issueWithWrongTextRange.getRange()).thenReturn(range);
+    when(store.getForFile(virtualFile)).thenReturn(List.of(issueWithWrongTextRange));
+
+    holder.applyExternalAnnotatorWithContext(psiFile, annotator, ctx);
+
+    assertThat(holder).isEmpty();
+  }
+
+  @Test
+  public void should_not_annotate_issue_with_overlapping_text_range() {
+    when(psiFile.isValid()).thenReturn(true);
+    when(psiFile.getTextRange()).thenReturn(new TextRange(0, 5));
+    var range = mock(RangeMarker.class);
+    when(range.getStartOffset()).thenReturn(2);
+    when(range.getEndOffset()).thenReturn(6);
+    when(range.isValid()).thenReturn(true);
+    when(range.getDocument()).thenReturn(document);
+    when(document.getText(any(TextRange.class))).thenReturn("foo");
+    var issueWithWrongTextRange = mock(LiveIssue.class);
+    when(issueWithWrongTextRange.getRange()).thenReturn(range);
+    when(store.getForFile(virtualFile)).thenReturn(List.of(issueWithWrongTextRange));
+
+    holder.applyExternalAnnotatorWithContext(psiFile, annotator, ctx);
+
+    assertThat(holder).isEmpty();
+  }
+
   private void createFileIssues(int number) {
     Collection<LiveIssue> issues = new LinkedList<>();
 
@@ -141,6 +179,9 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
     when(range.isValid()).thenReturn(true);
     when(range.getDocument()).thenReturn(document);
     when(document.getText(any(TextRange.class))).thenReturn(text);
-    return new LiveIssue(issue, mock(PsiFile.class), range, null, Collections.emptyList());
+    var psiFile = mock(PsiFile.class);
+    when(psiFile.isValid()).thenReturn(true);
+    when(psiFile.getTextRange()).thenReturn(new TextRange(rangeStart, rangeEnd));
+    return new LiveIssue(issue, psiFile, range, null, Collections.emptyList());
   }
 }

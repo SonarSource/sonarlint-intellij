@@ -141,6 +141,32 @@ public class LiveIssue implements Trackable {
     return range;
   }
 
+  @CheckForNull
+  public TextRange getValidTextRange() {
+    return toValidTextRange(psiFile, range);
+  }
+
+  @CheckForNull
+  public static TextRange toValidTextRange(@Nullable PsiFile psiFile, @Nullable RangeMarker rangeMarker) {
+    if (psiFile == null || !psiFile.isValid()) {
+      return null;
+    }
+    if (rangeMarker == null) {
+      return psiFile.getTextRange();
+    }
+    if (rangeMarker.isValid()) {
+      var startOffset = rangeMarker.getStartOffset();
+      var endOffset = rangeMarker.getEndOffset();
+      if (startOffset < endOffset && startOffset >= 0) {
+        var textRange = new TextRange(startOffset, endOffset);
+        if (psiFile.getTextRange().contains(textRange)) {
+          return textRange;
+        }
+      }
+    }
+    return null;
+  }
+
   public PsiFile psiFile() {
     return psiFile;
   }
