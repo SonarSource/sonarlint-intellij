@@ -134,19 +134,21 @@ public class LocalFileExclusions {
 
   private ExcludeResult checkFileInSourceFolders(VirtualFile file, Module module) {
     var fileIndex = ProjectRootManager.getInstance(myProject).getFileIndex();
-    var sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
-    if (sourceFolder != null) {
-      if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
-        return ExcludeResult.excluded("file is classified as generated in project structure");
+    return ReadAction.compute(() -> {
+      var sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
+      if (sourceFolder != null) {
+        if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
+          return ExcludeResult.excluded("file is classified as generated in project structure");
+        }
+        if (SonarLintUtils.isJavaResource(sourceFolder)) {
+          return ExcludeResult.excluded("file is classified as Java resource in project structure");
+        }
       }
-      if (SonarLintUtils.isJavaResource(sourceFolder)) {
-        return ExcludeResult.excluded("file is classified as Java resource in project structure");
-      }
-    }
 
-    // the fact that the file doesn't explicitly belong to sources doesn't mean it's not sources.
-    // In WebStorm, for example, everything is considered to be sources unless it is explicitly marked otherwise.
-    return ExcludeResult.notExcluded();
+      // the fact that the file doesn't explicitly belong to sources doesn't mean it's not sources.
+      // In WebStorm, for example, everything is considered to be sources unless it is explicitly marked otherwise.
+      return ExcludeResult.notExcluded();
+    });
   }
 
   public Map<Module, Collection<VirtualFile>> retainNonExcludedFilesByModules(Collection<VirtualFile> files, boolean forcedAnalysis,
