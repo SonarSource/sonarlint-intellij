@@ -89,7 +89,7 @@ class RequestProcessorTest : AbstractSonarLintLightTests() {
         val result = underTest.processRequest(request)
 
         assertThat(result).isInstanceOf(Success::class.java)
-        assertThat((result as Success).body).isEqualTo("{\"ideName\":\"Version name\",\"description\":\"Full version (Community Edition) - light_temp\"}")
+        assertThat((result as Success).body).isEqualTo("{\"ideName\":\"Version name\",\"description\":\"Full version (Community Edition) - " + project.name + "\"}")
     }
 
     @Test

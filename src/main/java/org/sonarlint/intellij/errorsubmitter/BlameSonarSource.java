@@ -72,7 +72,7 @@ public class BlameSonarSource extends ErrorReportSubmitter {
   public boolean submit(@NotNull IdeaLoggingEvent[] events,
     @Nullable String additionalInfo,
     @NotNull Component parentComponent,
-    @NotNull Consumer<SubmittedReportInfo> consumer) {
+    @NotNull Consumer<? super SubmittedReportInfo> consumer) {
     String body = buildBody(events, additionalInfo);
     BrowserUtil.browse(getReportWithBodyUrl(body));
     consumer.consume(new SubmittedReportInfo(COMMUNITY_FAULT_CATEGORY_URL, "community support thread", SubmittedReportInfo.SubmissionStatus.NEW_ISSUE));

@@ -24,6 +24,7 @@ import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vcs.VcsDirectoryMapping
+import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.testFramework.PsiTestUtil
 import git4idea.GitVcs
 import org.assertj.core.api.Assertions.assertThat
@@ -44,11 +45,12 @@ import java.util.Optional
 
 internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
 
-    private val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
+    private lateinit var connectedEngine : ConnectedSonarLintEngine
     private lateinit var vcsService: DefaultVcsService
 
     override fun setUp() {
         super.setUp()
+        connectedEngine = mock(ConnectedSonarLintEngine::class.java)
         vcsService = DefaultVcsService(project, ImmediateExecutorService())
         replaceProjectService(VcsService::class.java, vcsService)
     }
@@ -143,7 +145,7 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
     }
 
     @Test
-    fun test_should_resolve_closest_server_branch_when_module_is_bound_and_current_branch_unknown_on_server() {
+    fun test_should_resolve_closest_server_branch() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
@@ -248,10 +250,10 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         // this .git folder contains a repo with 2 branches: master and branch1 (current)
         FileUtil.copyDir(getTestDataPath().resolve("git/").toFile(), contentRootBasePath.resolve(".git/"))
         val rootVf = refreshAndFindFile(contentRootBasePath)
-        refreshRecursively(rootVf)
         val rootPath = rootVf.path
-        val vcsManager = ProjectLevelVcsManager.getInstance(project)
-        vcsManager.directoryMappings = vcsManager.directoryMappings + listOf(VcsDirectoryMapping(rootPath, GitVcs.NAME))
         PsiTestUtil.addContentRoot(module, rootVf)
+        val vcsManager = ProjectLevelVcsManager.getInstance(project) as ProjectLevelVcsManagerImpl
+        vcsManager.directoryMappings = vcsManager.directoryMappings + listOf(VcsDirectoryMapping(rootPath, GitVcs.NAME))
+        vcsManager.waitForInitialized()
     }
 }

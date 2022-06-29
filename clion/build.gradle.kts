@@ -3,6 +3,7 @@ val clionBuildVersion: String by project
 
 intellij {
     version.set(clionBuildVersion)
+    plugins.set(listOf("com.intellij.clion", "com.intellij.cidr.base", "com.intellij.cidr.lang"))
 }
 
 dependencies {

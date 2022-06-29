@@ -24,6 +24,7 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.Notifications;
 import com.intellij.notification.NotificationsAdapter;
 import com.intellij.notification.NotificationsManager;
+import com.intellij.util.messages.MessageBusConnection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +51,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
   final Map<ClientInputFile, Language> detectedLang = new HashMap<>();
 
   private List<Notification> notifications;
+  private @NotNull MessageBusConnection busConnection;
 
   @Before
   public void before() {
@@ -58,7 +60,8 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
     // register a listener to catch all notifications
     notifications = Lists.newCopyOnWriteArrayList();
     var project = getProject();
-    project.getMessageBus().connect(project).subscribe(Notifications.TOPIC, new NotificationsAdapter() {
+    busConnection = project.getMessageBus().connect(project);
+    busConnection.subscribe(Notifications.TOPIC, new NotificationsAdapter() {
       @Override
       public void notify(@NotNull Notification notification) {
         notifications.add(notification);
@@ -76,6 +79,7 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
     var mgr = NotificationsManager.getNotificationsManager();
     var notifications = mgr.getNotificationsOfType(Notification.class, getProject());
     Stream.of(notifications).forEach(mgr::expire);
+    busConnection.disconnect();
   }
 
   @Test

@@ -73,7 +73,7 @@ public class IssueTree extends Tree implements DataProvider {
     group.add(new ExcludeFileAction("Exclude file(s) from automatic analysis"));
     group.add(new DisableRuleAction());
 
-    PopupHandler.installPopupHandler(this, group, ActionPlaces.TODO_VIEW_POPUP, ActionManager.getInstance());
+    PopupHandler.installPopupHandler(this, group, ActionPlaces.TODO_VIEW_POPUP);
 
     EditSourceOnDoubleClickHandler.install(this);
     EditSourceOnEnterKeyHandler.install(this);

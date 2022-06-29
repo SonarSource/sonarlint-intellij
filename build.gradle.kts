@@ -118,7 +118,7 @@ intellij {
 
 tasks.runPluginVerifier {
     // Test oldest supported, and latest
-    ideVersions.set(listOf("IC-2020.1.1", "IC-2021.3"))
+    ideVersions.set(listOf("IC-2020.3.4", "IC-2021.3"))
     failureLevel.set(
         EnumSet.complementOf(
             EnumSet.of(
@@ -213,6 +213,8 @@ dependencies {
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766")
     }
     "typescript"("typescript:typescript:$typescriptVersion@tgz")
+    // workaround for light tests in 2020.3, might remove later
+    testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")
 }
 
 tasks {
