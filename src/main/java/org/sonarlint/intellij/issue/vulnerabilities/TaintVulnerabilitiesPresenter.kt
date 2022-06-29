@@ -88,6 +88,9 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     ProgressManager.getInstance()
       .run(object : Task.Backgroundable(project, "Loading taint vulnerabilities...", false, ALWAYS_BACKGROUND) {
         override fun run(indicator: ProgressIndicator) {
+          if (project.isDisposed) {
+            return
+          }
           val status = TaintVulnerabilitiesLoader.getTaintVulnerabilitiesByOpenedFiles(project)
           currentVulnerabilitiesByFile = if (status is FoundTaintVulnerabilities) status.byFile else emptyMap()
           GuiUtils.invokeLaterIfNeeded({
