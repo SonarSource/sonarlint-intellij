@@ -204,8 +204,9 @@ class ProjectServerNotificationsSubscriber : Disposable {
           val wizard = ServerConnectionWizard.forNotificationsEdition(connectionToEdit)
           if (wizard.showAndGet()) {
             val editedConnection = wizard.connection
-            val serverConnections = Settings.getGlobalSettings().serverConnections
+            val serverConnections = Settings.getGlobalSettings().serverConnections.toMutableList()
             serverConnections[serverConnections.indexOf(connectionToEdit)] = editedConnection
+            Settings.getGlobalSettings().serverConnections = serverConnections
             registerAsync()
           }
         } else if (e.project != null) {
