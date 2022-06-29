@@ -78,7 +78,7 @@ public class SonarCancelActionTest extends HeavyPlatformTestCase {
     var project = ProjectManager.getInstance().createProject("project", projectDir.getAbsolutePath());
     disposeOnTearDown(project);
     var projectManager = ProjectManager.getInstance();
-    var reloaded = projectManager.loadAndOpenProject(projectDir);
+    var reloaded = projectManager.loadAndOpenProject(projectDir.getAbsolutePath());
     disposeOnTearDown(reloaded);
     event = SonarLintTestUtils.createAnActionEvent(reloaded);
     when(event.getPresentation()).thenReturn(presentation);

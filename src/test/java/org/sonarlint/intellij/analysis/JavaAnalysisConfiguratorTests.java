@@ -25,8 +25,10 @@ import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.CompilerModuleExtension;
 import com.intellij.openapi.roots.ContentEntry;
 import com.intellij.openapi.roots.DependencyScope;
+import com.intellij.openapi.roots.LibraryOrderEntry;
 import com.intellij.openapi.roots.ModifiableRootModel;
 import com.intellij.openapi.roots.ModuleRootModificationUtil;
+import com.intellij.openapi.roots.OrderEntry;
 import com.intellij.openapi.roots.OrderRootType;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.openapi.vfs.JarFileSystem;
@@ -40,7 +42,6 @@ import com.intellij.testFramework.VfsTestUtil;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import com.intellij.testFramework.rules.TempDirectory;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -89,71 +90,63 @@ public class JavaAnalysisConfiguratorTests extends AbstractSonarLintLightTests {
       @Override
       public void configureModule(@NotNull Module module, @NotNull ModifiableRootModel model, @NotNull ContentEntry contentEntry) {
         super.configureModule(module, model, contentEntry);
-        try {
-          compilerOutputDirFile = tempDir.newFolder("compiler,OutputDir");
-          compilerTestOutputDirFile = tempDir.newFolder("compilerTestOutputDir");
-          // Set compiler outputs
-          setCompilerOutputs(model, compilerOutputDirFile, compilerTestOutputDirFile);
-          // Add some libraries
-          // Production lib
-          guavaLibFile = tempDir.newFile(GUAVA_LIB_JAR);
-          var guavaLib = PsiTestUtil.addLibrary(model, "guava", guavaLibFile.getParent(), guavaLibFile.getName());
-          final var guavaLibOrderEntry = model.findLibraryOrderEntry(guavaLib);
-          guavaLibOrderEntry.setScope(DependencyScope.COMPILE);
-          // Test lib
-          junitLibFile = tempDir.newFile(JUNIT_LIB_JAR);
-          var junitLib = PsiTestUtil.addLibrary(model, "junit", junitLibFile.getParent(), junitLibFile.getName());
-          final var junitLibOrderEntry = model.findLibraryOrderEntry(junitLib);
-          junitLibOrderEntry.setScope(DependencyScope.TEST);
+        compilerOutputDirFile = tempDir.newFolder("compiler,OutputDir");
+        compilerTestOutputDirFile = tempDir.newFolder("compilerTestOutputDir");
+        // Set compiler outputs
+        setCompilerOutputs(model, compilerOutputDirFile, compilerTestOutputDirFile);
+        // Add some libraries
+        // Production lib
+        guavaLibFile = tempDir.newFile(GUAVA_LIB_JAR);
+        addLibrary(guavaLibFile, "guava", model, DependencyScope.COMPILE, false);
+        // Test lib
+        junitLibFile = tempDir.newFile(JUNIT_LIB_JAR);
+        addLibrary(junitLibFile, "junit", model, DependencyScope.TEST, false);
 
-          // Dependent module with compile scope
-          var dependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "dependent.iml"));
-          final var moduleOrderEntry = model.addModuleOrderEntry(dependentModule);
-          moduleOrderEntry.setScope(DependencyScope.COMPILE);
-          exportedLibInDependentModuleFile = tempDir.newFile(MY_EXPORTED_LIB_JAR);
-          nonExportedLibFile = tempDir.newFile(MY_NON_EXPORTED_LIB_JAR);
+        // Dependent module with compile scope
+        var dependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "dependent.iml"));
+        final var moduleOrderEntry = model.addModuleOrderEntry(dependentModule);
+        moduleOrderEntry.setScope(DependencyScope.COMPILE);
+        exportedLibInDependentModuleFile = tempDir.newFile(MY_EXPORTED_LIB_JAR);
+        nonExportedLibFile = tempDir.newFile(MY_NON_EXPORTED_LIB_JAR);
 
-          ModuleRootModificationUtil.updateModel(dependentModule, dependentModel -> {
-            try {
-              dependentModCompilerOutputDirFile = tempDir.newFolder("depCompilerOutputDir");
-              dependentModCompilerTestOutputDirFile = tempDir.newFolder("depCompilerTestOutputDir");
-            } catch (IOException e) {
-              throw new IllegalStateException(e);
-            }
-            setCompilerOutputs(dependentModel, dependentModCompilerOutputDirFile, dependentModCompilerTestOutputDirFile);
+        ModuleRootModificationUtil.updateModel(dependentModule, dependentModel -> {
+          dependentModCompilerOutputDirFile = tempDir.newFolder("depCompilerOutputDir");
+          dependentModCompilerTestOutputDirFile = tempDir.newFolder("depCompilerTestOutputDir");
+          setCompilerOutputs(dependentModel, dependentModCompilerOutputDirFile, dependentModCompilerTestOutputDirFile);
 
-            PsiTestUtil.addLibrary(dependentModel, "myNonExportedLib", nonExportedLibFile.getParent(), nonExportedLibFile.getName());
-            var myExportedLib = PsiTestUtil.addLibrary(dependentModel, "myExportedLib", exportedLibInDependentModuleFile.getParent(),
-              exportedLibInDependentModuleFile.getName());
-            final var libraryOrderEntry = dependentModel.findLibraryOrderEntry(myExportedLib);
-            libraryOrderEntry.setExported(true);
-          });
+          addLibrary(nonExportedLibFile, "myNonExportedLib", dependentModel, DependencyScope.COMPILE, false);
+          addLibrary(exportedLibInDependentModuleFile, "myExportedLib", dependentModel, DependencyScope.COMPILE, true);
+        });
 
-          // Dependent module with test scope
-          var testDependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "testDependent.iml"));
-          final var testModuleOrderEntry = model.addModuleOrderEntry(testDependentModule);
-          testModuleOrderEntry.setScope(DependencyScope.TEST);
-          exportedLibInTestDependentModuleFile = tempDir.newFile(MY_EXPORTED_TEST_LIB_JAR);
+        // Dependent module with test scope
+        var testDependentModule = createModule(module.getProject(), FileUtil.join(FileUtil.getTempDirectory(), "testDependent.iml"));
+        final var testModuleOrderEntry = model.addModuleOrderEntry(testDependentModule);
+        testModuleOrderEntry.setScope(DependencyScope.TEST);
+        exportedLibInTestDependentModuleFile = tempDir.newFile(MY_EXPORTED_TEST_LIB_JAR);
 
-          ModuleRootModificationUtil.updateModel(testDependentModule, dependentModel -> {
-            try {
-              testDependentModCompilerOutputDirFile = tempDir.newFolder("testDepCompilerOutputDir");
-            } catch (IOException e) {
-              throw new IllegalStateException(e);
-            }
-            setCompilerOutputs(dependentModel, testDependentModCompilerOutputDirFile, null);
+        ModuleRootModificationUtil.updateModel(testDependentModule, dependentModel -> {
+          testDependentModCompilerOutputDirFile = tempDir.newFolder("testDepCompilerOutputDir");
+          setCompilerOutputs(dependentModel, testDependentModCompilerOutputDirFile, null);
 
-            var myExportedTestLib = PsiTestUtil.addLibrary(dependentModel, "myExportedTestLib", exportedLibInTestDependentModuleFile.getParent(),
-              exportedLibInTestDependentModuleFile.getName());
-            final var libraryOrderEntry = dependentModel.findLibraryOrderEntry(myExportedTestLib);
-            libraryOrderEntry.setExported(true);
-          });
-        } catch (IOException e) {
-          throw new IllegalStateException(e);
-        }
+          addLibrary(exportedLibInTestDependentModuleFile, "myExportedTestLib", dependentModel, DependencyScope.COMPILE, true);
+        });
       }
 
     };
+  }
+
+  private static void addLibrary(File libraryFile, String libraryName, ModifiableRootModel model, DependencyScope scope, boolean exported) {
+    var lib = PsiTestUtil.addLibrary(model, libraryName, libraryFile.getParent(), libraryFile.getName());
+    // workaround as ModifiableRootModel#findLibraryOrderEntry does not work
+    for (OrderEntry entry : model.getOrderEntries()) {
+      if (entry instanceof LibraryOrderEntry) {
+        var libraryEntry = (LibraryOrderEntry) entry;
+        if (libraryName.equals(libraryEntry.getLibraryName())) {
+          libraryEntry.setScope(scope);
+          libraryEntry.setExported(exported);
+        }
+      }
+    }
   }
 
   private static void setCompilerOutputs(@NotNull ModifiableRootModel model, File compilerOutputDirFile, @Nullable File compilerTestOutputDirFile) {

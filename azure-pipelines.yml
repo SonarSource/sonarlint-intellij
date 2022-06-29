@@ -152,9 +152,9 @@ stages:
       strategy:
         matrix:
           Idea2020:
-            IDEA_VERSION: 'IC-2020.1.1'
+            IDEA_VERSION: 'IC-2020.3.4'
           CLion2020:
-            IDEA_VERSION: 'CL-2020.1.1'
+            IDEA_VERSION: 'CL-2020.3.4'
           Idea2021:
             IDEA_VERSION: 'IC-2021.3.2'
           CLion2021:

@@ -58,6 +58,7 @@ class DefaultVcsService @NonInjectable constructor(private val project: Project,
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
         val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module, logger) }.toList()
         if (repositories.isEmpty()) {
+            logger.warn("No VCS repository found for module $module")
             return null
         }
         if (repositories.size > 1) {

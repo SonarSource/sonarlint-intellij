@@ -90,9 +90,7 @@ class IssuePersistenceTest : AbstractSonarLintLightTests() {
 
     @Test
     fun should_save_invalid_file_from_background_thread_without_error() {
-        // for the moment we still save a file that has become invalid
         val liveIssue = aLiveIssue(psiFile)
-        (liveIssue.psiFile() as PsiFileEx).markInvalidated()
 
         // simulate analysis task
         val futureSuccess = ApplicationManager.getApplication().executeOnPooledThread<Boolean> {

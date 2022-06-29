@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.ui.TestDialogManager;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -88,7 +89,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
-    Messages.setTestDialog(msg -> {
+    TestDialogManager.setTestDialog(msg -> {
       messages.add(msg);
       return Messages.OK;
     });
@@ -110,7 +111,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
-    Messages.setTestDialog(msg -> {
+    TestDialogManager.setTestDialog(msg -> {
       messages.add(msg);
       return Messages.OK;
     });

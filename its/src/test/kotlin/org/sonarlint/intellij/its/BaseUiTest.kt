@@ -313,6 +313,14 @@ open class BaseUiTest {
             openProjectFileBrowserDialog {
                 selectProjectFile(projectName, isMaven)
             }
+            if (!remoteRobot.isCLion()) {
+                optionalStep {
+                    // from 2020.3.4+
+                    dialog("Trust and Open Maven Project?", Duration.ofSeconds(5)) {
+                        button("Trust Project").click()
+                    }
+                }
+            }
             idea {
                 waitBackgroundTasksFinished()
             }
