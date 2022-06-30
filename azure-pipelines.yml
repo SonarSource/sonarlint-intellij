@@ -12,7 +12,7 @@ resources:
     - repository: commonTemplates
       type: git
       name: pipelines-yaml-templates
-      ref:  refs/heads/dp/mend
+      ref:  refs/tags/v1.0.17
 
 
 stages:
@@ -153,11 +153,7 @@ stages:
       - template: whitesource.yml@commonTemplates
         parameters:
           productName : 'SonarLint/IntelliJ'
-          # the projectName has to match the repo name for the releasability check to work
-          projectName : 'SonarSource/sonarlint-intellij'
-          projectVersion: '$(WHITESOURCE_PROJECT_VERSION)'
-          configFilePath: '$(Build.SourcesDirectory)/whitesource/wss-unified-agent.config'
-
+          releaseVersion: '$(WHITESOURCE_PROJECT_VERSION)'
 
 - template: stage-with-burgr-notifications.yml@commonTemplates
   parameters:
