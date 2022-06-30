@@ -67,6 +67,11 @@ public class SonarLintEngineFactory {
     Language.SCALA,
     Language.SWIFT);
 
+  private static final List<EmbeddedPlugin> EMBEDDED_PLUGINS = List.of(
+    new EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
+    new EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-secrets-plugin-*.jar"),
+    new EmbeddedPlugin(Language.CS, "CSharp", "sonarlint-omnisharp-plugin-*.jar"));
+
   ConnectedSonarLintEngine createEngine(String connectionId) {
     var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
     enabledLanguages.addAll(CONNECTED_ADDITIONAL_LANGUAGES);
@@ -81,18 +86,13 @@ public class SonarLintEngineFactory {
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
     configureCommonEngine(configBuilder);
 
-    var cFamilyPluginUrl = findEmbeddedCFamilyPlugin(getPluginsDir());
-    if (cFamilyPluginUrl != null) {
-      configBuilder.useEmbeddedPlugin(Language.CPP.getPluginKey(), cFamilyPluginUrl);
-    }
-    var secretsPluginUrl = findEmbeddedSecretsPlugin(getPluginsDir());
-    if (secretsPluginUrl != null) {
-      configBuilder.addExtraPlugin(Language.SECRETS.getPluginKey(), secretsPluginUrl);
-    }
-    var csPluginUrl = findEmbeddedOmnisharpPlugin(getPluginsDir());
-    if (csPluginUrl != null) {
-      configBuilder.useEmbeddedPlugin(Language.CS.getPluginKey(), csPluginUrl);
-    }
+    var pluginsDir = getPluginsDir();
+    EMBEDDED_PLUGINS.forEach(embeddedPlugin -> {
+      var embeddedPluginUrl = findEmbeddedPlugin(pluginsDir, embeddedPlugin);
+      if (embeddedPluginUrl != null) {
+        configBuilder.useEmbeddedPlugin(embeddedPlugin.pluginKey, embeddedPluginUrl);
+      }
+    });
     return new ConnectedSonarLintEngineImpl(configBuilder.build());
   }
 
@@ -155,9 +155,9 @@ public class SonarLintEngineFactory {
   }
 
   @CheckForNull
-  private static Path findEmbeddedPlugin(Path pluginsDir, String pluginNamePattern, String logPrefix) {
+  private static Path findEmbeddedPlugin(Path pluginsDir, EmbeddedPlugin embeddedPlugin) {
     try {
-      var pluginsUrls = findFilesInDir(pluginsDir, pluginNamePattern, logPrefix);
+      var pluginsUrls = findFilesInDir(pluginsDir, embeddedPlugin.jarFilePattern, "Found " + embeddedPlugin.name + " plugin: ");
       if (pluginsUrls.size() > 1) {
         throw new IllegalStateException("Multiple plugins found");
       }
@@ -165,21 +165,6 @@ public class SonarLintEngineFactory {
     } catch (Exception e) {
       throw new IllegalStateException(e);
     }
-  }
-
-  @CheckForNull
-  private static Path findEmbeddedCFamilyPlugin(Path pluginsDir) {
-    return findEmbeddedPlugin(pluginsDir, "sonar-cfamily-plugin-*.jar", "Found CFamily plugin: ");
-  }
-
-  @CheckForNull
-  private static Path findEmbeddedOmnisharpPlugin(Path pluginsDir) {
-    return findEmbeddedPlugin(pluginsDir, "sonarlint-omnisharp-plugin-*.jar", "Found CSharp plugin: ");
-  }
-
-  @CheckForNull
-  private static Path findEmbeddedSecretsPlugin(Path pluginsDir) {
-    return findEmbeddedPlugin(pluginsDir, "sonar-secrets-plugin-*.jar", "Found Secrets detection plugin: ");
   }
 
   private static Path[] getPluginsUrls(Path pluginsDir) throws IOException {
@@ -231,5 +216,17 @@ public class SonarLintEngineFactory {
       return;
     }
     extraProps.put("sonar.cs.internal.omnisharpLocation", plugin.getPath().resolve("omnisharp").resolve(osDir).toString());
+  }
+
+  private static class EmbeddedPlugin {
+    private final String pluginKey;
+    private final String name;
+    private final String jarFilePattern;
+
+    private EmbeddedPlugin(Language language, String name, String jarFilePattern) {
+      this.pluginKey = language.getPluginKey();
+      this.name = name;
+      this.jarFilePattern = jarFilePattern;
+    }
   }
 }
