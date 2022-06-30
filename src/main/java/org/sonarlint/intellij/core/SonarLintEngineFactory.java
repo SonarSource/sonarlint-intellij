@@ -70,7 +70,12 @@ public class SonarLintEngineFactory {
   private static final List<EmbeddedPlugin> EMBEDDED_PLUGINS = List.of(
     new EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
     new EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-secrets-plugin-*.jar"),
-    new EmbeddedPlugin(Language.CS, "CSharp", "sonarlint-omnisharp-plugin-*.jar"));
+    new EmbeddedPlugin(Language.CS, "CSharp", "sonarlint-omnisharp-plugin-*.jar"),
+    new EmbeddedPlugin(Language.HTML, "HTML", "sonar-html-plugin-*.jar"),
+    new EmbeddedPlugin(Language.JS, "JavaScript/TypeScript", "sonar-javascript-plugin-*.jar"),
+    new EmbeddedPlugin(Language.KOTLIN, "Kotlin", "sonar-kotlin-plugin-*.jar"),
+    new EmbeddedPlugin(Language.RUBY, "Ruby", "sonar-ruby-plugin-*.jar"),
+    new EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"));
 
   ConnectedSonarLintEngine createEngine(String connectionId) {
     var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
