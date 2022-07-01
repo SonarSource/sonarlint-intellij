@@ -47,22 +47,27 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
-import java.net.BindException
 import java.net.InetAddress
 
 const val STARTING_PORT = 64120
 const val ENDING_PORT = 64130
 
-class SonarLintHttpServer @NonInjectable constructor(private var nettyServer: NettyServer) : Disposable {
+class SonarLintHttpServer @NonInjectable constructor(private var serverImpl: ServerImpl) : Disposable {
 
     constructor() : this(NettyServer())
 
     var isStarted = false
 
     fun startOnce() {
+        try {
+            serverImpl.initialize()
+        } catch (e: Exception) {
+            GlobalLogOutput.get().log("Error starting SonarLint Server: " + e.message, ClientLogOutput.Level.ERROR)
+            return
+        }
         var currentPort = STARTING_PORT
         while (!isStarted && currentPort <= ENDING_PORT) {
-            isStarted = nettyServer.bindTo(currentPort)
+            isStarted = serverImpl.bindTo(currentPort)
             displayStartStatus(currentPort)
             currentPort++
         }
@@ -70,41 +75,55 @@ class SonarLintHttpServer @NonInjectable constructor(private var nettyServer: Ne
 
     private fun displayStartStatus(port: Int) {
         if (isStarted) {
-            GlobalLogOutput.get().log("Server started on $port", ClientLogOutput.Level.INFO)
+            GlobalLogOutput.get().log("Server bound to $port", ClientLogOutput.Level.INFO)
         } else {
-            GlobalLogOutput.get().log("Cannot start the SonarLint server on $port", ClientLogOutput.Level.ERROR)
+            GlobalLogOutput.get().log("Cannot bind the SonarLint server to $port", ClientLogOutput.Level.ERROR)
         }
     }
 
     override fun dispose() {
-        nettyServer.stop()
+        serverImpl.stop()
     }
 
 }
 
-open class NettyServer {
+interface ServerImpl {
+    fun initialize()
+    fun bindTo(port: Int): Boolean
+    fun stop()
+}
+
+class NettyServer : ServerImpl {
     private lateinit var bossGroup: EventLoopGroup
     private lateinit var workerGroup: EventLoopGroup
+    private lateinit var serverBootstrap: ServerBootstrap
 
-    open fun bindTo(port: Int): Boolean {
+    override fun initialize() {
         bossGroup = NioEventLoopGroup(1)
         workerGroup = NioEventLoopGroup()
-        val b = ServerBootstrap()
-        b.group(bossGroup, workerGroup)
+        serverBootstrap = ServerBootstrap()
+        serverBootstrap.group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel::class.java)
             .handler(LoggingHandler(LogLevel.INFO))
             .childHandler(ServerInitializer())
+    }
+
+    override fun bindTo(port: Int): Boolean {
         try {
-            b.bind(InetAddress.getLoopbackAddress(), port).sync().channel()
-        } catch (e: BindException) {
+            serverBootstrap.bind(InetAddress.getLoopbackAddress(), port).sync().channel()
+        } catch (e: Exception) {
             return false
         }
         return true
     }
 
-    fun stop() {
-        bossGroup.shutdownGracefully()
-        workerGroup.shutdownGracefully()
+    override fun stop() {
+        if (this::bossGroup.isInitialized) {
+            bossGroup.shutdownGracefully()
+        }
+        if (this::workerGroup.isInitialized) {
+            workerGroup.shutdownGracefully()
+        }
     }
 }
 
