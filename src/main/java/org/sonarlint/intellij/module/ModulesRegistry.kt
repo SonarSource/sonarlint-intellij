@@ -23,9 +23,10 @@ import com.intellij.openapi.module.Module
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarsource.sonarlint.core.analysis.api.ClientModuleInfo
+import java.util.concurrent.ConcurrentHashMap
 
 class ModulesRegistry {
-    private val modules: MutableMap<Module, ClientModuleInfo> = LinkedHashMap()
+    private val modules: MutableMap<Module, ClientModuleInfo> = ConcurrentHashMap()
 
     fun getStandaloneModules(): List<ClientModuleInfo> {
         return modules.filterKeys { connectionIdFor(it) == null }
