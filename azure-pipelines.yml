@@ -93,16 +93,16 @@ stages:
           ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
           ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
         displayName: 'Run UTs'
-      - task: Gradle@2
-        inputs:
-          options: --build-cache --stacktrace -i
-          tasks: :runPluginVerifier
-          jdkVersionOption: '1.11'
-        env:
-          CI: true # needed for gradle-intellij-plugin to skip downloading sources
-          ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
-          ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
-        displayName: 'Run plugin verifier'
+#      - task: Gradle@2
+#        inputs:
+#          options: --build-cache --stacktrace -i
+#          tasks: :runPluginVerifier
+#          jdkVersionOption: '1.11'
+#        env:
+#          CI: true # needed for gradle-intellij-plugin to skip downloading sources
+#          ARTIFACTORY_PRIVATE_READER_USERNAME: $(ARTIFACTORY_PRIVATE_READER_USERNAME)
+#          ARTIFACTORY_PRIVATE_READER_PASSWORD: $(ARTIFACTORY_PRIVATE_READER_PASSWORD)
+#        displayName: 'Run plugin verifier'
       - task: Gradle@2
         inputs:
           options: --stop
