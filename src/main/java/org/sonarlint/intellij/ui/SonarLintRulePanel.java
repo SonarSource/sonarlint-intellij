@@ -22,6 +22,9 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.ShowSettingsUtil;
+import com.intellij.openapi.progress.ProgressIndicator;
+import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.components.JBLabel;
@@ -37,6 +40,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
 import javax.swing.event.HyperlinkEvent;
+import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
@@ -69,22 +73,27 @@ public class SonarLintRulePanel {
       return;
     }
     displayLoadingMessage();
-    try {
-      SonarLintUtils.getService(project, ProjectBindingManager.class)
-        .getFacade(module)
-        .getActiveRuleDescription(ruleKey)
-        .thenAccept(ruleDescription -> {
-          if (ruleDescription == null) {
-            ApplicationManager.getApplication().invokeLater(() -> nothingToDisplay(true));
-            return;
-          }
-          ApplicationManager.getApplication().invokeLater(() -> updateEditor(ruleDescription.getHtml(), ruleDescription.getKey()));
-        }).get(30, TimeUnit.SECONDS);
+    ProgressManager.getInstance()
+      .run(new Task.Backgroundable(project, "Loading rule description...", false) {
+        public void run(@NotNull ProgressIndicator progressIndicator) {
+          try {
+            SonarLintUtils.getService(project, ProjectBindingManager.class)
+              .getFacade(module)
+              .getActiveRuleDescription(ruleKey)
+              .thenAccept(ruleDescription -> {
+                if (ruleDescription == null) {
+                  ApplicationManager.getApplication().invokeLater(() -> nothingToDisplay(true));
+                  return;
+                }
+                ApplicationManager.getApplication().invokeLater(() -> updateEditor(ruleDescription.getHtml(), ruleDescription.getKey()));
+              }).get(30, TimeUnit.SECONDS);
 
-    } catch (Exception e) {
-      SonarLintConsole.get(project).error("Cannot get rule description", e);
-      nothingToDisplay(true);
-    }
+          } catch (Exception e) {
+            SonarLintConsole.get(project).error("Cannot get rule description", e);
+            nothingToDisplay(true);
+          }
+        }
+      });
   }
 
   private void displayLoadingMessage() {
