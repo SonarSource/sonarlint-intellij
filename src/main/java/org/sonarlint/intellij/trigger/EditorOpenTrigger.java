@@ -29,8 +29,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.ProjectBindingManager;
 
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class EditorOpenTrigger implements FileEditorManagerListener, StartupActivity {
@@ -41,7 +42,7 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
     if (!getGlobalSettings().isAutoTrigger()) {
       return;
     }
-    var submitter = SonarLintUtils.getService(source.getProject(), SonarLintSubmitter.class);
+    var submitter = getService(source.getProject(), SonarLintSubmitter.class);
     submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_OPEN, true);
   }
 
@@ -59,10 +60,11 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
   public void runActivity(@NotNull Project myProject) {
     if (!ApplicationManager.getApplication().isUnitTestMode()) {
       myProject.getMessageBus().connect(myProject).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
-      if (getGlobalSettings().isAutoTrigger()) {
+      // skip analyzing open files at startup when connected, it will be triggered after the sync
+      if (getGlobalSettings().isAutoTrigger() && !getService(myProject, ProjectBindingManager.class).isBindingValid()) {
         var openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
         if (openFiles.length > 0) {
-          var submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
+          var submitter = getService(myProject, SonarLintSubmitter.class);
           submitter.submitFiles(List.of(openFiles), TriggerType.EDITOR_OPEN, true);
         }
       }
