@@ -42,7 +42,6 @@ description = "SonarLint for IntelliJ IDEA"
 
 val sonarlintCoreVersion: String by project
 val protobufVersion: String by project
-val typescriptVersion: String by project
 val jettyVersion: String by project
 val intellijBuildVersion: String by project
 val omnisharpVersion: String by project
@@ -65,20 +64,12 @@ allprojects {
     repositories {
         mavenCentral()
         maven("https://repox.jfrog.io/repox/sonarsource") {
-            content { excludeGroup("typescript") }
             if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
                 credentials {
                     username = artifactoryUsername
                     password = artifactoryPassword
                 }
             }
-        }
-        ivy("https://repox.jfrog.io/repox/api/npm/npm") {
-            patternLayout {
-                artifact("[organization]/-/[module]-[revision].[ext]")
-                metadataSources { artifact() }
-            }
-            content { includeGroup("typescript") }
         }
     }
 
@@ -97,7 +88,7 @@ allprojects {
 
     val bomFile = layout.buildDirectory.file("reports/bom.json")
     tasks.withType<org.cyclonedx.gradle.CycloneDxTask>().configureEach {
-        includeConfigs += setOf("runtimeClasspath", "sqplugins_deps", "typescript")
+        includeConfigs += setOf("runtimeClasspath", "sqplugins_deps")
         outputs.file(bomFile)
         outputs.upToDateWhen { false }
     }
@@ -170,7 +161,6 @@ configurations {
         extendsFrom(sqplugins)
         isTransitive = true
     }
-    create("typescript") { isCanBeConsumed = false }
     all {
         // Allows using project dependencies instead of IDE dependencies during compilation and test running
         resolutionStrategy {
@@ -212,7 +202,6 @@ dependencies {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.35.0.50389")
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766")
     }
-    "typescript"("typescript:typescript:$typescriptVersion@tgz")
     // workaround for light tests in 2020.3, might remove later
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")
 }
@@ -235,19 +224,6 @@ tasks {
         src("https://github.com/OmniSharp/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-win-x64.zip")
         dest(File(buildDir, "omnisharp-$omnisharpVersion-win-x64.zip"))
         overwrite(false)
-    }
-
-    fun copyTypeScript(destinationDir: File, pluginName: Property<String>) {
-        val tsBundlePath = project.configurations.get("typescript").iterator().next()
-        copy {
-            from(tarTree(tsBundlePath))
-            exclude(
-                "**/loc/**",
-                "**/lib/*/diagnosticMessages.generated.json"
-            )
-            into(file("$destinationDir/${pluginName.get()}"))
-        }
-        file("$destinationDir/${pluginName.get()}/package").renameTo(file("$destinationDir/${pluginName.get()}/typescript"))
     }
 
     fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
@@ -296,7 +272,6 @@ tasks {
         dependsOn(downloadOmnisharpLinuxZipFile, downloadOmnisharpOsxZipFile, downloadOmnisharpWindowsZipFile)
         doLast {
             copyPlugins(destinationDir, pluginName)
-            copyTypeScript(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
         }
     }
@@ -305,7 +280,6 @@ tasks {
         dependsOn(downloadOmnisharpLinuxZipFile, downloadOmnisharpOsxZipFile, downloadOmnisharpWindowsZipFile)
         doLast {
             copyPlugins(destinationDir, pluginName)
-            copyTypeScript(destinationDir, pluginName)
             copyOmnisharp(destinationDir, pluginName)
         }
     }

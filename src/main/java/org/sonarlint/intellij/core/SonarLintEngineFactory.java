@@ -201,7 +201,6 @@ public class SonarLintEngineFactory {
   private static Map<String, String> prepareExtraProps() {
     var plugin = SonarLintUtils.getService(SonarLintPlugin.class);
     var extraProps = new HashMap<String, String>();
-    extraProps.put("sonar.typescript.internal.typescriptLocation", plugin.getPath().toString());
     if (PlatformUtils.isRider()) {
       addOmnisharpServerPath(plugin, extraProps);
     }
