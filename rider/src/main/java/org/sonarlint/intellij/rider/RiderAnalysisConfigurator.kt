@@ -21,10 +21,15 @@ package org.sonarlint.intellij.rider
 
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.util.io.isFile
+import com.jetbrains.rd.ide.model.RdExistingSolution
+import com.jetbrains.rider.projectView.solution
+import com.jetbrains.rider.projectView.solutionDescription
 import com.jetbrains.rider.projectView.solutionFile
 import com.jetbrains.rider.runtime.RiderDotNetActiveRuntimeHost
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator
 import org.sonarlint.intellij.common.analysis.AnalysisConfigurator.AnalysisConfiguration
+import java.nio.file.Paths
 
 class RiderAnalysisConfigurator : AnalysisConfigurator {
     override fun configure(module: Module, filesToAnalyze: Collection<VirtualFile>): AnalysisConfiguration {
@@ -37,10 +42,13 @@ class RiderAnalysisConfigurator : AnalysisConfigurator {
         if (monoRuntime != null) {
             result.extraProperties["sonar.cs.internal.monoExeLocation"] = monoRuntime.getMonoExe().absolutePath
         }
-        val solutionFile = module.project.solutionFile
-        if (solutionFile.isFile && solutionFile.extension.equals("sln", true)) {
-            // OmniSharp can load solution
+        if (module.project.solutionDescription is RdExistingSolution) {
             result.extraProperties["sonar.cs.internal.solutionPath"] = module.project.solutionFile.absolutePath
+        }
+        val msBuildPathStr = module.project.solution.activeMsBuildPath.value
+        if (msBuildPathStr != null) {
+            val msBuildPath = Paths.get(msBuildPathStr);
+            result.extraProperties["sonar.cs.internal.msBuildPath"] = if (msBuildPath.isFile()) msBuildPath.parent.toString() else msBuildPath.toString()
         }
         return result
     }
