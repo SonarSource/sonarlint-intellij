@@ -210,19 +210,19 @@ dependencies {
 tasks {
 
     val downloadOmnisharpMonoZipFile by registering(Download::class) {
-        src("https://github.com/henryju/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-mono.zip")
+        src("https://repox.jfrog.io/artifactory/sonarsource/org/sonarsource/sonarlint/omnisharp/omnisharp-roslyn/$omnisharpVersion/omnisharp-roslyn-$omnisharpVersion-mono.zip")
         dest(File(buildDir, "omnisharp-$omnisharpVersion-mono.zip"))
         overwrite(false)
     }
 
     val downloadOmnisharpWinZipFile by registering(Download::class) {
-        src("https://github.com/henryju/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-net472.zip")
+        src("https://repox.jfrog.io/artifactory/sonarsource/org/sonarsource/sonarlint/omnisharp/omnisharp-roslyn/$omnisharpVersion/omnisharp-roslyn-$omnisharpVersion-net472.zip")
         dest(File(buildDir, "omnisharp-$omnisharpVersion-net472.zip"))
         overwrite(false)
     }
 
     val downloadOmnisharpNet6ZipFile by registering(Download::class) {
-        src("https://github.com/henryju/omnisharp-roslyn/releases/download/$omnisharpVersion/omnisharp-net6.0.zip")
+        src("https://repox.jfrog.io/artifactory/sonarsource/org/sonarsource/sonarlint/omnisharp/omnisharp-roslyn/$omnisharpVersion/omnisharp-roslyn-$omnisharpVersion-net6.zip")
         dest(File(buildDir, "omnisharp-$omnisharpVersion-net6.zip"))
         overwrite(false)
     }
