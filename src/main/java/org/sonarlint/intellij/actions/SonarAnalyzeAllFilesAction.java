@@ -27,7 +27,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
-import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
@@ -65,7 +64,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   @Override public void actionPerformed(AnActionEvent e) {
     var project = e.getProject();
 
-    if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace()) || !showWarning(project)) {
+    if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace()) || !showWarning()) {
       return;
     }
 
@@ -106,27 +105,34 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     });
   }
 
-  static boolean showWarning(Project project) {
-    if (!ApplicationManager.getApplication().isUnitTestMode()) {
-      return MessageDialogBuilder.yesNo("SonarLint - Analyze All Files",
-        "Analysing all files may take a considerable amount of time to complete.\n"
-          + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.")
-        .yesText("Proceed").noText("Cancel").icon(Messages.getWarningIcon()).doNotAsk(new DoNotShowAgain())
-        .ask(project);
+  static boolean showWarning() {
+    if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY, false)) {
+      // keep this deprecated call for a while as there is a breaking change between 2020.3 and 2021.3
+      var result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
+          + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
+        "SonarLint - Analyze All Files",
+        "Proceed", "Cancel", Messages.getWarningIcon(), new DoNotShowAgain());
+      return result == Messages.OK;
     }
     return true;
   }
 
   // Don't use DialogWrapper.DoNotAskOption.Adapter because it's not implemented in older versions of intellij
-  static class DoNotShowAgain extends DialogWrapper.DoNotAskOption.Adapter {
-    @Override
-    public void rememberChoice(boolean isSelected, int exitCode) {
-      PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, Boolean.toString(!isSelected));
+  static class DoNotShowAgain implements DialogWrapper.DoNotAskOption {
+    @Override public boolean isToBeShown() {
+      return true;
     }
 
-    @Override
-    public boolean isSelectedByDefault() {
-      return PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY, false);
+    @Override public void setToBeShown(boolean toBeShown, int exitCode) {
+      PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, Boolean.toString(!toBeShown));
+    }
+
+    @Override public boolean canBeHidden() {
+      return true;
+    }
+
+    @Override public boolean shouldSaveOptionsOnCancel() {
+      return false;
     }
 
     @NotNull @Override public String getDoNotShowMessage() {
