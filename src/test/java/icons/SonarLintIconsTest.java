@@ -20,6 +20,8 @@
 package icons;
 
 import org.junit.Test;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,11 +34,11 @@ public class SonarLintIconsTest {
     assertThat(SonarLintIcons.severity("INFO")).isNotNull();
     assertThat(SonarLintIcons.severity("CRITICAL")).isNotNull();
 
-    assertThat(SonarLintIcons.severity12("MAJOR")).isNotNull();
-    assertThat(SonarLintIcons.severity12("MINOR")).isNotNull();
-    assertThat(SonarLintIcons.severity12("BLOCKER")).isNotNull();
-    assertThat(SonarLintIcons.severity12("INFO")).isNotNull();
-    assertThat(SonarLintIcons.severity12("CRITICAL")).isNotNull();
+    assertThat(SonarLintIcons.severity12(IssueSeverity.MAJOR)).isNotNull();
+    assertThat(SonarLintIcons.severity12(IssueSeverity.MINOR)).isNotNull();
+    assertThat(SonarLintIcons.severity12(IssueSeverity.BLOCKER)).isNotNull();
+    assertThat(SonarLintIcons.severity12(IssueSeverity.INFO)).isNotNull();
+    assertThat(SonarLintIcons.severity12(IssueSeverity.CRITICAL)).isNotNull();
   }
 
   @Test
@@ -45,9 +47,9 @@ public class SonarLintIconsTest {
     assertThat(SonarLintIcons.type("VULNERABILITY")).isNotNull();
     assertThat(SonarLintIcons.type("CODE_SMELL")).isNotNull();
 
-    assertThat(SonarLintIcons.type12("BUG")).isNotNull();
-    assertThat(SonarLintIcons.type12("VULNERABILITY")).isNotNull();
-    assertThat(SonarLintIcons.type12("CODE_SMELL")).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.BUG)).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.VULNERABILITY)).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.CODE_SMELL)).isNotNull();
   }
 
   @Test

@@ -36,6 +36,8 @@ import org.mockito.MockitoAnnotations;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.issue.persistence.LiveIssueCache;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -77,13 +79,13 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     // tracking based on setRuleKey / line number
     var previousIssue = createRangeStoredIssue(1, "issue 1", 10);
     previousIssue.setCreationDate(1000L);
-    previousIssue.setSeverity("old");
-    previousIssue.setType("old");
+    previousIssue.setSeverity(IssueSeverity.INFO);
+    previousIssue.setType(RuleType.BUG);
 
     var rawIssue = createRangeStoredIssue(1, "issue 1", 10);
     rawIssue.setCreationDate(2000L);
-    rawIssue.setSeverity("severity");
-    rawIssue.setType("type");
+    rawIssue.setSeverity(IssueSeverity.MAJOR);
+    rawIssue.setType(RuleType.CODE_SMELL);
 
     var previousIssues = new ArrayList<>(List.of(previousIssue));
 
@@ -93,8 +95,8 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     assertThat(previousIssues).isEmpty();
 
     assertThat(trackedIssue.getCreationDate()).isEqualTo(1000);
-    assertThat(trackedIssue.getUserSeverity()).isEqualTo("severity");
-    assertThat(trackedIssue.getType()).isEqualTo("type");
+    assertThat(trackedIssue.getUserSeverity()).isEqualTo(IssueSeverity.MAJOR);
+    assertThat(trackedIssue.getType()).isEqualTo(RuleType.CODE_SMELL);
   }
 
   @Test
@@ -118,20 +120,20 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_copy_server_issue_on_match() {
     var serverIssueKey = "dummyServerIssueKey";
-    issue1.setSeverity("localSeverity");
-    issue1.setType("localType");
+    issue1.setSeverity(IssueSeverity.INFO);
+    issue1.setType(RuleType.VULNERABILITY);
     assertThat(issue1.getServerIssueKey()).isNull();
 
     var serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setServerIssueKey(serverIssueKey);
-    serverIssue.setSeverity("serverSeverity");
-    serverIssue.setType("serverType");
+    serverIssue.setSeverity(IssueSeverity.CRITICAL);
+    serverIssue.setType(RuleType.BUG);
     underTest.matchWithServerIssues(file1, List.of(serverIssue));
 
     // issue1 has been changed
     assertThat(issue1.getServerIssueKey()).isEqualTo(serverIssueKey);
-    assertThat(issue1.getUserSeverity()).isEqualTo("serverSeverity");
-    assertThat(issue1.getType()).isEqualTo("serverType");
+    assertThat(issue1.getUserSeverity()).isEqualTo(IssueSeverity.CRITICAL);
+    assertThat(issue1.getType()).isEqualTo(RuleType.BUG);
   }
 
   @Test
@@ -153,16 +155,16 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
     var serverIssue = createRangeStoredIssue(2, "server issue", localLine + 100);
     serverIssue.setServerIssueKey(serverIssueKey);
     serverIssue.setResolved(true);
-    serverIssue.setSeverity("sev");
-    serverIssue.setType("type");
+    serverIssue.setSeverity(IssueSeverity.MAJOR);
+    serverIssue.setType(RuleType.BUG);
     underTest.matchWithServerIssues(file1, List.of(serverIssue));
 
     // the local issue is preserved ...
     assertThat(issue1.getLine()).isEqualTo(localLine);
     // ... + the change from the server is copied
     assertThat(issue1.isResolved()).isTrue();
-    assertThat(issue1.getUserSeverity()).isEqualTo("sev");
-    assertThat(issue1.getType()).isEqualTo("type");
+    assertThat(issue1.getUserSeverity()).isEqualTo(IssueSeverity.MAJOR);
+    assertThat(issue1.getType()).isEqualTo(RuleType.BUG);
   }
 
   @Test
@@ -178,7 +180,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
   public void should_drop_server_issue_reference_if_gone() {
     issue1.setCreationDate(1000L);
     issue1.setServerIssueKey("dummyServerIssueKey");
-    issue1.setSeverity("sev");
+    issue1.setSeverity(IssueSeverity.BLOCKER);
 
     underTest.matchWithServerIssues(file1, Collections.emptyList());
 
@@ -186,7 +188,7 @@ public class IssueManagerTest extends AbstractSonarLintLightTests {
 
     // keep old creation date and severity
     assertThat(issue1.getCreationDate()).isEqualTo(1000L);
-    assertThat(issue1.getUserSeverity()).isEqualTo("sev");
+    assertThat(issue1.getUserSeverity()).isEqualTo(IssueSeverity.BLOCKER);
   }
 
   @Test

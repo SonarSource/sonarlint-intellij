@@ -33,7 +33,7 @@ import org.sonarlint.intellij.util.findModuleOf
 import org.sonarlint.intellij.util.getOpenFiles
 import org.sonarlint.intellij.util.getRelativePathOf
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
-import org.sonarsource.sonarlint.core.serverconnection.ServerTaintIssue
+import org.sonarsource.sonarlint.core.serverconnection.issues.ServerTaintIssue
 
 object TaintVulnerabilitiesLoader {
 

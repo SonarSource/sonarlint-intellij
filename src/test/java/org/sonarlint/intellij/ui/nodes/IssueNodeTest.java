@@ -24,6 +24,8 @@ import java.util.Collections;
 import org.junit.Test;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -45,7 +47,8 @@ public class IssueNodeTest {
     when(file.isValid()).thenReturn(true);
     var issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn(message);
-    when(issue.getSeverity()).thenReturn("MAJOR");
+    when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
+    when(issue.getType()).thenReturn(RuleType.BUG);
     var issuePointer = new LiveIssue(issue, file, Collections.emptyList());
     issuePointer.setCreationDate(date);
     return issuePointer;

@@ -39,6 +39,7 @@ import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -82,12 +83,11 @@ public class SonarExternalAnnotatorTest extends AbstractSonarLintLightTests {
   @Test
   public void testSeverityMapping() {
     assertThat(SonarExternalAnnotator.getTextAttrsKey(null)).isEqualTo(SonarLintTextAttributes.MAJOR);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey("MAJOR")).isEqualTo(SonarLintTextAttributes.MAJOR);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey("MINOR")).isEqualTo(SonarLintTextAttributes.MINOR);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey("BLOCKER")).isEqualTo(SonarLintTextAttributes.BLOCKER);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey("CRITICAL")).isEqualTo(SonarLintTextAttributes.CRITICAL);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey("INFO")).isEqualTo(SonarLintTextAttributes.INFO);
-    assertThat(SonarExternalAnnotator.getTextAttrsKey("unknown")).isEqualTo(SonarLintTextAttributes.MAJOR);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(IssueSeverity.MAJOR)).isEqualTo(SonarLintTextAttributes.MAJOR);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(IssueSeverity.MINOR)).isEqualTo(SonarLintTextAttributes.MINOR);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(IssueSeverity.BLOCKER)).isEqualTo(SonarLintTextAttributes.BLOCKER);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(IssueSeverity.CRITICAL)).isEqualTo(SonarLintTextAttributes.CRITICAL);
+    assertThat(SonarExternalAnnotator.getTextAttrsKey(IssueSeverity.INFO)).isEqualTo(SonarLintTextAttributes.INFO);
   }
 
   @Test

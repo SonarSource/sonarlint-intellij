@@ -23,18 +23,18 @@ import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.editor.colors.CodeInsightColors;
 import org.junit.Test;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SonarLintSeverityTest {
   @Test
   public void testSeveritiesExist() {
-    assertThat(SonarLintSeverity.byName("BLOCKER")).isNotNull();
-    assertThat(SonarLintSeverity.byName("MAJOR")).isNotNull();
-    assertThat(SonarLintSeverity.byName("MINOR")).isNotNull();
-    assertThat(SonarLintSeverity.byName("INFO")).isNotNull();
-    assertThat(SonarLintSeverity.byName("CRITICAL")).isNotNull();
-    assertThat(SonarLintSeverity.byName("RANDOM")).isNull();
+    assertThat(SonarLintSeverity.fromCoreSeverity(IssueSeverity.BLOCKER)).isNotNull();
+    assertThat(SonarLintSeverity.fromCoreSeverity(IssueSeverity.MAJOR)).isNotNull();
+    assertThat(SonarLintSeverity.fromCoreSeverity(IssueSeverity.MINOR)).isNotNull();
+    assertThat(SonarLintSeverity.fromCoreSeverity(IssueSeverity.INFO)).isNotNull();
+    assertThat(SonarLintSeverity.fromCoreSeverity(IssueSeverity.CRITICAL)).isNotNull();
   }
 
   @Test

@@ -22,7 +22,9 @@ package org.sonarlint.intellij.issue
 import com.intellij.openapi.editor.RangeMarker
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.impl.source.tree.injected.changesHandler.range
+import org.apache.commons.codec.digest.DigestUtils
 import java.nio.file.Paths
+import java.util.regex.Pattern
 
 fun unknownLocation(message: String?, filePath: String?): Location {
   return Location(null, null, message, filePath?.let { Paths.get(it).fileName.toString() }, null)
@@ -32,11 +34,18 @@ fun fileOnlyLocation(file: VirtualFile?, message: String?): Location {
   return Location(file, null, message, null, null)
 }
 
-fun resolvedLocation(file: VirtualFile?, range: RangeMarker?, message: String?, originalCode: String?): Location {
-  return Location(file, range, message, null, originalCode)
+fun resolvedLocation(file: VirtualFile?, range: RangeMarker?, message: String?, textRangeHash: String?): Location {
+  return Location(file, range, message, null, textRangeHash)
 }
 
-data class Location(val file: VirtualFile?, val range: RangeMarker?, val message: String?, val originalFileName: String? = null, val originalCode: String?) {
+data class Location(val file: VirtualFile?, val range: RangeMarker?, val message: String?, val originalFileName: String? = null, val textRangeHash: String?) {
   fun exists() = file != null && file.isValid && range != null && range.isValid && range.startOffset != range.endOffset
-  fun codeMatches() = exists() && (originalCode == null || originalCode == range!!.document.getText(range.range))
+  fun codeMatches() = exists() && (textRangeHash == null || textRangeHash == hash(range!!.document.getText(range.range)))
+}
+
+private val MATCH_ALL_WHITESPACES = Pattern.compile("\\s")
+
+private fun hash(codeSnippet: String): String {
+  val codeSnippetWithoutWhitespaces = MATCH_ALL_WHITESPACES.matcher(codeSnippet).replaceAll("")
+  return DigestUtils.md5Hex(codeSnippetWithoutWhitespaces)
 }

@@ -23,6 +23,8 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarlint.intellij.proto.Sonarlint;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 public class LocalIssueTrackable implements Trackable {
   private final Sonarlint.Issues.Issue issue;
@@ -68,11 +70,11 @@ public class LocalIssueTrackable implements Trackable {
     return issue.getResolved();
   }
 
-  @Override public String getUserSeverity() {
+  @Override public IssueSeverity getUserSeverity() {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public String getType() {
+  @Nullable @Override public RuleType getType() {
     throw new UnsupportedOperationException();
   }
 }

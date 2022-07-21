@@ -20,8 +20,10 @@
 package org.sonarlint.intellij.issue;
 
 import java.time.Instant;
-
 import org.junit.Test;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.TextRangeWithHash;
 import org.sonarsource.sonarlint.core.serverconnection.issues.FileLevelServerIssue;
 import org.sonarsource.sonarlint.core.serverconnection.issues.LineLevelServerIssue;
 import org.sonarsource.sonarlint.core.serverconnection.issues.RangeLevelServerIssue;
@@ -31,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ServerIssueTrackableTest {
   @Test
   public void test_file_level_issue() {
-    var trackable = new ServerIssueTrackable(new FileLevelServerIssue("issueUuid", true, "ruleKey", "msg", "filePath", Instant.now(), null, "BUG"));
+    var trackable = new ServerIssueTrackable(new FileLevelServerIssue("issueUuid", true, "ruleKey", "msg", "filePath", Instant.now(), null, RuleType.BUG));
 
     assertThat(trackable.getLine()).isNull();
     assertThat(trackable.getTextRangeHash()).isNull();
@@ -41,7 +43,7 @@ public class ServerIssueTrackableTest {
   @Test
   public void test_line_level_issue() {
     var trackable = new ServerIssueTrackable(
-      new LineLevelServerIssue("key", true, "ruleKey", "message", "lineHash", "filePath", Instant.ofEpochMilli(1_000_000), "severity", "type", 100));
+      new LineLevelServerIssue("key", true, "ruleKey", "message", "lineHash", "filePath", Instant.ofEpochMilli(1_000_000), IssueSeverity.MINOR, RuleType.VULNERABILITY, 100));
 
     assertThat(trackable.isResolved()).isTrue();
     assertThat(trackable.getRuleKey()).isEqualTo("ruleKey");
@@ -51,14 +53,14 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getCreationDate()).isEqualTo(1_000_000);
     assertThat(trackable.getServerIssueKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(100);
-    assertThat(trackable.getUserSeverity()).isEqualTo("severity");
-    assertThat(trackable.getType()).isEqualTo("type");
+    assertThat(trackable.getUserSeverity()).isEqualTo(IssueSeverity.MINOR);
+    assertThat(trackable.getType()).isEqualTo(RuleType.VULNERABILITY);
   }
 
   @Test
   public void test_range_level_issue() {
-    var trackable = new ServerIssueTrackable(new RangeLevelServerIssue("key", true, "ruleKey", "message", "rangeHash", "filePath", Instant.ofEpochMilli(1_000_000), "severity",
-      "type", new RangeLevelServerIssue.TextRange(1, 2, 3, 4)));
+    var trackable = new ServerIssueTrackable(new RangeLevelServerIssue("key", true, "ruleKey", "message", "filePath", Instant.ofEpochMilli(1_000_000), IssueSeverity.INFO,
+      RuleType.BUG, new TextRangeWithHash(1, 2, 3, 4, "rangeHash")));
 
     assertThat(trackable.isResolved()).isTrue();
     assertThat(trackable.getRuleKey()).isEqualTo("ruleKey");
@@ -68,8 +70,8 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getCreationDate()).isEqualTo(1_000_000);
     assertThat(trackable.getServerIssueKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(1);
-    assertThat(trackable.getUserSeverity()).isEqualTo("severity");
-    assertThat(trackable.getType()).isEqualTo("type");
+    assertThat(trackable.getUserSeverity()).isEqualTo(IssueSeverity.INFO);
+    assertThat(trackable.getType()).isEqualTo(RuleType.BUG);
   }
 
 }

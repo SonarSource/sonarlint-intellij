@@ -406,7 +406,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
     var htmlDescription = singleNode.getHtmlDescription();
     var builder = new StringBuilder(htmlDescription.length() + 64);
-    appendRuleAttributesHtmlTable(singleNode.getKey(), singleNode.severity(), singleNode.type(), builder);
+    appendRuleAttributesHtmlTable(singleNode.getKey(), singleNode.severity().toString(), singleNode.type().toString(), builder);
     builder.append(htmlDescription);
     try {
       setHTML(descriptionBrowser, SearchUtil.markup(builder.toString(), myRuleFilter.getFilter()));

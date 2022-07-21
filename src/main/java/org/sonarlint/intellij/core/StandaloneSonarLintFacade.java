@@ -105,8 +105,9 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
   public CompletableFuture<RuleDescription> getActiveRuleDescription(String ruleKey) {
     return CompletableFuture.completedFuture(
       sonarlint.getRuleDetails(ruleKey)
-        .map(details -> RuleDescription.from(details.getKey(), details.getName(), details.getSeverity(), details.getType(), details.getHtmlDescription(),
-          details.paramDetails().stream().map(p -> new RuleDescription.Param(p.name(), p.description(), p.defaultValue())).collect(Collectors.toList())))
+        .map(
+          details -> RuleDescription.from(details.getKey(), details.getName(), details.getDefaultSeverity().toString(), details.getType().toString(), details.getHtmlDescription(),
+            details.paramDetails().stream().map(p -> new RuleDescription.Param(p.name(), p.description(), p.defaultValue())).collect(Collectors.toList())))
         .orElse(null));
   }
 }

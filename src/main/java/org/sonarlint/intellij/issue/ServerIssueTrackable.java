@@ -23,6 +23,8 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 
 import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.serverconnection.issues.LineLevelServerIssue;
 import org.sonarsource.sonarlint.core.serverconnection.issues.RangeLevelServerIssue;
 import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
@@ -56,7 +58,7 @@ public class ServerIssueTrackable implements Trackable {
   @Override
   public Integer getTextRangeHash() {
     if (serverIssue instanceof RangeLevelServerIssue) {
-      return ((RangeLevelServerIssue) serverIssue).getRangeHash().hashCode();
+      return ((RangeLevelServerIssue) serverIssue).getTextRange().getHash().hashCode();
     }
     return null;
   }
@@ -92,11 +94,11 @@ public class ServerIssueTrackable implements Trackable {
     return serverIssue.isResolved();
   }
 
-  @Override public String getUserSeverity() {
+  @Override public IssueSeverity getUserSeverity() {
     return serverIssue.getUserSeverity();
   }
 
-  @Nullable @Override public String getType() {
+  @Nullable @Override public RuleType getType() {
     return serverIssue.getType();
   }
 }

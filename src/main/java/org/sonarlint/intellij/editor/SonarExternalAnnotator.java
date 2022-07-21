@@ -40,6 +40,7 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.util.SonarLintSeverity;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static java.util.Collections.emptyList;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -134,20 +135,20 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
       .create();
   }
 
-  static TextAttributesKey getTextAttrsKey(@Nullable String severity) {
+  static TextAttributesKey getTextAttrsKey(@Nullable IssueSeverity severity) {
     if (severity == null) {
       return SonarLintTextAttributes.MAJOR;
     }
     switch (severity) {
-      case "MINOR":
+      case MINOR:
         return SonarLintTextAttributes.MINOR;
-      case "BLOCKER":
+      case BLOCKER:
         return SonarLintTextAttributes.BLOCKER;
-      case "INFO":
+      case INFO:
         return SonarLintTextAttributes.INFO;
-      case "CRITICAL":
+      case CRITICAL:
         return SonarLintTextAttributes.CRITICAL;
-      case "MAJOR":
+      case MAJOR:
       default:
         return SonarLintTextAttributes.MAJOR;
     }
@@ -158,12 +159,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    *
    * @see Annotation#getTextAttributes
    */
-  private static ProblemHighlightType getType(@Nullable String severity) {
+  private static ProblemHighlightType getType(@Nullable IssueSeverity severity) {
     if (severity == null) {
       return ProblemHighlightType.GENERIC_ERROR_OR_WARNING;
     }
 
-    return SonarLintSeverity.byName(severity).highlightType();
+    return SonarLintSeverity.fromCoreSeverity(severity).highlightType();
   }
 
   /**
@@ -171,12 +172,12 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
    *
    * @see Annotation#getTextAttributes
    */
-  private static HighlightSeverity getSeverity(@Nullable String severity) {
+  private static HighlightSeverity getSeverity(@Nullable IssueSeverity severity) {
     if (severity == null) {
       return HighlightSeverity.WARNING;
     }
 
-    return SonarLintSeverity.byName(severity).highlightSeverity();
+    return SonarLintSeverity.fromCoreSeverity(severity).highlightSeverity();
   }
 
   public static class AnnotationContext {

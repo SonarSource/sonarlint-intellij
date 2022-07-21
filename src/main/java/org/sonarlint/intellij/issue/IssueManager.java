@@ -47,6 +47,7 @@ import org.sonarlint.intellij.issue.tracking.Tracker;
 import org.sonarlint.intellij.issue.tracking.Tracking;
 import org.sonarlint.intellij.messages.IssueStoreListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static java.util.Collections.emptyList;
 
@@ -202,7 +203,7 @@ public class IssueManager {
     liveIssue.setCreationDate(serverIssue.getCreationDate());
     liveIssue.setServerIssueKey(serverIssue.getServerIssueKey());
     liveIssue.setResolved(serverIssue.isResolved());
-    String userSeverity = serverIssue.getUserSeverity();
+    IssueSeverity userSeverity = serverIssue.getUserSeverity();
     if (userSeverity != null) {
       liveIssue.setSeverity(userSeverity);
     }

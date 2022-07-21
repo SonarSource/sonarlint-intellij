@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.core;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +32,9 @@ import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetail
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamType;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
@@ -92,8 +93,8 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
     when(rule.getName()).thenReturn("ruleName");
     when(rule.getHtmlDescription()).thenReturn("ruleDescription");
     when(rule.getLanguage()).thenReturn(Language.JAVA);
-    when(rule.getSeverity()).thenReturn("MAJOR");
-    when(rule.getType()).thenReturn("BUG");
+    when(rule.getDefaultSeverity()).thenReturn(IssueSeverity.MAJOR);
+    when(rule.getType()).thenReturn(RuleType.BUG);
     return rule;
   }
 

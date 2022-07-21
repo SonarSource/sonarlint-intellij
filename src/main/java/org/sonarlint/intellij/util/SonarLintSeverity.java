@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 public enum SonarLintSeverity {
   BLOCKER(CodeInsightColors.WARNINGS_ATTRIBUTES, ProblemHighlightType.GENERIC_ERROR_OR_WARNING, HighlightSeverity.WARNING),
@@ -59,7 +60,7 @@ public enum SonarLintSeverity {
     return highlightSeverity;
   }
 
-  public static SonarLintSeverity byName(String name) {
-    return cache.get(name);
+  public static SonarLintSeverity fromCoreSeverity(IssueSeverity severity) {
+    return cache.get(severity.toString());
   }
 }
