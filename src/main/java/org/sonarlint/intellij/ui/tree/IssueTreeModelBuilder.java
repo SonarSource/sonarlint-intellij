@@ -37,13 +37,20 @@ import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+
+import static org.sonarsource.sonarlint.core.commons.IssueSeverity.BLOCKER;
+import static org.sonarsource.sonarlint.core.commons.IssueSeverity.CRITICAL;
+import static org.sonarsource.sonarlint.core.commons.IssueSeverity.INFO;
+import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MAJOR;
+import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
 
 /**
  * Responsible for maintaining the tree model and send change events when needed.
  * Should be optimize to minimize the recreation of portions of the tree.
  */
 public class IssueTreeModelBuilder {
-  private static final List<String> SEVERITY_ORDER = List.of("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO");
+  private static final List<IssueSeverity> SEVERITY_ORDER = List.of(BLOCKER, CRITICAL, MAJOR, MINOR, INFO);
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
   private final IssueTreeIndex index;

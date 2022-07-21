@@ -37,6 +37,8 @@ import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -81,11 +83,11 @@ public class IssueTreeModelBuilderTest {
   public void testIssueComparator() {
     List<LiveIssue> list = new ArrayList<>();
 
-    list.add(mockIssuePointer("f1", 100, "rule1", "MAJOR", null));
-    list.add(mockIssuePointer("f1", 100, "rule2", "MAJOR", 1000L));
-    list.add(mockIssuePointer("f1", 100, "rule3", "MINOR", 2000L));
-    list.add(mockIssuePointer("f1", 50, "rule4", "MINOR", null));
-    list.add(mockIssuePointer("f1", 100, "rule5", "MAJOR", null));
+    list.add(mockIssuePointer("f1", 100, "rule1", IssueSeverity.MAJOR, null));
+    list.add(mockIssuePointer("f1", 100, "rule2", IssueSeverity.MAJOR, 1000L));
+    list.add(mockIssuePointer("f1", 100, "rule3", IssueSeverity.MINOR, 2000L));
+    list.add(mockIssuePointer("f1", 50, "rule4", IssueSeverity.MINOR, null));
+    list.add(mockIssuePointer("f1", 100, "rule5", IssueSeverity.MAJOR, null));
 
     List<LiveIssue> sorted = new ArrayList<>(list);
     sorted.sort(new IssueTreeModelBuilder.IssueComparator());
@@ -104,13 +106,13 @@ public class IssueTreeModelBuilderTest {
     List<LiveIssue> issueList = new LinkedList<>();
 
     for (var i = 0; i < numIssues; i++) {
-      issueList.add(mockIssuePointer(fileName, i, "rule" + i, "MAJOR", (long) i));
+      issueList.add(mockIssuePointer(fileName, i, "rule" + i, IssueSeverity.MAJOR, (long) i));
     }
 
     data.put(file, issueList);
   }
 
-  private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, String severity, @Nullable Long creationDate) {
+  private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, IssueSeverity severity, @Nullable Long creationDate) {
     var issue = mock(Issue.class);
     var psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
@@ -118,6 +120,7 @@ public class IssueTreeModelBuilderTest {
     when(issue.getInputFile()).thenReturn(f);
     when(issue.getRuleKey()).thenReturn(rule);
     when(issue.getSeverity()).thenReturn(severity);
+    when(issue.getType()).thenReturn(RuleType.BUG);
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
     var ip = new LiveIssue(issue, psiFile, Collections.emptyList());

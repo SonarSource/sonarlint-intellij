@@ -32,6 +32,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParam;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleParamType;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
   protected Boolean activated;
@@ -125,11 +127,11 @@ public abstract class RulesTreeNode<T> extends DefaultMutableTreeNode {
       return details.isActiveByDefault();
     }
 
-    public String severity() {
-      return details.getSeverity();
+    public IssueSeverity severity() {
+      return details.getDefaultSeverity();
     }
 
-    public String type() {
+    public RuleType type() {
       return details.getType();
     }
 

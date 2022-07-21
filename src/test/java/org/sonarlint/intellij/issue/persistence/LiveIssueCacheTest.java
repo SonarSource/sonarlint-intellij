@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyCollection;
@@ -222,7 +223,7 @@ public class LiveIssueCacheTest extends AbstractSonarLintLightTests {
   private LiveIssue createTestIssue(String ruleKey) {
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn(ruleKey);
-    when(issue.getUserSeverity()).thenReturn("MAJOR");
+    when(issue.getUserSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getMessage()).thenReturn("msg");
 
     return issue;

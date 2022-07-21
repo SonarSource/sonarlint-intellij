@@ -30,6 +30,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -49,8 +51,8 @@ public class RulesTreeTableModelTest {
 
   @Before
   public void setUp() {
-    when(ruleDetails.getType()).thenReturn("BUG");
-    when(ruleDetails.getSeverity()).thenReturn("MAJOR");
+    when(ruleDetails.getType()).thenReturn(RuleType.BUG);
+    when(ruleDetails.getDefaultSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(ruleDetails.getKey()).thenReturn("key");
     when(ruleDetails.isActiveByDefault()).thenReturn(false);
     root.add(lang);

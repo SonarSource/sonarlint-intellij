@@ -20,7 +20,8 @@
 package org.sonarlint.intellij.issue.tracking;
 
 import javax.annotation.CheckForNull;
-import javax.annotation.Nullable;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 public interface Trackable {
 
@@ -50,7 +51,7 @@ public interface Trackable {
   boolean isResolved();
 
   @CheckForNull
-  String getUserSeverity();
+  IssueSeverity getUserSeverity();
 
-  String getType();
+  RuleType getType();
 }

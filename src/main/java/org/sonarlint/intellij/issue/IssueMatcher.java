@@ -30,9 +30,8 @@ import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
-
 import javax.annotation.Nullable;
-
+import org.sonarsource.sonarlint.core.commons.TextRangeWithHash;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 
 public class IssueMatcher {
@@ -55,7 +54,7 @@ public class IssueMatcher {
    * Tries to match an SQ issue to an IntelliJ file.
    * <b>Can only be called with getLive access</b>.
    */
-  public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.serverconnection.ServerTaintIssue.TextRange textRange) throws NoMatchException {
+  public RangeMarker match(VirtualFile file, TextRangeWithHash textRange) throws NoMatchException {
     var psiFile = findFile(file);
     return match(psiFile, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
@@ -65,7 +64,7 @@ public class IssueMatcher {
     return match(psiFile, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
-  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.analysis.api.TextRange textRange) throws NoMatchException {
+  public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.commons.TextRange textRange) throws NoMatchException {
     return match(file, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 

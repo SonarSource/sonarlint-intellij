@@ -30,6 +30,7 @@ import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.util.ProjectLogOutput
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.serverapi.push.ServerEvent
 import java.util.Optional
 
 interface ServerEventsService {
@@ -54,6 +55,7 @@ class ServerEventsProductionService : ServerEventsService {
             serverConnection.endpointParams,
             serverConnection.httpClient,
             getProjectKeys(serverConnection, openedProjects),
+            this::handleEvents,
             CompositeLogOutput(getLogOutputs(serverConnection, openedProjects))
         )
     }
@@ -67,9 +69,14 @@ class ServerEventsProductionService : ServerEventsService {
                 connection.endpointParams,
                 connection.httpClient,
                 getProjectKeys(connection, openedProjects),
+                this::handleEvents,
                 CompositeLogOutput(getLogOutputs(connection, openedProjects))
             )
         }
+    }
+
+    private fun handleEvents(event: ServerEvent) {
+        // TODO
     }
 
     private fun getProjectKeys(serverConnection: ServerConnection, projects: Set<Project>) =

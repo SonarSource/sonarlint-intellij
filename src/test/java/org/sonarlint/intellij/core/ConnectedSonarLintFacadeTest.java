@@ -31,7 +31,9 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedAnalysisConfiguration;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedRuleDetails;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
@@ -83,6 +85,6 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   }
 
   private static ConnectedRuleDetails ruleDetails(String ruleKey) {
-    return new ConnectedRuleDetails(ruleKey, "ruleName", "ruleHtmlDescription", "BLOCKER", "CODE_SMELL", Language.JAVA, "ruleExtendedDescription");
+    return new ConnectedRuleDetails(ruleKey, "ruleName", "ruleHtmlDescription", IssueSeverity.BLOCKER, RuleType.CODE_SMELL, Language.JAVA, "ruleExtendedDescription");
   }
 }

@@ -24,6 +24,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import javax.swing.Icon;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 public class SonarLintIcons {
   public static final Icon ICON_SONARQUBE = getIcon("/images/SonarQube.png");
@@ -85,12 +87,12 @@ public class SonarLintIcons {
     // only static
   }
 
-  public static Icon severity12(String severity) {
-    return SEVERITY_ICONS_12.get(severity.toLowerCase(Locale.ENGLISH));
+  public static Icon severity12(IssueSeverity severity) {
+    return SEVERITY_ICONS_12.get(severity.toString().toLowerCase(Locale.ENGLISH));
   }
 
-  public static Icon type12(String type) {
-    return TYPE_ICONS_12.get(type.toLowerCase(Locale.ENGLISH));
+  public static Icon type12(RuleType type) {
+    return TYPE_ICONS_12.get(type.toString().toLowerCase(Locale.ENGLISH));
   }
 
   public static Icon severity(String severity) {

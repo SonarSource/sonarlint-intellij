@@ -43,7 +43,7 @@ class ServerEventsProductionServiceTest : AbstractSonarLintLightTests() {
 
         service.autoSubscribe(ProjectBinding("connectionName", "projectKey", emptyMap()))
 
-        verify(engine).subscribeForEvents(any(), any(), eq(setOf("projectKey")), any())
+        verify(engine).subscribeForEvents(any(), any(), eq(setOf("projectKey")), any(), any())
     }
 
     @Test
@@ -58,6 +58,6 @@ class ServerEventsProductionServiceTest : AbstractSonarLintLightTests() {
 
         service.unsubscribe(project)
 
-        verify(engine).subscribeForEvents(any(), any(), eq(emptySet()), any())
+        verify(engine).subscribeForEvents(any(), any(), eq(emptySet()), any(), any())
     }
 }

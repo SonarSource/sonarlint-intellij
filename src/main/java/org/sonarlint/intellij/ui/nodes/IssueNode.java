@@ -47,16 +47,17 @@ public class IssueNode extends AbstractNode {
 
   @Override
   public void render(TreeCellRenderer renderer) {
-    var severity = StringUtil.capitalize(issue.getUserSeverity().toLowerCase(Locale.ENGLISH));
+    var severity = issue.getUserSeverity();
+    var severityText = StringUtil.capitalize(severity.toString().toLowerCase(Locale.ENGLISH));
     var type = issue.getType();
 
     if (type != null) {
-      var typeStr = type.replace('_', ' ').toLowerCase(Locale.ENGLISH);
-      renderer.setIconToolTip(severity + " " + typeStr);
+      var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
+      renderer.setIconToolTip(severityText + " " + typeStr);
       var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
     } else {
-      renderer.setIconToolTip(severity);
+      renderer.setIconToolTip(severityText);
       setIcon(renderer, SonarLintIcons.severity12(severity));
     }
 

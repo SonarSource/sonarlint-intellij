@@ -29,8 +29,10 @@ import org.sonarsource.sonarlint.core.analysis.api.ClientInputFileEdit
 import org.sonarsource.sonarlint.core.analysis.api.Flow
 import org.sonarsource.sonarlint.core.analysis.api.QuickFix
 import org.sonarsource.sonarlint.core.analysis.api.TextEdit
-import org.sonarsource.sonarlint.core.analysis.api.TextRange
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
+import org.sonarsource.sonarlint.core.commons.IssueSeverity
+import org.sonarsource.sonarlint.core.commons.RuleType
+import org.sonarsource.sonarlint.core.commons.TextRange
 
 fun aLiveIssue(
     file: PsiFile,
@@ -47,8 +49,8 @@ fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = o
     override fun getMessage() = "message"
     override fun getInputFile() = aClientInputFile(file)
 
-    override fun getSeverity() = "MAJOR"
-    override fun getType() = "BUG"
+    override fun getSeverity() = IssueSeverity.MAJOR
+    override fun getType() = RuleType.BUG
     override fun getRuleKey() = "ruleKey"
     override fun flows() = mutableListOf<Flow>()
     override fun quickFixes() = mutableListOf<QuickFix>()

@@ -31,6 +31,8 @@ import javax.annotation.Nullable;
 import org.apache.commons.codec.binary.Hex;
 import org.sonarlint.intellij.issue.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
@@ -49,8 +51,8 @@ public class LiveIssue implements Trackable {
   private final List<QuickFix> quickFixes;
 
   // tracked fields (mutable)
-  private String severity;
-  private String type;
+  private IssueSeverity severity;
+  private RuleType type;
   private Long creationDate;
   private String serverIssueKey;
   private boolean resolved;
@@ -165,12 +167,12 @@ public class LiveIssue implements Trackable {
   }
 
   @Override
-  public String getUserSeverity() {
+  public IssueSeverity getUserSeverity() {
     return severity;
   }
 
   @Override
-  public String getType() {
+  public RuleType getType() {
     return type;
   }
 
@@ -202,11 +204,11 @@ public class LiveIssue implements Trackable {
     this.resolved = resolved;
   }
 
-  public void setSeverity(String severity) {
+  public void setSeverity(IssueSeverity severity) {
     this.severity = severity;
   }
 
-  public void setType(@Nullable String type) {
+  public void setType(@Nullable RuleType type) {
     this.type = type;
   }
 

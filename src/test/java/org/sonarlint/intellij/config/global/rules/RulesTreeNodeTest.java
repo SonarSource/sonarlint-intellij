@@ -24,7 +24,9 @@ import java.util.HashMap;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -38,8 +40,8 @@ public class RulesTreeNodeTest {
     when(details.getKey()).thenReturn("key");
     when(details.getHtmlDescription()).thenReturn("html");
     when(details.isActiveByDefault()).thenReturn(true);
-    when(details.getSeverity()).thenReturn("severity");
-    when(details.getType()).thenReturn("type");
+    when(details.getDefaultSeverity()).thenReturn(IssueSeverity.MAJOR);
+    when(details.getType()).thenReturn(RuleType.BUG);
     when(details.getLanguage()).thenReturn(Language.JAVA);
 
     var node = new RulesTreeNode.Rule(details, false, new HashMap<>());
@@ -49,8 +51,8 @@ public class RulesTreeNodeTest {
     assertThat(node.getHtmlDescription()).isEqualTo("html");
     assertThat(node.getDefaultActivation()).isTrue();
     assertThat(node.isNonDefault()).isTrue();
-    assertThat(node.severity()).isEqualTo("severity");
-    assertThat(node.type()).isEqualTo("type");
+    assertThat(node.severity()).isEqualTo(IssueSeverity.MAJOR);
+    assertThat(node.type()).isEqualTo(RuleType.BUG);
     assertThat(node.language()).isEqualTo(Language.JAVA);
   }
 
