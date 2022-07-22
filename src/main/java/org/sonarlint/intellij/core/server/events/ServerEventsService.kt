@@ -27,10 +27,14 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter
 import org.sonarlint.intellij.util.ProjectLogOutput
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.serverapi.push.IssueChangedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.ServerEvent
+import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
+import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
 import java.util.Optional
 
 interface ServerEventsService {
@@ -38,8 +42,7 @@ interface ServerEventsService {
         Settings.getGlobalSettings().getServerConnectionByName(binding.connectionName).ifPresent { connection ->
             val engineManager = getService(EngineManager::class.java)
             autoSubscribe(
-                engineManager.getConnectedEngineIfStarted(binding.connectionName),
-                connection
+                engineManager.getConnectedEngineIfStarted(binding.connectionName), connection
             )
         }
     }
@@ -76,20 +79,35 @@ class ServerEventsProductionService : ServerEventsService {
     }
 
     private fun handleEvents(event: ServerEvent) {
-        // TODO
+        identifyProjectsImpactedByTaintEvent(event).forEach { project ->
+            getService(
+                project, TaintVulnerabilitiesPresenter::class.java
+            ).presentTaintVulnerabilitiesForOpenFiles()
+        }
     }
 
+    private fun identifyProjectsImpactedByTaintEvent(event: ServerEvent): Set<Project> {
+        val projectKey = when (event) {
+            is TaintVulnerabilityRaisedEvent -> event.projectKey
+            is TaintVulnerabilityClosedEvent -> event.projectKey
+            is IssueChangedEvent -> event.projectKey
+            else -> null
+        }
+        return ProjectManager.getInstance().openProjects.filter { project ->
+            getService(
+                project, ProjectBindingManager::class.java
+            ).uniqueProjectKeys.contains(projectKey)
+        }.toSet()
+    }
+
+
     private fun getProjectKeys(serverConnection: ServerConnection, projects: Set<Project>) =
-        projects
-            .filter { bindingManager(it).tryGetServerConnection().equals(Optional.of(serverConnection)) }
-            .flatMap { bindingManager(it).uniqueProjectKeys }
-            .toSet()
+        projects.filter { bindingManager(it).tryGetServerConnection().equals(Optional.of(serverConnection)) }
+            .flatMap { bindingManager(it).uniqueProjectKeys }.toSet()
 
     private fun getLogOutputs(serverConnection: ServerConnection, projects: Set<Project>) =
-        projects
-            .filter { bindingManager(it).tryGetServerConnection().equals(Optional.of(serverConnection)) }
-            .map { ProjectLogOutput(it) }
-            .toSet()
+        projects.filter { bindingManager(it).tryGetServerConnection().equals(Optional.of(serverConnection)) }
+            .map { ProjectLogOutput(it) }.toSet()
 
     private fun openedProjects() = ProjectManager.getInstance().openProjects.toSet()
 
