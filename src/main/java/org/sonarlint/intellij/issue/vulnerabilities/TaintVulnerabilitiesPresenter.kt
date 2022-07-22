@@ -63,6 +63,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
   fun refreshTaintVulnerabilitiesForOpenFiles(project: Project) {
     try {
       project.getOpenFiles().forEach { refreshTaintVulnerabilitiesFor(project, it) }
+      syncTaintVulnerabilitiesFor(project)
     }
     catch (e: Exception) {
       showBalloon(project, TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE, RefreshTaintVulnerabilitiesAction("Retry"))
@@ -79,8 +80,18 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
 
     val serverConnection = bindingManager.serverConnection
     val branchName = getService(project, VcsService::class.java).getServerBranchName(module)
-    bindingManager.connectedEngine.downloadAllServerIssuesForFile(serverConnection.endpointParams,
+    bindingManager.connectedEngine.downloadAllServerTaintIssuesForFile(serverConnection.endpointParams,
       serverConnection.httpClient, projectBinding, relativePath, branchName, null)
+  }
+
+  private fun syncTaintVulnerabilitiesFor(project: Project) {
+    val bindingManager = getService(project, ProjectBindingManager::class.java)
+    val serverConnection = bindingManager.serverConnection
+    bindingManager.uniqueProjectKeysAndBranchesPairs.forEach {
+      bindingManager.connectedEngine.syncServerTaintIssues(
+        serverConnection.endpointParams, serverConnection.httpClient, it.projectKey, it.branchName, null
+      )
+    }
   }
 
   fun presentTaintVulnerabilitiesForOpenFiles() {

@@ -47,16 +47,16 @@ class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
         }
 
         override fun fileClosed(source: FileEditorManager, file: VirtualFile) {
-          triggerRefresh()
+          triggerDisplayUpdate()
         }
       })
-      subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener { triggerRefresh() })
+      subscribe(ProjectConfigurationListener.TOPIC, ProjectConfigurationListener { triggerDisplayUpdate() })
       subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
         override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
-          triggerRefresh()
+          triggerDisplayUpdate()
         }
       })
-      subscribe(BindingStorageUpdateTask.Listener.TOPIC, BindingStorageUpdateTask.Listener { runInEdt { triggerRefresh() } })
+      subscribe(BindingStorageUpdateTask.Listener.TOPIC, BindingStorageUpdateTask.Listener { runInEdt { triggerDisplayUpdate() } })
       subscribe(VcsListener.TOPIC, VcsListener { module, _ ->
         if (project.getOpenFiles().any { module == findModuleForFile(it, project) }) {
           ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Refreshing taint vulnerabilities...", false, ALWAYS_BACKGROUND) {
@@ -67,10 +67,14 @@ class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
         }})
     }
 
-    triggerRefresh()
+    triggerDisplayUpdate()
+  }
+
+  private fun triggerDisplayUpdate() {
+    getService(project, TaintVulnerabilitiesPresenter::class.java).presentTaintVulnerabilitiesForOpenFiles()
   }
 
   private fun triggerRefresh() {
-    getService(project, TaintVulnerabilitiesPresenter::class.java).presentTaintVulnerabilitiesForOpenFiles()
+    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFiles(project)
   }
 }
