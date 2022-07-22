@@ -26,13 +26,12 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.vcs.VcsListener;
+import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -96,8 +95,7 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
       engine.sync(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKeysToSync, new TaskProgressMonitor(progressIndicator, myProject));
 
       var projectAndBranchesToSync = bindingManager.getUniqueProjectKeysAndBranchesPairs();
-      projectAndBranchesToSync.forEach(pb -> engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(),
-        new TaskProgressMonitor(progressIndicator, myProject)));
+      projectAndBranchesToSync.forEach(pb -> syncIssuesForBranch(engine, serverConnection, pb.getProjectKey(), pb.getBranchName(), progressIndicator));
       myProject.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished();
     } catch (Exception e) {
       log.log("There was an error while synchronizing quality profiles: " + e.getMessage(), ClientLogOutput.Level.WARN);
@@ -133,14 +131,19 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
           try {
             var serverConnection = projectBindingManager.getServerConnection();
             progressIndicator.setIndeterminate(false);
-            engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), moduleProjectKey, branchName,
-              new TaskProgressMonitor(progressIndicator, myProject));
+            syncIssuesForBranch(engine, serverConnection, moduleProjectKey, branchName, progressIndicator);
           } catch (Exception e) {
             log.log("There was an error while synchronizing issues: " + e.getMessage(), ClientLogOutput.Level.WARN);
           }
         }
       });
+  }
 
+  private void syncIssuesForBranch(ConnectedSonarLintEngine engine, ServerConnection serverConnection, String projectKey, String branchName, ProgressIndicator progressIndicator) {
+    engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKey, branchName,
+      new TaskProgressMonitor(progressIndicator, myProject));
+    engine.syncServerTaintIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKey, branchName,
+      new TaskProgressMonitor(progressIndicator, myProject));
   }
 
   @Override
