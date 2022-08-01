@@ -21,6 +21,7 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.execution.process.OSProcessUtil;
 import com.intellij.openapi.application.PathManager;
+import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.util.PlatformUtils;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -33,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.CheckForNull;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.file.PathUtils;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.LanguageActivator;
@@ -191,7 +195,30 @@ public class SonarLintEngineFactory {
   }
 
   private static Path getSonarLintHome() {
-    return Paths.get(PathManager.getConfigPath()).resolve("sonarlint");
+    migrate();
+    return getSonarlintSystemPath();
+  }
+
+  /**
+   * SLI-657
+   */
+  private static synchronized void migrate() {
+    var oldPath = Paths.get(PathManager.getConfigPath()).resolve("sonarlint");
+    var newPath = getSonarlintSystemPath();
+    if (Files.exists(oldPath) && !Files.exists(newPath)) {
+      try {
+        FileUtils.moveDirectory(oldPath.toFile(), newPath.toFile());
+      } catch (IOException e) {
+        SonarLintUtils.getService(GlobalLogOutput.class).logError("Unable to migrate storage", e);
+      } finally {
+        FileUtils.deleteQuietly(oldPath.toFile());
+      }
+    }
+  }
+
+  @NotNull
+  private static Path getSonarlintSystemPath() {
+    return Paths.get(PathManager.getSystemPath()).resolve("sonarlint");
   }
 
   private static Path getWorkDir() {
