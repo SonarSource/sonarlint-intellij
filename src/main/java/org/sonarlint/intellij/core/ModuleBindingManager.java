@@ -111,7 +111,7 @@ public class ModuleBindingManager {
     var projectBinding = engine.calculatePathPrefixes(projectKey, moduleFiles);
     var settings = getSettingsFor(module);
     settings.setIdePathPrefix(projectBinding.idePathPrefix());
-    settings.setSqPathPrefix(projectBinding.sqPathPrefix());
+    settings.setSqPathPrefix(projectBinding.serverPathPrefix());
   }
 
   private List<String> collectPathsForModule() {
