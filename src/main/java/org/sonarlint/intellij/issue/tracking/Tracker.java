@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.issue.tracking;
 
 import com.intellij.openapi.application.ApplicationManager;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,7 +28,6 @@ import java.util.Objects;
 import java.util.function.Function;
 import javax.annotation.Nullable;
 
-import org.apache.commons.lang.StringUtils;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 public class Tracker<RAW extends Trackable, BASE extends Trackable> {

@@ -152,7 +152,7 @@ public class BindingStorageUpdateTask {
     }
   }
 
-  private List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ConnectedSonarLintEngine engine, ServerConnection connection, TaskProgressMonitor monitor,
+  private static List<ProjectStorageUpdateFailure> tryUpdateProjectStorages(ConnectedSonarLintEngine engine, ServerConnection connection, TaskProgressMonitor monitor,
     Collection<Project> projectsToUpdate) {
     var failures = new ArrayList<ProjectStorageUpdateFailure>();
 

@@ -100,7 +100,8 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     try {
       var serverConnection = getService(project, ProjectBindingManager.class).getServerConnection();
       return engine.getActiveRuleDetails(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), ruleKey, projectKey)
-        .thenApply(details -> RuleDescription.from(details.getKey(), details.getName(), details.getDefaultSeverity().toString(), details.getType().toString(), getFullDescription(details)));
+        .thenApply(
+          details -> RuleDescription.from(details.getKey(), details.getName(), details.getDefaultSeverity().toString(), details.getType().toString(), getFullDescription(details)));
     } catch (InvalidBindingException e) {
       return CompletableFuture.completedFuture(null);
     }
