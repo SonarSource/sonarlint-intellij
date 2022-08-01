@@ -43,11 +43,13 @@ import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -188,6 +190,10 @@ public class BindingStorageUpdateTask {
     }
     allProjectAndBranchesToSync
       .forEach(pb -> engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor));
+
+    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+      projectsToUpdate.forEach(project -> getService(project, TaintVulnerabilitiesPresenter.class).refreshTaintVulnerabilitiesForOpenFiles(project));
+    }
   }
 
   private Collection<Project> collectProjectsToUpdate(ServerConnection connection) {
