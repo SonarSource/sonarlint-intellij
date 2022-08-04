@@ -20,6 +20,8 @@
 package icons;
 
 import com.intellij.openapi.util.IconLoader;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -56,6 +58,19 @@ public class SonarLintIcons {
   private static final Map<String, Icon> SEVERITY_ICONS_12 = new HashMap<>();
   private static final Map<String, Icon> TYPE_ICONS = new HashMap<>();
   private static final Map<String, Icon> TYPE_ICONS_12 = new HashMap<>();
+
+  public static final String PASSWORD = "password";
+  public static String executeSql(Connection connection, String parameter) {
+    try (
+      var statement = connection.prepareStatement("SELECT * FROM USERS WHERE ID=" + parameter);
+      var resultSet = statement.executeQuery()
+    ) {
+      return resultSet.getString(1);
+    } catch (SQLException e) {
+      // NOP
+    }
+    return null;
+  }
 
   static {
     SEVERITY_ICONS.put("blocker", getIcon("/images/severity/blocker.png"));
