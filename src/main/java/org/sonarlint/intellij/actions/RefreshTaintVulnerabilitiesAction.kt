@@ -21,9 +21,6 @@ package org.sonarlint.intellij.actions
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -35,12 +32,6 @@ class RefreshTaintVulnerabilitiesAction(text: String = "Refresh") : AbstractSona
 
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
-
-    ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Refreshing taint vulnerabilities...", false, ALWAYS_BACKGROUND) {
-
-      override fun run(indicator: ProgressIndicator) {
-        getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFiles(project)
-      }
-    })
+    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFilesAsync(project)
   }
 }

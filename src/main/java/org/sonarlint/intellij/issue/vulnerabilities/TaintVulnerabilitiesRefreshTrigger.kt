@@ -19,12 +19,8 @@
  */
 package org.sonarlint.intellij.issue.vulnerabilities
 
-import com.intellij.openapi.application.runInEdt
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -32,7 +28,6 @@ import org.sonarlint.intellij.common.vcs.VcsListener
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 import org.sonarlint.intellij.messages.ProjectConfigurationListener
-import org.sonarlint.intellij.tasks.BindingStorageUpdateTask
 import org.sonarlint.intellij.util.SonarLintAppUtils.findModuleForFile
 import org.sonarlint.intellij.util.getOpenFiles
 
@@ -56,15 +51,11 @@ class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
           triggerDisplayUpdate()
         }
       })
-      subscribe(BindingStorageUpdateTask.Listener.TOPIC, BindingStorageUpdateTask.Listener { runInEdt { triggerDisplayUpdate() } })
       subscribe(VcsListener.TOPIC, VcsListener { module, _ ->
         if (project.getOpenFiles().any { module == findModuleForFile(it, project) }) {
-          ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Refreshing taint vulnerabilities...", false, ALWAYS_BACKGROUND) {
-            override fun run(indicator: ProgressIndicator) {
-              getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFiles(project)
-            }
-          })
-        }})
+          triggerRefresh()
+        }
+      })
     }
 
     triggerDisplayUpdate()
@@ -75,6 +66,6 @@ class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
   }
 
   private fun triggerRefresh() {
-    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFiles(project)
+    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFilesAsync(project)
   }
 }
