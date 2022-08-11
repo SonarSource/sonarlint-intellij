@@ -94,11 +94,12 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
 
   private fun syncTaintVulnerabilitiesFor(project: Project) {
     val bindingManager = getService(project, ProjectBindingManager::class.java)
-    val serverConnection = bindingManager.serverConnection
-    bindingManager.uniqueProjectKeysAndBranchesPairs.forEach {
-      bindingManager.connectedEngine.syncServerTaintIssues(
-        serverConnection.endpointParams, serverConnection.httpClient, it.projectKey, it.branchName, null
-      )
+    bindingManager.tryGetServerConnection().ifPresent { serverConnection ->
+      bindingManager.uniqueProjectKeysAndBranchesPairs.forEach {
+        bindingManager.connectedEngine.syncServerTaintIssues(
+          serverConnection.endpointParams, serverConnection.httpClient, it.projectKey, it.branchName, null
+        )
+      }
     }
   }
 
