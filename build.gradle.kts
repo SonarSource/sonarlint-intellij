@@ -14,18 +14,18 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 plugins {
-    kotlin("jvm") version "1.7.0"
-    id("org.jetbrains.intellij") version "1.7.0"
-    id("org.sonarqube") version "3.3"
+    kotlin("jvm") version "1.7.10"
+    id("org.jetbrains.intellij") version "1.9.0"
+    id("org.sonarqube") version "3.4.0.2513"
     java
     jacoco
     id("com.github.hierynomus.license") version "0.16.1"
-    id("com.jfrog.artifactory") version "4.24.20"
-    id("com.google.protobuf") version "0.8.17"
+    id("com.jfrog.artifactory") version "4.29.0"
+    id("com.google.protobuf") version "0.8.19"
     idea
     signing
-    id("de.undercouch.download") version "4.1.2"
-    id("org.cyclonedx.bom") version "1.5.0"
+    id("de.undercouch.download") version "5.2.0"
+    id("org.cyclonedx.bom") version "1.7.1"
 }
 
 buildscript {
@@ -33,7 +33,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.5")
+        "classpath"(group = "org.jetbrains.intellij", name = "blockmap", version = "1.0.6")
     }
 }
 
@@ -86,12 +86,11 @@ allprojects {
         }
     }
 
-    val bomFile = layout.buildDirectory.file("reports/bom.json")
-    tasks.withType<org.cyclonedx.gradle.CycloneDxTask>().configureEach {
-        includeConfigs += setOf("runtimeClasspath", "sqplugins_deps")
-        outputs.file(bomFile)
-        outputs.upToDateWhen { false }
+    tasks.cyclonedxBom {
+        setIncludeConfigs(listOf("runtimeClasspath", "sqplugins_deps"))
     }
+
+    val bomFile = layout.buildDirectory.file("reports/bom.json")
     artifacts.add("archives", bomFile.get().asFile) {
         name = "sonarlint-intellij"
         type = "json"
