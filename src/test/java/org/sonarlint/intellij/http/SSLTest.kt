@@ -20,6 +20,9 @@
 package org.sonarlint.intellij.http
 
 import com.intellij.util.net.ssl.CertificateManager
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.assertj.core.api.Assertions.assertThat
 import org.eclipse.jetty.http.HttpVersion
 import org.eclipse.jetty.server.HttpConfiguration
@@ -41,9 +44,6 @@ import java.io.IOException
 import java.net.InetAddress
 import java.net.ServerSocket
 import java.nio.file.Paths
-import javax.servlet.http.HttpServlet
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
 
 private const val SERVER_KEYSTORE = "server.p12"
 private const val SERVER_KEYSTORE_PASSWORD = "pwdServerP12"

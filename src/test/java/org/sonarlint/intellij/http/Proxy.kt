@@ -19,6 +19,10 @@
  */
 package org.sonarlint.intellij.http
 
+import jakarta.servlet.ServletRequest
+import jakarta.servlet.ServletResponse
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.http.HttpHeader
 import org.eclipse.jetty.proxy.ProxyServlet
 import org.eclipse.jetty.security.ConstraintMapping
@@ -40,16 +44,12 @@ import org.eclipse.jetty.server.handler.DefaultHandler
 import org.eclipse.jetty.server.handler.HandlerCollection
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHandler
-import org.eclipse.jetty.util.B64Code
 import org.eclipse.jetty.util.security.Constraint
 import org.eclipse.jetty.util.security.Credential
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import java.io.IOException
 import java.nio.charset.StandardCharsets
-import javax.servlet.ServletRequest
-import javax.servlet.ServletResponse
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import java.util.Base64
 
 
 class Proxy {
@@ -145,7 +145,7 @@ class Proxy {
             val method = credentials.substring(0, space)
             if ("basic".equals(method, ignoreCase = true)) {
               credentials = credentials.substring(space + 1)
-              credentials = B64Code.decode(credentials, StandardCharsets.ISO_8859_1)
+              credentials = String(Base64.getDecoder().decode(credentials), StandardCharsets.ISO_8859_1)
               val i = credentials.indexOf(':')
               if (i > 0) {
                 val username = credentials.substring(0, i)
