@@ -192,7 +192,7 @@ dependencies {
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.5.0.3376")
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.4.0.50839")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
-        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.35.0.50389")
+        "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.37.0.60132")
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.1.0.36766")
     }
     // workaround for light tests in 2020.3, might remove later
