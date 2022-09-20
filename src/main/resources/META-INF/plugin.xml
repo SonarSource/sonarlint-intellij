@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>7.1 - Support analysis of Kotlin 1.7.10. 8 new rules around unit tests for Python. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>7.1 - Support analysis of Kotlin 1.7.10. 8 new rules around unit tests for Python. Support analysis of PHP 8.2. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.0 - Reworked connected mode storage. Auto-sync of issues with SonarQube 9.6+.</li>
         <li>6.8 - Use embedded JS/TS/HTML/Kotlin/Ruby/XML analyzer even in connected mode. Introduce quick fixes for 7 Python rules. 15 new rules for Java (6 for regular expressions, 7 for AWS Cloud functions). 5 new rules for JS/TS. Add support for TypeScript 4.7. 3 new rules for C/C++. Add support for Ruby 3.1. New and improved C# rules. Support for C# 10. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>6.7 - Quick fixes for 3 C/C++ and 30 JS/TS rules. 17 new rules for Python (8 for regular expressions). Support for TypeScript 4.6. Activate JS rule S1172 by default. Activate C# rule S2222 by default. Remove legacy C/C++ rule keys. Bug fixes, fewer FPs and improvements for many languages.</li>
