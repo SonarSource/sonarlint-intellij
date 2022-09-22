@@ -30,8 +30,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsListener;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
@@ -132,6 +134,9 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
             var serverConnection = projectBindingManager.getServerConnection();
             progressIndicator.setIndeterminate(false);
             syncIssuesForBranch(engine, serverConnection, moduleProjectKey, branchName, progressIndicator);
+            if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+              getService(myProject, TaintVulnerabilitiesPresenter.class).presentTaintVulnerabilitiesForOpenFiles();
+            }
           } catch (Exception e) {
             log.log("There was an error while synchronizing issues: " + e.getMessage(), ClientLogOutput.Level.WARN);
           }
@@ -142,8 +147,10 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
   private void syncIssuesForBranch(ConnectedSonarLintEngine engine, ServerConnection serverConnection, String projectKey, String branchName, ProgressIndicator progressIndicator) {
     engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKey, branchName,
       new TaskProgressMonitor(progressIndicator, myProject));
-    engine.syncServerTaintIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKey, branchName,
-      new TaskProgressMonitor(progressIndicator, myProject));
+    if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+      engine.syncServerTaintIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKey, branchName,
+        new TaskProgressMonitor(progressIndicator, myProject));
+    }
   }
 
   @Override
