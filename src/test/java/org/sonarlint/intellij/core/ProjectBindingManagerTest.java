@@ -20,12 +20,9 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.ProgressManager;
-
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,12 +34,9 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
-import org.sonarsource.sonarlint.core.serverconnection.GlobalStorageStatus;
-import org.sonarsource.sonarlint.core.serverconnection.ProjectStorageStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class ProjectBindingManagerTest extends AbstractSonarLintLightTests {
   private ProjectBindingManager projectBindingManager;
