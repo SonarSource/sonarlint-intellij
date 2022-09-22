@@ -136,21 +136,19 @@ public class LocalFileExclusions {
 
   private ExcludeResult checkFileInSourceFolders(VirtualFile file, Module module) {
     var fileIndex = ProjectRootManager.getInstance(myProject).getFileIndex();
-    return ReadAction.compute(() -> {
-      var sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
-      if (sourceFolder != null) {
-        if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
-          return ExcludeResult.excluded("file is classified as generated in project structure");
-        }
-        if (SonarLintUtils.isJavaResource(sourceFolder)) {
-          return ExcludeResult.excluded("file is classified as Java resource in project structure");
-        }
+    var sourceFolder = SonarLintUtils.getSourceFolder(fileIndex.getSourceRootForFile(file), module);
+    if (sourceFolder != null) {
+      if (SonarLintUtils.isGeneratedSource(sourceFolder)) {
+        return ExcludeResult.excluded("file is classified as generated in project structure");
       }
+      if (SonarLintUtils.isJavaResource(sourceFolder)) {
+        return ExcludeResult.excluded("file is classified as Java resource in project structure");
+      }
+    }
 
-      // the fact that the file doesn't explicitly belong to sources doesn't mean it's not sources.
-      // In WebStorm, for example, everything is considered to be sources unless it is explicitly marked otherwise.
-      return ExcludeResult.notExcluded();
-    });
+    // the fact that the file doesn't explicitly belong to sources doesn't mean it's not sources.
+    // In WebStorm, for example, everything is considered to be sources unless it is explicitly marked otherwise.
+    return ExcludeResult.notExcluded();
   }
 
   public Map<Module, Collection<VirtualFile>> retainNonExcludedFilesByModules(Collection<VirtualFile> files, boolean forcedAnalysis,
@@ -180,11 +178,10 @@ public class LocalFileExclusions {
 
     var exclusionCheckers = Stream.concat(
       defaultExclusionCheckers(file, module),
-      forcedAnalysis ? Stream.empty() : onTheFlyExclusionCheckers(file, module)
-    ).collect(Collectors.toList());
+      forcedAnalysis ? Stream.empty() : onTheFlyExclusionCheckers(file, module)).collect(Collectors.toList());
 
     for (var exclusionChecker : exclusionCheckers) {
-      var result = exclusionChecker.get();
+      var result = ReadAction.compute(exclusionChecker::get);
       if (result.isExcluded()) {
         excludedFileHandler.accept(file, result);
         return;
@@ -199,8 +196,7 @@ public class LocalFileExclusions {
     return Stream.of(
       () -> checkVcsIgnored(file),
       () -> checkFileInSourceFolders(file, module),
-      () -> checkExclusionsFromSonarLintSettings(file, module)
-    );
+      () -> checkExclusionsFromSonarLintSettings(file, module));
   }
 
   @NotNull
@@ -210,8 +206,7 @@ public class LocalFileExclusions {
       LocalFileExclusions::excludeIfPowerSaveModeOn,
       () -> checkProjectStructureExclusion(file),
       () -> excludeUnsupportedFileOrFileType(file),
-      () -> checkExclusionFromEP(file, module)
-    );
+      () -> checkExclusionFromEP(file, module));
   }
 
   @NotNull
