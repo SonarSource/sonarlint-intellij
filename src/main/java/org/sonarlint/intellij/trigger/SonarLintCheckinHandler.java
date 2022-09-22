@@ -176,8 +176,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       resultStr,
       "SonarLint Analysis Results",
       "&Review Issues",
-      "Comm&it Anyway",
-      "Close",
+      "C&ontinue",
+      "Cancel",
       UIUtil.getWarningIcon());
 
     if (answer == Messages.YES) {
