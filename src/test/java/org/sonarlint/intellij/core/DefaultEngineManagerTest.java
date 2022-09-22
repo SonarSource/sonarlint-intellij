@@ -20,9 +20,7 @@
 package org.sonarlint.intellij.core;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -34,8 +32,6 @@ import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine;
-import org.sonarsource.sonarlint.core.serverconnection.GlobalStorageStatus;
-import org.sonarsource.sonarlint.core.serverconnection.ProjectStorageStatus;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -96,7 +92,4 @@ public class DefaultEngineManagerTest extends AbstractSonarLintLightTests {
     return ServerConnection.newBuilder().setName(name).build();
   }
 
-  private static ProjectStorageStatus projectOk = new ProjectStorageStatus(new Date(System.currentTimeMillis()), false);
-
-  private static GlobalStorageStatus globalOk = new GlobalStorageStatus(null, new Date(System.currentTimeMillis()), false);
 }
