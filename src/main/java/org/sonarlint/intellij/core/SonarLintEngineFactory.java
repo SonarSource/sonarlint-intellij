@@ -63,7 +63,8 @@ public class SonarLintEngineFactory {
     Language.PYTHON,
     Language.RUBY,
     Language.SECRETS,
-    Language.TS);
+    Language.TS,
+    Language.YAML);
 
   private static final Set<Language> CONNECTED_ADDITIONAL_LANGUAGES = EnumSet.of(
     Language.SCALA,

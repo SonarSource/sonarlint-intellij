@@ -1,0 +1,11 @@
+Transform: AWS::Serverless-2016-10-31
+Resources:
+  LambdaFunction:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Code:
+        ZipFile: >
+          exports.handler = function(event, context) {
+            let x;
+          };
+      Runtime: nodejs8.10

@@ -88,6 +88,22 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun should_analyze_js_in_yaml_file() {
+        val fileToAnalyze = myFixture.configureByFile("src/lambda.yaml").virtualFile
+
+        val issues = analyze(fileToAnalyze)
+
+        assertThat(issues)
+            .extracting(
+                { it.ruleKey },
+                { it.message },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+            .containsExactly(
+                tuple("javascript:S1481", "Remove the declaration of the unused 'x' variable.", Pair(219, 220))
+            )
+    }
+
+    @Test
     fun should_find_cross_file_python_issue() {
         val fileToAnalyze = myFixture.configureByFiles("src/main.py", "src/mod.py").first().virtualFile
 
