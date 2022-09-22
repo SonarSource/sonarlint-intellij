@@ -104,6 +104,7 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "    \"sonarlint_product\": \"SonarLint IntelliJ\",\n"
           + "    \"ide_version\": \"IntelliJ IDEA 2020.1 (Community Edition)\",\n"
           + "    \"os\": \"Linux\",\n"
+          + "    \"arch\": \"amd64\",\n"
           + "    \"jre\": \"11.0.6\",\n"
           + "    \"nodejs\": \"11.12.0\",\n"
           + "    \"connected_mode_used\": true,\n"
