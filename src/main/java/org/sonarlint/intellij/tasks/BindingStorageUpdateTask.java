@@ -186,7 +186,12 @@ public class BindingStorageUpdateTask {
       allProjectAndBranchesToSync.addAll(projectAndBranchesToSync);
     }
     allProjectAndBranchesToSync
-      .forEach(pb -> engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor));
+      .forEach(pb -> {
+        engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor);
+        if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
+          engine.syncServerTaintIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor);
+        }
+      });
 
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       projectsToUpdate.forEach(project -> getService(project, TaintVulnerabilitiesPresenter.class).refreshTaintVulnerabilitiesForOpenFiles(project));
