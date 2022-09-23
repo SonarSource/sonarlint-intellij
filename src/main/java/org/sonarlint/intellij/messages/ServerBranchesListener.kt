@@ -21,11 +21,11 @@ package org.sonarlint.intellij.messages
 
 import com.intellij.util.messages.Topic
 
-var PROJECT_SYNC_TOPIC = Topic.create(
-    "Project synchronization events",
-    ProjectSynchronizationListener::class.java
+var SERVER_BRANCHES_TOPIC = Topic.create(
+    "Server branches events",
+    ServerBranchesListener::class.java
 )
 
-interface ProjectSynchronizationListener {
-    fun synchronizationFinished()
+interface ServerBranchesListener {
+    fun serverBranchesUpdated()
 }

@@ -34,7 +34,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsListener;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
-import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
+import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -95,10 +95,10 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
       ProjectBindingManager bindingManager = getService(myProject, ProjectBindingManager.class);
       var projectKeysToSync = bindingManager.getUniqueProjectKeys();
       engine.sync(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKeysToSync, new TaskProgressMonitor(progressIndicator, myProject));
+      myProject.getMessageBus().syncPublisher(ServerBranchesListenerKt.getSERVER_BRANCHES_TOPIC()).serverBranchesUpdated();
 
       var projectAndBranchesToSync = bindingManager.getUniqueProjectKeysAndBranchesPairs();
       projectAndBranchesToSync.forEach(pb -> syncIssuesForBranch(engine, serverConnection, pb.getProjectKey(), pb.getBranchName(), progressIndicator));
-      myProject.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished();
     } catch (Exception e) {
       log.log("There was an error while synchronizing quality profiles: " + e.getMessage(), ClientLogOutput.Level.WARN);
     }

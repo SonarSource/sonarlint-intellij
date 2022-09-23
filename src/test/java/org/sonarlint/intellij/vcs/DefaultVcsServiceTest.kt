@@ -29,27 +29,22 @@ import com.intellij.testFramework.PsiTestUtil
 import git4idea.GitVcs
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
-import org.mockito.Mockito.anyString
 import org.mockito.Mockito.mock
-import org.mockito.Mockito.times
-import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 import org.sonarlint.intellij.AbstractSonarLintHeavyTest
 import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.messages.PROJECT_BINDING_TOPIC
-import org.sonarlint.intellij.messages.PROJECT_SYNC_TOPIC
+import org.sonarlint.intellij.messages.SERVER_BRANCHES_TOPIC
 import org.sonarlint.intellij.util.ImmediateExecutorService
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import java.nio.file.Paths
-import java.util.Optional
-import kotlin.test.assertFailsWith
 
 internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
 
-    private lateinit var connectedEngine : ConnectedSonarLintEngine
+    private lateinit var connectedEngine: ConnectedSonarLintEngine
     private lateinit var vcsService: DefaultVcsService
 
     override fun setUp() {
@@ -133,7 +128,7 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         getEngineManager().registerEngine(connectedEngine, "connection")
         assertThat(vcsService.getServerBranchName(module)).isEqualTo("branch1")
 
-        verify(connectedEngine, times(1)).getServerBranches(anyString())
+        whenever(connectedEngine.getServerBranches("moduleKey")).thenThrow(IllegalStateException("Should not be called because value is cached"))
 
         assertThat(vcsService.getServerBranchName(module)).isEqualTo("branch1")
     }
@@ -198,7 +193,7 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
     }
 
     @Test
-    fun test_should_refresh_cache_when_project_is_synchronized() {
+    fun test_should_refresh_cache_when_server_branches_are_updated() {
         val module = createModule("aModule")
         addContentRootWithGitRepo(module)
         whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
@@ -217,8 +212,8 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
                 "master"
             )
         )
-        project.messageBus.syncPublisher(PROJECT_SYNC_TOPIC)
-            .synchronizationFinished()
+        project.messageBus.syncPublisher(SERVER_BRANCHES_TOPIC)
+            .serverBranchesUpdated()
 
         val resolvedBranchName = vcsService.getServerBranchName(module)
 
