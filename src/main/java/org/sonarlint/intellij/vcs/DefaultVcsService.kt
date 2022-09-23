@@ -31,13 +31,16 @@ import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectBindingListener
-import org.sonarlint.intellij.messages.ProjectSynchronizationListener
+import org.sonarlint.intellij.messages.ServerBranchesListener
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class DefaultVcsService @NonInjectable constructor(private val project: Project, private val executor: ExecutorService) : VcsService, Disposable {
+class DefaultVcsService @NonInjectable constructor(
+    private val project: Project,
+    private val executor: ExecutorService
+) : VcsService, Disposable {
     private val logger = SonarLintLogger.get()
     private val resolvedBranchPerModule: MutableMap<Module, String> = mutableMapOf()
 
@@ -58,7 +61,10 @@ class DefaultVcsService @NonInjectable constructor(private val project: Project,
         val bindingManager = getService(project, ProjectBindingManager::class.java)
         val projectKey = getService(module, ModuleBindingManager::class.java).resolveProjectKey()
         val validConnectedEngine = bindingManager.validConnectedEngine
-        val serverBranches = if (projectKey != null && validConnectedEngine != null) validConnectedEngine.getServerBranches(projectKey) else ProjectBranches(setOf("master"), "master")
+        val serverBranches =
+            if (projectKey != null && validConnectedEngine != null) validConnectedEngine.getServerBranches(projectKey)
+            // should happen only in standalone mode, if no storage getServerBranches throws
+            else ProjectBranches(setOf("master"), "master")
         val mainServerBranch = serverBranches.mainBranchName
         if (repositories.isEmpty()) {
             logger.warn("No VCS repository found for module $module")
@@ -81,7 +87,7 @@ class DefaultVcsService @NonInjectable constructor(private val project: Project,
         }
     }
 
-    private fun refreshCache() {
+    override fun refreshCache() {
         resolvedBranchPerModule.forEach { (module, previousBranchName) ->
             val newBranchName = resolveServerBranchName(module)
             resolvedBranchPerModule[module] = newBranchName
@@ -107,10 +113,11 @@ class RefreshCacheOnBindingChange(private val project: Project) : ProjectBinding
     }
 }
 
-class RefreshCacheOnProjectSync(private val project: Project) : ProjectSynchronizationListener {
-    override fun synchronizationFinished() {
+class RefreshCacheOnProjectSync(private val project: Project) : ServerBranchesListener {
+    override fun serverBranchesUpdated() {
         val vcsService = getService(project, VcsService::class.java)
-        vcsService.refreshCacheAsync()
+        // refresh synchronously as we want the cache to be up-to-date for the rest of the sync process
+        vcsService.refreshCache()
     }
 }
 

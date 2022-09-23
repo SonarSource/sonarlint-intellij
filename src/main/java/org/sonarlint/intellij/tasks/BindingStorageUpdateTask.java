@@ -50,7 +50,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
-import org.sonarlint.intellij.messages.ProjectSynchronizationListenerKt;
+import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
 import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -172,11 +172,8 @@ public class BindingStorageUpdateTask {
       }
     });
     engine.sync(connection.getEndpointParams(), connection.getHttpClient(), allProjectKeysToSync, monitor);
-
+    projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ServerBranchesListenerKt.getSERVER_BRANCHES_TOPIC()).serverBranchesUpdated());
     updateAllProjectIssuesForCurrentBranch(engine, connection, monitor, projectsToUpdate);
-
-    projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ProjectSynchronizationListenerKt.getPROJECT_SYNC_TOPIC()).synchronizationFinished());
-
     return failures;
   }
 
