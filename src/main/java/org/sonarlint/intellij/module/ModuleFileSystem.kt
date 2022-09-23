@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.module
 
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.util.BackgroundTaskUtil
@@ -42,18 +43,28 @@ internal class ModuleFileSystem(private val project: Project, private val module
     override fun files(): Stream<ClientInputFile> {
         val files: MutableList<ClientInputFile> = ArrayList()
         val sonarLintAnalyzer = project.getService(SonarLintAnalyzer::class.java)
-        BackgroundTaskUtil.runUnderDisposeAwareIndicator(project, {
+        BackgroundTaskUtil.runUnderDisposeAwareIndicator(project) {
             ModuleRootManager.getInstance(module).fileIndex.iterateContent { fileOrDir: VirtualFile ->
                 ProgressManager.checkCanceled()
-                if (!fileOrDir.isDirectory && !ProjectCoreUtil.isProjectOrWorkspaceFile(fileOrDir, fileOrDir.fileType)) {
-                    val element = sonarLintAnalyzer.createClientInputFile(module, fileOrDir, null)
+                if (!fileOrDir.isDirectory && !ProjectCoreUtil.isProjectOrWorkspaceFile(
+                        fileOrDir,
+                        fileOrDir.fileType
+                    )
+                ) {
+                    val element = ReadAction.compute<ClientInputFile, Exception> {
+                        sonarLintAnalyzer.createClientInputFile(
+                            module,
+                            fileOrDir,
+                            null
+                        )
+                    }
                     if (element != null) {
                         files.add(element)
                     }
                 }
                 true
             }
-        })
+        }
         return files.stream()
     }
 }
