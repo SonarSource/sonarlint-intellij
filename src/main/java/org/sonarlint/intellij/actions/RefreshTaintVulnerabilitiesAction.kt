@@ -32,6 +32,6 @@ class RefreshTaintVulnerabilitiesAction(text: String = "Refresh") : AbstractSona
 
   override fun actionPerformed(e: AnActionEvent) {
     val project = e.project ?: return
-    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFilesAsync(project)
+    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFilesAsync()
   }
 }
