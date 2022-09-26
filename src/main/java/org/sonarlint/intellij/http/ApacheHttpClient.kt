@@ -176,7 +176,7 @@ class ApacheHttpClient private constructor(
             }
 
             override fun cancelled() {
-                // nothing to do, the completable future is already canceled
+                futureResponse.cancel(true)
             }
         })
         return futureResponse.whenComplete { _, error ->
