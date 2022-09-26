@@ -105,7 +105,7 @@ public class AnalysisRequirementNotifications {
   public static void notifyNodeCommandException(Project project) {
     var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
       "<b>SonarLint - Node.js Required</b>",
-      "Node.js >= 8.x is required to perform JavaScript or TypeScript analysis. Check the SonarLint Log for details.",
+      "Node.js >= 16.x is required to perform JavaScript or TypeScript analysis. Check the SonarLint Log for details.",
       NotificationType.WARNING, null);
     notification.setImportant(true);
     notification.notify(project);
