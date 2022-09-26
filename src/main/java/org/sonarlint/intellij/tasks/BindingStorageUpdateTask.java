@@ -194,7 +194,7 @@ public class BindingStorageUpdateTask {
       });
 
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-      projectsToUpdate.forEach(project -> getService(project, TaintVulnerabilitiesPresenter.class).refreshTaintVulnerabilitiesForOpenFiles(project));
+      projectsToUpdate.forEach(project -> getService(project, TaintVulnerabilitiesPresenter.class).refreshTaintVulnerabilitiesForOpenFiles());
     }
   }
 

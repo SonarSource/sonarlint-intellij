@@ -66,6 +66,6 @@ class TaintVulnerabilitiesRefreshTrigger(private val project: Project) {
   }
 
   private fun triggerRefresh() {
-    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFilesAsync(project)
+    getService(project, TaintVulnerabilitiesPresenter::class.java).refreshTaintVulnerabilitiesForOpenFilesAsync()
   }
 }

@@ -60,15 +60,15 @@ const val TAINT_VULNERABILITIES_REFRESH_ERROR_MESSAGE = "Error refreshing taint 
 class TaintVulnerabilitiesPresenter(private val project: Project) {
   var currentVulnerabilitiesByFile : Map<VirtualFile, Collection<LocalTaintVulnerability>> = emptyMap()
 
-  fun refreshTaintVulnerabilitiesForOpenFilesAsync(project: Project) {
+  fun refreshTaintVulnerabilitiesForOpenFilesAsync() {
     ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Refreshing taint vulnerabilities...", false, ALWAYS_BACKGROUND) {
       override fun run(indicator: ProgressIndicator) {
-        refreshTaintVulnerabilitiesForOpenFiles(project)
+        refreshTaintVulnerabilitiesForOpenFiles()
       }
     })
   }
 
-  fun refreshTaintVulnerabilitiesForOpenFiles(project: Project) {
+  fun refreshTaintVulnerabilitiesForOpenFiles() {
     try {
       project.getOpenFiles().forEach { refreshTaintVulnerabilitiesFor(project, it) }
     }
