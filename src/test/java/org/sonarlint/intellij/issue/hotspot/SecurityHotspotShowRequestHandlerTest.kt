@@ -47,7 +47,7 @@ import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
 import java.util.Optional
 
 const val FILE_PATH = "com/sonarsource/sample/MyFile.java"
-const val CONNECTED_URL = "serverUrl"
+const val CONNECTED_URL = "http://server.url"
 const val PROJECT_KEY = "projectKey"
 const val HOTSPOT_KEY = "hotspotKey"
 
