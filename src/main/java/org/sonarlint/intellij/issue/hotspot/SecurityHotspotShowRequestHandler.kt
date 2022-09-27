@@ -34,8 +34,11 @@ import org.sonarlint.intellij.core.SecurityHotspotMatcher
 import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import org.sonarsource.sonarlint.core.serverapi.hotspot.GetSecurityHotspotRequestParams
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
+import java.net.URL
 
 const val NOTIFICATION_TITLE = "Error opening security hotspot"
 
@@ -50,6 +53,12 @@ open class SecurityHotspotShowRequestHandler(
 ) {
 
   open fun open(projectKey: String, hotspotKey: String, serverUrl: String) {
+      try {
+          URL(serverUrl)
+      } catch (e: Exception) {
+          GlobalLogOutput.get().log("Invalid open hotspot request received, ignoring it", ClientLogOutput.Level.INFO)
+          return
+      }
     telemetry.showHotspotRequestReceived()
     doOpen(projectKey, hotspotKey, serverUrl)
   }

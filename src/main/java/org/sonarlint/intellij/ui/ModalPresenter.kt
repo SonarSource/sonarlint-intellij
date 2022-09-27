@@ -20,11 +20,12 @@
 package org.sonarlint.intellij.ui
 
 import com.intellij.openapi.ui.Messages
+import org.apache.commons.lang.StringEscapeUtils
 
 open class ModalPresenter {
 
     open fun showConfirmModal(title: String, message: String, confirmText: String): Boolean {
-        return Messages.showYesNoDialog(null, message, title, confirmText, "Cancel", Messages.getWarningIcon()) == Messages.OK
+        return Messages.showYesNoDialog(null, StringEscapeUtils.escapeHtml(message), title, confirmText, "Cancel", Messages.getWarningIcon()) == Messages.OK
     }
 
 }
