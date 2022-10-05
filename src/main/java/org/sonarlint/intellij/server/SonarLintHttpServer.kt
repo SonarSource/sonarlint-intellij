@@ -31,9 +31,10 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.DefaultFullHttpResponse
+import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.FullHttpResponse
 import io.netty.handler.codec.http.HttpHeaderNames
-import io.netty.handler.codec.http.HttpRequest
+import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpRequestDecoder
 import io.netty.handler.codec.http.HttpResponseEncoder
 import io.netty.handler.codec.http.HttpResponseStatus
@@ -48,6 +49,7 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.net.InetAddress
+import java.nio.charset.StandardCharsets
 
 const val STARTING_PORT = 64120
 const val ENDING_PORT = 64130
@@ -131,7 +133,7 @@ class ServerInitializer : ChannelInitializer<SocketChannel?>() {
 
     override fun initChannel(ch: SocketChannel?) {
         ch ?: return
-        ch.pipeline().addLast(HttpRequestDecoder(), HttpResponseEncoder(), ServerHandler())
+        ch.pipeline().addLast(HttpRequestDecoder(), HttpResponseEncoder(), HttpObjectAggregator(1048576), ServerHandler())
     }
 
 }
@@ -146,9 +148,10 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
     }
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
-        if (msg is HttpRequest) {
+        if (msg is FullHttpRequest) {
             origin = msg.headers()[HttpHeaderNames.ORIGIN]
-            response = RequestProcessor().processRequest(Request(msg.uri(), msg.method(), isTrustedOrigin(origin)))
+            val body = msg.content().toString(StandardCharsets.UTF_8)
+            response = RequestProcessor().processRequest(Request(msg.uri(), msg.method(), isTrustedOrigin(origin), body))
         }
         if (msg is LastHttpContent) {
             ctx.writeAndFlush(createResponse(response, origin))

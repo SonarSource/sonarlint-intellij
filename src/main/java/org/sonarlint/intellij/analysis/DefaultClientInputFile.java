@@ -21,16 +21,16 @@ package org.sonarlint.intellij.analysis;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.annotation.Nullable;
-
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.commons.Language;
 
@@ -68,6 +68,18 @@ public class DefaultClientInputFile implements ClientInputFile {
 
   public DefaultClientInputFile(VirtualFile vFile, String relativePath, boolean isTest, Charset charset) {
     this(vFile, relativePath, isTest, charset, null, 0, null);
+  }
+
+  public DefaultClientInputFile(Path filePath, String codeSnippet, Language language) {
+    this.path = filePath.toString();
+    this.relativePath = filePath.getFileName().toString();
+    this.test = false;
+    this.charset = StandardCharsets.UTF_8;
+    this.vFile = null;
+    this.documentBuffer = codeSnippet;
+    this.documentModificationStamp = 0;
+    this.language = language;
+    this.uri = filePath.toUri();
   }
 
   public boolean isOlderThan(Document document) {

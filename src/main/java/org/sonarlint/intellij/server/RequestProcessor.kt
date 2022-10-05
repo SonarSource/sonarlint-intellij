@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.server
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
@@ -27,18 +28,24 @@ import com.intellij.openapi.project.ProjectManager
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.QueryStringDecoder
 import org.sonarlint.intellij.issue.hotspot.SecurityHotspotShowRequestHandler
+import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 
 const val STATUS_ENDPOINT = "/sonarlint/api/status"
 const val SHOW_HOTSPOT_ENDPOINT = "/sonarlint/api/hotspots/show"
+const val ANALYZE_CODE_ENDPOINT = "/sonarlint/api/analyze"
 const val PROJECT_KEY = "project"
 const val HOTSPOT_KEY = "hotspot"
 const val SERVER_URL = "server"
+const val CODE_SNIPPET = "code"
+const val LANGUAGE = "language"
 
 data class Status(val ideName: String, val description: String)
 
 class RequestProcessor(
     private val appInfo: ApplicationInfo = ApplicationInfo.getInstance(),
     private val showRequestHandler: SecurityHotspotShowRequestHandler = SecurityHotspotShowRequestHandler(),
+    private val analyzeCodeRequestHandler: AnalyzeCodeRequestHandler = AnalyzeCodeRequestHandler(),
 ) {
 
     fun processRequest(request: Request): Response {
@@ -47,6 +54,9 @@ class RequestProcessor(
         }
         if (request.path == SHOW_HOTSPOT_ENDPOINT && request.method == HttpMethod.GET) {
             return processOpenInIdeRequest(request)
+        }
+        if (request.path == ANALYZE_CODE_ENDPOINT && request.method == HttpMethod.POST) {
+            return processAnalyzeCodeRequest(request)
         }
         return BadRequest("Invalid path or method.")
     }
@@ -84,6 +94,18 @@ class RequestProcessor(
         }
         return Success()
     }
+
+    private fun processAnalyzeCodeRequest(request: Request): Response {
+        val payload = Gson().fromJson(request.body, AnalyzeCodePayload::class.java)
+        val codeSnippet = payload.code ?: return missingParameter(CODE_SNIPPET)
+        val language = payload.language ?: return missingParameter(LANGUAGE)
+
+        val issues = analyzeCodeRequestHandler.analyze(codeSnippet, language)
+        GlobalLogOutput.get().log("Found ${issues.size} issues after analysis", ClientLogOutput.Level.INFO)
+        return Success(Gson().toJson(issues))
+    }
+
+    data class AnalyzeCodePayload(val code: String?, var language: String?)
 }
 
 open class Response
@@ -92,7 +114,7 @@ data class Success(val body: String? = null) : Response()
 
 data class BadRequest(val message: String) : Response()
 
-data class Request(val uri: String, val method: HttpMethod, val isTrustedOrigin: Boolean) {
+data class Request(val uri: String, val method: HttpMethod, val isTrustedOrigin: Boolean, val body: String? = null) {
     val path = uri.substringBefore('?')
     private val parameters = QueryStringDecoder(uri).parameters()
 
