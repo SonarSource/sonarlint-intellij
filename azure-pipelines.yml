@@ -12,7 +12,7 @@ resources:
     - repository: commonTemplates
       type: git
       name: pipelines-yaml-templates
-      ref:  refs/tags/v1.0.17
+      ref:  refs/tags/v2.0.0
 
 
 stages:
@@ -65,7 +65,7 @@ stages:
     burgrName: 'validate'
     burgrType: 'validate'
     stageName: 'validate'
-    stageDisplayName: Run UTs and trigger SonarQube and WhiteSource analysis
+    stageDisplayName: Run UTs and trigger SonarQube and Mend analysis
     jobs:
     - job: test_windows
       displayName: Run unit tests on Windows
@@ -110,8 +110,8 @@ stages:
           publishJUnitResults: false
           jdkVersionOption: '1.11'
         displayName: 'Stop Gradle daemon'
-    - job: sonarqubeAndWhiteSource
-      displayName: SonarQube analysis on Next and WhiteSource analysis
+    - job: sonarqubeAndMend
+      displayName: SonarQube analysis on Next and Mend analysis
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
@@ -148,15 +148,15 @@ stages:
           # Remove -SNAPSHOT suffix
           VERSION=`echo $VERSION | sed "s/-.*//g"`
 
-          echo "WhiteSource project version is $VERSION"          
-          echo "##vso[task.setvariable variable=WHITESOURCE_PROJECT_VERSION]$VERSION"
-        name: getWhiteSourceProjectVersion
-        displayName: Get WhiteSource project version
+          echo "Mend project version is $VERSION"
+          echo "##vso[task.setvariable variable=MEND_PROJECT_VERSION]$VERSION"
+        name: getMendProjectVersion
+        displayName: Get Mend project version
 
-      - template: whitesource.yml@commonTemplates
+      - template: mend.yml@commonTemplates
         parameters:
           productName : 'SonarLint/IntelliJ'
-          releaseVersion: '$(WHITESOURCE_PROJECT_VERSION)'
+          releaseVersion: '$(MEND_PROJECT_VERSION)'
 
 - template: stage-with-burgr-notifications.yml@commonTemplates
   parameters:
