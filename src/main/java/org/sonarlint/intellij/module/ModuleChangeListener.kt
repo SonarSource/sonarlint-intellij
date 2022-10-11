@@ -65,7 +65,7 @@ private object Modules {
     }
 }
 
-class ProjectClosedListener : ProjectManagerListener {
+class RemoveModulesOnProjectClose : ProjectManagerListener {
     override fun projectClosing(project: Project) {
         ModuleManager.getInstance(project).modules.forEach { Modules.removeModule(getEngineIfStarted(it), it) }
     }
