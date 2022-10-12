@@ -92,7 +92,12 @@ data class Success(val body: String? = null) : Response()
 
 data class BadRequest(val message: String) : Response()
 
-data class Request(val uri: String, val method: HttpMethod, val isTrustedOrigin: Boolean) {
+data class Request(
+    val uri: String,
+    val method: HttpMethod,
+    val isTrustedOrigin: Boolean,
+    val bodyProvider: (() -> String?) = { null }
+) {
     val path = uri.substringBefore('?')
     private val parameters = QueryStringDecoder(uri).parameters()
 
