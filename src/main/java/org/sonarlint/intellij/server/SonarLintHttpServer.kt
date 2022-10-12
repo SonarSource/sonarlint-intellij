@@ -31,9 +31,10 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.DefaultFullHttpResponse
+import io.netty.handler.codec.http.FullHttpRequest
 import io.netty.handler.codec.http.FullHttpResponse
 import io.netty.handler.codec.http.HttpHeaderNames
-import io.netty.handler.codec.http.HttpRequest
+import io.netty.handler.codec.http.HttpObjectAggregator
 import io.netty.handler.codec.http.HttpRequestDecoder
 import io.netty.handler.codec.http.HttpResponseEncoder
 import io.netty.handler.codec.http.HttpResponseStatus
@@ -48,6 +49,7 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.net.InetAddress
+import java.nio.charset.StandardCharsets
 
 const val STARTING_PORT = 64120
 const val ENDING_PORT = 64130
@@ -127,11 +129,14 @@ class NettyServer : ServerImpl {
     }
 }
 
+private const val MAX_BODY_SIZE = 1048576
+
 class ServerInitializer : ChannelInitializer<SocketChannel?>() {
 
     override fun initChannel(ch: SocketChannel?) {
         ch ?: return
-        ch.pipeline().addLast(HttpRequestDecoder(), HttpResponseEncoder(), ServerHandler())
+        ch.pipeline()
+            .addLast(HttpRequestDecoder(), HttpResponseEncoder(), HttpObjectAggregator(MAX_BODY_SIZE), ServerHandler())
     }
 
 }
@@ -146,9 +151,14 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
     }
 
     override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
-        if (msg is HttpRequest) {
+        if (msg is FullHttpRequest) {
             origin = msg.headers()[HttpHeaderNames.ORIGIN]
-            response = RequestProcessor().processRequest(Request(msg.uri(), msg.method(), isTrustedOrigin(origin)))
+            response = RequestProcessor().processRequest(
+                Request(
+                    msg.uri(),
+                    msg.method(),
+                    isTrustedOrigin(origin)
+                ) { msg.content().toString(StandardCharsets.UTF_8) })
         }
         if (msg is LastHttpContent) {
             ctx.writeAndFlush(createResponse(response, origin))
@@ -162,11 +172,14 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
                 is BadRequest -> HttpResponseStatus.BAD_REQUEST
                 else -> HttpResponseStatus.OK
             },
-            Unpooled.copiedBuffer(when (res) {
-                is Success -> res.body ?: ""
-                is BadRequest -> res.message
-                else -> ""
-            }, CharsetUtil.UTF_8))
+            Unpooled.copiedBuffer(
+                when (res) {
+                    is Success -> res.body ?: ""
+                    is BadRequest -> res.message
+                    else -> ""
+                }, CharsetUtil.UTF_8
+            )
+        )
         response.headers()[HttpHeaderNames.CONTENT_TYPE] = "application/json; charset=UTF-8"
         origin?.let { response.headers()[HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN] = origin }
         response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes())
@@ -180,7 +193,11 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
 
     companion object {
         fun isTrustedOrigin(origin: String?): Boolean {
-            return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || Settings.getGlobalSettings().serverConnections.any { it.hostUrl.startsWith(origin) })
+            return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || Settings.getGlobalSettings().serverConnections.any {
+                it.hostUrl.startsWith(
+                    origin
+                )
+            })
         }
     }
 
