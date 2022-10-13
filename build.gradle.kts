@@ -298,10 +298,11 @@ tasks {
     }
 
     jacocoTestReport {
-        classDirectories.setFrom(files("build/classes/java/main-instrumented"))
+        classDirectories.setFrom(files("build/instrumented/instrumentCode"))
         reports {
             xml.required.set(true)
         }
+        dependsOn(check)
     }
 }
 
