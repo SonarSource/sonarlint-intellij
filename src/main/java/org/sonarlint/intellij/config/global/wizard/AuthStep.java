@@ -23,29 +23,39 @@ import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.wizard.AbstractWizardStepEx;
 import com.intellij.ide.wizard.CommitStepCancelledException;
 import com.intellij.ide.wizard.CommitStepException;
+import com.intellij.openapi.application.ApplicationInfo;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.ui.ComboBox;
 import com.intellij.openapi.ui.Messages;
+import com.intellij.openapi.wm.WindowManager;
+import com.intellij.ui.AnimatedIcon;
 import com.intellij.ui.DocumentAdapter;
-
 import java.awt.CardLayout;
 import java.awt.event.ItemEvent;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.config.global.ServerConnection;
+import org.sonarlint.intellij.server.SonarLintHttpServer;
 import org.sonarlint.intellij.tasks.ConnectionTestTask;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.serverapi.system.ValidationResult;
+import org.sonarsource.sonarlint.core.serverconnection.ServerPathProvider;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class AuthStep extends AbstractWizardStepEx {
   private static final String LOGIN_ITEM = "Login / Password";
@@ -96,6 +106,16 @@ public class AuthStep extends AbstractWizardStepEx {
 
     errorPainter = new ErrorPainter();
     errorPainter.installOn(panel, this);
+    getService(SonarLintHttpServer.class).registerTokenListener(this::handleReceivedToken);
+  }
+
+  private void handleReceivedToken(String userToken) {
+    tokenField.setText(userToken);
+    JFrame visibleFrame = WindowManager.getInstance().findVisibleFrame();
+    if (visibleFrame != null) {
+      visibleFrame.toFront();
+    }
+    fireGoNext();
   }
 
   @Override
@@ -119,6 +139,7 @@ public class AuthStep extends AbstractWizardStepEx {
     } else {
       passwordField.setText(null);
     }
+    resetTokenCreationButton();
   }
 
   private void save() {
@@ -194,7 +215,7 @@ public class AuthStep extends AbstractWizardStepEx {
     try {
       model.queryOrganizations();
     } catch (Exception e) {
-      String msg = "Failed to query organizations. Please check the configuration and try again.";
+      var msg = "Failed to query organizations. Please check the configuration and try again.";
       if (e.getMessage() != null) {
         msg = msg + " Error: " + e.getMessage();
       }
@@ -206,7 +227,7 @@ public class AuthStep extends AbstractWizardStepEx {
     try {
       model.queryIfNotificationsSupported();
     } catch (Exception e) {
-      String msg = "Failed to contact the server. Please check the configuration and try again.";
+      var msg = "Failed to contact the server. Please check the configuration and try again.";
       if (e.getMessage() != null) {
         msg = msg + " Error: " + e.getMessage();
       }
@@ -217,7 +238,7 @@ public class AuthStep extends AbstractWizardStepEx {
   private void checkConnection() throws CommitStepException {
     ServerConnection tmpServer = model.createConnectionWithoutOrganization();
     ConnectionTestTask test = new ConnectionTestTask(tmpServer);
-    String msg = "Failed to connect to the server. Please check the configuration.";
+    var msg = "Failed to connect to the server. Please check the configuration.";
     ValidationResult result;
     try {
       result = ProgressManager.getInstance().run(test);
@@ -253,15 +274,45 @@ public class AuthStep extends AbstractWizardStepEx {
       Messages.showErrorDialog(panel, "Can't launch browser for URL: " + model.getServerUrl(), "Invalid Server URL");
       return;
     }
+    startLoadingToken();
+    getSecurityUrl()
+      .orTimeout(1, TimeUnit.MINUTES)
+      .thenAccept(BrowserUtil::browse)
+      .exceptionally(e -> {
+        var message = "Failed to open the token creation page for '" + model.getServerUrl() + "'. See the Log tab for more details";
+        GlobalLogOutput.get().logError(message, e);
 
-    StringBuilder url = new StringBuilder(256);
-    url.append(model.getServerUrl());
+        ApplicationManager.getApplication().invokeLater(() -> {
+          Messages.showErrorDialog(getComponent(), message);
+          resetTokenCreationButton();
+        }, ModalityState.any());
+        return null;
+      });
+  }
 
-    if (!model.getServerUrl().endsWith("/")) {
-      url.append("/");
+  private void startLoadingToken() {
+    openTokenCreationPageButton.setIcon(new AnimatedIcon.Default());
+    openTokenCreationPageButton.setText("Creating token...");
+  }
+
+  private void resetTokenCreationButton() {
+    openTokenCreationPageButton.setIcon(null);
+    openTokenCreationPageButton.setText("Create token");
+  }
+
+  private CompletableFuture<String> getSecurityUrl() {
+    var embeddedServer = getService(SonarLintHttpServer.class);
+    ServerConnection connectionBeingCreated = model.createUnauthenticatedConnection();
+    String ideName = ApplicationInfo.getInstance().getVersionName();
+    Integer port = embeddedServer.getPort();
+    if (port != null) {
+      return ServerPathProvider.getServerUrlForTokenGeneration(connectionBeingCreated.getEndpointParams(), connectionBeingCreated.getHttpClient(), port, ideName);
     }
+    return ServerPathProvider.getFallbackServerUrlForTokenGeneration(connectionBeingCreated.getEndpointParams(), connectionBeingCreated.getHttpClient(), ideName);
+  }
 
-    url.append("account/security");
-    BrowserUtil.browse(url.toString());
+  @Override
+  public void dispose() {
+    getService(SonarLintHttpServer.class).unregisterTokenListener();
   }
 }

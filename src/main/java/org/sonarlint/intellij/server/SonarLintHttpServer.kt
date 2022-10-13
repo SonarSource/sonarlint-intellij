@@ -46,6 +46,7 @@ import io.netty.util.CharsetUtil
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.messages.UserTokenListener
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.net.InetAddress
@@ -80,6 +81,14 @@ class SonarLintHttpServer @NonInjectable constructor(private var serverImpl: Ser
         } while (tentativePort <= ENDING_PORT);
     }
 
+    fun registerTokenListener(tokenListener: UserTokenListener) {
+        serverImpl.registerTokenListener(tokenListener)
+    }
+
+    fun unregisterTokenListener() {
+        serverImpl.registerTokenListener(null)
+    }
+
     private fun displayStartStatus(port: Int) {
         if (isStarted) {
             GlobalLogOutput.get().log("Server bound to $port", ClientLogOutput.Level.INFO)
@@ -97,6 +106,8 @@ class SonarLintHttpServer @NonInjectable constructor(private var serverImpl: Ser
 interface ServerImpl {
     fun initialize()
     fun bindTo(port: Int): Boolean
+
+    fun registerTokenListener(tokenListener: UserTokenListener?)
     fun stop()
 }
 
@@ -104,15 +115,17 @@ class NettyServer : ServerImpl {
     private lateinit var bossGroup: EventLoopGroup
     private lateinit var workerGroup: EventLoopGroup
     private lateinit var serverBootstrap: ServerBootstrap
+    private lateinit var requestHandler: RequestHandler
 
     override fun initialize() {
         bossGroup = NioEventLoopGroup(1)
         workerGroup = NioEventLoopGroup()
         serverBootstrap = ServerBootstrap()
+        requestHandler = RequestHandler()
         serverBootstrap.group(bossGroup, workerGroup)
             .channel(NioServerSocketChannel::class.java)
             .handler(LoggingHandler(LogLevel.INFO))
-            .childHandler(ServerInitializer())
+            .childHandler(ServerInitializer(requestHandler))
     }
 
     override fun bindTo(port: Int): Boolean {
@@ -122,6 +135,10 @@ class NettyServer : ServerImpl {
             return false
         }
         return true
+    }
+
+    override fun registerTokenListener(tokenListener: UserTokenListener?) {
+        requestHandler.registerTokenListener(tokenListener)
     }
 
     override fun stop() {
@@ -136,20 +153,25 @@ class NettyServer : ServerImpl {
 
 private const val MAX_BODY_SIZE = 1048576
 
-class ServerInitializer : ChannelInitializer<SocketChannel?>() {
+class ServerInitializer(private val serverHandler: RequestHandler) : ChannelInitializer<SocketChannel?>() {
 
     override fun initChannel(ch: SocketChannel?) {
         ch ?: return
         ch.pipeline()
-            .addLast(HttpRequestDecoder(), HttpResponseEncoder(), HttpObjectAggregator(MAX_BODY_SIZE), ServerHandler())
+            .addLast(HttpRequestDecoder(), HttpResponseEncoder(), HttpObjectAggregator(MAX_BODY_SIZE), serverHandler)
     }
 
 }
 
-class ServerHandler : SimpleChannelInboundHandler<Any?>() {
+class RequestHandler : SimpleChannelInboundHandler<Any?>() {
 
     private var response: Response? = null
     private var origin: String? = null
+    private val requestProcessor = RequestProcessor()
+
+    fun registerTokenListener(tokenListener: UserTokenListener?) {
+        requestProcessor.tokenListener = tokenListener
+    }
 
     override fun channelReadComplete(ctx: ChannelHandlerContext) {
         ctx.flush()
@@ -158,7 +180,7 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
     override fun channelRead0(ctx: ChannelHandlerContext, msg: Any?) {
         if (msg is FullHttpRequest) {
             origin = msg.headers()[HttpHeaderNames.ORIGIN]
-            response = RequestProcessor().processRequest(
+            response = requestProcessor.processRequest(
                 Request(
                     msg.uri(),
                     msg.method(),
@@ -175,6 +197,7 @@ class ServerHandler : SimpleChannelInboundHandler<Any?>() {
             HttpVersion.HTTP_1_1,
             when (res) {
                 is BadRequest -> HttpResponseStatus.BAD_REQUEST
+                is NotFound -> HttpResponseStatus.NOT_FOUND
                 else -> HttpResponseStatus.OK
             },
             Unpooled.copiedBuffer(
