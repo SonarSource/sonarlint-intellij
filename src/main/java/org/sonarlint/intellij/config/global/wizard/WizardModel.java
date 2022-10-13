@@ -243,7 +243,11 @@ public class WizardModel {
     return createConnection(organizationKey);
   }
 
-  private ServerConnection createConnection(@Nullable String organizationKey) {
+  public ServerConnection createUnauthenticatedConnection() {
+    return createUnauthenticatedConnection(organizationKey).build();
+  }
+
+  private ServerConnection.Builder createUnauthenticatedConnection(@Nullable String organizationKey) {
     var builder = ServerConnection.newBuilder()
       .setOrganizationKey(organizationKey)
       .setEnableProxy(proxyEnabled)
@@ -255,6 +259,12 @@ public class WizardModel {
     } else {
       builder.setHostUrl(serverUrl);
     }
+    builder.setDisableNotifications(notificationsDisabled);
+    return builder;
+  }
+
+  private ServerConnection createConnection(@Nullable String organizationKey) {
+    var builder = createUnauthenticatedConnection(organizationKey);
 
     if (token != null) {
       builder.setToken(token)
@@ -265,7 +275,6 @@ public class WizardModel {
         .setLogin(login)
         .setPassword(new String(password));
     }
-    builder.setDisableNotifications(notificationsDisabled);
     return builder.build();
   }
 }

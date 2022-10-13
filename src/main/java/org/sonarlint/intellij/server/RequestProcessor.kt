@@ -20,16 +20,20 @@
 package org.sonarlint.intellij.server
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.gson.Gson
 import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ApplicationNamesInfo
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.ProjectManager
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.QueryStringDecoder
 import org.sonarlint.intellij.issue.hotspot.SecurityHotspotShowRequestHandler
+import org.sonarlint.intellij.messages.UserTokenListener
 
 const val STATUS_ENDPOINT = "/sonarlint/api/status"
 const val SHOW_HOTSPOT_ENDPOINT = "/sonarlint/api/hotspots/show"
+const val TOKEN_ENDPOINT = "/sonarlint/api/token"
 const val PROJECT_KEY = "project"
 const val HOTSPOT_KEY = "hotspot"
 const val SERVER_URL = "server"
@@ -40,6 +44,7 @@ class RequestProcessor(
     private val appInfo: ApplicationInfo = ApplicationInfo.getInstance(),
     private val showRequestHandler: SecurityHotspotShowRequestHandler = SecurityHotspotShowRequestHandler(),
 ) {
+    var tokenListener: UserTokenListener? = null
 
     fun processRequest(request: Request): Response {
         if (request.path == STATUS_ENDPOINT && request.method == HttpMethod.GET) {
@@ -47,6 +52,9 @@ class RequestProcessor(
         }
         if (request.path == SHOW_HOTSPOT_ENDPOINT && request.method == HttpMethod.GET) {
             return processOpenInIdeRequest(request)
+        }
+        if (request.path == TOKEN_ENDPOINT && request.method == HttpMethod.POST) {
+            return processUserToken(request)
         }
         return BadRequest("Invalid path or method.")
     }
@@ -84,6 +92,29 @@ class RequestProcessor(
         }
         return Success()
     }
+
+    private fun processUserToken(request: Request): Response {
+        if (tokenListener == null) {
+            return NotFound
+        }
+        val token = try {
+            parseToken(request)
+        } catch (e: Exception) {
+            return BadRequest("The 'token' field is missing")
+        }
+        ApplicationManager.getApplication().invokeLater({
+            tokenListener?.tokenReceived(token)
+        }, ModalityState.any())
+        return Success()
+    }
+
+    private fun parseToken(request: Request): String {
+        return Gson().fromJson(request.bodyProvider(), TokenPayload::class.java).token!!
+    }
+
+    private class TokenPayload {
+        var token: String? = null
+    }
 }
 
 open class Response
@@ -91,6 +122,7 @@ open class Response
 data class Success(val body: String? = null) : Response()
 
 data class BadRequest(val message: String) : Response()
+object NotFound : Response()
 
 data class Request(
     val uri: String,
