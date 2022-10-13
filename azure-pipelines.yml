@@ -124,7 +124,7 @@ stages:
       - task: Gradle@2
         inputs:
           options: --build-cache --stacktrace -i
-          tasks: check jacocoTestReport -x :its:check
+          tasks: jacocoTestReport -x :its:check
           publishJUnitResults: false
           jdkVersionOption: '1.11'
           sonarQubeRunAnalysis: true
