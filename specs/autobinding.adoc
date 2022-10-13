@@ -1,0 +1,109 @@
+= Auto-Binding
+
+== Overview
+
+For *connected mode* to work, a connection should be defined to allow SonarLint to communicate with the server. Then, SonarLint needs to know which project on the server correspond to the local project. This is called the *project binding* (or just *binding*).
+
+For most users, there will be only one connection to define (to their corporate SonarQube server, or to SonarCloud). Then every time they open or checkout a new project, they will need to bind the project. This process can be tedious, and easily forgotten.
+
+Auto-binding is the feature that should try to help users by assisting them as much as possible to use connected mode as soon as they have at least one connection defined.
+
+== Triggers
+
+Auto-binding is triggered:
+* when an IntelliJ project/Rider solution is opened (only for this project)
+* when a connection is added/updated (for all projects currently opened)
+
+== Conditions
+
+* At least one **valid** (#TBD#) connection is defined
+* Only attempt to auto-bind projects that:
+** are not bound at all (or if we know the binding is **invalid** (#TBD#)
+** the user has not previously asked not to auto-bind (#TODO# link to the "do not ask" section)
+
+== Algorithm
+
+=== SonarQube/SonarCloud configuration file auto-detection
+
+For each project to auto-bind:
+
+1. search for the presence of files `sonar-project.properties` or `.sonarcloud.properties` at the root of the project (#FIXME# define what is project root in IntelliJ, possible problem in Rider as well, shouldn't we also look in parent directories?)
+
+2. if any of those files is found, extract from the file(s)) the properties (all are optional):
+- `sonar.projectKey`
+- `sonar.host.url` (assume it is https://sonarcloud.io for `.sonarcloud.properties`)
+- `sonar.organization`
+
+3. for each file + tuple of properties, try to guess if we are looking for a SonarQube or SonarCloud connection, using the following heuristic:
+- if the file is `.sonarcloud.properties`, this is SonarCloud (AutoScan)
+- if there is a `sonar.organization`, this is SonarCloud
+- if the `sonar.host.url` is equal to `https://sonarcloud.io` or one of the aliases used for tests, this is SonarCloud, else this is SonarQube
+- at this stage keep it as undecided type
+
+4. if we have no files, fallback to an undecided (#TODO# maybe a better name?) candidate binding with no projectKey
+
+At the end of this step, we should have a non-empty list of candidates bindings having one of those types and attributes:
+
+* *SonarQube Candidate Binding*:
+  ** projectKey: string?
+  ** serverUrl: string?
+
+* *SonarCloud Candidate Binding*:
+  ** projectKey: string?
+  ** organization: string?
+
+* *Undecided Candidate Binding*:
+** projectKey: string?
+
+=== Connection matching
+
+For each candidate binding, select the matching connections among configured ones in IDE settings.
+
+For a SonarQube Candidate Binding, select all SonarQube connections having the samefootnote:[determining that two URLs are pointing to the same server is tricky, so here we do at best] url. If we don't have a serverUrl for this candidate binding, select all SonarQube connections.
+
+For a SonarCloud Candidate Binding, select all SonarCloud connections having the same organization. If we don't have an organization for this candidate binding, select all SonarCloud connections.
+
+For an Undecided Candidate Binding, select all connections.
+
+At the end of this step, we should have each candidate binding with a list (possibly empty) of connections.
+
+Candidate bindings having no matching connections should be discarded (example: the project has a `.sonarcloud.properties`, but there is no SonarCloud connection defined).
+
+#TODO# I think there are corner cases where we could end up with duplicate combinations, so we might think about merging to avoid exponential matching attempts.
+
+=== Project matching
+
+We should favor candidate bindings with a projectKey.
+
+==== Exact matching on projectKey
+
+For each candidate bindings having a projectKey, look for server projects having the exact same projectKey using the matched connections. If we find one match, that's the project we want to suggest to user to auto-bind with. If there are multiple matches, we should ask the user to choose the one to bind to. #TODO# if there are no matches, should we fallback to matching on name like in VSCode, or directly ask user to bind manually as it is more likely that the right connection is missing?
+
+==== Matching projects based on project/solution name
+
+For each candidate binding with no projectKey, we will be doing a match among all remote projects of the matched connexions.
+The matching is based on a scoring described in `TextSearchIndex`. If there is only one server project with the highest score, then we will suggest user to auto-bind with this one, else if there are multiple top score, then we should ask the user to choose the one to bind to. Finally, if there is no match (#FIXME# or score is too low), then we should suggest manual binding.
+
+== Outcome
+
+For each project where auto-binding was executed, the user will receive one notification, with the following options:
+
+1. if there is one single candidate:
+- Do you want to bind current project to SonarQube project 'projectKey' using connection 'connectionId'?
+- Bind manually
+- Do not ask again for this project
+
+2. if there are multiple candidates (and less than a threshold #TBD#):
+- picklist to choose the project, then confirmation message like above
+- Bind manually
+- Do not ask again for this project
+
+3. if there are no candidates
+- This project is not bound to any SonarQube/SonarCloud projects. Do you want to configure binding?
+- Do not ask again for this project
+
+== Do not ask again
+
+If the user choose option "Do not ask again" in the notification, we should remember for this project to not attempt auto-binding again. The flag should be in project settings.
+
+#TODO# If a user manually unbind a project, should we also set the flag?
