@@ -59,6 +59,7 @@ class SonarLintHttpServer @NonInjectable constructor(private var serverImpl: Ser
     constructor() : this(NettyServer())
 
     var isStarted = false
+    var port: Int? = null
 
     fun startOnce() {
         try {
@@ -67,12 +68,16 @@ class SonarLintHttpServer @NonInjectable constructor(private var serverImpl: Ser
             GlobalLogOutput.get().log("Error starting SonarLint Server: " + e.message, ClientLogOutput.Level.ERROR)
             return
         }
-        var currentPort = STARTING_PORT
-        while (!isStarted && currentPort <= ENDING_PORT) {
-            isStarted = serverImpl.bindTo(currentPort)
-            displayStartStatus(currentPort)
-            currentPort++
-        }
+        var tentativePort = STARTING_PORT
+        do {
+            isStarted = serverImpl.bindTo(tentativePort)
+            displayStartStatus(tentativePort)
+            if (isStarted) {
+                port = tentativePort
+                break
+            }
+            tentativePort++
+        } while (tentativePort <= ENDING_PORT);
     }
 
     private fun displayStartStatus(port: Int) {
