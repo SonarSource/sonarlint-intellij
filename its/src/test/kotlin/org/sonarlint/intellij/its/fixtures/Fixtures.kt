@@ -46,7 +46,7 @@ fun ContainerFixture.jbTextField() = findElement<JTextFieldFixture>(byXpath("//d
 
 fun ContainerFixture.jbTable() = findElement<JBTableFixture>(byXpath("//div[@class='JBTable']"))
 
-fun CommonContainerFixture.jTextField() = textField(byXpath("//div[@class='JTextField']"))
+fun CommonContainerFixture.jPasswordField() = textField(byXpath("//div[@class='JPasswordField']"))
 
 fun ActionButtonFixture.clickWhenEnabled() {
   waitFor(Duration.ofSeconds(5)) {

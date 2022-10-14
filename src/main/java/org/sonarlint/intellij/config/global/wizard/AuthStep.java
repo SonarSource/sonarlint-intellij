@@ -54,7 +54,7 @@ public class AuthStep extends AbstractWizardStepEx {
 
   private JPanel panel;
   private JComboBox authComboBox;
-  private JTextField tokenField;
+  private JPasswordField tokenField;
   private JTextField loginField;
   private JPasswordField passwordField;
   private JPanel cardPanel;

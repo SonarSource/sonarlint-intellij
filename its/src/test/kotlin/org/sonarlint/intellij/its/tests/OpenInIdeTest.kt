@@ -36,7 +36,7 @@ import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.jTextField
+import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ItUtils
 import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
@@ -76,7 +76,7 @@ class OpenInIdeTest : BaseUiTest() {
                     button("Next").click()
                 }
                 dialog("New Connection: Authentication") {
-                    jTextField().text = token
+                    jPasswordField().text = token
                     button("Next").click()
                 }
                 dialog("New Connection: Configure Notifications") {

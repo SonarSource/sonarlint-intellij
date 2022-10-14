@@ -23,7 +23,6 @@ import com.intellij.remoterobot.fixtures.ActionButtonFixture.Companion.byTooltip
 import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.JButtonFixture.Companion.byText
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.utils.Locators
 import com.intellij.remoterobot.utils.keyboard
 import com.intellij.remoterobot.utils.waitFor
 import com.sonar.orchestrator.Orchestrator
@@ -41,8 +40,8 @@ import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
+import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
-import org.sonarlint.intellij.its.fixtures.jTextField
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
@@ -56,7 +55,6 @@ import org.sonarqube.ws.client.settings.SetRequest
 import org.sonarqube.ws.client.users.CreateRequest
 import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
-import java.time.Duration
 import java.time.Duration.ofSeconds
 
 class BindingTest : BaseUiTest() {
@@ -116,7 +114,7 @@ class BindingTest : BaseUiTest() {
                 button("Next").click()
             }
             dialog("New Connection: Authentication") {
-                jTextField().text = token
+                jPasswordField().text = token
                 button("Next").click()
             }
             dialog("New Connection: Configure Notifications") {
