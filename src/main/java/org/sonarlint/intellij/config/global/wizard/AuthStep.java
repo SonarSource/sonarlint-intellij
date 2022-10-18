@@ -127,7 +127,7 @@ public class AuthStep extends AbstractWizardStepEx {
       model.setLogin(loginField.getText());
       model.setPassword(passwordField.getPassword());
     } else {
-      model.setToken(tokenField.getText());
+      model.setToken(String.valueOf(tokenField.getPassword()));
       model.setLogin(null);
       model.setPassword(null);
     }
@@ -172,7 +172,7 @@ public class AuthStep extends AbstractWizardStepEx {
       errorPainter.setValid(tokenField, true);
       return passValid && loginValid;
     } else {
-      boolean tokenValid = !tokenField.getText().isEmpty();
+      boolean tokenValid = tokenField.getPassword().length > 0;
       errorPainter.setValid(tokenField, tokenValid);
       errorPainter.setValid(loginField, true);
       errorPainter.setValid(passwordField, true);
