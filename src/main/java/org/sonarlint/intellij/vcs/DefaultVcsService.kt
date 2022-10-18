@@ -42,7 +42,7 @@ class DefaultVcsService @NonInjectable constructor(
     private val executor: ExecutorService
 ) : VcsService, Disposable {
     private val logger = SonarLintLogger.get()
-    private val resolvedBranchPerModule: MutableMap<Module, String> = mutableMapOf()
+    internal val resolvedBranchPerModule: MutableMap<Module, String> = mutableMapOf()
 
     constructor(project: Project) : this(project, Executors.newSingleThreadExecutor())
 
@@ -88,11 +88,17 @@ class DefaultVcsService @NonInjectable constructor(
     }
 
     override fun refreshCache() {
-        resolvedBranchPerModule.forEach { (module, previousBranchName) ->
-            val newBranchName = resolveServerBranchName(module)
-            resolvedBranchPerModule[module] = newBranchName
-            if (previousBranchName != newBranchName) {
-                project.messageBus.syncPublisher(TOPIC).resolvedServerBranchChanged(module, newBranchName)
+        val cacheIterator = resolvedBranchPerModule.iterator()
+        while (cacheIterator.hasNext()) {
+            val (module, previousBranchName) = cacheIterator.next()
+            if (module.isDisposed) {
+                cacheIterator.remove()
+            } else {
+                val newBranchName = resolveServerBranchName(module)
+                resolvedBranchPerModule[module] = newBranchName
+                if (previousBranchName != newBranchName) {
+                    project.messageBus.syncPublisher(TOPIC).resolvedServerBranchChanged(module, newBranchName)
+                }
             }
         }
     }
