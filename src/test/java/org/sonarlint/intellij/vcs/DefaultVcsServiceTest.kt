@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.vcs
 
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.module.ModuleUtil
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
@@ -218,6 +219,26 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         val resolvedBranchName = vcsService.getServerBranchName(module)
 
         assertThat(resolvedBranchName).isEqualTo("branch1")
+    }
+
+    @Test
+    fun test_should_remove_disposed_module_from_cache_when_refreshing() {
+        val module = createModule("aModule")
+        addContentRootWithGitRepo(module)
+        whenever(connectedEngine.getServerBranches("projectKey")).thenReturn(
+            ProjectBranches(
+                setOf("master"),
+                "master"
+            )
+        )
+        getEngineManager().registerEngine(connectedEngine, "connection")
+        connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
+        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
+        ModuleManager.getInstance(project).disposeModule(module)
+
+        vcsService.refreshCacheAsync()
+
+        assertThat(vcsService.resolvedBranchPerModule).doesNotContainKey(module)
     }
 
     private fun addContentRootWithGitRepo(module: Module, contentRootPath: String = "path") {
