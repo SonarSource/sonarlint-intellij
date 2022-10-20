@@ -17,19 +17,6 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications;
+package org.sonarlint.intellij.notifications.binding
 
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
-
-class OpenProjectSettingsAction extends OpenConfigurableAction {
-
-  OpenProjectSettingsAction(Project project) {
-    this(project, "Open SonarLint Project Configuration");
-  }
-
-  OpenProjectSettingsAction(Project project, String text) {
-    super(project, text, new SonarLintProjectConfigurable(project));
-  }
-
-}
+data class BindingSuggestion(val connectionId: String, val projectKey: String, val projectName: String)

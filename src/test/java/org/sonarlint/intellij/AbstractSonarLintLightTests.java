@@ -73,6 +73,7 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     setGlobalLevelExclusions(Collections.emptyList());
     getProjectSettings().setProjectKey(null);
     getProjectSettings().setBindingEnabled(false);
+    getProjectSettings().setBindingSuggestionsEnabled(true);
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
@@ -165,5 +166,9 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
 
   protected void setGlobalLevelExclusions(List<String> exclusions) {
     getGlobalSettings().setFileExclusions(exclusions);
+  }
+
+  protected String getProjectBackendId() {
+    return getProject().getProjectFilePath();
   }
 }

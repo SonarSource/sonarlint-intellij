@@ -19,18 +19,29 @@
  */
 package org.sonarlint.intellij.notifications;
 
+import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationGroup;
 import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
+import icons.SonarLintIcons;
+import java.util.Arrays;
+import java.util.List;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.notifications.binding.BindProjectAction;
+import org.sonarlint.intellij.notifications.binding.BindingSuggestion;
+import org.sonarlint.intellij.notifications.binding.ChooseBindingSuggestionAction;
+import org.sonarlint.intellij.notifications.binding.DisableBindingSuggestionsAction;
+import org.sonarlint.intellij.notifications.binding.LearnMoreAboutConnectedModeAction;
 
 public class SonarLintProjectNotifications {
   private static final NotificationGroup BINDING_PROBLEM_GROUP = NotificationGroupManager.getInstance()
     .getNotificationGroup("SonarLint: Server Binding Errors");
   public static final NotificationGroup SERVER_NOTIFICATIONS_GROUP = NotificationGroupManager.getInstance()
     .getNotificationGroup("SonarLint: Server Notifications");
-  private static final String UPDATE_SERVER_MSG = "\n<br>Please update the binding in the SonarLint Settings";
+  private static final NotificationGroup BINDING_SUGGESTION_GROUP = NotificationGroupManager.getInstance()
+    .getNotificationGroup("SonarLint: Binding Suggestions");
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the SonarLint project configuration";
   private static final String TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>";
   private static final String NO_SUBTITLE = null;
@@ -79,19 +90,29 @@ public class SonarLintProjectNotifications {
     shown = true;
   }
 
-  public void notifyServerStorageNeedsUpdate(String serverId) {
-    if (shown) {
-      return;
+  public void suggestBindingOptions(List<BindingSuggestion> suggestedBindings) {
+    if (suggestedBindings.size() == 1) {
+      var suggestedBinding = suggestedBindings.get(0);
+      notifyBindingSuggestions("Bind this project to '" + suggestedBinding.getProjectName() + "' on '" + suggestedBinding.getConnectionId() + "'?",
+        new BindProjectAction(suggestedBinding), new OpenProjectSettingsAction(myProject, "Select another one"));
+    } else {
+      notifyBindingSuggestions("Bind this project to SonarQube or SonarCloud?",
+        suggestedBindings.isEmpty() ? new OpenProjectSettingsAction(myProject, "Configure binding") : new ChooseBindingSuggestionAction(suggestedBindings));
     }
-    var notification = BINDING_PROBLEM_GROUP.createNotification(
-      TITLE_SONARLINT_INVALID_BINDING,
-      NO_SUBTITLE,
-      "Local storage for connection '" + serverId + "' must be updated" + UPDATE_SERVER_MSG,
-      NotificationType.WARNING);
-    notification.addAction(new OpenGlobalSettingsAction(myProject));
-    notification.setImportant(true);
-    notification.notify(myProject);
-    shown = true;
   }
 
+  private void notifyBindingSuggestions(String message, AnAction... mainActions) {
+    var notification = BINDING_SUGGESTION_GROUP.createNotification(
+      "<b>SonarLint Suggestions</b>",
+      NO_SUBTITLE,
+      message,
+      NotificationType.INFORMATION);
+    Arrays.stream(mainActions).forEach(notification::addAction);
+    notification.addAction(new LearnMoreAboutConnectedModeAction());
+    notification.addAction(new DisableBindingSuggestionsAction());
+    notification.setCollapseActionsDirection(Notification.CollapseActionsDirection.KEEP_LEFTMOST);
+    notification.setImportant(true);
+    notification.setIcon(SonarLintIcons.SONARLINT);
+    notification.notify(myProject);
+  }
 }

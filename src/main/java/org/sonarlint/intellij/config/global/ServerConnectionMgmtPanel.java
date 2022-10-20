@@ -33,7 +33,6 @@ import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBList;
 import icons.SonarLintIcons;
-
 import java.awt.BorderLayout;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -48,10 +47,10 @@ import javax.swing.JComponent;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.SwingConstants;
-
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.core.ServerConnectionsManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -150,9 +149,9 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   }
 
   @Override
-  public void save(SonarLintGlobalSettings settings) {
-    var copyList = new ArrayList<>(connections);
-    settings.setServerConnections(copyList);
+  public void save(SonarLintGlobalSettings newSettings) {
+    var newConnections = new ArrayList<>(connections);
+    getService(ServerConnectionsManager.class).replaceConnections(newConnections, newSettings);
 
     // remove them even if a server with the same name was later added
     unbindRemovedServers();

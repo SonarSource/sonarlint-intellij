@@ -24,23 +24,20 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber;
-import org.sonarlint.intellij.server.SonarLintHttpServer;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
 
-public class BootstrapStartupActivity implements StartupActivity {
+public class StartServicesOnProjectOpened implements StartupActivity {
 
   @Override
   public void runActivity(@NotNull Project project) {
     if (ApplicationManager.getApplication().isUnitTestMode()) {
       return;
     }
-
-    SonarLintUtils.getService(SonarLintHttpServer.class).startOnce();
-
     SonarLintUtils.getService(project, ProjectServerNotificationsSubscriber.class).start();
     SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
@@ -50,5 +47,6 @@ public class BootstrapStartupActivity implements StartupActivity {
 
     // perform on bindings load
     SonarLintUtils.getService(project, ConnectedModeStorageSynchronizer.class).init();
+    SonarLintUtils.getService(BackendService.class).projectOpened(project);
   }
 }

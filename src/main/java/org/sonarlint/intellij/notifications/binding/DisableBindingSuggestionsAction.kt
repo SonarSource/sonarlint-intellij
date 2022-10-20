@@ -17,19 +17,20 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications;
+package org.sonarlint.intellij.notifications.binding
 
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.openapi.actionSystem.AnActionEvent
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.Settings.getSettingsFor
+import org.sonarlint.intellij.core.BackendService
 
-class OpenProjectSettingsAction extends OpenConfigurableAction {
-
-  OpenProjectSettingsAction(Project project) {
-    this(project, "Open SonarLint Project Configuration");
-  }
-
-  OpenProjectSettingsAction(Project project, String text) {
-    super(project, text, new SonarLintProjectConfigurable(project));
-  }
-
+class DisableBindingSuggestionsAction : NotificationAction("Don't ask again") {
+    override fun actionPerformed(e: AnActionEvent, notification: Notification) {
+        notification.expire()
+        val project = e.project!!
+        getSettingsFor(project).setBindingSuggestionsEnabled(false)
+        getService(BackendService::class.java).bindingSuggestionsDisabled(project)
+    }
 }

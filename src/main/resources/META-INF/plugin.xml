@@ -193,6 +193,7 @@
                             serviceImplementation="org.sonarlint.intellij.core.server.events.ServerEventsProductionService"
                             testServiceImplementation="org.sonarlint.intellij.util.ServerEventsNoOpService"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerConnectionsManager"/>
         <applicationService serviceInterface="org.sonarlint.intellij.core.EngineManager"
                             serviceImplementation="org.sonarlint.intellij.core.DefaultEngineManager"
                             testServiceImplementation="org.sonarlint.intellij.core.TestEngineManager"/>
@@ -208,6 +209,7 @@
         <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.fs.ModuleFileEventsNotifier"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.module.ModulesRegistry"/>
+        <applicationService serviceImplementation="org.sonarlint.intellij.core.BackendService"/>
         <applicationService serviceInterface="org.sonarlint.intellij.util.ThreadPoolExecutor"
                             serviceImplementation="org.sonarlint.intellij.util.ApplicationThreadPoolExecutor"
                             testServiceImplementation="org.sonarlint.intellij.util.SynchronousThreadPoolExecutor"/>
@@ -240,7 +242,7 @@
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>
         <moduleService serviceImplementation="org.sonarlint.intellij.config.module.SonarLintModuleSettingsStore"/>
 
-        <postStartupActivity implementation="org.sonarlint.intellij.BootstrapStartupActivity"/>
+        <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <postStartupActivity implementation="org.sonarlint.intellij.fs.EditorFileChangeListener"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.SonarLintSubmitter"/>
@@ -256,6 +258,8 @@
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Server Notifications"
                            displayType="STICKY_BALLOON"/>
+        <notificationGroup id="SonarLint: Binding Suggestions"
+                           displayType="STICKY_BALLOON"/>
 
     </extensions>
 
@@ -267,6 +271,7 @@
     </extensionPoints>
 
     <applicationListeners>
+        <listener class="org.sonarlint.intellij.InitializeSonarLintOnStartup" topic="com.intellij.ide.AppLifecycleListener"/>
         <listener class="org.sonarlint.intellij.fs.VirtualFileSystemListener" topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
         <listener class="org.sonarlint.intellij.module.ProjectClosedListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
         <listener class="org.sonarlint.intellij.core.server.events.SubscribeOnProjectOpenedOrClosed" topic="com.intellij.openapi.project.ProjectManagerListener"/>

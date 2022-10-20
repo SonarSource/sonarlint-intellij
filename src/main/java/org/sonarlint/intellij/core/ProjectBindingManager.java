@@ -180,12 +180,13 @@ public class ProjectBindingManager {
     unbind(modulesToClearOverride.collect(Collectors.toList()));
 
     SonarLintProjectNotifications.get(myProject).reset();
-    var newBinding = getBinding();
+    var newBinding = requireNonNull(getBinding());
     if (!Objects.equals(previousBinding, newBinding)) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, newBinding);
     }
     var task = new BindingStorageUpdateTask(connection, myProject);
     progressManager.run(task.asModal());
+    getService(BackendService.class).projectBound(myProject, newBinding);
   }
 
   public void unbind() {
@@ -199,6 +200,7 @@ public class ProjectBindingManager {
     if (previousBinding != null) {
       myProject.getMessageBus().syncPublisher(ProjectBindingListenerKt.getPROJECT_BINDING_TOPIC()).bindingChanged(previousBinding, null);
     }
+    getService(BackendService.class).projectUnbound(myProject);
   }
 
   private static void unbind(List<Module> modules) {

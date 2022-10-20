@@ -17,19 +17,14 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications;
+package org.sonarlint.intellij.notifications.binding
 
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
+import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 
-class OpenProjectSettingsAction extends OpenConfigurableAction {
-
-  OpenProjectSettingsAction(Project project) {
-    this(project, "Open SonarLint Project Configuration");
-  }
-
-  OpenProjectSettingsAction(Project project, String text) {
-    super(project, text, new SonarLintProjectConfigurable(project));
-  }
-
+class LearnMoreAboutConnectedModeAction : AnAction("Learn more") {
+    override fun actionPerformed(e: AnActionEvent) {
+        BrowserUtil.browse("https://github.com/SonarSource/sonarlint-intellij/wiki/Bind-to-SonarQube-or-SonarCloud")
+    }
 }

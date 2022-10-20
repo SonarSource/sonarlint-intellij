@@ -17,19 +17,20 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.notifications;
+package org.sonarlint.intellij
 
-import com.intellij.openapi.project.Project;
-import org.sonarlint.intellij.config.project.SonarLintProjectConfigurable;
+import com.intellij.ide.AppLifecycleListener
+import com.intellij.openapi.application.ApplicationManager
+import org.sonarlint.intellij.common.util.SonarLintUtils
+import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.server.SonarLintHttpServer
 
-class OpenProjectSettingsAction extends OpenConfigurableAction {
-
-  OpenProjectSettingsAction(Project project) {
-    this(project, "Open SonarLint Project Configuration");
-  }
-
-  OpenProjectSettingsAction(Project project, String text) {
-    super(project, text, new SonarLintProjectConfigurable(project));
-  }
-
+class InitializeSonarLintOnStartup : AppLifecycleListener {
+    override fun appFrameCreated(commandLineArgs: MutableList<String>) {
+        if (ApplicationManager.getApplication().isUnitTestMode) {
+            return
+        }
+        SonarLintUtils.getService(BackendService::class.java).startOnce()
+        SonarLintUtils.getService(SonarLintHttpServer::class.java).startOnce()
+    }
 }

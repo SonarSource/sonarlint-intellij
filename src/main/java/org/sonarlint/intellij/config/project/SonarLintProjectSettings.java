@@ -40,6 +40,7 @@ public final class SonarLintProjectSettings {
   private String connectionName = null;
   private String projectKey = null;
   private List<String> fileExclusions = new ArrayList<>();
+  private boolean bindingSuggestionsEnabled = true;
 
   public boolean isVerboseEnabled() {
     return verboseEnabled;
@@ -117,5 +118,13 @@ public final class SonarLintProjectSettings {
     bindingEnabled = false;
     connectionName = null;
     this.projectKey = null;
+  }
+
+  public void setBindingSuggestionsEnabled(boolean enabled) {
+    bindingSuggestionsEnabled = enabled;
+  }
+
+  public boolean isBindingSuggestionsEnabled() {
+    return bindingSuggestionsEnabled;
   }
 }
