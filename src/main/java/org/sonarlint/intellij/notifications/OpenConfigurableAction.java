@@ -39,9 +39,11 @@ class OpenConfigurableAction extends NotificationAction {
 
   @Override
   public final void actionPerformed(@NotNull AnActionEvent e, @NotNull Notification notification) {
+    var closeNotification = true;
     if (!project.isDisposed()) {
-      ShowSettingsUtil.getInstance().editConfigurable(project, configurable);
-    } else {
+      closeNotification = ShowSettingsUtil.getInstance().editConfigurable(project, configurable);
+    }
+    if (closeNotification) {
       notification.expire();
     }
   }

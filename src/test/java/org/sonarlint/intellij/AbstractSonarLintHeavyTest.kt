@@ -20,12 +20,14 @@
 package org.sonarlint.intellij
 
 import com.intellij.openapi.module.Module
+import com.intellij.openapi.project.Project
 import com.intellij.serviceContainer.ComponentManagerImpl
 import com.intellij.testFramework.HeavyPlatformTestCase
-import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.config.project.SonarLintProjectSettings
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.TestEngineManager
@@ -33,6 +35,15 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 abstract class AbstractSonarLintHeavyTest : HeavyPlatformTestCase() {
+    val globalSettings: SonarLintGlobalSettings
+        get() {
+            return Settings.getGlobalSettings()
+        }
+
+    val projectSettings: SonarLintProjectSettings
+        get() {
+            return Settings.getSettingsFor(project)
+        }
 
     override fun setUp() {
         super.setUp()
@@ -64,4 +75,6 @@ abstract class AbstractSonarLintHeavyTest : HeavyPlatformTestCase() {
     protected open fun <T : Any> replaceProjectService(clazz: Class<T>, newInstance: T) {
         (project as ComponentManagerImpl).replaceServiceInstance(clazz, newInstance, project)
     }
+
+    protected fun projectBackendId(project: Project) = project.projectFilePath!!
 }
