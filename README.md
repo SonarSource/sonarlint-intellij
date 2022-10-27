@@ -28,7 +28,7 @@ How to install
 
 You can install SonarLint from the [JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/7973-sonarlint), directly available in the IDE preferences.
 
-Node.js >= 8.x is required to perform JavaScript or TypeScript analysis.
+Node.js >= 14.20 is required to perform JavaScript or TypeScript analysis (Node.js >= 16 is recommended).
 
 Have Question or Feedback?
 --------------------------

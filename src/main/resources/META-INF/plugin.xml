@@ -50,7 +50,7 @@
             <br/>
             <p>
                 SonarLint requires your IDE to be run with a JVM 11+ (this is the case for all recent JetBrains IDE);
-                the analysis of JavaScript and TypeScript requires Node.js >= 12.22 to be installed on your computer.
+                the analysis of JavaScript and TypeScript requires Node.js >= 14.20 to be installed on your computer (Node.js >= 16 is recommended).
             </p>
         </html>
       ]]></description>
