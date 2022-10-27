@@ -32,13 +32,9 @@ import org.sonarlint.intellij.util.TaskProgressMonitor;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject;
 
-// we can't use Task.WithResult because it was only introduced recently
-public class ServerDownloadProjectTask extends Task.Modal {
+public class ServerDownloadProjectTask extends Task.WithResult<Map<String, ServerProject>, Exception> {
   private final ConnectedSonarLintEngine engine;
   private final ServerConnection server;
-
-  private Exception exception;
-  private Map<String, ServerProject> result;
 
   public ServerDownloadProjectTask(Project project, ConnectedSonarLintEngine engine, ServerConnection server) {
     super(project, "Downloading Project List", true);
@@ -47,20 +43,14 @@ public class ServerDownloadProjectTask extends Task.Modal {
   }
 
   @Override
-  public void run(@NotNull ProgressIndicator indicator) {
+  protected Map<String, ServerProject> compute(@NotNull ProgressIndicator indicator) throws Exception {
     try {
       var monitor = new TaskProgressMonitor(indicator, myProject);
-      this.result = engine.downloadAllProjects(server.getEndpointParams(), server.getHttpClient(), monitor);
+      return engine.downloadAllProjects(server.getEndpointParams(), server.getHttpClient(), monitor);
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to download list of projects", e);
-      this.exception = e;
+      throw e;
     }
   }
 
-  public Map<String, ServerProject> getResult() throws Exception {
-    if (exception != null) {
-      throw exception;
-    }
-    return result;
-  }
 }

@@ -169,8 +169,7 @@ public class SonarLintProjectBindPanel {
     var downloadTask = new ServerDownloadProjectTask(project, engine, selectedConnection);
 
     try {
-      ProgressManager.getInstance().run(downloadTask);
-      return downloadTask.getResult();
+      return ProgressManager.getInstance().run(downloadTask);
     } catch (Exception e) {
       var msg = e.getMessage() != null ? e.getMessage() : "Failed to download list of projects";
       Messages.showErrorDialog(rootPanel, msg, "Error Downloading Project List");
