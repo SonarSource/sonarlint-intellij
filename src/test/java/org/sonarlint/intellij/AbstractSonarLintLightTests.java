@@ -63,20 +63,21 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
   @Before
   public final void init() {
     disposable = Disposer.newDisposable();
-  }
-
-  @After
-  public final void restore() {
-    getEngineManager().stopAllEngines(false);
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
     setGlobalLevelExclusions(Collections.emptyList());
+    getProjectSettings().setConnectionName(null);
     getProjectSettings().setProjectKey(null);
     getProjectSettings().setBindingEnabled(false);
     setProjectLevelExclusions(Collections.emptyList());
     getModuleSettings().setIdePathPrefix("");
     getModuleSettings().setSqPathPrefix("");
     getModuleSettings().clearBindingOverride();
+  }
+
+  @After
+  public final void restore() {
+    getEngineManager().stopAllEngines(false);
     if (!getProject().isDisposed()) {
       AnalysisStatus.get(getProject()).stopRun();
     }
