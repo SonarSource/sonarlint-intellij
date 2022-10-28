@@ -222,11 +222,12 @@ class RequestHandler : SimpleChannelInboundHandler<Any?>() {
     companion object {
         fun isTrustedOrigin(origin: String?): Boolean {
             return origin != null && (SonarLintUtils.isSonarCloudAlias(origin) || Settings.getGlobalSettings().serverConnections.any {
-                it.hostUrl.startsWith(
-                    origin
-                )
+                ensureTrailingSlash(it.hostUrl).startsWith(ensureTrailingSlash(origin))
             })
         }
+
+        private fun ensureTrailingSlash(string: String) =
+            if (string.endsWith('/')) string else "$string/"
     }
 
 }
