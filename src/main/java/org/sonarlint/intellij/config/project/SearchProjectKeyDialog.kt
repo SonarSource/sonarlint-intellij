@@ -20,22 +20,24 @@
 package org.sonarlint.intellij.config.project
 
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.ui.CollectionListModel
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.ColoredListCellRenderer
+import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.IdeBorderFactory
-import com.intellij.ui.ListSpeedSearch
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBList
+import com.intellij.ui.layout.GrowPolicy
 import com.intellij.ui.layout.panel
-import com.intellij.util.Function
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject
 import java.awt.Component
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.util.stream.Collectors
+import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.ListSelectionModel
+import javax.swing.event.DocumentEvent
 import javax.swing.event.ListSelectionEvent
 import javax.swing.event.ListSelectionListener
 
@@ -48,25 +50,33 @@ class SearchProjectKeyDialog(
     parent, false
 ) {
     private lateinit var projectList: JBList<ServerProject>
+    private lateinit var searchTextField: SearchTextField
 
     init {
-        title = "Search Project in " + if (isSonarCloud) "SonarCloud" else "SonarQube"
+        title = "Select " + (if (isSonarCloud) "SonarCloud" else "SonarQube") + " Project To Bind"
         init()
     }
 
     override fun createCenterPanel() = panel {
         row {
-            label("Select a project from the list. Start typing to search.")
+            searchTextField = SearchTextField()
+            searchTextField.textEditor.emptyText.text = "Search by project key or name"
+            searchTextField.addDocumentListener(object : DocumentAdapter() {
+                override fun textChanged(e: DocumentEvent) {
+                    updateProjectsInList()
+                }
+            })
+            searchTextField().growPolicy(GrowPolicy.MEDIUM_TEXT)
         }
         row {
             projectList = createProjectList()
-            setProjectsInList(projectsByKey.values)
             scrollPane(projectList)
+            updateProjectsInList()
         }
     }
 
     private fun updateOk(): Boolean {
-        val valid = lastSelectedProjectKey != null
+        val valid = selectedProjectKey != null
         myOKAction.isEnabled = valid
         return valid
     }
@@ -78,55 +88,55 @@ class SearchProjectKeyDialog(
         }
 
     private fun createProjectList(): JBList<ServerProject> {
-        val projectList = JBList<ServerProject>()
-        projectList.setEmptyText("No projects found in " + if (isSonarCloud) "SonarCloud" else "SonarQube")
+        val projectList = JBList<ServerProject>(DefaultListModel<ServerProject>())
+        val emptyText = StringBuilder("No projects found")
+        if (projectsByKey.isEmpty()) {
+            emptyText.append(" for the selected connection")
+        }
+        projectList.setEmptyText(emptyText.toString())
         projectList.cellRenderer = ProjectListRenderer()
         projectList.addListSelectionListener(ProjectItemListener())
         projectList.addMouseListener(ProjectMouseListener())
         projectList.selectionMode = ListSelectionModel.SINGLE_SELECTION
         projectList.visibleRowCount = 10
         projectList.border = IdeBorderFactory.createBorder()
-        ListSpeedSearch(projectList, Function { o: ServerProject? -> o!!.name + " " + o.key } as Function<ServerProject?, String>)
+        projectList.cellRenderer = ProjectListRenderer()
         return projectList
     }
 
-    private fun setProjectsInList(projects: Collection<ServerProject>) {
-        val projectComparator = java.util.Comparator { o1: ServerProject?, o2: ServerProject? ->
-            val c1 = o1!!.name.compareTo(o2!!.name, ignoreCase = true)
-            if (c1 != 0) {
-                return@Comparator c1
-            }
-            o1.key.compareTo(o2.key, ignoreCase = true)
-        }
-        val sortedProjects = projects.stream()
-            .sorted(projectComparator)
-            .collect(Collectors.toList())
-        var selected: ServerProject? = null
-        if (lastSelectedProjectKey != null) {
-            selected = sortedProjects.stream()
-                .filter { project: ServerProject -> lastSelectedProjectKey == project.key }
-                .findAny().orElse(null)
-        }
-        val projectListModel = CollectionListModel(sortedProjects)
-        projectList.model = projectListModel
-        projectList.cellRenderer = ProjectListRenderer()
-        setSelectedProject(selected)
-    }
+    private fun updateProjectsInList() {
+        val filterText = searchTextField.text
+        val selection: ServerProject? = projectList.selectedValue
+        val model = (projectList.model as? DefaultListModel)
+        model!!.clear()
+        val sortedProjects = projectsByKey.values
+            .sortedWith(compareBy({ it.name.toLowerCase() }, { it.key.toLowerCase() }))
 
-    private fun setSelectedProject(selected: ServerProject?) {
-        if (selected != null) {
-            projectList.setSelectedValue(selected, true)
-        } else if (!projectList.isEmpty && lastSelectedProjectKey == null) {
-            projectList.setSelectedIndex(0)
-        } else {
-            projectList.setSelectedValue(null, true)
+        var selectedIndex = -1
+        var index = 0
+        for (sortedProject in sortedProjects) {
+            if (StringUtil.containsIgnoreCase(sortedProject.key, filterText) || StringUtil.containsIgnoreCase(sortedProject.name, filterText)) {
+                model.addElement(sortedProject)
+                if ((selection != null && selection === sortedProject) || lastSelectedProjectKey == sortedProject.key) {
+                    selectedIndex = index
+                }
+                index++
+            }
         }
+        if (!model.isEmpty) {
+            if (selectedIndex >= 0) {
+                projectList.selectedIndex = selectedIndex
+                projectList.ensureIndexIsVisible(selectedIndex)
+            } else {
+                projectList.clearSelection()
+            }
+        }
+        projectList.revalidate()
+        projectList.repaint()
+
         updateOk()
     }
 
-    /**
-     * Render projects in combo box
-     */
     private class ProjectListRenderer : ColoredListCellRenderer<ServerProject>() {
         override fun customizeCellRenderer(
             list: JList<out ServerProject>,
