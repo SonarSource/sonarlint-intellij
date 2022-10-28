@@ -43,7 +43,6 @@ import com.intellij.ui.components.JBTextField;
 import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.ui.JBUI;
 import icons.SonarLintIcons;
-
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -63,12 +62,9 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.event.HyperlinkEvent;
-
 import org.apache.commons.lang.StringUtils;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable;
-import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.tasks.BindingStorageUpdateTask;
 import org.sonarlint.intellij.tasks.ServerDownloadProjectTask;
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject;
@@ -164,10 +160,7 @@ public class SonarLintProjectBindPanel {
   private Map<String, ServerProject> downloadProjectList(ServerConnection selectedConnection) {
     ApplicationManager.getApplication().assertIsDispatchThread();
 
-    var engineManager = SonarLintUtils.getService(EngineManager.class);
-    var engine = engineManager.getConnectedEngine(selectedConnection.getName());
-    var downloadTask = new ServerDownloadProjectTask(project, engine, selectedConnection);
-
+    var downloadTask = new ServerDownloadProjectTask(project, selectedConnection);
     try {
       return ProgressManager.getInstance().run(downloadTask);
     } catch (Exception e) {
