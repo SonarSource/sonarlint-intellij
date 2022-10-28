@@ -72,13 +72,15 @@ public class SonarLintEngineFactory {
 
   private static final List<EmbeddedPlugin> EMBEDDED_PLUGINS = List.of(
     new EmbeddedPlugin(Language.CPP, "CFamily", "sonar-cfamily-plugin-*.jar"),
-    new EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-secrets-plugin-*.jar"),
     new EmbeddedPlugin(Language.CS, "CSharp", "sonarlint-omnisharp-plugin-*.jar"),
     new EmbeddedPlugin(Language.HTML, "HTML", "sonar-html-plugin-*.jar"),
     new EmbeddedPlugin(Language.JS, "JavaScript/TypeScript", "sonar-javascript-plugin-*.jar"),
     new EmbeddedPlugin(Language.KOTLIN, "Kotlin", "sonar-kotlin-plugin-*.jar"),
     new EmbeddedPlugin(Language.RUBY, "Ruby", "sonar-ruby-plugin-*.jar"),
     new EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"));
+
+  private static final List<EmbeddedPlugin> EXTRA_PLUGINS = List.of(
+    new EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-secrets-plugin-*.jar"));
 
   ConnectedSonarLintEngine createEngine(String connectionId, boolean isSonarCloud) {
     var enabledLanguages = EnumSet.copyOf(STANDALONE_LANGUAGES);
@@ -100,6 +102,12 @@ public class SonarLintEngineFactory {
       var embeddedPluginUrl = findEmbeddedPlugin(pluginsDir, embeddedPlugin);
       if (embeddedPluginUrl != null) {
         configBuilder.useEmbeddedPlugin(embeddedPlugin.pluginKey, embeddedPluginUrl);
+      }
+    });
+    EXTRA_PLUGINS.forEach(extraPlugin -> {
+      var extraPluginUrl = findEmbeddedPlugin(pluginsDir, extraPlugin);
+      if (extraPluginUrl != null) {
+        configBuilder.addExtraPlugin(extraPlugin.pluginKey, extraPluginUrl);
       }
     });
     return new ConnectedSonarLintEngineImpl(configBuilder.build());
