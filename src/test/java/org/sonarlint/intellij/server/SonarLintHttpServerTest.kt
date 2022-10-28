@@ -89,6 +89,7 @@ class SonarLintHttpServerTest : AbstractSonarLintLightTests() {
         assertThat(RequestHandler.isTrustedOrigin("https://my.sonar.com")).isTrue
         assertThat(RequestHandler.isTrustedOrigin("http://my.sonar.com")).isFalse
         assertThat(RequestHandler.isTrustedOrigin("https://sonar.com")).isFalse
+        assertThat(RequestHandler.isTrustedOrigin("https://my.so")).isFalse
     }
 
 }
