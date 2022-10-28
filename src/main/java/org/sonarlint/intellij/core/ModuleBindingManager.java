@@ -28,13 +28,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.annotation.CheckForNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
 import org.sonarsource.sonarlint.core.client.api.common.SonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
 
-import static java.util.Objects.requireNonNull;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
@@ -82,8 +82,8 @@ public class ModuleBindingManager {
       && hasProjectMoreThanOneModule()
       && isNotPrimaryProject())
       ||
-      // If binding was once overriden on a module, we want to keep using it, even if the project is now back to one module
-      hasOneModuleAlreadyOverriden();
+      // If binding was once overridden on a module, we want to keep using it, even if the project is now back to one module
+      hasOneModuleAlreadyOverridden();
   }
 
   /**
@@ -98,7 +98,7 @@ public class ModuleBindingManager {
     return ModuleManager.getInstance(module.getProject()).getModules().length > 1;
   }
 
-  private boolean hasOneModuleAlreadyOverriden() {
+  private boolean hasOneModuleAlreadyOverridden() {
     return Arrays.stream(ModuleManager.getInstance(module.getProject()).getModules()).anyMatch(m -> getSettingsFor(m).isProjectBindingOverridden());
   }
 
@@ -138,7 +138,11 @@ public class ModuleBindingManager {
     var projectSettings = getSettingsFor(module.getProject());
     if (moduleSettings.isProjectBindingOverridden() || projectSettings.isBound()) {
       var connectionId = projectSettings.getConnectionName();
-      return engineManager.getConnectedEngineIfStarted(requireNonNull(connectionId));
+      if (connectionId == null) {
+        SonarLintConsole.get(module.getProject()).error("Inconsistency in settings, the module or project is bound but there is no connection");
+      } else {
+        return engineManager.getConnectedEngineIfStarted(connectionId);
+      }
     }
     return engineManager.getStandaloneEngineIfStarted();
   }

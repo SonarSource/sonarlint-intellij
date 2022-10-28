@@ -22,13 +22,9 @@ package org.sonarlint.intellij.core
 import org.assertj.core.api.AssertionsForClassTypes.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentMatchers
-import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneSonarLintEngine
 
@@ -38,27 +34,21 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
 
     @Before
     fun prepare() {
-        val console = mock(SonarLintConsole::class.java)
-        val notifications = mock(SonarLintProjectNotifications::class.java)
-        replaceProjectService(SonarLintConsole::class.java, console)
-        replaceProjectService(SonarLintProjectNotifications::class.java, notifications)
-
-        getEngineManager().registerEngine(standaloneEngine)
-        getEngineManager().registerEngine(connectedEngine, "server1")
+        standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
+        connectedEngine = mock(ConnectedSonarLintEngine::class.java)
+        engineManager.registerEngine(standaloneEngine)
+        engineManager.registerEngine(connectedEngine, "server1")
         moduleBindingManager = ModuleBindingManager(module)
         replaceModuleService(ModuleBindingManager::class.java, moduleBindingManager)
     }
 
     @Test
     fun should_return_standalone_engine_if_not_bound_on_project_and_module_level() {
-        `when`(engineManager.standaloneEngineIfStarted).thenReturn(standaloneEngine)
-
         assertThat(moduleBindingManager.engineIfStarted).isEqualTo(standaloneEngine)
     }
 
     @Test
     fun should_return_connected_engine_if_not_bound_on_module_level_but_has_default_binding() {
-        `when`(engineManager.getConnectedEngineIfStarted(ArgumentMatchers.anyString())).thenReturn(connectedEngine)
         projectSettings.isBindingEnabled = true
         projectSettings.connectionName = "server1"
         projectSettings.projectKey = "key"
@@ -68,7 +58,6 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
 
     @Test
     fun should_return_connected_engine_if_no_default_binding_but_bound_on_module_level() {
-        `when`(engineManager.getConnectedEngineIfStarted(ArgumentMatchers.anyString())).thenReturn(connectedEngine)
         projectSettings.isBindingEnabled = true
         projectSettings.connectionName = "server1"
         moduleSettings.projectKey = "key"
@@ -102,8 +91,17 @@ class ModuleBindingManagerTest : AbstractSonarLintLightTests() {
         assertThat(moduleSettings.projectKey).isEmpty()
     }
 
-    private val standaloneEngine = mock(StandaloneSonarLintEngine::class.java)
-    private val connectedEngine = mock(ConnectedSonarLintEngine::class.java)
-    private val engineManager = mock(DefaultEngineManager::class.java)
+    @Test
+    fun should_fallback_to_standalone_engine_when_module_bound_but_not_project() {
+        // as settings are stored on file system, inconsistencies can happen
+        moduleSettings.projectKey = "moduleKey"
+
+        val engineIfStarted = moduleBindingManager.engineIfStarted
+
+        assertThat(engineIfStarted).isEqualTo(standaloneEngine)
+    }
+
+    private lateinit var standaloneEngine : StandaloneSonarLintEngine
+    private lateinit var connectedEngine : ConnectedSonarLintEngine
 
 }
