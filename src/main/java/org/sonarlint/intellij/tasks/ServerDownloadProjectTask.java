@@ -22,23 +22,20 @@ package org.sonarlint.intellij.tasks;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
-
 import java.util.Map;
-
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
-import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
+import org.sonarsource.sonarlint.core.commons.progress.ProgressMonitor;
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject;
 
 public class ServerDownloadProjectTask extends Task.WithResult<Map<String, ServerProject>, Exception> {
-  private final ConnectedSonarLintEngine engine;
   private final ServerConnection server;
 
-  public ServerDownloadProjectTask(Project project, ConnectedSonarLintEngine engine, ServerConnection server) {
+  public ServerDownloadProjectTask(Project project, ServerConnection server) {
     super(project, "Downloading Project List", true);
-    this.engine = engine;
     this.server = server;
   }
 
@@ -46,7 +43,7 @@ public class ServerDownloadProjectTask extends Task.WithResult<Map<String, Serve
   protected Map<String, ServerProject> compute(@NotNull ProgressIndicator indicator) throws Exception {
     try {
       var monitor = new TaskProgressMonitor(indicator, myProject);
-      return engine.downloadAllProjects(server.getEndpointParams(), server.getHttpClient(), monitor);
+      return server.api().component().getAllProjects(new ProgressMonitor(monitor)).stream().collect(Collectors.toMap(ServerProject::getKey, p -> p));
     } catch (Exception e) {
       SonarLintConsole.get(myProject).error("Failed to download list of projects", e);
       throw e;
