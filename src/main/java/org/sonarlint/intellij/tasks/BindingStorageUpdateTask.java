@@ -187,9 +187,15 @@ public class BindingStorageUpdateTask {
     }
     allProjectAndBranchesToSync
       .forEach(pb -> {
-        engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor);
+        var branchName = pb.getBranchName();
+        if (branchName == null) {
+          GlobalLogOutput.get().log("Skip synchronizing issues, branch is unknown", ClientLogOutput.Level.DEBUG);
+          return;
+        }
+        engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), branchName, monitor);
+
         if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-          engine.syncServerTaintIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), pb.getBranchName(), monitor);
+          engine.syncServerTaintIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), branchName, monitor);
         }
       });
 
