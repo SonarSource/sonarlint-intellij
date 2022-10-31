@@ -32,7 +32,6 @@ import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.messages.ProjectBindingListener
 import org.sonarlint.intellij.messages.ServerBranchesListener
-import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
 import org.sonarsource.sonarlint.core.commons.log.SonarLintLogger
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -46,25 +45,29 @@ class DefaultVcsService @NonInjectable constructor(
 
     constructor(project: Project) : this(project, Executors.newSingleThreadExecutor())
 
-    override fun getServerBranchName(module: Module): String {
+    override fun getServerBranchName(module: Module): String? {
         if (resolvedBranchPerModule.containsKey(module)) {
             return resolvedBranchPerModule[module]!!
         }
         val branchName = resolveServerBranchName(module)
-        resolvedBranchPerModule[module] = branchName
+        branchName?.let { resolvedBranchPerModule[module] = it }
         return branchName
     }
 
-    private fun resolveServerBranchName(module: Module): String {
+    private fun resolveServerBranchName(module: Module): String? {
         val repositoriesEPs = ModuleVcsRepoProvider.EP_NAME.extensionList
         val repositories = repositoriesEPs.mapNotNull { it.getRepoFor(module, logger) }.toList()
         val bindingManager = getService(project, ProjectBindingManager::class.java)
         val projectKey = getService(module, ModuleBindingManager::class.java).resolveProjectKey()
         val validConnectedEngine = bindingManager.validConnectedEngine
-        val serverBranches =
-            if (projectKey != null && validConnectedEngine != null) validConnectedEngine.getServerBranches(projectKey)
-            // should happen only in standalone mode, if no storage getServerBranches throws
-            else ProjectBranches(setOf("master"), "master")
+        if (projectKey == null || validConnectedEngine == null) {
+            return null
+        }
+        val serverBranches = try {
+            validConnectedEngine.getServerBranches(projectKey)
+        } catch (e: Exception) {
+            return null
+        }
         val mainServerBranch = serverBranches.mainBranchName
         if (repositories.isEmpty()) {
             logger.warn("No VCS repository found for module $module")
@@ -95,7 +98,11 @@ class DefaultVcsService @NonInjectable constructor(
                 cacheIterator.remove()
             } else {
                 val newBranchName = resolveServerBranchName(module)
-                resolvedBranchPerModule[module] = newBranchName
+                if (newBranchName == null) {
+                    cacheIterator.remove()
+                } else {
+                    resolvedBranchPerModule[module] = newBranchName
+                }
                 if (previousBranchName != newBranchName) {
                     project.messageBus.syncPublisher(TOPIC).resolvedServerBranchChanged(module, newBranchName)
                 }

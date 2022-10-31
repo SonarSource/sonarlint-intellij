@@ -246,7 +246,7 @@ public class ProjectBindingManager {
     private final String projectKey;
     private final String branchName;
 
-    public ProjectKeyAndBranch(String projectKey, String branchName) {
+    public ProjectKeyAndBranch(String projectKey, @Nullable String branchName) {
       this.projectKey = projectKey;
       this.branchName = branchName;
     }
@@ -255,6 +255,7 @@ public class ProjectBindingManager {
       return projectKey;
     }
 
+    @CheckForNull
     public String getBranchName() {
       return branchName;
     }

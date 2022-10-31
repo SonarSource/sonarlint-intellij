@@ -28,8 +28,10 @@ import com.intellij.openapi.progress.Task;
 import com.intellij.openapi.project.Project;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsListener;
 import org.sonarlint.intellij.config.global.ServerConnection;
@@ -107,11 +109,15 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
     submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
   }
 
-  private void updateIssues(Module module, String branchName) {
+  private void updateIssues(Module module, @Nullable String branchName) {
+    if (branchName == null) {
+      SonarLintConsole.get(module.getProject()).debug("Skip synchronizing issues, branch is unknown");
+      return;
+    }
     var log = getService(GlobalLogOutput.class);
     ProjectBindingManager projectBindingManager = getService(myProject, ProjectBindingManager.class);
     if (!projectBindingManager.isBindingValid()) {
-      log.log("Invalid bindind for project", ClientLogOutput.Level.WARN);
+      log.log("Invalid binding for project", ClientLogOutput.Level.WARN);
       return;
     }
     var moduleProjectKey = getService(module, ModuleBindingManager.class).resolveProjectKey();
@@ -144,7 +150,12 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
       });
   }
 
-  private void syncIssuesForBranch(ConnectedSonarLintEngine engine, ServerConnection serverConnection, String projectKey, String branchName, ProgressIndicator progressIndicator) {
+  private void syncIssuesForBranch(ConnectedSonarLintEngine engine, ServerConnection serverConnection, String projectKey, @Nullable String branchName,
+    ProgressIndicator progressIndicator) {
+    if (branchName == null) {
+      SonarLintConsole.get(myProject).debug("Skip synchronizing issues, branch is unknown");
+      return;
+    }
     engine.syncServerIssues(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), projectKey, branchName,
       new TaskProgressMonitor(progressIndicator, myProject));
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {

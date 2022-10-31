@@ -263,8 +263,14 @@ public class ServerIssueUpdater implements Disposable {
       this.engine = engine;
     }
 
-    public void matchIssuesSingleFile(ProjectBinding projectBinding, String branchName, VirtualFile virtualFile, String relativePath) {
-      var serverIssues = engine.getServerIssues(projectBinding, branchName, relativePath);
+    public void matchIssuesSingleFile(ProjectBinding projectBinding, @Nullable String branchName, VirtualFile virtualFile, String relativePath) {
+      List<ServerIssue> serverIssues;
+      if (branchName == null) {
+        SonarLintConsole.get(myProject).debug("Skip loading stored issues, branch is unknown");
+        serverIssues = List.of();
+      } else {
+        serverIssues = engine.getServerIssues(projectBinding, branchName, relativePath);
+      }
       matchFile(virtualFile, serverIssues);
     }
 
@@ -277,6 +283,10 @@ public class ServerIssueUpdater implements Disposable {
       try {
         SonarLintConsole.get(myProject).debug("fetchServerIssues projectKey=" + projectKey);
         var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
+        if (branchName == null) {
+          SonarLintConsole.get(myProject).debug("Skip fetching server issues, branch is unknown");
+          return;
+        }
         engine.downloadAllServerIssues(server.getEndpointParams(), server.getHttpClient(), projectKey, branchName, null);
       } catch (DownloadException e) {
         var console = getService(myProject, SonarLintConsole.class);
@@ -305,6 +315,10 @@ public class ServerIssueUpdater implements Disposable {
       var projectBinding = getProjectBinding(module);
       SonarLintConsole.get(myProject).debug("downloadAllServerIssuesForFile projectKey=" + projectBinding.projectKey() + ", filepath=" + relativePath);
       var branchName = getService(myProject, VcsService.class).getServerBranchName(module);
+      if (branchName == null) {
+        SonarLintConsole.get(myProject).debug("Skip downloading issues, branch is unknown");
+        return List.of();
+      }
       try {
         engine.downloadAllServerIssuesForFile(server.getEndpointParams(), server.getHttpClient(), projectBinding, relativePath, branchName, null);
       } catch (DownloadException e) {

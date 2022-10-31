@@ -41,6 +41,7 @@ import org.sonarlint.intellij.messages.SERVER_BRANCHES_TOPIC
 import org.sonarlint.intellij.util.ImmediateExecutorService
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches
+import org.sonarsource.sonarlint.core.serverconnection.storage.StorageException
 import java.nio.file.Paths
 
 internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
@@ -57,7 +58,7 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
 
     @Test
     fun test_should_not_resolve_server_branch_when_project_is_not_bound() {
-        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
+        assertThat(vcsService.getServerBranchName(module)).isNull()
     }
 
     @Test
@@ -73,6 +74,15 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
         getEngineManager().registerEngine(connectedEngine, "connection")
 
         assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
+    }
+
+    @Test
+    fun test_should_not_resolve_server_branch_when_storage_does_not_exist() {
+        whenever(connectedEngine.getServerBranches("moduleKey")).thenThrow(StorageException("boom"))
+
+        val resolvedServerBranchName = vcsService.getServerBranchName(module)
+
+        assertThat(resolvedServerBranchName).isNull()
     }
 
     @Test
@@ -170,7 +180,7 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
 
         unbindProject()
 
-        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
+        assertThat(vcsService.getServerBranchName(module)).isNull()
     }
 
     @Test
@@ -184,7 +194,7 @@ internal class DefaultVcsServiceTest : AbstractSonarLintHeavyTest() {
             )
         )
         getEngineManager().registerEngine(connectedEngine, "connection")
-        assertThat(vcsService.getServerBranchName(module)).isEqualTo("master")
+        assertThat(vcsService.getServerBranchName(module)).isNull()
 
         connectProjectTo(ServerConnection.newBuilder().setName("connection").build(), "projectKey")
         project.messageBus.syncPublisher(PROJECT_BINDING_TOPIC)

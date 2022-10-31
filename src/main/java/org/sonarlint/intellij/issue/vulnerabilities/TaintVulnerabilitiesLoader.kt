@@ -60,6 +60,10 @@ object TaintVulnerabilitiesLoader {
     val projectBinding = moduleBindingManager.binding
       ?: throw InvalidBindingException("Module ${module.name} is not bound")
     val branchName = getService(project, VcsService::class.java).getServerBranchName(module)
+    if (branchName == null) {
+      SonarLintConsole.get(project).debug("Skip loading taint vulnerabilities, branch is unknown")
+      return emptyList()
+    }
     val filePath = project.getRelativePathOf(file)
     if (filePath == null) {
       SonarLintConsole.get(project).debug("Filepath for file ${file.canonicalPath} was not resolved.")
