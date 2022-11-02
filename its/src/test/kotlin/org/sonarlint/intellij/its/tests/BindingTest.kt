@@ -149,7 +149,7 @@ class BindingTest : BaseUiTest() {
             pressOk()
             errorMessage("Project key for module 'sample-scala-module' should not be empty")
             buttons(byText("Search in list..."))[1].click()
-            dialog("Search Project in SonarQube") {
+            dialog("Select SonarQube Project To Bind") {
                 jList {
                     clickItem(MODULE_PROJECT_KEY, false)
                 }
