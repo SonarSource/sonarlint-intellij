@@ -24,6 +24,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.Assume
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIf
+import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
@@ -33,12 +35,8 @@ import org.sonarlint.intellij.its.utils.optionalStep
 import java.time.Duration
 
 
+@EnabledIf("isCLion")
 class CLionTests : BaseUiTest() {
-
-    @BeforeEach
-    fun requirements() {
-        Assume.assumeTrue(remoteRobot.isCLion())
-    }
 
     @Test
     fun should_analyze_cpp() = uiTest {

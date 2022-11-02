@@ -35,6 +35,7 @@ import org.junit.Assume
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -57,12 +58,11 @@ import java.time.Duration
 
 const val TAINT_VULNERABILITY_PROJECT_KEY = "sample-java-taint-vulnerability"
 
+@DisabledIf("isCLion", disabledReason = "No taint vulnerabilities in CLion")
 class TaintVulnerabilitiesTest : BaseUiTest() {
 
     @Test
     fun should_request_the_user_to_bind_project_when_not_bound() = uiTest {
-        Assume.assumeFalse(this.isCLion())
-
         openExistingProject("sample-java-taint-vulnerability", true)
 
         verifyTaintTabContainsMessages(this, "The project is not bound to SonarQube/SonarCloud")
@@ -70,8 +70,6 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
 
     @Test
     fun should_display_sink() = uiTest {
-        Assume.assumeFalse(this.isCLion())
-
         openExistingProject("sample-java-taint-vulnerability", true)
         bindProjectFromPanel()
 

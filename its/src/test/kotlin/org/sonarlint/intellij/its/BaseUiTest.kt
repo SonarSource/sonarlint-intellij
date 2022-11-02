@@ -61,7 +61,13 @@ open class BaseUiTest {
             StepsLogger.init()
             remoteRobot = RemoteRobot(robotUrl)
         }
+
+        @JvmStatic
+        fun isCLion(): Boolean {
+            return remoteRobot.isCLion()
+        }
     }
+
 
     fun uiTest(test: RemoteRobot.() -> Unit) {
         try {
