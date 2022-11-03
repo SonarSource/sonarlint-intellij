@@ -40,7 +40,7 @@ stages:
       - bash: gpg --dearmor < $(pgpSignKey.secureFilePath) > sign-key.pgp
       - task: Gradle@2
         inputs:
-          options: --build-cache --stacktrace -i -Psigning.secretKeyRingFile=sign-key.pgp -Psigning.password=$(PGP_PASSPHRASE) -Psigning.keyId=$(PGP_KEYID)
+          options: --stacktrace -i -Psigning.secretKeyRingFile=sign-key.pgp -Psigning.password=$(PGP_PASSPHRASE) -Psigning.keyId=$(PGP_KEYID)
           tasks: :buildPlugin :cyclonedxBom :artifactoryPublish
           publishJUnitResults: false
           jdkVersionOption: '1.11'
@@ -76,14 +76,9 @@ stages:
       steps:
       - checkout: self
         fetchDepth: 1
-      - task: Cache@2
-        inputs:
-          key: 'test_windows | gradle | "$(Agent.OS)" | **/build.gradle.kts'
-          path: $(GRADLE_USER_HOME)
-        displayName: Gradle build cache
       - task: Gradle@2
         inputs:
-          options: --build-cache --stacktrace -i
+          options: --stacktrace -i
           tasks: check -x :its:check
           publishJUnitResults: true
           testRunTitle: 'UTs on Windows'
@@ -95,7 +90,7 @@ stages:
         displayName: 'Run UTs'
       - task: Gradle@2
         inputs:
-          options: --build-cache --stacktrace -i
+          options: --stacktrace -i
           tasks: :runPluginVerifier
           jdkVersionOption: '1.11'
         env:
@@ -115,15 +110,10 @@ stages:
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
-      - task: Cache@2
-        inputs:
-          key: 'sonarqube | gradle | "$(Agent.OS)" | **/build.gradle.kts'
-          path: $(GRADLE_USER_HOME)
-        displayName: Gradle build cache
       - template: prepare-sq-analysis-steps.yml
       - task: Gradle@2
         inputs:
-          options: --build-cache --stacktrace -i
+          options: --stacktrace -i
           tasks: jacocoTestReport -x :its:check
           publishJUnitResults: false
           jdkVersionOption: '1.11'
@@ -221,7 +211,7 @@ stages:
           mkdir -p its/build/idea-sandbox/config-uiTest/
           cp $(clionKey.secureFilePath) its/build/idea-sandbox/config-uiTest/clion.key
 
-          ./gradlew :its:runIdeForUiTests --build-cache --stacktrace -i -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin > /tmp/runIdeGradle.log &
+          ./gradlew :its:runIdeForUiTests --stacktrace -i -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin > /tmp/runIdeGradle.log &
         displayName: 'Prepare env and start IDE $(IDEA_VERSION)'
       - bash: |
           set -e -o pipefail -u
@@ -237,7 +227,7 @@ stages:
       - task: Gradle@2
         displayName: 'Run ITs on $(IDEA_VERSION)'
         inputs:
-          options: --build-cache --stacktrace -i -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin
+          options: --stacktrace -i -PijVersion=$(IDEA_VERSION) -PslPluginDirectory=$(Agent.BuildDirectory)/staged-plugin
           tasks: :its:check
           publishJUnitResults: true
           testRunTitle: 'Run ITs on $(IDEA_VERSION)'
