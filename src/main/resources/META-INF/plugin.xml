@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>7.2 - Help users to generate a token when creating a new connection. 2 new rules for Python. 1 new rule for credentials detection for Java. Support analysis of JS in YAML files. Bug fixes, fewer FPs and improvements for many languages.</li>
+        <li>7.2 - Help users to generate a token when creating a new connection. Add quick fixes in Rider for C#. 2 new rules for Python. 1 new rule for credentials detection for Java. Support analysis of JS in YAML files. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.1.1 - Fix security issue when opening a hotspot from SonarQube.</li>
         <li>7.1 - Support analysis of Kotlin 1.7.10. 8 new rules around unit tests for Python. Support analysis of PHP 8.2. Support analysis of TypeScript 4.8. Remove support for Node.JS 12 and deprecate support for Node.JS 14. Add 7 rules for React. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.0 - Reworked connected mode storage. Auto-sync of issues with SonarQube 9.6+.</li>
