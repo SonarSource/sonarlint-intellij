@@ -194,7 +194,7 @@ dependencies {
     "sqplugins"("org.sonarsource.slang:sonar-ruby-plugin:1.11.0.3905")
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.6.0.3106")
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.6.1.3686")
-    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.5.0.56754")
+    "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.5.0.56800")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.39.0.60440")
         "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.2.0.53269")
