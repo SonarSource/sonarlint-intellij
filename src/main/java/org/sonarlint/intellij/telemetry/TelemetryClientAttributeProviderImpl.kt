@@ -21,6 +21,7 @@ package org.sonarlint.intellij.telemetry
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.ui.jcef.JBCefApp
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -67,7 +68,9 @@ class TelemetryClientAttributeProviderImpl : TelemetryClientAttributesProvider {
             .keys
     }
 
-    override fun additionalAttributes() = emptyMap<String, Any>()
+    override fun additionalAttributes(): Map<String, Any> {
+        return mapOf("intellij" to mapOf("jcefSupported" to JBCefApp.isSupported()))
+    }
 
     private fun defaultEnabledRuleKeys(): Set<String> {
         val engineManager = SonarLintUtils.getService(EngineManager::class.java)
