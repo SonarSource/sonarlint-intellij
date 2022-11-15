@@ -148,7 +148,10 @@ public class SonarLintAboutPanel implements ConfigurationPanel<SonarLintTelemetr
           + "        \"java:S1656\",\n"
           + "        \"java:S1872\"\n"
           + "      ],\n"
-          + "    }"
+          + "    },\n"
+          + "    \"intellij\": {\n"
+          + "        \"jcefSupported\": true\n"
+          + "    }\n"
           + "}</pre></html>");
         label.setBorder(HintUtil.createHintBorder());
         label.setBackground(HintUtil.getInformationColor());
