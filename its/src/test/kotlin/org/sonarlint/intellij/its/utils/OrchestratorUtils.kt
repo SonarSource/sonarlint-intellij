@@ -27,6 +27,7 @@ class OrchestratorUtils {
         fun defaultBuilderEnv(): OrchestratorBuilder {
             return Orchestrator.builderEnv()
                 .defaultForceAuthentication()
+                .useDefaultAdminCredentialsForBuilds(true)
                 .setSonarVersion(ItUtils.SONAR_VERSION)
         }
     }
