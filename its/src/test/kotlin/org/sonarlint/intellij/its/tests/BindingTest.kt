@@ -45,7 +45,7 @@ import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTable
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
+import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
@@ -163,9 +163,7 @@ class BindingTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = Orchestrator.builderEnv()
-            .defaultForceAuthentication()
-            .setSonarVersion(SONAR_VERSION)
+        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.slang", "sonar-scala-plugin", "1.8.3.2219"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-self-assignment.xml"))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/scala-sonarlint-empty-method.xml"))

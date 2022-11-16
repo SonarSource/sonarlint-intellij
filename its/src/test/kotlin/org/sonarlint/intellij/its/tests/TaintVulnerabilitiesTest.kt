@@ -31,7 +31,6 @@ import com.sonar.orchestrator.container.Edition
 import com.sonar.orchestrator.container.Server
 import com.sonar.orchestrator.locator.FileLocation
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Assume
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
@@ -40,13 +39,12 @@ import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
-import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
-import org.sonarlint.intellij.its.utils.ItUtils
+import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
 import org.sonarqube.ws.client.WsClientFactories
@@ -148,9 +146,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = Orchestrator.builderEnv()
-            .defaultForceAuthentication()
-            .setSonarVersion(ItUtils.SONAR_VERSION)
+        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
             .setEdition(Edition.DEVELOPER)
             .activateLicense()
             .keepBundledPlugins()

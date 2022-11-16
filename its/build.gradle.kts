@@ -28,7 +28,7 @@ repositories {
 val remoteRobotVersion = "0.11.16"
 
 dependencies {
-    testImplementation("org.sonarsource.orchestrator:sonar-orchestrator:3.37.0.87") {
+    testImplementation("org.sonarsource.orchestrator:sonar-orchestrator:3.40.0.183") {
         exclude(group = "org.slf4j", module = "log4j-over-slf4j")
     }
     testImplementation("org.sonarsource.slang:sonar-scala-plugin:1.8.3.2219")

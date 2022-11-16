@@ -39,7 +39,7 @@ import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
 import org.sonarlint.intellij.its.utils.ItUtils
-import org.sonarlint.intellij.its.utils.ItUtils.SONAR_VERSION
+import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarlint.intellij.its.utils.optionalStep
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
@@ -146,9 +146,7 @@ class OpenInIdeTest : BaseUiTest() {
         private var firstHotspotKey: String? = null
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = Orchestrator.builderEnv()
-            .defaultForceAuthentication()
-            .setSonarVersion(SONAR_VERSION)
+        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", ItUtils.javaVersion))
             .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
             .build()
