@@ -26,6 +26,8 @@ import java.util.Locale;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.sonarsource.sonarlint.core.commons.IssueSeverity;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
@@ -34,20 +36,20 @@ public class RuleDescription {
   
   private final String name;
   
-  private final String severity;
+  private final IssueSeverity severity;
   
-  private final String type;
+  private final RuleType type;
   private final String html;
 
-  public static RuleDescription from(String ruleKey, String name, String severity, String type, String fullDescription) {
+  public static RuleDescription from(String ruleKey, String name, IssueSeverity severity, RuleType type, String fullDescription) {
     return from(ruleKey, name, severity, type, fullDescription, Collections.emptyList());
   }
 
-  public static RuleDescription from(String ruleKey, String name, String severity, String type, @Nullable String fullDescription, List<Param> params) {
+  public static RuleDescription from(String ruleKey, String name, IssueSeverity severity, RuleType type, @Nullable String fullDescription, List<Param> params) {
     return new RuleDescription(ruleKey, name, severity, type, buildHtml(ruleKey, fullDescription, params));
   }
 
-  private RuleDescription(String key, String name, String severity, String type, String html) {
+  private RuleDescription(String key, String name, IssueSeverity severity, RuleType type, String html) {
     this.key = key;
     this.name = name;
     this.severity = severity;
@@ -63,11 +65,11 @@ public class RuleDescription {
     return name;
   }
 
-  public String getSeverity() {
+  public IssueSeverity getSeverity() {
     return severity;
   }
 
-  public String getType() {
+  public RuleType getType() {
     return type;
   }
 

@@ -25,68 +25,42 @@ import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.LoadingDecorator
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBLoadingPanel
 import com.intellij.ui.components.JBPanel
-import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.ui.scale.JBUIScale
-import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import icons.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.RuleDescription
+import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import java.awt.BorderLayout
-import java.awt.FlowLayout
 import java.awt.Font
 import java.util.concurrent.TimeUnit
 
 
-class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePanel>(BorderLayout()) {
+class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLayout(), project) {
     private var htmlViewer = RuleHtmlViewer(project)
     private var currentRuleKey: String? = null
     private var currentModule: Module? = null
 
     private val ruleNameLabel = JBLabel("")
 
-    private val ruleTypeIcon = JBLabel()
+    private val headerPanel = RuleHeaderPanel()
 
-    private val ruleTypeLabel = JBLabel()
-
-    private val ruleSeverityIcon = JBLabel()
-
-    private val ruleSeverityLabel = JBLabel("")
-
-    private val ruleKeyLabel = JBLabel("")
-
-    private val myLoadingDecorator: LoadingDecorator
 
     init {
-        val panel = JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
-                ruleNameLabel.font =
-                    UIUtil.getLabelFont().deriveFont((UIUtil.getLabelFont().size2D + JBUIScale.scale(3))).deriveFont(Font.BOLD)
-                add(ruleNameLabel, BorderLayout.NORTH)
-                add(JBPanel<JBPanel<*>>(FlowLayout(FlowLayout.LEFT)).apply {
-                    add(ruleTypeIcon, HorizontalLayout.LEFT)
-                    add(ruleTypeLabel.apply {
-                        border = JBUI.Borders.emptyRight(10)
-                    }, HorizontalLayout.LEFT)
-                    add(ruleSeverityIcon, HorizontalLayout.LEFT)
-                    add(ruleSeverityLabel, HorizontalLayout.LEFT)
-                    add(ruleKeyLabel.apply {
-                        border = JBUI.Borders.emptyLeft(10)
-                    }, HorizontalLayout.CENTER)
-                }, BorderLayout.CENTER)
-            }, BorderLayout.NORTH)
-            add(htmlViewer, BorderLayout.CENTER)
-        }
-        myLoadingDecorator = LoadingDecorator(panel, project, 0)
-        myLoadingDecorator.loadingText = "Loading rule description..."
-        add(myLoadingDecorator.component, BorderLayout.CENTER)
+        add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
+            ruleNameLabel.font =
+                UIUtil.getLabelFont().deriveFont((UIUtil.getLabelFont().size2D + JBUIScale.scale(3))).deriveFont(Font.BOLD)
+            add(ruleNameLabel, BorderLayout.NORTH)
+            add(headerPanel, BorderLayout.CENTER)
+        }, BorderLayout.NORTH)
+        add(htmlViewer, BorderLayout.CENTER)
+        setLoadingText("Loading rule description...")
         setRuleKey(null, null)
     }
 
@@ -100,7 +74,7 @@ class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePan
             nothingToDisplay(false)
             return
         }
-        myLoadingDecorator.startLoading(false)
+        startLoading()
         ProgressManager.getInstance()
             .run(object : Task.Backgroundable(project, "Loading rule description...", false) {
                 override fun run(progressIndicator: ProgressIndicator) {
@@ -115,7 +89,7 @@ class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePan
                                     } else {
                                         updateRuleDescription(ruleDescription)
                                     }
-                                    myLoadingDecorator.stopLoading()
+                                    stopLoading()
                                 }
                             }[30, TimeUnit.SECONDS]
                     } catch (e: Exception) {
@@ -130,29 +104,21 @@ class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePan
 
     private fun nothingToDisplay(error: Boolean) {
         htmlViewer.clear()
-        ruleNameLabel.text = if (error) "Couldn't find the rule description" else "Select an issue to display the rule description"
-        ruleTypeIcon.icon = null
-        ruleTypeLabel.text = ""
-        ruleSeverityIcon.icon = null
-        ruleSeverityLabel.text = ""
-        ruleKeyLabel.text = ""
+        ruleNameLabel.text = ""
+        headerPanel.showMessage(if (error) "Couldn't find the rule description" else "Select an issue to display the rule description")
         revalidate()
     }
 
     private fun updateRuleDescription(ruleDescription: RuleDescription) {
         ApplicationManager.getApplication().assertIsDispatchThread()
         updateHeader(ruleDescription)
-        htmlViewer.updateHtml(ruleDescription)
+        htmlViewer.updateHtml(ruleDescription.key, ruleDescription.html)
         revalidate()
     }
 
     private fun updateHeader(ruleDescription: RuleDescription) {
         ruleNameLabel.text = ruleDescription.name
-        ruleTypeIcon.icon = SonarLintIcons.type(ruleDescription.type)
-        ruleTypeLabel.text = clean(ruleDescription.type)
-        ruleSeverityIcon.icon = SonarLintIcons.severity(ruleDescription.severity)
-        ruleSeverityLabel.text = clean(ruleDescription.severity)
-        ruleKeyLabel.text = ruleDescription.key
+        headerPanel.update(ruleDescription.key, ruleDescription.type, ruleDescription.severity)
     }
 
     private fun clean(txt: String): String {

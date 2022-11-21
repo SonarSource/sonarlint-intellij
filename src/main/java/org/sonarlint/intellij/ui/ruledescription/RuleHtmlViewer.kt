@@ -37,11 +37,9 @@ import javax.swing.event.HyperlinkEvent
 import javax.swing.text.DefaultCaret
 
 
-class RuleHtmlViewer(private val project: Project) : JBPanel<RuleHtmlViewer>(BorderLayout()) {
+class RuleHtmlViewer(private val project: Project?) : JBPanel<RuleHtmlViewer>(BorderLayout()) {
     private var editor: JEditorPane
     private var ruleDescriptionHyperLinkListener: RuleDescriptionHyperLinkListener
-    private var currentRuleKey: String? = null
-    private var currentModule: Module? = null
 
     init {
         editor = JEditorPane().apply {
@@ -69,13 +67,13 @@ class RuleHtmlViewer(private val project: Project) : JBPanel<RuleHtmlViewer>(Bor
         editor.text = ""
     }
 
-    fun updateHtml(ruleDescription: RuleDescription) {
-        ruleDescriptionHyperLinkListener.setRuleKey(ruleDescription.key)
-        SwingHelper.setHtml(editor, ruleDescription.html, UIUtil.getLabelForeground())
+    fun updateHtml(ruleKey: String, html: String) {
+        ruleDescriptionHyperLinkListener.setRuleKey(ruleKey)
+        SwingHelper.setHtml(editor, html, UIUtil.getLabelForeground())
     }
 
 
-    private class RuleDescriptionHyperLinkListener(private val project: Project) : BrowserHyperlinkListener() {
+    private class RuleDescriptionHyperLinkListener(private val project: Project?) : BrowserHyperlinkListener() {
         private var ruleKey: String? = null
         fun setRuleKey(ruleKey: String?) {
             this.ruleKey = ruleKey
