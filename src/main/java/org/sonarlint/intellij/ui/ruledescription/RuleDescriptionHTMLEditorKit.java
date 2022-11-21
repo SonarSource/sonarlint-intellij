@@ -19,29 +19,17 @@
  */
 package org.sonarlint.intellij.ui.ruledescription;
 
+import com.intellij.ui.ColorUtil;
+import com.intellij.util.ui.JBHtmlEditorKit;
+import com.intellij.util.ui.UIUtil;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.Element;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
 import javax.swing.text.html.HTML;
-import javax.swing.text.html.HTMLEditorKit;
 
-public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
-
-  public RuleDescriptionHTMLEditorKit() {
-    var styleSheet = this.getStyleSheet();
-    styleSheet.addRule("td {align:center;}");
-    styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
-    styleSheet.addRule("pre {padding: 10px;}");
-    styleSheet.addRule(".rule-params { border: none; border-collapse: collapse; padding: 1em }");
-    styleSheet.addRule(".rule-params caption { text-align: left }");
-    styleSheet.addRule(".rule-params .thead td { padding-left: 0; padding-bottom: 1em; font-style: italic }");
-    styleSheet.addRule(".rule-params .tbody th { text-align: right; font-weight: normal; font-family: monospace }");
-    styleSheet.addRule(".rule-params .tbody td { margin-left: 1em; padding-bottom: 1em; }");
-    styleSheet.addRule(".rule-params p { margin: 0 }");
-    styleSheet.addRule(".rule-params small { display: block; margin-top: 2px }");
-  }
+public class RuleDescriptionHTMLEditorKit extends JBHtmlEditorKit {
 
   private static final HTMLFactory factory = new HTMLFactory() {
     @Override
@@ -58,6 +46,21 @@ public class RuleDescriptionHTMLEditorKit extends HTMLEditorKit {
       return super.create(elem);
     }
   };
+
+  public RuleDescriptionHTMLEditorKit() {
+    var styleSheet = this.getStyleSheet();
+    var fgColor = UIUtil.getLabelForeground();
+    styleSheet.addRule("td {align:center;}");
+    styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
+    styleSheet.addRule("pre {padding: 10px;}");
+    styleSheet.addRule(".rule-params { border: none; border-collapse: collapse; padding: 1em }");
+    styleSheet.addRule(".rule-params caption { text-align: left }");
+    styleSheet.addRule(".rule-params .thead td { padding-left: 0; padding-bottom: 1em; font-style: italic }");
+    styleSheet.addRule(".rule-params .tbody th { text-align: right; font-weight: normal; font-family: monospace }");
+    styleSheet.addRule(".rule-params .tbody td { margin-left: 1em; padding-bottom: 1em; }");
+    styleSheet.addRule(".rule-params p { margin: 0 }");
+    styleSheet.addRule(".rule-params small { display: block; margin-top: 2px }");
+  }
 
   @Override
   public ViewFactory getViewFactory() {

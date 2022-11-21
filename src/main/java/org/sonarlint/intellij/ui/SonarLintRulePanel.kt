@@ -21,42 +21,32 @@ package org.sonarlint.intellij.ui
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.LoadingDecorator
-import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.ui.BrowserHyperlinkListener
-import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.panels.HorizontalLayout
-import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
 import icons.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.RuleDescription
-import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit
+import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.Font
 import java.util.concurrent.TimeUnit
-import javax.swing.JEditorPane
-import javax.swing.ScrollPaneConstants
-import javax.swing.event.HyperlinkEvent
+
 
 class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePanel>(BorderLayout()) {
-    private var editor: JEditorPane
-    private var ruleDescriptionHyperLinkListener: RuleDescriptionHyperLinkListener
+    private var htmlViewer = RuleHtmlViewer(project)
     private var currentRuleKey: String? = null
     private var currentModule: Module? = null
 
@@ -92,16 +82,7 @@ class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePan
                     }, HorizontalLayout.CENTER)
                 }, BorderLayout.CENTER)
             }, BorderLayout.NORTH)
-            editor = createEditor();
-            ruleDescriptionHyperLinkListener = RuleDescriptionHyperLinkListener(project)
-            editor.addHyperlinkListener(ruleDescriptionHyperLinkListener)
-            val scrollableRulePanel = ScrollPaneFactory.createScrollPane(editor, true)
-            scrollableRulePanel.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-            scrollableRulePanel.verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
-            scrollableRulePanel.verticalScrollBar.unitIncrement = 10
-            scrollableRulePanel.isOpaque = false
-            scrollableRulePanel.viewport.isOpaque = false;
-            add(scrollableRulePanel, BorderLayout.CENTER)
+            add(htmlViewer, BorderLayout.CENTER)
         }
         myLoadingDecorator = LoadingDecorator(panel, project, 0)
         myLoadingDecorator.loadingText = "Loading rule description..."
@@ -148,8 +129,8 @@ class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePan
     }
 
     private fun nothingToDisplay(error: Boolean) {
-        editor.text = if (error) "Couldn't find the rule description" else "Select an issue to display the rule description"
-        ruleNameLabel.text = ""
+        htmlViewer.clear()
+        ruleNameLabel.text = if (error) "Couldn't find the rule description" else "Select an issue to display the rule description"
         ruleTypeIcon.icon = null
         ruleTypeLabel.text = ""
         ruleSeverityIcon.icon = null
@@ -161,7 +142,7 @@ class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePan
     private fun updateRuleDescription(ruleDescription: RuleDescription) {
         ApplicationManager.getApplication().assertIsDispatchThread()
         updateHeader(ruleDescription)
-        updateHtml(ruleDescription)
+        htmlViewer.updateHtml(ruleDescription)
         revalidate()
     }
 
@@ -176,44 +157,6 @@ class SonarLintRulePanel(private val project: Project): JBPanel<SonarLintRulePan
 
     private fun clean(txt: String): String {
         return StringUtil.capitalize(txt.lowercase().replace("_", " "))
-    }
-
-    private fun updateHtml(ruleDescription: RuleDescription) {
-        ruleDescriptionHyperLinkListener.setRuleKey(ruleDescription.key)
-        SwingHelper.setHtml(editor, ruleDescription.html, UIUtil.getLabelForeground())
-        editor.caretPosition = 0
-    }
-
-    private fun createEditor(): JEditorPane {
-        val newEditor = JEditorPane()
-        newEditor.editorKit = RuleDescriptionHTMLEditorKit()
-        newEditor.border = JBUI.Borders.empty(10)
-        newEditor.isEditable = false
-        newEditor.isOpaque = false
-        newEditor.contentType = UIUtil.HTML_MIME
-        return newEditor
-    }
-
-    private class RuleDescriptionHyperLinkListener(private val project: Project) : BrowserHyperlinkListener() {
-        private var ruleKey: String? = null
-        fun setRuleKey(ruleKey: String?) {
-            this.ruleKey = ruleKey
-        }
-
-        public override fun hyperlinkActivated(e: HyperlinkEvent) {
-            if (e.description.startsWith("#rule")) {
-                openRuleSettings(ruleKey)
-                return
-            }
-            super.hyperlinkActivated(e)
-        }
-
-        private fun openRuleSettings(ruleKey: String?) {
-            if (ruleKey!= null) {
-                val configurable = SonarLintGlobalConfigurable()
-                ShowSettingsUtil.getInstance().editConfigurable(project, configurable) { configurable.selectRule(ruleKey) }
-            }
-        }
     }
 
 }
