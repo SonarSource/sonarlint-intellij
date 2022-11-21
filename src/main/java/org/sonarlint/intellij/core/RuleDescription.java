@@ -31,18 +31,27 @@ import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class RuleDescription {
   private final String key;
+  
+  private final String name;
+  
+  private final String severity;
+  
+  private final String type;
   private final String html;
 
-  public static RuleDescription from(String key, String name, String severity, @Nullable String type, String fullDescription) {
-    return from(key, name, severity, type, fullDescription, Collections.emptyList());
+  public static RuleDescription from(String ruleKey, String name, String severity, String type, String fullDescription) {
+    return from(ruleKey, name, severity, type, fullDescription, Collections.emptyList());
   }
 
-  public static RuleDescription from(String key, String name, String severity, @Nullable String type, @Nullable String fullDescription, List<Param> params) {
-    return new RuleDescription(key, buildHtml(key, name, severity, type, fullDescription, params));
+  public static RuleDescription from(String ruleKey, String name, String severity, String type, @Nullable String fullDescription, List<Param> params) {
+    return new RuleDescription(ruleKey, name, severity, type, buildHtml(ruleKey, fullDescription, params));
   }
 
-  private RuleDescription(String key, String html) {
+  private RuleDescription(String key, String name, String severity, String type, String html) {
     this.key = key;
+    this.name = name;
+    this.severity = severity;
+    this.type = type;
     this.html = html;
   }
 
@@ -50,20 +59,27 @@ public class RuleDescription {
     return key;
   }
 
+  public String getName() {
+    return name;
+  }
+
+  public String getSeverity() {
+    return severity;
+  }
+
+  public String getType() {
+    return type;
+  }
+
   public String getHtml() {
     return html;
   }
 
-  private static String buildHtml(String key, String name, String severity, @Nullable String type, @Nullable String fullDescription, List<Param> params) {
+  private static String buildHtml(String ruleKey, @Nullable String fullDescription, List<Param> params) {
     var builder = new StringBuilder();
-    builder.append("<h2>")
-      .append(StringEscapeUtils.escapeHtml(name))
-      .append("</h2>");
-    appendRuleAttributesHtmlTable(key, severity, type, builder);
-    builder.append("<br />")
-      .append(fullDescription);
+    builder.append(fullDescription);
     if (!params.isEmpty()) {
-      builder.append(renderRuleParams(params, key));
+      builder.append(renderRuleParams(params, ruleKey));
     }
     return builder.toString();
   }

@@ -230,12 +230,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         // Rule panel
         rulePanel = SonarLintRulePanel(project)
 
-        val scrollableRulePanel = ScrollPaneFactory.createScrollPane(rulePanel.panel, true)
-        scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER)
-        scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED)
-        scrollableRulePanel.verticalScrollBar.unitIncrement = 10
         val detailsTab = JBTabbedPane()
-        detailsTab.addTab("Rule", null, scrollableRulePanel, "Details about the rule")
+        detailsTab.addTab("Rule", null, rulePanel, "Details about the rule")
         return detailsTab
     }
 
