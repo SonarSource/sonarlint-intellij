@@ -31,25 +31,8 @@ import javax.swing.text.html.HTML;
 
 public class RuleDescriptionHTMLEditorKit extends JBHtmlEditorKit {
 
-  private static final HTMLFactory factory = new HTMLFactory() {
-    @Override
-    public View create(Element elem) {
-      var attrs = elem.getAttributes();
-      var elementName = attrs.getAttribute(AbstractDocument.ElementNameAttribute);
-      var o = (elementName != null) ? null : attrs.getAttribute(StyleConstants.NameAttribute);
-      if (o instanceof HTML.Tag) {
-        var kind = (HTML.Tag) o;
-        if (HTML.Tag.IMG.equals(kind)) {
-          return new RuleDescriptionImageView(elem);
-        }
-      }
-      return super.create(elem);
-    }
-  };
-
   public RuleDescriptionHTMLEditorKit() {
     var styleSheet = this.getStyleSheet();
-    var fgColor = UIUtil.getLabelForeground();
     styleSheet.addRule("td {align:center;}");
     styleSheet.addRule("td.pad {padding: 0px 10px 0px 0px;}");
     styleSheet.addRule("pre {padding: 10px;}");
@@ -62,8 +45,4 @@ public class RuleDescriptionHTMLEditorKit extends JBHtmlEditorKit {
     styleSheet.addRule(".rule-params small { display: block; margin-top: 2px }");
   }
 
-  @Override
-  public ViewFactory getViewFactory() {
-    return factory;
-  }
 }

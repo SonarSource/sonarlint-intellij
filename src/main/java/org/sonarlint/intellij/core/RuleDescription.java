@@ -86,25 +86,6 @@ public class RuleDescription {
     return builder.toString();
   }
 
-  public static void appendRuleAttributesHtmlTable(String ruleKey, String ruleSeverity, @org.jetbrains.annotations.Nullable String ruleType, StringBuilder builder) {
-    // apparently some css properties are not supported
-    var imgAttributes = "valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\"";
-
-    builder.append("<table><tr>");
-    if (ruleType != null) {
-      builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///type/").append(ruleType).append("\"/></td>")
-        .append("<td class=\"pad\"><b>").append(clean(ruleType)).append("</b></td>");
-    }
-    builder.append("<td>").append("<img ").append(imgAttributes).append(" src=\"file:///severity/").append(ruleSeverity).append("\"/></td>")
-      .append("<td class=\"pad\"><b>").append(clean(ruleSeverity)).append("</b></td>")
-      .append("<td><b>").append(ruleKey).append("</b></td>")
-      .append("</tr></table>");
-  }
-
-  private static String clean(String txt) {
-    return StringUtil.capitalize(txt.toLowerCase(Locale.ENGLISH).replace("_", " "));
-  }
-
   private static String renderRuleParams(List<Param> params, String ruleKey) {
     return "<table class=\"rule-params\">" +
       "<caption><h2>Parameters</h2></caption>" +
