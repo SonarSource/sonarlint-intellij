@@ -333,7 +333,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     ruleHeaderPanel = new RuleHeaderPanel();
     descriptionPanel.add(ruleHeaderPanel, BorderLayout.NORTH);
 
-    ruleHtmlViewer = new RuleHtmlViewer(null);
+    ruleHtmlViewer = new RuleHtmlViewer();
     ruleHtmlViewer.setBorder(IdeBorderFactory.createBorder());
     descriptionPanel.add(ruleHtmlViewer, BorderLayout.CENTER);
 
@@ -456,7 +456,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
     ruleHeaderPanel.update(singleNode.getKey(), singleNode.type(), singleNode.severity());
-    ruleHtmlViewer.updateHtml(singleNode.getKey(), SearchUtil.markup(singleNode.getHtmlDescription(), myRuleFilter.getFilter()));
+    ruleHtmlViewer.updateHtml(SearchUtil.markup(singleNode.getHtmlDescription(), myRuleFilter.getFilter()));
 
     myParamsPanel.removeAll();
     final var configPanelAnchor = new JPanel(new GridLayout());

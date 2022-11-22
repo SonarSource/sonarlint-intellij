@@ -34,8 +34,8 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val ruleTypeIcon = JBLabel()
     private val ruleTypeLabel = JBLabel()
     private val ruleSeverityIcon = JBLabel()
-    private val ruleSeverityLabel = JBLabel("")
-    private val ruleKeyLabel = JBLabel("")
+    private val ruleSeverityLabel = JBLabel()
+    private val ruleKeyLabel = JBLabel()
 
 
     init {
@@ -70,7 +70,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     }
 
     fun showMessage(msg: String) {
-        clear();
+        clear()
         ruleTypeLabel.text = msg
         revalidate()
     }

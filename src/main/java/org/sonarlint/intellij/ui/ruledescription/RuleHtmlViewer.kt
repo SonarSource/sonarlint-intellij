@@ -19,40 +19,31 @@
  */
 package org.sonarlint.intellij.ui.ruledescription
 
-import com.intellij.openapi.module.Module
-import com.intellij.openapi.options.ShowSettingsUtil
-import com.intellij.openapi.project.Project
 import com.intellij.ui.BrowserHyperlinkListener
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.components.JBPanel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
-import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
-import org.sonarlint.intellij.core.RuleDescription
 import java.awt.BorderLayout
 import javax.swing.JEditorPane
 import javax.swing.ScrollPaneConstants
-import javax.swing.event.HyperlinkEvent
 import javax.swing.text.DefaultCaret
 
 
-class RuleHtmlViewer(private val project: Project?) : JBPanel<RuleHtmlViewer>(BorderLayout()) {
-    private var editor: JEditorPane
-    private var ruleDescriptionHyperLinkListener: RuleDescriptionHyperLinkListener
+class RuleHtmlViewer() : JBPanel<RuleHtmlViewer>(BorderLayout()) {
+    private var editor: JEditorPane = JEditorPane().apply {
+        contentType = UIUtil.HTML_MIME
+        (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+        editorKit = UIUtil.getHTMLEditorKit()
+        border = JBUI.Borders.empty(10)
+        isEditable = false
+        isOpaque = false
+
+        addHyperlinkListener(BrowserHyperlinkListener.INSTANCE)
+    }
 
     init {
-        editor = JEditorPane().apply {
-            contentType = UIUtil.HTML_MIME
-            (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
-            editorKit = RuleDescriptionHTMLEditorKit()
-            border = JBUI.Borders.empty(10)
-            isEditable = false
-            isOpaque = false
-
-            ruleDescriptionHyperLinkListener = RuleDescriptionHyperLinkListener(project)
-            addHyperlinkListener(ruleDescriptionHyperLinkListener)
-        }
         val scrollableRulePanel = ScrollPaneFactory.createScrollPane(editor, true)
         scrollableRulePanel.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         scrollableRulePanel.verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
@@ -67,32 +58,9 @@ class RuleHtmlViewer(private val project: Project?) : JBPanel<RuleHtmlViewer>(Bo
         editor.text = ""
     }
 
-    fun updateHtml(ruleKey: String, html: String) {
-        ruleDescriptionHyperLinkListener.setRuleKey(ruleKey)
+    fun updateHtml(html: String) {
         SwingHelper.setHtml(editor, html, UIUtil.getLabelForeground())
     }
 
-
-    private class RuleDescriptionHyperLinkListener(private val project: Project?) : BrowserHyperlinkListener() {
-        private var ruleKey: String? = null
-        fun setRuleKey(ruleKey: String?) {
-            this.ruleKey = ruleKey
-        }
-
-        public override fun hyperlinkActivated(e: HyperlinkEvent) {
-            if (e.description.startsWith("#rule")) {
-                openRuleSettings(ruleKey)
-                return
-            }
-            super.hyperlinkActivated(e)
-        }
-
-        private fun openRuleSettings(ruleKey: String?) {
-            if (ruleKey != null) {
-                val configurable = SonarLintGlobalConfigurable()
-                ShowSettingsUtil.getInstance().editConfigurable(project, configurable) { configurable.selectRule(ruleKey) }
-            }
-        }
-    }
 
 }
