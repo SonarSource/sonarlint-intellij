@@ -20,7 +20,6 @@
 package org.sonarlint.intellij.core;
 
 import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -39,7 +38,6 @@ import org.sonarsource.sonarlint.core.commons.progress.ClientProgressMonitor;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -51,17 +49,6 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
   @Before
   public void before() {
     facade = new ConnectedSonarLintFacade(engine, getProject(), "projectKey");
-  }
-
-  @Test
-  public void should_get_rule_description() throws Exception {
-    bindProject("projectKey");
-    when(engine.getActiveRuleDetails(any(), any(), eq("rule1"), eq("projectKey"))).thenReturn(CompletableFuture.completedFuture(ruleDetails("rule1")));
-
-    var ruleDescription = facade.getActiveRuleDescription("rule1").get();
-
-    assertThat(ruleDescription.getKey()).isEqualTo("rule1");
-    assertThat(ruleDescription.getHtml()).isEqualTo("ruleHtmlDescription<br/><br/>ruleExtendedDescription");
   }
 
   @Test

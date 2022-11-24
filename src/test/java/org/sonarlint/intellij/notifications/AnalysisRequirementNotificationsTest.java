@@ -118,5 +118,4 @@ public class AnalysisRequirementNotificationsTest extends AbstractSonarLintLight
     assertThat(notifications.get(0).getActions().get(0).getTemplatePresentation().getText()).isEqualTo("Open SonarLint Settings");
   }
 
-
 }

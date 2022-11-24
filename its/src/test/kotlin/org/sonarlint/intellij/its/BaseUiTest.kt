@@ -201,7 +201,7 @@ open class BaseUiTest {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     content("SonarLintIssuesPanel") {
-                        Assertions.assertThat(hasText(expectedMessage)).isTrue()
+                        waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") { hasText(expectedMessage) }
                     }
                 }
             }

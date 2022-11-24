@@ -35,14 +35,16 @@ import com.intellij.ui.scale.JBUIScale
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.SwingHelper
 import com.intellij.util.ui.UIUtil
+import org.apache.commons.lang.StringUtils
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
-import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.RuleDescription
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
+import org.sonarsource.sonarlint.core.clientapi.rules.ActiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.clientapi.rules.GetActiveRuleDetailsResponse
 import java.awt.BorderLayout
 import java.awt.Font
 import java.awt.GridBagConstraints
@@ -96,26 +98,24 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         ProgressManager.getInstance()
             .run(object : Task.Backgroundable(project, "Loading rule description...", false) {
                 override fun run(progressIndicator: ProgressIndicator) {
-                    try {
-                        SonarLintUtils.getService(project, ProjectBindingManager::class.java)
-                            .getFacade(module)
-                            .getActiveRuleDescription(ruleKey)
-                            .thenAccept { ruleDescription: RuleDescription? ->
-                                ApplicationManager.getApplication().invokeLater {
-                                    if (ruleDescription == null) {
-                                        nothingToDisplay(true)
-                                    } else {
-                                        updateRuleDescription(ruleDescription)
-                                    }
-                                    stopLoading()
-                                }
-                            }[30, TimeUnit.SECONDS]
-                    } catch (e: Exception) {
-                        SonarLintConsole.get(project).error("Cannot get rule description", e)
-                        ApplicationManager.getApplication().invokeLater {
-                            nothingToDisplay(true)
+                        val future = SonarLintUtils.getService(BackendService::class.java)
+                            .getActiveRuleDetails(module, ruleKey)
+                            .orTimeout(30, TimeUnit.SECONDS)
+
+                        future.exceptionally { ex ->
+                            SonarLintConsole.get(project).error("Cannot get rule description", ex)
+                            ApplicationManager.getApplication().invokeLater {
+                                nothingToDisplay(true)
+                            }
+                            null
                         }
-                    }
+
+                        future.thenAccept { response: GetActiveRuleDetailsResponse ->
+                            ApplicationManager.getApplication().invokeLater {
+                                updateRuleDescription(response.details())
+                                stopLoading()
+                            }
+                        }
                 }
             })
     }
@@ -128,23 +128,24 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         revalidate()
     }
 
-    private fun updateRuleDescription(ruleDescription: RuleDescription) {
+    private fun updateRuleDescription(ruleDetails: ActiveRuleDetailsDto) {
         ApplicationManager.getApplication().assertIsDispatchThread()
-        updateHeader(ruleDescription)
-        htmlViewer.updateHtml(ruleDescription.html)
-        updateParams(ruleDescription)
+        updateHeader(ruleDetails)
+        val ruleDescription = ruleDetails.description
+        htmlViewer.updateHtml(ruleDescription.map({m -> m.htmlContent}, {s -> s.introductionHtmlContent}))
+        updateParams(ruleDetails)
         revalidate()
     }
 
-    private fun updateHeader(ruleDescription: RuleDescription) {
+    private fun updateHeader(ruleDescription: ActiveRuleDetailsDto) {
         ruleNameLabel.text = ruleDescription.name
         headerPanel.update(ruleDescription.key, ruleDescription.type, ruleDescription.severity)
     }
 
-    private fun updateParams(ruleDescription: RuleDescription) {
+    private fun updateParams(ruleDetails: ActiveRuleDetailsDto) {
         hideRuleParameters()
-        if (ruleDescription.params.isNotEmpty()) {
-            populateParamPanel(ruleDescription)
+        if (ruleDetails.params.isNotEmpty()) {
+            populateParamPanel(ruleDetails)
         }
         paramsPanel.revalidate()
     }
@@ -154,17 +155,17 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         paramsPanel.isVisible = false
     }
 
-    private fun populateParamPanel(ruleDescription: RuleDescription) {
+    private fun populateParamPanel(ruleDetails: ActiveRuleDetailsDto) {
         paramsPanel.apply {
             isVisible = true
             border = IdeBorderFactory.createTitledBorder("Parameters")
             val constraints = GridBagConstraints()
             constraints.anchor = GridBagConstraints.BASELINE_LEADING
             constraints.gridy = 0
-            for (param in ruleDescription.params) {
+            for (param in ruleDetails.params) {
                 val paramDefaultValue = param.defaultValue
                 val defaultValue = paramDefaultValue ?: "(none)"
-                val currentValue = Settings.getGlobalSettings().getRuleParamValue(ruleDescription.key, param.name).orElse(defaultValue)
+                val currentValue = Settings.getGlobalSettings().getRuleParamValue(ruleDetails.key, param.name).orElse(defaultValue)
                 constraints.gridx = 0
                 constraints.fill = GridBagConstraints.HORIZONTAL
                 constraints.insets.right = UIUtil.DEFAULT_HGAP
@@ -193,7 +194,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
                 border = null
                 SwingHelper.setHtml(
                     this,
-                    """<small>Parameter values can be set in <a href="$RULE_CONFIG_LINK_PREFIX${ruleDescription.key}">Rule Settings</a>. 
+                    """<small>Parameter values can be set in <a href="$RULE_CONFIG_LINK_PREFIX${ruleDetails.key}">Rule Settings</a>. 
             | In connected mode, server side configuration overrides local settings.</small>""".trimMargin(),
                     UIUtil.getLabelForeground()
                 )
