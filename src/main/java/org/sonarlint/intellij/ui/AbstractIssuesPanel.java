@@ -88,14 +88,9 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
 
     // Rule panel
     rulePanel = new SonarLintRulePanel(project);
-    var scrollableRulePanel = ScrollPaneFactory.createScrollPane(rulePanel.getPanel(), true);
-
-    scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-    scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-    scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
 
     detailsTab = new JBTabbedPane();
-    detailsTab.insertTab("Rule", null, scrollableRulePanel, "Details about the rule", RULE_TAB_INDEX);
+    detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
     detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the issue", LOCATIONS_TAB_INDEX);
   }
 

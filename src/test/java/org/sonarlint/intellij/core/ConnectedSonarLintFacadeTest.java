@@ -61,11 +61,7 @@ public class ConnectedSonarLintFacadeTest extends AbstractSonarLintLightTests {
     var ruleDescription = facade.getActiveRuleDescription("rule1").get();
 
     assertThat(ruleDescription.getKey()).isEqualTo("rule1");
-    assertThat(ruleDescription.getHtml()).isEqualTo("<h2>ruleName</h2><table><tr>" +
-      "<td><img valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\" src=\"file:///type/CODE_SMELL\"/></td><td class=\"pad\"><b>Code smell</b></td>" +
-      "<td><img valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\" src=\"file:///severity/BLOCKER\"/></td>" +
-      "<td class=\"pad\"><b>Blocker</b></td><td><b>rule1</b></td></tr></table>" +
-      "<br />ruleHtmlDescription<br/><br/>ruleExtendedDescription");
+    assertThat(ruleDescription.getHtml()).isEqualTo("ruleHtmlDescription<br/><br/>ruleExtendedDescription");
   }
 
   @Test

@@ -29,7 +29,6 @@ import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.FilterComponent;
 import com.intellij.ui.IdeBorderFactory;
@@ -43,11 +42,11 @@ import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBLoadingPanel;
+import com.intellij.ui.components.JBPanel;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.ui.components.fields.ExpandableTextField;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
@@ -77,7 +76,6 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JEditorPane;
 import javax.swing.JFormattedTextField;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -95,14 +93,14 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings;
 import org.sonarlint.intellij.core.EngineManager;
-import org.sonarlint.intellij.ui.ruledescription.RuleDescriptionHTMLEditorKit;
+import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel;
+import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarsource.sonarlint.core.client.api.common.RuleDetails;
 import org.sonarsource.sonarlint.core.client.api.standalone.StandaloneRuleDetails;
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
-import static org.sonarlint.intellij.core.RuleDescription.appendRuleAttributesHtmlTable;
 
 public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<SonarLintGlobalSettings> {
   private static final String MAIN_SPLITTER_KEY = "sonarlint_rule_configuration_splitter";
@@ -112,23 +110,106 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   private static final float DIVIDER_PROPORTION_RULE_DEFAULT = 0.85f;
   @NonNls
   private static final String EMPTY_HTML = "Select a rule to see the description";
-
-  private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
+  private final Map<String, RulesTreeNode.Rule> allRulesStateByKey = new ConcurrentHashMap<>();
+  private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();  private final RulesFilterModel filterModel = new RulesFilterModel(this::updateModel);
+  private final AtomicBoolean isDirty = new AtomicBoolean(false);
   private RulesTreeTable table;
-  private JEditorPane descriptionBrowser;
+  private RuleHtmlViewer ruleHtmlViewer;
   private JBLoadingPanel panel;
   private JPanel myParamsPanel;
   private RulesTreeTableModel model;
   private FilterComponent myRuleFilter;
   private TreeExpander myTreeExpander;
   private RulesParamsSeparator rulesParamsSeparator;
-  private final Map<String, RulesTreeNode.Rule> allRulesStateByKey = new ConcurrentHashMap<>();
-  private final Map<String, RulesTreeNode.Language> languageNodesByName = new HashMap<>();
-  private final AtomicBoolean isDirty = new AtomicBoolean(false);
   private String selectedRuleKey;
-
+  private RuleHeaderPanel ruleHeaderPanel;
   public RuleConfigurationPanel() {
     createUIComponents();
+  }
+
+  @NotNull
+  private static Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
+    var engine = SonarLintUtils.getService(EngineManager.class).getStandaloneEngine();
+    return engine.getAllRuleDetails().stream()
+      .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
+      .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
+  }
+
+  private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
+    final var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
+    if (ruleInSettings != null) {
+      return ruleInSettings.isActive();
+    }
+    return ruleDetails.isActiveByDefault();
+  }
+
+  private static Map<String, String> loadNonDefaultRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
+    var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
+    if (ruleInSettings != null) {
+      return ruleInSettings.getParams();
+    }
+    return Collections.emptyMap();
+  }
+
+  private static void addParamLabel(JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
+    constraints.insets.right = UIUtil.DEFAULT_HGAP;
+    constraints.weightx = 0.0;
+    panel.add(new JBLabel(param.name), constraints);
+  }
+
+  private static boolean asBoolean(@Nullable String value) {
+    return "true".equals(value);
+  }
+
+  private static long asLong(@Nullable String value) {
+    if (StringUtil.isEmpty(value)) {
+      return 0;
+    }
+    try {
+      return Long.parseLong(value);
+    } catch (NumberFormatException e) {
+      return 0;
+    }
+  }
+
+  private static double asDouble(@Nullable String value) {
+    if (StringUtil.isEmpty(value)) {
+      return 0;
+    }
+    try {
+      return Double.parseDouble(value);
+    } catch (NumberFormatException e) {
+      return 0;
+    }
+  }
+
+  public static List<RulesTreeNode.Rule> getRulesNodes(@Nullable final TreePath[] paths) {
+    if (paths == null) {
+      return Collections.emptyList();
+    }
+    final var q = new ArrayDeque<RulesTreeNode>(paths.length);
+    for (final TreePath path : paths) {
+      if (path != null) {
+        q.addLast((RulesTreeNode) path.getLastPathComponent());
+      }
+    }
+    return getRulesNodes(q);
+  }
+
+  private static List<RulesTreeNode.Rule> getRulesNodes(final ArrayDeque<RulesTreeNode> queue) {
+    final var nodes = new ArrayList<RulesTreeNode.Rule>();
+    while (!queue.isEmpty()) {
+      final var node = queue.pollFirst();
+      if (node instanceof RulesTreeNode.Language) {
+        for (var i = 0; i < node.getChildCount(); i++) {
+          final var childNode = (RulesTreeNode) node.getChildAt(i);
+          queue.addLast(childNode);
+        }
+      } else {
+        nodes.add((RulesTreeNode.Rule) node);
+      }
+    }
+    return new ArrayList<>(nodes);
   }
 
   @Override
@@ -190,14 +271,6 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     });
   }
 
-  @NotNull
-  private static Map<String, RulesTreeNode.Rule> loadRuleNodes(SonarLintGlobalSettings settings) {
-    var engine = SonarLintUtils.getService(EngineManager.class).getStandaloneEngine();
-    return engine.getAllRuleDetails().stream()
-      .map(r -> new RulesTreeNode.Rule(r, loadRuleActivation(settings, r), loadNonDefaultRuleParams(settings, r)))
-      .collect(Collectors.toMap(RulesTreeNode.Rule::getKey, r -> r));
-  }
-
   private void restoreDefaults() {
     allRulesStateByKey.values().forEach(r -> {
       r.setIsActivated(r.getDefaultActivation());
@@ -239,22 +312,6 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     return languageNodesByName.computeIfAbsent(languageName, RulesTreeNode.Language::new);
   }
 
-  private static boolean loadRuleActivation(SonarLintGlobalSettings settings, StandaloneRuleDetails ruleDetails) {
-    final var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
-    if (ruleInSettings != null) {
-      return ruleInSettings.isActive();
-    }
-    return ruleDetails.isActiveByDefault();
-  }
-
-  private static Map<String, String> loadNonDefaultRuleParams(SonarLintGlobalSettings settings, RuleDetails ruleDetails) {
-    var ruleInSettings = settings.getRulesByKey().get(ruleDetails.getKey());
-    if (ruleInSettings != null) {
-      return ruleInSettings.getParams();
-    }
-    return Collections.emptyMap();
-  }
-
   private ActionToolbar createTreeToolbarPanel() {
     var actions = new DefaultActionGroup();
 
@@ -270,17 +327,15 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private JPanel createUIComponents() {
+    var descriptionPanel = new JBPanel<>(new BorderLayout());
+    descriptionPanel.setBorder(JBUI.Borders.emptyLeft(5));
 
-    descriptionBrowser = new JEditorPane(UIUtil.HTML_MIME, EMPTY_HTML);
-    descriptionBrowser.setEditorKit(new RuleDescriptionHTMLEditorKit());
-    descriptionBrowser.setEditable(false);
-    descriptionBrowser.setBorder(JBUI.Borders.empty(5));
-    descriptionBrowser.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
+    ruleHeaderPanel = new RuleHeaderPanel();
+    descriptionPanel.add(ruleHeaderPanel, BorderLayout.NORTH);
 
-    var descriptionPanel = new JPanel(new BorderLayout());
-    descriptionPanel.setBorder(IdeBorderFactory.createTitledBorder("Rule description", false,
-      JBUI.insetsLeft(12)).setShowLine(false));
-    descriptionPanel.add(ScrollPaneFactory.createScrollPane(descriptionBrowser), BorderLayout.CENTER);
+    ruleHtmlViewer = new RuleHtmlViewer();
+    ruleHtmlViewer.setBorder(IdeBorderFactory.createBorder());
+    descriptionPanel.add(ruleHtmlViewer, BorderLayout.CENTER);
 
     var rightSplitter = new JBSplitter(true, RIGHT_SPLITTER_KEY, DIVIDER_PROPORTION_RULE_DEFAULT);
     rightSplitter.setFirstComponent(descriptionPanel);
@@ -327,14 +382,10 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
 
   private void initOptionsAndDescriptionPanel() {
     myParamsPanel.removeAll();
-    setHTML(descriptionBrowser, EMPTY_HTML);
+    ruleHtmlViewer.clear();
+    ruleHeaderPanel.showMessage(EMPTY_HTML);
     myParamsPanel.validate();
     myParamsPanel.repaint();
-  }
-
-  public static void setHTML(JEditorPane browser, String text) {
-    SwingHelper.setHtml(browser, text, UIUtil.getLabelForeground());
-    browser.setCaretPosition(0);
   }
 
   private JScrollPane initTreeScrollPane() {
@@ -391,7 +442,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
       if (singleNode != null) {
         updateParamsAndDescriptionPanel(singleNode);
       } else {
-        setHTML(descriptionBrowser, "Multiple rules are selected.");
+        ruleHeaderPanel.showMessage("Multiple rules are selected.");
         myParamsPanel.removeAll();
 
       }
@@ -404,15 +455,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
   }
 
   private void updateParamsAndDescriptionPanel(RulesTreeNode.Rule singleNode) {
-    var htmlDescription = singleNode.getHtmlDescription();
-    var builder = new StringBuilder(htmlDescription.length() + 64);
-    appendRuleAttributesHtmlTable(singleNode.getKey(), singleNode.severity().toString(), singleNode.type().toString(), builder);
-    builder.append(htmlDescription);
-    try {
-      setHTML(descriptionBrowser, SearchUtil.markup(builder.toString(), myRuleFilter.getFilter()));
-    } catch (Throwable t) {
-      GlobalLogOutput.get().logError("Failed to load description for: " + singleNode.getKey() + "; description: " + builder, t);
-    }
+    ruleHeaderPanel.update(singleNode.getKey(), singleNode.type(), singleNode.severity());
+    ruleHtmlViewer.updateHtml(SearchUtil.markup(singleNode.getHtmlDescription(), myRuleFilter.getFilter()));
 
     myParamsPanel.removeAll();
     final var configPanelAnchor = new JPanel(new GridLayout());
@@ -461,70 +505,6 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     } else {
       filterModel.reset(false);
       myRuleFilter.reset();
-    }
-  }
-
-  private static class ConfigPanelState {
-    private static final ConfigPanelState EMPTY = new ConfigPanelState(null);
-
-    private final JComponent myOptionsPanel;
-    private final Set<Component> myEnableRequiredComponent = new HashSet<>();
-
-    private boolean myLastState = true;
-    private boolean myDeafListeners;
-
-    private ConfigPanelState(@Nullable JComponent optionsPanel) {
-      myOptionsPanel = optionsPanel;
-      if (myOptionsPanel != null) {
-        var q = new ArrayDeque<Component>(1);
-        q.addLast(optionsPanel);
-        while (!q.isEmpty()) {
-          final var current = q.pollFirst();
-          current.addPropertyChangeListener("enabled", getChangeListener(current));
-          if (current.isEnabled()) {
-            myEnableRequiredComponent.add(current);
-          }
-          if (current instanceof Container) {
-            for (var child : ((Container) current).getComponents()) {
-              q.addLast(child);
-            }
-          }
-        }
-      }
-    }
-
-    @NotNull
-    private PropertyChangeListener getChangeListener(Component current) {
-      return evt -> {
-        if (!myDeafListeners) {
-          final var newValue = (boolean) evt.getNewValue();
-          if (newValue) {
-            myEnableRequiredComponent.add(current);
-          } else {
-            myEnableRequiredComponent.remove(current);
-          }
-        }
-      };
-    }
-
-    @CheckForNull
-    private JComponent getPanel(boolean currentState) {
-      if (myOptionsPanel != null && myLastState != currentState) {
-        myDeafListeners = true;
-        try {
-          for (var c : myEnableRequiredComponent) {
-            c.setEnabled(currentState);
-          }
-          myLastState = currentState;
-        } finally {
-          myDeafListeners = false;
-        }
-      }
-      return myOptionsPanel;
-    }
-
-    private static ConfigPanelState of(@Nullable JComponent panel) {
-      return panel == null ? EMPTY : new ConfigPanelState(panel);
     }
   }
 
@@ -665,38 +645,6 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     panel.add(valueField, constraints);
   }
 
-  private static void addParamLabel(JPanel panel, GridBagConstraints constraints, RulesTreeNode.RuleParam param) {
-    constraints.insets.right = UIUtil.DEFAULT_HGAP;
-    constraints.weightx = 0.0;
-    panel.add(new JBLabel(param.name), constraints);
-  }
-
-  private static boolean asBoolean(@Nullable String value) {
-    return "true".equals(value);
-  }
-
-  private static long asLong(@Nullable String value) {
-    if (StringUtil.isEmpty(value)) {
-      return 0;
-    }
-    try {
-      return Long.parseLong(value);
-    } catch (NumberFormatException e) {
-      return 0;
-    }
-  }
-
-  private static double asDouble(@Nullable String value) {
-    if (StringUtil.isEmpty(value)) {
-      return 0;
-    }
-    try {
-      return Double.parseDouble(value);
-    } catch (NumberFormatException e) {
-      return 0;
-    }
-  }
-
   private RulesTreeNode.Rule getStrictlySelectedToolNode() {
     var paths = table.getTree().getSelectionPaths();
     return paths != null && paths.length == 1 && paths[0].getLastPathComponent() instanceof RulesTreeNode.Rule
@@ -708,33 +656,68 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     return getRulesNodes(table.getTree().getSelectionPaths());
   }
 
-  public static List<RulesTreeNode.Rule> getRulesNodes(@Nullable final TreePath[] paths) {
-    if (paths == null) {
-      return Collections.emptyList();
-    }
-    final var q = new ArrayDeque<RulesTreeNode>(paths.length);
-    for (final TreePath path : paths) {
-      if (path != null) {
-        q.addLast((RulesTreeNode) path.getLastPathComponent());
-      }
-    }
-    return getRulesNodes(q);
-  }
+  private static class ConfigPanelState {
+    private static final ConfigPanelState EMPTY = new ConfigPanelState(null);
 
-  private static List<RulesTreeNode.Rule> getRulesNodes(final ArrayDeque<RulesTreeNode> queue) {
-    final var nodes = new ArrayList<RulesTreeNode.Rule>();
-    while (!queue.isEmpty()) {
-      final var node = queue.pollFirst();
-      if (node instanceof RulesTreeNode.Language) {
-        for (var i = 0; i < node.getChildCount(); i++) {
-          final var childNode = (RulesTreeNode) node.getChildAt(i);
-          queue.addLast(childNode);
+    private final JComponent myOptionsPanel;
+    private final Set<Component> myEnableRequiredComponent = new HashSet<>();
+
+    private boolean myLastState = true;
+    private boolean myDeafListeners;
+
+    private ConfigPanelState(@Nullable JComponent optionsPanel) {
+      myOptionsPanel = optionsPanel;
+      if (myOptionsPanel != null) {
+        var q = new ArrayDeque<Component>(1);
+        q.addLast(optionsPanel);
+        while (!q.isEmpty()) {
+          final var current = q.pollFirst();
+          current.addPropertyChangeListener("enabled", getChangeListener(current));
+          if (current.isEnabled()) {
+            myEnableRequiredComponent.add(current);
+          }
+          if (current instanceof Container) {
+            for (var child : ((Container) current).getComponents()) {
+              q.addLast(child);
+            }
+          }
         }
-      } else {
-        nodes.add((RulesTreeNode.Rule) node);
       }
     }
-    return new ArrayList<>(nodes);
+
+    private static ConfigPanelState of(@Nullable JComponent panel) {
+      return panel == null ? EMPTY : new ConfigPanelState(panel);
+    }
+
+    @NotNull
+    private PropertyChangeListener getChangeListener(Component current) {
+      return evt -> {
+        if (!myDeafListeners) {
+          final var newValue = (boolean) evt.getNewValue();
+          if (newValue) {
+            myEnableRequiredComponent.add(current);
+          } else {
+            myEnableRequiredComponent.remove(current);
+          }
+        }
+      };
+    }
+
+    @CheckForNull
+    private JComponent getPanel(boolean currentState) {
+      if (myOptionsPanel != null && myLastState != currentState) {
+        myDeafListeners = true;
+        try {
+          for (var c : myEnableRequiredComponent) {
+            c.setEnabled(currentState);
+          }
+          myLastState = currentState;
+        } finally {
+          myDeafListeners = false;
+        }
+      }
+      return myOptionsPanel;
+    }
   }
 
   private class RulesParamsSeparator extends JPanel {
@@ -779,5 +762,8 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     }
 
   }
+
+
+
 
 }

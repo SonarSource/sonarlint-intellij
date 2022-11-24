@@ -22,6 +22,7 @@ package org.sonarlint.intellij.core;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import org.assertj.core.groups.Tuple;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -44,11 +45,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
-  private final StandaloneSonarLintEngine engine = mock(StandaloneSonarLintEngine.class);
+  private StandaloneSonarLintEngine engine;
   private StandaloneSonarLintFacade facade;
 
   @Before
   public void before() {
+    engine = mock(StandaloneSonarLintEngine.class);
     facade = new StandaloneSonarLintFacade(getProject(), engine);
   }
 
@@ -60,20 +62,7 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
     var ruleDescription = facade.getActiveRuleDescription("rule1").get();
 
     assertThat(ruleDescription.getKey()).isEqualTo("rule1");
-    assertThat(ruleDescription.getHtml()).isEqualTo("<h2>ruleName</h2><table>" +
-      "<tr><td><img valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\" src=\"file:///type/BUG\"/></td>" +
-      "<td class=\"pad\"><b>Bug</b></td>" +
-      "<td><img valign=\"top\" hspace=\"3\" height=\"16\" width=\"16\" src=\"file:///severity/MAJOR\"/></td>" +
-      "<td class=\"pad\"><b>Major</b></td>" +
-      "<td><b>rule1</b></td></tr></table>" +
-      "<br />ruleDescription" +
-      "<table class=\"rule-params\">" +
-      "<caption><h2>Parameters</h2></caption>" +
-      "<tr class='thead'><td colspan=\"2\">Following parameter values can be set in <a href=\"#rule\">Rule Settings</a>. In connected mode, server side configuration overrides local settings.</td></tr>"
-      +
-      "<tr class='tbody'><th>paramName<br/><br/></th><td><p>paramDescription</p><p><small>Current value: <code>paramDefaultValue</code></small></p><p><small>Default value: <code>paramDefaultValue</code></small></p></td></tr>"
-      +
-      "</table>");
+    assertThat(ruleDescription.getParams()).extracting(RuleDescription.Param::getName, RuleDescription.Param::getDescription, RuleDescription.Param::getDefaultValue).containsOnly(Tuple.tuple("paramName", "paramDescription", "paramDefaultValue"));
   }
 
   @Test
