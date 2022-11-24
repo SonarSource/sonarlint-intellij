@@ -39,7 +39,7 @@ import org.sonarsource.sonarlint.core.clientapi.connection.ConnectionService
 import org.sonarsource.sonarlint.core.clientapi.connection.config.DidAddConnectionParams
 import org.sonarsource.sonarlint.core.clientapi.connection.config.DidRemoveConnectionParams
 import org.sonarsource.sonarlint.core.clientapi.connection.config.DidUpdateConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.connection.config.InitializeParams
+import org.sonarsource.sonarlint.core.clientapi.InitializeParams
 import java.nio.file.Path
 
 class BackendServiceTest : AbstractSonarLintHeavyTest() {
@@ -59,7 +59,7 @@ class BackendServiceTest : AbstractSonarLintHeavyTest() {
     }
 
     @Test
-    fun test_initialize_connection_service_with_existing_connections_when_starting() {
+    fun test_initialize_with_existing_connections_when_starting() {
         globalSettings.serverConnections = listOf(
             ServerConnection.newBuilder().setName("id").setHostUrl("url").build(),
             ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
@@ -69,7 +69,7 @@ class BackendServiceTest : AbstractSonarLintHeavyTest() {
         service.startOnce()
 
         val paramsCaptor = argumentCaptor<InitializeParams>()
-        verify(backendConnectionService).initialize(paramsCaptor.capture())
+        verify(backend).initialize(paramsCaptor.capture())
         assertThat(paramsCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
             .containsExactly(tuple("id", "url"))
         assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")

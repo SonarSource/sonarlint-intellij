@@ -33,6 +33,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.TextRange
+import java.util.Optional
 
 fun aLiveIssue(
     file: PsiFile,
@@ -54,6 +55,7 @@ fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = o
     override fun getRuleKey() = "ruleKey"
     override fun flows() = mutableListOf<Flow>()
     override fun quickFixes() = mutableListOf<QuickFix>()
+    override fun getRuleDescriptionContextKey() = Optional.empty<String>()
 }
 
 private fun toTextRange(rangeMarker: RangeMarker?): TextRange? {
@@ -68,20 +70,11 @@ fun aClientInputFile(file: PsiFile) =
 fun aClientInputFile(file: PsiFile, document: Document) =
     DefaultClientInputFile(file.virtualFile, file.name, false, file.virtualFile.charset, document.text, document.modificationStamp, null)
 
-fun aQuickFix(message: String, fileEdits: List<ClientInputFileEdit>) = object : QuickFix {
-    override fun inputFileEdits() = fileEdits
-    override fun message() = message
-}
+fun aQuickFix(message: String, fileEdits: List<ClientInputFileEdit>) = QuickFix(fileEdits, message)
 
-fun aFileEdit(file: ClientInputFile, textEdits: List<TextEdit>) = object : ClientInputFileEdit {
-    override fun target() = file
-    override fun textEdits() = textEdits
-}
+fun aFileEdit(file: ClientInputFile, textEdits: List<TextEdit>) = ClientInputFileEdit(file, textEdits)
 
-fun aTextEdit(range: TextRange, newText: String) = object : TextEdit {
-    override fun range() = range
-    override fun newText() = newText
-}
+fun aTextEdit(range: TextRange, newText: String) = TextEdit(range, newText)
 
 fun aTextRange(
     startLine: Int,
