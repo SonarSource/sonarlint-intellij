@@ -48,8 +48,6 @@ public abstract class SonarLintFacade {
   protected abstract AnalysisResults analyze(Module module, Path baseDir, Path workDir, Collection<ClientInputFile> inputFiles, Map<String, String> props,
     IssueListener issueListener, ClientProgressMonitor progressMonitor);
 
-  public abstract CompletableFuture<RuleDescription> getActiveRuleDescription(String ruleKey);
-
   public synchronized AnalysisResults startAnalysis(Module module, List<ClientInputFile> inputFiles, IssueListener issueListener,
                                                     Map<String, String> additionalProps, ClientProgressMonitor progressMonitor) {
     var baseDir = Paths.get(project.getBasePath());

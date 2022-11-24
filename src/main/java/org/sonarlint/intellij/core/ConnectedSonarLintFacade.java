@@ -95,23 +95,4 @@ class ConnectedSonarLintFacade extends SonarLintFacade {
     return engine.getPluginDetails();
   }
 
-  @Override
-  public CompletableFuture<RuleDescription> getActiveRuleDescription(String ruleKey) {
-    try {
-      var serverConnection = getService(project, ProjectBindingManager.class).getServerConnection();
-      return engine.getActiveRuleDetails(serverConnection.getEndpointParams(), serverConnection.getHttpClient(), ruleKey, projectKey)
-        .thenApply(
-          details -> RuleDescription.from(details.getKey(), details.getName(), details.getDefaultSeverity(), details.getType(), getFullDescription(details)));
-    } catch (InvalidBindingException e) {
-      return CompletableFuture.completedFuture(null);
-    }
-  }
-
-  private static String getFullDescription(ConnectedRuleDetails details) {
-    var extendedDescription = details.getExtendedDescription();
-    if (extendedDescription.isEmpty()) {
-      return details.getHtmlDescription();
-    }
-    return details.getHtmlDescription() + "<br/><br/>" + extendedDescription;
-  }
 }

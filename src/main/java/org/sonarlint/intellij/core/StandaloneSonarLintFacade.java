@@ -101,13 +101,4 @@ final class StandaloneSonarLintFacade extends SonarLintFacade {
     return sonarlint.getPluginDetails();
   }
 
-  @Override
-  public CompletableFuture<RuleDescription> getActiveRuleDescription(String ruleKey) {
-    return CompletableFuture.completedFuture(
-      sonarlint.getRuleDetails(ruleKey)
-        .map(
-          details -> RuleDescription.from(details.getKey(), details.getName(), details.getDefaultSeverity(), details.getType(), details.getHtmlDescription(),
-            details.paramDetails().stream().map(p -> new RuleDescription.Param(p.name(), p.description(), p.defaultValue())).collect(Collectors.toList())))
-        .orElse(null));
-  }
 }

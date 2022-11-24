@@ -21,8 +21,6 @@ package org.sonarlint.intellij.core;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import org.assertj.core.groups.Tuple;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
@@ -52,17 +50,6 @@ public class StandaloneSonarLintFacadeTest extends AbstractSonarLintLightTests {
   public void before() {
     engine = mock(StandaloneSonarLintEngine.class);
     facade = new StandaloneSonarLintFacade(getProject(), engine);
-  }
-
-  @Test
-  public void should_get_rule_description() throws Exception {
-    Optional<StandaloneRuleDetails> rule1 = Optional.of(ruleDetails("rule1"));
-    when(engine.getRuleDetails("rule1")).thenReturn(rule1);
-
-    var ruleDescription = facade.getActiveRuleDescription("rule1").get();
-
-    assertThat(ruleDescription.getKey()).isEqualTo("rule1");
-    assertThat(ruleDescription.getParams()).extracting(RuleDescription.Param::getName, RuleDescription.Param::getDescription, RuleDescription.Param::getDefaultValue).containsOnly(Tuple.tuple("paramName", "paramDescription", "paramDefaultValue"));
   }
 
   @Test
