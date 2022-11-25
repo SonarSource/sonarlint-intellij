@@ -66,6 +66,11 @@ open class BaseUiTest {
         fun isCLion(): Boolean {
             return remoteRobot.isCLion()
         }
+
+        @JvmStatic
+        fun isNotCLion(): Boolean {
+            return !remoteRobot.isCLion()
+        }
     }
 
 

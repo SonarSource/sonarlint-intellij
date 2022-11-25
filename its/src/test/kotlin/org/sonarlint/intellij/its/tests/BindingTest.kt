@@ -35,6 +35,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -57,12 +58,8 @@ import org.sonarqube.ws.client.usertokens.GenerateRequest
 import java.io.File
 import java.time.Duration.ofSeconds
 
+@EnabledIf("isNotCLion")
 class BindingTest : BaseUiTest() {
-
-    @BeforeEach
-    fun requirements() {
-        Assume.assumeFalse(remoteRobot.isCLion())
-    }
 
     @Test
     fun should_use_configured_project_and_module_bindings_for_analysis() = uiTest {
@@ -74,13 +71,13 @@ class BindingTest : BaseUiTest() {
         verifyCurrentFileShowsCard("NotConnectedCard")
 
         bindProjectAndModuleInFileSettings()
-        verifyCurrentFileShowsCard("ConnectedCard")
         // Wait for re-analysis to happen
         with(remoteRobot) {
             idea {
                 waitBackgroundTasksFinished()
             }
         }
+        verifyCurrentFileShowsCard("ConnectedCard")
         verifyCurrentFileTabContainsMessages(
             "Found 1 issue in 1 file",
             "HelloProject.scala",
