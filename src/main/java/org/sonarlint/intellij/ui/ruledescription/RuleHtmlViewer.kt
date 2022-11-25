@@ -31,7 +31,7 @@ import javax.swing.ScrollPaneConstants
 import javax.swing.text.DefaultCaret
 
 
-class RuleHtmlViewer() : JBPanel<RuleHtmlViewer>(BorderLayout()) {
+class RuleHtmlViewer(scrollable: Boolean) : JBPanel<RuleHtmlViewer>(BorderLayout()) {
     private var editor: JEditorPane = JEditorPane().apply {
         contentType = UIUtil.HTML_MIME
         (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
@@ -44,13 +44,17 @@ class RuleHtmlViewer() : JBPanel<RuleHtmlViewer>(BorderLayout()) {
     }
 
     init {
-        val scrollableRulePanel = ScrollPaneFactory.createScrollPane(editor, true)
-        scrollableRulePanel.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-        scrollableRulePanel.verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
-        scrollableRulePanel.verticalScrollBar.unitIncrement = 10
-        scrollableRulePanel.isOpaque = false
-        scrollableRulePanel.viewport.isOpaque = false
-        add(scrollableRulePanel, BorderLayout.CENTER)
+        if (scrollable) {
+            val scrollableRulePanel = ScrollPaneFactory.createScrollPane(editor, true)
+            scrollableRulePanel.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+            scrollableRulePanel.verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
+            scrollableRulePanel.verticalScrollBar.unitIncrement = 10
+            scrollableRulePanel.isOpaque = false
+            scrollableRulePanel.viewport.isOpaque = false
+            add(scrollableRulePanel, BorderLayout.CENTER)
+        } else {
+            add(editor, BorderLayout.CENTER)
+        }
     }
 
 
