@@ -333,7 +333,7 @@ public class RuleConfigurationPanel implements Disposable, ConfigurationPanel<So
     ruleHeaderPanel = new RuleHeaderPanel();
     descriptionPanel.add(ruleHeaderPanel, BorderLayout.NORTH);
 
-    ruleHtmlViewer = new RuleHtmlViewer();
+    ruleHtmlViewer = new RuleHtmlViewer(true);
     ruleHtmlViewer.setBorder(IdeBorderFactory.createBorder());
     descriptionPanel.add(ruleHtmlViewer, BorderLayout.CENTER);
 
