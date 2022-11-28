@@ -25,6 +25,7 @@ import com.intellij.openapi.project.ModuleListener
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ModuleBindingManager
 import org.sonarlint.intellij.core.ProjectBinding
@@ -37,10 +38,12 @@ private fun getEngineIfStarted(module: Module) = getService(module, ModuleBindin
 class ModuleChangeListener(val project: Project) : ModuleListener {
     override fun moduleAdded(project: Project, module: Module) {
         Modules.declareModule(project, getEngineIfStarted(module), module)
+        getService(BackendService::class.java).moduleAdded(module)
     }
 
     override fun moduleRemoved(project: Project, module: Module) {
         Modules.removeModule(getEngineIfStarted(module), module)
+        getService(BackendService::class.java).moduleRemoved(module)
     }
 }
 

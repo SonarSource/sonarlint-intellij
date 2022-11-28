@@ -71,6 +71,15 @@ public class ModuleBindingManager {
     return null;
   }
 
+  @CheckForNull
+  public String getConfiguredProjectKey() {
+    var moduleSettings = getSettingsFor(module);
+    if (moduleSettings.isProjectBindingOverridden()) {
+      return moduleSettings.getProjectKey();
+    }
+    return null;
+  }
+
   /**
    * Module level binding override is allowed if:
    * <li>the IDE supports module or attached projects</li>
@@ -149,6 +158,7 @@ public class ModuleBindingManager {
 
   public void unbind() {
     getSettingsFor(module).clearBindingOverride();
+    getService(BackendService.class).moduleUnbound(module);
   }
 
 }

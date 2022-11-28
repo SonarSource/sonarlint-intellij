@@ -25,6 +25,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.Test
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.kotlin.argumentCaptor
@@ -171,6 +172,7 @@ class BackendServiceTest : AbstractSonarLintHeavyTest() {
 
     @Test
     fun test_notify_backend_when_closing_a_project() {
+        service.startOnce()
         val newProject = ProjectManagerEx.getInstanceEx().openProject(Path.of("test"), OpenProjectTask.newProject())!!
         service.projectOpened(newProject)
 
@@ -211,6 +213,45 @@ class BackendServiceTest : AbstractSonarLintHeavyTest() {
     }
 
     @Test
+    fun test_notify_backend_when_binding_a_project_having_module_overrides() {
+        service.startOnce()
+        projectSettings.isBindingSuggestionsEnabled = false
+        val moduleBackendId = moduleBackendId(module)
+
+        service.projectBound(project, ProjectBinding("id", "key", mapOf(Pair(module, "moduleKey"))))
+
+        val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
+        verify(backendConfigurationService, times(2)).didUpdateBinding(paramsCaptor.capture())
+        assertThat(paramsCaptor.allValues).extracting(
+            "configScopeId",
+            "updatedBinding.connectionId",
+            "updatedBinding.sonarProjectKey",
+            "updatedBinding.bindingSuggestionDisabled"
+        ).containsExactly(
+            tuple(projectBackendId(project), "id", "key", true),
+            tuple(moduleBackendId, "id", "moduleKey", true)
+        )
+    }
+
+    @Test
+    fun test_notify_backend_when_closing_a_project_having_module_overrides() {
+        service.startOnce()
+        projectSettings.isBindingSuggestionsEnabled = false
+        val moduleId = moduleBackendId(module)
+
+        service.projectClosed(project)
+
+        val paramsCaptor = argumentCaptor<DidRemoveConfigurationScopeParams>()
+        verify(backendConfigurationService, times(2)).didRemoveConfigurationScope(paramsCaptor.capture())
+        assertThat(paramsCaptor.allValues).extracting(
+            "removedId"
+        ).containsExactly(
+            moduleId,
+            projectBackendId(project)
+        )
+    }
+
+    @Test
     fun test_notify_backend_when_unbinding_a_project() {
         service.projectUnbound(project)
 
@@ -222,6 +263,21 @@ class BackendServiceTest : AbstractSonarLintHeavyTest() {
             "updatedBinding.sonarProjectKey",
             "updatedBinding.bindingSuggestionDisabled"
         ).containsExactly(projectBackendId(project), null, null, false)
+    }
+
+    @Test
+    fun test_notify_backend_when_unbinding_a_module() {
+        service.moduleUnbound(module)
+        val moduleId = moduleBackendId(module)
+
+        val paramsCaptor = argumentCaptor<DidUpdateBindingParams>()
+        verify(backendConfigurationService).didUpdateBinding(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue).extracting(
+            "configScopeId",
+            "updatedBinding.connectionId",
+            "updatedBinding.sonarProjectKey",
+            "updatedBinding.bindingSuggestionDisabled"
+        ).containsExactly(moduleId, null, null, true)
     }
 
     @Test
