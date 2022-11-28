@@ -24,7 +24,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
@@ -47,6 +46,5 @@ public class StartServicesOnProjectOpened implements StartupActivity {
 
     // perform on bindings load
     SonarLintUtils.getService(project, ConnectedModeStorageSynchronizer.class).init();
-    SonarLintUtils.getService(BackendService.class).projectOpened(project);
   }
 }

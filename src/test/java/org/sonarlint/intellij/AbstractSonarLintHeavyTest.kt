@@ -28,6 +28,7 @@ import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
 import org.sonarlint.intellij.config.project.SonarLintProjectSettings
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.TestEngineManager
@@ -49,6 +50,7 @@ abstract class AbstractSonarLintHeavyTest : HeavyPlatformTestCase() {
         super.setUp()
         getEngineManager().stopAllEngines(false)
     }
+
     protected fun getTestDataPath(): Path =
         Paths.get("src/test/testData/${javaClass.simpleName}").toAbsolutePath()
 
@@ -77,4 +79,5 @@ abstract class AbstractSonarLintHeavyTest : HeavyPlatformTestCase() {
     }
 
     protected fun projectBackendId(project: Project) = project.projectFilePath!!
+    protected fun moduleBackendId(module: Module) = BackendService.moduleId(module)
 }
