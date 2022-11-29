@@ -86,7 +86,7 @@ private const val TOOLBAR_GROUP_ID = "TaintVulnerabilities"
 class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindowPanel(false, true),
     OccurenceNavigator, DataProvider, Disposable {
 
-    private lateinit var rulePanel: SonarLintRulePanel
+    private val rulePanel = SonarLintRulePanel(project)
     private lateinit var tree: TaintVulnerabilityTree
     private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
     private val noVulnerabilitiesLabel = JLabel("")
@@ -118,7 +118,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", ActionLink("Configure Binding", SonarConfigureProject())), NO_BINDING_CARD_ID)
         cards.add(centeredLabel("The project binding is invalid", ActionLink("Edit Binding", SonarConfigureProject())), INVALID_BINDING_CARD_ID)
         cards.add(centeredLabel(noVulnerabilitiesLabel), NO_ISSUES_CARD_ID)
-        cards.add(createSplitter(project, this, this, ScrollPaneFactory.createScrollPane(createTree()), createRulePanel(), SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
+        cards.add(createSplitter(project, this, this, ScrollPaneFactory.createScrollPane(createTree()), rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
         )
         val issuesPanel = JPanel(BorderLayout())
@@ -224,15 +224,6 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         { it is LocalTaintVulnerabilityNode && it.issue.key() == vulnerability.key() }
             ?: return
         TreeUtil.selectPath(tree, TreePath(vulnerabilityNode.path))
-    }
-
-    private fun createRulePanel(): JBTabbedPane {
-        // Rule panel
-        rulePanel = SonarLintRulePanel(project)
-
-        val detailsTab = JBTabbedPane()
-        detailsTab.addTab("Rule", null, rulePanel, "Details about the rule")
-        return detailsTab
     }
 
     private fun updateRulePanelContent() {
