@@ -29,6 +29,7 @@ import java.awt.BorderLayout
 import javax.swing.JEditorPane
 import javax.swing.ScrollPaneConstants
 import javax.swing.text.DefaultCaret
+import javax.swing.text.html.HTMLEditorKit
 
 
 class RuleHtmlViewer(scrollable: Boolean) : JBPanel<RuleHtmlViewer>(BorderLayout()) {
@@ -44,6 +45,7 @@ class RuleHtmlViewer(scrollable: Boolean) : JBPanel<RuleHtmlViewer>(BorderLayout
     }
 
     init {
+        prepareCSS(editor.editorKit as HTMLEditorKit)
         if (scrollable) {
             val scrollableRulePanel = ScrollPaneFactory.createScrollPane(editor, true)
             scrollableRulePanel.horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
@@ -55,6 +57,12 @@ class RuleHtmlViewer(scrollable: Boolean) : JBPanel<RuleHtmlViewer>(BorderLayout
         } else {
             add(editor, BorderLayout.CENTER)
         }
+    }
+
+    private fun prepareCSS(editorKit: HTMLEditorKit) {
+        editorKit.styleSheet.addRule("h2 { font-size: 150%; }")
+        editorKit.styleSheet.addRule("h3 { font-size: 130%; }")
+        editorKit.styleSheet.addRule("h4 { font-size: 110%; }")
     }
 
 
