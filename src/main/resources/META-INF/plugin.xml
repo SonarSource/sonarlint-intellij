@@ -42,7 +42,7 @@
             <br/>
             <p>
                 SonarLint isn't just about your code, it's also an opportunity to bring your passion for quality code to the whole team.
-                When paired with <a href="https://www.sonarqube.org/">SonarQube</a> or <a href="https://sonarcloud.io/">SonarCloud</a>,
+                When paired with <a href="https://www.sonarsource.com/products/sonarqube/">SonarQube</a> or <a href="https://www.sonarsource.com/products/sonarcloud/">SonarCloud</a>,
                 your team can share common language rulesets, project analysis settings
                 and <a href="https://www.sonarlint.org/bring-your-team-on-board/">more</a>.
                 The combination forms a continuous analysis solution that keeps code quality and security issues out of your branches.
