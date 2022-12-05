@@ -82,19 +82,16 @@ public class IssueTree extends Tree implements DataProvider {
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
-    if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
+    // use string literal as the key appeared in newer versions
+    if ("bgtDataProvider".equals(dataId)) {
+      return getBackgroundDataProvider();
+    } else if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
       return navigate();
     } else if (PlatformDataKeys.TREE_EXPANDER.is(dataId)) {
       return new DefaultTreeExpander(this);
-    } else if (PlatformDataKeys.VIRTUAL_FILE.is(dataId)) {
+    } else if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
       return getSelectedFile();
-    } else if (PlatformDataKeys.PSI_FILE.is(dataId)) {
-      var file = getSelectedFile();
-      if (file != null && file.isValid()) {
-        return PsiManager.getInstance(project).findFile(file);
-      }
-      return null;
-    } else if (PlatformDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
+    } else if (CommonDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
       var f = getSelectedFile();
       // return empty so that it doesn't find it in parent components
       return f != null && f.isValid() ? (new VirtualFile[] {f}) : new VirtualFile[0];
@@ -102,6 +99,19 @@ public class IssueTree extends Tree implements DataProvider {
       return getSelectedIssue();
     }
 
+    return null;
+  }
+
+  private DataProvider getBackgroundDataProvider() {
+    var file = getSelectedFile();
+    if (file != null && file.isValid()) {
+      return otherId -> {
+        if (CommonDataKeys.PSI_FILE.is(otherId)) {
+          return PsiManager.getInstance(project).findFile(file);
+        }
+        return null;
+      };
+    }
     return null;
   }
 
