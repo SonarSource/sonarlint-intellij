@@ -50,7 +50,6 @@ import javax.swing.SwingConstants;
 import org.sonarlint.intellij.config.ConfigurationPanel;
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionWizard;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.core.ServerConnectionsManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -151,7 +150,7 @@ public class ServerConnectionMgmtPanel implements ConfigurationPanel<SonarLintGl
   @Override
   public void save(SonarLintGlobalSettings newSettings) {
     var newConnections = new ArrayList<>(connections);
-    getService(ServerConnectionsManager.class).replaceConnections(newConnections, newSettings);
+    newSettings.setServerConnections(newConnections);
 
     // remove them even if a server with the same name was later added
     unbindRemovedServers();

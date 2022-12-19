@@ -41,9 +41,11 @@ import org.sonarlint.intellij.editor.EditorDecorator
 import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarsource.sonarlint.core.commons.TextRange
 import org.sonarsource.sonarlint.core.serverapi.ServerApi
 import org.sonarsource.sonarlint.core.serverapi.hotspot.HotspotApi
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails
 import java.util.Optional
 
 const val FILE_PATH = "com/sonarsource/sample/MyFile.java"
@@ -51,15 +53,15 @@ const val CONNECTED_URL = "http://server.url"
 const val PROJECT_KEY = "projectKey"
 const val HOTSPOT_KEY = "hotspotKey"
 
-private fun aRemoteHotspot(textRange: ServerHotspot.TextRange): ServerHotspot {
-  return ServerHotspot(
+private fun aRemoteHotspot(textRange: TextRange): ServerHotspotDetails {
+  return ServerHotspotDetails(
     "Very hotspot",
     FILE_PATH,
     textRange,
     "author",
-    ServerHotspot.Status.TO_REVIEW,
+    ServerHotspotDetails.Status.TO_REVIEW,
     null,
-    ServerHotspot.Rule("rulekey", "rulename", "category", ServerHotspot.Rule.Probability.HIGH, "", "", ""),
+    ServerHotspotDetails.Rule("rulekey", "rulename", "category", ServerHotspotDetails.Rule.Probability.HIGH, "", "", ""),
     ""
   )
 }
@@ -115,7 +117,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
   @Test
   fun it_should_partially_display_a_hotspot_and_a_balloon_notification_if_file_is_not_found() {
-    val remoteHotspot = aRemoteHotspot(ServerHotspot.TextRange(1, 14, 1, 20))
+    val remoteHotspot = aRemoteHotspot(TextRange(1, 14, 1, 20))
     val connection = aServerConnectionReturningHotspot(remoteHotspot)
     whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
 
@@ -130,7 +132,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
   @Test
   fun it_should_open_a_hotspot_file_if_found() {
-    val remoteHotspot = aRemoteHotspot(ServerHotspot.TextRange(1, 14, 1, 20))
+    val remoteHotspot = aRemoteHotspot(TextRange(1, 14, 1, 20))
     val connection = aServerConnectionReturningHotspot(remoteHotspot)
     whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
     val file = myFixture.copyFileToProject(FILE_PATH)
@@ -152,7 +154,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
 
   @Test
   fun it_should_show_a_balloon_notification_when_the_text_range_does_not_match() {
-    val remoteHotspot = aRemoteHotspot(ServerHotspot.TextRange(10, 14, 10, 20))
+    val remoteHotspot = aRemoteHotspot(TextRange(10, 14, 10, 20))
     val connection = aServerConnectionReturningHotspot(remoteHotspot)
     whenever(projectBindingAssistant.bind(PROJECT_KEY, CONNECTED_URL)).thenReturn(BoundProject(project, connection))
     val file = myFixture.copyFileToProject(FILE_PATH)
@@ -174,7 +176,7 @@ class SecurityHotspotShowRequestHandlerTest : AbstractSonarLintLightTests() {
       )
   }
 
-  private fun aServerConnectionReturningHotspot(serverHotspot: ServerHotspot?): ServerConnection {
+  private fun aServerConnectionReturningHotspot(serverHotspot: ServerHotspotDetails?): ServerConnection {
     val serverConnection = mock(ServerConnection::class.java)
     whenever(serverConnection.hostUrl).thenReturn(CONNECTED_URL)
     val serverApi = mock(ServerApi::class.java)

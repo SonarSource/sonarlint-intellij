@@ -29,27 +29,28 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.ProjectManagerListener
 import com.intellij.serviceContainer.NonInjectable
 import org.apache.commons.io.FileUtils
-import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.config.global.SonarLintGlobalSettings
+import org.sonarlint.intellij.messages.GlobalConfigurationListener
+import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.SonarLintBackendImpl
-import org.sonarsource.sonarlint.core.clientapi.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
-import org.sonarsource.sonarlint.core.clientapi.config.binding.BindingConfigurationDto
-import org.sonarsource.sonarlint.core.clientapi.config.binding.DidUpdateBindingParams
-import org.sonarsource.sonarlint.core.clientapi.config.scope.ConfigurationScopeDto
-import org.sonarsource.sonarlint.core.clientapi.config.scope.DidAddConfigurationScopesParams
-import org.sonarsource.sonarlint.core.clientapi.config.scope.DidRemoveConfigurationScopeParams
-import org.sonarsource.sonarlint.core.clientapi.connection.config.DidAddConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.connection.config.DidRemoveConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.connection.config.DidUpdateConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.connection.config.SonarCloudConnectionConfigurationDto
-import org.sonarsource.sonarlint.core.clientapi.connection.config.SonarQubeConnectionConfigurationDto
-import org.sonarsource.sonarlint.core.clientapi.rules.GetActiveRuleDetailsResponse
+import org.sonarsource.sonarlint.core.clientapi.backend.InitializeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
+import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.ConfigurationScopeDto
+import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams
+import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveConfigurationScopeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsParams
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsResponse
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
@@ -63,13 +64,13 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun startOnce() {
         if (initialized) return
+
         initialized = true
         initialize()
     }
 
     private fun initialize() {
         migrateStoragePath()
-        val nodeJsManager = getService(NodeJsManager::class.java)
         val serverConnections = getGlobalSettings().serverConnections
         val sonarCloudConnections =
             serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
@@ -77,18 +78,29 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         backend.initialize(
             InitializeParams(
+                TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
                 getLocalStoragePath(),
                 EmbeddedPlugins.findEmbeddedPlugins(),
                 EmbeddedPlugins.getExtraPluginsForConnectedMode(),
                 EmbeddedPlugins.getEmbeddedPluginsForConnectedMode(),
                 EmbeddedPlugins.enabledLanguagesInStandaloneMode,
                 EmbeddedPlugins.enabledLanguagesInConnectedMode,
-                nodeJsManager.nodeJsVersion,
                 false,
                 sonarQubeConnections,
-                sonarCloudConnections
+                sonarCloudConnections,
+                null
             )
         )
+        ApplicationManager.getApplication().messageBus.connect()
+            .subscribe(GlobalConfigurationListener.TOPIC, object : GlobalConfigurationListener.Adapter() {
+                override fun applied(previousSettings: SonarLintGlobalSettings, newSettings: SonarLintGlobalSettings) {
+                    connectionsUpdated(newSettings.serverConnections)
+                }
+
+                override fun changed(serverList: MutableList<ServerConnection>) {
+                    connectionsUpdated(serverList)
+                }
+            })
         ApplicationManager.getApplication().messageBus.connect()
             .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
                 override fun projectOpened(project: Project) {
@@ -120,30 +132,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     private fun getLocalStoragePath(): Path = Paths.get(PathManager.getSystemPath()).resolve("sonarlint/storage")
 
-    fun connectionAdded(createdConnection: ServerConnection) {
-        backend.connectionService.didAddConnection(DidAddConnectionParams(toBackendConnection(createdConnection)))
-    }
-
-    fun connectionUpdated(updatedConnection: ServerConnection) {
-        backend.connectionService.didUpdateConnection(DidUpdateConnectionParams(toBackendConnection(updatedConnection)))
-    }
-
-    fun connectionRemoved(connectionId: String) {
-        backend.connectionService.didRemoveConnection(DidRemoveConnectionParams(connectionId))
-    }
-
-    private fun toBackendConnection(createdConnection: ServerConnection): Either<SonarQubeConnectionConfigurationDto, SonarCloudConnectionConfigurationDto> {
-        val connectionConfig: Either<SonarQubeConnectionConfigurationDto, SonarCloudConnectionConfigurationDto> =
-            if (createdConnection.isSonarCloud) {
-                Either.forRight(
-                    toSonarCloudBackendConnection(createdConnection)
-                )
-            } else {
-                Either.forLeft(
-                    toSonarQubeBackendConnection(createdConnection)
-                )
-            }
-        return connectionConfig
+    fun connectionsUpdated(serverConnections: List<ServerConnection>) {
+        val scConnections = serverConnections.filter { it.isSonarCloud }.map { toSonarCloudBackendConnection(it) }
+        val sqConnections = serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
+        backend.connectionService.didUpdateConnections(DidUpdateConnectionsParams(sqConnections, scConnections))
     }
 
     private fun toSonarQubeBackendConnection(createdConnection: ServerConnection) = SonarQubeConnectionConfigurationDto(
@@ -264,7 +256,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
     }
 
     fun getActiveRuleDetails(module: Module, ruleKey: String): CompletableFuture<GetActiveRuleDetailsResponse> {
-        return backend.activeRulesService.getActiveRuleDetails(moduleId(module), ruleKey)
+        return backend.activeRulesService.getActiveRuleDetails(GetActiveRuleDetailsParams(moduleId(module), ruleKey))
     }
 
     companion object {

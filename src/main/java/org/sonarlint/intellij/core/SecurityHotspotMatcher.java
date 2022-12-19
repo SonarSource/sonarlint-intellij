@@ -25,7 +25,9 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarsource.sonarlint.core.commons.TextRange;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails;
 
 import static org.sonarlint.intellij.issue.LocationKt.fileOnlyLocation;
 import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
@@ -41,11 +43,11 @@ public class SecurityHotspotMatcher {
     issueMatcher = new IssueMatcher(project);
   }
 
-  public LocalHotspot match(ServerHotspot serverHotspot) {
+  public LocalHotspot match(ServerHotspotDetails serverHotspot) {
     return new LocalHotspot(matchLocation(serverHotspot), serverHotspot);
   }
 
-  public Location matchLocation(ServerHotspot serverHotspot) {
+  public Location matchLocation(ServerHotspotDetails serverHotspot) {
     for (var contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
       if (contentRoot.isDirectory()) {
         var matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
@@ -62,7 +64,7 @@ public class SecurityHotspotMatcher {
     return unknownLocation(serverHotspot.message, serverHotspot.filePath);
   }
 
-  private Location matchTextRange(VirtualFile matchedFile, ServerHotspot.TextRange textRange, String message) {
+  private Location matchTextRange(VirtualFile matchedFile, TextRange textRange, String message) {
     try {
       var rangeMarker = issueMatcher.match(matchedFile, textRange);
       return resolvedLocation(matchedFile, rangeMarker, message, null);

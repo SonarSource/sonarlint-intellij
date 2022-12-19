@@ -20,9 +20,9 @@
 package org.sonarlint.intellij.issue.hotspot
 
 import org.sonarlint.intellij.issue.Location
-import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails
 
-data class LocalHotspot(val primaryLocation: Location, private val serverHotspot: ServerHotspot) {
+data class LocalHotspot(val primaryLocation: Location, private val serverHotspot: ServerHotspotDetails) {
     val filePath: String = serverHotspot.filePath
 
     val message: String = serverHotspot.message
@@ -33,11 +33,11 @@ data class LocalHotspot(val primaryLocation: Location, private val serverHotspot
 
     val statusDescription: String = serverHotspot.status.description + if (serverHotspot.resolution == null) "" else " as " + serverHotspot.resolution.description
 
-    val probability: ServerHotspot.Rule.Probability = serverHotspot.rule.vulnerabilityProbability
+    val probability: ServerHotspotDetails.Rule.Probability = serverHotspot.rule.vulnerabilityProbability
 
     val category: String = serverHotspot.rule.securityCategory
 
     val lineNumber: Int? = serverHotspot.textRange.startLine
 
-    val rule: ServerHotspot.Rule = serverHotspot.rule
+    val rule: ServerHotspotDetails.Rule = serverHotspot.rule
 }

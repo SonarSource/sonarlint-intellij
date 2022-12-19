@@ -32,15 +32,13 @@ import org.mockito.kotlin.argumentCaptor
 import org.sonarlint.intellij.AbstractSonarLintHeavyTest
 import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
-import org.sonarsource.sonarlint.core.clientapi.config.ConfigurationService
-import org.sonarsource.sonarlint.core.clientapi.config.binding.DidUpdateBindingParams
-import org.sonarsource.sonarlint.core.clientapi.config.scope.DidAddConfigurationScopesParams
-import org.sonarsource.sonarlint.core.clientapi.config.scope.DidRemoveConfigurationScopeParams
-import org.sonarsource.sonarlint.core.clientapi.connection.ConnectionService
-import org.sonarsource.sonarlint.core.clientapi.connection.config.DidAddConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.connection.config.DidRemoveConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.connection.config.DidUpdateConnectionParams
-import org.sonarsource.sonarlint.core.clientapi.InitializeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.InitializeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.config.ConfigurationService
+import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
+import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidAddConfigurationScopesParams
+import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveConfigurationScopeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.ConnectionService
+import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import java.nio.file.Path
 
 class BackendServiceTest : AbstractSonarLintHeavyTest() {
@@ -79,57 +77,23 @@ class BackendServiceTest : AbstractSonarLintHeavyTest() {
 
     @Test
     fun test_notify_backend_when_adding_a_sonarqube_connection() {
-        service.connectionAdded(ServerConnection.newBuilder().setName("id").setHostUrl("url").build())
+        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("url").build()))
 
-        val paramsCaptor = argumentCaptor<DidAddConnectionParams>()
-        verify(backendConnectionService).didAddConnection(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.addedConnection.left).extracting("connectionId", "serverUrl")
-            .containsExactly("id", "url")
+        val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
+        verify(backendConnectionService).didUpdateConnections(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue.sonarQubeConnections).extracting("connectionId", "serverUrl")
+            .containsExactly(tuple("id", "url"))
     }
 
     @Test
     fun test_notify_backend_when_adding_a_sonarcloud_connection() {
-        service.connectionAdded(
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
-                .build()
-        )
+        service.connectionsUpdated(listOf(ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
+            .build()))
 
-        val paramsCaptor = argumentCaptor<DidAddConnectionParams>()
-        verify(backendConnectionService).didAddConnection(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.addedConnection.right).extracting("connectionId", "organization")
-            .containsExactly("id", "org")
-    }
-
-    @Test
-    fun test_notify_backend_when_updating_a_sonarqube_connection() {
-        service.connectionUpdated(ServerConnection.newBuilder().setName("id").setHostUrl("url").build())
-
-        val paramsCaptor = argumentCaptor<DidUpdateConnectionParams>()
-        verify(backendConnectionService).didUpdateConnection(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.updatedConnection.left).extracting("connectionId", "serverUrl")
-            .containsExactly("id", "url")
-    }
-
-    @Test
-    fun test_notify_backend_when_updating_a_sonarcloud_connection() {
-        service.connectionUpdated(
-            ServerConnection.newBuilder().setName("id").setHostUrl("https://sonarcloud.io").setOrganizationKey("org")
-                .build()
-        )
-
-        val paramsCaptor = argumentCaptor<DidUpdateConnectionParams>()
-        verify(backendConnectionService).didUpdateConnection(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.updatedConnection.right).extracting("connectionId", "organization")
-            .containsExactly("id", "org")
-    }
-
-    @Test
-    fun test_notify_backend_when_removing_a_connection() {
-        service.connectionRemoved("id")
-
-        val paramsCaptor = argumentCaptor<DidRemoveConnectionParams>()
-        verify(backendConnectionService).didRemoveConnection(paramsCaptor.capture())
-        assertThat(paramsCaptor.firstValue.connectionId).isEqualTo("id")
+        val paramsCaptor = argumentCaptor<DidUpdateConnectionsParams>()
+        verify(backendConnectionService).didUpdateConnections(paramsCaptor.capture())
+        assertThat(paramsCaptor.firstValue.sonarCloudConnections).extracting("connectionId", "organization")
+            .containsExactly(tuple("id", "org"))
     }
 
     @Test
