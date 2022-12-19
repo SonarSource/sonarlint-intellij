@@ -168,8 +168,8 @@ configurations {
 dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
-    compileOnly("com.google.code.findbugs:jsr305:2.0.2")
     implementation("org.apache.httpcomponents.client5:httpclient5:5.1.2") {
+    compileOnly("com.google.code.findbugs:jsr305:3.0.2")
         exclude(module = "slf4j-api")
     }
     implementation(project(":common"))
@@ -180,7 +180,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("org.assertj:assertj-core:3.23.1")
     testImplementation("org.mockito:mockito-core:4.8.0")
-    testImplementation("org.mockito.kotlin:mockito-kotlin:4.0.0")
+    testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-proxy:$jettyVersion")
