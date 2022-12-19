@@ -1,5 +1,3 @@
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
 import com.jetbrains.plugin.blockmap.core.BlockMap
 import de.undercouch.gradle.tasks.download.Download
 import groovy.lang.GroovyObject
@@ -14,18 +12,18 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 plugins {
-    kotlin("jvm") version "1.7.10"
-    id("org.jetbrains.intellij") version "1.10.0"
+    kotlin("jvm") version "1.7.22"
+    id("org.jetbrains.intellij") version "1.11.0"
     id("org.sonarqube") version "3.4.0.2513"
     java
     jacoco
     id("com.github.hierynomus.license") version "0.16.1"
-    id("com.jfrog.artifactory") version "4.29.0"
-    id("com.google.protobuf") version "0.8.19"
+    id("com.jfrog.artifactory") version "4.30.1"
+    id("com.google.protobuf") version "0.9.1"
     idea
     signing
-    id("de.undercouch.download") version "5.2.0"
-    id("org.cyclonedx.bom") version "1.7.1"
+    id("de.undercouch.download") version "5.3.0"
+    id("org.cyclonedx.bom") version "1.7.3"
 }
 
 buildscript {
@@ -160,7 +158,7 @@ tasks.runIde {
 }
 
 configurations {
-    var sqplugins = create("sqplugins") { isTransitive = false }
+    val sqplugins = create("sqplugins") { isTransitive = false }
     create("sqplugins_deps") {
         extendsFrom(sqplugins)
         isTransitive = true
@@ -225,7 +223,7 @@ tasks {
 
     fun copyPlugins(destinationDir: File, pluginName: Property<String>) {
         copy {
-            from(project.configurations.get("sqplugins"))
+            from(project.configurations["sqplugins"])
             into(file("$destinationDir/${pluginName.get()}/plugins"))
         }
     }
@@ -327,16 +325,16 @@ license {
         )
     )
     excludes(
-        listOf("**/*.jar", "**/*.png", "**/README")
+        listOf("**/*.jar", "**/*.png", "**/README", "**/proto/*.java")
     )
     strictCheck = true
 }
 
 artifactory {
-    clientConfig.info.setBuildName("sonarlint-intellij")
-    clientConfig.info.setBuildNumber(System.getenv("BUILD_BUILDID"))
-    clientConfig.setIncludeEnvVars(true)
-    clientConfig.setEnvVarsExcludePatterns("*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*")
+    clientConfig.info.buildName = "sonarlint-intellij"
+    clientConfig.info.buildNumber = System.getenv("BUILD_BUILDID")
+    clientConfig.isIncludeEnvVars = true
+    clientConfig.envVarsExcludePatterns = "*password*,*PASSWORD*,*secret*,*MAVEN_CMD_LINE_ARGS*,sun.java.command,*token*,*TOKEN*,*LOGIN*,*login*,*key*,*KEY*,*PASSPHRASE*,*signing*"
     clientConfig.info.addEnvironmentProperty(
         "ARTIFACTS_TO_DOWNLOAD",
         "org.sonarsource.sonarlint.intellij:sonarlint-intellij:zip,org.sonarsource.sonarlint.intellij:sonarlint-intellij:json:cyclonedx"
