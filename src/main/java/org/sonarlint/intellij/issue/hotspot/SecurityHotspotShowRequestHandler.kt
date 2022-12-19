@@ -37,7 +37,7 @@ import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import org.sonarsource.sonarlint.core.serverapi.hotspot.GetSecurityHotspotRequestParams
-import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails
 import java.net.URL
 
 const val NOTIFICATION_TITLE = "Error opening security hotspot"
@@ -75,7 +75,7 @@ open class SecurityHotspotShowRequestHandler(
     display(project, localHotspot, balloonRetryAction)
   }
 
-  private fun fetchHotspot(connection: ServerConnection, hotspotKey: String, projectKey: String): ServerHotspot? {
+  private fun fetchHotspot(connection: ServerConnection, hotspotKey: String, projectKey: String): ServerHotspotDetails? {
     val params = GetSecurityHotspotRequestParams(hotspotKey, projectKey)
     return connection.api().hotspot().fetch(params).orElse(null)
   }

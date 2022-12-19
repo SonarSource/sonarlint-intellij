@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij
 
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
@@ -35,11 +36,12 @@ import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
-import org.sonarsource.sonarlint.core.clientapi.config.binding.BindingSuggestionDto
-import org.sonarsource.sonarlint.core.clientapi.config.binding.SuggestBindingParams
-import org.sonarsource.sonarlint.core.clientapi.fs.FindFileByNamesInScopeParams
-import org.sonarsource.sonarlint.core.clientapi.fs.FindFileByNamesInScopeResponse
-import org.sonarsource.sonarlint.core.clientapi.fs.FoundFileDto
+import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.clientapi.client.OpenUrlInBrowserParams
+import org.sonarsource.sonarlint.core.clientapi.client.SuggestBindingParams
+import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
+import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeResponse
+import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.util.concurrent.CompletableFuture
 
@@ -128,5 +130,9 @@ class SonarLintIntelliJClient : SonarLintClient {
 
     override fun getHttpClient(connectionId: String) =
         getGlobalSettings().getServerConnectionByName(connectionId).map { it.httpClient }.orNull()
+
+    override fun openUrlInBrowser(params: OpenUrlInBrowserParams) {
+        BrowserUtil.browse(params.url)
+    }
 
 }

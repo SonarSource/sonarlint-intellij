@@ -46,9 +46,9 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
-import org.sonarsource.sonarlint.core.clientapi.rules.ActiveRuleContextualSectionDto
-import org.sonarsource.sonarlint.core.clientapi.rules.ActiveRuleDescriptionTabDto
-import org.sonarsource.sonarlint.core.clientapi.rules.ActiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleContextualSectionDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDescriptionTabDto
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDetailsDto
 import java.awt.BorderLayout
 import java.awt.Font
 import java.awt.GridBagConstraints

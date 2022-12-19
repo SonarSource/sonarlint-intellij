@@ -24,9 +24,9 @@ import org.assertj.core.api.Assertions.tuple
 import org.junit.Before
 import org.junit.Test
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarsource.sonarlint.core.clientapi.config.binding.BindingSuggestionDto
-import org.sonarsource.sonarlint.core.clientapi.config.binding.SuggestBindingParams
-import org.sonarsource.sonarlint.core.clientapi.fs.FindFileByNamesInScopeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
+import org.sonarsource.sonarlint.core.clientapi.client.SuggestBindingParams
+import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
 
 internal class SonarLintIntelliJClientTest : AbstractSonarLintLightTests() {
     val client = SonarLintIntelliJClient()

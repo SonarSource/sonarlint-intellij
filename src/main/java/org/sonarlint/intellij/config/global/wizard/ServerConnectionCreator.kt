@@ -20,10 +20,8 @@
 package org.sonarlint.intellij.config.global.wizard
 
 import com.intellij.openapi.application.ApplicationManager
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.core.ServerConnectionsManager
 import org.sonarlint.intellij.messages.GlobalConfigurationListener
 
 open class ServerConnectionCreator {
@@ -34,7 +32,7 @@ open class ServerConnectionCreator {
         val wizard = ServerConnectionWizard.forNewConnection(connectionToCreate, globalSettings.serverNames)
         if (wizard.showAndGet()) {
             val created = wizard.connection
-            getService(ServerConnectionsManager::class.java).addConnection(created)
+            Settings.getGlobalSettings().addServerConnection(created)
             val serverChangeListener = ApplicationManager.getApplication().messageBus.syncPublisher(GlobalConfigurationListener.TOPIC)
             // notify in case the connections settings dialog is open to reflect the change
             serverChangeListener.changed(globalSettings.serverConnections)

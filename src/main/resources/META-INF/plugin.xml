@@ -194,7 +194,6 @@
                             serviceImplementation="org.sonarlint.intellij.core.server.events.ServerEventsProductionService"
                             testServiceImplementation="org.sonarlint.intellij.util.ServerEventsNoOpService"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.config.global.SonarLintGlobalSettingsStore"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerConnectionsManager"/>
         <applicationService serviceInterface="org.sonarlint.intellij.core.EngineManager"
                             serviceImplementation="org.sonarlint.intellij.core.DefaultEngineManager"
                             testServiceImplementation="org.sonarlint.intellij.core.TestEngineManager"/>
