@@ -168,8 +168,8 @@ configurations {
 dependencies {
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
     implementation("commons-lang:commons-lang:2.6")
-    implementation("org.apache.httpcomponents.client5:httpclient5:5.1.2") {
     compileOnly("com.google.code.findbugs:jsr305:3.0.2")
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.2.1") {
         exclude(module = "slf4j-api")
     }
     implementation(project(":common"))
