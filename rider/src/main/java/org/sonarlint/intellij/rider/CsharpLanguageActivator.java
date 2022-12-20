@@ -30,5 +30,9 @@ public class CsharpLanguageActivator implements LanguageActivator {
     enabledLanguages.clear();
     enabledLanguages.add(Language.CS);
     enabledLanguages.add(Language.SECRETS);
+    enabledLanguages.add(Language.HTML);
+    enabledLanguages.add(Language.CSS);
+    enabledLanguages.add(Language.JS);
+    enabledLanguages.add(Language.TS);
   }
 }

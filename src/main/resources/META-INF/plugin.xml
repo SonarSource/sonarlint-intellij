@@ -57,7 +57,7 @@
 
     <change-notes><![CDATA[
       <ul>
-        <li>7.3 - Improved display of rule descriptions. New react performance rules. Analyze CSS files. New Kotlin rules. 6 new C++20 rules. Support Python 3.11. Many rules improvements.</li>
+        <li>7.3 - Improved display of rule descriptions. New react performance rules. Analyze CSS files. New Kotlin rules. 6 new C++20 rules. Support Python 3.11. Analyze JS, TS, CSS and HTML in Rider. Many rules improvements.</li>
         <li>7.2.1 - Fix an error when selecting issues or taint vulnerabilities in the tool window in 2022.3.</li>
         <li>7.2 - Help users to generate a token when creating a new connection. Add quick fixes in Rider for C#. 2 new rules, 4 new quick fixes for Python. 1 new rule for credentials detection for Java. Support analysis of JS in YAML files. New AWS CDK rules. Bug fixes, fewer FPs and improvements for many languages.</li>
         <li>7.1.1 - Fix security issue when opening a hotspot from SonarQube.</li>
