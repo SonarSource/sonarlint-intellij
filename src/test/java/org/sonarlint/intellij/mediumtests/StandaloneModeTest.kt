@@ -71,6 +71,23 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
     }
 
     @Test
+    fun should_analyze_css_file() {
+        val fileToAnalyze = myFixture.configureByFile("src/style.css").virtualFile
+
+        val issues = analyze(fileToAnalyze)
+
+        assertThat(issues)
+            .extracting(
+                { it.ruleKey },
+                { it.message },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+            .containsExactlyInAnyOrder(
+                tuple("css:S4647", "Unexpected invalid hex color \"#3c\"", Pair(4, 80)),
+                tuple("css:S4647", "Unexpected invalid hex color \"#3cb371a\"", Pair(89, 171))
+            )
+    }
+
+    @Test
     fun should_analyze_java_file() {
         val fileToAnalyze = myFixture.configureByFile("src/Main.java").virtualFile
 

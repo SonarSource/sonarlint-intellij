@@ -37,6 +37,7 @@ object EmbeddedPlugins {
         Language.HTML,
         Language.XML,
         Language.JS,
+        Language.CSS,
         Language.KOTLIN,
         Language.PHP,
         Language.PYTHON,

@@ -1,0 +1,6 @@
+a {
+    color: #3c; /* Noncompliant; shorthand should be made of 3 characters */
+}
+div {
+    background-color: #3cb371a; /* Noncompliant; alpha should have 2 characters */
+}
