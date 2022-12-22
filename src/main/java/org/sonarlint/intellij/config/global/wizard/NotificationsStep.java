@@ -53,8 +53,8 @@ public class NotificationsStep extends AbstractWizardStepEx {
     final String sqOrSc = isSc ? "SonarCloud" : "SonarQube";
     notificationsCheckBox.setText("Receive notifications from " + sqOrSc);
     notificationsCheckBox.setSelected(!model.isNotificationsDisabled());
-    final String docUrl = isSc ? "https://sonarcloud.io/documentation/user-guide/sonarlint-notifications/" :
-      "https://docs.sonarqube.org/latest/user-guide/sonarlint-notifications/";
+    final String docUrl = isSc ? "https://docs.sonarcloud.io/advanced-setup/sonarlint-smart-notifications/" :
+      "https://docs.sonarqube.org/latest/user-guide/sonarlint-connected-mode/";
     notificationsDetails.setText("You will receive <a href=\"" + docUrl + "\">notifications</a> from " + sqOrSc + " in situations like:\n" +
       "<ul>" +
       "<li>the Quality Gate status of a bound project changes</li>" +
