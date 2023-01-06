@@ -176,6 +176,8 @@ public class AnalyzerConfiguration {
       case "Clang":
       case "GCC":
         return "clang";
+      case "clang-cl":
+        return "clang-cl";
       case "MSVC":
         return "msvc-cl";
       default:

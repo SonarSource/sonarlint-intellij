@@ -88,7 +88,7 @@ class AnalyzerConfigurationTest {
   void map_to_cfamily_compiler() {
     assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG));
     assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.GCC));
-    assertNull(AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG_CL));
+    assertEquals("clang-cl", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.CLANG_CL));
     assertEquals("msvc-cl", AnalyzerConfiguration.mapToCFamilyCompiler(OCCompilerKind.MSVC));
     assertEquals("clang", AnalyzerConfiguration.mapToCFamilyCompiler(APPLE_CLANG_COMPILER));
   }
