@@ -186,7 +186,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
             }
             comboPanel.add(contextCombo)
             sectionPanel.add(comboPanel, BorderLayout.NORTH)
-            contextCombo.selectedIndex = contextual.contextualSections.size - 1
+            contextCombo.selectedIndex = contextual.contextualSections.indexOfFirst { sec -> sec.contextKey == contextual.defaultContextKey }
         })
         sectionPanel.add(htmlViewer, BorderLayout.CENTER)
         sectionsTabs.insertTab(tabDesc.title, null, sectionPanel, null, index)
