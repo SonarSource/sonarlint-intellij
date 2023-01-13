@@ -255,8 +255,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
         )
     }
 
-    fun getActiveRuleDetails(module: Module, ruleKey: String): CompletableFuture<GetActiveRuleDetailsResponse> {
-        return backend.activeRulesService.getActiveRuleDetails(GetActiveRuleDetailsParams(moduleId(module), ruleKey))
+    fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetActiveRuleDetailsResponse> {
+        return backend.activeRulesService.getActiveRuleDetails(GetActiveRuleDetailsParams(moduleId(module), ruleKey, contextKey))
     }
 
     companion object {

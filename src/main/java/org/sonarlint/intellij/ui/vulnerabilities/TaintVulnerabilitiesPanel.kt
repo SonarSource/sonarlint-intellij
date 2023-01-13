@@ -33,7 +33,6 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.tools.SimpleActionGroup
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.components.JBTabbedPane
 import com.intellij.ui.components.labels.ActionLink
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
@@ -65,7 +64,6 @@ import javax.swing.BoxLayout
 import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.ScrollPaneConstants
 import javax.swing.event.TreeSelectionListener
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.TreeNode
@@ -230,25 +228,25 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         val highlighting = getService(project, EditorDecorator::class.java)
         val issue = tree.getIssueFromSelectedNode()
         if (issue == null) {
-            rulePanel.setRuleKey(null, null)
+            rulePanel.setRuleKey(null, null, null)
             highlighting.removeHighlights()
         } else {
             val file = issue.file()
             if (file == null) {
                 // FIXME can't we find a way to get the rule description?
-                rulePanel.setRuleKey(null, null)
+                rulePanel.setRuleKey(null, null, null)
                 highlighting.removeHighlights()
             } else {
                 val moduleForFile = ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(file)
-                rulePanel.setRuleKey(moduleForFile, issue.ruleKey())
+                rulePanel.setRuleKey(moduleForFile, issue.ruleKey(), issue.ruleDescriptionContextKey())
                 highlighting.highlight(issue)
             }
         }
     }
 
     private val TREE_SELECTION_LISTENER = TreeSelectionListener {
-        updateRulePanelContent();
-    };
+        updateRulePanelContent()
+    }
 
     private fun createTree(): TaintVulnerabilityTree {
         treeBuilder = TaintVulnerabilityTreeModelBuilder()

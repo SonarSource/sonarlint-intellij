@@ -71,6 +71,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
 
     private var currentRuleKey: String? = null
     private var currentModule: Module? = null
+    private var currentContextKey: String? = null
 
     init {
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -85,15 +86,17 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         add(paramsPanel, BorderLayout.SOUTH)
 
         setLoadingText("Loading rule description...")
-        setRuleKey(null, null)
+        setRuleKey(null, null, null)
     }
 
-    fun setRuleKey(module: Module?, ruleKey: String?) {
-        if (currentModule == module && currentRuleKey == ruleKey) {
+
+    fun setRuleKey(module: Module?, ruleKey: String?, contextKey: String?) {
+        if (currentModule == module && currentRuleKey == ruleKey && currentContextKey == contextKey) {
             return
         }
         currentRuleKey = ruleKey
         currentModule = module
+        currentContextKey = contextKey
         if (module == null || ruleKey == null) {
             nothingToDisplay(false)
             return
@@ -101,7 +104,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         startLoading()
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description...", false) {
             override fun run(progressIndicator: ProgressIndicator) {
-                SonarLintUtils.getService(BackendService::class.java).getActiveRuleDetails(module, ruleKey)
+                SonarLintUtils.getService(BackendService::class.java).getActiveRuleDetails(module, ruleKey, contextKey)
                     .orTimeout(30, TimeUnit.SECONDS)
                     .handle { response, error ->
                         stopLoading()
@@ -172,7 +175,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         tabDesc.content.map({ nonContextual -> htmlViewer.updateHtml(nonContextual.htmlContent) }, { contextual ->
             val comboPanel = JBPanel<JBPanel<*>>(HorizontalLayout(JBUI.scale(UIUtil.DEFAULT_HGAP)))
             comboPanel.add(JBLabel("Which component or framework contains the issue?"))
-            val contextCombo = ComboBox(DefaultComboBoxModel(contextual.toTypedArray()))
+            val contextCombo = ComboBox(DefaultComboBoxModel(contextual.contextualSections.toTypedArray()))
             contextCombo.renderer = SimpleListCellRenderer.create("", ActiveRuleContextualSectionDto::getDisplayName)
             contextCombo.addActionListener {
                 val htmlContent = (contextCombo.selectedItem as ActiveRuleContextualSectionDto).htmlContent
@@ -180,7 +183,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
             }
             comboPanel.add(contextCombo)
             sectionPanel.add(comboPanel, BorderLayout.NORTH)
-            contextCombo.selectedIndex = 0
+            contextCombo.selectedIndex = contextual.contextualSections.indexOfFirst { sec -> sec.contextKey == contextual.defaultContextKey }
         })
         sectionPanel.add(htmlViewer, BorderLayout.CENTER)
         sectionsTabs.insertTab(tabDesc.title, null, sectionPanel, null, index)
