@@ -71,7 +71,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
 
     private var currentRuleKey: String? = null
     private var currentModule: Module? = null
-    private var contextKey: String? = null
+    private var currentContextKey: String? = null
 
     init {
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
@@ -86,20 +86,17 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         add(paramsPanel, BorderLayout.SOUTH)
 
         setLoadingText("Loading rule description...")
-        setRuleKey(null, null)
+        setRuleKey(null, null, null)
     }
+
 
     fun setRuleKey(module: Module?, ruleKey: String?, contextKey: String?) {
-        this.contextKey = contextKey
-        setRuleKey(module, ruleKey)
-    }
-
-    fun setRuleKey(module: Module?, ruleKey: String?) {
-        if (currentModule == module && currentRuleKey == ruleKey) {
+        if (currentModule == module && currentRuleKey == ruleKey && currentContextKey == contextKey) {
             return
         }
         currentRuleKey = ruleKey
         currentModule = module
+        currentContextKey = contextKey
         if (module == null || ruleKey == null) {
             nothingToDisplay(false)
             return
