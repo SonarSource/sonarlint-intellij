@@ -57,6 +57,7 @@ allprojects {
         plugin("java")
         plugin("org.jetbrains.intellij")
         plugin("org.cyclonedx.bom")
+        plugin("com.github.hierynomus.license")
     }
 
     repositories {
@@ -98,6 +99,22 @@ allprojects {
         type = "json"
         classifier = "cyclonedx"
         builtBy("cyclonedxBom")
+    }
+
+    license {
+        header = rootProject.file("HEADER")
+        mapping(
+            mapOf(
+                "java" to "SLASHSTAR_STYLE",
+                "kt" to "SLASHSTAR_STYLE",
+                "svg" to "XML_STYLE",
+                "form" to "XML_STYLE"
+            )
+        )
+        excludes(
+            listOf("**/*.jar", "**/*.png", "**/README", "**/proto/*.java")
+        )
+        strictCheck = true
     }
 }
 
@@ -312,22 +329,6 @@ sonarqube {
     properties {
         property("sonar.projectName", "SonarLint for IntelliJ IDEA")
     }
-}
-
-license {
-    header = rootProject.file("HEADER")
-    mapping(
-        mapOf(
-            "java" to "SLASHSTAR_STYLE",
-            "kt" to "SLASHSTAR_STYLE",
-            "svg" to "XML_STYLE",
-            "form" to "XML_STYLE"
-        )
-    )
-    excludes(
-        listOf("**/*.jar", "**/*.png", "**/README", "**/proto/*.java")
-    )
-    strictCheck = true
 }
 
 artifactory {
