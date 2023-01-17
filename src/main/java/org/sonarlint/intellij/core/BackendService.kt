@@ -40,6 +40,7 @@ import org.sonarlint.intellij.telemetry.TelemetryManagerProvider
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarsource.sonarlint.core.SonarLintBackendImpl
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
+import org.sonarsource.sonarlint.core.clientapi.backend.HostInfoDto
 import org.sonarsource.sonarlint.core.clientapi.backend.InitializeParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
@@ -78,6 +79,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         backend.initialize(
             InitializeParams(
+                HostInfoDto("FIXME"),
                 TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
                 getLocalStoragePath(),
                 EmbeddedPlugins.findEmbeddedPlugins(),
@@ -88,7 +90,8 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 false,
                 sonarQubeConnections,
                 sonarCloudConnections,
-                null
+                null,
+                false
             )
         )
         ApplicationManager.getApplication().messageBus.connect()

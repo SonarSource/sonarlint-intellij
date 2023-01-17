@@ -32,13 +32,14 @@ import javax.swing.JTree;
 import javax.swing.SwingConstants;
 import javax.swing.tree.TreeCellRenderer;
 import org.sonarlint.intellij.ui.nodes.HotspotNode;
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails;
 
 class HotspotCellRenderer implements TreeCellRenderer {
 
   private static final int HORIZONTAL_PADDING = 15;
 
-  private static final Map<ServerHotspotDetails.Rule.Probability, JBColor> colorsByProbability = new EnumMap<>(ServerHotspotDetails.Rule.Probability.class);
+  private static final Map<VulnerabilityProbability, JBColor> colorsByProbability = new EnumMap<>(VulnerabilityProbability.class);
 
   private static final int RED = 0xd4333f;
   private static final int ORANGE = 0xed7d20;
@@ -48,9 +49,9 @@ class HotspotCellRenderer implements TreeCellRenderer {
   private final JBColor whiteForeground = new JBColor(WHITE, WHITE);
 
   static {
-    colorsByProbability.put(ServerHotspotDetails.Rule.Probability.HIGH, new JBColor(RED, RED));
-    colorsByProbability.put(ServerHotspotDetails.Rule.Probability.MEDIUM, new JBColor(ORANGE, ORANGE));
-    colorsByProbability.put(ServerHotspotDetails.Rule.Probability.LOW, new JBColor(YELLOW, YELLOW));
+    colorsByProbability.put(VulnerabilityProbability.HIGH, new JBColor(RED, RED));
+    colorsByProbability.put(VulnerabilityProbability.MEDIUM, new JBColor(ORANGE, ORANGE));
+    colorsByProbability.put(VulnerabilityProbability.LOW, new JBColor(YELLOW, YELLOW));
   }
 
   @Override
