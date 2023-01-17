@@ -42,6 +42,7 @@ import org.sonarlint.intellij.eq
 import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 import org.sonarsource.sonarlint.core.commons.TextRange
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import org.sonarsource.sonarlint.core.serverapi.ServerApi
 import org.sonarsource.sonarlint.core.serverapi.hotspot.HotspotApi
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot
@@ -61,7 +62,7 @@ private fun aRemoteHotspot(textRange: TextRange): ServerHotspotDetails {
     "author",
     ServerHotspotDetails.Status.TO_REVIEW,
     null,
-    ServerHotspotDetails.Rule("rulekey", "rulename", "category", ServerHotspotDetails.Rule.Probability.HIGH, "", "", ""),
+    ServerHotspotDetails.Rule("rulekey", "rulename", "category", VulnerabilityProbability.HIGH, "", "", ""),
     ""
   )
 }

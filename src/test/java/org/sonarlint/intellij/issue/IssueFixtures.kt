@@ -33,6 +33,7 @@ import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.TextRange
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.util.Optional
 
 fun aLiveIssue(
@@ -56,6 +57,7 @@ fun aCoreIssue(file: PsiFile, textRange: TextRange? = TextRange(0, 0, 0, 1)) = o
     override fun flows() = mutableListOf<Flow>()
     override fun quickFixes() = mutableListOf<QuickFix>()
     override fun getRuleDescriptionContextKey() = Optional.empty<String>()
+    override fun getVulnerabilityProbability() = Optional.empty<VulnerabilityProbability>()
 }
 
 private fun toTextRange(rangeMarker: RangeMarker?): TextRange? {

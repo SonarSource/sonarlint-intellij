@@ -39,9 +39,17 @@ import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.clientapi.client.OpenUrlInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.client.SuggestBindingParams
+import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingParams
+import org.sonarsource.sonarlint.core.clientapi.client.binding.AssistBindingResponse
+import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionParams
+import org.sonarsource.sonarlint.core.clientapi.client.connection.AssistCreatingConnectionResponse
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeResponse
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
+import org.sonarsource.sonarlint.core.clientapi.client.host.GetHostInfoResponse
+import org.sonarsource.sonarlint.core.clientapi.client.hotspot.ShowHotspotParams
+import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
+import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.util.concurrent.CompletableFuture
 
@@ -131,8 +139,32 @@ class SonarLintIntelliJClient : SonarLintClient {
     override fun getHttpClient(connectionId: String) =
         getGlobalSettings().getServerConnectionByName(connectionId).map { it.httpClient }.orNull()
 
+    override fun getHttpClientNoAuth(forUrl: String): HttpClient? {
+        TODO("Not yet implemented")
+    }
+
     override fun openUrlInBrowser(params: OpenUrlInBrowserParams) {
         BrowserUtil.browse(params.url)
+    }
+
+    override fun showMessage(params: ShowMessageParams) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getHostInfo(): CompletableFuture<GetHostInfoResponse> {
+        TODO("Not yet implemented")
+    }
+
+    override fun showHotspot(params: ShowHotspotParams) {
+        TODO("Not yet implemented")
+    }
+
+    override fun assistCreatingConnection(params: AssistCreatingConnectionParams): CompletableFuture<AssistCreatingConnectionResponse> {
+        TODO("Not yet implemented")
+    }
+
+    override fun assistBinding(params: AssistBindingParams): CompletableFuture<AssistBindingResponse> {
+        TODO("Not yet implemented")
     }
 
 }
