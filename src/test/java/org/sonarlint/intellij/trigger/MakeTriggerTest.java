@@ -21,12 +21,11 @@ package org.sonarlint.intellij.trigger;
 
 import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.project.Project;
-
 import java.util.UUID;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.mockito.Mockito.mock;
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class MakeTriggerTest extends AbstractSonarLintLightTests {
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private AnalysisSubmitter submitter = mock(AnalysisSubmitter.class);
   private SonarLintConsole console = mock(SonarLintConsole.class);
   private CompileContext context = mock(CompileContext.class);
 
@@ -43,7 +42,7 @@ public class MakeTriggerTest extends AbstractSonarLintLightTests {
 
   @Before
   public void prepare() {
-    replaceProjectService(SonarLintSubmitter.class, submitter);
+    replaceProjectService(AnalysisSubmitter.class, submitter);
     replaceProjectService(SonarLintConsole.class, console);
     when(context.getProject()).thenReturn(getProject());
     trigger = new MakeTrigger();
@@ -53,13 +52,13 @@ public class MakeTriggerTest extends AbstractSonarLintLightTests {
   @Test
   public void should_trigger_on_compilation() {
     trigger.compilationFinished(false, 0, 0, context);
-    verify(submitter).submitOpenFilesAuto(TriggerType.COMPILATION);
+    verify(submitter).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
   }
 
   @Test
   public void should_trigger_automake() {
     trigger.buildFinished(getProject(), UUID.randomUUID(), true);
-    verify(submitter).submitOpenFilesAuto(TriggerType.COMPILATION);
+    verify(submitter).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
   }
 
   @Test

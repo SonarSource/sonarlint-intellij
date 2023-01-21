@@ -28,6 +28,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import java.util.UUID;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -58,7 +59,7 @@ public class MakeTrigger implements BuildManagerListener, CompilationStatusListe
     }
 
     SonarLintUtils.getService(project, SonarLintConsole.class).debug("build finished");
-    SonarLintUtils.getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.COMPILATION);
+    SonarLintUtils.getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
   }
 
   /**
@@ -69,7 +70,7 @@ public class MakeTrigger implements BuildManagerListener, CompilationStatusListe
     var compiledProject = compileContext.getProject();
     if (this.project.equals(compiledProject)) {
       SonarLintUtils.getService(compiledProject, SonarLintConsole.class).debug("compilation finished");
-      SonarLintUtils.getService(compiledProject, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.COMPILATION);
+      SonarLintUtils.getService(compiledProject, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.COMPILATION);
     }
   }
 

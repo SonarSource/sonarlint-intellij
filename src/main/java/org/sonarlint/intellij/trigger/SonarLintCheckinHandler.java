@@ -37,7 +37,6 @@ import java.awt.BorderLayout;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -46,7 +45,7 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;
@@ -84,21 +83,10 @@ public class SonarLintCheckinHandler extends CheckinHandler {
 
     // de-duplicate as the same file can be present several times in the panel (e.g. in several changelists)
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
-    var submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
     // this will block EDT (modal)
     try {
-      var error = new AtomicBoolean(false);
-      var callback = new AnalysisCallback() {
-        @Override public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
-          // do nothing
-        }
-
-        @Override public void onError(Throwable e) {
-          error.set(true);
-        }
-      };
-      submitter.submitFilesModal(affectedFiles, TriggerType.CHECK_IN, callback);
-      if (error.get()) {
+      var succeeded = SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+      if (!succeeded) {
         return ReturnResult.CANCEL;
       }
       return processResult(affectedFiles);

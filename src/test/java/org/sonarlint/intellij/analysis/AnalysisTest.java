@@ -66,14 +66,13 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-public class AnalysisTaskTest extends AbstractSonarLintLightTests {
-  private AnalysisTask task;
+public class AnalysisTest extends AbstractSonarLintLightTests {
+  private Analysis task;
   @Mock
   private final LiveIssueBuilder liveIssueBuilder = mock(LiveIssueBuilder.class);
   private Set<VirtualFile> filesToAnalyze = new HashSet<>();
   @Mock
   private ProgressIndicator progress;
-  private AnalysisRequest analysisRequest;
   @Mock
   private SonarLintAnalyzer sonarLintAnalyzer;
   @Mock
@@ -86,7 +85,6 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
     MockitoAnnotations.initMocks(this);
     var testFile = myFixture.configureByText("MyClass.java", "public class MyClass {]");
     filesToAnalyze.add(testFile.getVirtualFile());
-    analysisRequest = createAnalysisRequest();
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class))).thenReturn(analysisResults);
@@ -98,7 +96,7 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
     replaceProjectService(IssueManager.class, issueManagerMock);
     replaceProjectService(LiveIssueBuilder.class, liveIssueBuilder);
 
-    task = new AnalysisTask(analysisRequest, false, true);
+    task = new Analysis(getProject(), filesToAnalyze, TriggerType.ACTION, false, mock(AnalysisCallback.class));
 
     // IntelliJ light test fixtures appear to reuse the same project container, so we need to ensure that status is stopped.
     AnalysisStatus.get(getProject()).stopRun();
@@ -106,9 +104,6 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
   @Test
   public void testTask() {
-    assertThat(task.shouldStartInBackground()).isTrue();
-    assertThat(task.isConditionalModal()).isFalse();
-    assertThat(task.getRequest()).isEqualTo(analysisRequest);
     task.run(progress);
 
     verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class));
@@ -248,17 +243,6 @@ public class AnalysisTaskTest extends AbstractSonarLintLightTests {
 
     // never called because of cancel
     verifyNoInteractions(liveIssueBuilder);
-  }
-
-  @Test
-  public void testFinishFlag() {
-    assertThat(task.isFinished()).isFalse();
-    task.onFinished();
-    assertThat(task.isFinished()).isTrue();
-  }
-
-  private AnalysisRequest createAnalysisRequest() {
-    return new AnalysisRequest(getProject(), filesToAnalyze, TriggerType.ACTION, false, mock(AnalysisCallback.class));
   }
 
   private List<LanguageExtensionPoint<?>> getExternalAnnotators() {

@@ -26,4 +26,16 @@ public interface AnalysisCallback {
   void onSuccess(Set<VirtualFile> failedVirtualFiles);
 
   void onError(Throwable e);
+
+  AnalysisCallback NO_OP = new AnalysisCallback() {
+    @Override
+    public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+      // Ignore
+    }
+
+    @Override
+    public void onError(Throwable e) {
+      // Ignore
+    }
+  };
 }

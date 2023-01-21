@@ -27,20 +27,16 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTests {
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private ChangeListManager changeListManager = mock(ChangeListManager.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
@@ -51,7 +47,7 @@ public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTe
   public void before() {
     action = new SonarAnalyzeChangedFilesAction();
     status = AnalysisStatus.get(getProject());
-    replaceProjectService(SonarLintSubmitter.class, submitter);
+    replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     replaceProjectService(ChangeListManager.class, changeListManager);
   }
 
@@ -87,6 +83,6 @@ public class SonarAnalyzeChangedFilesActionTest extends AbstractSonarLintLightTe
 
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(eq(List.of(file)), eq(TriggerType.CHANGED_FILES), any(AnalysisCallback.class), eq(false));
+    verify(analysisSubmitter).analyzeVcsChangedFiles();
   }
 }

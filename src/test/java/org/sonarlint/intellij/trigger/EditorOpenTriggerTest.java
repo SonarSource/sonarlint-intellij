@@ -23,12 +23,10 @@ import com.intellij.lang.Language;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerEvent;
 import com.intellij.openapi.vfs.VirtualFile;
-
-import java.util.Collections;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -36,7 +34,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
 
   private EditorOpenTrigger editorTrigger;
   private VirtualFile file;
@@ -46,7 +44,7 @@ public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
   public void start() {
     editorTrigger = new EditorOpenTrigger();
     getGlobalSettings().setAutoTrigger(true);
-    replaceProjectService(SonarLintSubmitter.class, submitter);
+    replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
 
     file = createAndOpenTestVirtualFile("MyClass.java", Language.findLanguageByID("JAVA"), "public class MyClass{}");
     editorManager = mock(FileEditorManager.class);
@@ -57,16 +55,7 @@ public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
   public void should_trigger() {
     editorTrigger.fileOpened(editorManager, file);
 
-    verify(submitter).submitFiles(Collections.singleton(file), TriggerType.EDITOR_OPEN, true);
-  }
-
-  @Test
-  public void should_not_trigger_if_auto_disabled() {
-    getGlobalSettings().setAutoTrigger(false);
-
-    editorTrigger.fileOpened(editorManager, file);
-
-    verifyNoInteractions(submitter);
+    verify(analysisSubmitter).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
   }
 
   @Test
@@ -74,6 +63,6 @@ public class EditorOpenTriggerTest extends AbstractSonarLintLightTests {
     editorTrigger.fileClosed(editorManager, file);
     editorTrigger.selectionChanged(new FileEditorManagerEvent(editorManager, null, null, null, null));
 
-    verifyNoInteractions  (submitter);
+    verifyNoInteractions  (analysisSubmitter);
   }
 }
