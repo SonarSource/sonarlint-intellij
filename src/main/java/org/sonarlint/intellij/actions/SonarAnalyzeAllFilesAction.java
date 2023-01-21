@@ -24,22 +24,16 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.project.ProjectCoreUtil;
-import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.DialogWrapper;
 import com.intellij.openapi.ui.Messages;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
+
+import static org.sonarlint.intellij.util.ProjectUtils.hasFiles;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";
@@ -68,41 +62,7 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
       return;
     }
 
-    var submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
-    var allFiles = getAllFiles(project);
-    var callback = new ShowAnalysisResultsCallable(project, allFiles, "all project files");
-    submitter.submitFiles(allFiles, TriggerType.ALL, callback, false);
-  }
-
-  private static Collection<VirtualFile> getAllFiles(Project project) {
-    var fileSet = new LinkedHashSet<VirtualFile>();
-    iterateFilesToAnalyze(project, vFile -> {
-      fileSet.add(vFile);
-      // Continue collecting other files
-      return true;
-    });
-    return fileSet;
-  }
-
-  private static boolean hasFiles(Project project) {
-    var result = new AtomicBoolean(false);
-    iterateFilesToAnalyze(project, vFile -> {
-      result.set(true);
-      // No need to iterate other files/folders
-      return false;
-    });
-    return result.get();
-  }
-
-  private static void iterateFilesToAnalyze(Project project, Predicate<VirtualFile> fileProcessor) {
-    var fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
-    fileIndex.iterateContent(vFile -> {
-      if (!vFile.isDirectory() && !ProjectCoreUtil.isProjectOrWorkspaceFile(vFile)) {
-        return fileProcessor.test(vFile);
-      }
-      // Continue iteration
-      return true;
-    });
+    SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeAllFiles();
   }
 
   static boolean showWarning() {

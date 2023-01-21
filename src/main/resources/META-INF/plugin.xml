@@ -224,7 +224,7 @@
         <projectService serviceInterface="org.sonarlint.intellij.common.ui.SonarLintConsole"
                         serviceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleImpl"
                         testServiceImplementation="org.sonarlint.intellij.ui.SonarLintConsoleTestImpl"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisManager"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisSubmitter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber"/>
         <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueStore"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
@@ -247,7 +247,6 @@
         <postStartupActivity implementation="org.sonarlint.intellij.StartServicesOnProjectOpened"/>
         <postStartupActivity implementation="org.sonarlint.intellij.trigger.EditorOpenTrigger"/>
         <postStartupActivity implementation="org.sonarlint.intellij.fs.EditorFileChangeListener"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.trigger.SonarLintSubmitter"/>
         <notificationGroup id="SonarLint: Server Binding Errors"
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Analyzer Requirement"

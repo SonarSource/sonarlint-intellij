@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.project.DumbAwareAction;
@@ -35,12 +34,11 @@ import java.util.stream.Stream;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarAnalyzeFilesAction extends DumbAwareAction {
   public SonarAnalyzeFilesAction() {
@@ -73,7 +71,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       return;
     }
 
-    var status = SonarLintUtils.getService(project, AnalysisStatus.class);
+    var status = getService(project, AnalysisStatus.class);
     if (status.isRunning()) {
       e.getPresentation().setEnabled(false);
       return;
@@ -110,24 +108,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       })
       .collect(Collectors.toSet());
 
-    SonarLintSubmitter submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
-    AnalysisCallback callback;
-
-    if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(e.getPlace())) {
-      callback = new ShowCurrentFileCallable(project);
-    } else {
-      callback = new ShowAnalysisResultsCallable(project, fileSet, whatAnalyzed(fileSet.size()));
-    }
-
-    submitter.submitFiles(fileSet, TriggerType.ACTION, callback, executeBackground(e));
-  }
-
-  private static String whatAnalyzed(int numFiles) {
-    if (numFiles == 1) {
-      return "1 file";
-    } else {
-      return numFiles + " files";
-    }
+    getService(project, AnalysisSubmitter.class).analyzeFilesOnUserAction(fileSet, e);
   }
 
   private static class CollectFilesVisitor extends VirtualFileVisitor {
@@ -145,17 +126,5 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
       }
       return !projectFile && !".git".equals(file.getName());
     }
-  }
-
-  /**
-   * Whether the analysis should be launched in the background.
-   * Analysis should be run in background in the following cases:
-   * - Keybinding used (place = MainMenu)
-   * - Macro used (place = unknown)
-   * - Action used, ctrl+shift+A (place = GoToAction)
-   */
-  private static boolean executeBackground(AnActionEvent e) {
-    return ActionPlaces.isMainMenuOrActionSearch(e.getPlace())
-      || ActionPlaces.UNKNOWN.equals(e.getPlace());
   }
 }

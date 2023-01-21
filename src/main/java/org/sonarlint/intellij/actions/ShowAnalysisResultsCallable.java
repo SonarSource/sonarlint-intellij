@@ -36,6 +36,10 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   private final Collection<VirtualFile> affectedFiles;
   private final String whatAnalyzed;
 
+  public ShowAnalysisResultsCallable(Project project, Collection<VirtualFile> affectedFiles) {
+    this(project, affectedFiles, whatAnalyzed(affectedFiles.size()));
+  }
+
   public ShowAnalysisResultsCallable(Project project, Collection<VirtualFile> affectedFiles, String whatAnalyzed) {
     this.project = project;
     this.affectedFiles = affectedFiles;
@@ -60,5 +64,13 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
   private void showAnalysisResultsTab() {
     UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
       .openAnalysisResults());
+  }
+
+  private static String whatAnalyzed(int numFiles) {
+    if (numFiles == 1) {
+      return "1 file";
+    } else {
+      return numFiles + " files";
+    }
   }
 }

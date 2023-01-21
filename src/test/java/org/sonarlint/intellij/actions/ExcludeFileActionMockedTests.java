@@ -26,8 +26,8 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintMockedTests;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.project.SonarLintProjectSettingsStore;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 
 import static com.intellij.openapi.actionSystem.ActionPlaces.EDITOR_POPUP;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,7 +38,7 @@ import static org.mockito.Mockito.when;
 public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
   private VirtualFile file1 = mock(VirtualFile.class);
   private SonarLintProjectSettingsStore settings = new SonarLintProjectSettingsStore();
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private ExcludeFileAction action = new ExcludeFileAction();
   private AnActionEvent e = mock(AnActionEvent.class);
   private Presentation presentation = new Presentation();
@@ -46,7 +46,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
   @Before
   public void setup() {
     super.register(project, SonarLintProjectSettingsStore.class, settings);
-    super.register(project, SonarLintSubmitter.class, submitter);
+    super.register(project, AnalysisSubmitter.class, analysisSubmitter);
     when(e.getProject()).thenReturn(project);
     when(e.getPresentation()).thenReturn(presentation);
     when(e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)).thenReturn(new VirtualFile[] {file1});
@@ -60,7 +60,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    verifyNoInteractions(submitter);
+    verifyNoInteractions(analysisSubmitter);
   }
 
   @Test
@@ -70,7 +70,7 @@ public class ExcludeFileActionMockedTests extends AbstractSonarLintMockedTests {
     action.actionPerformed(e);
 
     assertThat(settings.getState().getFileExclusions()).isEmpty();
-    verifyNoInteractions(submitter);
+    verifyNoInteractions(analysisSubmitter);
   }
 
   @Test

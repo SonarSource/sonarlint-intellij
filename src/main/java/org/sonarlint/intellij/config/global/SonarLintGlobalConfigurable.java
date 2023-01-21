@@ -31,11 +31,11 @@ import javax.annotation.Nullable;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.config.global.rules.RuleConfigurationPanel;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.messages.GlobalConfigurationListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -111,7 +111,7 @@ public class SonarLintGlobalConfigurable implements Configurable, Configurable.N
 
     for (var project : openProjects) {
       if (!unboundOnly || !getSettingsFor(project).isBindingEnabled()) {
-        getService(project, SonarLintSubmitter.class).submitOpenFilesAuto(TriggerType.CONFIG_CHANGE);
+        getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.CONFIG_CHANGE);
       }
     }
   }

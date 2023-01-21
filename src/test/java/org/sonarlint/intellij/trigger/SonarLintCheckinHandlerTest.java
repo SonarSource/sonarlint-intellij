@@ -31,13 +31,12 @@ import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -49,18 +48,19 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
   private CompletableFuture<Void> future = new CompletableFuture<>();
 
   private VirtualFile file = mock(VirtualFile.class);
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private IssueStore issueStore = mock(IssueStore.class);
   private IssueManager issueManager = mock(IssueManager.class);
   private CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
 
   @Before
   public void prepare() {
-    replaceProjectService(SonarLintSubmitter.class, submitter);
+    replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     replaceProjectService(IssueStore.class, issueStore);
     replaceProjectService(IssueManager.class, issueManager);
 
     when(checkinProjectPanel.getVirtualFiles()).thenReturn(Collections.singleton(file));
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(true);
   }
 
   @Test
@@ -76,7 +76,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
     verify(issueStore).set(Map.of(file, Collections.singleton(issue)), "SCM changed files");
-    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 
   @Test
@@ -98,7 +98,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
     assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue");
     verify(issueStore).set(anyMap(), eq("SCM changed files"));
-    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 
   @Test
@@ -122,6 +122,6 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
       "\n" +
       "SonarLint analysis found 1 secret. Committed secrets may lead to unauthorized system access.");
     verify(issueStore).set(anyMap(), eq("SCM changed files"));
-    verify(submitter).submitFilesModal(eq(Collections.singleton(file)), eq(TriggerType.CHECK_IN), any(AnalysisCallback.class));
+    verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 }

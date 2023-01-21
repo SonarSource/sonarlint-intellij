@@ -33,8 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.concurrent.ThreadSafe;
-import org.sonarlint.intellij.analysis.AnalysisRequest;
-import org.sonarlint.intellij.analysis.AnalysisTask;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.analysis.Cancelable;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
@@ -60,8 +60,8 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
       .connect(myProject)
       .subscribe(AnalysisListener.TOPIC, new AnalysisListener.Adapter() {
         @Override
-        public void started(AnalysisRequest analysisRequest) {
-          removeFiles(analysisRequest.files());
+        public void started(Collection<VirtualFile> files) {
+          removeFiles(files);
         }
       });
     watcher.start();
@@ -105,7 +105,7 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
   private class EventWatcher extends Thread {
 
     private boolean stop = false;
-    private AnalysisTask task;
+    private Cancelable task;
 
     EventWatcher() {
       this.setDaemon(true);
@@ -133,13 +133,13 @@ public class EditorChangeTrigger implements DocumentListener, Disposable {
       if (getGlobalSettings().isAutoTrigger()) {
         var openFilesToAnalyze = SonarLintAppUtils.retainOpenFiles(myProject, files);
         if (!openFilesToAnalyze.isEmpty()) {
-          if (task != null && !task.isFinished()) {
+          if (task != null) {
             task.cancel();
+            task = null;
             return;
           }
           files.forEach(eventMap::remove);
-          var submitter = SonarLintUtils.getService(myProject, SonarLintSubmitter.class);
-          task = submitter.submitFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE, true);
+          task = SonarLintUtils.getService(myProject, AnalysisSubmitter.class).autoAnalyzeFiles(openFilesToAnalyze, TriggerType.EDITOR_CHANGE);
         }
       }
     }

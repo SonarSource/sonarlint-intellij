@@ -23,12 +23,7 @@ import com.intellij.openapi.actionSystem.IdeActions
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.vcs.FileStatusManager
 import com.intellij.openapi.vcs.ProjectLevelVcsManager
-import com.intellij.openapi.vcs.changes.ChangeListManagerGate
-import com.intellij.openapi.vcs.changes.ChangeListManagerImpl
-import com.intellij.openapi.vcs.changes.ChangeProvider
-import com.intellij.openapi.vcs.changes.ChangelistBuilder
-import com.intellij.openapi.vcs.changes.VcsDirtyScope
-import com.intellij.openapi.vcs.changes.VcsDirtyScopeManager
+import com.intellij.openapi.vcs.changes.*
 import com.intellij.openapi.vcs.changes.committed.MockAbstractVcs
 import com.intellij.openapi.vcs.impl.ProjectLevelVcsManagerImpl
 import com.intellij.openapi.vfs.VirtualFile
@@ -38,12 +33,11 @@ import org.jetbrains.annotations.NotNull
 import org.junit.Before
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.analysis.AnalysisCallback
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.issue.IssueManager
 import org.sonarlint.intellij.issue.LiveIssue
-import org.sonarlint.intellij.trigger.SonarLintSubmitter
-import org.sonarlint.intellij.trigger.TriggerType
+import org.sonarlint.intellij.util.ProjectUtils
 
 class StandaloneModeTest : AbstractSonarLintLightTests() {
 
@@ -160,7 +154,7 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
 
     @Test
     fun should_find_secrets_excluding_vcs_ignored_files() {
-        val fileToAnalyze = myFixture.configureByFile("src/devenv.js").virtualFile
+        myFixture.configureByFile("src/devenv.js").virtualFile
         val fileToAnalyzeIgnored = myFixture.configureByFile("src/devenv_ignored.js").virtualFile
         val fileToAnalyzeUnversionned = myFixture.configureByFile("src/devenv_unversionned.js").virtualFile
 
@@ -188,7 +182,7 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
             assertThat(myChangeListManager.isIgnoredFile(fileToAnalyzeIgnored)).isTrue
             assertThat(myChangeListManager.isUnversioned(fileToAnalyzeUnversionned)).isTrue
 
-            val issues = analyze(fileToAnalyze, fileToAnalyzeIgnored, fileToAnalyzeUnversionned, triggerType = TriggerType.ALL)
+            val issues = analyzeAll()
 
             assertThat(issues)
                 .extracting(
@@ -299,18 +293,15 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
 
     }
 
-    private fun analyze(vararg fileToAnalyzes: VirtualFile, triggerType: TriggerType = TriggerType.ACTION): List<LiveIssue> {
-        val submitter = getService(project, SonarLintSubmitter::class.java)
-        submitter.submitFiles(fileToAnalyzes.toList(), triggerType, EmptyAnalysisCallback(), false)
+    private fun analyze(vararg fileToAnalyzes: VirtualFile): List<LiveIssue> {
+        val submitter = getService(project, AnalysisSubmitter::class.java)
+        submitter.analyzeFilesPreCommit(fileToAnalyzes.toList())
         return fileToAnalyzes.flatMap { getService(project, IssueManager::class.java).getForFile(it) }
     }
 
-    class EmptyAnalysisCallback : AnalysisCallback {
-        override fun onSuccess(failedVirtualFiles: MutableSet<VirtualFile>) {
-        }
-
-        override fun onError(e: Throwable) {
-        }
-
+    private fun analyzeAll(): List<LiveIssue> {
+        val submitter = getService(project, AnalysisSubmitter::class.java)
+        submitter.analyzeAllFiles()
+        return ProjectUtils.getAllFiles(project).flatMap { getService(project, IssueManager::class.java).getForFile(it) }
     }
 }

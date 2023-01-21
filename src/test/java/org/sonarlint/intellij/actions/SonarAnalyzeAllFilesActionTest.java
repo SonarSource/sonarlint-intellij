@@ -22,36 +22,29 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ui.TestDialog;
 import com.intellij.openapi.ui.TestDialogManager;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class SonarAnalyzeAllFilesActionTest extends AbstractSonarLintLightTests {
-  private SonarLintSubmitter submitter = mock(SonarLintSubmitter.class);
+  private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private AnActionEvent event = mock(AnActionEvent.class);
 
   private SonarAnalyzeAllFilesAction action = new SonarAnalyzeAllFilesAction();
   private AnalysisStatus status;
-  private VirtualFile file;
 
   @Before
   public void before() {
-    replaceProjectService(SonarLintSubmitter.class, submitter);
+    replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     status = AnalysisStatus.get(getProject());
-    file = myFixture.copyFileToProject("foo/foo.php", "foo/foo.php");
+    myFixture.copyFileToProject("foo/foo.php", "foo/foo.php");
   }
 
   @Test
@@ -79,7 +72,7 @@ public class SonarAnalyzeAllFilesActionTest extends AbstractSonarLintLightTests 
     TestDialogManager.setTestDialog(TestDialog.OK);
     action.actionPerformed(event);
 
-    verify(submitter).submitFiles(eq(Collections.singleton(file)), eq(TriggerType.ALL), any(AnalysisCallback.class), eq(false));
+    verify(analysisSubmitter).analyzeAllFiles();
   }
 
 }

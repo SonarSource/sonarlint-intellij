@@ -31,13 +31,13 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsListener;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
 import org.sonarlint.intellij.util.TaskProgressMonitor;
@@ -105,8 +105,7 @@ public class ConnectedModeStorageSynchronizer implements Disposable {
       log.log("There was an error while synchronizing quality profiles: " + e.getMessage(), ClientLogOutput.Level.WARN);
     }
 
-    var submitter = getService(myProject, SonarLintSubmitter.class);
-    submitter.submitOpenFilesAuto(TriggerType.BINDING_UPDATE);
+    getService(myProject, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE);
   }
 
   private void updateIssues(Module module, @Nullable String branchName) {

@@ -26,24 +26,17 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Collections;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-import static org.sonarlint.intellij.config.Settings.getGlobalSettings;
 
 public class EditorOpenTrigger implements FileEditorManagerListener, StartupActivity {
 
-
   @Override
   public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
-    if (!getGlobalSettings().isAutoTrigger()) {
-      return;
-    }
-    var submitter = getService(source.getProject(), SonarLintSubmitter.class);
-    submitter.submitFiles(Collections.singleton(file), TriggerType.EDITOR_OPEN, true);
+    getService(source.getProject(), AnalysisSubmitter.class).autoAnalyzeFile(file, TriggerType.EDITOR_OPEN);
   }
 
   @Override
@@ -61,12 +54,8 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
     if (!ApplicationManager.getApplication().isUnitTestMode()) {
       myProject.getMessageBus().connect(myProject).subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, this);
       // skip analyzing open files at startup when connected, it will be triggered after the sync
-      if (getGlobalSettings().isAutoTrigger() && !getService(myProject, ProjectBindingManager.class).isBindingValid()) {
-        var openFiles = FileEditorManager.getInstance(myProject).getOpenFiles();
-        if (openFiles.length > 0) {
-          var submitter = getService(myProject, SonarLintSubmitter.class);
-          submitter.submitFiles(List.of(openFiles), TriggerType.EDITOR_OPEN, true);
-        }
+      if (!getService(myProject, ProjectBindingManager.class).isBindingValid()) {
+        getService(myProject, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.EDITOR_OPEN);
       }
     }
   }

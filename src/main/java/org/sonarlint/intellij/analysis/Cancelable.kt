@@ -17,26 +17,8 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis;
+package org.sonarlint.intellij.analysis
 
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.List;
-import org.junit.Test;
-import org.sonarlint.intellij.trigger.TriggerType;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-
-public class AnalysisRequestTest {
-  @Test
-  public void testRoundTrip() {
-    var p = mock(Project.class);
-    var f = mock(VirtualFile.class);
-    var analysisRequest = new AnalysisRequest(p, List.of(f), TriggerType.COMPILATION, false, mock(AnalysisCallback.class));
-
-    assertThat(analysisRequest.files()).containsOnly(f);
-    assertThat(analysisRequest.trigger()).isEqualTo(TriggerType.COMPILATION);
-  }
-
+interface Cancelable {
+    fun cancel()
 }

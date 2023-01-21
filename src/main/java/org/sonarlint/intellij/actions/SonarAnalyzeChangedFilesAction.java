@@ -25,10 +25,9 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.trigger.SonarLintSubmitter;
-import org.sonarlint.intellij.trigger.TriggerType;
 
 public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
   public SonarAnalyzeChangedFilesAction() {
@@ -59,11 +58,6 @@ public class SonarAnalyzeChangedFilesAction extends AbstractSonarAction {
       return;
     }
 
-    var submitter = SonarLintUtils.getService(project, SonarLintSubmitter.class);
-    var changeListManager = ChangeListManager.getInstance(project);
-
-    var affectedFiles = changeListManager.getAffectedFiles();
-    var callback = new ShowAnalysisResultsCallable(project, affectedFiles, "SCM changed files");
-    submitter.submitFiles(affectedFiles, TriggerType.CHANGED_FILES, callback, false);
+    SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeVcsChangedFiles();
   }
 }
