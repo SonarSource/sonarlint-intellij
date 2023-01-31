@@ -32,11 +32,12 @@ import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.editor.EditorDecorator;
-import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
-import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
@@ -148,6 +149,17 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     if (content != null) {
       contentManager.setSelectedContent(content);
     }
+  }
+
+  public void updateHotspotsTab(AnalysisResult analysisResult) {
+    // TODO plug the UI
+    // the provided analysis result should merge with already displayed data
+    var console = SonarLintConsole.get(project);
+    console.info("Found hotspots:");
+    analysisResult.getSecurityHotspotsPerFile().forEach((file, hotspots) -> {
+      console.info("File: "+ file.getName());
+      hotspots.forEach(hotspot -> console.info("Hotspot: "+ hotspot.getMessage()));
+    });
   }
 
   private void showIssue(LiveIssue liveIssue, Consumer<CurrentFilePanel> selectTab) {

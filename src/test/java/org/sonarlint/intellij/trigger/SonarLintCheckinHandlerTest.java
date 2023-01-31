@@ -37,7 +37,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -68,7 +68,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
-      Set.of(file), TriggerType.CHECK_IN, Instant.now()));
+      Collections.emptyMap(), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var result = handler.beforeCheckin(null, null);
@@ -84,7 +84,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
-      Set.of(file), TriggerType.CHECK_IN, Instant.now()));
+      Collections.emptyMap(), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
@@ -109,7 +109,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
     when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
-      Set.of(file), TriggerType.CHECK_IN, Instant.now()));
+      Collections.emptyMap(), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();

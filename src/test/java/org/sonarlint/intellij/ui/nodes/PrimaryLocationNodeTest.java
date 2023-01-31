@@ -25,7 +25,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
-import org.sonarlint.intellij.issue.Flow;
+import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 import static org.mockito.Mockito.mock;

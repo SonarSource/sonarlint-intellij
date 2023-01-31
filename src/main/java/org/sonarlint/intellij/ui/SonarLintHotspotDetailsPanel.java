@@ -26,8 +26,8 @@ import javax.swing.BorderFactory;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
-import org.sonarlint.intellij.issue.hotspot.SecurityHotspotCategory;
+import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotCategory;
 
 import static java.awt.GridBagConstraints.HORIZONTAL;
 import static java.awt.GridBagConstraints.WEST;

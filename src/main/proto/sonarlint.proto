@@ -7,12 +7,12 @@ package sonarlint.intellij;
 option java_package = "org.sonarlint.intellij.proto";
 option optimize_for = SPEED;
 
-message Issues {
-    repeated Issue issue = 1;
+message Findings {
+    repeated Finding finding = 1;
 
-    message Issue {
+    message Finding {
         // used for matching
-        string serverIssueKey = 1;
+        string serverFindingKey = 1;
         string ruleKey = 2;
         int32 line = 3;
         string message = 4;
