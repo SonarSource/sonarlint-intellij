@@ -42,7 +42,7 @@ import javax.swing.tree.TreeModel;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.DisableRuleAction;
 import org.sonarlint.intellij.actions.ExcludeFileAction;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;
 

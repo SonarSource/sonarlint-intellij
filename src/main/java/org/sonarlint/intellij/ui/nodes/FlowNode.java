@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.openapi.wm.impl.welcomeScreen.BottomLineBorder;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
-import org.sonarlint.intellij.issue.Flow;
+import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class FlowNode extends AbstractNode {

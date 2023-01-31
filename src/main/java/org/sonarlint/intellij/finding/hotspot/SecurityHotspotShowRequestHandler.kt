@@ -1,0 +1,117 @@
+/*
+ * SonarLint for IntelliJ IDEA
+ * Copyright (C) 2015-2023 SonarSource
+ * sonarlint@sonarsource.com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+ */
+package org.sonarlint.intellij.finding.hotspot
+
+import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.project.Project
+import org.sonarlint.intellij.actions.RetryAction
+import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.ProjectBindingAssistant
+import org.sonarlint.intellij.core.SecurityHotspotMatcher
+import org.sonarlint.intellij.editor.EditorDecorator
+import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.telemetry.SonarLintTelemetry
+import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import org.sonarsource.sonarlint.core.serverapi.hotspot.GetSecurityHotspotRequestParams
+import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails
+import java.net.URL
+
+const val NOTIFICATION_TITLE = "Error opening security hotspot"
+
+const val FETCHING_HOTSPOT_ERROR_MESSAGE =
+  "Cannot fetch hotspot details. Server is unreachable or credentials are invalid."
+const val NOT_MATCHING_CODE_MESSAGE = "The local source code does not match the branch/revision analyzed by SonarQube"
+const val FILE_NOT_FOUND_MESSAGE = "Cannot find hotspot file in the project."
+
+open class SecurityHotspotShowRequestHandler(
+  private val projectBindingAssistant: ProjectBindingAssistant = ProjectBindingAssistant("Opening Security Hotspot..."),
+  private val telemetry: SonarLintTelemetry = getService(SonarLintTelemetry::class.java)
+) {
+
+  open fun open(projectKey: String, hotspotKey: String, serverUrl: String) {
+      try {
+          URL(serverUrl)
+      } catch (e: Exception) {
+          GlobalLogOutput.get().log("Invalid open hotspot request received, ignoring it", ClientLogOutput.Level.INFO)
+          return
+      }
+    telemetry.showHotspotRequestReceived()
+    doOpen(projectKey, hotspotKey, serverUrl)
+  }
+
+  private fun doOpen(projectKey: String, hotspotKey: String, serverUrl: String) {
+    val (project, connection) = projectBindingAssistant.bind(projectKey, serverUrl) ?: return
+
+    val balloonRetryAction = RetryAction { doOpen(projectKey, hotspotKey, serverUrl) }
+    val serverHotspot = fetchHotspot(connection, hotspotKey, projectKey) ?: run {
+      showBalloon(project, FETCHING_HOTSPOT_ERROR_MESSAGE, balloonRetryAction)
+      return
+    }
+    val localHotspot = SecurityHotspotMatcher(project).match(serverHotspot)
+    display(project, localHotspot, balloonRetryAction)
+  }
+
+  private fun fetchHotspot(connection: ServerConnection, hotspotKey: String, projectKey: String): ServerHotspotDetails? {
+    val params = GetSecurityHotspotRequestParams(hotspotKey, projectKey)
+    return connection.api().hotspot().fetch(params).orElse(null)
+  }
+
+  private fun display(project: Project, localHotspot: LocalHotspot, retryAction: RetryAction) {
+    val highlighter = getService(project, EditorDecorator::class.java)
+    getService(project, SonarLintToolWindow::class.java).show(localHotspot)
+    if (localHotspot.primaryLocation.file != null) {
+      openFile(project, localHotspot.primaryLocation)
+      highlighter.highlight(localHotspot)
+      if (localHotspot.primaryLocation.range == null) {
+        showBalloon(project, NOT_MATCHING_CODE_MESSAGE, retryAction)
+      }
+    } else {
+      showBalloon(project, FILE_NOT_FOUND_MESSAGE, retryAction)
+    }
+  }
+
+  open fun showBalloon(project: Project, message: String, action: AnAction) {
+    val notification = GROUP.createNotification(
+      NOTIFICATION_TITLE,
+      null,
+      message,
+      NotificationType.ERROR
+    )
+    notification.isImportant = true
+    notification.addAction(action)
+    notification.notify(project)
+  }
+
+  private fun openFile(project: Project, location: Location) {
+    OpenFileDescriptor(project, location.file!!, location.range?.startOffset ?: 0)
+      .navigate(true)
+  }
+
+  companion object {
+      val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint: Open in IDE")
+  }
+}

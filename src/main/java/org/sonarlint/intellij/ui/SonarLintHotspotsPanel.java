@@ -27,7 +27,7 @@ import com.intellij.ui.components.JBTabbedPane;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 

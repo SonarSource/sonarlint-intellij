@@ -20,8 +20,8 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.issue.Flow;
-import org.sonarlint.intellij.issue.Location;
+import org.sonarlint.intellij.finding.Flow;
+import org.sonarlint.intellij.finding.Location;
 
 public class FlowSecondaryLocationNode extends PrimaryLocationNode {
   private final Location secondaryLocation;

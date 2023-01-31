@@ -48,11 +48,14 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.Settings;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.IssueMatcher;
-import org.sonarlint.intellij.issue.LiveIssue;
-import org.sonarlint.intellij.issue.LiveIssueBuilder;
-import org.sonarlint.intellij.issue.tracking.Trackable;
+import org.sonarlint.intellij.finding.LiveFinding;
+import org.sonarlint.intellij.finding.RawIssueAdapter;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.finding.hotspot.ServerSecurityHotspotUpdater;
+import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.TextRangeMatcher;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.notifications.SecretsNotifications;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
@@ -63,6 +66,7 @@ import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.commons.Language;
+import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.progress.CanceledException;
 
 import static java.util.stream.Collectors.toList;
@@ -72,17 +76,17 @@ public class Analysis implements Cancelable {
   private final Project project;
   private final Collection<VirtualFile> files;
   private final TriggerType trigger;
-  private final boolean waitForServerIssues;
+  private final boolean waitForServerFindings;
   private final AnalysisCallback callback;
   private boolean finished = false;
   private boolean cancelled;
 
-  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerIssues,
+  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerFindings,
     AnalysisCallback callback) {
     this.project = project;
     this.files = files;
     this.trigger = trigger;
-    this.waitForServerIssues = waitForServerIssues;
+    this.waitForServerFindings = waitForServerFindings;
     this.callback = callback;
   }
 
@@ -130,10 +134,10 @@ public class Analysis implements Cancelable {
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));
 
-    var liveIssueBuilder = SonarLintUtils.getService(project, LiveIssueBuilder.class);
-    var manager = SonarLintUtils.getService(project, IssueManager.class);
+    var findingsManager = SonarLintUtils.getService(project, FindingsManager.class);
 
     var issuesPerFile = new ConcurrentHashMap<VirtualFile, Collection<LiveIssue>>();
+    var securityHotspotsPerFile = new ConcurrentHashMap<VirtualFile, Collection<LiveSecurityHotspot>>();
 
     var filesToClearIssues = new ArrayList<VirtualFile>();
     Map<Module, Collection<VirtualFile>> filesByModule;
@@ -141,13 +145,14 @@ public class Analysis implements Cancelable {
       filesByModule = filterAndGetByModule(files, isForced(), filesToClearIssues);
     } catch (InvalidBindingException e) {
       // nothing to do, SonarLintEngineManager already showed notification
-      return new AnalysisResult(Collections.emptyMap(), files, trigger, Instant.now());
+      return new AnalysisResult(Collections.emptyMap(), securityHotspotsPerFile, files, trigger, Instant.now());
     }
     var allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toList());
 
     // Cache everything that rely on issue store before clearing issues
-    var firstAnalyzedFiles = cacheFirstAnalyzedFiles(manager, allFilesToAnalyze);
-    var previousIssuesPerFile = collectPreviousIssuesPerFile(manager, allFilesToAnalyze);
+    var firstAnalyzedFiles = cacheFirstAnalyzedFiles(findingsManager, allFilesToAnalyze);
+    var previousIssuesPerFile = findingsManager.getPreviousIssuesByFile(allFilesToAnalyze);
+    var previousSecurityHotspotsPerFile = findingsManager.getPreviousSecurityHotspotsByFile(allFilesToAnalyze);
 
     var rawIssueCounter = new AtomicInteger();
 
@@ -157,19 +162,19 @@ public class Analysis implements Cancelable {
       ReadAction.run(() -> {
         var filesToClear = new HashSet<>(filesToClearIssues);
         filesToClear.addAll(allFilesToAnalyze);
-        manager.clearAllIssuesForFiles(filesToClear);
+        findingsManager.clearAllFindingsForFiles(filesToClear);
       });
 
       if (allFilesToAnalyze.isEmpty()) {
-        var analysisResult = new AnalysisResult(Collections.emptyMap(), files, trigger, Instant.now());
+        var analysisResult = new AnalysisResult(Collections.emptyMap(), Collections.emptyMap(), files, trigger, Instant.now());
         callback.onSuccess(analysisResult);
         return analysisResult;
       }
 
       var reportedRules = new HashSet<String>();
       var results = analyzePerModule(project, indicator, filesByModule,
-        rawIssue -> processRawIssue(liveIssueBuilder, manager, firstAnalyzedFiles, issuesPerFile,
-          previousIssuesPerFile, rawIssueCounter, rawIssue, reportedRules));
+        rawIssue -> processRawFinding(findingsManager, firstAnalyzedFiles, issuesPerFile, securityHotspotsPerFile,
+          previousIssuesPerFile, previousSecurityHotspotsPerFile, rawIssueCounter, rawIssue, reportedRules));
 
       var telemetry = SonarLintUtils.getService(SonarLintTelemetry.class);
       telemetry.addReportedRules(reportedRules);
@@ -186,11 +191,12 @@ public class Analysis implements Cancelable {
         logFoundIssuesIfAny(rawIssueCounter.get(), issuesPerFile);
       }
 
-      finalizeIssueStore(manager, previousIssuesPerFile, allFilesToAnalyze, failedVirtualFiles);
+      finalizeFindingsStore(findingsManager, previousIssuesPerFile, previousSecurityHotspotsPerFile, allFilesToAnalyze, failedVirtualFiles);
 
-      matchWithServerIssuesIfNeeded(indicator, filesByModule, issuesPerFile);
+      matchWithServerIssuesIfNeeded(indicator, filterFilesHavingFindingsByModule(filesByModule, issuesPerFile));
+      matchWithServerSecurityHotspotsIfNeeded(indicator, filterFilesHavingFindingsByModule(filesByModule, securityHotspotsPerFile));
 
-      var result = new AnalysisResult(issuesPerFile, files, trigger, Instant.now());
+      var result = new AnalysisResult(issuesPerFile, securityHotspotsPerFile, files, trigger, Instant.now());
       callback.onSuccess(result);
       return result;
     } catch (CanceledException | ProcessCanceledException e1) {
@@ -198,7 +204,7 @@ public class Analysis implements Cancelable {
     } catch (Throwable e) {
       handleError(e, indicator);
     }
-    return new AnalysisResult(Collections.emptyMap(), files, trigger, Instant.now());
+    return new AnalysisResult(Collections.emptyMap(), Collections.emptyMap(), files, trigger, Instant.now());
   }
 
   private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean forcedAnalysis,
@@ -219,8 +225,10 @@ public class Analysis implements Cancelable {
     console.debug("File '" + f.getName() + "' excluded: " + reason);
   }
 
-  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesByModule,
-    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile) {
+  @NotNull
+  private static <L extends LiveFinding> Map<Module, Collection<VirtualFile>> filterFilesHavingFindingsByModule(Map<Module,
+    Collection<VirtualFile>> filesByModule,
+    Map<VirtualFile, Collection<L>> issuesPerFile) {
     var filesWithIssuesPerModule = new LinkedHashMap<Module, Collection<VirtualFile>>();
 
     for (var entry : filesByModule.entrySet()) {
@@ -231,52 +239,65 @@ public class Analysis implements Cancelable {
         filesWithIssuesPerModule.put(entry.getKey(), moduleFilesWithIssues);
       }
     }
-    if (!filesWithIssuesPerModule.isEmpty()) {
+    return filesWithIssuesPerModule;
+  }
+
+  private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesHavingIssuesByModule) {
+    if (!filesHavingIssuesByModule.isEmpty()) {
       var serverIssueUpdater = SonarLintUtils.getService(project, ServerIssueUpdater.class);
       if (shouldUpdateServerIssues(trigger)) {
-        serverIssueUpdater.fetchAndMatchServerIssues(filesWithIssuesPerModule, indicator, waitForServerIssues);
+        serverIssueUpdater.fetchAndMatchServerIssues(filesHavingIssuesByModule, indicator, waitForServerFindings);
       } else {
-        serverIssueUpdater.matchServerIssues(filesWithIssuesPerModule);
+        serverIssueUpdater.matchServerIssues(filesHavingIssuesByModule);
       }
     }
   }
 
-  private void finalizeIssueStore(IssueManager manager, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile,
-    List<VirtualFile> allFilesToAnalyze,
+  private void matchWithServerSecurityHotspotsIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesHavingSecurityHotspotsByModule) {
+    if (!filesHavingSecurityHotspotsByModule.isEmpty()) {
+      var updater = SonarLintUtils.getService(project, ServerSecurityHotspotUpdater.class);
+      if (shouldUpdateServerIssues(trigger)) {
+        updater.fetchAndMatchServerSecurityHotspots(filesHavingSecurityHotspotsByModule, indicator, waitForServerFindings);
+      } else {
+        updater.matchServerSecurityHotspots(filesHavingSecurityHotspotsByModule);
+      }
+    }
+  }
+
+  private void finalizeFindingsStore(FindingsManager manager, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile,
+    Map<VirtualFile, Collection<Trackable>> previousSecurityHotspotsPerFile, List<VirtualFile> allFilesToAnalyze,
     Set<VirtualFile> failedVirtualFiles) {
     allFilesToAnalyze.forEach(vFile -> {
       if (failedVirtualFiles.contains(vFile)) {
         SonarLintConsole.get(project).debug("Analysis of file '" + vFile.getPath() + "' might not be accurate because there were errors" +
           " during analysis");
       } else {
-        // Remove previous issues that are unmatched, they are probably resolved
+        // Remove previous findings that are unmatched, they are probably resolved
         var nonMatchedPreviousIssues = previousIssuesPerFile.get(vFile)
           .stream()
           .filter(LiveIssue.class::isInstance)
           .map(LiveIssue.class::cast)
           .collect(toList());
-        // Even if there are no previous issues, call the method to mark the file as analyzed
-        manager.removeResolvedIssues(vFile, nonMatchedPreviousIssues);
+        var nonMatchedPreviousSecurityHotspots = previousSecurityHotspotsPerFile.get(vFile)
+          .stream()
+          .filter(LiveSecurityHotspot.class::isInstance)
+          .map(LiveSecurityHotspot.class::cast)
+          .collect(toList());
+        // Even if there are no previous findings, call the method to mark the file as analyzed
+        manager.removeResolvedFindings(vFile, nonMatchedPreviousIssues, nonMatchedPreviousSecurityHotspots);
       }
     });
   }
 
-  @NotNull
-  private static Map<VirtualFile, Collection<Trackable>> collectPreviousIssuesPerFile(IssueManager manager,
-    List<VirtualFile> allFilesToAnalyze) {
-    var previousIssuesPerFile = new HashMap<VirtualFile, Collection<Trackable>>();
-    allFilesToAnalyze.forEach(vFile -> previousIssuesPerFile.computeIfAbsent(vFile, f -> new ArrayList<>(manager.getPreviousIssues(f))));
-    return previousIssuesPerFile;
-  }
-
-  private static Map<VirtualFile, Boolean> cacheFirstAnalyzedFiles(IssueManager manager, List<VirtualFile> allFilesToAnalyze) {
+  private static Map<VirtualFile, Boolean> cacheFirstAnalyzedFiles(FindingsManager manager, List<VirtualFile> allFilesToAnalyze) {
     var firstAnalyzedFiles = new HashMap<VirtualFile, Boolean>();
-    allFilesToAnalyze.forEach(vFile -> firstAnalyzedFiles.computeIfAbsent(vFile, f -> !manager.wasAnalyzed(f)));
+    allFilesToAnalyze.forEach(vFile -> firstAnalyzedFiles.computeIfAbsent(vFile, f -> !manager.wasEverAnalyzed(f)));
     return firstAnalyzedFiles;
   }
 
-  private void processRawIssue(LiveIssueBuilder issueBuilder, IssueManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
-    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile,
+  private void processRawFinding(FindingsManager findingsManager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
+    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile, Map<VirtualFile,
+    Collection<Trackable>> previousIssuesPerFile, Map<VirtualFile, Collection<Trackable>> previousSecurityHotspotsPerFile,
     AtomicInteger rawIssueCounter, Issue rawIssue, Set<String> reportedRules) {
     rawIssueCounter.incrementAndGet();
 
@@ -291,10 +312,52 @@ public class Analysis implements Cancelable {
       // file is no longer valid (might have been deleted meanwhile) or there has been an error matching an issue in it
       return;
     }
-    LiveIssue liveIssue;
+    if (RuleType.SECURITY_HOTSPOT.equals(rawIssue.getType())) {
+      processSecurityHotspot(findingsManager, firstAnalyzedFiles, securityHotspotsPerFile, previousSecurityHotspotsPerFile, inputFile, rawIssue, reportedRules);
+    } else {
+      processIssue(findingsManager, firstAnalyzedFiles, issuesPerFile, previousIssuesPerFile, inputFile, rawIssue, reportedRules);
+    }
+  }
+
+  private void processSecurityHotspot(FindingsManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
+    Map<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile,
+    ClientInputFile inputFile, Issue rawIssue, Set<String> reportedRules) {
+    LiveSecurityHotspot liveSecurityHotspot;
+    VirtualFile vFile = inputFile.getClientObject();
     try {
-      liveIssue = issueBuilder.buildLiveIssue(rawIssue, inputFile);
-    } catch (IssueMatcher.NoMatchException e) {
+      liveSecurityHotspot = RawIssueAdapter.toLiveSecurityHotspot(project, rawIssue, inputFile);
+    } catch (TextRangeMatcher.NoMatchException e) {
+      // File content is likely to have changed during the analysis, should be fixed in next analysis
+      SonarLintConsole.get(project).debug("Failed to find location of security hotspot for file: '" + vFile.getName() + "'." + e.getMessage());
+      return;
+    } catch (ProcessCanceledException e) {
+      throw e;
+    } catch (Exception e) {
+      SonarLintConsole.get(project).error("Error finding location for security hotspot", e);
+      return;
+    }
+
+    if (firstAnalyzedFiles.get(vFile).booleanValue()) {
+      // don't set creation date, as we don't know when the issue was actually created (SLI-86)
+      securityHotspotsPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(liveSecurityHotspot);
+      manager.insertNewSecurityHotspot(vFile, liveSecurityHotspot);
+    } else {
+      var previousIssues = previousIssuesPerFile.get(vFile);
+      var locallyTrackedIssue = manager.trackSingleSecurityHotspot(vFile, previousIssues, liveSecurityHotspot);
+      securityHotspotsPerFile.computeIfAbsent(vFile, f -> new ArrayList<>()).add(locallyTrackedIssue);
+    }
+
+    reportedRules.add(liveSecurityHotspot.getRuleKey());
+  }
+
+  private void processIssue(FindingsManager manager, Map<VirtualFile, Boolean> firstAnalyzedFiles,
+    Map<VirtualFile, Collection<LiveIssue>> issuesPerFile, Map<VirtualFile, Collection<Trackable>> previousIssuesPerFile,
+    ClientInputFile inputFile, Issue rawIssue, Set<String> reportedRules) {
+    LiveIssue liveIssue;
+    VirtualFile vFile = inputFile.getClientObject();
+    try {
+      liveIssue = RawIssueAdapter.toLiveIssue(project, rawIssue, inputFile);
+    } catch (TextRangeMatcher.NoMatchException e) {
       // File content is likely to have changed during the analysis, should be fixed in next analysis
       SonarLintConsole.get(project).debug("Failed to find location of issue for file: '" + vFile.getName() + "'." + e.getMessage());
       return;

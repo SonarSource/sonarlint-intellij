@@ -30,7 +30,7 @@ import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.eq
-import org.sonarlint.intellij.issue.hotspot.SecurityHotspotShowRequestHandler
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotShowRequestHandler
 import org.sonarlint.intellij.messages.UserTokenListener
 
 class RequestProcessorTest : AbstractSonarLintLightTests() {

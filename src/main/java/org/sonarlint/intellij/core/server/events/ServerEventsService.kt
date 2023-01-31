@@ -27,7 +27,7 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
 import org.sonarlint.intellij.util.ProjectLogOutput
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput

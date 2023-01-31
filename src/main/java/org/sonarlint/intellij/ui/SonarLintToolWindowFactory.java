@@ -35,7 +35,6 @@ import javax.swing.JComponent;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
 import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildVulnerabilitiesTabName;
@@ -105,9 +104,8 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addCurrentFileTab(Project project, @NotNull ContentManager contentManager) {
-    var issueManager = getService(project, IssueManager.class);
     var currentFilePanel = new CurrentFilePanel(project);
-    var currentFileController = new CurrentFileController(project, issueManager, currentFilePanel);
+    var currentFileController = new CurrentFileController(project, currentFilePanel);
     var currentFileContent = contentManager.getFactory()
       .createContent(
         currentFilePanel,
