@@ -30,8 +30,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -42,14 +42,14 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
   private SonarClearIssuesAction clearIssues = new SonarClearIssuesAction(null, null, null);
   private VirtualFile file;
-  private IssueManager issueManager;
+  private FindingsManager findingsManager;
 
   @Before
   public void prepare() {
     when(event.getProject()).thenReturn(getProject());
     file = myFixture.copyFileToProject("foo.php", "foo.php");
-    issueManager = SonarLintUtils.getService(getProject(), IssueManager.class);
-    issueManager.insertNewIssue(file, mock(LiveIssue.class));
+    findingsManager = SonarLintUtils.getService(getProject(), FindingsManager.class);
+    findingsManager.insertNewIssue(file, mock(LiveIssue.class));
   }
 
   @Test
@@ -59,7 +59,7 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
     clearIssues.actionPerformed(event);
 
     // TODO test highlights are removed
-    assertThat(issueManager.getForFile(file)).isEmpty();
+    assertThat(findingsManager.getIssuesForFile(file)).isEmpty();
   }
 
   @Test
@@ -72,7 +72,7 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
     clearIssues.actionPerformed(event);
 
-    assertThat(issueManager.getForFile(file)).isEmpty();
+    assertThat(findingsManager.getIssuesForFile(file)).isEmpty();
   }
 
   @Test
@@ -81,6 +81,6 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
     clearIssues.actionPerformed(event);
 
-    assertThat(issueManager.getForFile(file)).isNotEmpty();
+    assertThat(findingsManager.getIssuesForFile(file)).isNotEmpty();
   }
 }

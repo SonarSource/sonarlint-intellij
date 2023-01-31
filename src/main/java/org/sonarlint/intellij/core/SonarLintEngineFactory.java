@@ -53,6 +53,7 @@ public class SonarLintEngineFactory {
     var configBuilder = isSonarCloud ? ConnectedGlobalConfiguration.sonarCloudBuilder() : ConnectedGlobalConfiguration.sonarQubeBuilder();
     configBuilder
       .addEnabledLanguages(EmbeddedPlugins.getEnabledLanguagesInConnectedMode().toArray(new Language[0]))
+      .enableHotspots()
       .setConnectionId(connectionId)
       .setModulesProvider(() -> modulesRegistry.getModulesForEngine(connectionId));
     configureCommonEngine(configBuilder);

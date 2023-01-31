@@ -28,7 +28,7 @@ import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.ProjectManager
 import io.netty.handler.codec.http.HttpMethod
 import io.netty.handler.codec.http.QueryStringDecoder
-import org.sonarlint.intellij.issue.hotspot.SecurityHotspotShowRequestHandler
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotShowRequestHandler
 import org.sonarlint.intellij.messages.UserTokenListener
 
 const val STATUS_ENDPOINT = "/sonarlint/api/status"

@@ -44,11 +44,11 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.EditorDecorator
-import org.sonarlint.intellij.issue.vulnerabilities.FoundTaintVulnerabilities
-import org.sonarlint.intellij.issue.vulnerabilities.InvalidBinding
-import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.issue.vulnerabilities.NoBinding
-import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus
+import org.sonarlint.intellij.finding.issue.vulnerabilities.FoundTaintVulnerabilities
+import org.sonarlint.intellij.finding.issue.vulnerabilities.InvalidBinding
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.finding.issue.vulnerabilities.NoBinding
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus
 import org.sonarlint.intellij.ui.SonarLintRulePanel
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.nodes.AbstractNode

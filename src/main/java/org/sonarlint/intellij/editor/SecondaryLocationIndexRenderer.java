@@ -32,7 +32,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import org.jetbrains.annotations.NotNull;
-import org.sonarlint.intellij.issue.Location;
+import org.sonarlint.intellij.finding.Location;
 
 @SuppressWarnings("UseJBColor")
 public class SecondaryLocationIndexRenderer implements EditorCustomElementRenderer {

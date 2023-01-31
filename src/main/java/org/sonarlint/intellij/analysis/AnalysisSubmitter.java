@@ -31,7 +31,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.actions.ShowReportCallable;
-import org.sonarlint.intellij.actions.ShowCurrentFileCallable;
+import org.sonarlint.intellij.actions.UpdateOnTheFlyFindingsAndShowCurrentFileCallable;
+import org.sonarlint.intellij.actions.UpdateOnTheFlyFindingsCallable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.tasks.TaskRunnerKt;
@@ -78,7 +79,8 @@ public class AnalysisSubmitter {
     if (!getGlobalSettings().isAutoTrigger()) {
       return null;
     }
-    return analyzeInBackground(files, triggerType, AnalysisCallback.NO_OP);
+    var callback = new UpdateOnTheFlyFindingsCallable(project);
+    return analyzeInBackground(files, triggerType, callback);
   }
 
   @CheckForNull
@@ -100,7 +102,7 @@ public class AnalysisSubmitter {
     AnalysisCallback callback;
 
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(actionEvent.getPlace())) {
-      callback = new ShowCurrentFileCallable(project);
+      callback = new UpdateOnTheFlyFindingsAndShowCurrentFileCallable(project);
     } else {
       callback = new ShowReportCallable(project);
     }

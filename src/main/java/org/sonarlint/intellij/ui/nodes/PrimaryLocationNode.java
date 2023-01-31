@@ -24,7 +24,7 @@ import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.util.ui.JBUI;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import org.sonarlint.intellij.issue.Flow;
+import org.sonarlint.intellij.finding.Flow;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class PrimaryLocationNode extends AbstractNode {

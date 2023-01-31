@@ -33,11 +33,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import org.sonarlint.intellij.config.SonarLintTextAttributes
-import org.sonarlint.intellij.issue.Flow
-import org.sonarlint.intellij.issue.LiveIssue
-import org.sonarlint.intellij.issue.Location
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot
-import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.finding.Flow
+import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.finding.hotspot.LocalHotspot
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import java.awt.Font
 import java.util.function.Consumer
 

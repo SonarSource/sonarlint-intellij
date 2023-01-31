@@ -21,9 +21,9 @@ package org.sonarlint.intellij.ui.nodes.taint.vulnerabilities
 
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.util.ui.JBUI
-import org.sonarlint.intellij.issue.Flow
-import org.sonarlint.intellij.issue.Location
-import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability
+import org.sonarlint.intellij.finding.Flow
+import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.nodes.AbstractNode
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer
 import java.util.Objects

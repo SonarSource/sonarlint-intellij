@@ -20,13 +20,15 @@
 package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.vfs.VirtualFile
-import org.sonarlint.intellij.issue.LiveIssue
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.trigger.TriggerType
 import java.time.Instant
 
 data class AnalysisResult(
     val issuesPerFile: Map<VirtualFile, Collection<LiveIssue>>,
-    val analyzedFiles: Collection<VirtualFile>,
+    val securityHotspotsPerFile: Map<VirtualFile, Collection<LiveSecurityHotspot>>,
+    val analyzedFiles: MutableCollection<out VirtualFile>,
     val triggerType: TriggerType,
     val analysisDate: Instant,
 )

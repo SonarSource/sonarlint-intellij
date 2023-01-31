@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
-import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
 

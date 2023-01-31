@@ -34,7 +34,7 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueManager;
+import org.sonarlint.intellij.finding.persistence.FindingsManager;
 
 public class SonarClearIssuesAction extends AnAction {
 
@@ -48,7 +48,7 @@ public class SonarClearIssuesAction extends AnAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      var issueManager = SonarLintUtils.getService(project, IssueManager.class);
+      var issueManager = SonarLintUtils.getService(project, FindingsManager.class);
       var codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
 
       ApplicationManager.getApplication().runReadAction(() -> {
