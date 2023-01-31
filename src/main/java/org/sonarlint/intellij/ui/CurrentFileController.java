@@ -39,19 +39,16 @@ public class CurrentFileController implements Disposable {
   private static final int DEFAULT_DELAY_MS = 300;
   private final Project project;
   private final IssueManager store;
-  private SonarLintIssuesPanel panel;
+  private final CurrentFilePanel currentFilePanel;
   private final AtomicLong refreshTimestamp = new AtomicLong(Long.MAX_VALUE);
   private final EventWatcher watcher;
-  private VirtualFile selectedFile = null;
+  private VirtualFile selectedFile;
 
-  public CurrentFileController(Project project, IssueManager store) {
+  public CurrentFileController(Project project, IssueManager store, CurrentFilePanel currentFilePanel) {
     this.project = project;
     this.store = store;
+    this.currentFilePanel = currentFilePanel;
     this.watcher = new EventWatcher();
-  }
-
-  public void setPanel(SonarLintIssuesPanel panel) {
-    this.panel = panel;
     initEventHandling();
     this.selectedFile = SonarLintUtils.getSelectedFile(project);
     update();
@@ -80,7 +77,7 @@ public class CurrentFileController implements Disposable {
 
     var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
-      newStatus -> ApplicationManager.getApplication().invokeLater(panel::refreshToolbar));
+      newStatus -> ApplicationManager.getApplication().invokeLater(currentFilePanel::refreshToolbar));
     busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
       @Override
       public void filesChanged(final Set<VirtualFile> changedFiles) {
@@ -146,9 +143,9 @@ public class CurrentFileController implements Disposable {
   private void update() {
     var emptyText = getEmptyText(selectedFile);
     if (selectedFile == null) {
-      panel.update(null, Collections.emptyList(), emptyText);
+      currentFilePanel.update(null, Collections.emptyList(), emptyText);
     } else {
-      panel.update(selectedFile, store.getForFile(selectedFile), emptyText);
+      currentFilePanel.update(selectedFile, store.getForFile(selectedFile), emptyText);
     }
   }
 }
