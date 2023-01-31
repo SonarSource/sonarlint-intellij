@@ -28,6 +28,7 @@ import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,7 +77,8 @@ public class Analysis implements Cancelable {
   private boolean finished = false;
   private boolean cancelled;
 
-  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerIssues, AnalysisCallback callback) {
+  public Analysis(Project project, Collection<VirtualFile> files, TriggerType trigger, boolean waitForServerIssues,
+    AnalysisCallback callback) {
     this.project = project;
     this.files = files;
     this.trigger = trigger;
@@ -84,14 +86,22 @@ public class Analysis implements Cancelable {
     this.callback = callback;
   }
 
+  public Collection<VirtualFile> getFiles() {
+    return files;
+  }
+
+  public TriggerType getTrigger() {
+    return trigger;
+  }
+
   public boolean isForced() {
     return trigger == TriggerType.ACTION;
   }
 
-  public void run(ProgressIndicator indicator) {
+  public AnalysisResult run(ProgressIndicator indicator) {
     try {
       notifyStart();
-      doRun(indicator);
+      return doRun(indicator);
     } finally {
       finished = true;
       if (!project.isDisposed()) {
@@ -115,7 +125,7 @@ public class Analysis implements Cancelable {
     project.getMessageBus().syncPublisher(AnalysisListener.TOPIC).started(files);
   }
 
-  private void doRun(ProgressIndicator indicator) {
+  private AnalysisResult doRun(ProgressIndicator indicator) {
     var console = SonarLintUtils.getService(project, SonarLintConsole.class);
     console.debug("Trigger: " + trigger);
     console.debug(String.format("[%s] %d file(s) submitted", trigger, files.size()));
@@ -131,7 +141,7 @@ public class Analysis implements Cancelable {
       filesByModule = filterAndGetByModule(files, isForced(), filesToClearIssues);
     } catch (InvalidBindingException e) {
       // nothing to do, SonarLintEngineManager already showed notification
-      return;
+      return new AnalysisResult(Collections.emptyMap(), files, trigger, Instant.now());
     }
     var allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toList());
 
@@ -151,8 +161,9 @@ public class Analysis implements Cancelable {
       });
 
       if (allFilesToAnalyze.isEmpty()) {
-        callback.onSuccess(Collections.emptySet());
-        return;
+        var analysisResult = new AnalysisResult(Collections.emptyMap(), files, trigger, Instant.now());
+        callback.onSuccess(analysisResult);
+        return analysisResult;
       }
 
       var reportedRules = new HashSet<String>();
@@ -179,12 +190,15 @@ public class Analysis implements Cancelable {
 
       matchWithServerIssuesIfNeeded(indicator, filesByModule, issuesPerFile);
 
-      callback.onSuccess(failedVirtualFiles);
+      var result = new AnalysisResult(issuesPerFile, files, trigger, Instant.now());
+      callback.onSuccess(result);
+      return result;
     } catch (CanceledException | ProcessCanceledException e1) {
       console.info("Analysis canceled");
     } catch (Throwable e) {
       handleError(e, indicator);
     }
+    return new AnalysisResult(Collections.emptyMap(), files, trigger, Instant.now());
   }
 
   private Map<Module, Collection<VirtualFile>> filterAndGetByModule(Collection<VirtualFile> files, boolean forcedAnalysis,

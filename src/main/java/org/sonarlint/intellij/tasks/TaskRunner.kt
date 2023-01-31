@@ -25,13 +25,14 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.project.Project
 import java.util.function.Consumer
 
-fun runModalTask(project: Project?, title: String, worker: Consumer<ProgressIndicator>) {
-    val task = object : Task.Modal(project, title, true) {
-        override fun run(indicator: ProgressIndicator) {
-            worker.accept(indicator)
+fun <T> runModalTaskWithResult(project: Project?, title: String, worker: (ProgressIndicator) -> T): T {
+    val task = object : Task.WithResult<T, RuntimeException>(project, title, true) {
+        override fun compute(indicator: ProgressIndicator): T {
+            return worker.invoke(indicator)
         }
     }
     task.queue()
+    return task.result
 }
 
 fun startBackgroundableModalTask(project: Project?, title: String, worker: Consumer<ProgressIndicator>): Task {
