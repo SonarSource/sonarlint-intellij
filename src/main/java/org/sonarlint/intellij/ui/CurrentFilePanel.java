@@ -31,7 +31,6 @@ import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
 import icons.SonarLintIcons;
-
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.util.Collection;
@@ -39,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.JPanel;
-
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.LiveIssue;
@@ -47,14 +45,12 @@ import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
-public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposable {
+public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ISSUES_SPLIT_PROPORTION";
   public static final String SONARLINT_TOOLWINDOW_ID = "SonarLint";
-  private final CurrentFileController scope;
 
-  public SonarLintIssuesPanel(Project project, CurrentFileController scope) {
+  public CurrentFilePanel(Project project) {
     super(project);
-    this.scope = scope;
 
     // Issues panel
     setToolbar(actions());
@@ -64,7 +60,6 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
 
     var splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
     super.setContent(splitter);
-    subscribeToEvents();
   }
 
   @Override
@@ -79,10 +74,6 @@ public class SonarLintIssuesPanel extends AbstractIssuesPanel implements Disposa
       ActionManager.getInstance().getAction("SonarLint.toolwindow.Configure"),
       SonarLintActions.getInstance().clearIssues()
     );
-  }
-
-  private void subscribeToEvents() {
-    scope.setPanel(this);
   }
 
   public void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {

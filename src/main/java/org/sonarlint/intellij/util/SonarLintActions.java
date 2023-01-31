@@ -27,7 +27,7 @@ import icons.SonarLintIcons;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
-import org.sonarlint.intellij.actions.SonarClearAnalysisResultsAction;
+import org.sonarlint.intellij.actions.ClearReportAction;
 import org.sonarlint.intellij.actions.SonarClearIssuesAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
@@ -38,7 +38,7 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
  */
 public class SonarLintActions {
 
-  private final AnAction clearResultsAction;
+  private final AnAction clearReportAction;
   private final AnAction clearIssuesAction;
   private final AnAction cleanConsoleAction;
   private final AnAction cancelAction;
@@ -63,7 +63,7 @@ public class SonarLintActions {
     cancelAction = actionManager.getAction("SonarLint.toolwindow.Cancel");
     configureAction = actionManager.getAction("SonarLint.toolwindow.Configure");
 
-    clearResultsAction = new SonarClearAnalysisResultsAction("Clear Project Files Issues",
+    clearReportAction = new ClearReportAction("Clear Project Files Issues",
       "Clear analysis results",
       SonarLintIcons.CLEAN);
     clearIssuesAction = new SonarClearIssuesAction("Clear SonarLint Issues",
@@ -88,8 +88,8 @@ public class SonarLintActions {
     return cancelAction;
   }
 
-  public AnAction clearResults() {
-    return clearResultsAction;
+  public AnAction clearReport() {
+    return clearReportAction;
   }
 
   public AnAction clearIssues() {

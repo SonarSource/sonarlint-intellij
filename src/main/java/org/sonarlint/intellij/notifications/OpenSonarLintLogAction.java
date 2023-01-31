@@ -52,7 +52,7 @@ class OpenSonarLintLogAction extends NotificationAction {
 
   private static void selectLogsTab(ToolWindow toolWindow) {
     var contentManager = toolWindow.getContentManager();
-    var content = contentManager.findContent(SonarLintToolWindowFactory.TAB_LOGS);
+    var content = contentManager.findContent(SonarLintToolWindowFactory.LOG_TAB_TITLE);
     if (content != null) {
       contentManager.setSelectedContent(content);
     }

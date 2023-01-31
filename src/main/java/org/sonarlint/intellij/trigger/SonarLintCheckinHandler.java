@@ -179,7 +179,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private void showChangedFilesTab() {
-    SonarLintUtils.getService(project, SonarLintToolWindow.class).openAnalysisResults();
+    SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab();
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent, UnnamedConfigurable {
