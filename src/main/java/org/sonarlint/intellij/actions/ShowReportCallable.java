@@ -20,31 +20,16 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.util.ui.UIUtil;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueManager;
 
 public class ShowReportCallable implements AnalysisCallback {
   private final Project project;
-  private final Collection<VirtualFile> affectedFiles;
-  private final String whatAnalyzed;
 
-  public ShowReportCallable(Project project, Collection<VirtualFile> affectedFiles) {
-    this(project, affectedFiles, whatAnalyzed(affectedFiles.size()));
-  }
-
-  public ShowReportCallable(Project project, Collection<VirtualFile> affectedFiles, String whatAnalyzed) {
+  public ShowReportCallable(Project project) {
     this.project = project;
-    this.affectedFiles = affectedFiles;
-    this.whatAnalyzed = whatAnalyzed;
   }
 
   @Override public void onError(Throwable e) {
@@ -52,23 +37,11 @@ public class ShowReportCallable implements AnalysisCallback {
   }
 
   @Override
-  public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
-    var issueManager = SonarLintUtils.getService(project, IssueManager.class);
-    var issuesPerFile = affectedFiles.stream()
-      .filter(f -> !failedVirtualFiles.contains(f))
-      .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
-    showReportTab(new AnalysisResult(issuesPerFile, whatAnalyzed, Instant.now()));
+  public void onSuccess(AnalysisResult analysisResult) {
+    showReportTab(analysisResult);
   }
 
   private void showReportTab(AnalysisResult analysisResult) {
     UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab(analysisResult));
-  }
-
-  private static String whatAnalyzed(int numFiles) {
-    if (numFiles == 1) {
-      return "1 file";
-    } else {
-      return numFiles + " files";
-    }
   }
 }
