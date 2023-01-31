@@ -34,6 +34,7 @@ import com.intellij.ui.NonFocusableCheckBox;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,10 +46,10 @@ import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.Language;
@@ -106,7 +107,6 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private ReturnResult processResult(Set<VirtualFile> affectedFiles) {
-    var issueStore = SonarLintUtils.getService(project, IssueStore.class);
     var issueManager = SonarLintUtils.getService(project, IssueManager.class);
 
     var issuesPerFile = affectedFiles.stream()
@@ -116,7 +116,6 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       .flatMap(e -> e.getValue().stream())
       .filter(Predicate.not(LiveIssue::isResolved))
       .count();
-    issueStore.set(issuesPerFile, "SCM changed files");
 
     var numBlockerIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
@@ -134,7 +133,12 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().startsWith(Language.SECRETS.getLanguageKey())).count();
     var msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
 
-    return showYesNoCancel(msg);
+    var choice = showYesNoCancel(msg);
+
+    if (choice == ReturnResult.CLOSE_WINDOW) {
+      showChangedFilesTab(new AnalysisResult(issuesPerFile, "SCM changed files", Instant.now()));
+    }
+    return choice;
   }
 
   private static String createMessage(long filesAnalyzed, long numIssues, long numBlockerIssues, long numSecretsIssues) {
@@ -169,7 +173,6 @@ public class SonarLintCheckinHandler extends CheckinHandler {
       UIUtil.getWarningIcon());
 
     if (answer == Messages.YES) {
-      showChangedFilesTab();
       return ReturnResult.CLOSE_WINDOW;
     } else if (answer == Messages.CANCEL) {
       return ReturnResult.CANCEL;
@@ -178,8 +181,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     }
   }
 
-  private void showChangedFilesTab() {
-    SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab();
+  private void showChangedFilesTab(AnalysisResult analysisResult) {
+    SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab(analysisResult);
   }
 
   private class MyRefreshableOnComponent implements RefreshableOnComponent, UnnamedConfigurable {

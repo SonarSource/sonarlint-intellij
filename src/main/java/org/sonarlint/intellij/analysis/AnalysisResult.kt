@@ -17,20 +17,10 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages;
+package org.sonarlint.intellij.analysis
 
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.Topic;
-import java.util.Collection;
-import java.util.Map;
-import org.sonarlint.intellij.issue.LiveIssue;
+import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.issue.LiveIssue
+import java.time.Instant
 
-@FunctionalInterface
-public interface AnalysisResultsListener {
-  Topic<AnalysisResultsListener> ANALYSIS_RESULTS_TOPIC = Topic.create("Analysis results", AnalysisResultsListener.class);
-
-  /**
-   * Called when the store of issues is modified. It is modified only as a result of a user action to analyze files.
-   */
-  void update(Map<VirtualFile, Collection<LiveIssue>> issues);
-}
+data class AnalysisResult(val issuesPerFile: Map<VirtualFile, Collection<LiveIssue>>, val whatAnalyzed: String, val analysisDate: Instant)

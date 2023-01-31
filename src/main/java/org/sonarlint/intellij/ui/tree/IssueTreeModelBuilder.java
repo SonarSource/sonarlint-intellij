@@ -23,6 +23,7 @@ import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,10 @@ public class IssueTreeModelBuilder {
 
   private SummaryNode getFilesParent() {
     return summary;
+  }
+
+  public void clear() {
+    updateModel(Collections.emptyMap(), "No analysis done");
   }
 
   public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map, String emptyText) {
