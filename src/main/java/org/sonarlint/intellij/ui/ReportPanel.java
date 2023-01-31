@@ -29,6 +29,7 @@ import java.awt.BorderLayout;
 import javax.swing.JPanel;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.messages.StatusListener;
+import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
@@ -68,16 +69,32 @@ public class ReportPanel extends AbstractIssuesPanel implements Disposable {
 
   private void subscribeToEvents() {
     var busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
+    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
+      newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
   }
 
   public void updateIssues(AnalysisResult analysisResult) {
     if (project.isDisposed()) {
       return;
     }
-    lastAnalysisPanel.update(analysisResult.getAnalysisDate(), analysisResult.getWhatAnalyzed());
+    lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     treeBuilder.updateModel(analysisResult.getIssuesPerFile(), "No issues found");
     expandTree();
+  }
+
+  private static String whatAnalyzed(AnalysisResult analysisResult) {
+    var trigger = analysisResult.getTriggerType();
+    if (TriggerType.ALL.equals(trigger)) {
+      return "all project files";
+    }
+    if (TriggerType.CHANGED_FILES.equals(trigger)) {
+      return "SCM changed files";
+    }
+    var filesCount = analysisResult.getAnalyzedFiles().size();
+    if (filesCount == 1) {
+      return "1 file";
+    }
+    return filesCount + " files";
   }
 
   public void clear() {

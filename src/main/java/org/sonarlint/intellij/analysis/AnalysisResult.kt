@@ -21,6 +21,12 @@ package org.sonarlint.intellij.analysis
 
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.issue.LiveIssue
+import org.sonarlint.intellij.trigger.TriggerType
 import java.time.Instant
 
-data class AnalysisResult(val issuesPerFile: Map<VirtualFile, Collection<LiveIssue>>, val whatAnalyzed: String, val analysisDate: Instant)
+data class AnalysisResult(
+    val issuesPerFile: Map<VirtualFile, Collection<LiveIssue>>,
+    val analyzedFiles: Collection<VirtualFile>,
+    val triggerType: TriggerType,
+    val analysisDate: Instant,
+)

@@ -28,7 +28,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.actions.ShowReportCallable;
@@ -53,14 +52,14 @@ public class AnalysisSubmitter {
 
   public void analyzeAllFiles() {
     var allFiles = getAllFiles(project);
-    var callback = new ShowReportCallable(project, allFiles, "all project files");
+    var callback = new ShowReportCallable(project);
     var analysis = new Analysis(project, allFiles, TriggerType.ALL, true, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
   public void analyzeVcsChangedFiles() {
     var changedFiles = ChangeListManager.getInstance(project).getAffectedFiles();
-    var callback = new ShowReportCallable(project, changedFiles, "SCM changed files");
+    var callback = new ShowReportCallable(project);
     var analysis = new Analysis(project, changedFiles, TriggerType.CHANGED_FILES, true, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
@@ -82,18 +81,19 @@ public class AnalysisSubmitter {
     return analyzeInBackground(files, triggerType, AnalysisCallback.NO_OP);
   }
 
-  public boolean analyzeFilesPreCommit(Collection<VirtualFile> files) {
+  @CheckForNull
+  public AnalysisResult analyzeFilesPreCommit(Collection<VirtualFile> files) {
     var console = SonarLintUtils.getService(project, SonarLintConsole.class);
     var trigger = TriggerType.CHECK_IN;
     console.debug("Trigger: " + trigger);
     if (shouldSkipAnalysis()) {
-      return true;
+      return null;
     }
 
     var callback = new ErrorAwareAnalysisCallback();
     var analysis = new Analysis(project, files, trigger, true, callback);
-    TaskRunnerKt.runModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
-    return callback.analysisSucceeded();
+    var result = TaskRunnerKt.runModalTaskWithResult(project, ANALYSIS_TASK_TITLE, analysis::run);
+    return callback.analysisSucceeded() ? result : null;
   }
 
   public void analyzeFilesOnUserAction(Collection<VirtualFile> files, AnActionEvent actionEvent) {
@@ -102,7 +102,7 @@ public class AnalysisSubmitter {
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(actionEvent.getPlace())) {
       callback = new ShowCurrentFileCallable(project);
     } else {
-      callback = new ShowReportCallable(project, files);
+      callback = new ShowReportCallable(project);
     }
 
     // do we really need to distinguish both cases ? Couldn't we always run in background ?
@@ -153,7 +153,7 @@ public class AnalysisSubmitter {
     private final AtomicBoolean errored = new AtomicBoolean(false);
 
     @Override
-    public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+    public void onSuccess(AnalysisResult analysisResult) {
       // do nothing
     }
 
