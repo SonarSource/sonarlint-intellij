@@ -22,8 +22,8 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import javax.swing.Icon;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueStore;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class ClearReportAction extends AnAction {
   public ClearReportAction(String text, String description, Icon icon) {
@@ -36,7 +36,6 @@ public class ClearReportAction extends AnAction {
       return;
     }
 
-    var store = SonarLintUtils.getService(project, IssueStore.class);
-    store.clear();
+    getService(project, SonarLintToolWindow.class).clearReportTab();
   }
 }

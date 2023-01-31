@@ -22,7 +22,6 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.issue.IssueStore;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -34,14 +33,14 @@ public class ClearReportActionTest extends AbstractSonarLintLightTests {
 
   @Test
   public void clear() {
-    var issueStore = mock(IssueStore.class);
-    replaceProjectService(IssueStore.class, issueStore);
+    var toolWindow = mock(SonarLintToolWindow.class);
+    replaceProjectService(SonarLintToolWindow.class, toolWindow);
 
     var event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(getProject());
     action.actionPerformed(event);
 
-    verify(issueStore).clear();
+    verify(toolWindow).clearReportTab();
   }
 
   @Test

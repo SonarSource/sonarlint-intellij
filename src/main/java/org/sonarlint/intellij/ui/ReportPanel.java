@@ -27,7 +27,7 @@ import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import javax.swing.JPanel;
-import org.sonarlint.intellij.messages.AnalysisResultsListener;
+import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 
@@ -37,12 +37,10 @@ public class ReportPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
-  private final AnalysisResults results;
 
   public ReportPanel(Project project) {
     super(project);
     this.lastAnalysisPanel = new LastAnalysisPanel();
-    this.results = new AnalysisResults(project);
 
     // Issues panel with tree
     var issuesPanel = new JPanel(new BorderLayout());
@@ -71,17 +69,23 @@ public class ReportPanel extends AbstractIssuesPanel implements Disposable {
   private void subscribeToEvents() {
     var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC, newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
-    busConnection.subscribe(AnalysisResultsListener.ANALYSIS_RESULTS_TOPIC, issues -> ApplicationManager.getApplication().invokeLater(this::updateIssues));
-
   }
 
-  public void updateIssues() {
+  public void updateIssues(AnalysisResult analysisResult) {
     if (project.isDisposed()) {
       return;
     }
-    lastAnalysisPanel.update(results.getLastAnalysisDate(), results.whatAnalyzed(), results.getLabelText());
-    treeBuilder.updateModel(results.issues(), results.getEmptyText());
+    lastAnalysisPanel.update(analysisResult.getAnalysisDate(), analysisResult.getWhatAnalyzed());
+    treeBuilder.updateModel(analysisResult.getIssuesPerFile(), "No issues found");
     expandTree();
+  }
+
+  public void clear() {
+    if (project.isDisposed()) {
+      return;
+    }
+    lastAnalysisPanel.clear();
+    treeBuilder.clear();
   }
 
   private void expandTree() {
