@@ -31,16 +31,16 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.IssueStore;
 
-public class ShowAnalysisResultsCallable implements AnalysisCallback {
+public class ShowReportCallable implements AnalysisCallback {
   private final Project project;
   private final Collection<VirtualFile> affectedFiles;
   private final String whatAnalyzed;
 
-  public ShowAnalysisResultsCallable(Project project, Collection<VirtualFile> affectedFiles) {
+  public ShowReportCallable(Project project, Collection<VirtualFile> affectedFiles) {
     this(project, affectedFiles, whatAnalyzed(affectedFiles.size()));
   }
 
-  public ShowAnalysisResultsCallable(Project project, Collection<VirtualFile> affectedFiles, String whatAnalyzed) {
+  public ShowReportCallable(Project project, Collection<VirtualFile> affectedFiles, String whatAnalyzed) {
     this.project = project;
     this.affectedFiles = affectedFiles;
     this.whatAnalyzed = whatAnalyzed;
@@ -58,12 +58,11 @@ public class ShowAnalysisResultsCallable implements AnalysisCallback {
       .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
     var issueStore = SonarLintUtils.getService(project, IssueStore.class);
     issueStore.set(map, whatAnalyzed);
-    showAnalysisResultsTab();
+    showReportTab();
   }
 
-  private void showAnalysisResultsTab() {
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class)
-      .openAnalysisResults());
+  private void showReportTab() {
+    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab());
   }
 
   private static String whatAnalyzed(int numFiles) {

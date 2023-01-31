@@ -31,7 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.actions.ShowAnalysisResultsCallable;
+import org.sonarlint.intellij.actions.ShowReportCallable;
 import org.sonarlint.intellij.actions.ShowCurrentFileCallable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
@@ -53,14 +53,14 @@ public class AnalysisSubmitter {
 
   public void analyzeAllFiles() {
     var allFiles = getAllFiles(project);
-    var callback = new ShowAnalysisResultsCallable(project, allFiles, "all project files");
+    var callback = new ShowReportCallable(project, allFiles, "all project files");
     var analysis = new Analysis(project, allFiles, TriggerType.ALL, true, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
 
   public void analyzeVcsChangedFiles() {
     var changedFiles = ChangeListManager.getInstance(project).getAffectedFiles();
-    var callback = new ShowAnalysisResultsCallable(project, changedFiles, "SCM changed files");
+    var callback = new ShowReportCallable(project, changedFiles, "SCM changed files");
     var analysis = new Analysis(project, changedFiles, TriggerType.CHANGED_FILES, true, callback);
     TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, analysis::run);
   }
@@ -102,7 +102,7 @@ public class AnalysisSubmitter {
     if (SonarLintToolWindowFactory.TOOL_WINDOW_ID.equals(actionEvent.getPlace())) {
       callback = new ShowCurrentFileCallable(project);
     } else {
-      callback = new ShowAnalysisResultsCallable(project, files);
+      callback = new ShowReportCallable(project, files);
     }
 
     // do we really need to distinguish both cases ? Couldn't we always run in background ?

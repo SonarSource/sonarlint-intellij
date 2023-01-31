@@ -28,8 +28,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class SonarClearAnalysisResultsActionTest extends AbstractSonarLintLightTests {
-  private SonarClearAnalysisResultsAction action = new SonarClearAnalysisResultsAction(null, null, null);
+public class ClearReportActionTest extends AbstractSonarLintLightTests {
+  private ClearReportAction action = new ClearReportAction(null, null, null);
 
 
   @Test

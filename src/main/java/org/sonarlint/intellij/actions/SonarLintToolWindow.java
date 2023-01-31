@@ -38,7 +38,7 @@ import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
-import org.sonarlint.intellij.ui.SonarLintIssuesPanel;
+import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
@@ -59,19 +59,19 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   /**
    * Must run in EDT
    */
-  public void openAnalysisResults() {
+  public void openReportTab() {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
-      toolWindow.show(() -> selectTab(toolWindow, SonarLintToolWindowFactory.TAB_ANALYSIS_RESULTS));
+      toolWindow.show(() -> selectTab(toolWindow, SonarLintToolWindowFactory.REPORT_TAB_TITLE));
     }
   }
 
   /**
    * Must run in EDT
    */
-  public void openCurrentFile() {
-    openTab(SonarLintToolWindowFactory.TAB_CURRENT_FILE);
+  public void openCurrentFileTab() {
+    openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
   }
 
   public void openTab(String name) {
@@ -115,9 +115,9 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   public static String buildVulnerabilitiesTabName(int count) {
     if (count == 0) {
-      return SonarLintToolWindowFactory.TAB_TAINT_VULNERABILITIES;
+      return SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE;
     }
-    return "<html><body>" + SonarLintToolWindowFactory.TAB_TAINT_VULNERABILITIES + "<font color=\"" + ColorUtil.toHtmlColor(UIUtil.getInactiveTextColor()) + "\"> " + count
+    return "<html><body>" + SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE + "<font color=\"" + ColorUtil.toHtmlColor(UIUtil.getInactiveTextColor()) + "\"> " + count
       + "</font></body></html>";
   }
 
@@ -135,22 +135,22 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     }
   }
 
-  private void showIssue(LiveIssue liveIssue, Consumer<SonarLintIssuesPanel> selectTab) {
-    openCurrentFile();
-    selectTab(getToolWindow(), SonarLintToolWindowFactory.TAB_CURRENT_FILE);
+  private void showIssue(LiveIssue liveIssue, Consumer<CurrentFilePanel> selectTab) {
+    openCurrentFileTab();
+    selectTab(getToolWindow(), SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
     var contentManager = getToolWindow().getContentManager();
-    var content = contentManager.findContent(SonarLintToolWindowFactory.TAB_CURRENT_FILE);
-    SonarLintIssuesPanel sonarLintIssuesPanel = (SonarLintIssuesPanel) content.getComponent();
-    sonarLintIssuesPanel.setSelectedIssue(liveIssue);
-    selectTab.accept(sonarLintIssuesPanel);
+    var content = contentManager.findContent(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
+    var currentFilePanel = (CurrentFilePanel) content.getComponent();
+    currentFilePanel.setSelectedIssue(liveIssue);
+    selectTab.accept(currentFilePanel);
   }
 
   public void showIssueDescription(LiveIssue liveIssue) {
-    showIssue(liveIssue, SonarLintIssuesPanel::selectRulesTab);
+    showIssue(liveIssue, CurrentFilePanel::selectRulesTab);
   }
 
   public void showIssueLocations(LiveIssue liveIssue) {
-    showIssue(liveIssue, SonarLintIssuesPanel::selectLocationsTab);
+    showIssue(liveIssue, CurrentFilePanel::selectLocationsTab);
   }
 
   public void show(LocalHotspot localHotspot) {
