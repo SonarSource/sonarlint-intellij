@@ -19,17 +19,15 @@
  */
 package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.Set;
-
 public interface AnalysisCallback {
-  void onSuccess(Set<VirtualFile> failedVirtualFiles);
+  void onSuccess(AnalysisResult analysisResult);
 
   void onError(Throwable e);
 
   AnalysisCallback NO_OP = new AnalysisCallback() {
+
     @Override
-    public void onSuccess(Set<VirtualFile> failedVirtualFiles) {
+    public void onSuccess(AnalysisResult analysisResult) {
       // Ignore
     }
 

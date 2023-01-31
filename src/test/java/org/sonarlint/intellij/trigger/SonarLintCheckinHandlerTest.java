@@ -24,8 +24,10 @@ import com.intellij.openapi.ui.TestDialogManager;
 import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
@@ -35,7 +37,6 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -51,17 +52,14 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
   private VirtualFile file = mock(VirtualFile.class);
   private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
   private SonarLintToolWindow toolWindow = mock(SonarLintToolWindow.class);
-  private IssueManager issueManager = mock(IssueManager.class);
   private CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
 
   @Before
   public void prepare() {
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
     replaceProjectService(SonarLintToolWindow.class, toolWindow);
-    replaceProjectService(IssueManager.class, issueManager);
 
     when(checkinProjectPanel.getVirtualFiles()).thenReturn(Collections.singleton(file));
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(true);
   }
 
   @Test
@@ -69,8 +67,8 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     future.complete(null);
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
-
-    when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
+      Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var result = handler.beforeCheckin(null, null);
@@ -85,8 +83,8 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     future.complete(null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
-
-    when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
+      Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
@@ -102,7 +100,6 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     verify(toolWindow).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getIssuesPerFile()).containsEntry(file, Set.of(issue));
-    assertThat(analysisResult.getWhatAnalyzed()).isEqualTo("SCM changed files");
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 
@@ -111,8 +108,8 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     future.complete(null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
-
-    when(issueManager.getForFile(file)).thenReturn(Collections.singleton(issue));
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
+      Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
@@ -130,7 +127,6 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     verify(toolWindow).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
     assertThat(analysisResult.getIssuesPerFile()).containsEntry(file, Set.of(issue));
-    assertThat(analysisResult.getWhatAnalyzed()).isEqualTo("SCM changed files");
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 }

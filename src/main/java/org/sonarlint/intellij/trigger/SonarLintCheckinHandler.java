@@ -29,16 +29,12 @@ import com.intellij.openapi.vcs.CheckinProjectPanel;
 import com.intellij.openapi.vcs.changes.CommitExecutor;
 import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vcs.ui.RefreshableOnComponent;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.NonFocusableCheckBox;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ui.UIUtil;
 import java.awt.BorderLayout;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.swing.JCheckBox;
@@ -49,7 +45,6 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueManager;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.Language;
@@ -86,11 +81,11 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var affectedFiles = new HashSet<>(checkinPanel.getVirtualFiles());
     // this will block EDT (modal)
     try {
-      var succeeded = SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
-      if (!succeeded) {
+      var result = SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeFilesPreCommit(affectedFiles);
+      if (result == null) {
         return ReturnResult.CANCEL;
       }
-      return processResult(affectedFiles);
+      return processResult(result);
     } catch (Exception e) {
       handleError(e, affectedFiles.size());
       return ReturnResult.CANCEL;
@@ -106,11 +101,8 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     Messages.showErrorDialog(project, msg, "Error Analysing Files");
   }
 
-  private ReturnResult processResult(Set<VirtualFile> affectedFiles) {
-    var issueManager = SonarLintUtils.getService(project, IssueManager.class);
-
-    var issuesPerFile = affectedFiles.stream()
-      .collect(Collectors.toMap(Function.identity(), issueManager::getForFile));
+  private ReturnResult processResult(AnalysisResult result) {
+    var issuesPerFile = result.getIssuesPerFile();
 
     var numIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())
@@ -136,7 +128,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var choice = showYesNoCancel(msg);
 
     if (choice == ReturnResult.CLOSE_WINDOW) {
-      showChangedFilesTab(new AnalysisResult(issuesPerFile, "SCM changed files", Instant.now()));
+      showChangedFilesTab(result);
     }
     return choice;
   }
