@@ -31,7 +31,7 @@ import javax.swing.JPanel;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
 import org.sonarlint.intellij.ui.nodes.HotspotNode;
 
 public class SonarLintHotspotsListPanel {

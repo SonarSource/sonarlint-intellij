@@ -47,8 +47,8 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
+import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -171,11 +171,11 @@ public class BindingStorageUpdateTask {
     });
     engine.sync(connection.getEndpointParams(), connection.getHttpClient(), allProjectKeysToSync, monitor);
     projectsToUpdate.forEach(project -> project.getMessageBus().syncPublisher(ServerBranchesListenerKt.getSERVER_BRANCHES_TOPIC()).serverBranchesUpdated());
-    updateAllProjectIssuesForCurrentBranch(engine, connection, monitor, projectsToUpdate);
+    updateAllProjectFindingsForCurrentBranch(engine, connection, monitor, projectsToUpdate);
     return failures;
   }
 
-  private static void updateAllProjectIssuesForCurrentBranch(ConnectedSonarLintEngine engine, ServerConnection connection, TaskProgressMonitor monitor,
+  private static void updateAllProjectFindingsForCurrentBranch(ConnectedSonarLintEngine engine, ServerConnection connection, TaskProgressMonitor monitor,
     Collection<Project> projectsToUpdate) {
     var allProjectAndBranchesToSync = new HashSet<ProjectBindingManager.ProjectKeyAndBranch>();
     for (Project project : projectsToUpdate) {
@@ -191,6 +191,7 @@ public class BindingStorageUpdateTask {
           return;
         }
         engine.downloadAllServerIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), branchName, monitor);
+        engine.downloadAllServerHotspots(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), branchName, monitor);
 
         if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
           engine.syncServerTaintIssues(connection.getEndpointParams(), connection.getHttpClient(), pb.getProjectKey(), branchName, monitor);
@@ -223,10 +224,10 @@ public class BindingStorageUpdateTask {
   private static void analyzeOpenFiles(Project project) {
     if (!project.isDisposed()) {
       var console = SonarLintConsole.get(project);
-      console.info("Clearing all issues because binding was updated");
+      console.info("Clearing all findings because binding was updated");
 
-      var store = getService(project, IssueManager.class);
-      store.clearAllIssuesForAllFiles();
+      var store = getService(project, FindingsManager.class);
+      store.clearAllFindingsForAllFiles();
 
       getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE);
     }

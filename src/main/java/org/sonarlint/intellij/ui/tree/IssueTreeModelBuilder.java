@@ -33,7 +33,7 @@ import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.IssueNode;

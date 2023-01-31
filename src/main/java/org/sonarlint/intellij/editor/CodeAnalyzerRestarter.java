@@ -33,9 +33,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.messages.IssueStoreListener;
+import org.sonarlint.intellij.messages.FindingStoreListener;
 
-public class CodeAnalyzerRestarter implements IssueStoreListener {
+public class CodeAnalyzerRestarter implements FindingStoreListener {
   private final MessageBus messageBus;
   private final Project myProject;
   private final DaemonCodeAnalyzer codeAnalyzer;
@@ -54,7 +54,7 @@ public class CodeAnalyzerRestarter implements IssueStoreListener {
 
   public void init() {
     var busConnection = messageBus.connect(myProject);
-    busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this);
+    busConnection.subscribe(FindingStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this);
   }
 
   public void refreshOpenFiles() {

@@ -30,7 +30,7 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.psi.PsiFile
 import com.intellij.psi.codeStyle.CodeStyleManager
 import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.issue.QuickFix
+import org.sonarlint.intellij.finding.QuickFix
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry
 
 class ApplyQuickFixIntentionAction(private val fix: QuickFix, private val ruleKey: String) : IntentionAction, PriorityAction, Iconable {

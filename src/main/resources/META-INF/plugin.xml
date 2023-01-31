@@ -228,17 +228,16 @@
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisSubmitter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.issue.persistence.IssuePersistence"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.issue.IssueManager"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.issue.LiveIssueBuilder"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.finding.persistence.FindingsManager"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisStatus"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.EditorChangeTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintAnalyzer"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.ServerIssueUpdater"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.finding.hotspot.ServerSecurityHotspotUpdater"/>
         <projectService serviceImplementation="org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesPresenter"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.LocalFileExclusions"/>
 
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>

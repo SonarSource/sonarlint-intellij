@@ -31,22 +31,22 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.messages.IssueStoreListener;
+import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.messages.FindingStoreListener;
 import org.sonarlint.intellij.messages.StatusListener;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class CurrentFileController implements Disposable {
   private static final int DEFAULT_DELAY_MS = 300;
   private final Project project;
-  private final IssueManager store;
   private final CurrentFilePanel currentFilePanel;
   private final AtomicLong refreshTimestamp = new AtomicLong(Long.MAX_VALUE);
   private final EventWatcher watcher;
   private VirtualFile selectedFile;
 
-  public CurrentFileController(Project project, IssueManager store, CurrentFilePanel currentFilePanel) {
+  public CurrentFileController(Project project, CurrentFilePanel currentFilePanel) {
     this.project = project;
-    this.store = store;
     this.currentFilePanel = currentFilePanel;
     this.watcher = new EventWatcher();
     initEventHandling();
@@ -57,7 +57,7 @@ public class CurrentFileController implements Disposable {
   private String getEmptyText(@Nullable VirtualFile selectedFile) {
     if (selectedFile == null) {
       return "No file opened in the editor";
-    } else if (store.getForFileOrNull(selectedFile) == null) {
+    } else if (getService(project, FindingsManager.class).neverAnalyzedSinceStartup(selectedFile)) {
       return "No analysis done on the current opened file";
     } else {
       return "No issues found in the current opened file";
@@ -78,7 +78,7 @@ public class CurrentFileController implements Disposable {
     var busConnection = project.getMessageBus().connect(project);
     busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
       newStatus -> ApplicationManager.getApplication().invokeLater(currentFilePanel::refreshToolbar));
-    busConnection.subscribe(IssueStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new IssueStoreListener() {
+    busConnection.subscribe(FindingStoreListener.SONARLINT_ISSUE_STORE_TOPIC, new FindingStoreListener() {
       @Override
       public void filesChanged(final Set<VirtualFile> changedFiles) {
         if (selectedFile != null && changedFiles.contains(selectedFile)) {
@@ -145,7 +145,7 @@ public class CurrentFileController implements Disposable {
     if (selectedFile == null) {
       currentFilePanel.update(null, Collections.emptyList(), emptyText);
     } else {
-      currentFilePanel.update(selectedFile, store.getForFile(selectedFile), emptyText);
+      currentFilePanel.update(selectedFile, getService(project, FindingsManager.class).getIssuesForFile(selectedFile), emptyText);
     }
   }
 }

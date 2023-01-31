@@ -32,14 +32,14 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.IssueContext;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.FindingContext;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 public class ShowLocationsIntentionAction implements IntentionAction, PriorityAction, Iconable {
   private final LiveIssue issue;
-  private final IssueContext context;
+  private final FindingContext context;
 
-  public ShowLocationsIntentionAction(LiveIssue issue, IssueContext context) {
+  public ShowLocationsIntentionAction(LiveIssue issue, FindingContext context) {
     this.issue = issue;
     this.context = context;
   }

@@ -25,7 +25,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataKey;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.trigger.TriggerType;
 
 import static org.sonarlint.intellij.config.Settings.getGlobalSettings;

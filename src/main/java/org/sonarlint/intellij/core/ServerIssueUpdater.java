@@ -20,14 +20,13 @@
 package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.progress.ProgressIndicator;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +40,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -49,10 +47,9 @@ import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.ServerIssueTrackable;
-import org.sonarlint.intellij.issue.tracking.Trackable;
-import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarlint.intellij.finding.issue.ServerIssueTrackable;
+import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverconnection.DownloadException;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
@@ -60,6 +57,9 @@ import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
+import static org.sonarlint.intellij.util.FutureUtils.waitForTask;
+import static org.sonarlint.intellij.util.FutureUtils.waitForTasks;
+import static org.sonarlint.intellij.util.ProjectUtils.getRelativePaths;
 
 public class ServerIssueUpdater implements Disposable {
 
@@ -136,32 +136,12 @@ public class ServerIssueUpdater implements Disposable {
 
       // submit tasks
       var updateTasks = fetchAndMatchServerIssues(filesPerModule, connection, engine, downloadAll);
-      Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(updateTasks));
+      Future<?> waitForTasksTask = executorService.submit(() -> waitForTasks(myProject, updateTasks, "ServerIssueUpdater"));
       if (waitForCompletion) {
-        try {
-          waitForTasksTask.get(1, TimeUnit.MINUTES);
-        } catch (TimeoutException ex) {
-          waitForTasksTask.cancel(true);
-          SonarLintConsole.get(myProject).error("Wait task expired", ex);
-        } catch (Exception ex) {
-          SonarLintConsole.get(myProject).error("Wait task failed", ex);
-        }
+        waitForTask(myProject, waitForTasksTask, "Wait", Duration.ofSeconds(60));
       }
     } catch (InvalidBindingException e) {
       // ignore, do nothing
-    }
-  }
-
-  private void waitForTasks(List<Future<?>> updateTasks) {
-    for (var f : updateTasks) {
-      try {
-        f.get(20, TimeUnit.SECONDS);
-      } catch (TimeoutException ex) {
-        f.cancel(true);
-        SonarLintConsole.get(myProject).error("ServerIssueUpdater task expired", ex);
-      } catch (Exception ex) {
-        SonarLintConsole.get(myProject).error("ServerIssueUpdater task failed", ex);
-      }
     }
   }
 
@@ -221,20 +201,6 @@ public class ServerIssueUpdater implements Disposable {
       futureList.add(submit(task, projectKey, e.getValue()));
     }
     return futureList;
-  }
-
-  private static Map<VirtualFile, String> getRelativePaths(Project project, Collection<VirtualFile> files) {
-    return ApplicationManager.getApplication().<Map<VirtualFile, String>>runReadAction(() -> {
-      Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
-
-      for (var file : files) {
-        var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file);
-        if (relativePath != null) {
-          relativePathPerFile.put(file, relativePath);
-        }
-      }
-      return relativePathPerFile;
-    });
   }
 
   private Future<?> submit(Runnable task, String projectKey, @Nullable String moduleRelativePath) {
@@ -301,8 +267,8 @@ public class ServerIssueUpdater implements Disposable {
           .collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
-          IssueManager issueManager = getService(myProject, IssueManager.class);
-          issueManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);
+          FindingsManager findingsManager = getService(myProject, FindingsManager.class);
+          findingsManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);
         }
       } catch (Throwable t) {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible

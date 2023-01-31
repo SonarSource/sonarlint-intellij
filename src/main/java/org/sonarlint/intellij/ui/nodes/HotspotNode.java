@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
 
 public class HotspotNode extends DefaultMutableTreeNode {
   private final LocalHotspot localHotspot;

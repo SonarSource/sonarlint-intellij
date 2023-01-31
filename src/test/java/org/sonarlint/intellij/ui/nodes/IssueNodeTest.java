@@ -22,7 +22,7 @@ package org.sonarlint.intellij.ui.nodes;
 import com.intellij.psi.PsiFile;
 import java.util.Collections;
 import org.junit.Test;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
