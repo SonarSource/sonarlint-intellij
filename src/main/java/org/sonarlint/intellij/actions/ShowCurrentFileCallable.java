@@ -43,6 +43,6 @@ public class ShowCurrentFileCallable implements AnalysisCallback {
   }
 
   private void showCurrentFileTab() {
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).openCurrentFile());
+    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).openCurrentFileTab());
   }
 }

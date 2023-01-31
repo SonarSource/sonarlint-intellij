@@ -178,7 +178,7 @@ open class BaseUiTest {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current file") { select() }
-                    content("SonarLintIssuesPanel") {
+                    content("CurrentFilePanel") {
                         expectedMessages.forEach { Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue() }
                     }
                 }
@@ -192,7 +192,7 @@ open class BaseUiTest {
                 toolWindow("SonarLint") {
                     ensureOpen()
                     tabTitleContains("Current file") { select() }
-                    content("SonarLintIssuesPanel") {
+                    content("CurrentFilePanel") {
                         findText(issueMessage).click()
                     }
                 }
@@ -205,7 +205,7 @@ open class BaseUiTest {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
-                    content("SonarLintIssuesPanel") {
+                    content("CurrentFilePanel") {
                         waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") { hasText(expectedMessage) }
                     }
                 }
