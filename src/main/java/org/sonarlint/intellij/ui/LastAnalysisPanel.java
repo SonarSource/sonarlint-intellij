@@ -33,6 +33,7 @@ import javax.swing.Timer;
 import org.sonarsource.sonarlint.core.client.api.util.DateUtils;
 
 public class LastAnalysisPanel {
+  private static final String NEVER_ANALYZED_EMPTY_TEXT = "Trigger an analysis to find issues in the project sources";
   private static final String NO_ANALYSIS = "NO_ANALYSIS";
   private static final String WITH_ANALYSIS = "WITH_ANALYSIS";
   @Nullable
@@ -54,26 +55,24 @@ public class LastAnalysisPanel {
     return panel;
   }
 
-  public void update(@Nullable Instant lastAnalysis, @Nullable String whatAnalyzed, String emptyText) {
-    this.lastAnalysis = lastAnalysis;
-    this.whatAnalyzed = whatAnalyzed;
-    setLabel(emptyText);
+  public void clear() {
+    this.lastAnalysis = null;
+    this.whatAnalyzed = null;
+    layout.show(panel, NO_ANALYSIS);
+    noAnalysisLabel.setText(NEVER_ANALYZED_EMPTY_TEXT);
+    panel.repaint();
   }
 
-  private void setLabel(String emptyText) {
-    if (lastAnalysis == null) {
-      layout.show(panel, NO_ANALYSIS);
-      noAnalysisLabel.setText(emptyText);
-    } else {
-      layout.show(panel, WITH_ANALYSIS);
-      setLastAnalysisLabel();
-    }
-
-    panel.repaint();
+  public void update(Instant lastAnalysis, String whatAnalyzed) {
+    this.lastAnalysis = lastAnalysis;
+    this.whatAnalyzed = whatAnalyzed;
+    layout.show(panel, WITH_ANALYSIS);
+    setLastAnalysisLabel();
   }
 
   private void setLastAnalysisLabel() {
     lastAnalysisLabel.setText("Analysis of " + whatAnalyzed + " done " + DateUtils.toAge(lastAnalysis.toEpochMilli()));
+    panel.repaint();
   }
 
   private void createComponents() {
@@ -109,7 +108,6 @@ public class LastAnalysisPanel {
     lastAnalysisTimeUpdater = new Timer(5000, e -> {
       if (lastAnalysis != null) {
         setLastAnalysisLabel();
-        panel.repaint();
       }
     });
     lastAnalysisTimeUpdater.start();

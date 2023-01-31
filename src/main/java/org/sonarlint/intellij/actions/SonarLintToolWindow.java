@@ -31,14 +31,16 @@ import com.intellij.util.ui.UIUtil;
 import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.issue.LiveIssue;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
 import org.sonarlint.intellij.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.issue.vulnerabilities.TaintVulnerabilitiesStatus;
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
-import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
+import org.sonarlint.intellij.ui.ReportPanel;
+import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
@@ -59,11 +61,24 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   /**
    * Must run in EDT
    */
-  public void openReportTab() {
+  public void openReportTab(AnalysisResult analysisResult) {
+    this.<ReportPanel>withTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.updateIssues(analysisResult));
+  }
+  public void clearReportTab() {
+    withTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);
+  }
+
+  private <T> void withTab(String displayName, Consumer<T> tabPanelConsumer) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
-      toolWindow.show(() -> selectTab(toolWindow, SonarLintToolWindowFactory.REPORT_TAB_TITLE));
+      toolWindow.show(() -> {
+        selectTab(toolWindow, displayName);
+        var contentManager = getToolWindow().getContentManager();
+        var content = contentManager.findContent(displayName);
+        var panel = (T) content.getComponent();
+        tabPanelConsumer.accept(panel);
+      });
     }
   }
 

@@ -26,21 +26,22 @@ import com.intellij.openapi.vcs.checkin.CheckinHandler;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
+import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.issue.IssueManager;
-import org.sonarlint.intellij.issue.IssueStore;
 import org.sonarlint.intellij.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
@@ -49,14 +50,14 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
 
   private VirtualFile file = mock(VirtualFile.class);
   private AnalysisSubmitter analysisSubmitter = mock(AnalysisSubmitter.class);
-  private IssueStore issueStore = mock(IssueStore.class);
+  private SonarLintToolWindow toolWindow = mock(SonarLintToolWindow.class);
   private IssueManager issueManager = mock(IssueManager.class);
   private CheckinProjectPanel checkinProjectPanel = mock(CheckinProjectPanel.class);
 
   @Before
   public void prepare() {
     replaceProjectService(AnalysisSubmitter.class, analysisSubmitter);
-    replaceProjectService(IssueStore.class, issueStore);
+    replaceProjectService(SonarLintToolWindow.class, toolWindow);
     replaceProjectService(IssueManager.class, issueManager);
 
     when(checkinProjectPanel.getVirtualFiles()).thenReturn(Collections.singleton(file));
@@ -75,8 +76,8 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     var result = handler.beforeCheckin(null, null);
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.COMMIT);
-    verify(issueStore).set(Map.of(file, Collections.singleton(issue)), "SCM changed files");
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
+    verifyNoInteractions(toolWindow);
   }
 
   @Test
@@ -97,7 +98,11 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
 
     assertThat(result).isEqualTo(CheckinHandler.ReturnResult.CLOSE_WINDOW);
     assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue");
-    verify(issueStore).set(anyMap(), eq("SCM changed files"));
+    ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
+    verify(toolWindow).openReportTab(analysisResultCaptor.capture());
+    var analysisResult = analysisResultCaptor.getValue();
+    assertThat(analysisResult.getIssuesPerFile()).containsEntry(file, Set.of(issue));
+    assertThat(analysisResult.getWhatAnalyzed()).isEqualTo("SCM changed files");
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 
@@ -121,7 +126,11 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     assertThat(messages).containsExactly("SonarLint analysis on 1 file found 1 issue\n" +
       "\n" +
       "SonarLint analysis found 1 secret. Committed secrets may lead to unauthorized system access.");
-    verify(issueStore).set(anyMap(), eq("SCM changed files"));
+    ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
+    verify(toolWindow).openReportTab(analysisResultCaptor.capture());
+    var analysisResult = analysisResultCaptor.getValue();
+    assertThat(analysisResult.getIssuesPerFile()).containsEntry(file, Set.of(issue));
+    assertThat(analysisResult.getWhatAnalyzed()).isEqualTo("SCM changed files");
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 }
