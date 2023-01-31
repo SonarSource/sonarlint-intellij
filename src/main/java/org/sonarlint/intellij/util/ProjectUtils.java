@@ -19,14 +19,20 @@
  */
 package org.sonarlint.intellij.util;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiManager;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import org.sonarlint.intellij.finding.TextRangeMatcher;
 
 public class ProjectUtils {
 
@@ -58,6 +64,29 @@ public class ProjectUtils {
       }
       // Continue iteration
       return true;
+    });
+  }
+
+  public static PsiFile toPsiFile(Project project, VirtualFile file) throws TextRangeMatcher.NoMatchException {
+    var psiManager = PsiManager.getInstance(project);
+    var psiFile = psiManager.findFile(file);
+    if (psiFile != null) {
+      return psiFile;
+    }
+    throw new TextRangeMatcher.NoMatchException("Couldn't find PSI file in module: " + file.getPath());
+  }
+
+  public static Map<VirtualFile, String> getRelativePaths(Project project, Collection<VirtualFile> files) {
+    return ApplicationManager.getApplication().<Map<VirtualFile, String>>runReadAction(() -> {
+      Map<VirtualFile, String> relativePathPerFile = new HashMap<>();
+
+      for (var file : files) {
+        var relativePath = SonarLintAppUtils.getRelativePathForAnalysis(project, file);
+        if (relativePath != null) {
+          relativePathPerFile.put(file, relativePath);
+        }
+      }
+      return relativePathPerFile;
     });
   }
 

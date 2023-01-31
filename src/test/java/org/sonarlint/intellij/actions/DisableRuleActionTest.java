@@ -24,7 +24,7 @@ import com.intellij.openapi.actionSystem.Presentation;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
-import org.sonarlint.intellij.issue.LiveIssue;
+import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;

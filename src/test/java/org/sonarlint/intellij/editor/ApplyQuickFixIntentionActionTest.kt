@@ -19,13 +19,12 @@
  */
 package org.sonarlint.intellij.editor
 
-import com.intellij.openapi.application.WriteAction
 import com.intellij.openapi.command.WriteCommandAction
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.issue.QuickFix
-import org.sonarlint.intellij.issue.RangeMarkerEdit
-import org.sonarlint.intellij.issue.VirtualFileEdit
+import org.sonarlint.intellij.finding.QuickFix
+import org.sonarlint.intellij.finding.RangeMarkerEdit
+import org.sonarlint.intellij.finding.VirtualFileEdit
 
 class ApplyQuickFixIntentionActionTest : AbstractSonarLintLightTests() {
     @Test

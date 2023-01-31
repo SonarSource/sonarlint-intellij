@@ -22,26 +22,23 @@ package org.sonarlint.intellij.core;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import org.sonarlint.intellij.issue.IssueMatcher;
-import org.sonarlint.intellij.issue.Location;
-import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarlint.intellij.finding.Location;
+import org.sonarlint.intellij.finding.TextRangeMatcher;
+import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
 import org.sonarsource.sonarlint.core.clientapi.client.hotspot.HotspotDetailsDto;
-import org.sonarsource.sonarlint.core.commons.TextRange;
-import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
-import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails;
 
-import static org.sonarlint.intellij.issue.LocationKt.fileOnlyLocation;
-import static org.sonarlint.intellij.issue.LocationKt.resolvedLocation;
-import static org.sonarlint.intellij.issue.LocationKt.unknownLocation;
+import static org.sonarlint.intellij.finding.LocationKt.fileOnlyLocation;
+import static org.sonarlint.intellij.finding.LocationKt.resolvedLocation;
+import static org.sonarlint.intellij.finding.LocationKt.unknownLocation;
 
 public class SecurityHotspotMatcher {
 
   private final Project project;
-  private final IssueMatcher issueMatcher;
+  private final TextRangeMatcher textRangeMatcher;
 
   public SecurityHotspotMatcher(Project project) {
     this.project = project;
-    issueMatcher = new IssueMatcher(project);
+    textRangeMatcher = new TextRangeMatcher(project);
   }
 
   public LocalHotspot match(HotspotDetailsDto serverHotspot) {
@@ -67,9 +64,9 @@ public class SecurityHotspotMatcher {
 
   private Location matchTextRange(VirtualFile matchedFile, HotspotDetailsDto.TextRangeDto textRange, String message) {
     try {
-      var rangeMarker = issueMatcher.match(matchedFile, textRange);
+      var rangeMarker = textRangeMatcher.match(matchedFile, textRange);
       return resolvedLocation(matchedFile, rangeMarker, message, null);
-    } catch (IssueMatcher.NoMatchException e) {
+    } catch (TextRangeMatcher.NoMatchException e) {
       return fileOnlyLocation(matchedFile, message);
     }
   }
