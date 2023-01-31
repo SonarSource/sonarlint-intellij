@@ -130,7 +130,7 @@ public class CurrentFileConnectedModePanel {
             var contentManager = ToolWindowManager.getInstance(project)
               .getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID)
               .getContentManager();
-            contentManager.setSelectedContent(contentManager.findContent(SonarLintToolWindowFactory.TAB_LOGS));
+            contentManager.setSelectedContent(contentManager.findContent(SonarLintToolWindowFactory.LOG_TAB_TITLE));
           }
         });
       IdeTooltipManager.getInstance().setCustomTooltip(this, errorTooltip);

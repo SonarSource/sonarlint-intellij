@@ -47,16 +47,16 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
  */
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TOOL_WINDOW_ID = "SonarLint";
-  public static final String TAB_LOGS = "Log";
-  public static final String TAB_CURRENT_FILE = "Current file";
-  public static final String TAB_ANALYSIS_RESULTS = "Report";
-  public static final String TAB_TAINT_VULNERABILITIES = "Taint vulnerabilities";
+  public static final String LOG_TAB_TITLE = "Log";
+  public static final String CURRENT_FILE_TAB_TITLE = "Current file";
+  public static final String REPORT_TAB_TITLE = "Report";
+  public static final String TAINT_VULNERABILITIES_TAB_TITLE = "Taint vulnerabilities";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
     var contentManager = toolWindow.getContentManager();
-    addIssuesTab(project, contentManager);
-    addAnalysisResultsTab(project, contentManager);
+    addCurrentFileTab(project, contentManager);
+    addReportTab(project, contentManager);
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       addTaintIssuesTab(project, contentManager);
     }
@@ -104,31 +104,31 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     return splitVertically;
   }
 
-  private static void addIssuesTab(Project project, @NotNull ContentManager contentManager) {
+  private static void addCurrentFileTab(Project project, @NotNull ContentManager contentManager) {
     var issueManager = getService(project, IssueManager.class);
-    var scope = new CurrentFileController(project, issueManager);
-    var issuesPanel = new SonarLintIssuesPanel(project, scope);
-    var issuesContent = contentManager.getFactory()
+    var currentFilePanel = new CurrentFilePanel(project);
+    var currentFileController = new CurrentFileController(project, issueManager, currentFilePanel);
+    var currentFileContent = contentManager.getFactory()
       .createContent(
-        issuesPanel,
-        TAB_CURRENT_FILE,
+        currentFilePanel,
+        CURRENT_FILE_TAB_TITLE,
         false);
-    Disposer.register(issuesContent, scope);
-    issuesContent.setCloseable(false);
-    contentManager.addDataProvider(issuesPanel);
-    contentManager.addContent(issuesContent);
+    Disposer.register(currentFileContent, currentFileController);
+    currentFileContent.setCloseable(false);
+    contentManager.addDataProvider(currentFilePanel);
+    contentManager.addContent(currentFileContent);
   }
 
-  private static void addAnalysisResultsTab(Project project, @NotNull ContentManager contentManager) {
-    var resultsPanel = new SonarLintAnalysisResultsPanel(project);
-    var analysisResultsContent = contentManager.getFactory()
+  private static void addReportTab(Project project, @NotNull ContentManager contentManager) {
+    var reportPanel = new ReportPanel(project);
+    var reportContent = contentManager.getFactory()
       .createContent(
-        resultsPanel,
-        TAB_ANALYSIS_RESULTS,
+        reportPanel,
+        REPORT_TAB_TITLE,
         false);
-    analysisResultsContent.setCloseable(false);
-    contentManager.addDataProvider(resultsPanel);
-    contentManager.addContent(analysisResultsContent);
+    reportContent.setCloseable(false);
+    contentManager.addDataProvider(reportPanel);
+    contentManager.addContent(reportContent);
   }
 
   private static void addTaintIssuesTab(Project project, @NotNull ContentManager contentManager) {
@@ -147,7 +147,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     var logContent = toolWindow.getContentManager().getFactory()
       .createContent(
         new SonarLintLogPanel(toolWindow, project),
-        TAB_LOGS,
+        LOG_TAB_TITLE,
         false);
     logContent.setCloseable(false);
     toolWindow.getContentManager().addContent(logContent);

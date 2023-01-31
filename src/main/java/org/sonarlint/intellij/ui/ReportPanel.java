@@ -33,13 +33,13 @@ import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
-public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implements Disposable {
+public class ReportPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
   private final AnalysisResults results;
 
-  public SonarLintAnalysisResultsPanel(Project project) {
+  public ReportPanel(Project project) {
     super(project);
     this.lastAnalysisPanel = new LastAnalysisPanel();
     this.results = new AnalysisResults(project);
@@ -64,7 +64,7 @@ public class SonarLintAnalysisResultsPanel extends AbstractIssuesPanel implement
     actionGroup.add(sonarLintActions.analyzeAllFiles());
     actionGroup.add(sonarLintActions.cancelAnalysis());
     actionGroup.add(sonarLintActions.configure());
-    actionGroup.add(sonarLintActions.clearResults());
+    actionGroup.add(sonarLintActions.clearReport());
     return actionGroup;
   }
 
