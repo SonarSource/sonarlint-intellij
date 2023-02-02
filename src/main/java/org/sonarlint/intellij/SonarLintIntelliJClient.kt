@@ -20,21 +20,40 @@
 package org.sonarlint.intellij
 
 import com.intellij.ide.BrowserUtil
+import com.intellij.ide.impl.ProjectUtil
+import com.intellij.notification.NotificationGroup
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.ApplicationInfo
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ApplicationNamesInfo
 import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.containers.orNull
+import org.apache.commons.lang.StringEscapeUtils
+import org.sonarlint.intellij.actions.SonarLintToolWindow
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
+import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.core.SecurityHotspotMatcher
+import org.sonarlint.intellij.editor.EditorDecorator
+import org.sonarlint.intellij.http.ApacheHttpClient.Companion.default
+import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
+import org.sonarlint.intellij.ui.ProjectSelectionDialog
 import org.sonarlint.intellij.util.GlobalLogOutput
+import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.clientapi.client.OpenUrlInBrowserParams
@@ -48,12 +67,17 @@ import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScope
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FoundFileDto
 import org.sonarsource.sonarlint.core.clientapi.client.host.GetHostInfoResponse
 import org.sonarsource.sonarlint.core.clientapi.client.hotspot.ShowHotspotParams
+import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
 import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
 import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
 
-class SonarLintIntelliJClient : SonarLintClient {
+object SonarLintIntelliJClient : SonarLintClient {
+
+    private val GROUP: NotificationGroup = NotificationGroupManager.getInstance().getNotificationGroup("SonarLint")
+
     override fun suggestBinding(params: SuggestBindingParams) {
         params.suggestions.forEach { (projectId, suggestions) -> suggestAutoBind(findProject(projectId), suggestions) }
     }
@@ -140,7 +164,7 @@ class SonarLintIntelliJClient : SonarLintClient {
         getGlobalSettings().getServerConnectionByName(connectionId).map { it.httpClient }.orNull()
 
     override fun getHttpClientNoAuth(forUrl: String): HttpClient? {
-        TODO("Not yet implemented")
+        return default
     }
 
     override fun openUrlInBrowser(params: OpenUrlInBrowserParams) {
@@ -148,23 +172,109 @@ class SonarLintIntelliJClient : SonarLintClient {
     }
 
     override fun showMessage(params: ShowMessageParams) {
-        TODO("Not yet implemented")
+        showBalloon(null, params.text, convert(params.type))
+    }
+
+    private fun convert(type: String?): NotificationType {
+        if (type == MessageType.ERROR.name) return NotificationType.ERROR
+        if (type == MessageType.WARNING.name) return NotificationType.WARNING
+        return NotificationType.INFORMATION
+    }
+
+    private fun showBalloon(project: Project?, message: String, type: NotificationType) {
+        val notification = GROUP.createNotification(
+            "SonarLint message",
+            message,
+            type
+        )
+        notification.isImportant = type != NotificationType.INFORMATION
+        notification.notify(project)
     }
 
     override fun getHostInfo(): CompletableFuture<GetHostInfoResponse> {
-        TODO("Not yet implemented")
+        var description = ApplicationInfo.getInstance().fullVersion
+        val edition = ApplicationNamesInfo.getInstance().editionName
+        if (edition != null) {
+            description += " ($edition)"
+        }
+        val openProjects = ProjectManager.getInstance().openProjects
+        if (openProjects.isNotEmpty()) {
+            description += " - " + openProjects.joinToString(", ") { it.name }
+        }
+        val hostInfoDto = GetHostInfoResponse(description)
+        return CompletableFuture.completedFuture(hostInfoDto)
     }
 
     override fun showHotspot(params: ShowHotspotParams) {
-        TODO("Not yet implemented")
+        val configurationScopeId = params.configurationScopeId
+        val project =
+            findProject(configurationScopeId) ?: throw IllegalStateException("Unable to find project with id '$configurationScopeId'")
+        ApplicationManager.getApplication().invokeLater {
+            val localHotspot = SecurityHotspotMatcher(project).match(params.hotspotDetails)
+            val highlighter = getService(project, EditorDecorator::class.java)
+            getService(project, SonarLintToolWindow::class.java).show(localHotspot)
+            if (localHotspot.primaryLocation.file != null) {
+                openFile(project, localHotspot.primaryLocation)
+                highlighter.highlight(localHotspot)
+            }
+        }
+    }
+
+    private fun openFile(project: Project, location: Location) {
+        OpenFileDescriptor(project, location.file!!, location.range?.startOffset ?: 0)
+            .navigate(true)
     }
 
     override fun assistCreatingConnection(params: AssistCreatingConnectionParams): CompletableFuture<AssistCreatingConnectionResponse> {
-        TODO("Not yet implemented")
+        return CompletableFuture.supplyAsync {
+            val serverUrl = params.serverUrl
+            val message = "No connections configured to '$serverUrl'."
+            if (!showConfirmModal("Opening Security Hotspot...", message, "Create connection", null)) {
+                throw CancellationException("Connection creation rejected by the user")
+            }
+            val newConnection = ApplicationManager.getApplication().computeInEDT {
+                ServerConnectionCreator().createThroughWizard(serverUrl)
+            } ?: throw CancellationException("Connection creation cancelled by the user")
+            AssistCreatingConnectionResponse(newConnection.name)
+        }
     }
 
     override fun assistBinding(params: AssistBindingParams): CompletableFuture<AssistBindingResponse> {
-        TODO("Not yet implemented")
+        return CompletableFuture.supplyAsync {
+            val connectionId = params.connectionId
+            val projectKey = params.projectKey
+            val connection = getGlobalSettings().getServerConnectionByName(connectionId)
+                .orElseThrow { IllegalStateException("Unable to find connection '$connectionId'") }
+            val message = "Cannot automatically find a project bound to:\n" +
+                "  • Project: $projectKey\n" +
+                "  • Connection: $connectionId\n" +
+                "Please manually select a project."
+            if (!showConfirmModal("Opening Security Hotspot...", message, "Select project", null)) {
+                throw CancellationException("Project selection rejected by the user")
+            }
+            val selectedProject = ApplicationManager.getApplication().computeInEDT {
+                ProjectSelectionDialog().selectProject()?.let {
+                    ProjectUtil.openOrImport(it, null, false)
+                }
+            } ?: throw CancellationException("Project selection cancelled by the user")
+            val confirmed = showConfirmModal(
+                "Opening Security Hotspot...",
+                "You are going to bind current project to '${connection.hostUrl}'. Do you agree?",
+                "Yes",
+                selectedProject
+            )
+            if (!confirmed) {
+                throw CancellationException("Project binding rejected by the user")
+            }
+            getService(selectedProject, ProjectBindingManager::class.java).bindTo(connection, projectKey, emptyMap())
+            AssistBindingResponse(BackendService.projectId(selectedProject))
+        }
+    }
+
+    private fun showConfirmModal(title: String, message: String, confirmText: String, project: Project?): Boolean {
+        return Messages.OK == ApplicationManager.getApplication().computeInEDT {
+            Messages.showYesNoDialog(project, StringEscapeUtils.escapeHtml(message), title, confirmText, "Cancel", Messages.getWarningIcon())
+        }
     }
 
 }

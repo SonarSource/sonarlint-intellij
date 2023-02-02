@@ -31,6 +31,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.psi.PsiWhiteSpace;
 import javax.annotation.Nullable;
+import org.sonarsource.sonarlint.core.clientapi.client.hotspot.HotspotDetailsDto;
 import org.sonarsource.sonarlint.core.commons.TextRangeWithHash;
 
 public class IssueMatcher {
@@ -59,6 +60,11 @@ public class IssueMatcher {
   }
 
   public RangeMarker match(VirtualFile file, org.sonarsource.sonarlint.core.commons.TextRange textRange) throws NoMatchException {
+    var psiFile = findFile(file);
+    return match(psiFile, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
+  }
+
+  public RangeMarker match(VirtualFile file, HotspotDetailsDto.TextRangeDto textRange) throws NoMatchException {
     var psiFile = findFile(file);
     return match(psiFile, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }

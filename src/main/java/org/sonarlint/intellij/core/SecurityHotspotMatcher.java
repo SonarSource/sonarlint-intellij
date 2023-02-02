@@ -25,6 +25,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import org.sonarlint.intellij.issue.IssueMatcher;
 import org.sonarlint.intellij.issue.Location;
 import org.sonarlint.intellij.issue.hotspot.LocalHotspot;
+import org.sonarsource.sonarlint.core.clientapi.client.hotspot.HotspotDetailsDto;
 import org.sonarsource.sonarlint.core.commons.TextRange;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails;
@@ -43,28 +44,28 @@ public class SecurityHotspotMatcher {
     issueMatcher = new IssueMatcher(project);
   }
 
-  public LocalHotspot match(ServerHotspotDetails serverHotspot) {
+  public LocalHotspot match(HotspotDetailsDto serverHotspot) {
     return new LocalHotspot(matchLocation(serverHotspot), serverHotspot);
   }
 
-  public Location matchLocation(ServerHotspotDetails serverHotspot) {
+  public Location matchLocation(HotspotDetailsDto serverHotspot) {
     for (var contentRoot : ProjectRootManager.getInstance(project).getContentRoots()) {
       if (contentRoot.isDirectory()) {
-        var matchedFile = contentRoot.findFileByRelativePath(serverHotspot.filePath);
+        var matchedFile = contentRoot.findFileByRelativePath(serverHotspot.getFilePath());
         if (matchedFile != null) {
-          return matchTextRange(matchedFile, serverHotspot.textRange, serverHotspot.message);
+          return matchTextRange(matchedFile, serverHotspot.getTextRange(), serverHotspot.getMessage());
         }
       } else {
         // On Rider, all source files are returned as individual content roots, so simply check for equality
-        if (contentRoot.getPath().endsWith(serverHotspot.filePath)) {
-          return matchTextRange(contentRoot, serverHotspot.textRange, serverHotspot.message);
+        if (contentRoot.getPath().endsWith(serverHotspot.getFilePath())) {
+          return matchTextRange(contentRoot, serverHotspot.getTextRange(), serverHotspot.getMessage());
         }
       }
     }
-    return unknownLocation(serverHotspot.message, serverHotspot.filePath);
+    return unknownLocation(serverHotspot.getMessage(), serverHotspot.getFilePath());
   }
 
-  private Location matchTextRange(VirtualFile matchedFile, TextRange textRange, String message) {
+  private Location matchTextRange(VirtualFile matchedFile, HotspotDetailsDto.TextRangeDto textRange, String message) {
     try {
       var rangeMarker = issueMatcher.match(matchedFile, textRange);
       return resolvedLocation(matchedFile, rangeMarker, message, null);

@@ -73,9 +73,9 @@ public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Dis
     hotspotDetailsTab.setVisible(true);
     hotspotsListPanel.setHotspot(hotspot);
     var hotspotRule = hotspot.getRule();
-    riskDescriptionPanel.setDescription(hotspotRule.riskDescription);
-    vulnerabilityDescriptionPanel.setDescription(hotspotRule.vulnerabilityDescription);
-    fixRecommendationsPanel.setDescription(hotspotRule.fixRecommendations);
+    riskDescriptionPanel.setDescription(hotspotRule.getRiskDescription());
+    vulnerabilityDescriptionPanel.setDescription(hotspotRule.getVulnerabilityDescription());
+    fixRecommendationsPanel.setDescription(hotspotRule.getFixRecommendations());
     detailsPanel.setDetails(hotspot);
   }
 

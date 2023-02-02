@@ -136,13 +136,6 @@ public class SonarLintTelemetryImpl implements SonarLintTelemetry, AppLifecycleL
   }
 
   @Override
-  public void showHotspotRequestReceived() {
-    if (enabled()) {
-      telemetry.showHotspotRequestReceived();
-    }
-  }
-
-  @Override
   public void taintVulnerabilitiesInvestigatedRemotely() {
     if (enabled()) {
       telemetry.taintVulnerabilitiesInvestigatedRemotely();
