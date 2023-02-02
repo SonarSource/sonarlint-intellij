@@ -22,15 +22,11 @@ package org.sonarlint.intellij.ui
 import com.intellij.ide.DataManager
 import com.intellij.ide.ProjectGroupActionGroup
 import com.intellij.ide.RecentProjectListActionProvider
-import com.intellij.ide.RecentProjectsManager
-import com.intellij.ide.RecentProjectsManagerBase
 import com.intellij.ide.ReopenProjectAction
-import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.ex.ActionUtil
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.FileUtil
@@ -75,20 +71,13 @@ import kotlin.math.min
 const val TITLE = "Pick Opened or Recent Project"
 val preferredScrollableViewportSize = JBUI.size(350, 250)
 
-open class SonarLintRecentProjectPanel(private val onProjectSelected: (Project) -> Unit) : JPanel(BorderLayout()) {
+open class SonarLintRecentProjectPanel(private val parent: ProjectSelectionDialog) : JPanel(BorderLayout()) {
 
     private val projectsList: JBList<AnAction>
 
-    private fun performSelectedAction(event: InputEvent, selection: AnAction): AnAction {
-        val actionEvent = AnActionEvent
-            .createFromInputEvent(event, ActionPlaces.POPUP, selection.templatePresentation,
-                DataManager.getInstance().getDataContext(projectsList), false, false)
-        ActionUtil.performActionDumbAwareWithCallbacks(selection, actionEvent, actionEvent.dataContext)
-
-        val recentProjectManager = RecentProjectsManager.getInstance() as RecentProjectsManagerBase
-        val openedProject = ProjectUtil.getOpenProjects().firstOrNull { recentProjectManager.getProjectPath(it) == (selection as ReopenProjectAction).projectPath }
-        openedProject?.let { onProjectSelected(it) }
-        return selection
+    private fun performSelectedAction(event: InputEvent, selection: AnAction){
+        val projectPath = (selection as ReopenProjectAction).projectPath
+        parent.setSelectedProject(projectPath)
     }
 
     private fun addMouseMotionListener() {
@@ -262,7 +251,7 @@ open class SonarLintRecentProjectPanel(private val onProjectSelected: (Project) 
         add(createTitle(), BorderLayout.NORTH)
     }
 
-    protected fun createTitle(): JPanel {
+    private fun createTitle(): JPanel {
         val title: JPanel = object : JPanel() {
             override fun getPreferredSize(): Dimension {
                 return Dimension(super.getPreferredSize().width, JBUI.scale(28))

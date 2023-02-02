@@ -19,13 +19,12 @@
  */
 package org.sonarlint.intellij.ui
 
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 
 open class ProjectSelectionDialog : DialogWrapper(true) {
-    var selectedProject: Project? = null
+    private var selectedProject: String? = null
 
-    open fun selectProject(): Project? {
+    open fun selectProject(): String? {
         init()
         title = "Select a project"
         show()
@@ -34,10 +33,15 @@ open class ProjectSelectionDialog : DialogWrapper(true) {
 
     override fun createActions() = arrayOf(cancelAction)
 
-    override fun createCenterPanel() = SelectProjectPanel(::onProjectSelected)
+    override fun createCenterPanel() = SelectProjectPanel(this)
 
-    private fun onProjectSelected(project: Project) {
+    fun setSelectedProject(project: String) {
         selectedProject = project
         close(OK_EXIT_CODE)
+    }
+
+    override fun doCancelAction() {
+        selectedProject = null
+        super.doCancelAction()
     }
 }

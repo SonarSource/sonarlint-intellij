@@ -61,7 +61,7 @@ class HotspotCellRenderer implements TreeCellRenderer {
     var panel = new JPanel(layout);
     var primaryLocation = hotspot.getPrimaryLocation();
 
-    var probabilityLabel = new JLabel(hotspot.getProbability().name());
+    var probabilityLabel = new JLabel(hotspot.getProbability());
     var border = BorderFactory.createEmptyBorder(0, HORIZONTAL_PADDING, 0, HORIZONTAL_PADDING);
     probabilityLabel.setBorder(border);
     probabilityLabel.setVerticalTextPosition(SwingConstants.TOP);
@@ -78,7 +78,7 @@ class HotspotCellRenderer implements TreeCellRenderer {
     var file = hotspot.getPrimaryLocation().getFile();
     var fileName = file == null ? hotspot.getFilePath() : file.getName();
     var lineNumber = hotspot.getLineNumber();
-    var lineLabel = new JLabel(fileName + (lineNumber != null ? (":" + lineNumber) : ""));
+    var lineLabel = new JLabel(fileName + ":" + lineNumber);
     lineLabel.setForeground(selected ? whiteForeground : JBColor.GRAY);
     panel.add(lineLabel);
     return panel;

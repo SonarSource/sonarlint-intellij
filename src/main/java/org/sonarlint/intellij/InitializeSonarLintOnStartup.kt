@@ -22,11 +22,9 @@ package org.sonarlint.intellij
 import com.intellij.ide.AppLifecycleListener
 import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.core.BackendService
-import org.sonarlint.intellij.server.SonarLintHttpServer
 
 class InitializeSonarLintOnStartup : AppLifecycleListener {
     override fun appFrameCreated(commandLineArgs: MutableList<String>) {
         SonarLintUtils.getService(BackendService::class.java).startOnce()
-        SonarLintUtils.getService(SonarLintHttpServer::class.java).startOnce()
     }
 }

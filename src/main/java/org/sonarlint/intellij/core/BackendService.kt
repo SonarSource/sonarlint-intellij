@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.core
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationInfo
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.module.Module
@@ -42,6 +43,8 @@ import org.sonarsource.sonarlint.core.SonarLintBackendImpl
 import org.sonarsource.sonarlint.core.clientapi.SonarLintBackend
 import org.sonarsource.sonarlint.core.clientapi.backend.HostInfoDto
 import org.sonarsource.sonarlint.core.clientapi.backend.InitializeParams
+import org.sonarsource.sonarlint.core.clientapi.backend.authentication.HelpGenerateUserTokenParams
+import org.sonarsource.sonarlint.core.clientapi.backend.authentication.HelpGenerateUserTokenResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.DidUpdateBindingParams
 import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.ConfigurationScopeDto
@@ -59,7 +62,7 @@ import java.nio.file.Paths
 import java.util.concurrent.CompletableFuture
 
 class BackendService @NonInjectable constructor(private val backend: SonarLintBackend) : Disposable {
-    constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient()))
+    constructor() : this(SonarLintBackendImpl(SonarLintIntelliJClient))
 
     private var initialized = false
 
@@ -79,7 +82,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             serverConnections.filter { !it.isSonarCloud }.map { toSonarQubeBackendConnection(it) }
         backend.initialize(
             InitializeParams(
-                HostInfoDto("FIXME"),
+                HostInfoDto(ApplicationInfo.getInstance().versionName),
                 TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
                 getLocalStoragePath(),
                 EmbeddedPlugins.findEmbeddedPlugins(),
@@ -90,7 +93,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 sonarQubeConnections,
                 sonarCloudConnections,
                 null,
-                false
+                true
             )
         )
         ApplicationManager.getApplication().messageBus.connect()
@@ -259,6 +262,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetActiveRuleDetailsResponse> {
         return backend.activeRulesService.getActiveRuleDetails(GetActiveRuleDetailsParams(moduleId(module), ruleKey, contextKey))
+    }
+
+    fun helpGenerateUserToken(serverUrl: String, isSonarCloud: Boolean): CompletableFuture<HelpGenerateUserTokenResponse> {
+        return backend.authenticationHelperService.helpGenerateUserToken(HelpGenerateUserTokenParams(serverUrl, isSonarCloud))
     }
 
     companion object {

@@ -27,14 +27,17 @@ import org.sonarlint.intellij.config.global.ServerConnection
 import org.sonarsource.sonarlint.core.clientapi.backend.config.binding.BindingSuggestionDto
 import org.sonarsource.sonarlint.core.clientapi.client.SuggestBindingParams
 import org.sonarsource.sonarlint.core.clientapi.client.fs.FindFileByNamesInScopeParams
+import org.sonarsource.sonarlint.core.clientapi.client.message.MessageType
+import org.sonarsource.sonarlint.core.clientapi.client.message.ShowMessageParams
 
 internal class SonarLintIntelliJClientTest : AbstractSonarLintLightTests() {
-    val client = SonarLintIntelliJClient()
+    lateinit var client: SonarLintIntelliJClient
 
     @Before
     fun prepare() {
         // also important as this starts the notification manager service
         clearNotifications()
+        client = SonarLintIntelliJClient
     }
 
     @Test
@@ -205,5 +208,22 @@ internal class SonarLintIntelliJClientTest : AbstractSonarLintLightTests() {
         )
 
         assertThat(projectNotifications).isEmpty()
+    }
+
+    @Test
+    fun it_should_returns_host_info() {
+        assertThat(client.hostInfo.get().description).isEqualTo("2021.3 (Community Edition) - " + project.name)
+    }
+
+    @Test
+    fun it_should_show_message_as_notification() {
+        client.showMessage(ShowMessageParams(MessageType.WARNING, "Some message"))
+
+        assertThat(projectNotifications).extracting("title", "content").containsExactly(
+            tuple(
+                "SonarLint message",
+                "Some message"
+            )
+        )
     }
 }
