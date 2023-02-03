@@ -69,8 +69,9 @@ stages:
     jobs:
     - job: test_windows
       displayName: Run unit tests on Windows
-      pool:
-        vmImage: 'windows-latest'
+      # FIXME tests on Windows are disabled because there is not enough disk space on Azure hosted agents
+      # pool:
+      #  vmImage: 'windows-latest'
       variables:
         GRADLE_USER_HOME: $(Pipeline.Workspace)/.gradle
       steps:
@@ -160,12 +161,8 @@ stages:
       displayName: Run ITs
       strategy:
         matrix:
-          Idea2020:
-            IDEA_VERSION: 'IC-2020.3.4'
-          CLion2020:
-            IDEA_VERSION: 'CL-2020.3.4'
           Idea2021:
-            IDEA_VERSION: 'IC-2021.3.2'
+            IDEA_VERSION: 'IC-2021.3.3'
           CLion2021:
             IDEA_VERSION: 'CL-2021.3.3'
       steps:
@@ -231,7 +228,7 @@ stages:
           tasks: :its:check
           publishJUnitResults: true
           testRunTitle: 'Run ITs on $(IDEA_VERSION)'
-          jdkVersionOption: '1.11'
+          jdkVersionOption: '17'
         env:
           CI: true # needed for gradle-intellij-plugin to skip downloading sources
           ARTIFACTORY_API_KEY: $(ARTIFACTORY_API_KEY)
