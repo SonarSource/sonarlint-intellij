@@ -160,14 +160,14 @@ stages:
       displayName: Run ITs
       strategy:
         matrix:
-          Idea2020:
-            IDEA_VERSION: 'IC-2020.3.4'
-          CLion2020:
-            IDEA_VERSION: 'CL-2020.3.4'
           Idea2021:
-            IDEA_VERSION: 'IC-2021.3.2'
+            IDEA_VERSION: 'IC-2021.3.3'
           CLion2021:
             IDEA_VERSION: 'CL-2021.3.3'
+          Idea2022:
+            IDEA_VERSION: 'IC-2022.3.2'
+          CLion2022:
+            IDEA_VERSION: 'CL-2022.3.2'
       steps:
       - checkout: self
         fetchDepth: 1

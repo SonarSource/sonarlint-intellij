@@ -69,7 +69,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerExecutable)
         + ",\"properties\":{\"prop1\":\"val1\",\"prop2\":\"\\\"val2\\\"\",\"propn\":\"valn\"}"
         + ",\"cmd\":["
-        + quote(compilerExecutable) + ",\"/test.cpp\",\"a1\",\"a2\"]}" +
+        + quote(compilerExecutable) + ",\"" + virtualFile.getCanonicalPath() + "\",\"a1\",\"a2\"]}" +
         "]}",
       json);
   }
@@ -131,7 +131,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerExecutable)
         + ",\"properties\":{\"isHeaderFile\":\"false\"}"
         + ",\"cmd\":["
-        + quote(compilerExecutable) + ",\"/test.cpp\",\"a1\",\"a2\"]}"
+        + quote(compilerExecutable) + ",\"" + virtualFile.getCanonicalPath() + "\",\"a1\",\"a2\"]}"
         + ","
         + "{\"compiler\":\"clang\",\"cwd\":"
         + quote(compilerWorkingDir2)
@@ -139,7 +139,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerExecutable2)
         + ",\"properties\":{\"prop1\":\"val1\",\"prop2\":\"\\\"val2\\\"\",\"propn\":\"valn\"}"
         + ",\"cmd\":["
-        + quote(compilerExecutable2) + ",\"/test2.cpp\",\"b1\",\"b2\"]}"
+        + quote(compilerExecutable2) + ",\"" + virtualFile2.getCanonicalPath() + "\",\"b1\",\"b2\"]}"
         + ","
         + "{\"compiler\":\"clang\",\"cwd\":"
         + quote(compilerWorkingDir3)
@@ -147,7 +147,7 @@ class BuildWrapperJsonGeneratorTest {
         + quote(compilerExecutable3)
         + ",\"properties\":{}"
         + ",\"cmd\":["
-        + quote(compilerExecutable3) + ",\"/test3.h\",\"c1\",\"c2\"]}"
+        + quote(compilerExecutable3) + ",\"" + virtualFile3.getCanonicalPath() + "\",\"c1\",\"c2\"]}"
         + "]}",
       json);
   }

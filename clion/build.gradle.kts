@@ -9,11 +9,16 @@ intellij {
 dependencies {
     implementation(project(":common"))
     implementation("org.sonarsource.sonarlint.core:sonarlint-core:$sonarlintCoreVersion")
-    testImplementation(platform("org.junit:junit-bom:5.7.1"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.mockito:mockito-core:3.10.0")
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    // Needed for https://github.com/gradle/gradle/issues/22333
+    testRuntimeOnly(libs.junit.launcher)
+    testImplementation(libs.mockito.core)
 }
 
 tasks.test {
     useJUnitPlatform()
+    testLogging {
+        events("passed", "skipped", "failed")
+    }
 }

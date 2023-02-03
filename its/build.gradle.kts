@@ -6,17 +6,21 @@ plugins {
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
+val javaTargetVersion: Int by project
+
+val javaTarget = if (project.hasProperty("javaTargetVersion")) javaTargetVersion else 11
+
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(11))
+        languageVersion.set(JavaLanguageVersion.of(javaTarget))
     }
 }
 
 val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileKotlin.kotlinOptions.jvmTarget = "11"
+compileKotlin.kotlinOptions.jvmTarget = javaTarget.toString()
 
 val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileTestKotlin.kotlinOptions.jvmTarget = "11"
+compileTestKotlin.kotlinOptions.jvmTarget = javaTarget.toString()
 
 repositories {
     maven("https://repox.jfrog.io/repox/sonarsource")
@@ -34,10 +38,11 @@ dependencies {
     testImplementation("org.sonarsource.sonarqube:sonar-ws:8.5.1.38104")
     testImplementation("com.intellij.remoterobot:remote-robot:$remoteRobotVersion")
     testImplementation("com.intellij.remoterobot:remote-fixtures:$remoteRobotVersion")
-    testImplementation(platform("org.junit:junit-bom:5.9.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    testImplementation("org.assertj:assertj-core:3.23.1")
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
+    // Needed for https://github.com/gradle/gradle/issues/22333
+    testRuntimeOnly(libs.junit.launcher)
+    testImplementation(libs.assertj.core)
 }
 
 tasks.test {

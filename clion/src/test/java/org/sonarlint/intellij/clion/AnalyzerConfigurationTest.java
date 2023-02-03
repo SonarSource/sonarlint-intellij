@@ -19,6 +19,7 @@
  */
 package org.sonarlint.intellij.clion;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.jetbrains.cidr.lang.CLanguageKind;
 import com.jetbrains.cidr.lang.CUDALanguageKind;
@@ -68,9 +69,10 @@ class AnalyzerConfigurationTest {
     }
 
     @Override
-    public @NotNull OCCompiler getCompilerInstance(@NotNull File file, @NotNull File file1, @NotNull CidrToolEnvironment cidrToolEnvironment, @NotNull TempFilesPool tempFilesPool) {
+    public @NotNull OCCompiler getCompilerInstance(@NotNull Project project, @NotNull File file, @NotNull File file1, @NotNull CidrToolEnvironment cidrToolEnvironment, @NotNull TempFilesPool tempFilesPool) {
       return null;
     }
+
   };
 
   @Test
