@@ -6,21 +6,17 @@ plugins {
 group = "org.sonarsource.sonarlint.intellij.its"
 description = "ITs for SonarLint IntelliJ"
 
-val javaTargetVersion: Int by project
-
-val javaTarget = if (project.hasProperty("javaTargetVersion")) javaTargetVersion else 11
-
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(javaTarget))
+        languageVersion.set(JavaLanguageVersion.of(17))
     }
 }
 
 val compileKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileKotlin.kotlinOptions.jvmTarget = javaTarget.toString()
+compileKotlin.kotlinOptions.jvmTarget = "17"
 
 val compileTestKotlin: org.jetbrains.kotlin.gradle.tasks.KotlinCompile by tasks
-compileTestKotlin.kotlinOptions.jvmTarget = javaTarget.toString()
+compileTestKotlin.kotlinOptions.jvmTarget = "17"
 
 repositories {
     maven("https://repox.jfrog.io/repox/sonarsource")
