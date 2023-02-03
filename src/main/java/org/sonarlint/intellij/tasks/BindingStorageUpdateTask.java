@@ -49,6 +49,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.finding.persistence.FindingsManager;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter;
 import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarlint.intellij.util.GlobalLogOutput;
@@ -201,6 +202,7 @@ public class BindingStorageUpdateTask {
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       projectsToUpdate.forEach(project -> getService(project, TaintVulnerabilitiesPresenter.class).refreshTaintVulnerabilitiesForOpenFiles());
     }
+    projectsToUpdate.forEach(project -> getService(project, SecurityHotspotsPresenter.class).refreshSecurityHotspotsForOpenFiles());
   }
 
   private Collection<Project> collectProjectsToUpdate(ServerConnection connection) {

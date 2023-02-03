@@ -20,67 +20,61 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
-import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.ui.components.JBTabbedPane;
-import javax.swing.JComponent;
-import javax.swing.JScrollPane;
-import javax.swing.ScrollPaneConstants;
-import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
+import com.intellij.tools.SimpleActionGroup;
+import java.util.Collection;
+import java.util.List;
+import javax.swing.Box;
+import org.sonarlint.intellij.actions.SecurityHotspotsAction;
+import org.sonarlint.intellij.actions.SonarLintDetectedSHAction;
+import org.sonarlint.intellij.actions.SonarQubeDetectedSHAction;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SonarLintHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
-  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_HOTSPOTS_SPLIT_PROPORTION";
-  private static final float DEFAULT_SPLIT_PROPORTION = 0.5f;
+    private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_HOTSPOTS_SPLIT_PROPORTION";
 
-  private final JBTabbedPane hotspotDetailsTab;
-  private final SonarLintHotspotsListPanel hotspotsListPanel;
-  private final SonarLintHotspotDescriptionPanel riskDescriptionPanel;
-  private final SonarLintHotspotDescriptionPanel vulnerabilityDescriptionPanel;
-  private final SonarLintHotspotDescriptionPanel fixRecommendationsPanel;
-  private final SonarLintHotspotDetailsPanel detailsPanel;
+    private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
+    private static final float DEFAULT_SPLIT_PROPORTION = 0.5f;
 
-  public SonarLintHotspotsPanel(Project project) {
-    super(false, true);
+    private final SonarLintHotspotsListPanel hotspotsListPanel;
 
-    hotspotsListPanel = new SonarLintHotspotsListPanel(project);
-    detailsPanel = new SonarLintHotspotDetailsPanel();
-    riskDescriptionPanel = new SonarLintHotspotDescriptionPanel();
-    vulnerabilityDescriptionPanel = new SonarLintHotspotDescriptionPanel();
-    fixRecommendationsPanel = new SonarLintHotspotDescriptionPanel();
+    public SonarLintHotspotsPanel(Project project) {
+        super(false, true);
+        hotspotsListPanel = new SonarLintHotspotsListPanel(project);
+        super.setContent(createSplitter(project, this, this, hotspotsListPanel.getPanel(),
+                hotspotsListPanel.getSonarLintRulePanel(), SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION));
+        setupToolbar(List.of(new SonarLintDetectedSHAction(), new SonarQubeDetectedSHAction(),
+                new SecurityHotspotsAction()));
+    }
 
-    hotspotDetailsTab = new JBTabbedPane();
-    hotspotDetailsTab.addTab("What's the risk?", null, scrollable(riskDescriptionPanel.getPanel()), "Risk description");
-    hotspotDetailsTab.addTab("Are you at risk?", null, scrollable(vulnerabilityDescriptionPanel.getPanel()), "Vulnerability description");
-    hotspotDetailsTab.addTab("How can you fix it?", null, scrollable(fixRecommendationsPanel.getPanel()), "Recommendations");
-    hotspotDetailsTab.addTab("Details", null, scrollable(detailsPanel.getPanel()), "Details about the hotspot");
-    hotspotDetailsTab.setVisible(false);
+    public void setLiveHotspots(Collection<LiveSecurityHotspot> hotspots) {
+        hotspotsListPanel.loadHotspots(hotspots);
+    }
 
-    super.setContent(createSplitter(project, this, this, hotspotsListPanel.getPanel(), hotspotDetailsTab, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION));
-  }
+    @Override
+    public void dispose() {
+        // Nothing to do
+    }
 
-  private static JScrollPane scrollable(JComponent component) {
-    var scrollableRulePanel = ScrollPaneFactory.createScrollPane(component, true);
-    scrollableRulePanel.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-    scrollableRulePanel.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-    scrollableRulePanel.getVerticalScrollBar().setUnitIncrement(10);
-    return scrollableRulePanel;
-  }
+    public void populate(SecurityHotspotsStatus status) {
+        hotspotsListPanel.populate(status);
+    }
 
-  public void setHotspot(LocalHotspot hotspot) {
-    hotspotDetailsTab.setVisible(true);
-    hotspotsListPanel.setHotspot(hotspot);
-    var hotspotRule = hotspot.getRule();
-    riskDescriptionPanel.setDescription(hotspotRule.getRiskDescription());
-    vulnerabilityDescriptionPanel.setDescription(hotspotRule.getVulnerabilityDescription());
-    fixRecommendationsPanel.setDescription(hotspotRule.getFixRecommendations());
-    detailsPanel.setDetails(hotspot);
-  }
+    private void setupToolbar(List<AnAction> actions) {
+        var group = new SimpleActionGroup();
+        actions.forEach(group::add);
+        var toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_GROUP_ID, group, false);
+        toolbar.setTargetComponent(hotspotsListPanel.getPanel());
+        var horizontalBox = Box.createHorizontalBox();
+        horizontalBox.add(toolbar.getComponent());
+        setToolbar(horizontalBox);
+        toolbar.getComponent().setVisible(true);
+    }
 
-  @Override
-  public void dispose() {
-    // Nothing to do
-  }
 }
