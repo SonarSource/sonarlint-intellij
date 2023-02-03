@@ -19,27 +19,33 @@
  */
 package org.sonarlint.intellij.ui;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
-import java.awt.BorderLayout;
-import javax.swing.JComponent;
-import javax.swing.JEditorPane;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.SwingConstants;
-import javax.swing.text.html.HTMLEditorKit;
 
-public class SonarLintHotspotDescriptionPanel {
+import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.text.html.HTMLEditorKit;
+import java.awt.*;
+
+import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
+
+public class SonarLintHotspotDescriptionPanel implements Disposable {
   private static final int BORDER = 10;
 
   private final JPanel panel;
   private final HTMLEditorKit kit;
   private JEditorPane editor;
+  private JPanel headerPanel;
 
-  public SonarLintHotspotDescriptionPanel() {
+  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_HOTSPOTS_SPLIT_PROPORTION";
+  private static final float DEFAULT_SPLIT_PROPORTION = 0.5f;
+
+  public SonarLintHotspotDescriptionPanel(Project project)  {
     this.kit = new HTMLEditorKit();
     var styleSheet = kit.getStyleSheet();
     styleSheet.addRule("td {align:center;}");
@@ -47,9 +53,12 @@ public class SonarLintHotspotDescriptionPanel {
     styleSheet.addRule("pre {padding: 10px;}");
 
     panel = new JPanel(new BorderLayout());
+    headerPanel = new JPanel(new BorderLayout());
 
     var titleComp = new JLabel("Select a hotspot to see more details", SwingConstants.CENTER);
     panel.add(titleComp, BorderLayout.CENTER);
+    panel.add(headerPanel, BorderLayout.NORTH);
+    panel.add(createSplitter(project, panel, this, headerPanel, editor, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION));
   }
 
   public void setDescription(String description) {
@@ -66,8 +75,12 @@ public class SonarLintHotspotDescriptionPanel {
     }
 
     SwingHelper.setHtml(editor, text, UIUtil.getLabelForeground());
-    editor.setCaretPosition(0);
+    setHeader();
     panel.revalidate();
+  }
+
+  private void setHeader() {
+    headerPanel.add(new JLabel("text"));
   }
 
   private JEditorPane createEditor() {
@@ -77,6 +90,7 @@ public class SonarLintHotspotDescriptionPanel {
     newEditor.setEditable(false);
     newEditor.setContentType(UIUtil.HTML_MIME);
     newEditor.addHyperlinkListener(new BrowserHyperlinkListener());
+    newEditor.setOpaque(false);
     return newEditor;
   }
 
@@ -84,4 +98,8 @@ public class SonarLintHotspotDescriptionPanel {
     return panel;
   }
 
+  @Override
+  public void dispose() {
+
+  }
 }

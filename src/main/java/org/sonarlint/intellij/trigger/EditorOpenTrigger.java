@@ -27,6 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.NotNull;
+import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 
@@ -42,11 +43,13 @@ public class EditorOpenTrigger implements FileEditorManagerListener, StartupActi
   @Override
   public void fileClosed(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
     // nothing to do
+    getService(source.getProject(), SonarLintToolWindow.class).updateAnalysisResultForClosedFile(file);
   }
 
   @Override
   public void selectionChanged(@NotNull FileEditorManagerEvent event) {
     // nothing to do
+
   }
 
   @Override

@@ -17,20 +17,32 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes;
+package org.sonarlint.intellij.ui
 
-import javax.swing.tree.DefaultMutableTreeNode;
-import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
+import javax.swing.BoxLayout
+import javax.swing.JComponent
+import javax.swing.JPanel
 
-public class HotspotNode extends DefaultMutableTreeNode {
-  private final LocalHotspot localHotspot;
+class CardPanel {
+    val container = JPanel()
+    private var subPanels = mutableMapOf<String, JComponent>()
 
-  public HotspotNode(LocalHotspot localHotspot) {
-    this.localHotspot = localHotspot;
-    setUserObject(localHotspot);
-  }
+    init {
+        container.layout = BoxLayout(container, BoxLayout.PAGE_AXIS)
+    }
 
-  public LocalHotspot getHotspot() {
-    return localHotspot;
-  }
+    fun add(panel: JComponent, id: String) {
+        panel.isVisible = subPanels.isEmpty()
+        panel.alignmentX = 0.5f
+        panel.alignmentY = 0.5f
+        container.add(panel)
+        subPanels[id] = panel
+    }
+
+    fun show(id: String) {
+        subPanels.values.forEach { it.isVisible = false }
+        subPanels[id]!!.isVisible = true
+    }
+
+
 }

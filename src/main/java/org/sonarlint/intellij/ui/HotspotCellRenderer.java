@@ -20,67 +20,58 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.ui.JBColor;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.panels.HorizontalLayout;
+import icons.SonarLintIcons;
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.Font;
-import java.util.EnumMap;
-import java.util.Map;
-import javax.swing.BorderFactory;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JPanel;
-import javax.swing.JTree;
-import javax.swing.SwingConstants;
-import javax.swing.tree.TreeCellRenderer;
-import org.sonarlint.intellij.ui.nodes.HotspotNode;
-import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
-import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspotDetails;
+import javax.swing.ListCellRenderer;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 
-class HotspotCellRenderer implements TreeCellRenderer {
+class HotspotCellRenderer implements ListCellRenderer {
 
-  private static final int HORIZONTAL_PADDING = 15;
-
-  private static final Map<VulnerabilityProbability, JBColor> colorsByProbability = new EnumMap<>(VulnerabilityProbability.class);
-
-  private static final int RED = 0xd4333f;
-  private static final int ORANGE = 0xed7d20;
-  private static final int YELLOW = 0xeabe06;
   private static final int WHITE = 0xffffff;
-
   private final JBColor whiteForeground = new JBColor(WHITE, WHITE);
 
-  static {
-    colorsByProbability.put(VulnerabilityProbability.HIGH, new JBColor(RED, RED));
-    colorsByProbability.put(VulnerabilityProbability.MEDIUM, new JBColor(ORANGE, ORANGE));
-    colorsByProbability.put(VulnerabilityProbability.LOW, new JBColor(YELLOW, YELLOW));
-  }
+  private static final String ICON_KEY = "security_hotspot_";
 
   @Override
-  public Component getTreeCellRendererComponent(JTree jTree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
-    var hotspot = ((HotspotNode) value).getHotspot();
-    var layout = new FlowLayout(FlowLayout.LEADING);
+  public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+    var hotspot = (LiveSecurityHotspot) value;
+    var layout = new FlowLayout(FlowLayout.LEFT);
     var panel = new JPanel(layout);
-    var primaryLocation = hotspot.getPrimaryLocation();
 
-    var probabilityLabel = new JLabel(hotspot.getProbability());
-    var border = BorderFactory.createEmptyBorder(0, HORIZONTAL_PADDING, 0, HORIZONTAL_PADDING);
-    probabilityLabel.setBorder(border);
-    probabilityLabel.setVerticalTextPosition(SwingConstants.TOP);
-    probabilityLabel.setBackground(primaryLocation.exists() ? colorsByProbability.get(hotspot.getProbability()) : JBColor.GRAY);
-    probabilityLabel.setForeground(whiteForeground);
-    probabilityLabel.setOpaque(true);
-    probabilityLabel.setFont(probabilityLabel.getFont().deriveFont(probabilityLabel.getFont().getStyle() | Font.BOLD));
-    panel.add(probabilityLabel);
+    var shIconLabel = new JBLabel();
+    var icon = SonarLintIcons.type(ICON_KEY + hotspot.getVulnerabilityProbability().name());
+    shIconLabel.setIcon(icon);
+    shIconLabel.setToolTipText("Security Hotspots with severity " + hotspot.getVulnerabilityProbability().name());
+    panel.add(shIconLabel, HorizontalLayout.LEFT);
+
+    var analyzedByLabel = new JBLabel();
+    if (hotspot.getServerFindingKey() != null) {
+      analyzedByLabel.setIcon(SonarLintIcons.ICON_SONARQUBE_16);
+      analyzedByLabel.setToolTipText("Analyzed by SonarQube");
+    } else {
+      analyzedByLabel.setToolTipText("Analyzed by SonarLint");
+      analyzedByLabel.setIcon(SonarLintIcons.SONARLINT);
+    }
+    panel.add(analyzedByLabel, HorizontalLayout.LEFT);
+
 
     var messageLabel = new JLabel(hotspot.getMessage());
-    messageLabel.setForeground(selected ? whiteForeground : JBColor.BLACK);
+    messageLabel.setForeground(isSelected ? whiteForeground : JBColor.BLACK);
     panel.add(messageLabel);
 
-    var file = hotspot.getPrimaryLocation().getFile();
-    var fileName = file == null ? hotspot.getFilePath() : file.getName();
-    var lineNumber = hotspot.getLineNumber();
-    var lineLabel = new JLabel(fileName + ":" + lineNumber);
-    lineLabel.setForeground(selected ? whiteForeground : JBColor.GRAY);
+    var file = hotspot.getFile();
+    var fileName = file == null ? hotspot.getFile().getPath() : file.getName();
+    var lineNumber = hotspot.getLine();
+    var lineLabel = new JLabel(fileName + (lineNumber != null ? (":" + lineNumber) : ""));
+    lineLabel.setForeground(isSelected ? whiteForeground : JBColor.GRAY);
     panel.add(lineLabel);
+
     return panel;
   }
 }

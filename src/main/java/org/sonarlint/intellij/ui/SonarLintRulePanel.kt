@@ -44,6 +44,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.Settings
 import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.BackendService
+import org.sonarlint.intellij.core.ProjectBindingManager
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleContextualSectionDto
@@ -62,22 +64,36 @@ import javax.swing.text.DefaultCaret
 
 private const val RULE_CONFIG_LINK_PREFIX = "#rule:"
 
+private const val s = """security_hotspots"""
+
 class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLayout(), project) {
 
     private val descriptionPanel = JBPanel<JBPanel<*>>(BorderLayout())
     private val ruleNameLabel = JBLabel()
     private val headerPanel = RuleHeaderPanel()
     private val paramsPanel = JBPanel<JBPanel<*>>(GridBagLayout())
+    private val editor = JEditorPane()
 
     private var currentRuleKey: String? = null
     private var currentModule: Module? = null
     private var currentContextKey: String? = null
+    private var selectedHotspot: LiveSecurityHotspot? = null
 
     init {
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
             ruleNameLabel.font = UIUtil.getLabelFont().deriveFont((UIUtil.getLabelFont().size2D + JBUIScale.scale(3))).deriveFont(Font.BOLD)
             add(ruleNameLabel, BorderLayout.NORTH)
             add(headerPanel, BorderLayout.CENTER)
+            add(editor.apply {
+                contentType = UIUtil.HTML_MIME
+                (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
+                editorKit = UIUtil.getHTMLEditorKit()
+                border = JBUI.Borders.empty(10)
+                isEditable = false
+                isOpaque = false
+
+                addHyperlinkListener(BrowserHyperlinkListener.INSTANCE)
+            }, BorderLayout.PAGE_END)
         }, BorderLayout.NORTH)
 
         add(descriptionPanel, BorderLayout.CENTER)
@@ -124,6 +140,11 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         })
     }
 
+    fun setRuleKeyForSecurityHotspot(module: Module?, ruleKey: String?, contextKey: String?, selectedHotspot: LiveSecurityHotspot) {
+        this.selectedHotspot = selectedHotspot;
+        setRuleKey(module, ruleKey, contextKey)
+    }
+
     private fun nothingToDisplay(error: Boolean) {
         descriptionPanel.removeAll()
         hideRuleParameters()
@@ -139,7 +160,11 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
 
     private fun updateRuleDescription(ruleDetails: ActiveRuleDetailsDto) {
         ApplicationManager.getApplication().assertIsDispatchThread()
-        updateHeader(ruleDetails)
+        if (this.selectedHotspot == null) {
+            updateHeader(ruleDetails)
+        } else {
+            updateHeaderForSecurityHotspots(ruleDetails)
+        }
         descriptionPanel.removeAll()
         ruleDetails.description.map(
             { monolithDescription ->
@@ -183,7 +208,8 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
             }
             comboPanel.add(contextCombo)
             sectionPanel.add(comboPanel, BorderLayout.NORTH)
-            contextCombo.selectedIndex = contextual.contextualSections.indexOfFirst { sec -> sec.contextKey == contextual.defaultContextKey }
+            contextCombo.selectedIndex =
+                contextual.contextualSections.indexOfFirst { sec -> sec.contextKey == contextual.defaultContextKey }
         })
         sectionPanel.add(htmlViewer, BorderLayout.CENTER)
         sectionsTabs.insertTab(tabDesc.title, null, sectionPanel, null, index)
@@ -194,6 +220,25 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         headerPanel.update(ruleDescription.key, ruleDescription.type, ruleDescription.severity)
     }
 
+    private fun updateHeaderForSecurityHotspots(ruleDescription: ActiveRuleDetailsDto) {
+        ruleNameLabel.text = ruleDescription.name
+        if (selectedHotspot?.serverFindingKey != null) {
+            editor.isVisible = true
+            val serverConnection =
+                SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
+            val projectKey = Settings.getSettingsFor(project).projectKey
+
+            val htmlString = """
+                At the moment, the status of Security Hotspot can be reviewed and updated only in SonarQube. 
+                Click <a href='${serverConnection.hostUrl}/security_hotspots?id=${projectKey}&hotspots=${selectedHotspot?.serverFindingKey}'>here</a>
+                to review it on ${serverConnection.name} server""".trimIndent()
+
+            SwingHelper.setHtml(editor, htmlString, UIUtil.getLabelForeground())
+        } else {
+            editor.isVisible = false
+        }
+        selectedHotspot?.let { headerPanel.update(ruleDescription, it) }
+    }
 
     private fun updateParams(ruleDescription: ActiveRuleDetailsDto) {
         if (ruleDescription.params.isNotEmpty()) {

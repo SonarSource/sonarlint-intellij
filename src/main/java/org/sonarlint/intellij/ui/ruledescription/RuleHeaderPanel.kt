@@ -20,15 +20,24 @@
 package org.sonarlint.intellij.ui.ruledescription
 
 import com.intellij.openapi.util.text.StringUtil
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBUI
 import icons.SonarLintIcons
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
 import java.awt.FlowLayout
+import java.awt.Font
+import java.util.*
+import javax.swing.SwingConstants
 
+
+private const val ICON_KEY = "security_hotspot_"
 
 class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val ruleTypeIcon = JBLabel()
@@ -36,7 +45,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val ruleSeverityIcon = JBLabel()
     private val ruleSeverityLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
-
+    private val colorsByProbability: MutableMap<VulnerabilityProbability, JBColor> = EnumMap(VulnerabilityProbability::class.java)
 
     init {
         add(ruleTypeIcon, HorizontalLayout.LEFT)
@@ -48,6 +57,9 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         add(ruleKeyLabel.apply {
             border = JBUI.Borders.emptyLeft(10)
         }, HorizontalLayout.CENTER)
+        colorsByProbability[VulnerabilityProbability.HIGH] = JBColor.RED
+        colorsByProbability[VulnerabilityProbability.MEDIUM] = JBColor.ORANGE
+        colorsByProbability[VulnerabilityProbability.LOW] = JBColor.YELLOW
     }
 
 
@@ -67,6 +79,20 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         ruleSeverityLabel.text = clean(severity.toString())
         ruleKeyLabel.text = ruleKey
         revalidate()
+    }
+
+    fun update(ruleDetails: ActiveRuleDetailsDto, selectedHotspot: LiveSecurityHotspot) {
+        ruleTypeIcon.icon = SonarLintIcons.type("$ICON_KEY${selectedHotspot.vulnerabilityProbability.name}")
+        ruleTypeLabel.text = clean(ruleDetails.type.toString())
+
+        ruleKeyLabel.text = ruleDetails.key
+        ruleSeverityLabel.text = selectedHotspot.vulnerabilityProbability.name
+        ruleSeverityLabel.background = colorsByProbability[selectedHotspot.vulnerabilityProbability]
+        ruleSeverityLabel.foreground = JBColor.WHITE
+        ruleSeverityLabel.font = ruleSeverityLabel.font.deriveFont(Font.BOLD)
+        ruleSeverityLabel.verticalTextPosition = SwingConstants.TOP
+        ruleSeverityLabel.isOpaque = true
+
     }
 
     fun showMessage(msg: String) {

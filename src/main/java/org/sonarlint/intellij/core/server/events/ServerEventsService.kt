@@ -28,6 +28,7 @@ import org.sonarlint.intellij.core.EngineManager
 import org.sonarlint.intellij.core.ProjectBinding
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter
 import org.sonarlint.intellij.util.ProjectLogOutput
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
@@ -35,7 +36,7 @@ import org.sonarsource.sonarlint.core.serverapi.push.IssueChangedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.ServerEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityClosedEvent
 import org.sonarsource.sonarlint.core.serverapi.push.TaintVulnerabilityRaisedEvent
-import java.util.Optional
+import java.util.*
 
 interface ServerEventsService {
     fun autoSubscribe(binding: ProjectBinding) {
@@ -83,6 +84,10 @@ class ServerEventsProductionService : ServerEventsService {
             getService(
                 project, TaintVulnerabilitiesPresenter::class.java
             ).presentTaintVulnerabilitiesForOpenFiles()
+        }
+        ProjectManager.getInstance().openProjects.forEach { project ->
+            getService(project, SecurityHotspotsPresenter::class.java)
+                .presentSecurityHotspotsForOpenFiles()
         }
     }
 
