@@ -37,7 +37,7 @@ import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
-import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildVulnerabilitiesTabName;
+import static org.sonarlint.intellij.actions.SonarLintToolWindow.buildTabName;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 /**
@@ -50,22 +50,24 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String CURRENT_FILE_TAB_TITLE = "Current file";
   public static final String REPORT_TAB_TITLE = "Report";
   public static final String TAINT_VULNERABILITIES_TAB_TITLE = "Taint vulnerabilities";
+  public static final String SECURITY_HOTSPOTS_TAB_TITLE = "Security Hotspots";
 
   @Override
   public void createToolWindowContent(Project project, final ToolWindow toolWindow) {
     var contentManager = toolWindow.getContentManager();
     addCurrentFileTab(project, contentManager);
     addReportTab(project, contentManager);
+    var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
+    addSecurityHotspotsTab(project, contentManager);
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-      addTaintIssuesTab(project, contentManager);
+      addTaintVulnerabilitiesTab(project, contentManager);
     }
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
-    var sonarLintToolWindow = getService(project, SonarLintToolWindow.class);
     contentManager.addContentManagerListener(sonarLintToolWindow);
     var activeHotspot = sonarLintToolWindow.getActiveHotspot();
     if (activeHotspot != null) {
-      sonarLintToolWindow.show(activeHotspot);
+      //sonarLintToolWindow.show(activeHotspot);
     }
   }
 
@@ -129,16 +131,28 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     contentManager.addContent(reportContent);
   }
 
-  private static void addTaintIssuesTab(Project project, @NotNull ContentManager contentManager) {
+  private static void addTaintVulnerabilitiesTab(Project project, @NotNull ContentManager contentManager) {
     var vulnerabilitiesPanel = new TaintVulnerabilitiesPanel(project);
-    var analysisResultsContent = contentManager.getFactory()
+    var taintVulnerabilitiesContent = contentManager.getFactory()
       .createContent(
         vulnerabilitiesPanel,
-        buildVulnerabilitiesTabName(0),
+        buildTabName(0, SonarLintToolWindowFactory.TAINT_VULNERABILITIES_TAB_TITLE),
         false);
-    analysisResultsContent.setCloseable(false);
+    taintVulnerabilitiesContent.setCloseable(false);
     contentManager.addDataProvider(vulnerabilitiesPanel);
-    contentManager.addContent(analysisResultsContent);
+    contentManager.addContent(taintVulnerabilitiesContent);
+  }
+
+  private static void addSecurityHotspotsTab(Project project, @NotNull ContentManager contentManager) {
+    var hotspotsPanel = new SonarLintHotspotsPanel(project);
+    var securityHotspotsContent = contentManager.getFactory()
+      .createContent(
+        hotspotsPanel,
+        buildTabName(0, SECURITY_HOTSPOTS_TAB_TITLE),
+        false);
+    securityHotspotsContent.setCloseable(false);
+    contentManager.addDataProvider(hotspotsPanel);
+    contentManager.addContent(securityHotspotsContent);
   }
 
   private static void addLogTab(Project project, ToolWindow toolWindow) {

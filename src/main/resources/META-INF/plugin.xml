@@ -238,6 +238,8 @@
         <projectService serviceImplementation="org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer"/>
         <projectService serviceImplementation="org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.LocalFileExclusions"/>
 
         <moduleService serviceImplementation="org.sonarlint.intellij.core.ModuleBindingManager"/>

@@ -36,6 +36,7 @@ import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.hotspot.LocalHotspot
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import java.awt.Font
@@ -44,144 +45,146 @@ import java.util.function.Consumer
 private const val HIGHLIGHT_GROUP_ID = 1001
 
 open class EditorDecorator(private val project: Project) {
-  private val currentHighlightedDoc: HashSet<Document> = hashSetOf()
-  private var blinker: RangeBlinker? = null
+    private val currentHighlightedDoc: HashSet<Document> = hashSetOf()
+    private var blinker: RangeBlinker? = null
 
-  open fun removeHighlights() {
-    currentHighlightedDoc.forEach {
-      clearSecondaryLocationNumbers(it)
-      UpdateHighlightersUtil.setHighlightersToEditor(project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID)
+    open fun removeHighlights() {
+        currentHighlightedDoc.forEach {
+            clearSecondaryLocationNumbers(it)
+            UpdateHighlightersUtil.setHighlightersToEditor(project, it, 0, it.textLength, emptyList(), null, HIGHLIGHT_GROUP_ID)
+        }
+        currentHighlightedDoc.clear()
+        stopBlinking()
     }
-    currentHighlightedDoc.clear()
-    stopBlinking()
-  }
 
-  private fun stopBlinking() {
-    blinker?.stopBlinking()
-    blinker = null
-  }
-
-  open fun highlightFlow(flow: Flow) {
-    updateHighlights(createHighlights(flow.locations))
-    displaySecondaryLocationNumbers(flow, null)
-  }
-
-  private fun displaySecondaryLocationNumbers(flow: Flow, selectedLocation: Location?) {
-    flow.locations.forEachIndexed { index, location ->
-      drawSecondaryLocationNumbers(location, index + 1, selectedLocation != null && selectedLocation == location)
+    private fun stopBlinking() {
+        blinker?.stopBlinking()
+        blinker = null
     }
-  }
 
-  open fun highlightFinding(finding: LiveFinding) {
-    val highlights = finding.context()
-      .map { createHighlights(it.flows()[0].locations) }
-      .orElse(mutableListOf())
-    createHighlight(finding.range, finding.message)?.let(highlights::add)
-    updateHighlights(highlights)
-    finding.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
-  }
-
-  open fun highlight(vulnerability: LocalTaintVulnerability) {
-    val highlights = createHighlights(vulnerability.flows[0].locations)
-    createHighlight(vulnerability.rangeMarker(), vulnerability.message())?.let(highlights::add)
-    updateHighlights(highlights)
-    displaySecondaryLocationNumbers(vulnerability.flows[0], null)
-  }
-
-  open fun highlightPrimaryLocation(rangeMarker: RangeMarker, message: String?, associatedFlow: Flow) {
-    val highlights = createHighlights(associatedFlow.locations)
-    createHighlight(rangeMarker, message)?.let(highlights::add)
-    updateHighlights(highlights)
-    displaySecondaryLocationNumbers(associatedFlow, null)
-  }
-
-  open fun highlightSecondaryLocation(secondaryLocation: Location, parentFlow: Flow) {
-    secondaryLocation.range ?: return
-    val highlights = createHighlights(parentFlow.locations)
-    createHighlight(secondaryLocation.range, secondaryLocation.message)?.let(highlights::add)
-    updateHighlights(highlights)
-    displaySecondaryLocationNumbers(parentFlow, secondaryLocation)
-  }
-
-  open fun highlight(hotspot: LocalHotspot) {
-    createHighlight(hotspot.primaryLocation.range, hotspot.message)?.let { updateHighlights(listOf(it)) }
-  }
-
-  private fun updateHighlights(highlights: List<Highlight>) {
-    removeHighlights()
-    highlights.groupBy({ it.document }, { it.highlightInfo })
-      .forEach { (doc, hs) ->
-        highlightInDocument(hs, doc)
-        blinkLocations(hs, doc)
-      }
-  }
-
-  private fun highlightInDocument(highlights: List<HighlightInfo?>, document: Document) {
-    UpdateHighlightersUtil.setHighlightersToEditor(project, document, 0,
-      document.textLength, highlights, null, HIGHLIGHT_GROUP_ID)
-    currentHighlightedDoc.add(document)
-  }
-
-  private fun clearSecondaryLocationNumbers(document: Document) {
-    getEditors(document)
-      .forEach {
-        it.inlayModel.getInlineElementsInRange(0, document.textLength, SecondaryLocationIndexRenderer::class.java)
-          .forEach { disposable -> Disposer.dispose(disposable!!) }
-      }
-  }
-
-  private fun drawSecondaryLocationNumbers(location: Location, index: Int, selected: Boolean) {
-    if (!location.exists()) {
-      return
+    open fun highlightFlow(flow: Flow) {
+        updateHighlights(createHighlights(flow.locations))
+        displaySecondaryLocationNumbers(flow, null)
     }
-    val marker = location.range!!
-    getEditors(marker.document)
-      .forEach { it.inlayModel.addInlineElement(marker.startOffset, SecondaryLocationIndexRenderer(location, index, selected)) }
-  }
 
-  private fun getEditors(document: Document): List<Editor> {
-    return EditorFactory.getInstance().getEditors(document, project).toList()
-  }
-
-  private fun blinkLocations(highlights: List<HighlightInfo>, document: Document) {
-    if (highlights.isEmpty()) {
-      return
+    private fun displaySecondaryLocationNumbers(flow: Flow, selectedLocation: Location?) {
+        flow.locations.forEachIndexed { index, location ->
+            drawSecondaryLocationNumbers(location, index + 1, selectedLocation != null && selectedLocation == location)
+        }
     }
-    getEditors(document).forEach(Consumer { editor: Editor ->
-      blinker = RangeBlinker(editor, TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3)
-      blinker!!.blinkHighlights(highlights)
-    })
-  }
 
-  open fun isActiveInEditor(editor: Editor): Boolean {
-    return currentHighlightedDoc.contains(editor.document)
-  }
-
-  private fun createHighlights(locations: List<Location>): MutableList<Highlight> {
-    return locations
-      .mapNotNull { createHighlight(it.range, it.message) }
-      .toMutableList()
-  }
-
-  private fun locationInvalid(location: RangeMarker?): Boolean {
-    return location == null || !location.isValid || location.startOffset == location.endOffset
-  }
-
-  private fun createHighlight(location: RangeMarker?, message: String?): Highlight? {
-    if (locationInvalid(location)) {
-      return null
+    open fun highlightFinding(finding: LiveFinding) {
+        val highlights = finding.context()
+            .map { createHighlights(it.flows()[0].locations) }
+            .orElse(mutableListOf())
+        createHighlight(finding.range, finding.message)?.let(highlights::add)
+        updateHighlights(highlights)
+        finding.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
     }
-    // Creating the HighlightInfo with high severity will ensure that it will override most other highlighters.
-    val builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
-      .range(location!!.startOffset, location.endOffset)
-      .severity(HighlightSeverity.ERROR)
-      .textAttributes(SonarLintTextAttributes.SELECTED)
-    if (message != null && message.isNotEmpty() && "..." != message) {
-      builder.descriptionAndTooltip("SonarLint: $message")
-    }
-    return builder.create()?.let { Highlight(location.document, it) }
-  }
 
-  class Highlight(val document: Document, val highlightInfo: HighlightInfo)
+    open fun highlight(vulnerability: LocalTaintVulnerability) {
+        val highlights = createHighlights(vulnerability.flows[0].locations)
+        createHighlight(vulnerability.rangeMarker(), vulnerability.message())?.let(highlights::add)
+        updateHighlights(highlights)
+        displaySecondaryLocationNumbers(vulnerability.flows[0], null)
+    }
+
+    open fun highlightPrimaryLocation(rangeMarker: RangeMarker, message: String?, associatedFlow: Flow) {
+        val highlights = createHighlights(associatedFlow.locations)
+        createHighlight(rangeMarker, message)?.let(highlights::add)
+        updateHighlights(highlights)
+        displaySecondaryLocationNumbers(associatedFlow, null)
+    }
+
+    open fun highlightSecondaryLocation(secondaryLocation: Location, parentFlow: Flow) {
+        secondaryLocation.range ?: return
+        val highlights = createHighlights(parentFlow.locations)
+        createHighlight(secondaryLocation.range, secondaryLocation.message)?.let(highlights::add)
+        updateHighlights(highlights)
+        displaySecondaryLocationNumbers(parentFlow, secondaryLocation)
+    }
+
+    open fun highlight(hotspot: LocalHotspot) {
+        createHighlight(hotspot.primaryLocation.range, hotspot.message)?.let { updateHighlights(listOf(it)) }
+    }
+
+    private fun updateHighlights(highlights: List<Highlight>) {
+        removeHighlights()
+        highlights.groupBy({ it.document }, { it.highlightInfo })
+            .forEach { (doc, hs) ->
+                highlightInDocument(hs, doc)
+                blinkLocations(hs, doc)
+            }
+    }
+
+    private fun highlightInDocument(highlights: List<HighlightInfo?>, document: Document) {
+        UpdateHighlightersUtil.setHighlightersToEditor(
+            project, document, 0,
+            document.textLength, highlights, null, HIGHLIGHT_GROUP_ID
+        )
+        currentHighlightedDoc.add(document)
+    }
+
+    private fun clearSecondaryLocationNumbers(document: Document) {
+        getEditors(document)
+            .forEach {
+                it.inlayModel.getInlineElementsInRange(0, document.textLength, SecondaryLocationIndexRenderer::class.java)
+                    .forEach { disposable -> Disposer.dispose(disposable!!) }
+            }
+    }
+
+    private fun drawSecondaryLocationNumbers(location: Location, index: Int, selected: Boolean) {
+        if (!location.exists()) {
+            return
+        }
+        val marker = location.range!!
+        getEditors(marker.document)
+            .forEach { it.inlayModel.addInlineElement(marker.startOffset, SecondaryLocationIndexRenderer(location, index, selected)) }
+    }
+
+    private fun getEditors(document: Document): List<Editor> {
+        return EditorFactory.getInstance().getEditors(document, project).toList()
+    }
+
+    private fun blinkLocations(highlights: List<HighlightInfo>, document: Document) {
+        if (highlights.isEmpty()) {
+            return
+        }
+        getEditors(document).forEach(Consumer { editor: Editor ->
+            blinker = RangeBlinker(editor, TextAttributes(null, null, JBColor.YELLOW, EffectType.BOXED, Font.PLAIN), 3)
+            blinker!!.blinkHighlights(highlights)
+        })
+    }
+
+    open fun isActiveInEditor(editor: Editor): Boolean {
+        return currentHighlightedDoc.contains(editor.document)
+    }
+
+    private fun createHighlights(locations: List<Location>): MutableList<Highlight> {
+        return locations
+            .mapNotNull { createHighlight(it.range, it.message) }
+            .toMutableList()
+    }
+
+    private fun locationInvalid(location: RangeMarker?): Boolean {
+        return location == null || !location.isValid || location.startOffset == location.endOffset
+    }
+
+    private fun createHighlight(location: RangeMarker?, message: String?): Highlight? {
+        if (locationInvalid(location)) {
+            return null
+        }
+        // Creating the HighlightInfo with high severity will ensure that it will override most other highlighters.
+        val builder = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR)
+            .range(location!!.startOffset, location.endOffset)
+            .severity(HighlightSeverity.ERROR)
+            .textAttributes(SonarLintTextAttributes.SELECTED)
+        if (!message.isNullOrEmpty() && "..." != message) {
+            builder.descriptionAndTooltip("SonarLint: $message")
+        }
+        return builder.create()?.let { Highlight(location.document, it) }
+    }
+
+    class Highlight(val document: Document, val highlightInfo: HighlightInfo)
 
 }

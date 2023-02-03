@@ -44,11 +44,8 @@ import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.editor.EditorDecorator
-import org.sonarlint.intellij.finding.issue.vulnerabilities.FoundTaintVulnerabilities
-import org.sonarlint.intellij.finding.issue.vulnerabilities.InvalidBinding
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
-import org.sonarlint.intellij.finding.issue.vulnerabilities.NoBinding
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus
+import org.sonarlint.intellij.finding.issue.vulnerabilities.*
+import org.sonarlint.intellij.ui.CardPanel
 import org.sonarlint.intellij.ui.SonarLintRulePanel
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter
 import org.sonarlint.intellij.ui.nodes.AbstractNode
@@ -60,8 +57,6 @@ import java.awt.BorderLayout
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import javax.swing.Box
-import javax.swing.BoxLayout
-import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.event.TreeSelectionListener
@@ -89,28 +84,6 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private lateinit var treeBuilder: TaintVulnerabilityTreeModelBuilder
     private val noVulnerabilitiesLabel = JLabel("")
     private val cards = CardPanel()
-
-    class CardPanel {
-        val container = JPanel()
-        private var subPanels = mutableMapOf<String, JComponent>()
-
-        init {
-            container.layout = BoxLayout(container, BoxLayout.PAGE_AXIS)
-        }
-
-        fun add(panel: JComponent, id: String) {
-            panel.isVisible = subPanels.isEmpty()
-            panel.alignmentX = 0.5f
-            panel.alignmentY = 0.5f
-            container.add(panel)
-            subPanels[id] = panel
-        }
-
-        fun show(id: String) {
-            subPanels.values.forEach { it.isVisible = false }
-            subPanels[id]!!.isVisible = true
-        }
-    }
 
     init {
         cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", ActionLink("Configure Binding", SonarConfigureProject())), NO_BINDING_CARD_ID)
@@ -168,7 +141,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     fun populate(status: TaintVulnerabilitiesStatus) {
         val highlighting = getService(project, EditorDecorator::class.java)
         when (status) {
-            is NoBinding -> {
+            is NoBinding  ->  {
                 showCard(NO_BINDING_CARD_ID)
                 highlighting.removeHighlights()
             }
