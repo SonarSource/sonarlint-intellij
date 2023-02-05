@@ -27,8 +27,8 @@ import com.intellij.openapi.wm.impl.ProjectFrameHelper;
 import com.intellij.openapi.wm.impl.ToolWindowManagerImpl;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 
-public class SonarLintToolWindowFixture {
-  public static SonarLintToolWindowFixture createFor(Project project) {
+class SonarLintToolWindowFixture {
+  static SonarLintToolWindowFixture createFor(Project project) {
     var manager = new ToolWindowManagerImpl(project) {
       @Override
       protected void fireStateChanged() {
@@ -47,15 +47,15 @@ public class SonarLintToolWindowFixture {
 
   private final ToolWindowManagerImpl manager;
 
-  public SonarLintToolWindowFixture(ToolWindowManagerImpl manager) {
+  SonarLintToolWindowFixture(ToolWindowManagerImpl manager) {
     this.manager = manager;
   }
 
-  public ToolWindowManagerImpl getManager() {
+  ToolWindowManagerImpl getManager() {
     return manager;
   }
 
-  public void cleanUp() {
+  void cleanUp() {
     Disposer.dispose(manager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID).getContentManager());
   }
 

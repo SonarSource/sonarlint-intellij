@@ -28,13 +28,16 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiFileFactory;
 import com.intellij.serviceContainer.ComponentManagerImpl;
-import com.intellij.testFramework.fixtures.LightPlatformCodeInsightFixture4TestCase;
+import com.intellij.testFramework.fixtures.BasePlatformTestCase;
+import java.lang.reflect.Method;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.config.Settings;
@@ -51,7 +54,8 @@ import static com.intellij.notification.NotificationsManager.getNotificationsMan
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.config.Settings.getSettingsFor;
 
-public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsightFixture4TestCase {
+@ExtendWith(RunInEdtInterceptor.class)
+public abstract class AbstractSonarLintLightTests extends BasePlatformTestCase {
 
   private Disposable disposable;
 
@@ -60,8 +64,11 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     return Paths.get("src/test/testData/" + this.getClass().getSimpleName()).toAbsolutePath().toString();
   }
 
-  @Before
-  public final void init() {
+  @BeforeEach
+  final void beforeEachLightTest(TestInfo testInfo) throws Exception {
+    // explicitly call TestCase.setName as IntelliJ relies on it for the setup
+    setName(testInfo.getTestMethod().map(Method::getName).orElse("test"));
+    super.setUp();
     disposable = Disposer.newDisposable();
     getGlobalSettings().setRules(Collections.emptyList());
     getGlobalSettings().setServerConnections(Collections.emptyList());
@@ -76,13 +83,18 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     getModuleSettings().clearBindingOverride();
   }
 
-  @After
-  public final void restore() {
-    getEngineManager().stopAllEngines(false);
-    if (!getProject().isDisposed()) {
-      AnalysisStatus.get(getProject()).stopRun();
+  @AfterEach
+  final void afterEachLightTest() throws Exception {
+    try {
+      getEngineManager().stopAllEngines(false);
+      if (!getProject().isDisposed()) {
+        AnalysisStatus.get(getProject()).stopRun();
+      }
+      Disposer.dispose(disposable);
+
+    } finally {
+      super.tearDown();
     }
-    Disposer.dispose(disposable);
   }
 
   protected void clearNotifications() {
@@ -103,15 +115,15 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     ((ComponentManagerImpl) getModule()).replaceServiceInstance(clazz, newInstance, disposable);
   }
 
-  public SonarLintGlobalSettings getGlobalSettings() {
+  protected SonarLintGlobalSettings getGlobalSettings() {
     return Settings.getGlobalSettings();
   }
 
-  public SonarLintProjectSettings getProjectSettings() {
+  protected SonarLintProjectSettings getProjectSettings() {
     return getSettingsFor(getProject());
   }
 
-  public SonarLintModuleSettings getModuleSettings() {
+  protected SonarLintModuleSettings getModuleSettings() {
     return getSettingsFor(getModule());
   }
 
@@ -123,23 +135,23 @@ public abstract class AbstractSonarLintLightTests extends LightPlatformCodeInsig
     return (SonarLintConsoleTestImpl) getService(getProject(), SonarLintConsole.class);
   }
 
-  public VirtualFile createTestFile(String fileName, Language language, String text) {
+  protected VirtualFile createTestFile(String fileName, Language language, String text) {
     return createTestPsiFile(fileName, language, text).getVirtualFile();
   }
 
-  public VirtualFile createAndOpenTestVirtualFile(String fileName, Language language, String text) {
+  protected VirtualFile createAndOpenTestVirtualFile(String fileName, Language language, String text) {
     var file = createTestFile(fileName, language, text);
     FileEditorManager.getInstance(getProject()).openFile(file, false);
     return file;
   }
 
-  public PsiFile createAndOpenTestPsiFile(String fileName, Language language, String text) {
+  protected PsiFile createAndOpenTestPsiFile(String fileName, Language language, String text) {
     var file = createTestPsiFile(fileName, language, text);
     FileEditorManager.getInstance(getProject()).openFile(file.getVirtualFile(), false);
     return file;
   }
 
-  public PsiFile createTestPsiFile(String fileName, Language language, String text) {
+  protected PsiFile createTestPsiFile(String fileName, Language language, String text) {
     return PsiFileFactory.getInstance(getProject()).createFileFromText(fileName, language, text, true, true);
   }
 

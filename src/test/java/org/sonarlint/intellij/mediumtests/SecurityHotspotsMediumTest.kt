@@ -22,9 +22,9 @@ package org.sonarlint.intellij.mediumtests
 import com.intellij.openapi.application.PathManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
-import org.junit.After
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
@@ -45,7 +45,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     private lateinit var storageFolderPath: Path
     private lateinit var mockServer: MockServer
 
-    @Before
+    @BeforeEach
     fun prepare() {
         storageFolderPath = Paths.get(PathManager.getSystemPath()).resolve("sonarlint")
         FileUtils.deleteRecursively(storageFolderPath)
@@ -56,7 +56,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
         connectProjectTo(mockServer.url(""), "connection", "projectKey")
     }
 
-    @After
+    @AfterEach
     fun cleanUp() {
         mockServer.shutdown()
     }
