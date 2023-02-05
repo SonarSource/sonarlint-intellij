@@ -27,13 +27,13 @@ import com.intellij.testFramework.LightProjectDescriptor;
 import com.intellij.testFramework.fixtures.DefaultLightProjectDescriptor;
 import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTests {
+class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLintLightTests {
 
   private JavaAnalysisConfigurator underTest = new JavaAnalysisConfigurator();
 
@@ -56,7 +56,7 @@ public class JavaAnalysisConfiguratorInvalidEntryTests extends AbstractSonarLint
   }
 
   @Test
-  public void testClasspathIgnoreInvalidJdkEntries() {
+  void testClasspathIgnoreInvalidJdkEntries() {
     final var props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
     assertThat(props).containsOnlyKeys("sonar.java.source", "sonar.java.target");
   }

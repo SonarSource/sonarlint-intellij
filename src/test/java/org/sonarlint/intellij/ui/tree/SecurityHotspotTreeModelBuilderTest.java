@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
@@ -45,18 +45,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SecurityHotspotTreeModelBuilderTest {
+class SecurityHotspotTreeModelBuilderTest {
   private SecurityHotspotTreeModelBuilder treeBuilder = new SecurityHotspotTreeModelBuilder();
   private DefaultTreeModel model  = treeBuilder.createModel();
 
   @Test
-  public void createModel() {
+  void createModel() {
     var model = treeBuilder.createModel();
     assertThat(model.getRoot()).isNotNull();
   }
 
   @Test
-  public void testNavigation() {
+  void testNavigation() {
     Map<VirtualFile, Collection<LiveSecurityHotspot>> data = new HashMap<>();
 
     // ordering of files: name
@@ -81,7 +81,7 @@ public class SecurityHotspotTreeModelBuilderTest {
   }
 
   @Test
-  public void testHotspotComparator() {
+  void testHotspotComparator() {
     List<LiveSecurityHotspot> list = new ArrayList<>();
 
     list.add(mockSecurityHotspotPointer("f1", 100, "rule1", VulnerabilityProbability.HIGH, null));

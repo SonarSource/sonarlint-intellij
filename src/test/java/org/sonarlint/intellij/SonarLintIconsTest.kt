@@ -20,7 +20,7 @@
 package org.sonarlint.intellij
 
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.SonarLintIcons.hotspotTypeWithProbability
 import org.sonarlint.intellij.SonarLintIcons.severity
 import org.sonarlint.intellij.SonarLintIcons.toDisabled

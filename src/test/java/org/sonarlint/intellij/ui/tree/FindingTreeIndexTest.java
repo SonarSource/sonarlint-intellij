@@ -20,15 +20,15 @@
 package org.sonarlint.intellij.ui.tree;
 
 import com.intellij.openapi.vfs.VirtualFile;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class FindingTreeIndexTest {
+class FindingTreeIndexTest {
   private FindingTreeIndex idx = new FindingTreeIndex();
 
   private VirtualFile file1;
@@ -37,8 +37,8 @@ public class FindingTreeIndexTest {
   private FileNode node1;
   private FileNode node2;
 
-  @Before
-  public void setUp() {
+  @BeforeEach
+  void setUp() {
     file1 = createFile("file1");
     file2 = createFile("file1");
     node1 = new FileNode(file1, false);
@@ -46,7 +46,7 @@ public class FindingTreeIndexTest {
   }
 
   @Test
-  public void testClear() {
+  void testClear() {
     idx.setFileNode(node1);
     idx.setFileNode(node2);
     assertThat(idx.getAllFiles()).isNotEmpty();
@@ -56,7 +56,7 @@ public class FindingTreeIndexTest {
   }
 
   @Test
-  public void testRemove() {
+  void testRemove() {
     idx.setFileNode(node1);
     assertThat(idx.getAllFiles()).isNotEmpty();
 
@@ -65,7 +65,7 @@ public class FindingTreeIndexTest {
   }
 
   @Test
-  public void testIndex() {
+  void testIndex() {
     idx.setFileNode(node1);
     idx.setFileNode(node2);
 

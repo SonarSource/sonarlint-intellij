@@ -160,7 +160,7 @@ tasks.test {
             languageVersion.set(JavaLanguageVersion.of(11))
         }
     }
-    useJUnit()
+    useJUnitPlatform()
     systemProperty("sonarlint.telemetry.disabled", "true")
 }
 
@@ -193,7 +193,9 @@ dependencies {
     runtimeOnly(project(":clion"))
     runtimeOnly(project(":rider"))
     runtimeOnly(project(":git"))
-    testImplementation("junit:junit:4.13.2")
+    testImplementation(platform("org.junit:junit-bom:5.9.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("org.junit.platform:junit-platform-launcher")
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)

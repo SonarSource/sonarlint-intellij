@@ -28,13 +28,13 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.java.JavaAnalysisConfigurator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLintLightTests {
+class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLintLightTests {
 
   private static final Path FAKE_JDK_ROOT_PATH = Paths.get("src/test/resources/fake_jdk/").toAbsolutePath();
 
@@ -51,7 +51,7 @@ public class JavaAnalysisConfiguratorWithModularJdkTests extends AbstractSonarLi
   }
 
   @Test
-  public void testAddJrtFsToClasspath() {
+  void testAddJrtFsToClasspath() {
     final var props = underTest.configure(getModule(), Collections.emptyList()).extraProperties;
     assertThat(props).containsKeys("sonar.java.libraries", "sonar.java.test.libraries");
     assertThat(Stream.of(props.get("sonar.java.libraries").split(",")).map(Paths::get))
