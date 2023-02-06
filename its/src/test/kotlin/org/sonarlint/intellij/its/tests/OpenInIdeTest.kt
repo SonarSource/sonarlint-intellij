@@ -37,7 +37,7 @@ import org.sonarlint.intellij.its.fixtures.editor
 import org.sonarlint.intellij.its.fixtures.fileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.jPasswordField
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.sonarLintToolWindow
 import org.sonarlint.intellij.its.utils.ItUtils
 import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarlint.intellij.its.utils.optionalStep
@@ -129,7 +129,8 @@ class OpenInIdeTest : BaseUiTest() {
     private fun verifyToolWindowFilled(robot: RemoteRobot) {
         with(robot) {
             idea {
-                toolWindow("SonarLint") {
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     tab("Security Hotspots") {
                         content("SonarLintHotspotsPanel") {
                             assertThat(hasText("LOW")).isTrue()
@@ -148,8 +149,7 @@ class OpenInIdeTest : BaseUiTest() {
 
         private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", ItUtils.javaVersion))
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
-            .build()
+            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml")).build()
 
         private const val SONARLINT_USER = "sonarlint"
         private const val SONARLINT_PWD = "sonarlintpwd"
@@ -160,8 +160,7 @@ class OpenInIdeTest : BaseUiTest() {
             ORCHESTRATOR.start()
 
             val adminWsClient = newAdminWsClient()
-            adminWsClient.users()
-                .create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
+            adminWsClient.users().create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
 
             ORCHESTRATOR.server.provisionProject(PROJECT_KEY, "Sample Java")
             ORCHESTRATOR.server.associateProjectToQualityProfile(PROJECT_KEY, "java", "SonarLint IT Java Hotspot")
@@ -169,9 +168,7 @@ class OpenInIdeTest : BaseUiTest() {
             // Build and analyze project to raise hotspot
             val file = File("projects/sample-java-hotspot/pom.xml")
             ORCHESTRATOR.executeBuild(
-                MavenBuild.create(file)
-                    .setCleanPackageSonarGoals()
-                    .setProperty("sonar.login", SONARLINT_USER)
+                MavenBuild.create(file).setCleanPackageSonarGoals().setProperty("sonar.login", SONARLINT_USER)
                     .setProperty("sonar.password", SONARLINT_PWD)
             )
 
@@ -184,10 +181,7 @@ class OpenInIdeTest : BaseUiTest() {
         private fun newAdminWsClient(): WsClient {
             val server = ORCHESTRATOR.server
             return WsClientFactories.getDefault().newClient(
-                HttpConnector.newBuilder()
-                    .url(server.url)
-                    .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-                    .build()
+                HttpConnector.newBuilder().url(server.url).credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD).build()
             )
         }
 
@@ -198,8 +192,7 @@ class OpenInIdeTest : BaseUiTest() {
         }
 
         private fun triggerOpenHotspotRequest() {
-            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}")
-                .readText()
+            URL("http://localhost:64120/sonarlint/api/hotspots/show?project=$PROJECT_KEY&hotspot=$firstHotspotKey&server=${ORCHESTRATOR.server.url}").readText()
         }
     }
 

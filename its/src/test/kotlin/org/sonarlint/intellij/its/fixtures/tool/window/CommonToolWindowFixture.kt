@@ -23,28 +23,13 @@ import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
 import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
-import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.fixtures.DefaultXpath
 import com.intellij.remoterobot.fixtures.FixtureName
-import com.intellij.remoterobot.fixtures.JButtonFixture
 import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
-import org.assertj.core.api.Assertions
 import org.sonarlint.intellij.its.fixtures.findElement
-import java.time.Duration
 
-fun ContainerFixture.toolWindow(
-  title: String,
-  function: ToolWindowFixture.() -> Unit = {}): ToolWindowFixture = step("Search for tool window with title $title") {
-  val toolWindowPane = find<ToolWindowFixture>(Duration.ofSeconds(5))
-  toolWindowPane.title = title
-  toolWindowPane.apply(function)
-}
-
-@DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowsPane']")
-@FixtureName(name = "Tool Window")
-class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
-  var title: String? = null
+open class CommonToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
 
   fun tab(title: String, function: TabTitleFixture.() -> Unit = {}) =
     findElement<TabTitleFixture>(byXpath("tab with title $title", "//div[@class='ContentTabLabel' and @text='$title']")).apply(function)
@@ -58,19 +43,5 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
 
   fun findCard(classType: String) =
     findElement<ComponentFixture>(byXpath("card with type $classType", "//div[@class='$classType']"))
-
-  fun ensureOpen() {
-    try {
-      findToolWindowPanelTitle()
-    } catch (e: Exception) {
-      stripeButton().click()
-    }
-  }
-
-  private fun findToolWindowPanelTitle() {
-    findElement<ComponentFixture>(byXpath("//div[@accessiblename='$title:' and @class='BaseLabel' and @text='$title:']"))
-  }
-
-  private fun stripeButton() = findElement<JButtonFixture>(byXpath("//div[@accessiblename='$title' and @class='StripeButton' and @text='$title']"))
 
 }

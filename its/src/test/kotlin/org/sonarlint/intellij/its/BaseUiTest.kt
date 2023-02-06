@@ -39,7 +39,8 @@ import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.openProjectFileBrowserDialog
 import org.sonarlint.intellij.its.fixtures.preferencesDialog
 import org.sonarlint.intellij.its.fixtures.tool.window.TabContentFixture
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.cmakeToolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.sonarLintToolWindow
 import org.sonarlint.intellij.its.fixtures.waitUntilLoaded
 import org.sonarlint.intellij.its.fixtures.welcomeFrame
 import org.sonarlint.intellij.its.utils.StepsLogger
@@ -126,8 +127,8 @@ open class BaseUiTest {
     private fun sonarlintLogPanel(remoteRobot: RemoteRobot, function: TabContentFixture.() -> Unit = {}) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     tabTitleContains("Log") { select() }
                     content("SonarLintLogPanel") {
                         this.apply(function)
@@ -140,8 +141,8 @@ open class BaseUiTest {
     private fun cmakePanel(remoteRobot: RemoteRobot, function: TabContentFixture.() -> Unit = {}) {
         with(remoteRobot) {
             idea {
-                toolWindow("CMake") {
-                    ensureOpen()
+                showCMakeToolWindow()
+                cmakeToolWindow {
                     tabTitleContains("Debug") { select() }
                     content("DataProviderPanel") {
                         this.apply(function)
@@ -175,8 +176,8 @@ open class BaseUiTest {
     protected fun verifyCurrentFileTabContainsMessages(vararg expectedMessages: String) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     tabTitleContains("Current file") { select() }
                     content("SonarLintIssuesPanel") {
                         expectedMessages.forEach { Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue() }
@@ -189,8 +190,8 @@ open class BaseUiTest {
     protected fun clickCurrentFileIssue(issueMessage: String) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     tabTitleContains("Current file") { select() }
                     content("SonarLintIssuesPanel") {
                         findText(issueMessage).click()
@@ -203,8 +204,8 @@ open class BaseUiTest {
     protected fun verifyRuleDescriptionTabContains(expectedMessage: String) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     content("SonarLintIssuesPanel") {
                         waitFor(Duration.ofSeconds(10), errorMessage = "Unable to find '$expectedMessage' in: ${findAllText()}") { hasText(expectedMessage) }
                     }
@@ -216,8 +217,8 @@ open class BaseUiTest {
     protected fun verifyCurrentFileShowsCard(expectedClass: String) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     Assertions.assertThat(findCard(expectedClass)).isNotNull
                 }
             }

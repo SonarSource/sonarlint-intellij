@@ -43,7 +43,7 @@ import org.sonarlint.intellij.its.fixtures.jPasswordField
 import org.sonarlint.intellij.its.fixtures.jRadioButtons
 import org.sonarlint.intellij.its.fixtures.jbTextField
 import org.sonarlint.intellij.its.fixtures.jbTextFields
-import org.sonarlint.intellij.its.fixtures.tool.window.toolWindow
+import org.sonarlint.intellij.its.fixtures.tool.window.sonarLintToolWindow
 import org.sonarlint.intellij.its.utils.OrchestratorUtils
 import org.sonarqube.ws.client.HttpConnector
 import org.sonarqube.ws.client.WsClient
@@ -84,8 +84,8 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
     private fun bindProjectFromPanel() {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     tab("Taint vulnerabilities") { select() }
                     content("TaintVulnerabilitiesPanel") {
                         jLabel("Configure Binding").click()
@@ -131,8 +131,8 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
     private fun verifyTaintTabContainsMessages(remoteRobot: RemoteRobot, vararg expectedMessages: String) {
         with(remoteRobot) {
             idea {
-                toolWindow("SonarLint") {
-                    ensureOpen()
+                showSonarLintToolWindow()
+                sonarLintToolWindow {
                     tabTitleContains("Taint vulnerabilities") { select() }
                     content("TaintVulnerabilitiesPanel") {
                         expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
@@ -146,12 +146,9 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
 
         lateinit var token: String
 
-        private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
-            .setEdition(Edition.DEVELOPER)
-            .activateLicense()
-            .keepBundledPlugins()
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml"))
-            .build()
+        private val ORCHESTRATOR: Orchestrator =
+            OrchestratorUtils.defaultBuilderEnv().setEdition(Edition.DEVELOPER).activateLicense().keepBundledPlugins()
+                .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-taint-vulnerability.xml")).build()
 
         private const val SONARLINT_USER = "sonarlint"
         private const val SONARLINT_PWD = "sonarlintpwd"
@@ -162,22 +159,17 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
             ORCHESTRATOR.start()
 
             val adminWsClient = newAdminWsClient()
-            adminWsClient.users()
-                .create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
+            adminWsClient.users().create(CreateRequest().setLogin(SONARLINT_USER).setPassword(SONARLINT_PWD).setName("SonarLint"))
 
             ORCHESTRATOR.server.provisionProject(TAINT_VULNERABILITY_PROJECT_KEY, "Sample Java Taint Vulnerability")
             ORCHESTRATOR.server.associateProjectToQualityProfile(
-                TAINT_VULNERABILITY_PROJECT_KEY,
-                "java",
-                "SonarLint IT Java Taint Vulnerability"
+                TAINT_VULNERABILITY_PROJECT_KEY, "java", "SonarLint IT Java Taint Vulnerability"
             )
 
             // Build and analyze project to raise hotspot
             val file = File("projects/sample-java-taint-vulnerability/pom.xml")
             ORCHESTRATOR.executeBuild(
-                MavenBuild.create(file)
-                    .setCleanPackageSonarGoals()
-                    .setProperty("sonar.login", SONARLINT_USER)
+                MavenBuild.create(file).setCleanPackageSonarGoals().setProperty("sonar.login", SONARLINT_USER)
                     .setProperty("sonar.password", SONARLINT_PWD)
             )
 
@@ -189,10 +181,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
         private fun newAdminWsClient(): WsClient {
             val server = ORCHESTRATOR.server
             return WsClientFactories.getDefault().newClient(
-                HttpConnector.newBuilder()
-                    .url(server.url)
-                    .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
-                    .build()
+                HttpConnector.newBuilder().url(server.url).credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD).build()
             )
         }
 
