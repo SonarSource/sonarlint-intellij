@@ -149,7 +149,8 @@ class OpenInIdeTest : BaseUiTest() {
 
         private val ORCHESTRATOR: Orchestrator = OrchestratorUtils.defaultBuilderEnv()
             .addPlugin(MavenLocation.of("org.sonarsource.java", "sonar-java-plugin", ItUtils.javaVersion))
-            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml")).build()
+            .restoreProfileAtStartup(FileLocation.ofClasspath("/java-sonarlint-with-hotspot.xml"))
+            .build()
 
         private const val SONARLINT_USER = "sonarlint"
         private const val SONARLINT_PWD = "sonarlintpwd"
@@ -168,7 +169,9 @@ class OpenInIdeTest : BaseUiTest() {
             // Build and analyze project to raise hotspot
             val file = File("projects/sample-java-hotspot/pom.xml")
             ORCHESTRATOR.executeBuild(
-                MavenBuild.create(file).setCleanPackageSonarGoals().setProperty("sonar.login", SONARLINT_USER)
+                MavenBuild.create(file)
+                    .setCleanPackageSonarGoals()
+                    .setProperty("sonar.login", SONARLINT_USER)
                     .setProperty("sonar.password", SONARLINT_PWD)
             )
 
@@ -181,7 +184,10 @@ class OpenInIdeTest : BaseUiTest() {
         private fun newAdminWsClient(): WsClient {
             val server = ORCHESTRATOR.server
             return WsClientFactories.getDefault().newClient(
-                HttpConnector.newBuilder().url(server.url).credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD).build()
+                HttpConnector.newBuilder()
+                    .url(server.url)
+                    .credentials(Server.ADMIN_LOGIN, Server.ADMIN_PASSWORD)
+                    .build()
             )
         }
 

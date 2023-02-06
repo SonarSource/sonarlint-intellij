@@ -17,25 +17,30 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.its.fixtures.tool.window
+package org.sonarlint.intellij.its.fixtures
 
 import com.intellij.remoterobot.RemoteRobot
 import com.intellij.remoterobot.data.RemoteComponent
-import com.intellij.remoterobot.fixtures.CommonContainerFixture
 import com.intellij.remoterobot.fixtures.ComponentFixture
-import com.intellij.remoterobot.fixtures.DefaultXpath
-import com.intellij.remoterobot.fixtures.FixtureName
+import com.intellij.remoterobot.fixtures.ContainerFixture
 import com.intellij.remoterobot.search.locators.byXpath
-import com.intellij.remoterobot.stepsProcessing.step
-import org.sonarlint.intellij.its.fixtures.findElement
 
-fun RemoteRobot.sonarLintToolWindow(function: SonarLintToolWindow.() -> Unit) {
-  step("SonarLint ToolWindow") {
-    find(SonarLintToolWindow::class.java).apply(function)
-  }
-}
-@DefaultXpath("type", "//div[@class='ToolWindowsPane' or @class='ToolWindowPane']")
-@FixtureName(name = "SonarLint ToolWindow")
-class SonarLintToolWindow(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonToolWindowFixture(remoteRobot, remoteComponent) {
+fun ContainerFixture.stripeButton(text: String) =
+    find(StripeButtonFixture::class.java, byXpath("//div[@class='StripeButton' and @text='$text']"))
 
+class StripeButtonFixture(
+    remoteRobot: RemoteRobot,
+    remoteComponent: RemoteComponent
+) : ComponentFixture(remoteRobot, remoteComponent) {
+    private fun isSelected(): Boolean {
+        return callJs("component.isSelected()")
+    }
+
+    fun open() {
+        if (isSelected().not()) click()
+    }
+
+    fun close() {
+        if (isSelected()) click()
+    }
 }

@@ -129,21 +129,12 @@ class IdeaFrame(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : Co
     }
 
     fun showSonarLintToolWindow() {
-        if (findAll<SonarLintToolWindow>(SonarLintToolWindow::class.java).isEmpty()) {
-            find(
-                ComponentFixture::class.java,
-                byXpath("//div[@accessiblename='SonarLint' and @class='StripeButton' and @text='SonarLint']")
-            ).click()
-        }
+        stripeButton("SonarLint").open()
     }
 
     fun showCMakeToolWindow() {
-        if (findAll<CMakeToolWindow>(CMakeToolWindow::class.java).isEmpty()) {
-            find(
-                ComponentFixture::class.java,
-                byXpath("//div[@accessiblename='CMake' and @class='StripeButton' and @text='CMake']")
-            ).click()
-        }
+        stripeButton("CMake").open()
     }
+
 
 }
