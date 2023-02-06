@@ -210,9 +210,9 @@ dependencies {
     "sqplugins"("org.sonarsource.html:sonar-html-plugin:3.7.1.3306")
     "sqplugins"("org.sonarsource.xml:sonar-xml-plugin:2.7.0.3820")
     "sqplugins"("org.sonarsource.sonarlint.omnisharp:sonarlint-omnisharp-plugin:1.6.0.59081")
+    "sqplugins"("org.sonarsource.text:sonar-text-plugin:2.0.1.611")
     if (artifactoryUsername.isNotEmpty() && artifactoryPassword.isNotEmpty()) {
         "sqplugins"("com.sonarsource.cpp:sonar-cfamily-plugin:6.41.0.60884")
-        "sqplugins"("com.sonarsource.secrets:sonar-secrets-plugin:1.2.0.53269")
     }
     // workaround for light tests in 2020.3, might remove later
     testRuntimeOnly("org.jetbrains.kotlin:kotlin-reflect")

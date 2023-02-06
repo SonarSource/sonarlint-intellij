@@ -58,7 +58,6 @@ public class SonarLintEngineFactory {
     configureCommonEngine(configBuilder);
 
     EmbeddedPlugins.getEmbeddedPluginsForConnectedMode().forEach(configBuilder::useEmbeddedPlugin);
-    EmbeddedPlugins.getExtraPluginsForConnectedMode().forEach(configBuilder::addExtraPlugin);
 
     return new ConnectedSonarLintEngineImpl(configBuilder.build());
   }
