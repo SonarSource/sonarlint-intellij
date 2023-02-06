@@ -131,7 +131,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
     var numFiles = issuesPerFile.keySet().size();
 
     var issues = issuesPerFile.values().stream().flatMap(Collection::stream).collect(Collectors.toList());
-    var numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().startsWith(Language.SECRETS.getPluginKey())).count();
+    var numSecretsIssues = issues.stream().filter(issue -> issue.getRuleKey().startsWith(Language.SECRETS.getLanguageKey())).count();
     var msg = createMessage(numFiles, numIssues, numBlockerIssues, numSecretsIssues);
 
     return showYesNoCancel(msg);

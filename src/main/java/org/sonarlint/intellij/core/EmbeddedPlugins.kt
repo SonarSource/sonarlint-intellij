@@ -29,7 +29,6 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.EnumSet
-import java.util.function.BiConsumer
 import java.util.function.Consumer
 
 object EmbeddedPlugins {
@@ -57,27 +56,13 @@ object EmbeddedPlugins {
         EmbeddedPlugin(Language.JS, "JavaScript/TypeScript", "sonar-javascript-plugin-*.jar"),
         EmbeddedPlugin(Language.KOTLIN, "Kotlin", "sonar-kotlin-plugin-*.jar"),
         EmbeddedPlugin(Language.RUBY, "Ruby", "sonar-ruby-plugin-*.jar"),
-        EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar")
-    )
-    private val EXTRA_PLUGINS = listOf(
-        EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-secrets-plugin-*.jar")
+        EmbeddedPlugin(Language.XML, "XML", "sonar-xml-plugin-*.jar"),
+        EmbeddedPlugin(Language.SECRETS, "Secrets detection", "sonar-text-plugin-*.jar")
     )
 
     @JvmStatic
     fun getEmbeddedPluginsForConnectedMode(): Map<String, Path> {
         return EMBEDDED_PLUGINS.mapNotNull {
-            val path = findEmbeddedPlugin(getPluginsDir(), it);
-            if (path != null) {
-                it.pluginKey to path
-            } else {
-                null
-            }
-        }.toMap()
-    }
-
-    @JvmStatic
-    fun getExtraPluginsForConnectedMode(): Map<String, Path> {
-        return EXTRA_PLUGINS.mapNotNull {
             val path = findEmbeddedPlugin(getPluginsDir(), it);
             if (path != null) {
                 it.pluginKey to path

@@ -303,7 +303,7 @@ public class Analysis implements Cancelable {
 
     reportedRules.add(liveIssue.getRuleKey());
     var sonarLintGlobalSettings = Settings.getGlobalSettings();
-    if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains(Language.SECRETS.getPluginKey())) {
+    if (sonarLintGlobalSettings.isSecretsNeverBeenAnalysed() && liveIssue.getRuleKey().contains(Language.SECRETS.getLanguageKey())) {
       SecretsNotifications.sendNotification(project);
       sonarLintGlobalSettings.rememberNotificationOnSecretsBeenSent();
     }

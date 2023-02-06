@@ -83,7 +83,6 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
                 TelemetryManagerProvider.TELEMETRY_PRODUCT_KEY,
                 getLocalStoragePath(),
                 EmbeddedPlugins.findEmbeddedPlugins(),
-                EmbeddedPlugins.getExtraPluginsForConnectedMode(),
                 EmbeddedPlugins.getEmbeddedPluginsForConnectedMode(),
                 EmbeddedPlugins.enabledLanguagesInStandaloneMode,
                 EmbeddedPlugins.enabledLanguagesInConnectedMode,
