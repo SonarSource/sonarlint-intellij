@@ -31,6 +31,7 @@ import com.intellij.remoterobot.search.locators.byXpath
 import com.intellij.remoterobot.stepsProcessing.step
 import org.assertj.core.api.Assertions
 import org.sonarlint.intellij.its.fixtures.findElement
+import org.sonarlint.intellij.its.fixtures.stripeButton
 import java.time.Duration
 
 fun ContainerFixture.toolWindow(
@@ -45,7 +46,7 @@ fun ContainerFixture.toolWindow(
 @DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowsPane' or @class='ToolWindowPane']")
 @FixtureName(name = "Tool Window")
 class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
-  var title: String? = null
+  lateinit var title: String
 
   fun tab(title: String, function: TabTitleFixture.() -> Unit = {}) =
     findElement<TabTitleFixture>(byXpath("tab with title $title", "//div[@class='ContentTabLabel' and @text='$title']")).apply(function)
@@ -61,17 +62,7 @@ class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteCompone
     findElement<ComponentFixture>(byXpath("card with type $classType", "//div[@class='$classType']"))
 
   fun ensureOpen() {
-    try {
-      findToolWindowPanelTitle()
-    } catch (e: Exception) {
-      stripeButton().click()
-    }
+    stripeButton(title).open()
   }
-
-  private fun findToolWindowPanelTitle() {
-    findElement<ComponentFixture>(byXpath("//div[@accessiblename='$title:' and @class='BaseLabel' and @text='$title:']"))
-  }
-
-  private fun stripeButton() = findElement<JButtonFixture>(byXpath("//div[@accessiblename='$title' and @class='StripeButton' and @text='$title']"))
 
 }
