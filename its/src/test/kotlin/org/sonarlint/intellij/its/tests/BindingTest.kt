@@ -39,6 +39,7 @@ import org.junit.jupiter.api.condition.EnabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
+import org.sonarlint.intellij.its.fixtures.ideMajorVersion
 import org.sonarlint.intellij.its.fixtures.idea
 import org.sonarlint.intellij.its.fixtures.isCLion
 import org.sonarlint.intellij.its.fixtures.jPasswordField
@@ -118,7 +119,7 @@ class BindingTest : BaseUiTest() {
                 button("Next").click()
             }
             dialog("New Connection: Configuration completed") {
-                button("Finish").click()
+                pressFinishOrCreate()
             }
             tree {
                 clickPath("Tools", "SonarLint", "Project Settings")
