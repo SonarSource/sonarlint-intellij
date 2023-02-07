@@ -20,23 +20,18 @@
 package org.sonarlint.intellij.editor;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 import com.intellij.serviceContainer.NonInjectable;
-import com.intellij.util.messages.MessageBus;
 import java.util.Collection;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Stream;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.messages.FindingStoreListener;
 
-public class CodeAnalyzerRestarter implements FindingStoreListener {
-  private final MessageBus messageBus;
+public class CodeAnalyzerRestarter {
   private final Project myProject;
   private final DaemonCodeAnalyzer codeAnalyzer;
 
@@ -48,14 +43,9 @@ public class CodeAnalyzerRestarter implements FindingStoreListener {
   @NonInjectable
   CodeAnalyzerRestarter(Project project, DaemonCodeAnalyzer codeAnalyzer) {
     myProject = project;
-    this.messageBus = project.getMessageBus();
     this.codeAnalyzer = codeAnalyzer;
   }
 
-  public void init() {
-    var busConnection = messageBus.connect(myProject);
-    busConnection.subscribe(FindingStoreListener.SONARLINT_ISSUE_STORE_TOPIC, this);
-  }
 
   public void refreshOpenFiles() {
     if (myProject.isDisposed()) {
@@ -70,7 +60,7 @@ public class CodeAnalyzerRestarter implements FindingStoreListener {
       .forEach(codeAnalyzer::restart);
   }
 
-  void refreshFiles(Collection<VirtualFile> changedFiles) {
+  public void refreshFiles(Collection<VirtualFile> changedFiles) {
     if (myProject.isDisposed()) {
       return;
     }
@@ -89,13 +79,5 @@ public class CodeAnalyzerRestarter implements FindingStoreListener {
       return null;
     }
     return PsiManager.getInstance(myProject).findFile(virtualFile);
-  }
-
-  @Override public void filesChanged(final Set<VirtualFile> changedFiles) {
-    ApplicationManager.getApplication().invokeLater(() -> refreshFiles(changedFiles));
-  }
-
-  @Override public void allChanged() {
-    ApplicationManager.getApplication().invokeLater(this::refreshOpenFiles);
   }
 }

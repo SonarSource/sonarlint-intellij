@@ -32,13 +32,15 @@ import java.util.ArrayList;
 import java.util.Collection;
 import javax.swing.Icon;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 
-public class SonarClearIssuesAction extends AnAction {
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-  public SonarClearIssuesAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
+public class ClearCurrentFileIssuesAction extends AnAction {
+
+  public ClearCurrentFileIssuesAction(@Nullable String text, @Nullable String description, @Nullable Icon icon) {
     super(text, description, icon);
   }
 
@@ -48,11 +50,12 @@ public class SonarClearIssuesAction extends AnAction {
     ApplicationManager.getApplication().assertReadAccessAllowed();
 
     if (project != null) {
-      var issueManager = SonarLintUtils.getService(project, FindingsManager.class);
+      var issueManager = getService(project, FindingsCache.class);
       var codeAnalyzer = DaemonCodeAnalyzer.getInstance(project);
 
       ApplicationManager.getApplication().runReadAction(() -> {
         issueManager.clearAllIssuesForAllFiles();
+        getService(project, AnalysisSubmitter.class).clearCurrentFileIssues();
 
         // run annotator to remove highlighting of issues
         var editorManager = FileEditorManager.getInstance(project);

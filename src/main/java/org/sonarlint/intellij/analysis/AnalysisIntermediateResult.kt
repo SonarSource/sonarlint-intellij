@@ -19,14 +19,6 @@
  */
 package org.sonarlint.intellij.analysis
 
-import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.finding.LiveFindings
-import org.sonarlint.intellij.trigger.TriggerType
-import java.time.Instant
 
-data class AnalysisResult(
-    val findings: LiveFindings,
-    val analyzedFiles: MutableCollection<out VirtualFile>,
-    val triggerType: TriggerType,
-    val analysisDate: Instant,
-)
+data class AnalysisIntermediateResult(val findings: LiveFindings)

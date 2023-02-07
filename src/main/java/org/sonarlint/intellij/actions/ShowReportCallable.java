@@ -24,6 +24,7 @@ import com.intellij.util.ui.UIUtil;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 
 public class ShowReportCallable implements AnalysisCallback {
   private final Project project;
@@ -42,6 +43,9 @@ public class ShowReportCallable implements AnalysisCallback {
   }
 
   private void showReportTab(AnalysisResult analysisResult) {
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab(analysisResult));
+    UIUtil.invokeLaterIfNeeded(() -> {
+      SonarLintUtils.getService(project, SonarLintToolWindow.class).openReportTab(analysisResult);
+      SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).refreshOpenFiles();
+    });
   }
 }

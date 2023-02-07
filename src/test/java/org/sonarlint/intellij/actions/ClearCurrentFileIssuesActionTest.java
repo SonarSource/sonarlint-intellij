@@ -30,26 +30,26 @@ import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
+public class ClearCurrentFileIssuesActionTest extends AbstractSonarLintLightTests {
   private AnActionEvent event = mock(AnActionEvent.class);
 
-  private SonarClearIssuesAction clearIssues = new SonarClearIssuesAction(null, null, null);
+  private ClearCurrentFileIssuesAction clearIssues = new ClearCurrentFileIssuesAction(null, null, null);
   private VirtualFile file;
-  private FindingsManager findingsManager;
+  private FindingsCache findingsCache;
 
   @Before
   public void prepare() {
     when(event.getProject()).thenReturn(getProject());
     file = myFixture.copyFileToProject("foo.php", "foo.php");
-    findingsManager = SonarLintUtils.getService(getProject(), FindingsManager.class);
-    findingsManager.insertNewIssue(file, mock(LiveIssue.class));
+    findingsCache = SonarLintUtils.getService(getProject(), FindingsCache.class);
+    findingsCache.insertNewIssue(file, mock(LiveIssue.class));
   }
 
   @Test
@@ -59,7 +59,7 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
     clearIssues.actionPerformed(event);
 
     // TODO test highlights are removed
-    assertThat(findingsManager.getIssuesForFile(file)).isEmpty();
+    assertThat(findingsCache.getIssuesForFile(file)).isEmpty();
   }
 
   @Test
@@ -72,7 +72,7 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
     clearIssues.actionPerformed(event);
 
-    assertThat(findingsManager.getIssuesForFile(file)).isEmpty();
+    assertThat(findingsCache.getIssuesForFile(file)).isEmpty();
   }
 
   @Test
@@ -81,6 +81,6 @@ public class SonarClearIssuesActionTest extends AbstractSonarLintLightTests {
 
     clearIssues.actionPerformed(event);
 
-    assertThat(findingsManager.getIssuesForFile(file)).isNotEmpty();
+    assertThat(findingsCache.getIssuesForFile(file)).isNotEmpty();
   }
 }

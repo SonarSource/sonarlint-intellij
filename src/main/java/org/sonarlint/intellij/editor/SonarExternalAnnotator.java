@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.SonarLintTextAttributes;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
@@ -57,7 +57,7 @@ public class SonarExternalAnnotator extends ExternalAnnotator<SonarExternalAnnot
     }
 
     var project = file.getProject();
-    var issueManager = getService(project, FindingsManager.class);
+    var issueManager = getService(project, FindingsCache.class);
     var issues = issueManager.getIssuesForFile(file.getVirtualFile());
     issues.stream()
       .filter(issue -> !issue.isResolved())

@@ -34,6 +34,7 @@ import icons.SonarLintIcons;
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
@@ -41,6 +42,7 @@ import javax.swing.JPanel;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
@@ -60,6 +62,8 @@ public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable 
 
     var splitter = createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f);
     super.setContent(splitter);
+    project.getMessageBus().connect().subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
+      newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
   }
 
   @Override
@@ -76,7 +80,21 @@ public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable 
     );
   }
 
-  public void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {
+  public void update(@Nullable VirtualFile file, @Nullable Collection<LiveIssue> issues) {
+    String emptyText;
+    Collection<LiveIssue> liveIssues = issues;
+    if (file != null) {
+      emptyText = liveIssues == null ? "No analysis done on the current opened file" : "No issues found in the current opened file";
+    } else {
+      emptyText = "No file opened in the editor";
+    }
+    if (liveIssues == null) {
+      liveIssues = Collections.emptyList();
+    }
+    update(file, List.copyOf(liveIssues), emptyText);
+  }
+
+  private void update(@Nullable VirtualFile file, Collection<LiveIssue> issues, String emptyText) {
     if (file == null) {
       treeBuilder.updateModel(Map.of(), emptyText);
     } else {
@@ -87,12 +105,10 @@ public class CurrentFilePanel extends AbstractIssuesPanel implements Disposable 
   }
 
   private void updateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues) {
-    ApplicationManager.getApplication().invokeLater(() -> {
-      var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARLINT_TOOLWINDOW_ID);
-      if (toolWindow != null) {
-        doUpdateIcon(file, issues, toolWindow);
-      }
-    }, project.getDisposed());
+    var toolWindow = ToolWindowManager.getInstance(project).getToolWindow(SONARLINT_TOOLWINDOW_ID);
+    if (toolWindow != null) {
+      doUpdateIcon(file, issues, toolWindow);
+    }
   }
 
   private static void doUpdateIcon(@Nullable VirtualFile file, Collection<LiveIssue> issues, ToolWindow toolWindow) {

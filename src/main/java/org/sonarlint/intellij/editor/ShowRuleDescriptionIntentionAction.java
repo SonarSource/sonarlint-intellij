@@ -33,7 +33,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 
 public class ShowRuleDescriptionIntentionAction implements IntentionAction, PriorityAction, Iconable {
 
@@ -66,7 +66,7 @@ public class ShowRuleDescriptionIntentionAction implements IntentionAction, Prio
       // passed here to be a completely virtual 'PHP_REGEXP_FILE' instance. However, the editor holds the reference to the actual file.
       actualFile = ((EditorEx) editor).getVirtualFile();
     }
-    var issueManager = SonarLintUtils.getService(project, FindingsManager.class);
+    var issueManager = SonarLintUtils.getService(project, FindingsCache.class);
     var liveIssues = issueManager.getIssuesForFile(actualFile);
     var liveIssue = liveIssues.stream().filter(issue -> issue.getRuleKey().equals(ruleKey)).findFirst();
     if (liveIssue.isEmpty()) {

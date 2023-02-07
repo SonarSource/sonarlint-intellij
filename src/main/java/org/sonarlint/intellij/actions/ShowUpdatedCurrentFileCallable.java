@@ -22,31 +22,39 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.project.Project;
 import com.intellij.util.ui.UIUtil;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisIntermediateResult;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
-public class UpdateOnTheFlyFindingsAndShowCurrentFileCallable implements AnalysisCallback {
+public class ShowUpdatedCurrentFileCallable implements AnalysisCallback {
   private final Project project;
+  private final UpdateOnTheFlyFindingsCallable updateOnTheFlyFindingsCallable;
 
-  public UpdateOnTheFlyFindingsAndShowCurrentFileCallable(Project project) {
+  public ShowUpdatedCurrentFileCallable(Project project, OnTheFlyFindingsHolder onTheFlyFindingsHolder) {
     this.project = project;
+    updateOnTheFlyFindingsCallable = new UpdateOnTheFlyFindingsCallable(onTheFlyFindingsHolder);
   }
 
   @Override public void onError(Throwable e) {
-    // do nothing
+    updateOnTheFlyFindingsCallable.onError(e);
+  }
+
+  @Override
+  public void onIntermediateResult(AnalysisIntermediateResult intermediateResult) {
+    updateOnTheFlyFindingsCallable.onIntermediateResult(intermediateResult);
   }
 
   @Override
   public void onSuccess(AnalysisResult analysisResult) {
-    showCurrentFileTab(analysisResult);
+    updateOnTheFlyFindingsCallable.onSuccess(analysisResult);
+    showCurrentFileTab();
   }
 
-  private void showCurrentFileTab(AnalysisResult analysisResult) {
+  private void showCurrentFileTab() {
     UIUtil.invokeLaterIfNeeded(() -> {
       var toolWindow = SonarLintUtils.getService(project, SonarLintToolWindow.class);
-      // the issues are updated through another mechanism for now
       toolWindow.openCurrentFileTab();
-      toolWindow.updateHotspotsTab(analysisResult);
     });
   }
 }

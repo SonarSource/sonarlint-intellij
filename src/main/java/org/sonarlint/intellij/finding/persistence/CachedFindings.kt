@@ -17,23 +17,12 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.messages;
+package org.sonarlint.intellij.finding.persistence
 
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.util.messages.Topic;
-import java.util.Set;
+import com.intellij.openapi.vfs.VirtualFile
+import org.sonarlint.intellij.finding.tracking.Trackable
 
-/**
- * Called when finding store is updated. Should be used by UI that displays findings.
- */
-public interface FindingStoreListener {
-  Topic<FindingStoreListener> SONARLINT_ISSUE_STORE_TOPIC = Topic.create("Finding store changed", FindingStoreListener.class);
-
-  void filesChanged(Set<VirtualFile> changedFiles);
-
-  default void fileChanged(VirtualFile virtualFile) {
-    filesChanged(Set.of(virtualFile));
-  }
-
-  void allChanged();
-}
+class CachedFindings(
+    val issuesPerFile: Map<VirtualFile, Collection<Trackable>>,
+    val securityHotspotsPerFile: Map<VirtualFile, Collection<Trackable>>,
+)

@@ -37,6 +37,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.actions.SonarLintToolWindow;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.analysis.AnalysisSubmitter;
+import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -67,8 +68,8 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     future.complete(null);
     var issue = mock(LiveIssue.class);
     when(issue.isResolved()).thenReturn(true);
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
-      Collections.emptyMap(), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(new LiveFindings(Map.of(file, Set.of(issue)),
+      Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var result = handler.beforeCheckin(null, null);
@@ -83,8 +84,8 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     future.complete(null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("java:S123");
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
-      Collections.emptyMap(), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(new LiveFindings(Map.of(file, Set.of(issue)),
+      Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
@@ -99,7 +100,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
     verify(toolWindow).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
-    assertThat(analysisResult.getIssuesPerFile()).containsEntry(file, Set.of(issue));
+    assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 
@@ -108,8 +109,8 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     future.complete(null);
     var issue = mock(LiveIssue.class);
     when(issue.getRuleKey()).thenReturn("secrets:S123");
-    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(Map.of(file, Set.of(issue)),
-      Collections.emptyMap(), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
+    when(analysisSubmitter.analyzeFilesPreCommit(Collections.singleton(file))).thenReturn(new AnalysisResult(new LiveFindings(Map.of(file, Set.of(issue)),
+      Collections.emptyMap()), Set.of(file), TriggerType.CHECK_IN, Instant.now()));
 
     handler = new SonarLintCheckinHandler(getProject(), checkinProjectPanel);
     var messages = new ArrayList<>();
@@ -126,7 +127,7 @@ public class SonarLintCheckinHandlerTest extends AbstractSonarLintLightTests {
     ArgumentCaptor<AnalysisResult> analysisResultCaptor = ArgumentCaptor.forClass(AnalysisResult.class);
     verify(toolWindow).openReportTab(analysisResultCaptor.capture());
     var analysisResult = analysisResultCaptor.getValue();
-    assertThat(analysisResult.getIssuesPerFile()).containsEntry(file, Set.of(issue));
+    assertThat(analysisResult.getFindings().getIssuesPerFile()).containsEntry(file, Set.of(issue));
     verify(analysisSubmitter).analyzeFilesPreCommit(Collections.singleton(file));
   }
 }
