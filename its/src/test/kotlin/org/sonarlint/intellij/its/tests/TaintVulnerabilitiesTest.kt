@@ -110,7 +110,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
                             button("Next").click()
                         }
                         dialog("New Connection: Configuration completed") {
-                            button("Finish").click()
+                            pressFinishOrCreate()
                         }
                         button("OK").click()
                     }

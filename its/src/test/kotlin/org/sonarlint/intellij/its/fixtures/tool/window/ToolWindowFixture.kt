@@ -41,7 +41,8 @@ fun ContainerFixture.toolWindow(
   toolWindowPane.apply(function)
 }
 
-@DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowsPane']")
+// Panel class name changed from ToolWindowsPane to ToolWindowPane in 2022.x
+@DefaultXpath(by = "ToolWindow type", xpath = "//div[@class='ToolWindowsPane' or @class='ToolWindowPane']")
 @FixtureName(name = "Tool Window")
 class ToolWindowFixture(remoteRobot: RemoteRobot, remoteComponent: RemoteComponent) : CommonContainerFixture(remoteRobot, remoteComponent) {
   var title: String? = null

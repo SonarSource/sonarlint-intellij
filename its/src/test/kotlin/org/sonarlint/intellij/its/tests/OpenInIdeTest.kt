@@ -83,7 +83,7 @@ class OpenInIdeTest : BaseUiTest() {
                     button("Next").click()
                 }
                 dialog("New Connection: Configuration completed") {
-                    button("Finish").click()
+                    pressFinishOrCreate()
                 }
             }
         }
