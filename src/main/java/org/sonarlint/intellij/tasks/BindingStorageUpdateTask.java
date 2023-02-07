@@ -47,7 +47,7 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.EngineManager;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesPresenter;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsPresenter;
 import org.sonarlint.intellij.messages.ServerBranchesListenerKt;
@@ -228,7 +228,7 @@ public class BindingStorageUpdateTask {
       var console = SonarLintConsole.get(project);
       console.info("Clearing all findings because binding was updated");
 
-      var store = getService(project, FindingsManager.class);
+      var store = getService(project, FindingsCache.class);
       store.clearAllFindingsForAllFiles();
 
       getService(project, AnalysisSubmitter.class).autoAnalyzeOpenFiles(TriggerType.BINDING_UPDATE);

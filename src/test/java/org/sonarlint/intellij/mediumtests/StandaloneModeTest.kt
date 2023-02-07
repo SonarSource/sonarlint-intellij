@@ -35,7 +35,7 @@ import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.finding.persistence.FindingsManager
+import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.util.ProjectUtils
 
@@ -296,12 +296,12 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
     private fun analyze(vararg fileToAnalyzes: VirtualFile): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
         submitter.analyzeFilesPreCommit(fileToAnalyzes.toList())
-        return fileToAnalyzes.flatMap { getService(project, FindingsManager::class.java).getIssuesForFile(it) }
+        return fileToAnalyzes.flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
     }
 
     private fun analyzeAll(): List<LiveIssue> {
         val submitter = getService(project, AnalysisSubmitter::class.java)
         submitter.analyzeAllFiles()
-        return ProjectUtils.getAllFiles(project).flatMap { getService(project, FindingsManager::class.java).getIssuesForFile(it) }
+        return ProjectUtils.getAllFiles(project).flatMap { getService(project, FindingsCache::class.java).getIssuesForFile(it) }
     }
 }

@@ -44,7 +44,6 @@ import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
-import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.IssueListener;
 import org.sonarsource.sonarlint.core.commons.Language;
@@ -58,7 +57,7 @@ public class SonarLintAnalyzer {
     myProject = project;
   }
 
-  public AnalysisResults analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ClientProgressMonitor progressMonitor) {
+  public ModuleAnalysisResult analyzeModule(Module module, Collection<VirtualFile> filesToAnalyze, IssueListener listener, ClientProgressMonitor progressMonitor) {
     // Configure plugin properties. Nothing might be done if there is no configurator available for the extensions loaded in runtime.
     var start = System.currentTimeMillis();
     var console = SonarLintUtils.getService(myProject, SonarLintConsole.class);
@@ -91,7 +90,7 @@ public class SonarLintAnalyzer {
         telemetry.analysisDoneOnMultipleFiles();
       }
 
-      return result;
+      return new ModuleAnalysisResult(result.failedAnalysisFiles());
     } catch (InvalidBindingException e) {
       // should not happen, as analysis should not have been submitted in this case.
       throw new IllegalStateException(e);

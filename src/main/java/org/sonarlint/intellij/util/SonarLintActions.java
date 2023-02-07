@@ -28,7 +28,7 @@ import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeChangedFilesAction;
 import org.sonarlint.intellij.actions.SonarCleanConsoleAction;
 import org.sonarlint.intellij.actions.ClearReportAction;
-import org.sonarlint.intellij.actions.SonarClearIssuesAction;
+import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 /**
@@ -66,7 +66,7 @@ public class SonarLintActions {
     clearReportAction = new ClearReportAction("Clear Project Files Issues",
       "Clear analysis results",
       SonarLintIcons.CLEAN);
-    clearIssuesAction = new SonarClearIssuesAction("Clear SonarLint Issues",
+    clearIssuesAction = new ClearCurrentFileIssuesAction("Clear SonarLint Issues",
       "Clear SonarLint issues",
       SonarLintIcons.CLEAN);
     cleanConsoleAction = new SonarCleanConsoleAction("Clear SonarLint Console",

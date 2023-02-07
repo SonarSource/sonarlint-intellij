@@ -41,7 +41,8 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.SonarLintTestUtils;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.core.ServerIssueUpdater;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.CachedFindings;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.trigger.TriggerType;
 import org.sonarsource.sonarlint.core.analysis.api.AnalysisResults;
@@ -70,7 +71,7 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
   @Mock
   private AnalysisResults analysisResults;
   private final SonarLintConsole sonarLintConsole = mock(SonarLintConsole.class);
-  private final FindingsManager findingsManagerMock = mock(FindingsManager.class);
+  private final FindingsCache findingsCacheMock = mock(FindingsCache.class);
 
   @Before
   public void prepare() {
@@ -79,13 +80,16 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
     filesToAnalyze.add(testFile.getVirtualFile());
     when(progress.isCanceled()).thenReturn(false);
     when(analysisResults.failedAnalysisFiles()).thenReturn(Collections.emptyList());
-    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class))).thenReturn(analysisResults);
+    var moduleAnalysisResult = new ModuleAnalysisResult(analysisResults.failedAnalysisFiles());
+    when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class)))
+      .thenReturn(moduleAnalysisResult);
+    when(findingsCacheMock.clearFindings(any())).thenReturn(new CachedFindings(Collections.emptyMap(), Collections.emptyMap()));
 
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
     replaceProjectService(SonarLintConsole.class, sonarLintConsole);
     replaceProjectService(ServerIssueUpdater.class, mock(ServerIssueUpdater.class));
-    replaceProjectService(FindingsManager.class, findingsManagerMock);
+    replaceProjectService(FindingsCache.class, findingsCacheMock);
 
     task = new Analysis(getProject(), filesToAnalyze, TriggerType.ACTION, false, mock(AnalysisCallback.class));
 
@@ -97,7 +101,8 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
   public void testTask() {
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class),
+      any(ClientProgressMonitor.class));
 
     assertThat(getExternalAnnotators())
       .extracting("implementationClass")
@@ -119,8 +124,9 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class));
-    verify(findingsManagerMock, never()).insertNewIssue(any(), any());
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class),
+      any(ClientProgressMonitor.class));
+    verify(findingsCacheMock, never()).insertNewIssue(any(), any());
   }
 
   @Test
@@ -139,7 +145,7 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
     task.run(progress);
 
     verifyNoInteractions(sonarLintAnalyzer);
-    verify(findingsManagerMock, never()).insertNewIssue(any(), any());
+    verify(findingsCacheMock, never()).insertNewIssue(any(), any());
   }
 
   @Test
@@ -162,7 +168,8 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class),
+      any(ClientProgressMonitor.class));
   }
 
   @Test
@@ -180,7 +187,8 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class),
+      any(ClientProgressMonitor.class));
   }
 
   @Test
@@ -197,7 +205,8 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
 
     task.run(progress);
 
-    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class));
+    verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class),
+      any(ClientProgressMonitor.class));
   }
 
   @Test

@@ -17,16 +17,27 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis
+package org.sonarlint.intellij.analysis;
 
-import com.intellij.openapi.vfs.VirtualFile
-import org.sonarlint.intellij.finding.LiveFindings
-import org.sonarlint.intellij.trigger.TriggerType
-import java.time.Instant
+import com.intellij.openapi.vfs.VirtualFile;
+import java.util.Collection;
+import java.util.Set;
+import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
 
-data class AnalysisResult(
-    val findings: LiveFindings,
-    val analyzedFiles: MutableCollection<out VirtualFile>,
-    val triggerType: TriggerType,
-    val analysisDate: Instant,
-)
+import static java.util.stream.Collectors.toSet;
+
+class ModuleAnalysisResult {
+
+  private final Set<VirtualFile> failedFiles;
+
+  public ModuleAnalysisResult(Collection<ClientInputFile> failedAnalysisFiles) {
+    failedFiles = failedAnalysisFiles.stream()
+      .map(ClientInputFile::getClientObject)
+      .map(VirtualFile.class::cast)
+      .collect(toSet());
+  }
+
+  public Collection<VirtualFile> failedFiles() {
+    return failedFiles;
+  }
+}

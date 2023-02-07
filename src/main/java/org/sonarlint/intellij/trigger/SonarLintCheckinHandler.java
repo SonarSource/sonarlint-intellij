@@ -102,7 +102,7 @@ public class SonarLintCheckinHandler extends CheckinHandler {
   }
 
   private ReturnResult processResult(AnalysisResult result) {
-    var issuesPerFile = result.getIssuesPerFile();
+    var issuesPerFile = result.getFindings().getIssuesPerFile();
 
     var numIssues = issuesPerFile.entrySet().stream()
       .flatMap(e -> e.getValue().stream())

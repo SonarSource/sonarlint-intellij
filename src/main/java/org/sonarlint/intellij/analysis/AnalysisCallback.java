@@ -20,20 +20,10 @@
 package org.sonarlint.intellij.analysis;
 
 public interface AnalysisCallback {
+  default void onIntermediateResult(AnalysisIntermediateResult intermediateResult) {
+    // no op
+  }
+
   void onSuccess(AnalysisResult analysisResult);
-
   void onError(Throwable e);
-
-  AnalysisCallback NO_OP = new AnalysisCallback() {
-
-    @Override
-    public void onSuccess(AnalysisResult analysisResult) {
-      // Ignore
-    }
-
-    @Override
-    public void onError(Throwable e) {
-      // Ignore
-    }
-  };
 }

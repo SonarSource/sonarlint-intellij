@@ -25,7 +25,6 @@ import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
-import org.sonarlint.intellij.editor.CodeAnalyzerRestarter;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger;
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber;
@@ -39,7 +38,6 @@ public class StartServicesOnProjectOpened implements StartupActivity {
       return;
     }
     SonarLintUtils.getService(project, ProjectServerNotificationsSubscriber.class).start();
-    SonarLintUtils.getService(project, CodeAnalyzerRestarter.class).init();
     SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
       SonarLintUtils.getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();

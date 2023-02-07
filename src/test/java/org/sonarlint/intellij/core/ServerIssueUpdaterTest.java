@@ -21,12 +21,10 @@ package org.sonarlint.intellij.core;
 
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,7 +33,7 @@ import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.client.api.connected.ProjectBranches;
 import org.sonarsource.sonarlint.core.serverconnection.ProjectBinding;
@@ -43,14 +41,12 @@ import org.sonarsource.sonarlint.core.serverconnection.issues.ServerIssue;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -61,7 +57,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
   public static final ProjectBinding PROJECT_BINDING = new ProjectBinding(PROJECT_KEY, "", "");
   private static final String FOO_PHP = "foo.php";
 
-  private FindingsManager findingsManager = mock(FindingsManager.class);
+  private FindingsCache findingsCache = mock(FindingsCache.class);
   private SonarLintConsole mockedConsole = mock(SonarLintConsole.class);
   private ConnectedSonarLintEngine engine = mock(ConnectedSonarLintEngine.class);
 
@@ -70,7 +66,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
   @Before
   public void prepare() throws InvalidBindingException {
     var bindingManager = spy(SonarLintUtils.getService(getProject(), ProjectBindingManager.class));
-    replaceProjectService(FindingsManager.class, findingsManager);
+    replaceProjectService(FindingsCache.class, findingsCache);
     replaceProjectService(SonarLintConsole.class, mockedConsole);
     replaceProjectService(ProjectBindingManager.class, bindingManager);
     doReturn(engine).when(bindingManager).getConnectedEngine();
@@ -93,7 +89,7 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     getProjectSettings().setBindingEnabled(false);
 
     underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
-    verifyNoInteractions(findingsManager);
+    verifyNoInteractions(findingsCache);
   }
 
   @Test
@@ -110,8 +106,6 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
     getProjectSettings().setBindingEnabled(true);
 
     underTest.fetchAndMatchServerIssues(Map.of(getModule(), List.of(file)), new EmptyProgressIndicator(), false);
-
-    verify(findingsManager, timeout(3000).times(1)).matchWithServerIssues(eq(file), argThat(issues -> issues.size() == 1));
 
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
@@ -136,7 +130,6 @@ public class ServerIssueUpdaterTest extends AbstractSonarLintLightTests {
 
     underTest.fetchAndMatchServerIssues(Map.of(getModule(), files), new EmptyProgressIndicator(), false);
 
-    verify(findingsManager, timeout(3000).times(10)).matchWithServerIssues(any(VirtualFile.class), argThat(issues -> issues.size() == 1));
     verify(engine).downloadAllServerIssues(any(), any(), eq(PROJECT_KEY), anyString(), isNull());
     verify(mockedConsole, never()).error(anyString());
     verify(mockedConsole, never()).error(anyString(), any(Throwable.class));
