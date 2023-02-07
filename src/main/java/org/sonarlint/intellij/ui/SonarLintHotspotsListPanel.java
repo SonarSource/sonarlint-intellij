@@ -29,17 +29,21 @@ import com.intellij.ui.components.labels.ActionLink;
 import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
+import java.awt.BorderLayout;
+import java.util.Collection;
+import javax.annotation.Nullable;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
-import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.editor.EditorDecorator;
-import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.finding.hotspot.*;
-
-import javax.annotation.Nullable;
-import javax.swing.*;
-import java.awt.*;
-import java.util.Collection;
+import org.sonarlint.intellij.finding.hotspot.FoundSecurityHotspots;
+import org.sonarlint.intellij.finding.hotspot.InvalidBinding;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.finding.hotspot.NoBinding;
+import org.sonarlint.intellij.finding.hotspot.NoIssueSelected;
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
@@ -119,14 +123,11 @@ public class SonarLintHotspotsListPanel {
     }
 
     private void showNoVulnerabilitiesLabel() {
-        ServerConnection serverConnection = null;
-        try {
-            serverConnection = getService(project, ProjectBindingManager.class).getServerConnection();
-        } catch (InvalidBindingException e) {
-            // TODO log the exception
-        }
-        noSecurityHotspotsLabel.setText("No security hotspots found for currently opened files in the latest analysis on " + serverConnection.getProductName() + ".");
-        cardPanel.show(NO_ISSUES_CARD_ID);
+        getService(project, ProjectBindingManager.class).tryGetServerConnection()
+          .ifPresentOrElse(serverConnection -> {
+              noSecurityHotspotsLabel.setText("No security hotspots found for currently opened files in the latest analysis on " + serverConnection.getProductName() + ".");
+              cardPanel.show(NO_ISSUES_CARD_ID);
+          }, () -> cardPanel.show(NO_BINDING_CARD_ID));
     }
 
     public void populate(SecurityHotspotsStatus status) {

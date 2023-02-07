@@ -17,16 +17,28 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.analysis
+package org.sonarlint.intellij.finding
 
 import com.intellij.openapi.vfs.VirtualFile
-import org.sonarlint.intellij.finding.LiveFindings
-import org.sonarlint.intellij.trigger.TriggerType
-import java.time.Instant
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
+import org.sonarlint.intellij.finding.issue.LiveIssue
 
-data class AnalysisResult(
-    val findings: LiveFindings,
-    val analyzedFiles: MutableCollection<out VirtualFile>,
-    val triggerType: TriggerType,
-    val analysisDate: Instant,
-)
+class LiveFindings(
+    val issuesPerFile: Map<VirtualFile, Collection<LiveIssue>>,
+    val securityHotspotsPerFile: Map<VirtualFile, Collection<LiveSecurityHotspot>>,
+) {
+    val filesInvolved = issuesPerFile.keys + securityHotspotsPerFile.keys
+
+    fun onlyFor(files: Set<VirtualFile>): LiveFindings {
+        return LiveFindings(
+            issuesPerFile.filterKeys { files.contains(it) },
+            securityHotspotsPerFile.filterKeys { files.contains(it) })
+    }
+
+    companion object {
+        @JvmStatic
+        fun none() : LiveFindings {
+            return LiveFindings(emptyMap(), emptyMap())
+        }
+    }
+}

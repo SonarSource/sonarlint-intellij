@@ -28,7 +28,7 @@ import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.persistence.FindingsManager
+import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.mediumtests.fixtures.StorageFixture.newStorage
 import org.sonarsource.sonarlint.core.commons.Language
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
@@ -97,6 +97,6 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
         val fileToAnalyze = myFixture.configureByText("file.rb", codeSnippet).virtualFile
         val submitter = getService(project, AnalysisSubmitter::class.java)
         submitter.analyzeFilesPreCommit(listOf(fileToAnalyze))
-        return getService(project, FindingsManager::class.java).getSecurityHotspotsForFile(fileToAnalyze)
+        return getService(project, FindingsCache::class.java).getSecurityHotspotsForFile(fileToAnalyze)
     }
 }

@@ -48,7 +48,8 @@ import org.sonarlint.intellij.common.vcs.VcsService;
 import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.finding.issue.ServerIssueTrackable;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
+import org.sonarlint.intellij.finding.tracking.ServerFindingTracker;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverconnection.DownloadException;
@@ -69,6 +70,7 @@ public class ServerIssueUpdater implements Disposable {
   private final Project myProject;
 
   private final ExecutorService executorService;
+  private final ServerFindingTracker serverFindingTracker = new ServerFindingTracker();
 
   public ServerIssueUpdater(Project project) {
     myProject = project;
@@ -267,8 +269,8 @@ public class ServerIssueUpdater implements Disposable {
           .collect(Collectors.toList());
 
         if (!serverIssuesTrackable.isEmpty()) {
-          FindingsManager findingsManager = getService(myProject, FindingsManager.class);
-          findingsManager.matchWithServerIssues(virtualFile, serverIssuesTrackable);
+          var issuesForFile = getService(myProject, FindingsCache.class).getIssuesForFile(virtualFile);
+          serverFindingTracker.matchLocalWithServerFindings(serverIssuesTrackable, issuesForFile);
         }
       } catch (Throwable t) {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible

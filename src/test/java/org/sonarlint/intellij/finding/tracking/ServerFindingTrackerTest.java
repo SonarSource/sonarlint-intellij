@@ -17,14 +17,13 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.finding.persistence;
+package org.sonarlint.intellij.finding.tracking;
 
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
@@ -39,12 +38,10 @@ import org.sonarsource.sonarlint.core.commons.RuleType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class FindingsManagerTest extends AbstractSonarLintLightTests {
-  private FindingsManager underTest;
-  private LiveFindingCache<LiveIssue> cache = mock(LiveFindingCache.class);
+public class ServerFindingTrackerTest extends AbstractSonarLintLightTests {
+  private ServerFindingTracker underTest;
   private VirtualFile file1 = mock(VirtualFile.class);
   private Document document = mock(Document.class);
   private LiveIssue issue1;
@@ -55,61 +52,11 @@ public class FindingsManagerTest extends AbstractSonarLintLightTests {
     when(file1.isValid()).thenReturn(true);
     when(file1.getPath()).thenReturn("file1");
 
-    underTest = new FindingsManager(getProject(), cache);
+    underTest = new ServerFindingTracker();
 
     issue1 = createRangeStoredIssue(1, "issue 1", 10);
-
-    when(cache.contains(file1)).thenReturn(true);
-    when(cache.getLive(file1)).thenReturn(List.of(issue1));
   }
 
-  @Test
-  public void should_return_file_issues() {
-    assertThat(underTest.getIssuesForFile(file1)).containsExactly(issue1);
-  }
-
-  @Test
-  public void testTracking() {
-    // tracking based on setRuleKey / line number
-    var previousIssue = createRangeStoredIssue(1, "issue 1", 10);
-    previousIssue.setCreationDate(1000L);
-    previousIssue.setSeverity(IssueSeverity.INFO);
-    previousIssue.setType(RuleType.BUG);
-
-    var rawIssue = createRangeStoredIssue(1, "issue 1", 10);
-    rawIssue.setCreationDate(2000L);
-    rawIssue.setSeverity(IssueSeverity.MAJOR);
-    rawIssue.setType(RuleType.CODE_SMELL);
-
-    var previousIssues = new ArrayList<>(List.of(previousIssue));
-
-    var trackedIssue = underTest.trackSingleIssue(file1, previousIssues, rawIssue);
-
-    // matched issues are removed from the list
-    assertThat(previousIssues).isEmpty();
-
-    assertThat(trackedIssue.getCreationDate()).isEqualTo(1000);
-    assertThat(trackedIssue.getUserSeverity()).isEqualTo(IssueSeverity.MAJOR);
-    assertThat(trackedIssue.getType()).isEqualTo(RuleType.CODE_SMELL);
-  }
-
-  @Test
-  public void testTracking_by_checksum() {
-    // tracking based on checksum
-    issue1.setCreationDate(1000L);
-
-    // line is different
-    var i2 = createRangeStoredIssue(1, "issue 1", 11);
-    i2.setCreationDate(2000L);
-
-    var previousIssues = new ArrayList<>(List.of(issue1));
-    var trackedIssue = underTest.trackSingleIssue(file1, previousIssues, i2);
-
-    // matched issues are removed from the list
-    assertThat(previousIssues).isEmpty();
-
-    assertThat(trackedIssue.getCreationDate()).isEqualTo(1000);
-  }
 
   @Test
   public void should_copy_server_issue_on_match() {
@@ -122,7 +69,7 @@ public class FindingsManagerTest extends AbstractSonarLintLightTests {
     serverIssue.setServerFindingKey(serverIssueKey);
     serverIssue.setSeverity(IssueSeverity.CRITICAL);
     serverIssue.setType(RuleType.BUG);
-    underTest.matchWithServerIssues(file1, List.of(serverIssue));
+    underTest.matchLocalWithServerFindings(List.of(serverIssue), List.of(issue1));
 
     // issue1 has been changed
     assertThat(issue1.getServerFindingKey()).isEqualTo(serverIssueKey);
@@ -135,7 +82,7 @@ public class FindingsManagerTest extends AbstractSonarLintLightTests {
     var serverIssue = createRangeStoredIssue(1, "issue 1", 10);
     serverIssue.setResolved(true);
 
-    underTest.matchWithServerIssues(file1, Collections.singleton(serverIssue));
+    underTest.matchLocalWithServerFindings(Collections.singleton(serverIssue), List.of(issue1));
 
     assertThat(issue1.isResolved()).isTrue();
   }
@@ -151,7 +98,7 @@ public class FindingsManagerTest extends AbstractSonarLintLightTests {
     serverIssue.setResolved(true);
     serverIssue.setSeverity(IssueSeverity.MAJOR);
     serverIssue.setType(RuleType.BUG);
-    underTest.matchWithServerIssues(file1, List.of(serverIssue));
+    underTest.matchLocalWithServerFindings(List.of(serverIssue), List.of(issue1));
 
     // the local issue is preserved ...
     assertThat(issue1.getLine()).isEqualTo(localLine);
@@ -165,7 +112,7 @@ public class FindingsManagerTest extends AbstractSonarLintLightTests {
   public void should_ignore_server_issue_if_not_matched() {
     var serverIssue = createRangeStoredIssue(2, "server issue", issue1.getLine() + 100);
     serverIssue.setServerFindingKey("dummyServerIssueKey");
-    underTest.matchWithServerIssues(file1, List.of(serverIssue));
+    underTest.matchLocalWithServerFindings(List.of(serverIssue), List.of(issue1));
 
     assertThat(issue1.getServerFindingKey()).isNull();
   }
@@ -176,7 +123,7 @@ public class FindingsManagerTest extends AbstractSonarLintLightTests {
     issue1.setServerFindingKey("dummyServerIssueKey");
     issue1.setSeverity(IssueSeverity.BLOCKER);
 
-    underTest.matchWithServerIssues(file1, Collections.emptyList());
+    underTest.matchLocalWithServerFindings(Collections.emptyList(), List.of(issue1));
 
     assertThat(issue1.getServerFindingKey()).isNull();
 
@@ -186,27 +133,13 @@ public class FindingsManagerTest extends AbstractSonarLintLightTests {
   }
 
   @Test
-  public void unknown_file() {
-    var unknownFile = mock(VirtualFile.class);
-    when(cache.getLive(unknownFile)).thenReturn(null);
-    assertThat(underTest.neverAnalyzedSinceStartup(unknownFile)).isTrue();
-    assertThat(underTest.getIssuesForFile(unknownFile)).isEmpty();
-  }
-
-  @Test
   public void should_preserve_creation_date_of_leaked_issues_in_connected_mode() {
     var creationDate = 1L;
     issue1.setCreationDate(creationDate);
 
-    underTest.matchWithServerIssues(file1, Collections.emptyList());
+    underTest.matchLocalWithServerFindings(Collections.emptyList(), List.of(issue1));
 
     assertThat(issue1.getCreationDate()).isEqualTo(creationDate);
-  }
-
-  @Test
-  public void testClear() {
-    underTest.clearAllIssuesForAllFiles();
-    verify(cache).clear();
   }
 
   private LiveIssue createRangeStoredIssue(int id, String rangeContent, int line) {

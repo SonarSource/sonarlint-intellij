@@ -19,17 +19,16 @@
  */
 package org.sonarlint.intellij.actions;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.util.ui.UIUtil;
 import org.sonarlint.intellij.analysis.AnalysisCallback;
+import org.sonarlint.intellij.analysis.AnalysisIntermediateResult;
 import org.sonarlint.intellij.analysis.AnalysisResult;
-import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.analysis.OnTheFlyFindingsHolder;
 
 public class UpdateOnTheFlyFindingsCallable implements AnalysisCallback {
-  private final Project project;
+  private final OnTheFlyFindingsHolder onTheFlyFindingsHolder;
 
-  public UpdateOnTheFlyFindingsCallable(Project project) {
-    this.project = project;
+  public UpdateOnTheFlyFindingsCallable(OnTheFlyFindingsHolder onTheFlyFindingsHolder) {
+    this.onTheFlyFindingsHolder = onTheFlyFindingsHolder;
   }
 
   @Override public void onError(Throwable e) {
@@ -37,12 +36,12 @@ public class UpdateOnTheFlyFindingsCallable implements AnalysisCallback {
   }
 
   @Override
-  public void onSuccess(AnalysisResult analysisResult) {
-    showHotspotsTab(analysisResult);
+  public void onIntermediateResult(AnalysisIntermediateResult intermediateResult) {
+    onTheFlyFindingsHolder.updateOnAnalysisIntermediateResult(intermediateResult);
   }
 
-  private void showHotspotsTab(AnalysisResult analysisResult) {
-    // the issues are updated through another mechanism for now
-    UIUtil.invokeLaterIfNeeded(() -> SonarLintUtils.getService(project, SonarLintToolWindow.class).updateHotspotsTab(analysisResult));
+  @Override
+  public void onSuccess(AnalysisResult analysisResult) {
+    onTheFlyFindingsHolder.updateOnAnalysisResult(analysisResult);
   }
 }

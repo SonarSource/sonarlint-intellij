@@ -229,7 +229,7 @@
         <projectService serviceImplementation="org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber"/>
         <projectService serviceImplementation="org.sonarlint.intellij.editor.CodeAnalyzerRestarter"/>
         <projectService serviceImplementation="org.sonarlint.intellij.config.project.SonarLintProjectState"/>
-        <projectService serviceImplementation="org.sonarlint.intellij.finding.persistence.FindingsManager"/>
+        <projectService serviceImplementation="org.sonarlint.intellij.finding.persistence.FindingsCache"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.AnalysisStatus"/>
         <projectService serviceImplementation="org.sonarlint.intellij.trigger.EditorChangeTrigger"/>
         <projectService serviceImplementation="org.sonarlint.intellij.analysis.SonarLintAnalyzer"/>

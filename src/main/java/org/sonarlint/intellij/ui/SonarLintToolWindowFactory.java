@@ -107,13 +107,11 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
 
   private static void addCurrentFileTab(Project project, @NotNull ContentManager contentManager) {
     var currentFilePanel = new CurrentFilePanel(project);
-    var currentFileController = new CurrentFileController(project, currentFilePanel);
     var currentFileContent = contentManager.getFactory()
       .createContent(
         currentFilePanel,
         CURRENT_FILE_TAB_TITLE,
         false);
-    Disposer.register(currentFileContent, currentFileController);
     currentFileContent.setCloseable(false);
     contentManager.addDataProvider(currentFilePanel);
     contentManager.addContent(currentFileContent);

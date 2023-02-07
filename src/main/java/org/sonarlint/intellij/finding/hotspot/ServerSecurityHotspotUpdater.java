@@ -49,7 +49,8 @@ import org.sonarlint.intellij.config.global.ServerConnection;
 import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.exception.InvalidBindingException;
-import org.sonarlint.intellij.finding.persistence.FindingsManager;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
+import org.sonarlint.intellij.finding.tracking.ServerFindingTracker;
 import org.sonarlint.intellij.finding.tracking.Trackable;
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine;
 import org.sonarsource.sonarlint.core.serverapi.hotspot.ServerHotspot;
@@ -70,6 +71,7 @@ public class ServerSecurityHotspotUpdater implements Disposable {
   private final Project myProject;
 
   private final ExecutorService executorService;
+  private final ServerFindingTracker serverFindingTracker = new ServerFindingTracker();
 
   public ServerSecurityHotspotUpdater(Project project) {
     myProject = project;
@@ -157,7 +159,8 @@ public class ServerSecurityHotspotUpdater implements Disposable {
     if (!downloadAll) {
       for (var e : filesPerModule.entrySet()) {
         var projectKey = getService(e.getKey(), ModuleBindingManager.class).resolveProjectKey();
-        futureList.addAll(fetchAndMatchServerSecurityHotspots(Objects.requireNonNull(projectKey), e.getKey(), e.getValue(), connection, engine));
+        futureList.addAll(fetchAndMatchServerSecurityHotspots(Objects.requireNonNull(projectKey), e.getKey(), e.getValue(), connection,
+          engine));
       }
     } else {
       futureList.addAll(downloadAndMatchAllServerHotspots(filesPerModule, connection, engine));
@@ -274,8 +277,8 @@ public class ServerSecurityHotspotUpdater implements Disposable {
           .collect(Collectors.toList());
 
         if (!serverHotspotsTrackable.isEmpty()) {
-          FindingsManager findingsManager = getService(myProject, FindingsManager.class);
-          findingsManager.matchWithServerSecurityHotspots(virtualFile, serverHotspotsTrackable);
+          var securityHotspotsForFile = getService(myProject, FindingsCache.class).getSecurityHotspotsForFile(virtualFile);
+          serverFindingTracker.matchLocalWithServerFindings(serverHotspotsTrackable, securityHotspotsForFile);
         }
       } catch (Throwable t) {
         // note: without catching Throwable, any exceptions raised in the thread will not be visible
