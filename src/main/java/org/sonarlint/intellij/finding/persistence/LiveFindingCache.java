@@ -25,7 +25,6 @@ import com.intellij.openapi.vfs.VirtualFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -107,7 +106,7 @@ public class LiveFindingCache<T extends LiveFinding> {
       return emptyList();
     }
     var storeFindings = persistence.read(storeKey);
-    return storeFindings != null ? Collections.unmodifiableCollection(storeFindings) : emptyList();
+    return storeFindings != null ? new ArrayList<>(storeFindings) : emptyList();
   }
 
   /**

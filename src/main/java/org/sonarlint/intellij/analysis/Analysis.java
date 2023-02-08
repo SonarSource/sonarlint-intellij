@@ -151,8 +151,8 @@ public class Analysis implements Cancelable {
 
     // Cache everything that rely on issue store before clearing issues
     var firstAnalyzedFiles = cacheFirstAnalyzedFiles(findingsManager, allFilesToAnalyze);
-    var previousIssuesPerFile = findingsManager.getPreviousIssuesByFile(allFilesToAnalyze);
-    var previousSecurityHotspotsPerFile = findingsManager.getPreviousSecurityHotspotsByFile(allFilesToAnalyze);
+    var previousIssuesPerFile = new HashMap<>(findingsManager.getPreviousIssuesByFile(allFilesToAnalyze));
+    var previousSecurityHotspotsPerFile = new HashMap<>(findingsManager.getPreviousSecurityHotspotsByFile(allFilesToAnalyze));
 
     var rawIssueCounter = new AtomicInteger();
 
