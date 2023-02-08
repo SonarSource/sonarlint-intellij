@@ -49,10 +49,10 @@ public class AbstractNodeTest {
   @Test
   public void testInsertion() {
     var summaryNode = new SummaryNode();
-    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("name")), nameComparator)).isZero();
-    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("file")), nameComparator)).isZero();
-    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("test")), nameComparator)).isEqualTo(2);
-    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("abc")), nameComparator)).isZero();
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("name"), false), nameComparator)).isZero();
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("file"), false), nameComparator)).isZero();
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("test"), false), nameComparator)).isEqualTo(2);
+    assertThat(summaryNode.insertFileNode(new FileNode(mockFile("abc"), false), nameComparator)).isZero();
 
     assertThat(summaryNode.getChildCount()).isEqualTo(4);
     assertThat(((FileNode) summaryNode.getChildAt(0)).file().getName()).isEqualTo("abc");
@@ -67,21 +67,21 @@ public class AbstractNodeTest {
     var child2 = mock(AbstractNode.class);
     var child3 = mock(AbstractNode.class);
 
-    when(child1.getIssueCount()).thenReturn(1);
+    when(child1.getFindingCount()).thenReturn(1);
 
-    when(child2.getIssueCount()).thenReturn(2);
+    when(child2.getFindingCount()).thenReturn(2);
 
-    when(child3.getIssueCount()).thenReturn(3);
+    when(child3.getFindingCount()).thenReturn(3);
 
     testNode.add(child1);
     testNode.add(child2);
     testNode.add(child3);
 
-    assertThat(testNode.getIssueCount()).isEqualTo(6);
-    assertThat(testNode.getIssueCount()).isEqualTo(6);
+    assertThat(testNode.getFindingCount()).isEqualTo(6);
+    assertThat(testNode.getFindingCount()).isEqualTo(6);
 
     //second call should be from cache
-    verify(child1, times(1)).getIssueCount();
+    verify(child1, times(1)).getFindingCount();
   }
 
   private final Comparator<FileNode> nameComparator = Comparator.comparing(f -> f.file().getName());

@@ -22,7 +22,6 @@ package org.sonarlint.intellij.ui;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -35,7 +34,7 @@ import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
-public class ReportPanel extends AbstractFindingsPanel implements Disposable {
+public class ReportPanel extends AbstractIssuesPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
   private final LastAnalysisPanel lastAnalysisPanel;
@@ -45,16 +44,13 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
     this.lastAnalysisPanel = new LastAnalysisPanel();
 
     // Issues panel with tree
-    var findingsPanel = new JPanel(new BorderLayout());
-    var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
-    treePanel.add(tree);
-    treePanel.add(shTree);
-    findingsPanel.add(ScrollPaneFactory.createScrollPane(treePanel), BorderLayout.CENTER);
-    findingsPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
+    var issuesPanel = new JPanel(new BorderLayout());
+    issuesPanel.add(ScrollPaneFactory.createScrollPane(tree), BorderLayout.CENTER);
+    issuesPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
     setToolbar(createActionGroup());
 
     // Put everything together
-    super.setContent(createSplitter(project, this, this, findingsPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
+    super.setContent(createSplitter(project, this, this, issuesPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
     // Subscribe to events
     subscribeToEvents();
@@ -77,20 +73,12 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
       newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
   }
 
-  public void updateFindings(AnalysisResult analysisResult) {
+  public void updateIssues(AnalysisResult analysisResult) {
     if (project.isDisposed()) {
       return;
     }
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     treeBuilder.updateModel(analysisResult.getIssuesPerFile(), "No issues found");
-    shTreeBuilder.updateModel(analysisResult.getSecurityHotspotsPerFile(), "No security hotspots found");
-
-    if (analysisResult.getSecurityHotspotsPerFile().isEmpty()) {
-      disableSecurityHotspotTree();
-    } else {
-      enableHotspotTree();
-    }
-
     expandTree();
   }
 
@@ -115,7 +103,6 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
     }
     lastAnalysisPanel.clear();
     treeBuilder.clear();
-    shTreeBuilder.clear();
   }
 
   private void expandTree() {
@@ -124,12 +111,6 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
     } else {
       tree.expandRow(0);
     }
-
-    if (shTreeBuilder.numberHotspots() < 30) {
-      TreeUtil.expandAll(shTree);
-    } else {
-      shTree.expandRow(0);
-    }
   }
 
   @Override
@@ -137,5 +118,4 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
   public void dispose() {
     lastAnalysisPanel.dispose();
   }
-
 }

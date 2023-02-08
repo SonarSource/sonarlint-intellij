@@ -31,9 +31,11 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.pluralize;
 
 public class FileNode extends AbstractNode {
   private final VirtualFile file;
+  private final boolean isSecurityHotspot;
 
-  public FileNode(VirtualFile file) {
+  public FileNode(VirtualFile file, boolean isSecurityHotspot) {
     this.file = file;
+    this.isSecurityHotspot = isSecurityHotspot;
   }
 
   public VirtualFile file() {
@@ -41,7 +43,7 @@ public class FileNode extends AbstractNode {
   }
 
   @Override
-  public int getIssueCount() {
+  public int getFindingCount() {
     return super.getChildCount();
   }
 
@@ -53,7 +55,8 @@ public class FileNode extends AbstractNode {
   public void render(TreeCellRenderer renderer) {
     renderer.setIcon(getIcon());
     renderer.append(file.getName());
-    renderer.append(spaceAndThinSpace() + "(" + getIssueCount() + pluralize(" issue", getIssueCount()) + ")", SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
+    renderer.append(spaceAndThinSpace() + "(" + getFindingCount() + pluralize(isSecurityHotspot ? " security hotspot" : " issue", getFindingCount()) + ")",
+      SimpleTextAttributes.GRAYED_BOLD_ATTRIBUTES);
   }
 
   @Override

@@ -21,36 +21,37 @@ package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.psi.PsiFile;
 import java.util.Collections;
+import java.util.Optional;
 import org.junit.Test;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class IssueNodeTest {
-  private IssueNode node;
+public class SecurityHotspotNodeTest {
+  private LiveSecurityHotspotNode node;
 
   @Test
   public void testCount() {
-    var i = createIssue(System.currentTimeMillis(), "rule");
-    node = new IssueNode(i);
+    var i = createSecurityHotspot(System.currentTimeMillis(), "rule");
+    node = new LiveSecurityHotspotNode(i);
     assertThat(node.getFindingCount()).isEqualTo(1);
-    assertThat(node.issue()).isEqualTo(i);
+    assertThat(node.getHotspot()).isEqualTo(i);
   }
 
-  private static LiveIssue createIssue(long date, String message) {
+  private static LiveSecurityHotspot createSecurityHotspot(long date, String message) {
     var file = mock(PsiFile.class);
     when(file.isValid()).thenReturn(true);
     var issue = mock(Issue.class);
     when(issue.getMessage()).thenReturn(message);
-    when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
+    when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(VulnerabilityProbability.HIGH));
     when(issue.getType()).thenReturn(RuleType.BUG);
-    var issuePointer = new LiveIssue(issue, file, Collections.emptyList());
-    issuePointer.setCreationDate(date);
-    return issuePointer;
+    var securityHotspotPointer = new LiveSecurityHotspot(issue, file, Collections.emptyList());
+    securityHotspotPointer.setCreationDate(date);
+    return securityHotspotPointer;
   }
 }

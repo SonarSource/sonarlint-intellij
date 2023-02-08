@@ -17,44 +17,36 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.ui.nodes;
+package org.sonarlint.intellij.actions;
 
-import com.intellij.icons.AllIcons;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.vfs.VirtualFile;
-import org.junit.Before;
+import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.junit.Test;
+import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class FileNodeTest {
-  private VirtualFile file = mock(VirtualFile.class);
-  private FileNode node = new FileNode(file, false);
+public class ClearReportActionTest extends AbstractSonarLintLightTests {
+  private ClearReportAction action = new ClearReportAction(null, null, null);
 
-  @Before
-  public void setUp() {
-    var type = mock(FileType.class);
-    when(type.getIcon()).thenReturn(AllIcons.FileTypes.Java);
 
-    when(file.getFileType()).thenReturn(type);
-    when(file.getName()).thenReturn("fileName");
+  @Test
+  public void clear() {
+    var toolWindow = mock(SonarLintToolWindow.class);
+    replaceProjectService(SonarLintToolWindow.class, toolWindow);
+
+    var event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(getProject());
+    action.actionPerformed(event);
+
+    verify(toolWindow).clearReportTab();
   }
 
   @Test
-  public void testCountIssues() {
-    node.add(createTestIssueNode());
-    node.add(createTestIssueNode());
-    assertThat(node.getFindingCount()).isEqualTo(2);
-  }
-
-  @Test
-  public void testGetFile() {
-    assertThat(node.file()).isEqualTo(file);
-  }
-
-  private static IssueNode createTestIssueNode() {
-    return mock(IssueNode.class);
+  public void noProject() {
+    var event = mock(AnActionEvent.class);
+    when(event.getProject()).thenReturn(null);
+    action.actionPerformed(event);
   }
 }

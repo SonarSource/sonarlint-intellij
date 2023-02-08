@@ -73,10 +73,14 @@ public class SonarLintIcons {
     TYPE_ICONS.put("bug", getIcon("/images/type/bug.png"));
     TYPE_ICONS.put("code_smell", getIcon("/images/type/code_smell.png"));
     TYPE_ICONS.put("vulnerability", getIcon("/images/type/vulnerability.png"));
+    TYPE_ICONS.put("security_hotspot_high", getIcon("/images/type/hotspot_high.png"));
+    TYPE_ICONS.put("security_hotspot_medium", getIcon("/images/type/hotspot_medium.png"));
+    TYPE_ICONS.put("security_hotspot_low", getIcon("/images/type/hotspot_low.png"));
 
     TYPE_ICONS_12.put("bug", getIcon("/images/type/bug12.png"));
     TYPE_ICONS_12.put("code_smell", getIcon("/images/type/code_smell12.png"));
     TYPE_ICONS_12.put("vulnerability", getIcon("/images/type/vulnerability12.png"));
+    TYPE_ICONS_12.put("security_hotspot", getIcon("/images/type/hotspot12.png"));
   }
 
   private static Icon getIcon(String path) {

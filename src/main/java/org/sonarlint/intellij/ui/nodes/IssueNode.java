@@ -89,7 +89,7 @@ public class IssueNode extends AbstractNode {
   }
 
   @Override
-  public int getIssueCount() {
+  public int getFindingCount() {
     return 1;
   }
 

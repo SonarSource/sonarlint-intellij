@@ -128,7 +128,7 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         descriptionPanel.removeAll()
         hideRuleParameters()
         ruleNameLabel.text = ""
-        headerPanel.showMessage(if (error) "Couldn't find the rule description" else "Select an issue to display the rule description")
+        headerPanel.showMessage(if (error) "Couldn't find the rule description" else "Select a finding to display the rule description")
         revalidate()
     }
 

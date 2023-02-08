@@ -34,9 +34,10 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.Location
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.hotspot.LocalHotspot
+import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import java.awt.Font
 import java.util.function.Consumer
@@ -105,6 +106,10 @@ open class EditorDecorator(private val project: Project) {
 
   open fun highlight(hotspot: LocalHotspot) {
     createHighlight(hotspot.primaryLocation.range, hotspot.message)?.let { updateHighlights(listOf(it)) }
+  }
+
+  open fun highlight(securityHotspot: LiveSecurityHotspot) {
+    createHighlight(securityHotspot.range, securityHotspot.message)?.let { updateHighlights(listOf(it)) }
   }
 
   private fun updateHighlights(highlights: List<Highlight>) {
@@ -183,4 +188,5 @@ open class EditorDecorator(private val project: Project) {
   }
 
   class Highlight(val document: Document, val highlightInfo: HighlightInfo)
+
 }
