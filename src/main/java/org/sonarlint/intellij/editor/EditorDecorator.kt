@@ -37,7 +37,6 @@ import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.hotspot.LocalHotspot
-import org.sonarlint.intellij.finding.issue.LiveIssue
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import java.awt.Font
 import java.util.function.Consumer
@@ -73,13 +72,13 @@ open class EditorDecorator(private val project: Project) {
     }
   }
 
-  open fun highlightIssue(issue: LiveIssue) {
-    val highlights = issue.context()
+  open fun highlightFinding(finding: LiveFinding) {
+    val highlights = finding.context()
       .map { createHighlights(it.flows()[0].locations) }
       .orElse(mutableListOf())
-    createHighlight(issue.range, issue.message)?.let(highlights::add)
+    createHighlight(finding.range, finding.message)?.let(highlights::add)
     updateHighlights(highlights)
-    issue.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
+    finding.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
   }
 
   open fun highlight(vulnerability: LocalTaintVulnerability) {
@@ -106,10 +105,6 @@ open class EditorDecorator(private val project: Project) {
 
   open fun highlight(hotspot: LocalHotspot) {
     createHighlight(hotspot.primaryLocation.range, hotspot.message)?.let { updateHighlights(listOf(it)) }
-  }
-
-  open fun highlight(liveFinding: LiveFinding) {
-    createHighlight(liveFinding.range, liveFinding.message)?.let { updateHighlights(listOf(it)) }
   }
 
   private fun updateHighlights(highlights: List<Highlight>) {

@@ -99,7 +99,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
       var issue = selectedNodes[0].issue();
       var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(issue.psiFile().getVirtualFile());
       rulePanel.setRuleKey(moduleForFile, issue.getRuleKey(), null);
-      SonarLintUtils.getService(project, EditorDecorator.class).highlightIssue(issue);
+      SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(issue);
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
       flowsTreeBuilder.populateForIssue(issue);
       flowsTree.expandAll();
