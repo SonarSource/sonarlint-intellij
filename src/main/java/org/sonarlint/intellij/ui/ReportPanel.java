@@ -20,61 +20,77 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.roots.ProjectRootManager;
+import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.components.JBTabbedPane;
+import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import javax.swing.Box;
 import javax.swing.JPanel;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.editor.EditorDecorator;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.messages.StatusListener;
 import org.sonarlint.intellij.trigger.TriggerType;
+import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
+import org.sonarlint.intellij.ui.tree.FlowsTree;
+import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
+import org.sonarlint.intellij.ui.tree.IssueTree;
+import org.sonarlint.intellij.ui.tree.IssueTreeModelBuilder;
+import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
+import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
 import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
-public class ReportPanel extends AbstractFindingsPanel implements Disposable {
+public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
-
+  private static final String ID = "SonarLint";
+  private static final int RULE_TAB_INDEX = 0;
+  private static final int LOCATIONS_TAB_INDEX = 1;
+  protected final Project project;
+  protected SonarLintRulePanel rulePanel;
+  protected JBTabbedPane detailsTab;
+  protected Tree tree;
+  protected IssueTreeModelBuilder treeBuilder;
+  protected FlowsTree flowsTree;
+  protected FlowsTreeModelBuilder flowsTreeBuilder;
+  private ActionToolbar mainToolbar;
+  protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
+  protected Tree securityHotspotTree;
   private final LastAnalysisPanel lastAnalysisPanel;
 
   public ReportPanel(Project project) {
-    super(project);
+    super(false, true);
+    this.project = project;
     this.lastAnalysisPanel = new LastAnalysisPanel();
 
-    // Issues panel with tree
-    var findingsPanel = new JPanel(new BorderLayout());
-    var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
-    treePanel.add(tree);
-    treePanel.add(shTree);
-    findingsPanel.add(ScrollPaneFactory.createScrollPane(treePanel), BorderLayout.CENTER);
-    findingsPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
-    setToolbar(createActionGroup());
+    createFlowsTree();
+    createIssuesTree();
+    createSecurityHotspotsTree();
+    createTabs();
+    handleListener();
+    disableSecurityHotspotTree();
 
-    // Put everything together
-    super.setContent(createSplitter(project, this, this, findingsPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
+    initPanel();
 
     // Subscribe to events
     subscribeToEvents();
-  }
-
-  private static SimpleActionGroup createActionGroup() {
-    var sonarLintActions = SonarLintActions.getInstance();
-    var actionGroup = new SimpleActionGroup();
-    actionGroup.add(sonarLintActions.analyzeChangedFiles());
-    actionGroup.add(sonarLintActions.analyzeAllFiles());
-    actionGroup.add(sonarLintActions.cancelAnalysis());
-    actionGroup.add(sonarLintActions.configure());
-    actionGroup.add(sonarLintActions.clearReport());
-    return actionGroup;
-  }
-
-  private void subscribeToEvents() {
-    var busConnection = project.getMessageBus().connect(project);
-    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
-      newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
   }
 
   public void updateFindings(AnalysisResult analysisResult) {
@@ -83,7 +99,7 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
     }
     lastAnalysisPanel.update(analysisResult.getAnalysisDate(), whatAnalyzed(analysisResult));
     treeBuilder.updateModel(analysisResult.getIssuesPerFile(), "No issues found");
-    shTreeBuilder.updateModel(analysisResult.getSecurityHotspotsPerFile(), "No security hotspots found");
+    securityHotspotTreeBuilder.updateModel(analysisResult.getSecurityHotspotsPerFile(), "No security hotspots found");
 
     if (analysisResult.getSecurityHotspotsPerFile().isEmpty()) {
       disableSecurityHotspotTree();
@@ -94,7 +110,96 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
     expandTree();
   }
 
-  private static String whatAnalyzed(AnalysisResult analysisResult) {
+  private void initPanel() {
+    // Findings panel with tree
+    var findingsPanel = new JPanel(new BorderLayout());
+    var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
+    treePanel.add(tree);
+    treePanel.add(securityHotspotTree);
+    findingsPanel.add(ScrollPaneFactory.createScrollPane(treePanel), BorderLayout.CENTER);
+    findingsPanel.add(lastAnalysisPanel.getPanel(), BorderLayout.SOUTH);
+    setToolbar(createActionGroup());
+
+    // Put everything together
+    super.setContent(createSplitter(project, this, this, findingsPanel, detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
+  }
+
+  private void refreshToolbar() {
+    mainToolbar.updateActionsImmediately();
+  }
+
+  private void enableHotspotTree() {
+    tree.setShowsRootHandles(true);
+    securityHotspotTree.setShowsRootHandles(true);
+    securityHotspotTree.setVisible(true);
+  }
+
+  private void disableSecurityHotspotTree() {
+    tree.setShowsRootHandles(false);
+    securityHotspotTree.setShowsRootHandles(false);
+    securityHotspotTree.setVisible(false);
+  }
+
+  private void issueTreeSelectionChanged(TreeSelectionEvent e) {
+    if (!tree.isSelectionEmpty()) {
+      securityHotspotTree.clearSelection();
+    }
+    var selectedIssueNodes = tree.getSelectedNodes(IssueNode.class, null);
+    if (selectedIssueNodes.length > 0) {
+      updateOnSelect(selectedIssueNodes[0].issue());
+    } else {
+      clearSelectionChanged();
+    }
+  }
+
+  private void securityHotspotTreeSelectionChanged(TreeSelectionEvent e) {
+    if (e.getSource() instanceof SecurityHotspotTree) {
+      if (!securityHotspotTree.isSelectionEmpty()) {
+        tree.clearSelection();
+      }
+      var selectedHotspotsNodes = securityHotspotTree.getSelectedNodes(LiveSecurityHotspotNode.class, null);
+      if (selectedHotspotsNodes.length > 0) {
+        updateOnSelect(selectedHotspotsNodes[0].getHotspot());
+      } else {
+        clearSelectionChanged();
+      }
+    }
+  }
+
+  private void updateOnSelect(LiveFinding liveFinding) {
+    var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
+    rulePanel.setRuleKey(moduleForFile, liveFinding.getRuleKey(), null);
+    SonarLintUtils.getService(project, EditorDecorator.class).highlight(liveFinding);
+    flowsTree.getEmptyText().setText("No finding selected");
+    flowsTree.expandAll();
+  }
+
+  private void setToolbar(ActionGroup group) {
+    if (mainToolbar != null) {
+      mainToolbar.setTargetComponent(null);
+      super.setToolbar(null);
+      mainToolbar = null;
+    }
+    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, group, false);
+    mainToolbar.setTargetComponent(this);
+    var toolBarBox = Box.createHorizontalBox();
+    toolBarBox.add(mainToolbar.getComponent());
+    super.setToolbar(toolBarBox);
+    mainToolbar.getComponent().setVisible(true);
+  }
+
+  private SimpleActionGroup createActionGroup() {
+    var sonarLintActions = SonarLintActions.getInstance();
+    var actionGroup = new SimpleActionGroup();
+    actionGroup.add(sonarLintActions.analyzeChangedFiles());
+    actionGroup.add(sonarLintActions.analyzeAllFiles());
+    actionGroup.add(sonarLintActions.cancelAnalysis());
+    actionGroup.add(sonarLintActions.configure());
+    actionGroup.add(sonarLintActions.clearReport());
+    return actionGroup;
+  }
+
+  private String whatAnalyzed(AnalysisResult analysisResult) {
     var trigger = analysisResult.getTriggerType();
     if (TriggerType.ALL.equals(trigger)) {
       return "all project files";
@@ -109,13 +214,80 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
     return filesCount + " files";
   }
 
+  private void handleListener() {
+    tree.addTreeSelectionListener(this::issueTreeSelectionChanged);
+    securityHotspotTree.addTreeSelectionListener(this::securityHotspotTreeSelectionChanged);
+  }
+
+  private void createSecurityHotspotsTree() {
+    securityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
+    var model = securityHotspotTreeBuilder.createModel();
+    securityHotspotTree = new SecurityHotspotTree(project, model);
+    manageInteraction(securityHotspotTree);
+  }
+
+  private void createTabs() {
+    // Flows panel with tree
+    var flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
+    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
+
+    // Rule panel
+    rulePanel = new SonarLintRulePanel(project);
+
+    detailsTab = new JBTabbedPane();
+    detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
+    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the finding", LOCATIONS_TAB_INDEX);
+  }
+
+  private void clearSelectionChanged() {
+    flowsTreeBuilder.clearFlows();
+    flowsTree.getEmptyText().setText("No finding selected");
+    rulePanel.setRuleKey(null, null, null);
+    var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+    highlighting.removeHighlights();
+  }
+
+  private void createFlowsTree() {
+    flowsTreeBuilder = new FlowsTreeModelBuilder();
+    var model = flowsTreeBuilder.createModel();
+    flowsTree = new FlowsTree(project, model);
+    flowsTreeBuilder.clearFlows();
+    flowsTree.getEmptyText().setText("No finding selected");
+  }
+
+  private void createIssuesTree() {
+    treeBuilder = new IssueTreeModelBuilder();
+    var model = treeBuilder.createModel();
+    tree = new IssueTree(project, model);
+    manageInteraction(tree);
+  }
+
+  private void manageInteraction(Tree tree) {
+    tree.addKeyListener(new KeyAdapter() {
+      @Override
+      public void keyPressed(KeyEvent e) {
+        if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
+          var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+          highlighting.removeHighlights();
+        }
+      }
+    });
+    tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+  }
+
+  private void subscribeToEvents() {
+    var busConnection = project.getMessageBus().connect(project);
+    busConnection.subscribe(StatusListener.SONARLINT_STATUS_TOPIC,
+      newStatus -> ApplicationManager.getApplication().invokeLater(this::refreshToolbar));
+  }
+
   public void clear() {
     if (project.isDisposed()) {
       return;
     }
     lastAnalysisPanel.clear();
     treeBuilder.clear();
-    shTreeBuilder.clear();
+    securityHotspotTreeBuilder.clear();
   }
 
   private void expandTree() {
@@ -125,10 +297,10 @@ public class ReportPanel extends AbstractFindingsPanel implements Disposable {
       tree.expandRow(0);
     }
 
-    if (shTreeBuilder.numberHotspots() < 30) {
-      TreeUtil.expandAll(shTree);
+    if (securityHotspotTreeBuilder.numberHotspots() < 30) {
+      TreeUtil.expandAll(securityHotspotTree);
     } else {
-      shTree.expandRow(0);
+      securityHotspotTree.expandRow(0);
     }
   }
 

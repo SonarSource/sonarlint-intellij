@@ -31,6 +31,7 @@ import com.intellij.serviceContainer.NonInjectable
 import org.apache.commons.io.FileUtils
 import org.sonarlint.intellij.SonarLintIntelliJClient
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.vcs.VcsService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.ServerConnection
@@ -50,6 +51,7 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveCo
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsResponse
 import java.io.IOException
@@ -259,6 +261,14 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
 
     fun getActiveRuleDetails(module: Module, ruleKey: String, contextKey: String?): CompletableFuture<GetActiveRuleDetailsResponse> {
         return backend.activeRulesService.getActiveRuleDetails(GetActiveRuleDetailsParams(moduleId(module), ruleKey, contextKey))
+    }
+
+    fun openHotspotInIde(module: Module, hotspotKey: String) {
+        val branchName: String? = getService(module.project, VcsService::class.java).getServerBranchName(module)
+        branchName?.let {
+            val configScopeId = moduleId(module)
+            backend.hotspotService.openHotspotInBrowser(OpenHotspotInBrowserParams(configScopeId, branchName, hotspotKey))
+        }
     }
 
     companion object {

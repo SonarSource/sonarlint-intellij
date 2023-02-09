@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.actions
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataKey
 import com.intellij.openapi.module.ModuleUtil
@@ -27,10 +26,9 @@ import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.analysis.AnalysisStatus
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.global.ServerConnection
-import org.sonarlint.intellij.core.ModuleBindingManager
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils
 
 class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
   "Open In Browser",
@@ -55,20 +53,12 @@ class OpenSecurityHotspotInBrowserAction : AbstractSonarAction(
     val key = securityHotspot?.serverFindingKey ?: return
     val localFile = securityHotspot.psiFile().virtualFile ?: return
     val localFileModule = ModuleUtil.findModuleForFile(localFile, project) ?: return
-    val serverUrl = serverConnection(project)?.hostUrl ?: return
-    val projectKey = getService(localFileModule, ModuleBindingManager::class.java).resolveProjectKey() ?: return
-    BrowserUtil.browse(buildLink(serverUrl, projectKey, key))
+    getService(BackendService::class.java).openHotspotInIde(localFileModule, key)
   }
 
   override fun isEnabled(e: AnActionEvent, project: Project, status: AnalysisStatus): Boolean {
     return e.getData(SECURITY_HOTSPOT_DATA_KEY) != null &&
         e.getData(SECURITY_HOTSPOT_DATA_KEY)?.serverFindingKey != null
-  }
-
-  private fun buildLink(serverUrl: String, projectKey: String, securityHotspotKey: String): String {
-    val urlEncodedProjectKey = UrlUtils.urlEncode(projectKey)
-    val urlEncodedHotspotKey = UrlUtils.urlEncode(securityHotspotKey)
-    return "$serverUrl/security_hotspots?id=$urlEncodedProjectKey&hotspots=$urlEncodedHotspotKey"
   }
 
   private fun serverConnection(project: Project): ServerConnection? = getService(project, ProjectBindingManager::class.java).tryGetServerConnection().orElse(null)
