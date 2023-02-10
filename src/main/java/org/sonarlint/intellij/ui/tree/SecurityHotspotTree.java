@@ -19,40 +19,34 @@
  */
 package org.sonarlint.intellij.ui.tree;
 
-import com.intellij.ide.DefaultTreeExpander;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.actionSystem.DataProvider;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.actionSystem.IdeActions;
-import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiManager;
 import com.intellij.ui.PopupHandler;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.EditSourceOnDoubleClickHandler;
 import com.intellij.util.EditSourceOnEnterKeyHandler;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeModel;
 import org.jetbrains.annotations.NonNls;
 import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserAction;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.ui.nodes.FileNode;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 
 /**
  * Extends {@link Tree} to provide context data for actions and initialize it
  */
-public class SecurityHotspotTree extends Tree implements DataProvider {
+public class SecurityHotspotTree extends FindingTree implements DataProvider {
   private final Project project;
 
   public SecurityHotspotTree(Project project, TreeModel model) {
-    super(model);
+    super(project, model);
     this.project = project;
     init();
   }
@@ -77,36 +71,16 @@ public class SecurityHotspotTree extends Tree implements DataProvider {
   @Nullable
   @Override
   public Object getData(@NonNls String dataId) {
-    // use string literal as the key appeared in newer versions
-    if ("bgtDataProvider".equals(dataId)) {
-      return getBackgroundDataProvider();
+    Object data = this.getDataInner(dataId);
+
+    if (data != null) {
+      return data;
     } else if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
       return navigate();
-    } else if (PlatformDataKeys.TREE_EXPANDER.is(dataId)) {
-      return new DefaultTreeExpander(this);
-    } else if (CommonDataKeys.VIRTUAL_FILE.is(dataId)) {
-      return getSelectedFile();
-    } else if (CommonDataKeys.VIRTUAL_FILE_ARRAY.is(dataId)) {
-      var f = getSelectedFile();
-      // return empty so that it doesn't find it in parent components
-      return f != null && f.isValid() ? (new VirtualFile[] {f}) : new VirtualFile[0];
     } else if (OpenSecurityHotspotInBrowserAction.Companion.getSECURITY_HOTSPOT_DATA_KEY().is(dataId)) {
       return getSelectedSecurityHotspot();
     }
 
-    return null;
-  }
-
-  private DataProvider getBackgroundDataProvider() {
-    var file = getSelectedFile();
-    if (file != null && file.isValid()) {
-      return otherId -> {
-        if (CommonDataKeys.PSI_FILE.is(otherId)) {
-          return PsiManager.getInstance(project).findFile(file);
-        }
-        return null;
-      };
-    }
     return null;
   }
 
@@ -136,22 +110,4 @@ public class SecurityHotspotTree extends Tree implements DataProvider {
     return ((LiveSecurityHotspotNode) node).getHotspot();
   }
 
-  @CheckForNull
-  private VirtualFile getSelectedFile() {
-    var node = getSelectedNode();
-    if (!(node instanceof FileNode)) {
-      return null;
-    }
-    var fileNode = (FileNode) node;
-    return fileNode.file();
-  }
-
-  @CheckForNull
-  private DefaultMutableTreeNode getSelectedNode() {
-    var path = getSelectionPath();
-    if (path == null) {
-      return null;
-    }
-    return (DefaultMutableTreeNode) path.getLastPathComponent();
-  }
 }

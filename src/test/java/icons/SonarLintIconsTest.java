@@ -46,14 +46,14 @@ public class SonarLintIconsTest {
     assertThat(SonarLintIcons.type("BUG")).isNotNull();
     assertThat(SonarLintIcons.type("VULNERABILITY")).isNotNull();
     assertThat(SonarLintIcons.type("CODE_SMELL")).isNotNull();
-    assertThat(SonarLintIcons.type("security_hotspot_high")).isNotNull();
-    assertThat(SonarLintIcons.type("security_hotspot_medium")).isNotNull();
-    assertThat(SonarLintIcons.type("security_hotspot_low")).isNotNull();
 
     assertThat(SonarLintIcons.type12(RuleType.BUG)).isNotNull();
     assertThat(SonarLintIcons.type12(RuleType.VULNERABILITY)).isNotNull();
     assertThat(SonarLintIcons.type12(RuleType.CODE_SMELL)).isNotNull();
     assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT)).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_high")).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_medium")).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_low")).isNotNull();
   }
 
   @Test

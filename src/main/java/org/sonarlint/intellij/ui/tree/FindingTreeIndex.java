@@ -26,7 +26,7 @@ import java.util.Set;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.ui.nodes.FileNode;
 
-public class IssueTreeIndex {
+public class FindingTreeIndex {
   private final Map<VirtualFile, FileNode> fileNodes = new HashMap<>();
 
   @CheckForNull

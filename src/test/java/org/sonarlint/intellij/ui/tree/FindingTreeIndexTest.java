@@ -28,8 +28,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class IssueTreeIndexTest {
-  private IssueTreeIndex idx = new IssueTreeIndex();
+public class FindingTreeIndexTest {
+  private FindingTreeIndex idx = new FindingTreeIndex();
 
   private VirtualFile file1;
   private VirtualFile file2;

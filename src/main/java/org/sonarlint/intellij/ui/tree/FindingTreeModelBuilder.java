@@ -19,34 +19,42 @@
  */
 package org.sonarlint.intellij.ui.tree;
 
-import com.intellij.openapi.vfs.VirtualFile;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import javax.annotation.CheckForNull;
-import org.sonarlint.intellij.ui.nodes.FileNode;
+import org.sonarlint.intellij.ui.nodes.AbstractNode;
 
-public class SecurityHotspotTreeIndex {
-  private final Map<VirtualFile, FileNode> fileNodes = new HashMap<>();
+public interface FindingTreeModelBuilder {
 
   @CheckForNull
-  public FileNode getFileNode(VirtualFile file) {
-    return fileNodes.get(file);
+  default AbstractNode getPreviousNode(AbstractNode startNode) {
+    var parent = (AbstractNode) startNode.getParent();
+
+    if (parent == null) {
+      return null;
+    }
+    var previous = parent.getChildBefore(startNode);
+    if (previous == null) {
+      return getPreviousNode(parent);
+    }
+
+    return (AbstractNode) previous;
   }
 
-  public void setFileNode(FileNode node) {
-    fileNodes.put(node.file(), node);
+  /**
+   * Next node, either the sibling if it exists, or the sibling of the parent
+   */
+  @CheckForNull
+  default AbstractNode getNextNode(AbstractNode startNode) {
+    var parent = (AbstractNode) startNode.getParent();
+
+    if (parent == null) {
+      return null;
+    }
+    var after = parent.getChildAfter(startNode);
+    if (after == null) {
+      return getNextNode(parent);
+    }
+
+    return (AbstractNode) after;
   }
 
-  public void remove(VirtualFile file) {
-    fileNodes.remove(file);
-  }
-
-  public void clear() {
-    fileNodes.clear();
-  }
-
-  public Set<VirtualFile> getAllFiles() {
-    return fileNodes.keySet();
-  }
 }

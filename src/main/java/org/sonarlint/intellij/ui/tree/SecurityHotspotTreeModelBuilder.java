@@ -44,17 +44,17 @@ import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
  * Responsible for maintaining the tree model and send change events when needed.
  * Should be optimized to minimize the recreation of portions of the tree.
  */
-public class SecurityHotspotTreeModelBuilder {
+public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder {
   private static final List<VulnerabilityProbability> VULNERABILITY_PROBABILITIES = List.of(VulnerabilityProbability.HIGH,
     VulnerabilityProbability.MEDIUM, VulnerabilityProbability.LOW);
   private static final Comparator<LiveSecurityHotspot> SECURITY_HOTSPOT_COMPARATOR = new SecurityHotspotComparator();
 
-  private final SecurityHotspotTreeIndex index;
+  private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
 
   public SecurityHotspotTreeModelBuilder() {
-    this.index = new SecurityHotspotTreeIndex();
+    this.index = new FindingTreeIndex();
   }
 
   /**
@@ -274,38 +274,5 @@ public class SecurityHotspotTreeModelBuilder {
     }
 
     return lastHotspotDown((AbstractNode) lastChild);
-  }
-
-  @CheckForNull
-  private static AbstractNode getPreviousNode(AbstractNode startNode) {
-    var parent = (AbstractNode) startNode.getParent();
-
-    if (parent == null) {
-      return null;
-    }
-    var previous = parent.getChildBefore(startNode);
-    if (previous == null) {
-      return getPreviousNode(parent);
-    }
-
-    return (AbstractNode) previous;
-  }
-
-  /**
-   * Next node, either the sibling if it exists, or the sibling of the parent
-   */
-  @CheckForNull
-  private static AbstractNode getNextNode(AbstractNode startNode) {
-    var parent = (AbstractNode) startNode.getParent();
-
-    if (parent == null) {
-      return null;
-    }
-    var after = parent.getChildAfter(startNode);
-    if (after == null) {
-      return getNextNode(parent);
-    }
-
-    return (AbstractNode) after;
   }
 }

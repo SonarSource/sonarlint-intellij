@@ -113,16 +113,12 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
   }
 
   protected void setToolbar(Collection<AnAction> actions) {
-    setToolbar(createActionGroup(actions));
-  }
-
-  protected void setToolbar(ActionGroup group) {
     if (mainToolbar != null) {
       mainToolbar.setTargetComponent(null);
       super.setToolbar(null);
       mainToolbar = null;
     }
-    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, group, false);
+    mainToolbar = ActionManager.getInstance().createActionToolbar(ID, createActionGroup(actions), false);
     mainToolbar.setTargetComponent(this);
     var toolBarBox = Box.createHorizontalBox();
     toolBarBox.add(mainToolbar.getComponent());

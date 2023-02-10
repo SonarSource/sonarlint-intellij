@@ -50,16 +50,16 @@ import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
  * Responsible for maintaining the tree model and send change events when needed.
  * Should be optimize to minimize the recreation of portions of the tree.
  */
-public class IssueTreeModelBuilder {
+public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   private static final List<IssueSeverity> SEVERITY_ORDER = List.of(BLOCKER, CRITICAL, MAJOR, MINOR, INFO);
   private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
 
-  private final IssueTreeIndex index;
+  private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
 
   public IssueTreeModelBuilder() {
-    this.index = new IssueTreeIndex();
+    this.index = new FindingTreeIndex();
   }
 
   /**
@@ -279,38 +279,5 @@ public class IssueTreeModelBuilder {
     }
 
     return lastIssueDown((AbstractNode) lastChild);
-  }
-
-  @CheckForNull
-  private static AbstractNode getPreviousNode(AbstractNode startNode) {
-    var parent = (AbstractNode) startNode.getParent();
-
-    if (parent == null) {
-      return null;
-    }
-    var previous = parent.getChildBefore(startNode);
-    if (previous == null) {
-      return getPreviousNode(parent);
-    }
-
-    return (AbstractNode) previous;
-  }
-
-  /**
-   * Next node, either the sibling if it exists, or the sibling of the parent
-   */
-  @CheckForNull
-  private static AbstractNode getNextNode(AbstractNode startNode) {
-    var parent = (AbstractNode) startNode.getParent();
-
-    if (parent == null) {
-      return null;
-    }
-    var after = parent.getChildAfter(startNode);
-    if (after == null) {
-      return getNextNode(parent);
-    }
-
-    return (AbstractNode) after;
   }
 }
