@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 public class FileNodeTest {
   private VirtualFile file = mock(VirtualFile.class);
-  private FileNode node = new FileNode(file);
+  private FileNode node = new FileNode(file, false);
 
   @Before
   public void setUp() {
@@ -46,7 +46,7 @@ public class FileNodeTest {
   public void testCountIssues() {
     node.add(createTestIssueNode());
     node.add(createTestIssueNode());
-    assertThat(node.getIssueCount()).isEqualTo(2);
+    assertThat(node.getFindingCount()).isEqualTo(2);
   }
 
   @Test

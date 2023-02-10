@@ -77,6 +77,10 @@ public class SonarLintIcons {
     TYPE_ICONS_12.put("bug", getIcon("/images/type/bug12.png"));
     TYPE_ICONS_12.put("code_smell", getIcon("/images/type/code_smell12.png"));
     TYPE_ICONS_12.put("vulnerability", getIcon("/images/type/vulnerability12.png"));
+    TYPE_ICONS_12.put("security_hotspot", getIcon("/images/type/hotspot12.png"));
+    TYPE_ICONS_12.put("security_hotspot_high", getIcon("/images/type/hotspot_high12.png"));
+    TYPE_ICONS_12.put("security_hotspot_medium", getIcon("/images/type/hotspot_medium12.png"));
+    TYPE_ICONS_12.put("security_hotspot_low", getIcon("/images/type/hotspot_low12.png"));
   }
 
   private static Icon getIcon(String path) {
@@ -93,6 +97,10 @@ public class SonarLintIcons {
 
   public static Icon type12(RuleType type) {
     return TYPE_ICONS_12.get(type.toString().toLowerCase(Locale.ENGLISH));
+  }
+
+  public static Icon type12(String type) {
+    return TYPE_ICONS_12.get(type.toLowerCase(Locale.ENGLISH));
   }
 
   public static Icon severity(String severity) {
