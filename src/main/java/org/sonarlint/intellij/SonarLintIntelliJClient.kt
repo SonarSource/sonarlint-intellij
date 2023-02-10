@@ -47,8 +47,8 @@ import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.core.SecurityHotspotMatcher
 import org.sonarlint.intellij.editor.EditorDecorator
+import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.http.ApacheHttpClient.Companion.default
-import org.sonarlint.intellij.issue.Location
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.ui.ProjectSelectionDialog

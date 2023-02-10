@@ -35,21 +35,37 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import javax.swing.tree.TreeModel;
 import org.jetbrains.annotations.NonNls;
-import org.sonarlint.intellij.actions.DisableRuleAction;
-import org.sonarlint.intellij.actions.ExcludeFileAction;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
-import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarlint.intellij.actions.OpenSecurityHotspotInBrowserAction;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 
 /**
  * Extends {@link Tree} to provide context data for actions and initialize it
  */
-public class IssueTree extends FindingTree implements DataProvider {
+public class SecurityHotspotTree extends FindingTree implements DataProvider {
   private final Project project;
 
-  public IssueTree(Project project, TreeModel model) {
+  public SecurityHotspotTree(Project project, TreeModel model) {
     super(project, model);
     this.project = project;
     init();
+  }
+
+  private void init() {
+    this.setShowsRootHandles(false);
+    this.setCellRenderer(new TreeCellRenderer());
+    this.expandRow(0);
+
+    var group = new DefaultActionGroup();
+    group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
+    group.add(new OpenSecurityHotspotInBrowserAction());
+    group.addSeparator();
+    group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
+
+    PopupHandler.installPopupMenu(this, group, ActionPlaces.TODO_VIEW_POPUP);
+
+    EditSourceOnDoubleClickHandler.install(this);
+    EditSourceOnEnterKeyHandler.install(this);
   }
 
   @Nullable
@@ -61,56 +77,37 @@ public class IssueTree extends FindingTree implements DataProvider {
       return data;
     } else if (CommonDataKeys.NAVIGATABLE.is(dataId)) {
       return navigate();
-    } else if (DisableRuleAction.ISSUE_DATA_KEY.is(dataId)) {
-      return getSelectedIssue();
+    } else if (OpenSecurityHotspotInBrowserAction.Companion.getSECURITY_HOTSPOT_DATA_KEY().is(dataId)) {
+      return getSelectedSecurityHotspot();
     }
 
     return null;
   }
 
-  private void init() {
-    this.setShowsRootHandles(false);
-    this.setCellRenderer(new TreeCellRenderer());
-    this.expandRow(0);
-
-    var group = new DefaultActionGroup();
-    group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EDIT_SOURCE));
-    group.addSeparator();
-    group.add(ActionManager.getInstance().getAction(IdeActions.GROUP_VERSION_CONTROLS));
-    group.addSeparator();
-    group.add(ActionManager.getInstance().getAction(IdeActions.ACTION_EXPAND_ALL));
-    group.addSeparator();
-    group.add(new ExcludeFileAction("Exclude file(s) from automatic analysis"));
-    group.add(new DisableRuleAction());
-    PopupHandler.installPopupMenu(this, group, ActionPlaces.TODO_VIEW_POPUP);
-
-    EditSourceOnDoubleClickHandler.install(this);
-    EditSourceOnEnterKeyHandler.install(this);
-  }
-
   @CheckForNull
   private OpenFileDescriptor navigate() {
-    var issue = getSelectedIssue();
-    if (issue == null || !issue.isValid()) {
+    var securityHotspot = getSelectedSecurityHotspot();
+    if (securityHotspot == null || !securityHotspot.isValid()) {
       return null;
     }
 
     int offset;
-    var range = issue.getRange();
+    var range = securityHotspot.getRange();
     if (range != null) {
       offset = range.getStartOffset();
     } else {
       offset = 0;
     }
-    return new OpenFileDescriptor(project, issue.psiFile().getVirtualFile(), offset);
+    return new OpenFileDescriptor(project, securityHotspot.psiFile().getVirtualFile(), offset);
   }
 
   @CheckForNull
-  private LiveIssue getSelectedIssue() {
+  private LiveSecurityHotspot getSelectedSecurityHotspot() {
     var node = getSelectedNode();
-    if (!(node instanceof IssueNode)) {
+    if (!(node instanceof LiveSecurityHotspotNode)) {
       return null;
     }
-    return ((IssueNode) node).issue();
+    return ((LiveSecurityHotspotNode) node).getHotspot();
   }
+
 }

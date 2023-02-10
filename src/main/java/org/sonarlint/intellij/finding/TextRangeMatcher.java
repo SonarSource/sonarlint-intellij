@@ -55,8 +55,7 @@ public class TextRangeMatcher {
   }
 
   public RangeMarker match(VirtualFile file, HotspotDetailsDto.TextRangeDto textRange) throws NoMatchException {
-    var psiFile = findFile(file);
-    return match(psiFile, textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
+    return match(toPsiFile(project, file), textRange.getStartLine(), textRange.getStartLineOffset(), textRange.getEndLine(), textRange.getEndLineOffset());
   }
 
   public RangeMarker match(PsiFile file, org.sonarsource.sonarlint.core.commons.TextRange textRange) throws NoMatchException {

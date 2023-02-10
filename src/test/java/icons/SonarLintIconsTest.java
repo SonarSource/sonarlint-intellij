@@ -50,6 +50,10 @@ public class SonarLintIconsTest {
     assertThat(SonarLintIcons.type12(RuleType.BUG)).isNotNull();
     assertThat(SonarLintIcons.type12(RuleType.VULNERABILITY)).isNotNull();
     assertThat(SonarLintIcons.type12(RuleType.CODE_SMELL)).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT)).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_high")).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_medium")).isNotNull();
+    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_low")).isNotNull();
   }
 
   @Test

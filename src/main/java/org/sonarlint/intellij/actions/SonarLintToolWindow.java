@@ -63,7 +63,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
    * Must run in EDT
    */
   public void openReportTab(AnalysisResult analysisResult) {
-    this.<ReportPanel>withTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.updateIssues(analysisResult));
+    this.<ReportPanel>withTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, panel -> panel.updateFindings(analysisResult));
   }
   public void clearReportTab() {
     withTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);

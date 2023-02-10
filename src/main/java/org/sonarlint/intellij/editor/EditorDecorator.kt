@@ -34,7 +34,7 @@ import com.intellij.openapi.util.Disposer
 import com.intellij.ui.JBColor
 import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
-import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.finding.hotspot.LocalHotspot
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
@@ -72,13 +72,13 @@ open class EditorDecorator(private val project: Project) {
     }
   }
 
-  open fun highlightIssue(issue: LiveIssue) {
-    val highlights = issue.context()
+  open fun highlightFinding(finding: LiveFinding) {
+    val highlights = finding.context()
       .map { createHighlights(it.flows()[0].locations) }
       .orElse(mutableListOf())
-    createHighlight(issue.range, issue.message)?.let(highlights::add)
+    createHighlight(finding.range, finding.message)?.let(highlights::add)
     updateHighlights(highlights)
-    issue.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
+    finding.context().ifPresent { displaySecondaryLocationNumbers(it.flows()[0], null) }
   }
 
   open fun highlight(vulnerability: LocalTaintVulnerability) {
@@ -183,4 +183,5 @@ open class EditorDecorator(private val project: Project) {
   }
 
   class Highlight(val document: Document, val highlightInfo: HighlightInfo)
+
 }

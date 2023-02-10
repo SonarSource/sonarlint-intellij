@@ -32,7 +32,7 @@ public class SummaryNodeTest {
   @Test
   public void testText() {
     var child1 = mock(AbstractNode.class);
-    when(child1.getIssueCount()).thenReturn(3);
+    when(child1.getFindingCount()).thenReturn(3);
 
     node.add(child1);
 

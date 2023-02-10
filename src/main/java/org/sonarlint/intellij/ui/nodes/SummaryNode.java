@@ -26,10 +26,22 @@ import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public class SummaryNode extends AbstractNode {
   private String emptyText;
+  private final boolean forSecurityHotspot;
 
   public SummaryNode() {
     super();
     this.emptyText = "No issues to display";
+    this.forSecurityHotspot = false;
+  }
+
+  public SummaryNode(boolean forSecurityHotspot) {
+    super();
+    if (forSecurityHotspot) {
+      this.emptyText = "No security hotspots to display";
+    } else {
+      this.emptyText = "No issues to display";
+    }
+    this.forSecurityHotspot = forSecurityHotspot;
   }
 
   public void setEmptyText(String emptyText) {
@@ -37,14 +49,18 @@ public class SummaryNode extends AbstractNode {
   }
 
   public String getText() {
-    var issues = getIssueCount();
+    var findings = getFindingCount();
     var files = getChildCount();
 
-    if (issues == 0) {
+    if (findings == 0) {
       return emptyText;
     }
 
-    return String.format("Found %d %s in %d %s", issues, issues == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
+    if (forSecurityHotspot) {
+      return String.format("Found %d %s in %d %s", findings, findings == 1 ? "security hotspot" : "security hotspots", files, files == 1 ? "file" : "files");
+    }
+
+    return String.format("Found %d %s in %d %s", findings, findings == 1 ? "issue" : "issues", files, files == 1 ? "file" : "files");
   }
 
   public int insertFileNode(FileNode newChild, Comparator<FileNode> comparator) {

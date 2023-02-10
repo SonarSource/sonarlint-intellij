@@ -33,32 +33,27 @@ import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
-import org.sonarlint.intellij.ui.nodes.IssueNode;
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.nodes.SummaryNode;
-import org.sonarsource.sonarlint.core.commons.IssueSeverity;
-
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.BLOCKER;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.CRITICAL;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.INFO;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MAJOR;
-import static org.sonarsource.sonarlint.core.commons.IssueSeverity.MINOR;
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
 /**
  * Responsible for maintaining the tree model and send change events when needed.
- * Should be optimize to minimize the recreation of portions of the tree.
+ * Should be optimized to minimize the recreation of portions of the tree.
  */
-public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
-  private static final List<IssueSeverity> SEVERITY_ORDER = List.of(BLOCKER, CRITICAL, MAJOR, MINOR, INFO);
-  private static final Comparator<LiveIssue> ISSUE_COMPARATOR = new IssueComparator();
+public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder {
+  private static final List<VulnerabilityProbability> VULNERABILITY_PROBABILITIES = List.of(VulnerabilityProbability.HIGH,
+    VulnerabilityProbability.MEDIUM, VulnerabilityProbability.LOW);
+  private static final Comparator<LiveSecurityHotspot> SECURITY_HOTSPOT_COMPARATOR = new SecurityHotspotComparator();
 
   private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
 
-  public IssueTreeModelBuilder() {
+  public SecurityHotspotTreeModelBuilder() {
     this.index = new FindingTreeIndex();
   }
 
@@ -66,13 +61,13 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
    * Creates the model with a basic root
    */
   public DefaultTreeModel createModel() {
-    summary = new SummaryNode();
+    summary = new SummaryNode(true);
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
     return model;
   }
 
-  public int numberIssues() {
+  public int numberHotspots() {
     return summary.getFindingCount();
   }
 
@@ -80,11 +75,7 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     return summary;
   }
 
-  public void clear() {
-    updateModel(Collections.emptyMap(), "No analysis done");
-  }
-
-  public void updateModel(Map<VirtualFile, Collection<LiveIssue>> map, String emptyText) {
+  public void updateModel(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText) {
     summary.setEmptyText(emptyText);
 
     var toRemove = index.getAllFiles().stream().filter(f -> !map.containsKey(f)).collect(Collectors.toList());
@@ -92,19 +83,19 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     toRemove.forEach(this::removeFile);
 
     for (var e : map.entrySet()) {
-      setFileIssues(e.getKey(), e.getValue());
+      setFileSecurityHotspots(e.getKey(), e.getValue());
     }
 
     model.nodeChanged(summary);
   }
 
-  private void setFileIssues(VirtualFile file, Iterable<LiveIssue> issues) {
+  private void setFileSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
     if (!accept(file)) {
       removeFile(file);
       return;
     }
 
-    var filtered = filter(issues);
+    var filtered = filter(securityHotspots);
     if (filtered.isEmpty()) {
       removeFile(file);
       return;
@@ -114,11 +105,11 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     var fNode = index.getFileNode(file);
     if (fNode == null) {
       newFile = true;
-      fNode = new FileNode(file, false);
+      fNode = new FileNode(file, true);
       index.setFileNode(fNode);
     }
 
-    setIssues(fNode, filtered);
+    setHotspots(fNode, filtered);
 
     if (newFile) {
       var parent = getFilesParent();
@@ -140,30 +131,33 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     }
   }
 
-  private static void setIssues(FileNode node, Iterable<LiveIssue> issuePointers) {
+  public void clear() {
+    updateModel(Collections.emptyMap(), "No analysis done");
+  }
+
+  private static void setHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
     node.removeAllChildren();
 
-    // 15ms for 500 issues -> to improve?
-    var issues = new TreeSet<>(ISSUE_COMPARATOR);
+    var securityHotspots = new TreeSet<>(SECURITY_HOTSPOT_COMPARATOR);
 
-    for (var issue : issuePointers) {
-      issues.add(issue);
+    for (var securityHotspot : securityHotspotsPointer) {
+      securityHotspots.add(securityHotspot);
     }
 
-    for (var issue : issues) {
-      var iNode = new IssueNode(issue);
+    for (var securityHotspot : securityHotspots) {
+      var iNode = new LiveSecurityHotspotNode(securityHotspot);
       node.add(iNode);
     }
   }
 
-  private static List<LiveIssue> filter(Iterable<LiveIssue> issues) {
-    return StreamSupport.stream(issues.spliterator(), false)
-      .filter(IssueTreeModelBuilder::accept)
+  private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots) {
+    return StreamSupport.stream(securityHotspots.spliterator(), false)
+      .filter(SecurityHotspotTreeModelBuilder::accept)
       .collect(Collectors.toList());
   }
 
-  private static boolean accept(LiveIssue issue) {
-    return !issue.isResolved() && issue.isValid();
+  private static boolean accept(LiveSecurityHotspot securityHotspot) {
+    return !securityHotspot.isResolved() && securityHotspot.isValid();
   }
 
   private static boolean accept(VirtualFile file) {
@@ -181,8 +175,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
     }
   }
 
-  static class IssueComparator implements Comparator<LiveIssue> {
-    @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
+  static class SecurityHotspotComparator implements Comparator<LiveSecurityHotspot> {
+    @Override public int compare(@Nonnull LiveSecurityHotspot o1, @Nonnull LiveSecurityHotspot o2) {
       var creationDateOrdering = Ordering.natural().reverse().nullsLast();
       var dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
 
@@ -190,10 +184,11 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
         return dateCompare;
       }
 
-      var severityCompare = Ordering.explicit(SEVERITY_ORDER).compare(o1.getUserSeverity(), o2.getUserSeverity());
+      var vulnerabilityCompare = Ordering.explicit(VULNERABILITY_PROBABILITIES)
+        .compare(o1.getVulnerabilityProbability(), o2.getVulnerabilityProbability());
 
-      if (severityCompare != 0) {
-        return severityCompare;
+      if (vulnerabilityCompare != 0) {
+        return vulnerabilityCompare;
       }
 
       var r1 = o1.getRange();
@@ -211,9 +206,9 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
   }
 
   @CheckForNull
-  public IssueNode getNextIssue(AbstractNode startNode) {
-    if (!(startNode instanceof IssueNode)) {
-      return firstIssueDown(startNode);
+  public LiveSecurityHotspotNode getNextHotspot(AbstractNode startNode) {
+    if (!(startNode instanceof LiveSecurityHotspotNode)) {
+      return firstHotspotDown(startNode);
     }
 
     var next = getNextNode(startNode);
@@ -223,15 +218,15 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
       return null;
     }
 
-    if (next instanceof IssueNode) {
-      return (IssueNode) next;
+    if (next instanceof LiveSecurityHotspotNode) {
+      return (LiveSecurityHotspotNode) next;
     }
 
-    return firstIssueDown(next);
+    return firstHotspotDown(next);
   }
 
   @CheckForNull
-  public IssueNode getPreviousIssue(AbstractNode startNode) {
+  public LiveSecurityHotspotNode getPreviousHotspot(AbstractNode startNode) {
     var next = getPreviousNode(startNode);
 
     if (next == null) {
@@ -239,37 +234,37 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
       return null;
     }
 
-    if (next instanceof IssueNode) {
-      return (IssueNode) next;
+    if (next instanceof LiveSecurityHotspotNode) {
+      return (LiveSecurityHotspotNode) next;
     }
 
-    return lastIssueDown(next);
+    return lastHotspotDown(next);
   }
 
   /**
-   * Finds the first issue node which is child of a given node.
+   * Finds the first security hotspot node which is child of a given node.
    */
   @CheckForNull
-  private static IssueNode firstIssueDown(AbstractNode node) {
-    if (node instanceof IssueNode) {
-      return (IssueNode) node;
+  private static LiveSecurityHotspotNode firstHotspotDown(AbstractNode node) {
+    if (node instanceof LiveSecurityHotspotNode) {
+      return (LiveSecurityHotspotNode) node;
     }
 
     if (node.getChildCount() > 0) {
       var firstChild = node.getFirstChild();
-      return firstIssueDown((AbstractNode) firstChild);
+      return firstHotspotDown((AbstractNode) firstChild);
     }
 
     return null;
   }
 
   /**
-   * Finds the first issue node which is child of a given node.
+   * Finds the first security hotspot node which is child of a given node.
    */
   @CheckForNull
-  private static IssueNode lastIssueDown(AbstractNode node) {
-    if (node instanceof IssueNode) {
-      return (IssueNode) node;
+  private static LiveSecurityHotspotNode lastHotspotDown(AbstractNode node) {
+    if (node instanceof LiveSecurityHotspotNode) {
+      return (LiveSecurityHotspotNode) node;
     }
 
     var lastChild = node.getLastChild();
@@ -278,6 +273,6 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
       return null;
     }
 
-    return lastIssueDown((AbstractNode) lastChild);
+    return lastHotspotDown((AbstractNode) lastChild);
   }
 }

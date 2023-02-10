@@ -26,14 +26,14 @@ import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.ui.tree.TreeCellRenderer;
 
 public abstract class AbstractNode extends DefaultMutableTreeNode {
-  protected int issueCount;
+  protected int findingCount;
   protected int fileCount;
 
   public abstract void render(TreeCellRenderer renderer);
 
-  public int getIssueCount() {
-    if (issueCount < 0) {
-      issueCount = 0;
+  public int getFindingCount() {
+    if (findingCount < 0) {
+      findingCount = 0;
       var children = super.children();
 
       while (children.hasMoreElements()) {
@@ -42,11 +42,11 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
           continue;
         }
 
-        issueCount += node.getIssueCount();
+        findingCount += node.getFindingCount();
       }
     }
 
-    return issueCount;
+    return findingCount;
   }
 
   @Override
@@ -75,7 +75,7 @@ public abstract class AbstractNode extends DefaultMutableTreeNode {
 
   public void setDirty() {
     fileCount = -1;
-    issueCount = -1;
+    findingCount = -1;
     if (super.getParent() != null) {
       ((AbstractNode) super.getParent()).setDirty();
     }
