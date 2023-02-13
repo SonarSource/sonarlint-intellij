@@ -30,6 +30,7 @@ import com.sonar.orchestrator.locator.MavenLocation
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
@@ -52,6 +53,7 @@ import java.net.URL
 
 const val PROJECT_KEY = "sample-java-hotspot"
 
+@Disabled("Open in IDE feature temporarily broken, will be re-enabled by SLI-856")
 class OpenInIdeTest : BaseUiTest() {
 
     @Test
