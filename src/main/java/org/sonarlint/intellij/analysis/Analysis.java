@@ -155,7 +155,7 @@ public class Analysis implements Cancelable {
   private void matchWithServerIssuesIfNeeded(ProgressIndicator indicator, Map<Module, Collection<VirtualFile>> filesHavingIssuesByModule) {
     if (!filesHavingIssuesByModule.isEmpty()) {
       var serverIssueUpdater = SonarLintUtils.getService(project, ServerIssueUpdater.class);
-      if (shouldUpdateServerIssues(trigger)) {
+      if (trigger.isShouldUpdateServerIssues()) {
         serverIssueUpdater.fetchAndMatchServerIssues(filesHavingIssuesByModule, indicator, waitForServerFindings);
       } else {
         serverIssueUpdater.matchServerIssues(filesHavingIssuesByModule);
@@ -167,24 +167,11 @@ public class Analysis implements Cancelable {
     Map<Module, Collection<VirtualFile>> filesHavingSecurityHotspotsByModule) {
     if (!filesHavingSecurityHotspotsByModule.isEmpty()) {
       var updater = SonarLintUtils.getService(project, ServerSecurityHotspotUpdater.class);
-      if (shouldUpdateServerIssues(trigger)) {
+      if (trigger.isShouldUpdateServerIssues()) {
         updater.fetchAndMatchServerSecurityHotspots(filesHavingSecurityHotspotsByModule, indicator, waitForServerFindings);
       } else {
         updater.matchServerSecurityHotspots(filesHavingSecurityHotspotsByModule);
       }
-    }
-  }
-
-  private static boolean shouldUpdateServerIssues(TriggerType trigger) {
-    switch (trigger) {
-      case ACTION:
-      case CONFIG_CHANGE:
-      case BINDING_UPDATE:
-      case CHECK_IN:
-      case EDITOR_OPEN:
-        return true;
-      default:
-        return false;
     }
   }
 

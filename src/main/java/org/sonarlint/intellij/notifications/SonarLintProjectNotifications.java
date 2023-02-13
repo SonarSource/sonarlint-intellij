@@ -42,11 +42,15 @@ public class SonarLintProjectNotifications {
     .getNotificationGroup("SonarLint: Server Notifications");
   private static final NotificationGroup BINDING_SUGGESTION_GROUP = NotificationGroupManager.getInstance()
     .getNotificationGroup("SonarLint: Binding Suggestions");
+  private static final NotificationGroup OPEN_IN_IDE_GROUP = NotificationGroupManager.getInstance()
+    .getNotificationGroup("SonarLint: Open in IDE");
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the SonarLint project configuration";
   private static final String TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>";
   private static final String NO_SUBTITLE = null;
   private volatile boolean shown = false;
   private final Project myProject;
+
+  private Notification currentOpenHotspotNotification;
 
   protected SonarLintProjectNotifications(Project project) {
     this.myProject = project;
@@ -114,5 +118,24 @@ public class SonarLintProjectNotifications {
     notification.setImportant(true);
     notification.setIcon(SonarLintIcons.SONARLINT);
     notification.notify(myProject);
+  }
+
+  public void notifyUnableToOpenSecurityHotspot(String message) {
+    expireCurrentHotspotNotificationIfNeeded();
+    currentOpenHotspotNotification = OPEN_IN_IDE_GROUP.createNotification(
+      "<b>SonarLint - Unable To Open Security Hotspot</b>",
+      NO_SUBTITLE,
+      message,
+      NotificationType.INFORMATION);
+    currentOpenHotspotNotification.setImportant(true);
+    currentOpenHotspotNotification.setIcon(SonarLintIcons.SONARLINT);
+    currentOpenHotspotNotification.notify(myProject);
+  }
+
+  public void expireCurrentHotspotNotificationIfNeeded() {
+    if (currentOpenHotspotNotification != null) {
+      currentOpenHotspotNotification.expire();
+      currentOpenHotspotNotification = null;
+    }
   }
 }

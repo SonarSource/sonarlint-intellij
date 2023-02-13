@@ -37,11 +37,10 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.wm.IdeFocusManager
-import com.intellij.openapi.wm.ToolWindow
-import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.containers.orNull
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
@@ -212,34 +211,16 @@ object SonarLintIntelliJClient : SonarLintClient {
         val configurationScopeId = params.configurationScopeId
         val project =
             findProject(configurationScopeId) ?: throw IllegalStateException("Unable to find project with id '$configurationScopeId'")
+        SonarLintProjectNotifications.get(project).expireCurrentHotspotNotificationIfNeeded()
         val file = tryFindFile(project, params.hotspotDetails.filePath)
         if (file == null) {
-            showBalloon(project, "Unable to open security hotspot. Can't find file: ${params.hotspotDetails.filePath}", NotificationType.WARNING)
+            showBalloon(project, "Unable to open security hotspot. Can't find the file: ${params.hotspotDetails.filePath}", NotificationType.WARNING)
             return
         }
         ApplicationManager.getApplication().invokeAndWait {
             openFile(project, file)
         }
-        // FIXME trigger an analysis of the file, in case automatic analysis is disabled
-        ApplicationManager.getApplication().invokeLater {
-            val toolWindow = getService(project, SonarLintToolWindow::class.java)
-            toolWindow.openSecurityHotspotsTab()
-            bringIdeToFront(project)
-            val success = getService(project, SonarLintToolWindow::class.java).trySelectSecurityHotspot(file, params.hotspotDetails.key)
-            if (!success) {
-                showBalloon(project, "Unable to find the security hotspot. Maybe you have different local code than what was analyzed", NotificationType.WARNING)
-            }
-        }
-    }
-
-    private fun bringIdeToFront(project: Project) {
-        val sonarlintToolWindow = SonarLintToolWindowFactory.getSonarLintToolWindow(project)
-        if (sonarlintToolWindow != null) {
-            val component: JComponent = sonarlintToolWindow.component
-            IdeFocusManager.getInstance(project).requestFocus(component, true)
-            val window = SwingUtilities.getWindowAncestor(component)
-            window?.toFront()
-        }
+        getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectHotspot(file, params.hotspotDetails.key)
     }
 
     private fun tryFindFile(project: Project, filePath: String): VirtualFile? {

@@ -22,6 +22,7 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
@@ -32,6 +33,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisResult;
@@ -103,7 +105,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
   public void openSecurityHotspotsTab() {
-    openTab(SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE);
+    openTab(getSecurityHotspotContent());
   }
 
   private void openTab(String name) {
@@ -214,7 +216,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
 
-  public boolean trySelectSecurityHotspot(VirtualFile file, String securityHotspotKey) {
+  public boolean trySelectSecurityHotspot(String securityHotspotKey) {
     var foundHotspot = liveSecurityHotspots.stream().filter(sh -> securityHotspotKey.equals(sh.getServerFindingKey())).findFirst();
     if (foundHotspot.isPresent()) {
       var sonarLintHotspotsPanel = (SonarLintHotspotsPanel) getSecurityHotspotContent().getComponent();
@@ -249,6 +251,18 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       .collect(Collectors.toList());
   }
 
+  public void bringToFront() {
+    var toolWindow = SonarLintToolWindowFactory.getSonarLintToolWindow(project);
+    if (toolWindow != null) {
+      var component = toolWindow.getComponent();
+      IdeFocusManager.getInstance(project).requestFocus(component, true);
+      var window = SwingUtilities.getWindowAncestor(component);
+      if (window != null) {
+        window.toFront();
+      }
+    }
+  }
+
   @Override
   public void contentRemoved(@NotNull ContentManagerEvent event) {
     // only hotspots tab is removable
@@ -258,4 +272,5 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   public Collection<LiveSecurityHotspot> getHotspotList() {
     return this.liveSecurityHotspots;
   }
+
 }

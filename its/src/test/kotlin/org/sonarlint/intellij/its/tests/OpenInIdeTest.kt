@@ -53,7 +53,6 @@ import java.net.URL
 
 const val PROJECT_KEY = "sample-java-hotspot"
 
-@Disabled("Open in IDE feature temporarily broken, will be re-enabled by SLI-856")
 class OpenInIdeTest : BaseUiTest() {
 
     @Test
