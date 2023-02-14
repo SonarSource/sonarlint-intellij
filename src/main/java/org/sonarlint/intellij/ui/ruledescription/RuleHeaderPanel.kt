@@ -24,28 +24,36 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.panels.HorizontalLayout
+import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
 import icons.SonarLintIcons
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDetailsDto
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
+import java.awt.Color
 import java.awt.FlowLayout
-import java.awt.Font
-import java.util.*
+import javax.swing.BorderFactory
 import javax.swing.SwingConstants
 
-
-private const val ICON_KEY = "security_hotspot_"
 
 class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val ruleTypeIcon = JBLabel()
     private val ruleTypeLabel = JBLabel()
     private val ruleSeverityIcon = JBLabel()
     private val ruleSeverityLabel = JBLabel()
+    private val hotspotVulnerabilityLabel = JBLabel("Review Priority: ")
+    private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
-    private val colorsByProbability: MutableMap<VulnerabilityProbability, JBColor> = EnumMap(VulnerabilityProbability::class.java)
+
+    // Same colors and opacity as in the icons SVG
+    private val highColor = Color(0x99e05555.toInt(), true)
+    private val mediumColor = Color(0x99f26522.toInt(), true)
+    private val lowColor = Color(0x99f4af3d.toInt(), true)
+    private val colorsByProbability = mapOf(
+        VulnerabilityProbability.HIGH to JBColor(highColor, highColor),
+        VulnerabilityProbability.MEDIUM to JBColor(mediumColor, mediumColor),
+        VulnerabilityProbability.LOW to JBColor(lowColor, lowColor)
+    )
 
     init {
         add(ruleTypeIcon, HorizontalLayout.LEFT)
@@ -54,55 +62,61 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         }, HorizontalLayout.LEFT)
         add(ruleSeverityIcon, HorizontalLayout.LEFT)
         add(ruleSeverityLabel, HorizontalLayout.LEFT)
+        add(hotspotVulnerabilityLabel, HorizontalLayout.LEFT)
+        add(hotspotVulnerabilityValueLabel.apply {
+            // Don't use JBColor.WHITE as it will be dark gray on dark theme
+            foreground = JBColor(Color.white, Color.white)
+            font = JBFont.label().asBold()
+            verticalTextPosition = SwingConstants.TOP
+            isOpaque = true
+            border = BorderFactory.createEmptyBorder(0, 15, 0, 15)
+        }, HorizontalLayout.LEFT)
         add(ruleKeyLabel.apply {
             border = JBUI.Borders.emptyLeft(10)
         }, HorizontalLayout.CENTER)
-        colorsByProbability[VulnerabilityProbability.HIGH] = JBColor.RED
-        colorsByProbability[VulnerabilityProbability.MEDIUM] = JBColor.ORANGE
-        colorsByProbability[VulnerabilityProbability.LOW] = JBColor.YELLOW
     }
-
 
     fun clear() {
         ruleTypeIcon.icon = null
         ruleTypeLabel.text = ""
+        ruleKeyLabel.text = ""
         ruleSeverityIcon.icon = null
         ruleSeverityLabel.text = ""
-        ruleKeyLabel.text = ""
-        revalidate()
+        hotspotVulnerabilityLabel.isVisible = false
+        hotspotVulnerabilityValueLabel.text = ""
     }
 
     fun update(ruleKey: String, type: RuleType, severity: IssueSeverity) {
-        ruleTypeIcon.icon = SonarLintIcons.type(type.toString())
-        ruleTypeLabel.text = clean(type.toString())
+        clear()
+        updateCommonFields(type, ruleKey)
         ruleSeverityIcon.icon = SonarLintIcons.severity(severity.toString())
         ruleSeverityLabel.text = clean(severity.toString())
+    }
+
+    fun update(ruleKey: String, type: RuleType, vulnerabilityProbability: VulnerabilityProbability) {
+        clear()
+        updateCommonFields(type, ruleKey)
+        hotspotVulnerabilityLabel.isVisible = true
+        hotspotVulnerabilityValueLabel.apply {
+            text = vulnerabilityProbability.name
+            background = colorsByProbability[vulnerabilityProbability]
+        }
+    }
+
+    private fun updateCommonFields(type: RuleType, ruleKey: String) {
+        ruleTypeIcon.icon = SonarLintIcons.type(type.toString())
+        ruleTypeLabel.text = clean(type.toString())
         ruleKeyLabel.text = ruleKey
-        revalidate()
     }
 
-    fun update(ruleDetails: ActiveRuleDetailsDto, selectedHotspot: LiveSecurityHotspot) {
-        ruleTypeIcon.icon = SonarLintIcons.type("$ICON_KEY${selectedHotspot.vulnerabilityProbability.name}")
-        ruleTypeLabel.text = clean(ruleDetails.type.toString())
-
-        ruleKeyLabel.text = ruleDetails.key
-        ruleSeverityLabel.text = selectedHotspot.vulnerabilityProbability.name
-        ruleSeverityLabel.background = colorsByProbability[selectedHotspot.vulnerabilityProbability]
-        ruleSeverityLabel.foreground = JBColor.WHITE
-        ruleSeverityLabel.font = ruleSeverityLabel.font.deriveFont(Font.BOLD)
-        ruleSeverityLabel.verticalTextPosition = SwingConstants.TOP
-        ruleSeverityLabel.isOpaque = true
-
-    }
 
     fun showMessage(msg: String) {
         clear()
         ruleTypeLabel.text = msg
-        revalidate()
     }
 
     private fun clean(txt: String): String {
-        return StringUtil.capitalize(txt.lowercase().replace("_", " "))
+        return StringUtil.capitalizeWords(txt.lowercase().replace("_", " "), true)
     }
 
 }
