@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.CheckForNull;
 import org.sonarlint.intellij.actions.ShowReportCallable;
+import org.sonarlint.intellij.actions.ShowSecurityHotspotCallable;
 import org.sonarlint.intellij.actions.ShowUpdatedCurrentFileCallable;
 import org.sonarlint.intellij.actions.UpdateOnTheFlyFindingsCallable;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
@@ -115,6 +116,12 @@ public class AnalysisSubmitter {
     } else {
       analyzeInBackgroundableModal(files, TriggerType.ACTION, callback);
     }
+  }
+
+  public void analyzeFileAndTrySelectHotspot(VirtualFile file, String securityHotspotKey) {
+    AnalysisCallback callback = new ShowSecurityHotspotCallable(project, onTheFlyFindingsHolder, securityHotspotKey);
+    var task = new Analysis(project, List.of(file), TriggerType.OPEN_SECURITY_HOTSPOT, true, callback);
+    TaskRunnerKt.startBackgroundTask(project, ANALYSIS_TASK_TITLE, task::run);
   }
 
   /**

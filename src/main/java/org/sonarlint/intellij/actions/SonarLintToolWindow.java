@@ -24,14 +24,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
-import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -42,7 +40,6 @@ import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.hotspot.FoundSecurityHotspots;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.finding.hotspot.LocalHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
@@ -59,7 +56,6 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   private final Project project;
-  private LiveSecurityHotspot activeHotspot;
   private Content taintVulnerabilitiesContent;
   private Content securityHotspotsContent;
   private AnalysisResult analysisResult;
@@ -108,6 +104,10 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     openTab(SonarLintToolWindowFactory.CURRENT_FILE_TAB_TITLE);
   }
 
+  public void openSecurityHotspotsTab() {
+    openTab(getSecurityHotspotContent());
+  }
+
   private void openTab(String name) {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
@@ -125,8 +125,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
   private ToolWindow getToolWindow() {
-    var toolWindowManager = ToolWindowManager.getInstance(project);
-    return toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
+    return SonarLintToolWindowFactory.getSonarLintToolWindow(project);
   }
 
   private Content getTaintVulnerabilitiesContent() {
@@ -217,22 +216,19 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
 
-  public void show(LocalHotspot remoteHotspot) {
-    //TODO plug in when OPEN in IDE feature modified
-//    activeHotspot = liveHotspot;
-    if (getToolWindow() == null) {
-      // can happen if we try to show while the project is opening
-      // we will show the hotspot when the tool window is built
-      return;
+  public boolean trySelectSecurityHotspot(String securityHotspotKey) {
+    var foundHotspot = liveSecurityHotspots.stream().filter(sh -> securityHotspotKey.equals(sh.getServerFindingKey())).findFirst();
+    if (foundHotspot.isPresent()) {
+      var sonarLintHotspotsPanel = (SonarLintHotspotsPanel) getSecurityHotspotContent().getComponent();
+      sonarLintHotspotsPanel.setSelectedSecurityHotspot(foundHotspot.get());
+      return true;
     }
-    //TODO replace the null
-    renderHotspotFindings(Collections.emptyMap());
+    return false;
   }
 
   public void renderHotspotFindings(Map<VirtualFile, Collection<LiveSecurityHotspot>> hotspotsMap) {
     mergeAndSortHotspot(hotspotsMap);
     renderFindings(liveSecurityHotspots);
-    bringIdeToFront(project);
   }
 
   public void renderFindings(Collection<LiveSecurityHotspot> securityHotspots) {
@@ -255,12 +251,8 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       .collect(Collectors.toList());
   }
 
-  public LiveSecurityHotspot getActiveHotspot() {
-    return activeHotspot;
-  }
-
-  private void bringIdeToFront(Project project) {
-    var toolWindow = getToolWindow();
+  public void bringToFront() {
+    var toolWindow = SonarLintToolWindowFactory.getSonarLintToolWindow(project);
     if (toolWindow != null) {
       var component = toolWindow.getComponent();
       IdeFocusManager.getInstance(project).requestFocus(component, true);
@@ -280,4 +272,5 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   public Collection<LiveSecurityHotspot> getHotspotList() {
     return this.liveSecurityHotspots;
   }
+
 }

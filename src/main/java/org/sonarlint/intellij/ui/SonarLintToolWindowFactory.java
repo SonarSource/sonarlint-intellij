@@ -65,10 +65,6 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
     addLogTab(project, toolWindow);
     toolWindow.setType(ToolWindowType.DOCKED, null);
     contentManager.addContentManagerListener(sonarLintToolWindow);
-    var activeHotspot = sonarLintToolWindow.getActiveHotspot();
-    if (activeHotspot != null) {
-      //sonarLintToolWindow.show(activeHotspot);
-    }
   }
 
   public static JBSplitter createSplitter(Project project, JComponent parentComponent, Disposable parentDisposable, JComponent c1, JComponent c2, String proportionProperty,
@@ -161,5 +157,10 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
         false);
     logContent.setCloseable(false);
     toolWindow.getContentManager().addContent(logContent);
+  }
+
+  public static ToolWindow getSonarLintToolWindow(Project project) {
+    var toolWindowManager = ToolWindowManager.getInstance(project);
+    return toolWindowManager.getToolWindow(SonarLintToolWindowFactory.TOOL_WINDOW_ID);
   }
 }

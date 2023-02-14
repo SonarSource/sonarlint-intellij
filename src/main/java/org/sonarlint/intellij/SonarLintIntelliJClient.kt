@@ -36,22 +36,22 @@ import com.intellij.openapi.project.guessProjectDir
 import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.IdeFocusManager
 import com.intellij.util.containers.orNull
 import org.apache.commons.lang.StringEscapeUtils
 import org.sonarlint.intellij.actions.SonarLintToolWindow
+import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings.getGlobalSettings
 import org.sonarlint.intellij.config.Settings.getSettingsFor
 import org.sonarlint.intellij.config.global.wizard.ServerConnectionCreator
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
-import org.sonarlint.intellij.core.SecurityHotspotMatcher
-import org.sonarlint.intellij.editor.EditorDecorator
-import org.sonarlint.intellij.finding.Location
 import org.sonarlint.intellij.http.ApacheHttpClient.Companion.default
 import org.sonarlint.intellij.notifications.SonarLintProjectNotifications
 import org.sonarlint.intellij.notifications.binding.BindingSuggestion
 import org.sonarlint.intellij.ui.ProjectSelectionDialog
+import org.sonarlint.intellij.ui.SonarLintToolWindowFactory
 import org.sonarlint.intellij.util.GlobalLogOutput
 import org.sonarlint.intellij.util.computeInEDT
 import org.sonarsource.sonarlint.core.clientapi.SonarLintClient
@@ -73,6 +73,8 @@ import org.sonarsource.sonarlint.core.commons.http.HttpClient
 import org.sonarsource.sonarlint.core.commons.log.ClientLogOutput
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletableFuture
+import javax.swing.JComponent
+import javax.swing.SwingUtilities
 
 object SonarLintIntelliJClient : SonarLintClient {
 
@@ -209,20 +211,37 @@ object SonarLintIntelliJClient : SonarLintClient {
         val configurationScopeId = params.configurationScopeId
         val project =
             findProject(configurationScopeId) ?: throw IllegalStateException("Unable to find project with id '$configurationScopeId'")
-        ApplicationManager.getApplication().invokeLater {
-            val localHotspot = SecurityHotspotMatcher(project).match(params.hotspotDetails)
-            val highlighter = getService(project, EditorDecorator::class.java)
-            getService(project, SonarLintToolWindow::class.java).show(localHotspot)
-            if (localHotspot.primaryLocation.file != null) {
-                openFile(project, localHotspot.primaryLocation)
-                highlighter.highlight(localHotspot)
-            }
+        SonarLintProjectNotifications.get(project).expireCurrentHotspotNotificationIfNeeded()
+        val file = tryFindFile(project, params.hotspotDetails.filePath)
+        if (file == null) {
+            showBalloon(project, "Unable to open security hotspot. Can't find the file: ${params.hotspotDetails.filePath}", NotificationType.WARNING)
+            return
         }
+        ApplicationManager.getApplication().invokeAndWait {
+            openFile(project, file)
+        }
+        getService(project, AnalysisSubmitter::class.java).analyzeFileAndTrySelectHotspot(file, params.hotspotDetails.key)
     }
 
-    private fun openFile(project: Project, location: Location) {
-        OpenFileDescriptor(project, location.file!!, location.range?.startOffset ?: 0)
-            .navigate(true)
+    private fun tryFindFile(project: Project, filePath: String): VirtualFile? {
+        for (contentRoot in ProjectRootManager.getInstance(project).contentRoots) {
+            if (contentRoot.isDirectory) {
+                val matchedFile = contentRoot.findFileByRelativePath(filePath)
+                if (matchedFile != null) {
+                    return matchedFile
+                }
+            } else {
+                // On Rider, all source files are returned as individual content roots, so simply check for equality
+                if (contentRoot.path.endsWith(filePath)) {
+                    return contentRoot
+                }
+            }
+        }
+        return null
+    }
+
+    private fun openFile(project: Project, file: VirtualFile) {
+        OpenFileDescriptor(project, file).navigate(true)
     }
 
     override fun assistCreatingConnection(params: AssistCreatingConnectionParams): CompletableFuture<AssistCreatingConnectionResponse> {

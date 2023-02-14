@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -53,7 +54,7 @@ import java.net.URL
 
 const val PROJECT_KEY = "sample-java-hotspot"
 
-@Disabled("Open in IDE feature temporarily broken, will be re-enabled by SLI-856")
+@DisabledIf("isCLion", disabledReason = "Java Security Hotspot not detected in CLion")
 class OpenInIdeTest : BaseUiTest() {
 
     @Test
@@ -132,9 +133,8 @@ class OpenInIdeTest : BaseUiTest() {
         with(robot) {
             idea {
                 toolWindow("SonarLint") {
-                    tab("Security Hotspots") {
+                    tabTitleContains("Security Hotspots") {
                         content("SonarLintHotspotsPanel") {
-                            assertThat(hasText("LOW")).isTrue()
                             assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
                         }
                     }
