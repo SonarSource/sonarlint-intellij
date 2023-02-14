@@ -121,7 +121,7 @@ public class AnalysisSubmitter {
   public void analyzeFileAndTrySelectHotspot(VirtualFile file, String securityHotspotKey) {
     AnalysisCallback callback = new ShowSecurityHotspotCallable(project, onTheFlyFindingsHolder, securityHotspotKey);
     var task = new Analysis(project, List.of(file), TriggerType.OPEN_SECURITY_HOTSPOT, true, callback);
-    TaskRunnerKt.startBackgroundTask(project, ANALYSIS_TASK_TITLE, task::run);
+    TaskRunnerKt.startBackgroundableModalTask(project, ANALYSIS_TASK_TITLE, task::run);
   }
 
   /**
