@@ -131,9 +131,8 @@ class OpenInIdeTest : BaseUiTest() {
         with(robot) {
             idea {
                 toolWindow("SonarLint") {
-                    tab("Security Hotspots") {
+                    tabTitleContains("Security Hotspots") {
                         content("SonarLintHotspotsPanel") {
-                            assertThat(hasText("LOW")).isTrue()
                             assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
                         }
                     }

@@ -124,13 +124,12 @@ public class SonarLintHotspotsListPanel {
   }
 
   private void showNoHotspotsLabel() {
-    ServerConnection serverConnection = null;
     try {
-      serverConnection = getService(project, ProjectBindingManager.class).getServerConnection();
+      var serverConnection = getService(project, ProjectBindingManager.class).getServerConnection();
+      noSecurityHotspotsLabel.setText("No security hotspots found for currently opened files in the latest analysis on " + serverConnection.getProductName() + ".");
     } catch (InvalidBindingException e) {
       // TODO log the exception
     }
-    noSecurityHotspotsLabel.setText("No security hotspots found for currently opened files in the latest analysis on " + serverConnection.getProductName() + ".");
     cardPanel.show(NO_ISSUES_CARD_ID);
   }
 
