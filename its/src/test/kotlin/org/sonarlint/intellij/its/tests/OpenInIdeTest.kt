@@ -32,6 +32,7 @@ import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.editor
@@ -53,6 +54,7 @@ import java.net.URL
 
 const val PROJECT_KEY = "sample-java-hotspot"
 
+@DisabledIf("isCLion", disabledReason = "Java Security Hotspot not detected in CLion")
 class OpenInIdeTest : BaseUiTest() {
 
     @Test
