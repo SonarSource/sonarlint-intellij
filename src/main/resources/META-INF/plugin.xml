@@ -256,6 +256,8 @@
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Taint vulnerabilities"
                            displayType="BALLOON"/>
+        <notificationGroup id="SonarLint: Open in IDE"
+                           displayType="BALLOON"/>
         <notificationGroup id="SonarLint"
                            displayType="BALLOON"/>
         <notificationGroup id="SonarLint: Server Notifications"

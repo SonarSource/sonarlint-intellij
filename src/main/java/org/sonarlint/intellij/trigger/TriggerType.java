@@ -20,23 +20,30 @@
 package org.sonarlint.intellij.trigger;
 
 public enum TriggerType {
-  EDITOR_OPEN("Editor open"),
-  ACTION("Action"),
-  ALL("All files"),
-  CHANGED_FILES("Changed files"),
-  COMPILATION("Compilation"),
-  EDITOR_CHANGE("Editor change"),
-  CHECK_IN("Pre-commit check"),
-  CONFIG_CHANGE("Config change"),
-  BINDING_UPDATE("Binding update");
+  EDITOR_OPEN("Editor open", true),
+  ACTION("Action", true),
+  ALL("All files", false),
+  CHANGED_FILES("Changed files", false),
+  COMPILATION("Compilation", false),
+  EDITOR_CHANGE("Editor change", false),
+  CHECK_IN("Pre-commit check", true),
+  CONFIG_CHANGE("Config change", true),
+  BINDING_UPDATE("Binding update", true),
+  OPEN_SECURITY_HOTSPOT("Open Security Hotspot", true);
 
   private final String name;
+  private final boolean shouldUpdateServerIssues;
 
-  TriggerType(String name) {
+  TriggerType(String name, boolean shouldUpdateServerIssues) {
     this.name = name;
+    this.shouldUpdateServerIssues = shouldUpdateServerIssues;
   }
 
   public String getName() {
     return name;
+  }
+
+  public boolean isShouldUpdateServerIssues() {
+    return shouldUpdateServerIssues;
   }
 }

@@ -36,8 +36,6 @@ import org.sonarlint.intellij.config.SonarLintTextAttributes
 import org.sonarlint.intellij.finding.Flow
 import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.Location
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.hotspot.LocalHotspot
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import java.awt.Font
 import java.util.function.Consumer
@@ -102,10 +100,6 @@ open class EditorDecorator(private val project: Project) {
         createHighlight(secondaryLocation.range, secondaryLocation.message)?.let(highlights::add)
         updateHighlights(highlights)
         displaySecondaryLocationNumbers(parentFlow, secondaryLocation)
-    }
-
-    open fun highlight(hotspot: LocalHotspot) {
-        createHighlight(hotspot.primaryLocation.range, hotspot.message)?.let { updateHighlights(listOf(it)) }
     }
 
     private fun updateHighlights(highlights: List<Highlight>) {
