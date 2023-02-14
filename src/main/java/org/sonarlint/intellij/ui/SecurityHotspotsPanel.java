@@ -200,14 +200,14 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private void clearSelectionChanged() {
     flowsTreeBuilder.clearFlows();
     flowsTree.getEmptyText().setText("No finding selected");
-    rulePanel.setRuleKey(null, null, null);
+    rulePanel.clear();
     var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
   }
 
   public void updateOnSelect(LiveFinding liveFinding) {
     var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
-    rulePanel.setRuleKey(moduleForFile, liveFinding.getRuleKey(), null);
+    rulePanel.setSelectedFinding(moduleForFile, liveFinding);
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
     flowsTree.getEmptyText().setText("Selected security hotspot doesn't have flows");
     flowsTreeBuilder.populateForFinding(liveFinding);
