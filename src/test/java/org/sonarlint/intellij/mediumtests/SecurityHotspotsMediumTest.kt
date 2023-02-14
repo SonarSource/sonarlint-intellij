@@ -22,6 +22,7 @@ package org.sonarlint.intellij.mediumtests
 import com.intellij.openapi.application.PathManager
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
@@ -29,74 +30,180 @@ import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
 import org.sonarlint.intellij.finding.persistence.FindingsCache
+import org.sonarlint.intellij.mediumtests.fixtures.MockServer
 import org.sonarlint.intellij.mediumtests.fixtures.StorageFixture.newStorage
 import org.sonarsource.sonarlint.core.commons.Language
+import org.sonarsource.sonarlint.core.commons.TextRange
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
+import org.sonarsource.sonarlint.core.serverapi.proto.sonarqube.ws.Common
+import org.sonarsource.sonarlint.core.serverapi.proto.sonarqube.ws.Hotspots
 import org.sonarsource.sonarlint.core.serverconnection.FileUtils
 import java.nio.file.Path
 import java.nio.file.Paths
 
 class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     private lateinit var storageFolderPath: Path
+    private lateinit var mockServer: MockServer
 
     @Before
     fun prepare() {
         storageFolderPath = Paths.get(PathManager.getSystemPath()).resolve("sonarlint")
         FileUtils.deleteRecursively(storageFolderPath)
         engineManager.stopAllEngines(false)
-        connectProjectTo("http://url", "connection", "projectKey")
+        mockServer = MockServer()
+        mockServer.start()
+        connectProjectTo(mockServer.url(""), "connection", "projectKey")
+    }
+
+    @After
+    fun cleanUp() {
+        mockServer.shutdown()
     }
 
     @Test
     fun should_raise_new_security_hotspots_when_connected_to_compatible_sonarqube() {
         createStorage(serverVersion = "9.7", activeRuleKey = "ruby:S1313")
 
-        val hotspots = analyze("ip = \"192.168.12.42\";")
+        val raisedHotspots = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
-        assertThat(hotspots).extracting({ it.ruleKey },
-                { it.message },
-                { it.vulnerabilityProbability },
-                { it.serverFindingKey },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } }).containsExactly(
-                tuple(
-                    "ruby:S1313", "Make sure using this hardcoded IP address is safe here.", VulnerabilityProbability.LOW, null, Pair(5, 20)
-                )
+        assertThat(raisedHotspots).extracting({ it.ruleKey },
+            { it.message },
+            { it.vulnerabilityProbability },
+            { it.serverFindingKey },
+            { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } },
+            { it.introductionDate }).containsExactly(
+            tuple(
+                "ruby:S1313", "Make sure using this hardcoded IP address is safe here.", VulnerabilityProbability.LOW, null, Pair(5, 20),
+                // no creation date on new hotspots
+                null
             )
+        )
     }
 
     @Test
     fun should_not_raise_any_security_hotspots_when_connected_to_incompatible_sonarqube() {
         createStorage(serverVersion = "9.6", activeRuleKey = "ruby:S1313")
 
-        val hotspots = analyze("ip = \"192.168.12.42\";")
+        val raisedHotspots = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
-        assertThat(hotspots).isEmpty()
+        assertThat(raisedHotspots).isEmpty()
     }
 
     @Test
     fun should_not_raise_any_security_hotspots_when_server_version_is_unknown() {
         createStorage(serverVersion = null, activeRuleKey = "ruby:S1313")
 
-        val hotspots = analyze("ip = \"192.168.12.42\";")
+        val raisedHotspots = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
-        assertThat(hotspots).isEmpty()
+        assertThat(raisedHotspots).isEmpty()
+    }
+
+    @Test
+    fun should_keep_no_creation_date_when_raising_previously_raised_new_security_hotspot() {
+        createStorage(activeRuleKey = "ruby:S1313")
+        analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
+        Thread.sleep(100)
+
+        val raisedHotspot = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
+
+        assertThat(raisedHotspot.introductionDate).isNull()
+    }
+
+    @Test
+    fun should_set_creation_date_when_raising_a_new_security_hotspot_in_an_already_analyzed_file() {
+        createStorage(activeRuleKey = "ruby:S1313")
+        analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
+
+        val newlyIntroducedHotspot = typeAndAnalyze(codeSnippet = "\nip2 = \"192.168.12.43\";")
+
+        assertThat(newlyIntroducedHotspot.introductionDate).isNotNull
+    }
+
+    @Test
+    fun should_match_security_hotspot_previously_detected_on_the_server() {
+        prepareStorageAndServer(
+            serverSecurityHotspot = ServerSecurityHotspot(
+                filePath = "file.rb",
+                key = "hotspotKey",
+                message = "Make sure using this hardcoded IP address is safe here.",
+                ruleKey = "ruby:S1313",
+                textRange = TextRange(1, 5, 1, 20),
+                introductionDate = "2020-09-21T12:46:39+0000",
+                status = "TO_REVIEW",
+                vulnerabilityProbability = "LOW"
+            )
+        )
+
+        val raisedHotspot = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
+
+        assertThat(raisedHotspot).extracting({ it.serverFindingKey },
+            { it.isResolved },
+            { it.introductionDate },
+            { it.vulnerabilityProbability }).containsExactly("hotspotKey", false, 1600692399000L, VulnerabilityProbability.LOW)
+    }
+
+    private fun prepareStorageAndServer(
+        serverSecurityHotspot: ServerSecurityHotspot,
+        branchName: String = "master",
+    ) {
+        createStorage(activeRuleKey = serverSecurityHotspot.ruleKey, projectKey = serverSecurityHotspot.projectKey, branchName = branchName)
+        mockServer.addProtobufResponse(
+            "/api/hotspots/search.protobuf?projectKey=${serverSecurityHotspot.projectKey}&files=${serverSecurityHotspot.filePath}&branch=$branchName&ps=500&p=1",
+            Hotspots.SearchWsResponse.newBuilder().setPaging(Common.Paging.newBuilder().setTotal(1).build()).addHotspots(
+                Hotspots.SearchWsResponse.Hotspot.newBuilder().setKey(serverSecurityHotspot.key).setMessage(serverSecurityHotspot.message)
+                    .setRuleKey(serverSecurityHotspot.ruleKey).setStatus(serverSecurityHotspot.status)
+                    .setVulnerabilityProbability(serverSecurityHotspot.vulnerabilityProbability)
+                    .setCreationDate(serverSecurityHotspot.introductionDate).setComponent(serverSecurityHotspot.componentKey).setTextRange(
+                        Common.TextRange.newBuilder().setStartLine(serverSecurityHotspot.textRange.startLine)
+                            .setStartOffset(serverSecurityHotspot.textRange.startLineOffset)
+                            .setEndLine(serverSecurityHotspot.textRange.endLine).setEndOffset(serverSecurityHotspot.textRange.endLineOffset)
+                            .build()
+                    ).build()
+            ).addComponents(
+                Hotspots.Component.newBuilder().setKey(serverSecurityHotspot.componentKey).setPath(serverSecurityHotspot.filePath).build()
+            ).build()
+        )
     }
 
     private fun createStorage(
-        serverVersion: String? = "9.7",
-        activeRuleKey: String
+        serverVersion: String? = "99.9",
+        projectKey: String = "projectKey",
+        branchName: String = "master",
+        activeRuleKey: String,
     ) {
-        newStorage("connection").withServerVersion(serverVersion)
-            .withProject("projectKey") { project ->
-                project.withRuleSet(Language.RUBY.languageKey) { ruleSet -> ruleSet.withActiveRule(activeRuleKey, "BLOCKER") }
-            }.create(storageFolderPath)
+        newStorage("connection").withServerVersion(serverVersion).withProject(projectKey) { project ->
+            project.withRuleSet(Language.RUBY.languageKey) { ruleSet -> ruleSet.withActiveRule(activeRuleKey, "BLOCKER") }
+                .withMainBranchName(branchName)
+        }.create(storageFolderPath)
     }
 
 
-    private fun analyze(codeSnippet: String): Collection<LiveSecurityHotspot> {
-        val fileToAnalyze = myFixture.configureByText("file.rb", codeSnippet).virtualFile
+    private fun analyzeFile(filePath: String, codeSnippet: String): Collection<LiveSecurityHotspot> {
+        val fileToAnalyze = myFixture.configureByText(filePath, "$codeSnippet<caret>").virtualFile
         val submitter = getService(project, AnalysisSubmitter::class.java)
         submitter.analyzeFilesPreCommit(listOf(fileToAnalyze))
         return getService(project, FindingsCache::class.java).getSecurityHotspotsForFile(fileToAnalyze)
+    }
+
+    private fun typeAndAnalyze(codeSnippet: String): LiveSecurityHotspot {
+        val previousCaretOffset = myFixture.caretOffset
+        myFixture.type(codeSnippet)
+        val file = myFixture.file.virtualFile
+        getService(project, AnalysisSubmitter::class.java).analyzeFilesPreCommit(listOf(file))
+        return getService(project, FindingsCache::class.java).getSecurityHotspotsForFile(file).first { it.range!!.startOffset > previousCaretOffset }
+    }
+
+    private data class ServerSecurityHotspot(
+        val projectKey: String = "projectKey",
+        val filePath: String,
+        val key: String,
+        val message: String,
+        val ruleKey: String,
+        val textRange: TextRange,
+        val introductionDate: String,
+        val status: String,
+        val vulnerabilityProbability: String,
+    ) {
+        val componentKey = "$projectKey:$filePath"
     }
 }

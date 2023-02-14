@@ -104,7 +104,8 @@ public class FindingsCache {
   public CachedFindings clearFindings(Collection<VirtualFile> files) {
     var previousIssuesPerFile = getPreviousIssuesByFile(files);
     var previousSecurityHotspotsPerFile = getPreviousSecurityHotspotsByFile(files);
-    var findingsSnapshot = new CachedFindings(previousIssuesPerFile, previousSecurityHotspotsPerFile);
+    var alreadyAnalyzedFiles = files.stream().filter(this::wasEverAnalyzed).collect(Collectors.toSet());
+    var findingsSnapshot = new CachedFindings(previousIssuesPerFile, previousSecurityHotspotsPerFile, alreadyAnalyzedFiles);
     ReadAction.run(() -> clearAllFindingsForFiles(files));
     return findingsSnapshot;
   }
@@ -123,6 +124,10 @@ public class FindingsCache {
 
   private Collection<Trackable> getPreviousSecurityHotspots(VirtualFile file) {
     return liveSecurityHotspotCache.getPreviousFindings(file);
+  }
+
+  private boolean wasEverAnalyzed(VirtualFile file) {
+    return liveIssueCache.wasEverAnalyzed(file) || liveSecurityHotspotCache.wasEverAnalyzed(file);
   }
 
   public void insertNewIssue(VirtualFile file, LiveIssue liveIssue) {

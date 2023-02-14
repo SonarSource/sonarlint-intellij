@@ -85,7 +85,7 @@ public class ServerIssueTrackable implements Trackable {
 
   @CheckForNull
   @Override
-  public Long getCreationDate() {
+  public Long getIntroductionDate() {
     return serverIssue.getCreationDate().toEpochMilli();
   }
 

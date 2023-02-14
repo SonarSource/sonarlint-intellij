@@ -50,7 +50,7 @@ public class IssueNodeTest {
     when(issue.getSeverity()).thenReturn(IssueSeverity.MAJOR);
     when(issue.getType()).thenReturn(RuleType.BUG);
     var issuePointer = new LiveIssue(issue, file, Collections.emptyList());
-    issuePointer.setCreationDate(date);
+    issuePointer.setIntroductionDate(date);
     return issuePointer;
   }
 }

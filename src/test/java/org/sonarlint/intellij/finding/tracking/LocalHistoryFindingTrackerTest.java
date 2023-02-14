@@ -27,6 +27,7 @@ import com.intellij.psi.PsiFile;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockitoAnnotations;
@@ -39,6 +40,7 @@ import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -66,19 +68,19 @@ public class LocalHistoryFindingTrackerTest extends AbstractSonarLintLightTests 
   public void testTracking() {
     // tracking based on setRuleKey / line number
     var previousIssue = createRangeStoredIssue(1, "issue 1", 10);
-    previousIssue.setCreationDate(1000L);
+    previousIssue.setIntroductionDate(1000L);
     previousIssue.setSeverity(IssueSeverity.INFO);
     previousIssue.setType(RuleType.BUG);
 
     var rawIssue = createRangeStoredIssue(1, "issue 1", 10);
-    rawIssue.setCreationDate(2000L);
+    rawIssue.setIntroductionDate(2000L);
     rawIssue.setSeverity(IssueSeverity.MAJOR);
     rawIssue.setType(RuleType.CODE_SMELL);
-    underTest = new LocalHistoryFindingTracker(new CachedFindings(Map.of(file1, List.of(previousIssue)), emptyMap()));
+    underTest = new LocalHistoryFindingTracker(new CachedFindings(Map.of(file1, List.of(previousIssue)), emptyMap(), Set.of(file1)));
 
     underTest.matchWithPreviousIssue(file1, rawIssue);
 
-    assertThat(rawIssue.getCreationDate()).isEqualTo(1000);
+    assertThat(rawIssue.getIntroductionDate()).isEqualTo(1000);
     assertThat(rawIssue.getUserSeverity()).isEqualTo(IssueSeverity.MAJOR);
     assertThat(rawIssue.getType()).isEqualTo(RuleType.CODE_SMELL);
   }
@@ -86,39 +88,39 @@ public class LocalHistoryFindingTrackerTest extends AbstractSonarLintLightTests 
   @Test
   public void testTracking_by_checksum() {
     // tracking based on checksum
-    issue1.setCreationDate(1000L);
+    issue1.setIntroductionDate(1000L);
 
     // line is different
     var i2 = createRangeStoredIssue(1, "issue 1", 11);
-    i2.setCreationDate(2000L);
-    underTest = new LocalHistoryFindingTracker(new CachedFindings(Map.of(file1, List.of(issue1)), emptyMap()));
+    i2.setIntroductionDate(2000L);
+    underTest = new LocalHistoryFindingTracker(new CachedFindings(Map.of(file1, List.of(issue1)), emptyMap(), Set.of(file1)));
 
     underTest.matchWithPreviousIssue(file1, i2);
 
-    assertThat(i2.getCreationDate()).isEqualTo(1000);
+    assertThat(i2.getIntroductionDate()).isEqualTo(1000);
   }
 
   @Test
   public void testTracking_removes_matched_issues_for_future_tracking() {
     var previousIssue = createRangeStoredIssue(1, "issue 1", 10);
-    previousIssue.setCreationDate(1000L);
+    previousIssue.setIntroductionDate(1000L);
     previousIssue.setSeverity(IssueSeverity.INFO);
     previousIssue.setType(RuleType.BUG);
 
     var rawIssue = createRangeStoredIssue(1, "issue 1", 10);
-    rawIssue.setCreationDate(2000L);
+    rawIssue.setIntroductionDate(2000L);
     rawIssue.setSeverity(IssueSeverity.MAJOR);
     rawIssue.setType(RuleType.CODE_SMELL);
     var rawIssue2 = createRangeStoredIssue(1, "issue 1", 10);
-    rawIssue2.setCreationDate(3000L);
+    rawIssue2.setIntroductionDate(3000L);
     rawIssue2.setSeverity(IssueSeverity.MAJOR);
     rawIssue2.setType(RuleType.CODE_SMELL);
-    underTest = new LocalHistoryFindingTracker(new CachedFindings(Map.of(file1, List.of(previousIssue)), emptyMap()));
+    underTest = new LocalHistoryFindingTracker(new CachedFindings(Map.of(file1, List.of(previousIssue)), emptyMap(), emptySet()));
 
     underTest.matchWithPreviousIssue(file1, rawIssue);
     underTest.matchWithPreviousIssue(file1, rawIssue2);
 
-    assertThat(rawIssue2.getCreationDate()).isEqualTo(3000);
+    assertThat(rawIssue2.getIntroductionDate()).isEqualTo(3000);
   }
 
   private LiveIssue createRangeStoredIssue(int id, String rangeContent, int line) {

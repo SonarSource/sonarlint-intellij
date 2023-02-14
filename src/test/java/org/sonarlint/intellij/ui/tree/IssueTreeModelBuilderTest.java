@@ -112,7 +112,7 @@ public class IssueTreeModelBuilderTest {
     data.put(file, issueList);
   }
 
-  private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, IssueSeverity severity, @Nullable Long creationDate) {
+  private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) {
     var issue = mock(Issue.class);
     var psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
@@ -124,7 +124,7 @@ public class IssueTreeModelBuilderTest {
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
     var ip = new LiveIssue(issue, psiFile, Collections.emptyList());
-    ip.setCreationDate(creationDate);
+    ip.setIntroductionDate(introductionDate);
     return ip;
   }
 

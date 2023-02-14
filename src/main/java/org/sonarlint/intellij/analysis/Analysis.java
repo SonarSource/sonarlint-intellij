@@ -248,7 +248,7 @@ public class Analysis implements Cancelable {
       this.filesHavingIssuesByModule = filterFilesHavingFindingsByModule(filesByModule, findings.getIssuesPerFile());
       this.filesHavingSecurityHotspotsByModule = filterFilesHavingFindingsByModule(filesByModule, findings.getSecurityHotspotsPerFile());
       this.securityHotspotsCount = findings.getSecurityHotspotsPerFile().values().stream().mapToLong(Collection::size).sum();
-      this.issuesCount = findings.getSecurityHotspotsPerFile().values().stream().mapToLong(Collection::size).sum();
+      this.issuesCount = findings.getIssuesPerFile().values().stream().mapToLong(Collection::size).sum();
       this.onlyFailedFiles = failedFiles.containsAll(filesByModule.values().stream().flatMap(Collection::stream).collect(toSet()));
     }
 

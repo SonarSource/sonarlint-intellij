@@ -33,7 +33,7 @@ public class LocalFindingTrackableTest {
       .setChecksum(20)
       .setMessage("msg")
       .setResolved(true)
-      .setCreationDate(1000L)
+      .setIntroductionDate(1000L)
       .setRuleKey("ruleKey")
       .build();
 
@@ -41,7 +41,7 @@ public class LocalFindingTrackableTest {
     assertThat(trackable.getMessage()).isEqualTo("msg");
     assertThat(trackable.getServerFindingKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(10);
-    assertThat(trackable.getCreationDate()).isEqualTo(1000L);
+    assertThat(trackable.getIntroductionDate()).isEqualTo(1000L);
     assertThat(trackable.isResolved()).isTrue();
     assertThat(trackable.getLineHash()).isEqualTo(20);
     assertThat(trackable.getTextRangeHash()).isNull();
@@ -56,7 +56,7 @@ public class LocalFindingTrackableTest {
     var trackable = new LocalFindingTrackable(finding);
     assertThat(trackable.getServerFindingKey()).isNull();
     assertThat(trackable.getLine()).isNull();
-    assertThat(trackable.getCreationDate()).isNull();
+    assertThat(trackable.getIntroductionDate()).isNull();
   }
 
   @Test(expected = UnsupportedOperationException.class)

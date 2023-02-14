@@ -183,8 +183,8 @@ public class IssueTreeModelBuilder implements FindingTreeModelBuilder {
 
   static class IssueComparator implements Comparator<LiveIssue> {
     @Override public int compare(@Nonnull LiveIssue o1, @Nonnull LiveIssue o2) {
-      var creationDateOrdering = Ordering.natural().reverse().nullsLast();
-      var dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
+      var introductionDateOrdering = Ordering.natural().reverse().nullsLast();
+      var dateCompare = introductionDateOrdering.compare(o1.getIntroductionDate(), o2.getIntroductionDate());
 
       if (dateCompare != 0) {
         return dateCompare;

@@ -51,11 +51,11 @@ public abstract class LiveFinding implements Trackable {
 
   // tracked fields (mutable)
   private IssueSeverity severity;
-  private Long creationDate;
+  private Long introductionDate;
   private String serverFindingKey;
   private boolean resolved;
 
-  public LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
+  protected LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     this.range = range;
     this.message = issue.getMessage();
     this.ruleKey = issue.getRuleKey();
@@ -165,8 +165,8 @@ public abstract class LiveFinding implements Trackable {
   }
 
   @Override
-  public Long getCreationDate() {
-    return creationDate;
+  public Long getIntroductionDate() {
+    return introductionDate;
   }
 
   @Override
@@ -184,8 +184,8 @@ public abstract class LiveFinding implements Trackable {
     this.serverFindingKey = serverHotspotKey;
   }
 
-  public void setCreationDate(@Nullable Long creationDate) {
-    this.creationDate = creationDate;
+  public void setIntroductionDate(@Nullable Long introductionDate) {
+    this.introductionDate = introductionDate;
   }
 
   public void setResolved(boolean resolved) {

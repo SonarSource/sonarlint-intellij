@@ -50,7 +50,7 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getMessage()).isEqualTo("message");
     assertThat(trackable.getLineHash()).isEqualTo("lineHash".hashCode());
     assertThat(trackable.getTextRangeHash()).isNull();
-    assertThat(trackable.getCreationDate()).isEqualTo(1_000_000);
+    assertThat(trackable.getIntroductionDate()).isEqualTo(1_000_000);
     assertThat(trackable.getServerFindingKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(100);
     assertThat(trackable.getUserSeverity()).isEqualTo(IssueSeverity.MINOR);
@@ -67,7 +67,7 @@ public class ServerIssueTrackableTest {
     assertThat(trackable.getMessage()).isEqualTo("message");
     assertThat(trackable.getLineHash()).isNull();
     assertThat(trackable.getTextRangeHash()).isEqualTo("rangeHash".hashCode());
-    assertThat(trackable.getCreationDate()).isEqualTo(1_000_000);
+    assertThat(trackable.getIntroductionDate()).isEqualTo(1_000_000);
     assertThat(trackable.getServerFindingKey()).isEqualTo("key");
     assertThat(trackable.getLine()).isEqualTo(1);
     assertThat(trackable.getUserSeverity()).isEqualTo(IssueSeverity.INFO);
