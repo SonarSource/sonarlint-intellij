@@ -81,6 +81,24 @@ public class SummaryNode extends AbstractNode {
     return insertIdx;
   }
 
+  public int insertLiveSecurityHotspotNode(LiveSecurityHotspotNode newChild, Comparator<LiveSecurityHotspotNode> comparator) {
+    if (children == null) {
+      insert(newChild, 0);
+      return 0;
+    }
+
+    // keep the cast for Java 8 compat
+    var nodes = children.stream().map(LiveSecurityHotspotNode.class::cast).collect(Collectors.<LiveSecurityHotspotNode>toList());
+    var foundIndex = Collections.binarySearch(nodes, newChild, comparator);
+    if (foundIndex >= 0) {
+      throw new IllegalArgumentException("Child already exists");
+    }
+
+    int insertIdx = -foundIndex - 1;
+    insert(newChild, insertIdx);
+    return insertIdx;
+  }
+
   @Override public void render(TreeCellRenderer renderer) {
     renderer.append(getText());
   }

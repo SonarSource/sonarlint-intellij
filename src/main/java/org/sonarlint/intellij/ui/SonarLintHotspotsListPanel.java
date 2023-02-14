@@ -19,99 +19,192 @@
  */
 package org.sonarlint.intellij.ui;
 
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.ActionManager;
+import com.intellij.openapi.actionSystem.ActionToolbar;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
-import com.intellij.ui.CollectionListModel;
+import com.intellij.openapi.ui.SimpleToolWindowPanel;
+import com.intellij.openapi.ui.VerticalFlowLayout;
+import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
-import com.intellij.ui.components.JBList;
+import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.labels.ActionLink;
 import com.intellij.ui.components.panels.HorizontalLayout;
-import com.intellij.util.EditSourceOnDoubleClickHandler;
-import com.intellij.util.EditSourceOnEnterKeyHandler;
+import com.intellij.ui.treeStructure.Tree;
+import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
-import java.util.Collection;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import javax.annotation.Nullable;
+import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
-import org.sonarlint.intellij.config.global.ServerConnection;
-import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.analysis.AnalysisResult;
+import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
-import org.sonarlint.intellij.exception.InvalidBindingException;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.hotspot.FoundSecurityHotspots;
 import org.sonarlint.intellij.finding.hotspot.InvalidBinding;
-import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.NoBinding;
 import org.sonarlint.intellij.finding.hotspot.NoIssueSelected;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
+import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
+import org.sonarlint.intellij.ui.tree.FlowsTree;
+import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
+import org.sonarlint.intellij.ui.tree.SecurityHotspotTree;
+import org.sonarlint.intellij.ui.tree.SecurityHotspotTreeModelBuilder;
+import org.sonarlint.intellij.util.SonarLintActions;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
+import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
-public class SonarLintHotspotsListPanel {
+public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements Disposable {
   private final JPanel mainPanel;
-  private final JBList<LiveSecurityHotspot> liveHotspotJBList;
   private final Project project;
   private final CardPanel cardPanel;
-  private LiveSecurityHotspot selectedHotspot;
-  private final SonarLintRulePanel sonarLintRulePanel;
   private static final String NO_BINDING_CARD_ID = "NO_BINDING_CARD";
   private static final String INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD";
   private static final String NO_ISSUES_CARD_ID = "NO_ISSUES_CARD_ID";
   private static final String HOTSPOTS_LIST = "HOTSPOTS_LIST";
   private final JLabel noSecurityHotspotsLabel = new JLabel("");
+  protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
+  protected Tree securityHotspotTree;
+  protected FlowsTree flowsTree;
+  protected FlowsTreeModelBuilder flowsTreeBuilder;
+  protected SonarLintRulePanel rulePanel;
+  protected JBTabbedPane detailsTab;
+  private static final int RULE_TAB_INDEX = 0;
+  private static final int LOCATIONS_TAB_INDEX = 1;
+  private ActionToolbar mainToolbar;
+  private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
+  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
   public SonarLintHotspotsListPanel(Project project) {
+    super(false, true);
     this.project = project;
-    liveHotspotJBList = new JBList<>();
-    liveHotspotJBList.setCellRenderer(new HotspotCellRenderer());
-
-    sonarLintRulePanel = new SonarLintRulePanel(project);
-    sonarLintRulePanel.setVisible(false);
-
     cardPanel = new CardPanel();
+    mainPanel = new JPanel(new BorderLayout());
+
+    createFlowsTree();
+    createSecurityHotspotsTree();
+    createTabs();
+    initPanel();
+
+    super.setContent(mainPanel);
+  }
+
+  private void initPanel() {
+    var treePanel = new JPanel(new VerticalFlowLayout(0, 0));
+    treePanel.add(securityHotspotTree);
+
+    var findingsPanel = new JPanel(new BorderLayout());
+    findingsPanel.add(createSplitter(project, this, this,
+      ScrollPaneFactory.createScrollPane(treePanel), detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
+
     cardPanel.add(centeredLabel(new JLabel("The project is not bound to SonarQube 9.7+"), new ActionLink("Configure binding", new SonarConfigureProject())), NO_BINDING_CARD_ID);
     cardPanel.add(centeredLabel(new JLabel("The project binding is invalid"), new ActionLink("Edit binding", new SonarConfigureProject())), INVALID_BINDING_CARD_ID);
     cardPanel.add(centeredLabel(noSecurityHotspotsLabel, null), NO_ISSUES_CARD_ID);
-    cardPanel.add(ScrollPaneFactory.createScrollPane(liveHotspotJBList), HOTSPOTS_LIST);
+    cardPanel.add(findingsPanel, HOTSPOTS_LIST);
+    setupToolbar(createActionGroup());
 
-    mainPanel = new JPanel(new BorderLayout());
     mainPanel.add(cardPanel.getContainer(), BorderLayout.CENTER);
-    EditSourceOnDoubleClickHandler.install(liveHotspotJBList, this::navigateToLocation);
-    EditSourceOnEnterKeyHandler.install(liveHotspotJBList, this::navigateToLocation);
-
-    liveHotspotJBList.getSelectionModel().addListSelectionListener(event -> setRuleDescription(liveHotspotJBList.getSelectedValue()));
   }
 
-  private void setRuleDescription(LiveSecurityHotspot selectedHotspot) {
-    if (selectedHotspot == null) return;
-    this.selectedHotspot = selectedHotspot;
-    var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex()
-      .getModuleForFile(selectedHotspot.psiFile().getVirtualFile());
-    sonarLintRulePanel.setVisible(true);
-    sonarLintRulePanel.setRuleKeyForSecurityHotspot(moduleForFile, selectedHotspot.getRuleKey(),
-      null, selectedHotspot);
-    getService(project, EditorDecorator.class).highlightFinding(selectedHotspot);
+  private SimpleActionGroup createActionGroup() {
+    var sonarLintActions = SonarLintActions.getInstance();
+    var actionGroup = new SimpleActionGroup();
+    actionGroup.add(sonarLintActions.configure());
+    return actionGroup;
   }
 
-  public void loadHotspots(Collection<LiveSecurityHotspot> hotspots) {
-    var listHotspots = new CollectionListModel<>(hotspots);
-    liveHotspotJBList.setModel(listHotspots);
+  private void createFlowsTree() {
+    flowsTreeBuilder = new FlowsTreeModelBuilder();
+    var model = flowsTreeBuilder.createModel();
+    flowsTree = new FlowsTree(project, model);
+    flowsTreeBuilder.clearFlows();
+    flowsTree.getEmptyText().setText("No security hotspot selected");
+  }
+
+  private void createTabs() {
+    // Flows panel with tree
+    var flowsPanel = ScrollPaneFactory.createScrollPane(flowsTree, true);
+    flowsPanel.getVerticalScrollBar().setUnitIncrement(10);
+
+    // Rule panel
+    rulePanel = new SonarLintRulePanel(project);
+
+    detailsTab = new JBTabbedPane();
+    detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
+    detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the finding", LOCATIONS_TAB_INDEX);
+    detailsTab.setVisible(false);
+  }
+
+  public void updateFindings(AnalysisResult analysisResult) {
+    if (project.isDisposed()) {
+      return;
+    }
+    securityHotspotTreeBuilder.updateModelWithoutFileNode(analysisResult.getSecurityHotspotsPerFile(), "No security hotspots found");
+    TreeUtil.expandAll(securityHotspotTree);
+    detailsTab.setVisible(true);
+  }
+
+  private void createSecurityHotspotsTree() {
+    securityHotspotTreeBuilder = new SecurityHotspotTreeModelBuilder();
+    var model = securityHotspotTreeBuilder.createModel();
+    securityHotspotTree = new SecurityHotspotTree(project, model);
+    manageInteraction(securityHotspotTree);
+    securityHotspotTree.setRootVisible(false);
+    securityHotspotTree.addTreeSelectionListener(this::securityHotspotTreeSelectionChanged);
+  }
+
+  private void manageInteraction(Tree tree) {
+    tree.addKeyListener(new KeyAdapter() {
+      @Override
+      public void keyPressed(KeyEvent e) {
+        if (KeyEvent.VK_ESCAPE == e.getKeyCode()) {
+          var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+          highlighting.removeHighlights();
+        }
+      }
+    });
+    tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+  }
+
+  private void securityHotspotTreeSelectionChanged(TreeSelectionEvent e) {
+    if (e.getSource() instanceof SecurityHotspotTree) {
+      var selectedHotspotsNodes = securityHotspotTree.getSelectedNodes(LiveSecurityHotspotNode.class, null);
+      if (selectedHotspotsNodes.length > 0) {
+        updateOnSelect(selectedHotspotsNodes[0].getHotspot());
+      } else {
+        clearSelectionChanged();
+      }
+    }
+  }
+
+  private void clearSelectionChanged() {
+    flowsTreeBuilder.clearFlows();
+    flowsTree.getEmptyText().setText("No finding selected");
+    rulePanel.setRuleKey(null, null, null);
+    var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
+    highlighting.removeHighlights();
+  }
+
+  private void updateOnSelect(LiveFinding liveFinding) {
+    var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
+    rulePanel.setRuleKey(moduleForFile, liveFinding.getRuleKey(), null);
+    SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
+    flowsTree.getEmptyText().setText("Selected security hotspot doesn't have flows");
+    flowsTree.expandAll();
   }
 
   public JComponent getPanel() {
     return mainPanel;
-  }
-
-  private void navigateToLocation() {
-    if (selectedHotspot == null || selectedHotspot.getFile() == null) {
-      return;
-    }
-
-    var range = selectedHotspot.getRange();
-    var offset = range == null ? 0 : range.getStartOffset();
-    new OpenFileDescriptor(project, selectedHotspot.getFile(), offset).navigate(true);
   }
 
   private JPanel centeredLabel(JLabel textLabel, @Nullable ActionLink actionLink) {
@@ -123,14 +216,18 @@ public class SonarLintHotspotsListPanel {
     return labelPanel;
   }
 
-  private void showNoHotspotsLabel() {
-    try {
-      var serverConnection = getService(project, ProjectBindingManager.class).getServerConnection();
-      noSecurityHotspotsLabel.setText("No security hotspots found for currently opened files in the latest analysis on " + serverConnection.getProductName() + ".");
-    } catch (InvalidBindingException e) {
-      // TODO log the exception
+  private void setupToolbar(ActionGroup group) {
+    if (mainToolbar != null) {
+      mainToolbar.setTargetComponent(null);
+      super.setToolbar(null);
+      mainToolbar = null;
     }
-    cardPanel.show(NO_ISSUES_CARD_ID);
+    mainToolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_GROUP_ID, group, false);
+    mainToolbar.setTargetComponent(this);
+    var toolBarBox = Box.createHorizontalBox();
+    toolBarBox.add(mainToolbar.getComponent());
+    super.setToolbar(toolBarBox);
+    mainToolbar.getComponent().setVisible(true);
   }
 
   public void populate(SecurityHotspotsStatus status) {
@@ -138,28 +235,20 @@ public class SonarLintHotspotsListPanel {
     highlighting.removeHighlights();
     if (status instanceof NoBinding) {
       cardPanel.show(NO_BINDING_CARD_ID);
-      sonarLintRulePanel.setVisible(false);
+      detailsTab.setVisible(false);
     } else if (status instanceof InvalidBinding) {
       cardPanel.show(INVALID_BINDING_CARD_ID);
     } else if (status instanceof NoIssueSelected) {
-      sonarLintRulePanel.setVisible(false);
+      detailsTab.setVisible(false);
     } else if (status instanceof FoundSecurityHotspots) {
-      if (status.isEmpty()) {
-        showNoHotspotsLabel();
-        sonarLintRulePanel.setVisible(false);
-      } else {
-        cardPanel.show(HOTSPOTS_LIST);
-      }
+      cardPanel.show(HOTSPOTS_LIST);
     }
+  }
+
+  @Override
+  // called automatically because the panel is one of the content of the tool window
+  public void dispose() {
 
   }
 
-  public SonarLintRulePanel getSonarLintRulePanel() {
-    return this.sonarLintRulePanel;
-  }
-
-
-  public void setSelectedSecurityHotspot(LiveSecurityHotspot securityHotspot) {
-    liveHotspotJBList.setSelectedValue(securityHotspot, true);
-  }
 }

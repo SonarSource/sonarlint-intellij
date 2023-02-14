@@ -47,7 +47,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
-import org.sonarlint.intellij.ui.SonarLintHotspotsPanel;
+import org.sonarlint.intellij.ui.SonarLintHotspotsListPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
@@ -160,11 +160,9 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       return;
     }
     var content = getSecurityHotspotContent();
-    if (content != null) {
-      content.setDisplayName(buildTabName(status.count(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
-      var hotspotsPanel = (SonarLintHotspotsPanel) content.getComponent();
-      hotspotsPanel.populate(status);
-    }
+    content.setDisplayName(buildTabName(status.count(), SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+    var hotspotsPanel = (SonarLintHotspotsListPanel) content.getComponent();
+    hotspotsPanel.populate(status);
   }
 
   public static String buildTabName(int count, String tabName) {
@@ -189,8 +187,11 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     }
   }
 
-  public void updateOnTheFlySecurityHotspots(@NotNull Map<VirtualFile, Collection<LiveSecurityHotspot>> currentSecurityHotspotsPerOpenFile) {
-    renderHotspotFindings(currentSecurityHotspotsPerOpenFile);
+  public void updateHotspotsTab(AnalysisResult analysisResult) {
+    var content = getSecurityHotspotContent();
+    content.setDisplayName(buildTabName(1, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
+    var hotspotsPanel = (SonarLintHotspotsListPanel) content.getComponent();
+    hotspotsPanel.updateFindings(analysisResult);
   }
 
   public void updateCurrentFileTab(@Nullable VirtualFile selectedFile, @Nullable Collection<LiveIssue> issues) {
@@ -223,7 +224,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       sonarLintHotspotsPanel.setSelectedSecurityHotspot(foundHotspot.get());
       return true;
     }
-    return false;
+    //TODO replace the null
   }
 
   public void renderHotspotFindings(Map<VirtualFile, Collection<LiveSecurityHotspot>> hotspotsMap) {
@@ -234,11 +235,6 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   public void renderFindings(Collection<LiveSecurityHotspot> securityHotspots) {
     var status = new FoundSecurityHotspots(securityHotspots);
     populateSecurityHotspotsTab(status);
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      var sonarLintHotspotsPanel = (SonarLintHotspotsPanel) content.getComponent();
-      sonarLintHotspotsPanel.setLiveHotspots(securityHotspots);
-    }
   }
 
   private void mergeAndSortHotspot(Map<VirtualFile, Collection<LiveSecurityHotspot>> hotspotsMap) {
