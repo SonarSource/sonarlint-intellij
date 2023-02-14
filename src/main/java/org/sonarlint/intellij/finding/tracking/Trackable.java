@@ -46,7 +46,7 @@ public interface Trackable {
   String getServerFindingKey();
 
   @CheckForNull
-  Long getCreationDate();
+  Long getIntroductionDate();
 
   boolean isResolved();
 

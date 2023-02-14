@@ -127,8 +127,8 @@ public class FindingPersistence<T extends LiveFinding> {
       .setMessage(liveFinding.getMessage())
       .setResolved(liveFinding.isResolved());
 
-    if (liveFinding.getCreationDate() != null) {
-      builder.setCreationDate(liveFinding.getCreationDate());
+    if (liveFinding.getIntroductionDate() != null) {
+      builder.setIntroductionDate(liveFinding.getIntroductionDate());
     }
     if (liveFinding.getLineHash() != null) {
       builder.setChecksum(liveFinding.getLineHash());

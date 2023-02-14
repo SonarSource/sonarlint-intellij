@@ -51,7 +51,7 @@ public class SecurityHotspotNodeTest {
     when(issue.getVulnerabilityProbability()).thenReturn(Optional.of(VulnerabilityProbability.HIGH));
     when(issue.getType()).thenReturn(RuleType.BUG);
     var securityHotspotPointer = new LiveSecurityHotspot(issue, file, Collections.emptyList());
-    securityHotspotPointer.setCreationDate(date);
+    securityHotspotPointer.setIntroductionDate(date);
     return securityHotspotPointer;
   }
 }

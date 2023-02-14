@@ -84,6 +84,17 @@ public class LiveFindingCache<T extends LiveFinding> {
     }
   }
 
+  public boolean wasEverAnalyzed(VirtualFile file) {
+    if (contains(file)) {
+      return true;
+    }
+    var storeKey = SonarLintAppUtils.getRelativePathForAnalysis(project, file);
+    if (storeKey == null) {
+      return false;
+    }
+    return persistence.contains(storeKey);
+  }
+
   public Collection<Trackable> getPreviousFindings(VirtualFile file) {
     var liveFindings = getLive(file);
     if (liveFindings != null) {

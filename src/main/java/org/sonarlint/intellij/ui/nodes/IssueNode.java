@@ -73,10 +73,11 @@ public class IssueNode extends AbstractNode {
 
     issue.context().ifPresent(context -> renderer.append(context.getSummaryDescription(), GRAYED_SMALL_ATTRIBUTES));
 
-    if (issue.getCreationDate() != null) {
+    var introductionDate = issue.getIntroductionDate();
+    if (introductionDate != null) {
       renderer.append(" ");
-      var creationDate = DateUtils.toAge(issue.getCreationDate());
-      renderer.append(creationDate, SimpleTextAttributes.GRAY_ATTRIBUTES);
+      var age = DateUtils.toAge(introductionDate);
+      renderer.append(age, SimpleTextAttributes.GRAY_ATTRIBUTES);
     }
   }
 

@@ -22,7 +22,8 @@ package org.sonarlint.intellij.finding.persistence
 import com.intellij.openapi.vfs.VirtualFile
 import org.sonarlint.intellij.finding.tracking.Trackable
 
-class CachedFindings(
+data class CachedFindings(
     val issuesPerFile: Map<VirtualFile, Collection<Trackable>>,
     val securityHotspotsPerFile: Map<VirtualFile, Collection<Trackable>>,
+    val alreadyAnalyzedFiles: Set<VirtualFile>
 )

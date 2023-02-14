@@ -177,8 +177,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
 
   static class SecurityHotspotComparator implements Comparator<LiveSecurityHotspot> {
     @Override public int compare(@Nonnull LiveSecurityHotspot o1, @Nonnull LiveSecurityHotspot o2) {
-      var creationDateOrdering = Ordering.natural().reverse().nullsLast();
-      var dateCompare = creationDateOrdering.compare(o1.getCreationDate(), o2.getCreationDate());
+      var introductionDateOrdering = Ordering.natural().reverse().nullsLast();
+      var dateCompare = introductionDateOrdering.compare(o1.getIntroductionDate(), o2.getIntroductionDate());
 
       if (dateCompare != 0) {
         return dateCompare;
