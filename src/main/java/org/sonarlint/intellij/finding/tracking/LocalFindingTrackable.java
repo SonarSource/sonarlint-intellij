@@ -61,8 +61,8 @@ public class LocalFindingTrackable implements Trackable {
   }
 
   @CheckForNull
-  @Override public Long getCreationDate() {
-    return finding.getCreationDate() != 0 ? finding.getCreationDate() : null;
+  @Override public Long getIntroductionDate() {
+    return finding.getIntroductionDate() != 0 ? finding.getIntroductionDate() : null;
   }
 
   @Override public boolean isResolved() {

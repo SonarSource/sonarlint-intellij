@@ -23,8 +23,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import org.apache.commons.io.FileUtils;
@@ -60,9 +62,17 @@ public class ProjectStorageFixture {
   public static class ProjectStorageBuilder {
     private final String projectKey;
     private final List<RuleSetBuilder> ruleSets = new ArrayList<>();
+    private String mainBranchName;
+    private final Set<String> branchNames = new HashSet<>();
 
     public ProjectStorageBuilder(String projectKey) {
       this.projectKey = projectKey;
+    }
+
+    public ProjectStorageBuilder withMainBranchName(String mainBranchName) {
+      this.mainBranchName = mainBranchName;
+      branchNames.add(mainBranchName);
+      return this;
     }
 
     public ProjectStorageBuilder withRuleSet(String languageKey, Consumer<RuleSetBuilder> consumer) {
@@ -81,6 +91,9 @@ public class ProjectStorageFixture {
       }
 
       createAnalyzerConfiguration(projectFolder);
+      if (mainBranchName != null) {
+        createProjectBranches(projectFolder);
+      }
       return new ProjectStorage(projectFolder);
     }
 
@@ -100,6 +113,14 @@ public class ProjectStorageFixture {
       });
       var analyzerConfiguration = Sonarlint.AnalyzerConfiguration.newBuilder().putAllRuleSetsByLanguageKey(protoRuleSets).build();
       ProtobufUtil.writeToFile(analyzerConfiguration, projectFolder.resolve("analyzer_config.pb"));
+    }
+
+    private void createProjectBranches(Path projectFolder) {
+      Map<String, Sonarlint.ProjectBranches> protoBranches = new HashMap<>();
+      var builder = Sonarlint.ProjectBranches.newBuilder()
+        .setMainBranchName(mainBranchName)
+        .addAllBranchName(branchNames);
+      ProtobufUtil.writeToFile(builder.build(), projectFolder.resolve("project_branches.pb"));
     }
 
     public static class RuleSetBuilder {

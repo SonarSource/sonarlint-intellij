@@ -19,7 +19,7 @@ message Findings {
         int32 checksum = 5;
 
         // values carried forward
-        int64 creationDate = 7;
+        int64 introductionDate = 7;
         bool resolved = 8;
     }
 }

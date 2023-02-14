@@ -119,7 +119,7 @@ public class ServerFindingTrackerTest extends AbstractSonarLintLightTests {
 
   @Test
   public void should_drop_server_issue_reference_if_gone() {
-    issue1.setCreationDate(1000L);
+    issue1.setIntroductionDate(1000L);
     issue1.setServerFindingKey("dummyServerIssueKey");
     issue1.setSeverity(IssueSeverity.BLOCKER);
 
@@ -128,18 +128,18 @@ public class ServerFindingTrackerTest extends AbstractSonarLintLightTests {
     assertThat(issue1.getServerFindingKey()).isNull();
 
     // keep old creation date and severity
-    assertThat(issue1.getCreationDate()).isEqualTo(1000L);
+    assertThat(issue1.getIntroductionDate()).isEqualTo(1000L);
     assertThat(issue1.getUserSeverity()).isEqualTo(IssueSeverity.BLOCKER);
   }
 
   @Test
   public void should_preserve_creation_date_of_leaked_issues_in_connected_mode() {
-    var creationDate = 1L;
-    issue1.setCreationDate(creationDate);
+    var introductionDate = 1L;
+    issue1.setIntroductionDate(introductionDate);
 
     underTest.matchLocalWithServerFindings(Collections.emptyList(), List.of(issue1));
 
-    assertThat(issue1.getCreationDate()).isEqualTo(creationDate);
+    assertThat(issue1.getIntroductionDate()).isEqualTo(introductionDate);
   }
 
   private LiveIssue createRangeStoredIssue(int id, String rangeContent, int line) {

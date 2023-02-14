@@ -83,7 +83,7 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
     var moduleAnalysisResult = new ModuleAnalysisResult(analysisResults.failedAnalysisFiles());
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class)))
       .thenReturn(moduleAnalysisResult);
-    when(findingsCacheMock.clearFindings(any())).thenReturn(new CachedFindings(Collections.emptyMap(), Collections.emptyMap()));
+    when(findingsCacheMock.clearFindings(any())).thenReturn(new CachedFindings(Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet()));
 
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);

@@ -114,7 +114,7 @@ public class SecurityHotspotTreeModelBuilderTest {
   }
 
   private static LiveSecurityHotspot mockSecurityHotspotPointer(String path, int startOffset, String rule,
-    VulnerabilityProbability vulnerability, @Nullable Long creationDate) {
+    VulnerabilityProbability vulnerability, @Nullable Long introductionDate) {
     var issue = mock(Issue.class);
     var psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
@@ -126,7 +126,7 @@ public class SecurityHotspotTreeModelBuilderTest {
     var marker = mock(RangeMarker.class);
     when(marker.getStartOffset()).thenReturn(startOffset);
     var ip = new LiveSecurityHotspot(issue, psiFile, Collections.emptyList());
-    ip.setCreationDate(creationDate);
+    ip.setIntroductionDate(introductionDate);
     return ip;
   }
 

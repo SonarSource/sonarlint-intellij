@@ -70,7 +70,7 @@ public class ServerSecurityHotspotTrackable implements Trackable {
 
   @CheckForNull
   @Override
-  public Long getCreationDate() {
+  public Long getIntroductionDate() {
     return serverHotspot.getCreationDate().toEpochMilli();
   }
 

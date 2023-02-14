@@ -44,23 +44,20 @@ public class ServerFindingTracker {
       if (liveUnmatched.getServerFindingKey() != null) {
         // were matched before with server finding, now not anymore
         wipeServerFindingDetails(liveUnmatched);
-      } else if (liveUnmatched.getCreationDate() == null) {
-        // first time seen, even locally
-        liveUnmatched.setCreationDate(System.currentTimeMillis());
       }
     }
   }
 
-  private static <L extends LiveFinding> void copyAttributesFromServer(L liveFinding, Trackable serverIssue) {
-    liveFinding.setCreationDate(serverIssue.getCreationDate());
-    liveFinding.setServerFindingKey(serverIssue.getServerFindingKey());
-    liveFinding.setResolved(serverIssue.isResolved());
-    IssueSeverity userSeverity = serverIssue.getUserSeverity();
+  private static <L extends LiveFinding> void copyAttributesFromServer(L liveFinding, Trackable serverFinding) {
+    liveFinding.setIntroductionDate(serverFinding.getIntroductionDate());
+    liveFinding.setServerFindingKey(serverFinding.getServerFindingKey());
+    liveFinding.setResolved(serverFinding.isResolved());
+    IssueSeverity userSeverity = serverFinding.getUserSeverity();
     if (userSeverity != null) {
       liveFinding.setSeverity(userSeverity);
     }
     if (liveFinding instanceof LiveIssue) {
-      ((LiveIssue) liveFinding).setType(serverIssue.getType());
+      ((LiveIssue) liveFinding).setType(serverFinding.getType());
     }
   }
 

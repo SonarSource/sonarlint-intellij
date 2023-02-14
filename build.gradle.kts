@@ -197,6 +197,7 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(libs.assertj.core)
     testImplementation(libs.mockito.core)
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.10.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
     testImplementation("org.eclipse.jetty:jetty-server:$jettyVersion")
     testImplementation("org.eclipse.jetty:jetty-servlet:$jettyVersion")
