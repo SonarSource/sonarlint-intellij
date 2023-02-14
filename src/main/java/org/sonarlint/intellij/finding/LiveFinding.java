@@ -36,7 +36,7 @@ import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.commons.codec.digest.DigestUtils.md5;
 
-public abstract class LiveFinding implements Trackable {
+public abstract class LiveFinding implements Trackable, Finding {
   private static final AtomicLong UID_GEN = new AtomicLong();
 
   private final long uid;

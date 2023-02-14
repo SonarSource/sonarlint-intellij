@@ -98,7 +98,11 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     if (selectedNodes.length > 0) {
       var issue = selectedNodes[0].issue();
       var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(issue.psiFile().getVirtualFile());
-      rulePanel.setRuleKey(moduleForFile, issue.getRuleKey(), null);
+      if (moduleForFile != null) {
+        rulePanel.setSelectedFinding(moduleForFile, issue);
+      } else {
+        rulePanel.clear();
+      }
       SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(issue);
       flowsTree.getEmptyText().setText("Selected issue doesn't have flows");
       flowsTreeBuilder.populateForFinding(issue);
@@ -106,7 +110,7 @@ public abstract class AbstractIssuesPanel extends SimpleToolWindowPanel implemen
     } else {
       flowsTreeBuilder.clearFlows();
       flowsTree.getEmptyText().setText("No issue selected");
-      rulePanel.setRuleKey(null, null, null);
+      rulePanel.clear();
       var highlighting = SonarLintUtils.getService(project, EditorDecorator.class);
       highlighting.removeHighlights();
     }
