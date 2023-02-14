@@ -122,7 +122,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  private void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
+  private static void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
     node.removeAllChildren();
 
     var securityHotspots = new TreeSet<>(SECURITY_HOTSPOT_COMPARATOR);
@@ -146,7 +146,18 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  public void updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText) {
+  public LiveSecurityHotspot findHotspot(String securityHotspotKey) {
+    var nodes = summary.children();
+    while (nodes.hasMoreElements()) {
+      var securityHotspotNode = (LiveSecurityHotspotNode) nodes.nextElement();
+      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
+        return securityHotspotNode.getHotspot();
+      }
+    }
+    return null;
+  }
+
+  public int updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText) {
     summary.setEmptyText(emptyText);
 
     var nodes = summary.children();
@@ -162,6 +173,8 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
 
     model.nodeChanged(summary);
+
+    return summary.getFindingCount();
   }
 
   private void setSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {

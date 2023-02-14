@@ -27,6 +27,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.openapi.ui.VerticalFlowLayout;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
 import com.intellij.ui.components.JBTabbedPane;
@@ -37,6 +38,8 @@ import com.intellij.util.ui.tree.TreeUtil;
 import java.awt.BorderLayout;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Collection;
+import java.util.Map;
 import javax.annotation.Nullable;
 import javax.swing.Box;
 import javax.swing.JComponent;
@@ -45,15 +48,14 @@ import javax.swing.JPanel;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
-import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
-import org.sonarlint.intellij.finding.hotspot.FoundSecurityHotspots;
 import org.sonarlint.intellij.finding.hotspot.InvalidBinding;
+import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.NoBinding;
-import org.sonarlint.intellij.finding.hotspot.NoIssueSelected;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
+import org.sonarlint.intellij.finding.hotspot.ValidStatus;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.tree.FlowsTree;
 import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
@@ -65,25 +67,24 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
 public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements Disposable {
-  private final JPanel mainPanel;
-  private final Project project;
-  private final CardPanel cardPanel;
+  private static final int RULE_TAB_INDEX = 0;
+  private static final int LOCATIONS_TAB_INDEX = 1;
   private static final String NO_BINDING_CARD_ID = "NO_BINDING_CARD";
   private static final String INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD";
-  private static final String NO_ISSUES_CARD_ID = "NO_ISSUES_CARD_ID";
+  private static final String NO_SECURITY_HOTSPOT_CARD_ID = "NO_SECURITY_HOTSPOT_CARD_ID";
   private static final String HOTSPOTS_LIST = "HOTSPOTS_LIST";
-  private final JLabel noSecurityHotspotsLabel = new JLabel("");
+  private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
+  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
   protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
   protected Tree securityHotspotTree;
   protected FlowsTree flowsTree;
   protected FlowsTreeModelBuilder flowsTreeBuilder;
   protected SonarLintRulePanel rulePanel;
   protected JBTabbedPane detailsTab;
-  private static final int RULE_TAB_INDEX = 0;
-  private static final int LOCATIONS_TAB_INDEX = 1;
+  private final JPanel mainPanel;
+  private final Project project;
+  private final CardPanel cardPanel;
   private ActionToolbar mainToolbar;
-  private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
-  private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
 
   public SonarLintHotspotsListPanel(Project project) {
     super(false, true);
@@ -109,14 +110,14 @@ public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements
 
     cardPanel.add(centeredLabel(new JLabel("The project is not bound to SonarQube 9.7+"), new ActionLink("Configure binding", new SonarConfigureProject())), NO_BINDING_CARD_ID);
     cardPanel.add(centeredLabel(new JLabel("The project binding is invalid"), new ActionLink("Edit binding", new SonarConfigureProject())), INVALID_BINDING_CARD_ID);
-    cardPanel.add(centeredLabel(noSecurityHotspotsLabel, null), NO_ISSUES_CARD_ID);
+    cardPanel.add(centeredLabel(new JLabel("No security hotspot found"), null), NO_SECURITY_HOTSPOT_CARD_ID);
     cardPanel.add(findingsPanel, HOTSPOTS_LIST);
     setupToolbar(createActionGroup());
 
     mainPanel.add(cardPanel.getContainer(), BorderLayout.CENTER);
   }
 
-  private SimpleActionGroup createActionGroup() {
+  private static SimpleActionGroup createActionGroup() {
     var sonarLintActions = SonarLintActions.getInstance();
     var actionGroup = new SimpleActionGroup();
     actionGroup.add(sonarLintActions.configure());
@@ -142,16 +143,24 @@ public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements
     detailsTab = new JBTabbedPane();
     detailsTab.insertTab("Rule", null, rulePanel, "Details about the rule", RULE_TAB_INDEX);
     detailsTab.insertTab("Locations", null, flowsPanel, "All locations involved in the finding", LOCATIONS_TAB_INDEX);
-    detailsTab.setVisible(false);
   }
 
-  public void updateFindings(AnalysisResult analysisResult) {
+  public int updateFindings(Map<VirtualFile, Collection<LiveSecurityHotspot>> findings) {
     if (project.isDisposed()) {
-      return;
+      return 0;
     }
-    securityHotspotTreeBuilder.updateModelWithoutFileNode(analysisResult.getSecurityHotspotsPerFile(), "No security hotspots found");
+    int count = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No security hotspots found");
     TreeUtil.expandAll(securityHotspotTree);
-    detailsTab.setVisible(true);
+
+    if (count == 0) {
+      cardPanel.show(NO_SECURITY_HOTSPOT_CARD_ID);
+      detailsTab.setVisible(false);
+    } else {
+      cardPanel.show(HOTSPOTS_LIST);
+      detailsTab.setVisible(true);
+    }
+
+    return count;
   }
 
   private void createSecurityHotspotsTree() {
@@ -195,7 +204,7 @@ public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements
     highlighting.removeHighlights();
   }
 
-  private void updateOnSelect(LiveFinding liveFinding) {
+  public void updateOnSelect(LiveFinding liveFinding) {
     var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
     rulePanel.setRuleKey(moduleForFile, liveFinding.getRuleKey(), null);
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
@@ -235,20 +244,25 @@ public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements
     highlighting.removeHighlights();
     if (status instanceof NoBinding) {
       cardPanel.show(NO_BINDING_CARD_ID);
-      detailsTab.setVisible(false);
     } else if (status instanceof InvalidBinding) {
       cardPanel.show(INVALID_BINDING_CARD_ID);
-    } else if (status instanceof NoIssueSelected) {
-      detailsTab.setVisible(false);
-    } else if (status instanceof FoundSecurityHotspots) {
+    } else if (status instanceof ValidStatus) {
       cardPanel.show(HOTSPOTS_LIST);
     }
+  }
+
+  public boolean trySelectSecurityHotspot(String securityHotspotKey) {
+    var foundHotspot = securityHotspotTreeBuilder.findHotspot(securityHotspotKey);
+    if (foundHotspot != null) {
+      updateOnSelect(foundHotspot);
+      return true;
+    }
+    return false;
   }
 
   @Override
   // called automatically because the panel is one of the content of the tool window
   public void dispose() {
-
+    // Nothing to do
   }
-
 }
