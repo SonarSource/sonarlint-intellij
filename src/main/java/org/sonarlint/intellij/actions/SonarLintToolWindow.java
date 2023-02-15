@@ -44,7 +44,7 @@ import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilities
 import org.sonarlint.intellij.ui.ContentManagerListenerAdapter;
 import org.sonarlint.intellij.ui.CurrentFilePanel;
 import org.sonarlint.intellij.ui.ReportPanel;
-import org.sonarlint.intellij.ui.SonarLintHotspotsListPanel;
+import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
 
@@ -100,10 +100,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   }
 
   public void openSecurityHotspotsTab() {
-    var content = getSecurityHotspotContent();
-    if (content != null) {
-      openTab(content);
-    }
+    openTab(getSecurityHotspotContent());
   }
 
   private void openTab(String name) {
@@ -157,7 +154,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     var content = getSecurityHotspotContent();
     if (content != null) {
       content.setDisplayName(buildTabName(0, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
-      var hotspotsPanel = (SonarLintHotspotsListPanel) content.getComponent();
+      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
       hotspotsPanel.populate(status);
     }
   }
@@ -206,11 +203,10 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     showIssue(liveIssue, CurrentFilePanel::selectLocationsTab);
   }
 
-
   public boolean trySelectSecurityHotspot(String securityHotspotKey) {
     var content = getSecurityHotspotContent();
     if (content != null) {
-      var sonarLintHotspotsPanel = (SonarLintHotspotsListPanel) content.getComponent();
+      var sonarLintHotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
       return sonarLintHotspotsPanel.trySelectSecurityHotspot(securityHotspotKey);
     }
     return false;
@@ -231,7 +227,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
   public void updateOnTheFlySecurityHotspots(@NotNull Map<VirtualFile, Collection<LiveSecurityHotspot>> currentSecurityHotspotsPerOpenFile) {
     var content = getSecurityHotspotContent();
     if (content != null) {
-      var hotspotsPanel = (SonarLintHotspotsListPanel) content.getComponent();
+      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
       var count = hotspotsPanel.updateFindings(currentSecurityHotspotsPerOpenFile);
       content.setDisplayName(buildTabName(count, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }

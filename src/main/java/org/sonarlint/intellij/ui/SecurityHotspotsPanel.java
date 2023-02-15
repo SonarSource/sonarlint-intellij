@@ -66,7 +66,7 @@ import org.sonarlint.intellij.util.SonarLintActions;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitter;
 
-public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements Disposable {
+public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
   private static final int RULE_TAB_INDEX = 0;
   private static final int LOCATIONS_TAB_INDEX = 1;
   private static final String NO_BINDING_CARD_ID = "NO_BINDING_CARD";
@@ -86,7 +86,7 @@ public class SonarLintHotspotsListPanel extends SimpleToolWindowPanel implements
   private final CardPanel cardPanel;
   private ActionToolbar mainToolbar;
 
-  public SonarLintHotspotsListPanel(Project project) {
+  public SecurityHotspotsPanel(Project project) {
     super(false, true);
     this.project = project;
     cardPanel = new CardPanel();

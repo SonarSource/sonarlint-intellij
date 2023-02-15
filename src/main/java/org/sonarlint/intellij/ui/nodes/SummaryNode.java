@@ -69,8 +69,7 @@ public class SummaryNode extends AbstractNode {
       return 0;
     }
 
-    // keep the cast for Java 8 compat
-    var nodes = children.stream().map(FileNode.class::cast).collect(Collectors.<FileNode>toList());
+    var nodes = children.stream().map(n -> (FileNode) n).collect(Collectors.<FileNode>toList());
     var foundIndex = Collections.binarySearch(nodes, newChild, comparator);
     if (foundIndex >= 0) {
       throw new IllegalArgumentException("Child already exists");
@@ -87,8 +86,7 @@ public class SummaryNode extends AbstractNode {
       return 0;
     }
 
-    // keep the cast for Java 8 compat
-    var nodes = children.stream().map(LiveSecurityHotspotNode.class::cast).collect(Collectors.<LiveSecurityHotspotNode>toList());
+    var nodes = children.stream().map(n -> (LiveSecurityHotspotNode) n).collect(Collectors.<LiveSecurityHotspotNode>toList());
     var foundIndex = Collections.binarySearch(nodes, newChild, comparator);
     if (foundIndex >= 0) {
       throw new IllegalArgumentException("Child already exists");
@@ -99,7 +97,8 @@ public class SummaryNode extends AbstractNode {
     return insertIdx;
   }
 
-  @Override public void render(TreeCellRenderer renderer) {
+  @Override
+  public void render(TreeCellRenderer renderer) {
     renderer.append(getText());
   }
 }
