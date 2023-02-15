@@ -30,7 +30,6 @@ import com.sonar.orchestrator.locator.MavenLocation
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
@@ -134,7 +133,7 @@ class OpenInIdeTest : BaseUiTest() {
             idea {
                 toolWindow("SonarLint") {
                     tabTitleContains("Security Hotspots") {
-                        content("SonarLintHotspotsPanel") {
+                        content("SecurityHotspotsPanel") {
                             assertThat(hasText("Make sure using this hardcoded IP address is safe here.")).isTrue()
                         }
                     }

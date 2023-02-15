@@ -138,7 +138,7 @@ public class SonarLintToolWindowFactory implements ToolWindowFactory {
   }
 
   private static void addSecurityHotspotsTab(Project project, @NotNull ContentManager contentManager) {
-    var hotspotsPanel = new SonarLintHotspotsPanel(project);
+    var hotspotsPanel = new SecurityHotspotsPanel(project);
     var securityHotspotsContent = contentManager.getFactory()
       .createContent(
         hotspotsPanel,

@@ -171,7 +171,7 @@ public class ReportPanel extends SimpleToolWindowPanel implements Disposable {
     var moduleForFile = ProjectRootManager.getInstance(project).getFileIndex().getModuleForFile(liveFinding.psiFile().getVirtualFile());
     rulePanel.setRuleKey(moduleForFile, liveFinding.getRuleKey(), null);
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
-    flowsTree.getEmptyText().setText("No finding selected");
+    flowsTree.getEmptyText().setText("Selected finding doesn't have flows");
     flowsTree.expandAll();
   }
 
