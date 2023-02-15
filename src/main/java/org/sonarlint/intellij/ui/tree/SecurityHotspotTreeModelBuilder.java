@@ -109,7 +109,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       index.setFileNode(fNode);
     }
 
-    setHotspots(fNode, filtered);
+    setFileNodeSecurityHotspots(fNode, filtered);
 
     if (newFile) {
       var parent = getFilesParent();
@@ -122,20 +122,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
   }
 
-  private void removeFile(VirtualFile file) {
-    var node = index.getFileNode(file);
-
-    if (node != null) {
-      index.remove(node.file());
-      model.removeNodeFromParent(node);
-    }
-  }
-
-  public void clear() {
-    updateModel(Collections.emptyMap(), "No analysis done");
-  }
-
-  private static void setHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
+  private static void setFileNodeSecurityHotspots(FileNode node, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
     node.removeAllChildren();
 
     var securityHotspots = new TreeSet<>(SECURITY_HOTSPOT_COMPARATOR);
@@ -148,6 +135,86 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       var iNode = new LiveSecurityHotspotNode(securityHotspot);
       node.add(iNode);
     }
+  }
+
+  private void removeFile(VirtualFile file) {
+    var node = index.getFileNode(file);
+
+    if (node != null) {
+      index.remove(node.file());
+      model.removeNodeFromParent(node);
+    }
+  }
+
+  public LiveSecurityHotspot findHotspot(String securityHotspotKey) {
+    var nodes = summary.children();
+    while (nodes.hasMoreElements()) {
+      var securityHotspotNode = (LiveSecurityHotspotNode) nodes.nextElement();
+      if (securityHotspotKey.equals(securityHotspotNode.getHotspot().getServerFindingKey())) {
+        return securityHotspotNode.getHotspot();
+      }
+    }
+    return null;
+  }
+
+  public int updateModelWithoutFileNode(Map<VirtualFile, Collection<LiveSecurityHotspot>> map, String emptyText) {
+    summary.setEmptyText(emptyText);
+
+    var nodes = summary.children();
+    while (nodes.hasMoreElements()) {
+      var securityHotspotNode = (LiveSecurityHotspotNode) nodes.nextElement();
+      if (!map.containsKey(securityHotspotNode.getHotspot().getFile())) {
+        model.removeNodeFromParent(securityHotspotNode);
+      }
+    }
+
+    for (var e : map.entrySet()) {
+      setSecurityHotspots(e.getKey(), e.getValue());
+    }
+
+    model.nodeChanged(summary);
+
+    return summary.getFindingCount();
+  }
+
+  private void setSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspots) {
+    if (!accept(file)) {
+      removeHotspotsByFile(file);
+      return;
+    }
+
+    var filtered = filter(securityHotspots);
+    if (filtered.isEmpty()) {
+      removeHotspotsByFile(file);
+      return;
+    }
+
+    setRootSecurityHotspots(file, filtered);
+  }
+
+  private void removeHotspotsByFile(VirtualFile file) {
+    Collections.list(summary.children()).forEach(e -> {
+      var securityHotspotNode = (LiveSecurityHotspotNode) e;
+      if (securityHotspotNode.getHotspot().getFile().equals(file)) {
+        model.removeNodeFromParent(securityHotspotNode);
+      }
+    });
+  }
+
+  private void setRootSecurityHotspots(VirtualFile file, Iterable<LiveSecurityHotspot> securityHotspotsPointer) {
+    removeHotspotsByFile(file);
+
+    for (var securityHotspot : securityHotspotsPointer) {
+      var iNode = new LiveSecurityHotspotNode(securityHotspot);
+      var idx = summary.insertLiveSecurityHotspotNode(iNode, new LiveSecurityHotspotNodeComparator());
+      var newIdx = new int[]{idx};
+      model.nodesWereInserted(summary, newIdx);
+      model.nodeChanged(summary);
+    }
+  }
+
+  public void clear() {
+    updateModel(Collections.emptyMap(), "No analysis done");
   }
 
   private static List<LiveSecurityHotspot> filter(Iterable<LiveSecurityHotspot> securityHotspots) {
@@ -172,6 +239,27 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       }
 
       return o1.file().getPath().compareTo(o2.file().getPath());
+    }
+  }
+
+  private static class LiveSecurityHotspotNodeComparator implements Comparator<LiveSecurityHotspotNode> {
+    @Override public int compare(LiveSecurityHotspotNode o1, LiveSecurityHotspotNode o2) {
+      int c = o1.getHotspot().getVulnerabilityProbability().compareTo(o2.getHotspot().getVulnerabilityProbability());
+      if (c != 0) {
+        return c;
+      }
+
+      var r1 = o1.getHotspot().getRange();
+      var r2 = o2.getHotspot().getRange();
+
+      var rangeStart1 = (r1 == null) ? -1 : r1.getStartOffset();
+      var rangeStart2 = (r2 == null) ? -1 : r2.getStartOffset();
+
+      return ComparisonChain.start()
+        .compare(rangeStart1, rangeStart2)
+        .compare(o1.getHotspot().getRuleKey(), o2.getHotspot().getRuleKey())
+        .compare(o1.getHotspot().uid(), o2.getHotspot().uid())
+        .result();
     }
   }
 
