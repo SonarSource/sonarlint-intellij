@@ -19,7 +19,6 @@
  */
 package org.sonarlint.intellij.finding.persistence;
 
-import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -35,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.annotation.concurrent.ThreadSafe;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
+import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.tracking.Trackable;
@@ -86,11 +86,6 @@ public class FindingsCache {
     liveSecurityHotspotCache.clear();
   }
 
-  private void clearAllFindingsForFiles(Collection<VirtualFile> files) {
-    files.forEach(liveIssueCache::clear);
-    files.forEach(liveSecurityHotspotCache::clear);
-  }
-
   public Collection<LiveIssue> getIssuesForFile(VirtualFile file) {
     var issues = liveIssueCache.getLive(file);
     return issues != null ? issues : emptyList();
@@ -101,13 +96,16 @@ public class FindingsCache {
     return hotspots != null ? hotspots : emptyList();
   }
 
-  public CachedFindings clearFindings(Collection<VirtualFile> files) {
+  public CachedFindings getSnapshot(Collection<VirtualFile> files) {
     var previousIssuesPerFile = getPreviousIssuesByFile(files);
     var previousSecurityHotspotsPerFile = getPreviousSecurityHotspotsByFile(files);
     var alreadyAnalyzedFiles = files.stream().filter(this::wasEverAnalyzed).collect(Collectors.toSet());
-    var findingsSnapshot = new CachedFindings(previousIssuesPerFile, previousSecurityHotspotsPerFile, alreadyAnalyzedFiles);
-    ReadAction.run(() -> clearAllFindingsForFiles(files));
-    return findingsSnapshot;
+    return new CachedFindings(previousIssuesPerFile, previousSecurityHotspotsPerFile, alreadyAnalyzedFiles);
+  }
+
+  public void replaceFindings(LiveFindings newLiveFindings) {
+    liveIssueCache.replaceFindings(newLiveFindings.getIssuesPerFile());
+    liveSecurityHotspotCache.replaceFindings(newLiveFindings.getSecurityHotspotsPerFile());
   }
 
   private Map<VirtualFile, Collection<Trackable>> getPreviousIssuesByFile(Collection<VirtualFile> files) {
@@ -128,13 +126,5 @@ public class FindingsCache {
 
   private boolean wasEverAnalyzed(VirtualFile file) {
     return liveIssueCache.wasEverAnalyzed(file) || liveSecurityHotspotCache.wasEverAnalyzed(file);
-  }
-
-  public void insertNewIssue(VirtualFile file, LiveIssue liveIssue) {
-    liveIssueCache.insertFinding(file, liveIssue);
-  }
-
-  public void insertNewSecurityHotspot(VirtualFile file, LiveSecurityHotspot liveSecurityHotspot) {
-    liveSecurityHotspotCache.insertFinding(file, liveSecurityHotspot);
   }
 }

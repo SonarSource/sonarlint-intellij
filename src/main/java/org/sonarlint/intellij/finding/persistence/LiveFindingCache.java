@@ -54,6 +54,11 @@ public class LiveFindingCache<T extends LiveFinding> {
     this.cache = new LimitedSizeLinkedHashMap();
   }
 
+  public void replaceFindings(Map<VirtualFile, Collection<T>> newFindingsPerFile) {
+    newFindingsPerFile.keySet().forEach(this::clear);
+    cache.putAll(newFindingsPerFile);
+  }
+
   /**
    * Keeps a maximum number of entries in the map. On insertion, if the limit is passed, the entry accessed the longest time ago
    * is flushed into cache and removed from the map.

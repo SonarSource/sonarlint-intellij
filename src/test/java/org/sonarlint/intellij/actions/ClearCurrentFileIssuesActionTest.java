@@ -23,15 +23,17 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.vfs.VirtualFile;
-
 import java.io.IOException;
-
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
+import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.persistence.FindingsCache;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -49,7 +51,7 @@ public class ClearCurrentFileIssuesActionTest extends AbstractSonarLintLightTest
     when(event.getProject()).thenReturn(getProject());
     file = myFixture.copyFileToProject("foo.php", "foo.php");
     findingsCache = SonarLintUtils.getService(getProject(), FindingsCache.class);
-    findingsCache.insertNewIssue(file, mock(LiveIssue.class));
+    findingsCache.replaceFindings(new LiveFindings(Map.of(file, List.of(mock(LiveIssue.class))), Collections.emptyMap()));
   }
 
   @Test
