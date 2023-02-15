@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import icons.SonarLintIcons;
 import java.util.Locale;
@@ -59,6 +60,7 @@ public class LiveSecurityHotspotNode extends AbstractNode {
 
     renderer.setToolTipText("Double click to open location");
     renderer.append(securityHotspot.getMessage());
+    renderer.append(" " + securityHotspot.getFile().getName(), SimpleTextAttributes.GRAY_ATTRIBUTES);
   }
 
   private void setIcon(TreeCellRenderer renderer, Icon icon) {
