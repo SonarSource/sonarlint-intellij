@@ -216,7 +216,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return mainPanel;
   }
 
-  private JPanel centeredLabel(JLabel textLabel, @Nullable ActionLink actionLink) {
+  private static JPanel centeredLabel(JLabel textLabel, @Nullable ActionLink actionLink) {
     var labelPanel = new JPanel(new HorizontalLayout(5));
     labelPanel.add(textLabel, HorizontalLayout.CENTER);
     if (actionLink != null) {
