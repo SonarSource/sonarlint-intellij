@@ -1,0 +1,24 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2023 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<svg height="16" width="16" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 1c3.863 0 7 3.137 7 7s-3.137 7-7 7-7-3.137-7-7 3.137-7 7-7Zm1.167 11.667v-5.35l2.208 2.208c.152.145.33.252.533.304a1.174 1.174 0 0 0 1.372-.69 1.178 1.178 0 0 0 .012-.85 1.227 1.227 0 0 0-.267-.414C11.61 6.461 10.232 5.01 8.78 3.633a1.252 1.252 0 0 0-.198-.143 1.225 1.225 0 0 0-.522-.156h-.122a1.228 1.228 0 0 0-.575.187 1.414 1.414 0 0 0-.189.154C5.76 5.09 4.31 6.468 2.932 7.921a1.16 1.16 0 0 0-.06 1.487c.243.316.64.49 1.037.454.23-.022.44-.114.624-.254.047-.041.046-.04.092-.083l2.208-2.209v5.35z" style="opacity:.8;fill:#e05555;fill-opacity:1;stroke-width:1.35167"/>
+</svg>

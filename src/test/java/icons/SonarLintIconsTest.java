@@ -22,38 +22,26 @@ package icons;
 import org.junit.Test;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SonarLintIconsTest {
   @Test
   public void testSeverities() {
-    assertThat(SonarLintIcons.severity("MAJOR")).isNotNull();
-    assertThat(SonarLintIcons.severity("MINOR")).isNotNull();
-    assertThat(SonarLintIcons.severity("BLOCKER")).isNotNull();
-    assertThat(SonarLintIcons.severity("INFO")).isNotNull();
-    assertThat(SonarLintIcons.severity("CRITICAL")).isNotNull();
-
-    assertThat(SonarLintIcons.severity12(IssueSeverity.MAJOR)).isNotNull();
-    assertThat(SonarLintIcons.severity12(IssueSeverity.MINOR)).isNotNull();
-    assertThat(SonarLintIcons.severity12(IssueSeverity.BLOCKER)).isNotNull();
-    assertThat(SonarLintIcons.severity12(IssueSeverity.INFO)).isNotNull();
-    assertThat(SonarLintIcons.severity12(IssueSeverity.CRITICAL)).isNotNull();
+    for (IssueSeverity value : IssueSeverity.values()) {
+      assertThat(SonarLintIcons.severity(value)).isNotNull();
+    }
   }
 
   @Test
   public void testTypes() {
-    assertThat(SonarLintIcons.type("BUG")).isNotNull();
-    assertThat(SonarLintIcons.type("VULNERABILITY")).isNotNull();
-    assertThat(SonarLintIcons.type("CODE_SMELL")).isNotNull();
-
-    assertThat(SonarLintIcons.type12(RuleType.BUG)).isNotNull();
-    assertThat(SonarLintIcons.type12(RuleType.VULNERABILITY)).isNotNull();
-    assertThat(SonarLintIcons.type12(RuleType.CODE_SMELL)).isNotNull();
-    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT)).isNotNull();
-    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_high")).isNotNull();
-    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_medium")).isNotNull();
-    assertThat(SonarLintIcons.type12(RuleType.SECURITY_HOTSPOT + "_low")).isNotNull();
+    for (RuleType value : RuleType.values()) {
+      assertThat(SonarLintIcons.type(value)).isNotNull();
+    }
+    for (VulnerabilityProbability value : VulnerabilityProbability.values()) {
+      assertThat(SonarLintIcons.hotspotTypeWithProbability(value)).isNotNull();
+    }
   }
 
   @Test

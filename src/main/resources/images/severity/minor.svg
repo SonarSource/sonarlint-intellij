@@ -1,0 +1,24 @@
+<!--
+
+    SonarLint for IntelliJ IDEA
+    Copyright (C) 2015-2023 SonarSource
+    sonarlint@sonarsource.com
+
+    This program is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this program; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
+
+-->
+<svg height="16" style="fill-rule:evenodd" width="16" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 1c3.863 0 7 3.137 7 7s-3.137 7-7 7-7-3.137-7-7 3.137-7 7-7Zm1.167 7.684v-5.35H6.833v5.35L4.625 6.475a1.374 1.374 0 0 0-.193-.156 1.214 1.214 0 0 0-.772-.178 1.167 1.167 0 0 0-.685 1.984C4.39 9.539 5.768 10.99 7.22 12.367c.11.093.227.17.362.223a1.176 1.176 0 0 0 1.243-.265c1.415-1.414 2.866-2.793 4.243-4.246a1.16 1.16 0 0 0 .06-1.487 1.18 1.18 0 0 0-1.037-.454 1.214 1.214 0 0 0-.624.254c-.046.04-.046.04-.092.083Z" style="opacity:.8;fill:#62b543;fill-opacity:1;stroke-width:1.57695"/>
+</svg>

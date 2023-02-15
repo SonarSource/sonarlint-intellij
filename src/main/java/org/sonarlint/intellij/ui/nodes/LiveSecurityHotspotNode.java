@@ -54,10 +54,10 @@ public class LiveSecurityHotspotNode extends AbstractNode {
       var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
       renderer.setIconToolTip(vulnerabilityText + " " + typeStr + " matched on SonarQube");
       setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.ICON_SONARQUBE_16,
-        SonarLintIcons.type12(type + "_" + vulnerabilityText)));
+        SonarLintIcons.hotspotTypeWithProbability(vulnerability)));
     } else {
       renderer.setIconToolTip(vulnerabilityText + " " + typeStr);
-      setIcon(renderer, SonarLintIcons.type12(type + "_" + vulnerabilityText));
+      setIcon(renderer, SonarLintIcons.hotspotTypeWithProbability(vulnerability));
     }
 
     renderer.setToolTipText("Double click to open location");

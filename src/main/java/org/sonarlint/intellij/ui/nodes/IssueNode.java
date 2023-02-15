@@ -55,10 +55,10 @@ public class IssueNode extends AbstractNode {
       var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
       renderer.setIconToolTip(severityText + " " + typeStr);
       var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
-      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type12(type), SonarLintIcons.severity12(severity)));
+      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.type(type), SonarLintIcons.severity(severity)));
     } else {
       renderer.setIconToolTip(severityText);
-      setIcon(renderer, SonarLintIcons.severity12(severity));
+      setIcon(renderer, SonarLintIcons.severity(severity));
     }
 
     renderer.append(issueCoordinates(issue), SimpleTextAttributes.GRAY_ATTRIBUTES);

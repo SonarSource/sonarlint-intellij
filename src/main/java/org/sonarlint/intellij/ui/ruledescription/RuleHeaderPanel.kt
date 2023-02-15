@@ -89,7 +89,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     fun update(ruleKey: String, type: RuleType, severity: IssueSeverity) {
         clear()
         updateCommonFields(type, ruleKey)
-        ruleSeverityIcon.icon = SonarLintIcons.severity(severity.toString())
+        ruleSeverityIcon.icon = SonarLintIcons.severity(severity)
         ruleSeverityLabel.text = clean(severity.toString())
     }
 
@@ -104,7 +104,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     }
 
     private fun updateCommonFields(type: RuleType, ruleKey: String) {
-        ruleTypeIcon.icon = SonarLintIcons.type(type.toString())
+        ruleTypeIcon.icon = SonarLintIcons.type(type)
         ruleTypeLabel.text = clean(type.toString())
         ruleKeyLabel.text = ruleKey
     }
