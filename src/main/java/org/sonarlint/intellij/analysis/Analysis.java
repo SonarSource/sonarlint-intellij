@@ -119,7 +119,7 @@ public class Analysis implements Cancelable {
     try {
       checkCanceled(indicator);
 
-      var previousFindings = findingsCache.clearFindings(files);
+      var previousFindings = findingsCache.getSnapshot(files);
 
       if (scope.isEmpty()) {
         var analysisResult = new AnalysisResult(LiveFindings.none(), files, trigger, Instant.now());
@@ -137,6 +137,8 @@ public class Analysis implements Cancelable {
       indicator.setFraction(.9);
 
       summary.logInConsole();
+
+      findingsCache.replaceFindings(summary.findings);
 
       matchWithServerIssuesIfNeeded(indicator, summary.filesHavingIssuesByModule);
       matchWithServerSecurityHotspotsIfNeeded(indicator, summary.filesHavingSecurityHotspotsByModule);

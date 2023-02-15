@@ -83,7 +83,7 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
     var moduleAnalysisResult = new ModuleAnalysisResult(analysisResults.failedAnalysisFiles());
     when(sonarLintAnalyzer.analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class), any(ClientProgressMonitor.class)))
       .thenReturn(moduleAnalysisResult);
-    when(findingsCacheMock.clearFindings(any())).thenReturn(new CachedFindings(Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet()));
+    when(findingsCacheMock.getSnapshot(any())).thenReturn(new CachedFindings(Collections.emptyMap(), Collections.emptyMap(), Collections.emptySet()));
 
     replaceProjectService(AnalysisStatus.class, new AnalysisStatus(getProject()));
     replaceProjectService(SonarLintAnalyzer.class, sonarLintAnalyzer);
@@ -126,7 +126,7 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
 
     verify(sonarLintAnalyzer).analyzeModule(eq(getModule()), eq(filesToAnalyze), any(IssueListener.class),
       any(ClientProgressMonitor.class));
-    verify(findingsCacheMock, never()).insertNewIssue(any(), any());
+    verify(findingsCacheMock, never()).replaceFindings(any());
   }
 
   @Test
@@ -145,7 +145,7 @@ public class AnalysisTest extends AbstractSonarLintLightTests {
     task.run(progress);
 
     verifyNoInteractions(sonarLintAnalyzer);
-    verify(findingsCacheMock, never()).insertNewIssue(any(), any());
+    verify(findingsCacheMock, never()).replaceFindings(any());
   }
 
   @Test

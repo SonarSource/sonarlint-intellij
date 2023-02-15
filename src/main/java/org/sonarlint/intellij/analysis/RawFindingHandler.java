@@ -99,7 +99,6 @@ class RawFindingHandler implements IssueListener {
 
     localHistoryFindingTracker.matchWithPreviousSecurityHotspot(file, liveSecurityHotspot);
     securityHotspotsPerFile.computeIfAbsent(file, f -> new ArrayList<>()).add(liveSecurityHotspot);
-    findingsCache.insertNewSecurityHotspot(file, liveSecurityHotspot);
     findingStreamer.streamSecurityHotspot(file, liveSecurityHotspot);
   }
 
@@ -121,7 +120,6 @@ class RawFindingHandler implements IssueListener {
 
     localHistoryFindingTracker.matchWithPreviousIssue(file, liveIssue);
     issuesPerFile.computeIfAbsent(file, f -> new ArrayList<>()).add(liveIssue);
-    findingsCache.insertNewIssue(file, liveIssue);
     findingStreamer.streamIssue(file, liveIssue);
 
     var sonarLintGlobalSettings = Settings.getGlobalSettings();
