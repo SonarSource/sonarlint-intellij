@@ -20,12 +20,11 @@
 package icons;
 
 import com.intellij.openapi.util.IconLoader;
-import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import javax.swing.Icon;
 import org.sonarsource.sonarlint.core.commons.IssueSeverity;
 import org.sonarsource.sonarlint.core.commons.RuleType;
+import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
 
 public class SonarLintIcons {
   public static final Icon ICON_SONARQUBE = getIcon("/images/SonarQube.png");
@@ -52,40 +51,25 @@ public class SonarLintIcons {
   public static final Icon CONNECTED = getIcon("/images/connected.svg");
   public static final Icon CONNECTION_ERROR = getIcon("/images/io_error.svg");
 
-  private static final Map<String, Icon> SEVERITY_ICONS = new HashMap<>();
-  private static final Map<String, Icon> SEVERITY_ICONS_12 = new HashMap<>();
-  private static final Map<String, Icon> TYPE_ICONS = new HashMap<>();
-  private static final Map<String, Icon> TYPE_ICONS_12 = new HashMap<>();
+  private static final Map<IssueSeverity, Icon> SEVERITY_ICONS = Map.of(
+    IssueSeverity.BLOCKER, getIcon("/images/severity/blocker.svg"),
+    IssueSeverity.CRITICAL, getIcon("/images/severity/critical.svg"),
+    IssueSeverity.INFO, getIcon("/images/severity/info.svg"),
+    IssueSeverity.MAJOR, getIcon("/images/severity/major.svg"),
+    IssueSeverity.MINOR, getIcon("/images/severity/minor.svg")
+  );
+  private static final Map<RuleType, Icon> TYPE_ICONS = Map.of(
+    RuleType.BUG, getIcon("/images/type/bug.svg"),
+    RuleType.CODE_SMELL, getIcon("/images/type/codeSmell.svg"),
+    RuleType.VULNERABILITY, getIcon("/images/type/vulnerability.svg"),
+    RuleType.SECURITY_HOTSPOT, getIcon("/images/type/hotspot.svg")
+  );
 
-  static {
-    SEVERITY_ICONS.put("blocker", getIcon("/images/severity/blocker.png"));
-    SEVERITY_ICONS.put("critical", getIcon("/images/severity/critical.png"));
-    SEVERITY_ICONS.put("info", getIcon("/images/severity/info.png"));
-    SEVERITY_ICONS.put("major", getIcon("/images/severity/major.png"));
-    SEVERITY_ICONS.put("minor", getIcon("/images/severity/minor.png"));
-
-    SEVERITY_ICONS_12.put("blocker", getIcon("/images/severity/blocker12.png"));
-    SEVERITY_ICONS_12.put("critical", getIcon("/images/severity/critical12.png"));
-    SEVERITY_ICONS_12.put("info", getIcon("/images/severity/info12.png"));
-    SEVERITY_ICONS_12.put("major", getIcon("/images/severity/major12.png"));
-    SEVERITY_ICONS_12.put("minor", getIcon("/images/severity/minor12.png"));
-
-    TYPE_ICONS.put("bug", getIcon("/images/type/bug.png"));
-    TYPE_ICONS.put("code_smell", getIcon("/images/type/code_smell.png"));
-    TYPE_ICONS.put("vulnerability", getIcon("/images/type/vulnerability.png"));
-    TYPE_ICONS.put("security_hotspot_high", getIcon("/images/type/hotspot_high.png"));
-    TYPE_ICONS.put("security_hotspot_medium", getIcon("/images/type/hotspot_medium.png"));
-    TYPE_ICONS.put("security_hotspot_low", getIcon("/images/type/hotspot_low.png"));
-
-
-    TYPE_ICONS_12.put("bug", getIcon("/images/type/bug12.png"));
-    TYPE_ICONS_12.put("code_smell", getIcon("/images/type/code_smell12.png"));
-    TYPE_ICONS_12.put("vulnerability", getIcon("/images/type/vulnerability12.png"));
-    TYPE_ICONS_12.put("security_hotspot", getIcon("/images/type/hotspot12.png"));
-    TYPE_ICONS_12.put("security_hotspot_high", getIcon("/images/type/hotspot_high12.png"));
-    TYPE_ICONS_12.put("security_hotspot_medium", getIcon("/images/type/hotspot_medium12.png"));
-    TYPE_ICONS_12.put("security_hotspot_low", getIcon("/images/type/hotspot_low12.png"));
-  }
+  private static final Map<VulnerabilityProbability, Icon> PROBABILITY_ICONS = Map.of(
+    VulnerabilityProbability.HIGH, getIcon("/images/type/hotspotHigh.svg"),
+    VulnerabilityProbability.MEDIUM, getIcon("/images/type/hotspotMedium.svg"),
+    VulnerabilityProbability.LOW, getIcon("/images/type/hotspotLow.svg")
+  );
 
   private static Icon getIcon(String path) {
     return IconLoader.getIcon(path, SonarLintIcons.class);
@@ -95,27 +79,19 @@ public class SonarLintIcons {
     // only static
   }
 
-  public static Icon severity12(IssueSeverity severity) {
-    return SEVERITY_ICONS_12.get(severity.toString().toLowerCase(Locale.ENGLISH));
+  public static Icon severity(IssueSeverity severity) {
+    return SEVERITY_ICONS.get(severity);
   }
 
-  public static Icon type12(RuleType type) {
-    return TYPE_ICONS_12.get(type.toString().toLowerCase(Locale.ENGLISH));
-  }
-
-  public static Icon type12(String type) {
-    return TYPE_ICONS_12.get(type.toLowerCase(Locale.ENGLISH));
-  }
-
-  public static Icon severity(String severity) {
-    return SEVERITY_ICONS.get(severity.toLowerCase(Locale.ENGLISH));
+  public static Icon type(RuleType type) {
+    return TYPE_ICONS.get(type);
   }
 
   public static Icon toDisabled(Icon icon) {
     return IconLoader.getDisabledIcon(icon);
   }
 
-  public static Icon type(String type) {
-    return TYPE_ICONS.get(type.toLowerCase(Locale.ENGLISH));
+  public static Icon hotspotTypeWithProbability(VulnerabilityProbability vulnerabilityProbability) {
+    return PROBABILITY_ICONS.get(vulnerabilityProbability);
   }
 }
