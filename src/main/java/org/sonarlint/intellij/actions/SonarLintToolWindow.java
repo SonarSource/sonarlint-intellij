@@ -82,12 +82,10 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     ApplicationManager.getApplication().assertIsDispatchThread();
     var toolWindow = getToolWindow();
     if (toolWindow != null) {
-      toolWindow.show(() -> {
-        var contentManager = getToolWindow().getContentManager();
-        var content = contentManager.findContent(displayName);
-        var panel = (T) content.getComponent();
-        tabPanelConsumer.accept(panel);
-      });
+      var contentManager = toolWindow.getContentManager();
+      var content = contentManager.findContent(displayName);
+      var panel = (T) content.getComponent();
+      tabPanelConsumer.accept(panel);
     }
     return toolWindow;
   }
