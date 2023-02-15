@@ -54,7 +54,7 @@ public class LiveSecurityHotspotNode extends AbstractNode {
         SonarLintIcons.type12(type + "_" + vulnerabilityText)));
     } else {
       renderer.setIconToolTip(vulnerabilityText + " " + typeStr);
-      setIcon(renderer, SonarLintIcons.type12(type));
+      setIcon(renderer, SonarLintIcons.type12(type + "_" + vulnerabilityText));
     }
 
     renderer.setToolTipText("Double click to open location");
