@@ -26,7 +26,6 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.content.Content;
-import com.intellij.ui.content.ContentManagerEvent;
 import com.intellij.util.ui.UIUtil;
 import java.util.Collection;
 import java.util.Map;
@@ -35,7 +34,6 @@ import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.analysis.AnalysisResult;
-import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
@@ -47,8 +45,6 @@ import org.sonarlint.intellij.ui.ReportPanel;
 import org.sonarlint.intellij.ui.SecurityHotspotsPanel;
 import org.sonarlint.intellij.ui.SonarLintToolWindowFactory;
 import org.sonarlint.intellij.ui.vulnerabilities.TaintVulnerabilitiesPanel;
-
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
@@ -230,11 +226,4 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
       content.setDisplayName(buildTabName(count, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));
     }
   }
-
-  @Override
-  public void contentRemoved(@NotNull ContentManagerEvent event) {
-    // only hotspots tab is removable
-    getService(project, EditorDecorator.class).removeHighlights();
-  }
-
 }
