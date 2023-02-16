@@ -25,7 +25,7 @@ import com.intellij.notification.NotificationGroupManager;
 import com.intellij.notification.NotificationType;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.project.Project;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 import java.util.Arrays;
 import java.util.List;
 import org.sonarlint.intellij.common.util.SonarLintUtils;

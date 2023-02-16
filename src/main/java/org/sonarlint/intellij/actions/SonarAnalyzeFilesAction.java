@@ -26,7 +26,7 @@ import com.intellij.openapi.project.ProjectCoreUtil;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileVisitor;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;

@@ -32,7 +32,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.WindowManager
 import com.intellij.serviceContainer.NonInjectable
 import com.intellij.util.ui.UIUtil
-import icons.SonarLintIcons
+import org.sonarlint.intellij.SonarLintIcons
 import org.sonarlint.intellij.common.ui.SonarLintConsole
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
 import org.sonarlint.intellij.config.Settings

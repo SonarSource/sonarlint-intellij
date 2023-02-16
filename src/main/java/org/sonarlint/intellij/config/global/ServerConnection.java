@@ -22,6 +22,7 @@ package org.sonarlint.intellij.config.global;
 import com.intellij.openapi.util.PasswordUtil;
 import com.intellij.util.xmlb.annotations.OptionTag;
 import com.intellij.util.xmlb.annotations.Tag;
+import org.sonarlint.intellij.SonarLintIcons;
 import java.util.Objects;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
@@ -33,8 +34,6 @@ import org.sonarsource.sonarlint.core.commons.http.HttpClient;
 import org.sonarsource.sonarlint.core.serverapi.EndpointParams;
 import org.sonarsource.sonarlint.core.serverapi.ServerApi;
 
-import static icons.SonarLintIcons.ICON_SONARCLOUD_16;
-import static icons.SonarLintIcons.ICON_SONARQUBE_16;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.isBlank;
 
 /**
@@ -145,7 +144,7 @@ public class ServerConnection {
   }
 
   public Icon getProductIcon() {
-    return isSonarCloud() ? ICON_SONARCLOUD_16 : ICON_SONARQUBE_16;
+    return isSonarCloud() ? SonarLintIcons.ICON_SONARCLOUD_16 : SonarLintIcons.ICON_SONARQUBE_16;
   }
 
   public boolean enableProxy() {
