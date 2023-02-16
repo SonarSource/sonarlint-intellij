@@ -33,7 +33,7 @@ import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 
-public class FindingStreamer {
+public class FindingStreamer implements AutoCloseable {
   public static final Duration STREAMING_INTERVAL = Duration.ofMillis(300);
   private final Alarm streamingTriggeringAlarm;
   private final Map<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
@@ -53,12 +53,17 @@ public class FindingStreamer {
     streamingTriggeringAlarm.schedule();
   }
 
-  public void stopStreaming() {
-    streamingTriggeringAlarm.stop();
-  }
-
   private void triggerStreaming(AnalysisCallback analysisCallback) {
     analysisCallback.onIntermediateResult(new AnalysisIntermediateResult(new LiveFindings(issuesPerFile, securityHotspotsPerFile)));
+  }
+
+  @Override
+  public void close() {
+    stopStreaming();
+  }
+
+  private void stopStreaming() {
+    streamingTriggeringAlarm.stop();
   }
 
   private static class Alarm {
