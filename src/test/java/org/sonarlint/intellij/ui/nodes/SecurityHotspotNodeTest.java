@@ -38,7 +38,7 @@ public class SecurityHotspotNodeTest {
   @Test
   public void testCount() {
     var i = createSecurityHotspot(System.currentTimeMillis(), "rule");
-    node = new LiveSecurityHotspotNode(i);
+    node = new LiveSecurityHotspotNode(i, false);
     assertThat(node.getFindingCount()).isEqualTo(1);
     assertThat(node.getHotspot()).isEqualTo(i);
   }
