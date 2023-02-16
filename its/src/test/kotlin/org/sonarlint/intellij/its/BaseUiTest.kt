@@ -177,7 +177,7 @@ open class BaseUiTest {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
-                    tabTitleContains("Current file") { select() }
+                    tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
                         expectedMessages.forEach { Assertions.assertThat(hasText(it)).`as`("Failed to find current file text '$it'").isTrue() }
                     }
@@ -191,7 +191,7 @@ open class BaseUiTest {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
-                    tabTitleContains("Current file") { select() }
+                    tabTitleContains("Current File") { select() }
                     content("CurrentFilePanel") {
                         findText(issueMessage).click()
                     }
