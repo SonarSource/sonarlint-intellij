@@ -215,6 +215,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     rulePanel.setRuleKey(moduleForFile, liveFinding.getRuleKey(), null);
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
     flowsTree.getEmptyText().setText("Selected security hotspot doesn't have flows");
+    flowsTreeBuilder.populateForFinding(liveFinding);
     flowsTree.expandAll();
   }
 

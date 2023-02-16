@@ -24,7 +24,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 import javax.swing.tree.DefaultTreeModel;
 import org.sonarlint.intellij.finding.Flow;
-import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.ui.nodes.FlowNode;
 import org.sonarlint.intellij.ui.nodes.FlowSecondaryLocationNode;
 import org.sonarlint.intellij.ui.nodes.PrimaryLocationNode;
@@ -46,19 +46,19 @@ public class FlowsTreeModelBuilder {
     model.setRoot(null);
   }
 
-  public void populateForIssue(LiveIssue issue) {
-    var rangeMarker = issue.getRange();
-    var context = issue.context();
+  public void populateForFinding(LiveFinding finding) {
+    var rangeMarker = finding.getRange();
+    var context = finding.context();
     if (rangeMarker == null || context.isEmpty()) {
       clearFlows();
       return;
     }
-    var issueContext = context.get();
-    var message = issue.getMessage();
-    if (issueContext.hasUniqueFlow()) {
-      setSingleFlow(issueContext.flows().get(0), rangeMarker, message);
+    var findingContext = context.get();
+    var message = finding.getMessage();
+    if (findingContext.hasUniqueFlow()) {
+      setSingleFlow(findingContext.flows().get(0), rangeMarker, message);
     } else {
-      setMultipleFlows(issueContext.flows(), rangeMarker, message);
+      setMultipleFlows(findingContext.flows(), rangeMarker, message);
     }
   }
 
