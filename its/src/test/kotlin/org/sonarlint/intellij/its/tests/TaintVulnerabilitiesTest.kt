@@ -86,7 +86,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
-                    tab("Taint vulnerabilities") { select() }
+                    tab("Taint Vulnerabilities") { select() }
                     content("TaintVulnerabilitiesPanel") {
                         jLabel("Configure Binding").click()
                     }
@@ -133,7 +133,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
             idea {
                 toolWindow("SonarLint") {
                     ensureOpen()
-                    tabTitleContains("Taint vulnerabilities") { select() }
+                    tabTitleContains("Taint Vulnerabilities") { select() }
                     content("TaintVulnerabilitiesPanel") {
                         expectedMessages.forEach { assertThat(hasText(it)).isTrue() }
                     }

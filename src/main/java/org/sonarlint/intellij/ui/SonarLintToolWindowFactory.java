@@ -47,9 +47,9 @@ import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 public class SonarLintToolWindowFactory implements ToolWindowFactory {
   public static final String TOOL_WINDOW_ID = "SonarLint";
   public static final String LOG_TAB_TITLE = "Log";
-  public static final String CURRENT_FILE_TAB_TITLE = "Current file";
+  public static final String CURRENT_FILE_TAB_TITLE = "Current File";
   public static final String REPORT_TAB_TITLE = "Report";
-  public static final String TAINT_VULNERABILITIES_TAB_TITLE = "Taint vulnerabilities";
+  public static final String TAINT_VULNERABILITIES_TAB_TITLE = "Taint Vulnerabilities";
   public static final String SECURITY_HOTSPOTS_TAB_TITLE = "Security Hotspots";
 
   @Override
