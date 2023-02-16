@@ -28,8 +28,6 @@ import com.intellij.util.Consumer;
 import java.awt.Component;
 import java.io.BufferedReader;
 import java.io.StringReader;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -39,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.SonarLintPlugin;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarsource.sonarlint.core.serverapi.UrlUtils;
 
 // Inspired from https://github.com/openclover/clover/blob/master/clover-idea/src/com/atlassian/clover/idea/util/BlameClover.java
 public class BlameSonarSource extends ErrorReportSubmitter {
@@ -127,14 +126,14 @@ public class BlameSonarSource extends ErrorReportSubmitter {
   }
 
   String getBoundedEncodedString(String description, int maxLen) {
-    var encoded = URLEncoder.encode(description, StandardCharsets.UTF_8);
+    var encoded = UrlUtils.urlEncode(description);
     while (encoded.length() > maxLen) {
       int lastNewline = description.lastIndexOf('\n');
       if (lastNewline == -1) {
         return "";
       }
       description = description.substring(0, lastNewline);
-      encoded = URLEncoder.encode(description, StandardCharsets.UTF_8);
+      encoded = UrlUtils.urlEncode(description);
     }
 
     return encoded;

@@ -33,8 +33,6 @@ import java.awt.CardLayout;
 import java.awt.Cursor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -49,6 +47,7 @@ import org.sonarlint.intellij.core.ModuleBindingManager;
 import org.sonarlint.intellij.core.ProjectBindingManager;
 import org.sonarlint.intellij.util.SonarLintActions;
 import org.sonarlint.intellij.util.SonarLintAppUtils;
+import org.sonarsource.sonarlint.core.serverapi.UrlUtils;
 
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
@@ -188,10 +187,10 @@ public class CurrentFileConnectedModePanel {
   }
 
   private static String buildTooltipHtml(ServerConnection serverConnection, String projectKey, @Nullable String branchName) {
-    var projectOverviewUrl = String.format("%s/dashboard?id=%s", serverConnection.getHostUrl(), URLEncoder.encode(projectKey, StandardCharsets.UTF_8));
+    var projectOverviewUrl = String.format("%s/dashboard?id=%s", serverConnection.getHostUrl(), UrlUtils.urlEncode(projectKey));
     var branchParagraph = "<p>Synchronized with the project's main branch</p>";
     if (branchName != null) {
-      projectOverviewUrl += String.format("&branch=%s", URLEncoder.encode(branchName, StandardCharsets.UTF_8));
+      projectOverviewUrl += String.format("&branch=%s", UrlUtils.urlEncode(branchName));
       branchParagraph = String.format("<p>Synchronized with branch '%s'</p>", escapeHtml(branchName));
     }
     return String.format(
