@@ -24,11 +24,12 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 import org.sonarlint.intellij.exception.InvalidBindingException;
 import org.sonarlint.intellij.trigger.TriggerType;
 
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 class AnalysisScope {
@@ -43,18 +44,18 @@ class AnalysisScope {
   }
 
   private final Map<Module, Collection<VirtualFile>> filesByModule;
-  private final Collection<VirtualFile> allFilesToAnalyze;
+  private final Set<VirtualFile> allFilesToAnalyze;
 
   public AnalysisScope(Map<Module, Collection<VirtualFile>> filesByModule) {
     this.filesByModule = filesByModule;
-    this.allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toList());
+    this.allFilesToAnalyze = filesByModule.entrySet().stream().flatMap(e -> e.getValue().stream()).collect(toSet());
   }
 
   public Map<Module, Collection<VirtualFile>> getFilesByModule() {
     return filesByModule;
   }
 
-  public Collection<VirtualFile> getAllFilesToAnalyze() {
+  public Set<VirtualFile> getAllFilesToAnalyze() {
     return allFilesToAnalyze;
   }
 
