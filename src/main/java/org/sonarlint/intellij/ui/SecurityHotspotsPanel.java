@@ -85,6 +85,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private final Project project;
   private final CardPanel cardPanel;
   private ActionToolbar mainToolbar;
+  private SecurityHotspotsStatus status;
 
   public SecurityHotspotsPanel(Project project) {
     super(false, true);
@@ -149,18 +150,23 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     if (project.isDisposed()) {
       return 0;
     }
-    int count = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No security hotspots found");
-    TreeUtil.expandAll(securityHotspotTree);
 
-    if (count == 0) {
-      cardPanel.show(NO_SECURITY_HOTSPOT_CARD_ID);
-      detailsTab.setVisible(false);
+    if (status instanceof ValidStatus) {
+      int count = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No security hotspots found");
+      TreeUtil.expandAll(securityHotspotTree);
+
+      if (count == 0) {
+        cardPanel.show(NO_SECURITY_HOTSPOT_CARD_ID);
+        detailsTab.setVisible(false);
+      } else {
+        cardPanel.show(HOTSPOTS_LIST);
+        detailsTab.setVisible(true);
+      }
+
+      return count;
     } else {
-      cardPanel.show(HOTSPOTS_LIST);
-      detailsTab.setVisible(true);
+      return 0;
     }
-
-    return count;
   }
 
   private void createSecurityHotspotsTree() {
@@ -240,6 +246,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public void populate(SecurityHotspotsStatus status) {
+    this.status = status;
     var highlighting = getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
     if (status instanceof NoBinding) {
