@@ -72,7 +72,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private static final String NO_BINDING_CARD_ID = "NO_BINDING_CARD";
   private static final String INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD";
   private static final String NO_SECURITY_HOTSPOT_CARD_ID = "NO_SECURITY_HOTSPOT_CARD_ID";
-  private static final String HOTSPOTS_LIST = "HOTSPOTS_LIST";
+  private static final String SECURITY_HOTSPOTS_LIST_CARD_ID = "SECURITY_HOTSPOTS_LIST_CARD_ID";
   private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
   private static final String SPLIT_PROPORTION_PROPERTY = "SONARLINT_ANALYSIS_RESULTS_SPLIT_PROPORTION";
   protected SecurityHotspotTreeModelBuilder securityHotspotTreeBuilder;
@@ -85,10 +85,13 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private final Project project;
   private final CardPanel cardPanel;
   private ActionToolbar mainToolbar;
+  private SecurityHotspotsStatus status;
+  private int securityHotspotCount;
 
   public SecurityHotspotsPanel(Project project) {
     super(false, true);
     this.project = project;
+    securityHotspotCount = 0;
     cardPanel = new CardPanel();
     mainPanel = new JPanel(new BorderLayout());
 
@@ -111,7 +114,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     cardPanel.add(centeredLabel(new JLabel("The project is not bound to SonarQube 9.7+"), new ActionLink("Configure binding", new SonarConfigureProject())), NO_BINDING_CARD_ID);
     cardPanel.add(centeredLabel(new JLabel("The project binding is invalid"), new ActionLink("Edit binding", new SonarConfigureProject())), INVALID_BINDING_CARD_ID);
     cardPanel.add(centeredLabel(new JLabel("No security hotspot found"), null), NO_SECURITY_HOTSPOT_CARD_ID);
-    cardPanel.add(findingsPanel, HOTSPOTS_LIST);
+    cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
     setupToolbar(createActionGroup());
 
     mainPanel.add(cardPanel.getContainer(), BorderLayout.CENTER);
@@ -149,18 +152,16 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     if (project.isDisposed()) {
       return 0;
     }
-    int count = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No security hotspots found");
-    TreeUtil.expandAll(securityHotspotTree);
 
-    if (count == 0) {
-      cardPanel.show(NO_SECURITY_HOTSPOT_CARD_ID);
-      detailsTab.setVisible(false);
+    if (status instanceof ValidStatus) {
+      securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No security hotspots found");
+      TreeUtil.expandAll(securityHotspotTree);
+      displaySecurityHotspots();
+
+      return securityHotspotCount;
     } else {
-      cardPanel.show(HOTSPOTS_LIST);
-      detailsTab.setVisible(true);
+      return 0;
     }
-
-    return count;
   }
 
   private void createSecurityHotspotsTree() {
@@ -209,6 +210,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     rulePanel.setRuleKey(moduleForFile, liveFinding.getRuleKey(), null);
     SonarLintUtils.getService(project, EditorDecorator.class).highlightFinding(liveFinding);
     flowsTree.getEmptyText().setText("Selected security hotspot doesn't have flows");
+    flowsTreeBuilder.populateForFinding(liveFinding);
     flowsTree.expandAll();
   }
 
@@ -240,6 +242,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   }
 
   public void populate(SecurityHotspotsStatus status) {
+    this.status = status;
     var highlighting = getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
     if (status instanceof NoBinding) {
@@ -247,7 +250,15 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     } else if (status instanceof InvalidBinding) {
       cardPanel.show(INVALID_BINDING_CARD_ID);
     } else if (status instanceof ValidStatus) {
-      cardPanel.show(HOTSPOTS_LIST);
+      displaySecurityHotspots();
+    }
+  }
+
+  private void displaySecurityHotspots() {
+    if (securityHotspotCount == 0) {
+      cardPanel.show(NO_SECURITY_HOTSPOT_CARD_ID);
+    } else {
+      cardPanel.show(SECURITY_HOTSPOTS_LIST_CARD_ID);
     }
   }
 
