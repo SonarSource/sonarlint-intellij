@@ -29,6 +29,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.BrowserHyperlinkListener
 import com.intellij.ui.IdeBorderFactory
+import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBLoadingPanel
@@ -46,15 +47,12 @@ import org.sonarlint.intellij.config.global.SonarLintGlobalConfigurable
 import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.core.ProjectBindingManager
 import org.sonarlint.intellij.finding.Finding
-import org.sonarlint.intellij.finding.LiveFinding
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot
-import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability
 import org.sonarlint.intellij.ui.ruledescription.RuleHeaderPanel
 import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleContextualSectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDescriptionTabDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDetailsDto
-import org.sonarsource.sonarlint.core.serverapi.UrlUtils
 import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
 import java.awt.BorderLayout
 import java.awt.Font
@@ -77,28 +75,33 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
     private val paramsPanel = JBPanel<JBPanel<*>>(GridBagLayout())
     private val securityHotspotHeaderMessage = JEditorPane()
     private val ruleDetailsLoader = RuleDetailsLoader()
+    private var finding: Finding? = null
+    private var ruleDetails: ActiveRuleDetailsDto? = null
 
     init {
         add(JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            ruleNameLabel.font = UIUtil.getLabelFont().deriveFont((UIUtil.getLabelFont().size2D + JBUIScale.scale(3))).deriveFont(Font.BOLD)
-            add(ruleNameLabel, BorderLayout.NORTH)
+            add(ruleNameLabel.apply {
+                font = UIUtil.getLabelFont().deriveFont((UIUtil.getLabelFont().size2D + JBUIScale.scale(3))).deriveFont(Font.BOLD)
+            }, BorderLayout.NORTH)
             add(headerPanel, BorderLayout.CENTER)
             add(securityHotspotHeaderMessage.apply {
                 contentType = UIUtil.HTML_MIME
                 (caret as DefaultCaret).updatePolicy = DefaultCaret.NEVER_UPDATE
                 editorKit = UIUtil.getHTMLEditorKit()
-                border = JBUI.Borders.empty(10)
+                border = JBUI.Borders.empty()
                 isEditable = false
                 isOpaque = false
+                isFocusable = false
 
                 addHyperlinkListener(BrowserHyperlinkListener.INSTANCE)
-            }, BorderLayout.PAGE_END)
+            }, BorderLayout.SOUTH)
         }, BorderLayout.NORTH)
 
         add(descriptionPanel, BorderLayout.CENTER)
 
-        paramsPanel.border = JBUI.Borders.emptyLeft(12)
-        add(paramsPanel, BorderLayout.SOUTH)
+        add(paramsPanel.apply {
+            border = IdeBorderFactory.createTitledBorder("Parameters")
+        }, BorderLayout.SOUTH)
 
         setLoadingText("Loading rule description...")
         clear()
@@ -114,33 +117,35 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
 
         private var state = RuleDetailsLoaderState(null, null, null)
 
-        fun clear() {
+        fun clearState() {
             state = RuleDetailsLoaderState(null, null, null)
         }
 
-        fun updateActiveRuleDetailsIfNeeded(module: Module, finding: Finding, contextKey: String?) {
-            val newState = RuleDetailsLoaderState(module, finding.getRuleKey(), contextKey)
+        fun updateActiveRuleDetailsIfNeeded(module: Module, finding: Finding) {
+            val newState = RuleDetailsLoaderState(module, finding.getRuleKey(), finding.getRuleDescriptionContextKey())
             if (state == newState) {
+                // Still force a refresh of the UI, as some other fields of the finding may be differents
+                ApplicationManager.getApplication().invokeLater {
+                    updateUiComponents()
+                }
                 return
             }
             state = newState
             startLoading()
             ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Loading rule description...", false) {
                 override fun run(progressIndicator: ProgressIndicator) {
-                    SonarLintUtils.getService(BackendService::class.java).getActiveRuleDetails(module, finding.getRuleKey(), contextKey)
+                    SonarLintUtils.getService(BackendService::class.java).getActiveRuleDetails(module, finding.getRuleKey(), finding.getRuleDescriptionContextKey())
                         .orTimeout(30, TimeUnit.SECONDS)
                         .handle { response, error ->
                             stopLoading()
                             if (error != null) {
                                 SonarLintConsole.get(project).error("Cannot get rule description", error)
-                                ApplicationManager.getApplication().invokeLater {
-                                    nothingToDisplay(true)
-                                }
-                                null
+                                ruleDetails = null
                             } else {
-                                ApplicationManager.getApplication().invokeLater {
-                                    updateRuleDescription(finding, response.details())
-                                }
+                                ruleDetails = response.details()
+                            }
+                            ApplicationManager.getApplication().invokeLater {
+                                updateUiComponents()
                             }
                         }
                 }
@@ -150,62 +155,59 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
     }
 
     fun clear() {
-        ruleDetailsLoader.clear()
-        nothingToDisplay(false)
+        finding = null
+        ruleDetails = null
+        ruleDetailsLoader.clearState()
+        updateUiComponents()
     }
 
-    fun setSelectedFinding(module: Module, taintVulnerability: LocalTaintVulnerability, contextKey: String?) {
-        ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, taintVulnerability, contextKey)
+    fun setSelectedFinding(module: Module, finding: Finding) {
+        this.finding = finding
+        ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, finding)
     }
 
-    fun setSelectedFinding(module: Module, finding: LiveFinding) {
-        ruleDetailsLoader.updateActiveRuleDetailsIfNeeded(module, finding, null)
-    }
-
-    private fun nothingToDisplay(error: Boolean) {
-        descriptionPanel.removeAll()
-        hideRuleParameters()
-        ruleNameLabel.text = ""
-        headerPanel.showMessage(if (error) "Couldn't find the rule description" else "Select a finding to display the rule description")
-        securityHotspotHeaderMessage.text = ""
-        securityHotspotHeaderMessage.isVisible = false
-    }
-
-    private fun hideRuleParameters() {
-        paramsPanel.removeAll()
-        paramsPanel.border = null
-    }
-
-    private fun updateRuleDescription(finding: Finding, ruleDetails: ActiveRuleDetailsDto) {
+    private fun updateUiComponents() {
         ApplicationManager.getApplication().assertIsDispatchThread()
-        updateHeader(finding, ruleDetails)
-        descriptionPanel.removeAll()
-        ruleDetails.description.map(
-            { monolithDescription ->
-                val htmlHeader = monolithDescription.htmlContent
-                if (!htmlHeader.isNullOrBlank()) {
-                    val htmlViewer = RuleHtmlViewer(true)
-                    descriptionPanel.add(htmlViewer, BorderLayout.CENTER)
-                    htmlViewer.updateHtml(htmlHeader)
-                }
-            },
-            { withSections ->
-                val htmlHeader = withSections.introductionHtmlContent
-                if (!htmlHeader.isNullOrBlank()) {
-                    val htmlViewer = RuleHtmlViewer(false)
-                    descriptionPanel.add(htmlViewer, BorderLayout.NORTH)
-                    htmlViewer.updateHtml(htmlHeader)
-                }
-                val sectionsTabs = JBTabbedPane()
-                sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
+        val finding = this.finding
+        val ruleDetails = this.ruleDetails
+        if (finding == null || ruleDetails == null) {
+            val errorLoadingRuleDetails = finding != null
+            descriptionPanel.removeAll()
+            hideRuleParameters()
+            ruleNameLabel.text = ""
+            headerPanel.showMessage(if (errorLoadingRuleDetails) "Couldn't find the rule description" else "Select a finding to display the rule description")
+            securityHotspotHeaderMessage.text = ""
+            securityHotspotHeaderMessage.isVisible = false
+        } else {
+            updateHeader(finding, ruleDetails)
+            descriptionPanel.removeAll()
+            ruleDetails.description.map(
+                { monolithDescription ->
+                    val htmlHeader = monolithDescription.htmlContent
+                    if (!htmlHeader.isNullOrBlank()) {
+                        val htmlViewer = RuleHtmlViewer(true)
+                        descriptionPanel.add(htmlViewer, BorderLayout.CENTER)
+                        htmlViewer.updateHtml(htmlHeader)
+                    }
+                },
+                { withSections ->
+                    val htmlHeader = withSections.introductionHtmlContent
+                    if (!htmlHeader.isNullOrBlank()) {
+                        val htmlViewer = RuleHtmlViewer(false)
+                        descriptionPanel.add(htmlViewer, BorderLayout.NORTH)
+                        htmlViewer.updateHtml(htmlHeader)
+                    }
+                    val sectionsTabs = JBTabbedPane()
+                    sectionsTabs.font = UIUtil.getLabelFont().deriveFont(Font.BOLD)
 
-                withSections.tabs.forEachIndexed { index, tabDesc ->
-                    addTab(tabDesc, sectionsTabs, index)
-                }
+                    withSections.tabs.forEachIndexed { index, tabDesc ->
+                        addTab(tabDesc, sectionsTabs, index)
+                    }
 
-                descriptionPanel.add(sectionsTabs, BorderLayout.CENTER)
-            })
-        updateParams(ruleDetails)
+                    descriptionPanel.add(sectionsTabs, BorderLayout.CENTER)
+                })
+            updateParams(ruleDetails)
+        }
     }
 
     private fun addTab(tabDesc: ActiveRuleDescriptionTabDto, sectionsTabs: JBTabbedPane, index: Int) {
@@ -234,7 +236,9 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         securityHotspotHeaderMessage.isVisible = finding is LiveSecurityHotspot
         if (finding is LiveSecurityHotspot) {
             val htmlStringBuilder = StringBuilder("""
-                A <a href="https://docs.sonarqube.org/latest/user-guide/security-hotspots/">Security Hotspot</a> is not necessarily an issue, but a security-sensitive piece of code that needs a manual review.
+                A ${externalLink("Security Hotspot", "https://docs.sonarqube.org/latest/user-guide/security-hotspots/")}
+                highlights a security-sensitive piece of code that the developer <b>needs to review</b>.
+                Upon review, you’ll either find there is no threat or you need to apply a fix to secure the code.
                 <br>
                 At the moment, the status of a Security Hotspot can only be updated in SonarQube. 
                 """.trimIndent())
@@ -246,17 +250,21 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
                 if (projectKey != null) {
                     htmlStringBuilder.append(
                         """
-                        Click <a href="${serverConnection.hostUrl}/security_hotspots?id=${urlEncode(projectKey)}&hotspots=${urlEncode(serverFindingKey)}">here</a>
+                        Click ${externalLink("here", "${serverConnection.hostUrl}/security_hotspots?id=${urlEncode(projectKey)}&hotspots=${urlEncode(serverFindingKey)}")}
                         to open it on '${serverConnection.name}' server.""".trimIndent()
                     )
                 }
 
             }
-            SwingHelper.setHtml(securityHotspotHeaderMessage, htmlStringBuilder.toString(), UIUtil.getLabelForeground())
+            SwingHelper.setHtml(securityHotspotHeaderMessage, htmlStringBuilder.toString(), JBUI.CurrentTheme.ContextHelp.FOREGROUND)
             headerPanel.update(ruleDescription.key, ruleDescription.type, finding.vulnerabilityProbability)
         } else {
             headerPanel.update(ruleDescription.key, ruleDescription.type, ruleDescription.severity)
         }
+    }
+
+    private fun externalLink(text: String, href: String): String {
+        return """<a href="$href">$text<icon src="AllIcons.Ide.External_link_arrow" href="$href"></a>"""
     }
 
     private fun updateParams(ruleDescription: ActiveRuleDetailsDto) {
@@ -267,9 +275,13 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
         }
     }
 
+    private fun hideRuleParameters() {
+        paramsPanel.isVisible = false
+    }
+
     private fun populateParamPanel(ruleDetails: ActiveRuleDetailsDto) {
+        paramsPanel.isVisible = true
         paramsPanel.apply {
-            border = IdeBorderFactory.createTitledBorder("Parameters")
             removeAll()
             val constraints = GridBagConstraints()
             constraints.anchor = GridBagConstraints.BASELINE_LEADING

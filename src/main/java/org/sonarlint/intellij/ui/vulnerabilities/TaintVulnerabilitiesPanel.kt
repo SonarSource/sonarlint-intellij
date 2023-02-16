@@ -212,7 +212,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
             } else {
                 val moduleForFile = ProjectRootManager.getInstance(project).fileIndex.getModuleForFile(file)
                 if (moduleForFile != null) {
-                    rulePanel.setSelectedFinding(moduleForFile, issue, issue.ruleDescriptionContextKey())
+                    rulePanel.setSelectedFinding(moduleForFile, issue)
                 } else {
                     rulePanel.clear()
                 }

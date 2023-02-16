@@ -46,14 +46,17 @@ public abstract class LiveFinding implements Trackable, Finding {
   private final Integer lineHash;
   private final String message;
   private final String ruleKey;
+
   private final FindingContext context;
   private final List<QuickFix> quickFixes;
+  private final String ruleDescriptionContextKey;
 
   // tracked fields (mutable)
   private IssueSeverity severity;
   private Long introductionDate;
   private String serverFindingKey;
   private boolean resolved;
+
 
   protected LiveFinding(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     this.range = range;
@@ -64,6 +67,7 @@ public abstract class LiveFinding implements Trackable, Finding {
     this.uid = UID_GEN.getAndIncrement();
     this.context = context;
     this.quickFixes = quickFixes;
+    this.ruleDescriptionContextKey = issue.getRuleDescriptionContextKey().orElse(null);
 
     if (range != null) {
       var document = range.getDocument();
@@ -80,7 +84,7 @@ public abstract class LiveFinding implements Trackable, Finding {
   }
 
   private static int checksum(String content) {
-    return Hex.encodeHexString(md5(content.replaceAll("[\\s]", "").getBytes(UTF_8))).hashCode();
+    return Hex.encodeHexString(md5(content.replaceAll("\\s", "").getBytes(UTF_8))).hashCode();
   }
 
   public boolean isValid() {
@@ -115,6 +119,7 @@ public abstract class LiveFinding implements Trackable, Finding {
     return lineHash;
   }
 
+  @org.jetbrains.annotations.NotNull
   @Override
   public String getRuleKey() {
     return ruleKey;
@@ -202,5 +207,11 @@ public abstract class LiveFinding implements Trackable, Finding {
 
   public List<QuickFix> quickFixes() {
     return quickFixes;
+  }
+
+  @org.jetbrains.annotations.Nullable
+  @Override
+  public String getRuleDescriptionContextKey() {
+    return ruleDescriptionContextKey;
   }
 }

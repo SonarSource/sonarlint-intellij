@@ -22,15 +22,14 @@ package org.sonarlint.intellij.finding.hotspot;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import java.util.List;
+import javax.annotation.Nullable;
 import org.sonarlint.intellij.finding.FindingContext;
 import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.QuickFix;
 import org.sonarsource.sonarlint.core.client.api.common.analysis.Issue;
 import org.sonarsource.sonarlint.core.commons.RuleType;
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 public class LiveSecurityHotspot extends LiveFinding {
   private final VulnerabilityProbability vulnerabilityProbability;
