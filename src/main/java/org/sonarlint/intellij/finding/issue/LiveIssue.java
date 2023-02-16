@@ -39,6 +39,7 @@ public class LiveIssue extends LiveFinding {
 
   public LiveIssue(Issue issue, PsiFile psiFile, @Nullable RangeMarker range, @Nullable FindingContext context, List<QuickFix> quickFixes) {
     super(issue, psiFile, range, context, quickFixes);
+    this.type = issue.getType();
   }
 
   @Override
