@@ -54,6 +54,8 @@ import org.sonarlint.intellij.ui.ruledescription.RuleHtmlViewer
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleContextualSectionDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDescriptionTabDto
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.ActiveRuleDetailsDto
+import org.sonarsource.sonarlint.core.serverapi.UrlUtils
+import org.sonarsource.sonarlint.core.serverapi.UrlUtils.urlEncode
 import java.awt.BorderLayout
 import java.awt.Font
 import java.awt.GridBagConstraints
@@ -236,14 +238,18 @@ class SonarLintRulePanel(private val project: Project) : JBLoadingPanel(BorderLa
                 <br>
                 At the moment, the status of a Security Hotspot can only be updated in SonarQube. 
                 """.trimIndent())
-            if (finding.serverFindingKey != null) {
+            val serverFindingKey = finding.serverFindingKey
+            if (serverFindingKey != null) {
                 val serverConnection =
                     SonarLintUtils.getService(project, ProjectBindingManager::class.java).serverConnection
                 val projectKey = Settings.getSettingsFor(project).projectKey
-
-                htmlStringBuilder.append("""
-                Click <a href="${serverConnection.hostUrl}/security_hotspots?id=${projectKey}&hotspots=${finding.serverFindingKey}">here</a>
-                to open it on '${serverConnection.name}' server.""".trimIndent())
+                if (projectKey != null) {
+                    htmlStringBuilder.append(
+                        """
+                        Click <a href="${serverConnection.hostUrl}/security_hotspots?id=${urlEncode(projectKey)}&hotspots=${urlEncode(serverFindingKey)}">here</a>
+                        to open it on '${serverConnection.name}' server.""".trimIndent()
+                    )
+                }
 
             }
             SwingHelper.setHtml(securityHotspotHeaderMessage, htmlStringBuilder.toString(), UIUtil.getLabelForeground())
