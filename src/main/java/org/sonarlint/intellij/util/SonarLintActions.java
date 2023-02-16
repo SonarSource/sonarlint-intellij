@@ -23,7 +23,7 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.serviceContainer.NonInjectable;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 import org.sonarlint.intellij.actions.ClearCurrentFileIssuesAction;
 import org.sonarlint.intellij.actions.ClearReportAction;
 import org.sonarlint.intellij.actions.SonarAnalyzeAllFilesAction;
