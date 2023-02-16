@@ -132,7 +132,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
 
     for (var securityHotspot : securityHotspots) {
-      var iNode = new LiveSecurityHotspotNode(securityHotspot);
+      var iNode = new LiveSecurityHotspotNode(securityHotspot, false);
       node.add(iNode);
     }
   }
@@ -205,7 +205,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     removeHotspotsByFile(file);
 
     for (var securityHotspot : securityHotspotsPointer) {
-      var iNode = new LiveSecurityHotspotNode(securityHotspot);
+      var iNode = new LiveSecurityHotspotNode(securityHotspot, true);
       var idx = summary.insertLiveSecurityHotspotNode(iNode, new LiveSecurityHotspotNodeComparator());
       var newIdx = new int[]{idx};
       model.nodesWereInserted(summary, newIdx);

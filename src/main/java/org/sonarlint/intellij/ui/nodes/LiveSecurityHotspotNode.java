@@ -31,9 +31,11 @@ import org.sonarlint.intellij.util.CompoundIcon;
 
 public class LiveSecurityHotspotNode extends AbstractNode {
   private final LiveSecurityHotspot securityHotspot;
+  private final boolean appendFileName;
 
-  public LiveSecurityHotspotNode(LiveSecurityHotspot securityHotspot) {
+  public LiveSecurityHotspotNode(LiveSecurityHotspot securityHotspot, boolean appendFileName) {
     this.securityHotspot = securityHotspot;
+    this.appendFileName = appendFileName;
     setUserObject(securityHotspot);
   }
 
@@ -60,7 +62,9 @@ public class LiveSecurityHotspotNode extends AbstractNode {
 
     renderer.setToolTipText("Double click to open location");
     renderer.append(securityHotspot.getMessage());
-    renderer.append(" " + securityHotspot.getFile().getName(), SimpleTextAttributes.GRAY_ATTRIBUTES);
+    if (appendFileName) {
+      renderer.append(" " + securityHotspot.getFile().getName(), SimpleTextAttributes.GRAY_ATTRIBUTES);
+    }
   }
 
   private void setIcon(TreeCellRenderer renderer, Icon icon) {
