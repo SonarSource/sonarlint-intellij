@@ -20,6 +20,7 @@
 package org.sonarlint.intellij.ui.nodes;
 
 import com.intellij.openapi.util.text.StringUtil;
+import com.intellij.ui.OffsetIcon;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.scale.JBUIScale;
 import org.sonarlint.intellij.SonarLintIcons;
@@ -50,14 +51,14 @@ public class LiveSecurityHotspotNode extends AbstractNode {
     var type = securityHotspot.getType();
     var typeStr = type.toString().replace('_', ' ').toLowerCase(Locale.ENGLISH);
 
+    var typeIcon = SonarLintIcons.hotspotTypeWithProbability(vulnerability);
+    var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
     if (securityHotspot.getServerFindingKey() != null) {
-      var gap = JBUIScale.isUsrHiDPI() ? 8 : 4;
       renderer.setIconToolTip(vulnerabilityText + " " + typeStr + " matched on SonarQube");
-      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.ICON_SONARQUBE_16,
-        SonarLintIcons.hotspotTypeWithProbability(vulnerability)));
+      setIcon(renderer, new CompoundIcon(CompoundIcon.Axis.X_AXIS, gap, SonarLintIcons.ICON_SONARQUBE_16, typeIcon));
     } else {
       renderer.setIconToolTip(vulnerabilityText + " " + typeStr);
-      setIcon(renderer, SonarLintIcons.hotspotTypeWithProbability(vulnerability));
+      setIcon(renderer, new OffsetIcon(typeIcon.getIconWidth() + gap, typeIcon));
     }
 
     renderer.setToolTipText("Double click to open location");
