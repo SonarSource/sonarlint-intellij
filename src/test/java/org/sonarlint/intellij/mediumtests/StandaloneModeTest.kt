@@ -35,9 +35,11 @@ import org.junit.Test
 import org.sonarlint.intellij.AbstractSonarLintLightTests
 import org.sonarlint.intellij.analysis.AnalysisSubmitter
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.finding.issue.LiveIssue
+import org.sonarlint.intellij.finding.persistence.FindingsCache
 import org.sonarlint.intellij.util.ProjectUtils
+import org.sonarsource.sonarlint.core.commons.IssueSeverity
+import org.sonarsource.sonarlint.core.commons.RuleType
 
 class StandaloneModeTest : AbstractSonarLintLightTests() {
 
@@ -58,9 +60,12 @@ class StandaloneModeTest : AbstractSonarLintLightTests() {
             .extracting(
                 { it.ruleKey },
                 { it.message },
-                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } })
+                { it.type },
+                { it.userSeverity },
+                { issue -> issue.range?.let { Pair(it.startOffset, it.endOffset) } },
+                { it.introductionDate })
             .containsExactly(
-                tuple("xml:S1778", "Remove all characters located before \"<?xml\".", Pair(62, 67))
+                tuple("xml:S1778", "Remove all characters located before \"<?xml\".", RuleType.BUG, IssueSeverity.CRITICAL, Pair(62, 67), null)
             )
     }
 
