@@ -209,7 +209,6 @@
                             serviceImplementation="org.sonarlint.intellij.telemetry.SonarLintTelemetryImpl" />
         <applicationService serviceImplementation="org.sonarlint.intellij.core.ServerNotificationsService"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.NodeJsManager"/>
-        <applicationService serviceImplementation="org.sonarlint.intellij.server.SonarLintHttpServer"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.fs.ModuleFileEventsNotifier"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.module.ModulesRegistry"/>
         <applicationService serviceImplementation="org.sonarlint.intellij.core.BackendService"/>
