@@ -52,6 +52,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
         engineManager.stopAllEngines(false)
         mockServer = MockServer()
         mockServer.start()
+        getService(project, FindingsCache::class.java).clearAllFindingsForAllFiles()
         connectProjectTo(mockServer.url(""), "connection", "projectKey")
     }
 
@@ -64,7 +65,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     fun should_raise_new_security_hotspots_when_connected_to_compatible_sonarqube() {
         createStorage(serverVersion = "9.7", activeRuleKey = "ruby:S1313")
 
-        val raisedHotspots = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
+        val raisedHotspots = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
         assertThat(raisedHotspots).extracting({ it.ruleKey },
             { it.message },
@@ -84,7 +85,7 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     fun should_not_raise_any_security_hotspots_when_connected_to_incompatible_sonarqube() {
         createStorage(serverVersion = "9.6", activeRuleKey = "ruby:S1313")
 
-        val raisedHotspots = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
+        val raisedHotspots = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
         assertThat(raisedHotspots).isEmpty()
     }
@@ -93,28 +94,25 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     fun should_not_raise_any_security_hotspots_when_server_version_is_unknown() {
         createStorage(serverVersion = null, activeRuleKey = "ruby:S1313")
 
-        val raisedHotspots = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
+        val raisedHotspots = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
         assertThat(raisedHotspots).isEmpty()
     }
 
     @Test
-    fun should_keep_no_creation_date_when_raising_previously_raised_new_security_hotspot() {
-        createStorage(activeRuleKey = "ruby:S1313")
-        analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
-        Thread.sleep(100)
+    fun should_keep_same_creation_date_when_matching_previous_security_hotspot() {
+        ensureSecurityHotspotRaised(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";")
 
-        val raisedHotspot = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
+        val raisedHotspot = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
 
         assertThat(raisedHotspot.introductionDate).isNull()
     }
 
     @Test
     fun should_set_creation_date_when_raising_a_new_security_hotspot_in_an_already_analyzed_file() {
-        createStorage(activeRuleKey = "ruby:S1313")
-        analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
+        ensureSecurityHotspotRaised(filePath = "file.rb")
 
-        val newlyIntroducedHotspot = typeAndAnalyze(codeSnippet = "\nip2 = \"192.168.12.43\";")
+        val newlyIntroducedHotspot = typeAndAnalyze(codeSnippetToAppend = "\nip2 = \"192.168.12.43\";")
 
         assertThat(newlyIntroducedHotspot.introductionDate).isNotNull
     }
@@ -134,12 +132,26 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
             )
         )
 
-        val raisedHotspot = analyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
+        val raisedHotspot = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "ip = \"192.168.12.42\";").first()
 
         assertThat(raisedHotspot).extracting({ it.serverFindingKey },
             { it.isResolved },
             { it.introductionDate },
             { it.vulnerabilityProbability }).containsExactly("hotspotKey", false, 1600692399000L, VulnerabilityProbability.LOW)
+    }
+
+    @Test
+    fun should_not_raise_issue_when_fixed_in_the_code() {
+        ensureSecurityHotspotRaised(filePath = "file.rb")
+
+        val raisedHotspots = openAndAnalyzeFile(filePath = "file.rb", codeSnippet = "")
+
+        assertThat(raisedHotspots).isEmpty()
+    }
+
+    private fun ensureSecurityHotspotRaised(filePath: String, codeSnippet: String = "ip = \"192.168.12.42\";") {
+        createStorage(activeRuleKey = "ruby:S1313")
+        openAndAnalyzeFile(filePath = filePath, codeSnippet = codeSnippet)
     }
 
     private fun prepareStorageAndServer(
@@ -178,16 +190,16 @@ class SecurityHotspotsMediumTest : AbstractSonarLintLightTests() {
     }
 
 
-    private fun analyzeFile(filePath: String, codeSnippet: String): Collection<LiveSecurityHotspot> {
+    private fun openAndAnalyzeFile(filePath: String, codeSnippet: String): Collection<LiveSecurityHotspot> {
         val fileToAnalyze = myFixture.configureByText(filePath, "$codeSnippet<caret>").virtualFile
         val submitter = getService(project, AnalysisSubmitter::class.java)
         submitter.analyzeFilesPreCommit(listOf(fileToAnalyze))
         return getService(project, FindingsCache::class.java).getSecurityHotspotsForFile(fileToAnalyze)
     }
 
-    private fun typeAndAnalyze(codeSnippet: String): LiveSecurityHotspot {
+    private fun typeAndAnalyze(codeSnippetToAppend: String): LiveSecurityHotspot {
         val previousCaretOffset = myFixture.caretOffset
-        myFixture.type(codeSnippet)
+        myFixture.type(codeSnippetToAppend)
         val file = myFixture.file.virtualFile
         getService(project, AnalysisSubmitter::class.java).analyzeFilesPreCommit(listOf(file))
         return getService(project, FindingsCache::class.java).getSecurityHotspotsForFile(file).first { it.range!!.startOffset > previousCaretOffset }

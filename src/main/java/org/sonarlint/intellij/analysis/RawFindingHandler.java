@@ -34,7 +34,6 @@ import org.sonarlint.intellij.finding.TextRangeMatcher;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.persistence.CachedFindings;
-import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.finding.tracking.LocalHistoryFindingTracker;
 import org.sonarlint.intellij.notifications.SecretsNotifications;
 import org.sonarsource.sonarlint.core.analysis.api.ClientInputFile;
@@ -45,16 +44,14 @@ import org.sonarsource.sonarlint.core.commons.RuleType;
 
 class RawFindingHandler implements IssueListener {
   private final Project project;
-  private final FindingsCache findingsCache;
   private final ConcurrentHashMap<VirtualFile, Collection<LiveIssue>> issuesPerFile = new ConcurrentHashMap<>();
   private final ConcurrentHashMap<VirtualFile, Collection<LiveSecurityHotspot>> securityHotspotsPerFile = new ConcurrentHashMap<>();
   private final AtomicInteger rawIssueCounter = new AtomicInteger();
   private final FindingStreamer findingStreamer;
   private final LocalHistoryFindingTracker localHistoryFindingTracker;
 
-  public RawFindingHandler(Project project, FindingStreamer findingStreamer, FindingsCache findingsCache, CachedFindings previousFindings) {
+  public RawFindingHandler(Project project, FindingStreamer findingStreamer, CachedFindings previousFindings) {
     this.project = project;
-    this.findingsCache = findingsCache;
     this.localHistoryFindingTracker = new LocalHistoryFindingTracker(previousFindings);
     this.findingStreamer = findingStreamer;
   }
