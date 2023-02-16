@@ -20,7 +20,7 @@
 package org.sonarlint.intellij.ui;
 
 import com.intellij.util.ui.JBUI;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;

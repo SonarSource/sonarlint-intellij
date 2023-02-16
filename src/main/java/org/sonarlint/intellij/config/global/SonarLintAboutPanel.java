@@ -28,7 +28,7 @@ import com.intellij.ui.HyperlinkLabel;
 import com.intellij.ui.IdeBorderFactory;
 import com.intellij.ui.awt.RelativePoint;
 import com.intellij.ui.components.JBLabel;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;

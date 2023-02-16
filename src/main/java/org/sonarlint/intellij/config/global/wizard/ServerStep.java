@@ -26,7 +26,7 @@ import com.intellij.ui.DocumentAdapter;
 import com.intellij.ui.components.JBTextField;
 import com.intellij.util.net.HttpConfigurable;
 import com.intellij.util.ui.SwingHelper;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.event.MouseEvent;
 import java.net.MalformedURLException;
 import java.net.URL;

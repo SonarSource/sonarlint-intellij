@@ -26,7 +26,7 @@ import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.JBFont
 import com.intellij.util.ui.JBUI
-import icons.SonarLintIcons
+import org.sonarlint.intellij.SonarLintIcons
 import org.sonarsource.sonarlint.core.commons.IssueSeverity
 import org.sonarsource.sonarlint.core.commons.RuleType
 import org.sonarsource.sonarlint.core.commons.VulnerabilityProbability
@@ -41,19 +41,9 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
     private val ruleTypeLabel = JBLabel()
     private val ruleSeverityIcon = JBLabel()
     private val ruleSeverityLabel = JBLabel()
-    private val hotspotVulnerabilityLabel = JBLabel("Review Priority: ")
+    private val hotspotVulnerabilityLabel = JBLabel("Review priority: ")
     private val hotspotVulnerabilityValueLabel = JBLabel()
     private val ruleKeyLabel = JBLabel()
-
-    // Same colors and opacity as in the icons SVG
-    private val highColor = Color(0x99e05555.toInt(), true)
-    private val mediumColor = Color(0x99f26522.toInt(), true)
-    private val lowColor = Color(0x99f4af3d.toInt(), true)
-    private val colorsByProbability = mapOf(
-        VulnerabilityProbability.HIGH to JBColor(highColor, highColor),
-        VulnerabilityProbability.MEDIUM to JBColor(mediumColor, mediumColor),
-        VulnerabilityProbability.LOW to JBColor(lowColor, lowColor)
-    )
 
     init {
         add(ruleTypeIcon, HorizontalLayout.LEFT)
@@ -99,7 +89,7 @@ class RuleHeaderPanel : JBPanel<RuleHeaderPanel>(FlowLayout(FlowLayout.LEFT)) {
         hotspotVulnerabilityLabel.isVisible = true
         hotspotVulnerabilityValueLabel.apply {
             text = vulnerabilityProbability.name
-            background = colorsByProbability[vulnerabilityProbability]
+            background = SonarLintIcons.colorsByProbability[vulnerabilityProbability]
         }
     }
 

@@ -28,7 +28,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.ui.HyperlinkAdapter;
 import com.intellij.ui.TooltipWithClickableLinks;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 import java.awt.CardLayout;
 import java.awt.Cursor;
 import java.awt.event.MouseAdapter;

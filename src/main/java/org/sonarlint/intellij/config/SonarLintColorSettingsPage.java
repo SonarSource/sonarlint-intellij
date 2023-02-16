@@ -25,7 +25,7 @@ import com.intellij.openapi.fileTypes.SyntaxHighlighter;
 import com.intellij.openapi.options.colors.AttributesDescriptor;
 import com.intellij.openapi.options.colors.ColorDescriptor;
 import com.intellij.openapi.options.colors.ColorSettingsPage;
-import icons.SonarLintIcons;
+import org.sonarlint.intellij.SonarLintIcons;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
