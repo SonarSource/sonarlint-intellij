@@ -19,7 +19,13 @@
  */
 package org.sonarlint.intellij.finding
 
+import org.sonarsource.sonarlint.core.commons.RuleType
+
 interface Finding {
 
     fun getRuleKey(): String
+
+    fun getType(): RuleType
+
+    fun getRuleDescriptionContextKey(): String?
 }
