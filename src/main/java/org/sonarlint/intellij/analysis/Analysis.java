@@ -45,6 +45,7 @@ import org.sonarlint.intellij.finding.LiveFinding;
 import org.sonarlint.intellij.finding.LiveFindings;
 import org.sonarlint.intellij.finding.hotspot.ServerSecurityHotspotUpdater;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
+import org.sonarlint.intellij.finding.persistence.CachedFindings;
 import org.sonarlint.intellij.finding.persistence.FindingsCache;
 import org.sonarlint.intellij.messages.AnalysisListener;
 import org.sonarlint.intellij.telemetry.SonarLintTelemetry;
@@ -129,10 +130,7 @@ public class Analysis implements Cancelable {
         callback.onSuccess(analysisResult);
         return analysisResult;
       }
-      var findingStreamer = new FindingStreamer(callback);
-      var rawFindingHandler = new RawFindingHandler(project, findingStreamer, previousFindings);
-      var summary = analyzePerModule(scope, indicator, rawFindingHandler);
-      findingStreamer.stopStreaming();
+      var summary = analyzePerModule(scope, indicator, previousFindings);
 
       getService(SonarLintTelemetry.class).addReportedRules(summary.getReportedRuleKeys());
 
@@ -207,18 +205,22 @@ public class Analysis implements Cancelable {
     return cancelled || indicator.isCanceled() || project.isDisposed() || Thread.currentThread().isInterrupted() || AnalysisStatus.get(project).isCanceled();
   }
 
-  private Summary analyzePerModule(AnalysisScope scope, ProgressIndicator indicator, RawFindingHandler rawFindingHandler) {
+  private Summary analyzePerModule(AnalysisScope scope, ProgressIndicator indicator, CachedFindings cachedFindings) {
     indicator.setIndeterminate(true);
     indicator.setText("Running SonarLint Analysis for " + scope.getDescription());
 
     var analyzer = getService(project, SonarLintAnalyzer.class);
     var progressMonitor = new TaskProgressMonitor(indicator, project, () -> cancelled);
     var results = new LinkedHashMap<Module, ModuleAnalysisResult>();
+    RawFindingHandler rawFindingHandler;
+    try (var findingStreamer = new FindingStreamer(callback)) {
+      rawFindingHandler = new RawFindingHandler(project, findingStreamer, cachedFindings);
 
-    for (var entry : scope.getFilesByModule().entrySet()) {
-      var module = entry.getKey();
-      results.put(module, analyzer.analyzeModule(module, entry.getValue(), rawFindingHandler, progressMonitor));
-      checkCanceled(indicator);
+      for (var entry : scope.getFilesByModule().entrySet()) {
+        var module = entry.getKey();
+        results.put(module, analyzer.analyzeModule(module, entry.getValue(), rawFindingHandler, progressMonitor));
+        checkCanceled(indicator);
+      }
     }
     return summarize(scope, rawFindingHandler, results);
   }
