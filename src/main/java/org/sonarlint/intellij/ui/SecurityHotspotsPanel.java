@@ -52,11 +52,10 @@ import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
-import org.sonarlint.intellij.finding.hotspot.InvalidBinding;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.finding.hotspot.NoBinding;
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
-import org.sonarlint.intellij.finding.hotspot.ValidStatus;
+import org.sonarlint.intellij.finding.hotspot.NotSupported;
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
+import org.sonarlint.intellij.finding.hotspot.Supported;
 import org.sonarlint.intellij.ui.nodes.LiveSecurityHotspotNode;
 import org.sonarlint.intellij.ui.tree.FlowsTree;
 import org.sonarlint.intellij.ui.tree.FlowsTreeModelBuilder;
@@ -70,8 +69,7 @@ import static org.sonarlint.intellij.ui.SonarLintToolWindowFactory.createSplitte
 public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disposable {
   private static final int RULE_TAB_INDEX = 0;
   private static final int LOCATIONS_TAB_INDEX = 1;
-  private static final String NO_BINDING_CARD_ID = "NO_BINDING_CARD";
-  private static final String INVALID_BINDING_CARD_ID = "INVALID_BINDING_CARD";
+  private static final String NOT_SUPPORTED_CARD_ID = "NOT_SUPPORTED_CARD";
   private static final String NO_SECURITY_HOTSPOT_CARD_ID = "NO_SECURITY_HOTSPOT_CARD_ID";
   private static final String SECURITY_HOTSPOTS_LIST_CARD_ID = "SECURITY_HOTSPOTS_LIST_CARD_ID";
   private static final String TOOLBAR_GROUP_ID = "SecurityHotspot";
@@ -86,8 +84,9 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private final Project project;
   private final CardPanel cardPanel;
   private ActionToolbar mainToolbar;
-  private SecurityHotspotsStatus status;
+  private SecurityHotspotsLocalDetectionSupport status;
   private int securityHotspotCount;
+  private JLabel notSupportedLabel;
 
   public SecurityHotspotsPanel(Project project) {
     super(false, true);
@@ -112,8 +111,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     findingsPanel.add(createSplitter(project, this, this,
       ScrollPaneFactory.createScrollPane(treePanel), detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
-    cardPanel.add(centeredLabel(new JLabel("The project is not bound to SonarQube 9.7+"), new ActionLink("Configure binding", new SonarConfigureProject())), NO_BINDING_CARD_ID);
-    cardPanel.add(centeredLabel(new JLabel("The project binding is invalid"), new ActionLink("Edit binding", new SonarConfigureProject())), INVALID_BINDING_CARD_ID);
+    notSupportedLabel = new JLabel();
+    cardPanel.add(centeredLabel(notSupportedLabel, new ActionLink("Configure binding", new SonarConfigureProject())), NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel(new JLabel("No security hotspot found"), null), NO_SECURITY_HOTSPOT_CARD_ID);
     cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
     setupToolbar(createActionGroup());
@@ -155,7 +154,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       return 0;
     }
 
-    if (status instanceof ValidStatus) {
+    if (status instanceof Supported) {
       securityHotspotCount = securityHotspotTreeBuilder.updateModelWithoutFileNode(findings, "No security hotspots found");
       TreeUtil.expandAll(securityHotspotTree);
       displaySecurityHotspots();
@@ -243,15 +242,14 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     mainToolbar.getComponent().setVisible(true);
   }
 
-  public void populate(SecurityHotspotsStatus status) {
+  public void populate(SecurityHotspotsLocalDetectionSupport status) {
     this.status = status;
     var highlighting = getService(project, EditorDecorator.class);
     highlighting.removeHighlights();
-    if (status instanceof NoBinding) {
-      cardPanel.show(NO_BINDING_CARD_ID);
-    } else if (status instanceof InvalidBinding) {
-      cardPanel.show(INVALID_BINDING_CARD_ID);
-    } else if (status instanceof ValidStatus) {
+    if (status instanceof NotSupported) {
+      notSupportedLabel.setText(((NotSupported) status).getReason());
+      cardPanel.show(NOT_SUPPORTED_CARD_ID);
+    } else if (status instanceof Supported) {
       displaySecurityHotspots();
     }
   }
