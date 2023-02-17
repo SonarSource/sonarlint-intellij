@@ -23,30 +23,29 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.project.Project
 import org.sonarlint.intellij.actions.SonarLintToolWindow
-import org.sonarlint.intellij.common.util.SonarLintUtils
-import org.sonarlint.intellij.config.Settings
+import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.core.BackendService
 import org.sonarlint.intellij.editor.CodeAnalyzerRestarter
 
-sealed class SecurityHotspotsStatus
+sealed class SecurityHotspotsLocalDetectionSupport
 
-object NoBinding : SecurityHotspotsStatus()
-
-object InvalidBinding : SecurityHotspotsStatus()
-object ValidStatus: SecurityHotspotsStatus()
+data class NotSupported(val reason: String) : SecurityHotspotsLocalDetectionSupport()
+object Supported : SecurityHotspotsLocalDetectionSupport()
 
 class SecurityHotspotsPresenter(private val project: Project) {
 
     fun presentSecurityHotspotsForOpenFiles() {
-        // TODO update the logic similar to TaintVulnerabilities
-        val status = if (!Settings.getSettingsFor(project).isBindingEnabled) NoBinding else {
-            ValidStatus
-        }
-        ApplicationManager.getApplication().invokeLater({
-            SonarLintUtils.getService(project, SonarLintToolWindow::class.java).populateSecurityHotspotsTab(status)
-            if (status is ValidStatus) {
-                SonarLintUtils.getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+        getService(BackendService::class.java)
+            .checkLocalSecurityHotspotDetectionSupported(project)
+            .thenApply { response -> if (response.isSupported) Supported else NotSupported(response.reason!!) }
+            .thenAccept { status ->
+                ApplicationManager.getApplication().invokeLater({
+                    getService(project, SonarLintToolWindow::class.java).populateSecurityHotspotsTab(status)
+                    if (status is Supported) {
+                        getService(project, CodeAnalyzerRestarter::class.java).refreshOpenFiles()
+                    }
+                }, ModalityState.defaultModalityState(), project.disposed)
             }
-        }, ModalityState.defaultModalityState(), project.disposed)
     }
 
     fun refreshSecurityHotspotsForOpenFiles() {
