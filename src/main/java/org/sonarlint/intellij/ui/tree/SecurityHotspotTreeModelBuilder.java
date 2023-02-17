@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.tree;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -33,6 +34,7 @@ import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
+import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -52,6 +54,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
+  private List<LiveSecurityHotspotNode> nonFilteredNodes;
 
   public SecurityHotspotTreeModelBuilder() {
     this.index = new FindingTreeIndex();
@@ -64,6 +67,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     summary = new SummaryNode(true);
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
+    nonFilteredNodes = new ArrayList<>();
     return model;
   }
 
@@ -190,6 +194,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
 
     setRootSecurityHotspots(file, filtered);
+    copyToFilteredNodes();
   }
 
   private void removeHotspotsByFile(VirtualFile file) {
@@ -211,6 +216,29 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       model.nodesWereInserted(summary, newIdx);
       model.nodeChanged(summary);
     }
+  }
+
+  private void copyToFilteredNodes() {
+    nonFilteredNodes.clear();
+    Collections.list(summary.children()).forEach(e -> {
+      var securityHotspotNode = (LiveSecurityHotspotNode) e;
+      nonFilteredNodes.add((LiveSecurityHotspotNode) securityHotspotNode.clone());
+    });
+  }
+
+  public void filterSecurityHotspots(SecurityHotspotFilters filter) {
+    Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
+
+    for (var securityHotspotNode : nonFilteredNodes) {
+      if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
+        var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
+        var newIdx = new int[]{idx};
+        model.nodesWereInserted(summary, newIdx);
+        model.nodeChanged(summary);
+      }
+    }
+
+    model.reload();
   }
 
   public void clear() {
