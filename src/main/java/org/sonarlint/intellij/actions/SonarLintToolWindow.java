@@ -33,6 +33,7 @@ import java.util.function.Consumer;
 import javax.swing.SwingUtilities;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
@@ -65,6 +66,14 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
 
   public void clearReportTab() {
     updateTab(SonarLintToolWindowFactory.REPORT_TAB_TITLE, ReportPanel::clear);
+  }
+
+  public void filterSecurityHotspotTab(SecurityHotspotFilters filter) {
+    var content = getSecurityHotspotContent();
+    if (content != null) {
+      var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
+      hotspotsPanel.filterSecurityHotspots(filter);
+    }
   }
 
   private <T> void openTab(String displayName, Consumer<T> tabPanelConsumer) {
