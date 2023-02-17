@@ -48,6 +48,7 @@ import javax.swing.JPanel;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.TreeSelectionModel;
 import org.sonarlint.intellij.actions.SonarConfigureProject;
+import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 import org.sonarlint.intellij.editor.EditorDecorator;
 import org.sonarlint.intellij.finding.LiveFinding;
@@ -272,16 +273,8 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return false;
   }
 
-  public void hideSonarQubeSecurityHotspots() {
-    securityHotspotTreeBuilder.showLocalSecurityHotspots();
-  }
-
-  public void hideLocalSecurityHotspots() {
-    securityHotspotTreeBuilder.showSonarQubeSecurityHotspots();
-  }
-
-  public void showAllSecurityHotspots() {
-    securityHotspotTreeBuilder.showAllSecurityHotspots();
+  public void filterSecurityHotspots(SecurityHotspotFilters filter) {
+    securityHotspotTreeBuilder.filterSecurityHotspots(filter);
   }
 
   @Override

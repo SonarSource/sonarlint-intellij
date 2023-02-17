@@ -34,6 +34,7 @@ import java.util.stream.StreamSupport;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import javax.swing.tree.DefaultTreeModel;
+import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 import org.sonarlint.intellij.ui.nodes.AbstractNode;
 import org.sonarlint.intellij.ui.nodes.FileNode;
@@ -225,44 +226,16 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     });
   }
 
-  public void showLocalSecurityHotspots() {
+  public void filterSecurityHotspots(SecurityHotspotFilters filter) {
     Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
 
     for (var securityHotspotNode : nonFilteredNodes) {
-      if (securityHotspotNode.getHotspot().getServerFindingKey() == null) {
+      if (filter.shouldIncludeSecurityHotspot(securityHotspotNode.getHotspot())) {
         var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
         var newIdx = new int[]{idx};
         model.nodesWereInserted(summary, newIdx);
         model.nodeChanged(summary);
       }
-    }
-
-    model.reload();
-  }
-
-  public void showSonarQubeSecurityHotspots() {
-    Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
-
-    for (var securityHotspotNode : nonFilteredNodes) {
-      if (securityHotspotNode.getHotspot().getServerFindingKey() != null) {
-        var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
-        var newIdx = new int[]{idx};
-        model.nodesWereInserted(summary, newIdx);
-        model.nodeChanged(summary);
-      }
-    }
-
-    model.reload();
-  }
-
-  public void showAllSecurityHotspots() {
-    Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
-
-    for (var securityHotspotNode : nonFilteredNodes) {
-      var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
-      var newIdx = new int[]{idx};
-      model.nodesWereInserted(summary, newIdx);
-      model.nodeChanged(summary);
     }
 
     model.reload();

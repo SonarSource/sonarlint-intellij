@@ -72,14 +72,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     var content = getSecurityHotspotContent();
     if (content != null) {
       var hotspotsPanel = (SecurityHotspotsPanel) content.getComponent();
-
-      if (filter == SecurityHotspotFilters.SHOW_ALL) {
-        hotspotsPanel.showAllSecurityHotspots();
-      } else if (filter == SecurityHotspotFilters.LOCAL_ONLY) {
-        hotspotsPanel.hideSonarQubeSecurityHotspots();
-      } else if (filter == SecurityHotspotFilters.MATCHED_ON_SONARQUBE) {
-        hotspotsPanel.hideLocalSecurityHotspots();
-      }
+      hotspotsPanel.filterSecurityHotspots(filter);
     }
   }
 
