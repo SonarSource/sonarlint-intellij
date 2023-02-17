@@ -32,11 +32,11 @@ import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class SecurityHotspotFilterAction extends ActionGroup {
+public class FilterSecurityHotspotAction extends ActionGroup {
 
   private final AnAction[] myChildren;
 
-  public SecurityHotspotFilterAction(String title, String description, @Nullable Icon icon) {
+  public FilterSecurityHotspotAction(String title, String description, @Nullable Icon icon) {
     super(title, description, icon);
     setPopup(true);
 
