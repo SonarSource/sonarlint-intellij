@@ -123,6 +123,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
   private static SimpleActionGroup createActionGroup() {
     var sonarLintActions = SonarLintActions.getInstance();
     var actionGroup = new SimpleActionGroup();
+    actionGroup.add(sonarLintActions.filterSecurityHotspots());
     actionGroup.add(sonarLintActions.configure());
     return actionGroup;
   }
@@ -269,6 +270,18 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       return true;
     }
     return false;
+  }
+
+  public void hideSonarQubeSecurityHotspots() {
+    securityHotspotTreeBuilder.showLocalSecurityHotspots();
+  }
+
+  public void hideLocalSecurityHotspots() {
+    securityHotspotTreeBuilder.showSonarQubeSecurityHotspots();
+  }
+
+  public void showAllSecurityHotspots() {
+    securityHotspotTreeBuilder.showAllSecurityHotspots();
   }
 
   @Override

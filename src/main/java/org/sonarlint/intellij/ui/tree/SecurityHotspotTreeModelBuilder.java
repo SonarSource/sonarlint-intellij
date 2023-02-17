@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.tree;
 import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Ordering;
 import com.intellij.openapi.vfs.VirtualFile;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,6 +53,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
   private final FindingTreeIndex index;
   private DefaultTreeModel model;
   private SummaryNode summary;
+  private List<LiveSecurityHotspotNode> nonFilteredNodes;
 
   public SecurityHotspotTreeModelBuilder() {
     this.index = new FindingTreeIndex();
@@ -64,6 +66,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     summary = new SummaryNode(true);
     model = new DefaultTreeModel(summary);
     model.setRoot(summary);
+    nonFilteredNodes = new ArrayList<>();
     return model;
   }
 
@@ -190,6 +193,7 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
     }
 
     setRootSecurityHotspots(file, filtered);
+    copyToFilteredNodes();
   }
 
   private void removeHotspotsByFile(VirtualFile file) {
@@ -211,6 +215,57 @@ public class SecurityHotspotTreeModelBuilder implements FindingTreeModelBuilder 
       model.nodesWereInserted(summary, newIdx);
       model.nodeChanged(summary);
     }
+  }
+
+  private void copyToFilteredNodes() {
+    nonFilteredNodes.clear();
+    Collections.list(summary.children()).forEach(e -> {
+      var securityHotspotNode = (LiveSecurityHotspotNode) e;
+      nonFilteredNodes.add((LiveSecurityHotspotNode) securityHotspotNode.clone());
+    });
+  }
+
+  public void showLocalSecurityHotspots() {
+    Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
+
+    for (var securityHotspotNode : nonFilteredNodes) {
+      if (securityHotspotNode.getHotspot().getServerFindingKey() == null) {
+        var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
+        var newIdx = new int[]{idx};
+        model.nodesWereInserted(summary, newIdx);
+        model.nodeChanged(summary);
+      }
+    }
+
+    model.reload();
+  }
+
+  public void showSonarQubeSecurityHotspots() {
+    Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
+
+    for (var securityHotspotNode : nonFilteredNodes) {
+      if (securityHotspotNode.getHotspot().getServerFindingKey() != null) {
+        var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
+        var newIdx = new int[]{idx};
+        model.nodesWereInserted(summary, newIdx);
+        model.nodeChanged(summary);
+      }
+    }
+
+    model.reload();
+  }
+
+  public void showAllSecurityHotspots() {
+    Collections.list(summary.children()).forEach(e -> model.removeNodeFromParent((LiveSecurityHotspotNode) e));
+
+    for (var securityHotspotNode : nonFilteredNodes) {
+      var idx = summary.insertLiveSecurityHotspotNode(securityHotspotNode, new LiveSecurityHotspotNodeComparator());
+      var newIdx = new int[]{idx};
+      model.nodesWereInserted(summary, newIdx);
+      model.nodeChanged(summary);
+    }
+
+    model.reload();
   }
 
   public void clear() {
