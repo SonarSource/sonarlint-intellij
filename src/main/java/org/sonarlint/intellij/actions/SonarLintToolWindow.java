@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 import org.sonarlint.intellij.analysis.AnalysisResult;
 import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
-import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsStatus;
+import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsLocalDetectionSupport;
 import org.sonarlint.intellij.finding.issue.LiveIssue;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.LocalTaintVulnerability;
 import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesStatus;
@@ -153,7 +153,7 @@ public class SonarLintToolWindow implements ContentManagerListenerAdapter {
     return securityHotspotsContent;
   }
 
-  public void populateSecurityHotspotsTab(SecurityHotspotsStatus status) {
+  public void populateSecurityHotspotsTab(SecurityHotspotsLocalDetectionSupport status) {
     var content = getSecurityHotspotContent();
     if (content != null) {
       content.setDisplayName(buildTabName(0, SonarLintToolWindowFactory.SECURITY_HOTSPOTS_TAB_TITLE));

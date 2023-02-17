@@ -54,6 +54,8 @@ import org.sonarsource.sonarlint.core.clientapi.backend.config.scope.DidRemoveCo
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.DidUpdateConnectionsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarCloudConnectionConfigurationDto
 import org.sonarsource.sonarlint.core.clientapi.backend.connection.config.SonarQubeConnectionConfigurationDto
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedParams
+import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.CheckLocalDetectionSupportedResponse
 import org.sonarsource.sonarlint.core.clientapi.backend.hotspot.OpenHotspotInBrowserParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsParams
 import org.sonarsource.sonarlint.core.clientapi.backend.rules.GetActiveRuleDetailsResponse
@@ -276,6 +278,10 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             val configScopeId = moduleId(module)
             backend.hotspotService.openHotspotInBrowser(OpenHotspotInBrowserParams(configScopeId, branchName, hotspotKey))
         }
+    }
+
+    fun checkLocalSecurityHotspotDetectionSupported(project: Project): CompletableFuture<CheckLocalDetectionSupportedResponse> {
+        return backend.hotspotService.checkLocalDetectionSupported(CheckLocalDetectionSupportedParams(projectId(project)))
     }
 
     companion object {
