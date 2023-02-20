@@ -19,11 +19,11 @@
  */
 package org.sonarlint.intellij.actions.filters;
 
-public class SecurityHotspotFilterSettings {
+public class FilterSecurityHotspotSettings {
 
   private SecurityHotspotFilters currentlySelectedFilter;
 
-  public SecurityHotspotFilterSettings() {
+  public FilterSecurityHotspotSettings() {
     currentlySelectedFilter = SecurityHotspotFilters.SHOW_ALL;
   }
 

@@ -23,9 +23,9 @@ import org.sonarlint.intellij.finding.hotspot.LiveSecurityHotspot;
 
 public enum SecurityHotspotFilters {
 
-  SHOW_ALL("Show all"),
-  LOCAL_ONLY("Local only"),
-  EXISTING_ON_SONARQUBE("Existing on SonarQube");
+  SHOW_ALL("Show All"),
+  LOCAL_ONLY("Local Only"),
+  EXISTING_ON_SONARQUBE("Existing On SonarQube");
 
   private final String title;
 

@@ -27,24 +27,24 @@ import java.util.ArrayList;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.actions.filters.SecurityHotspotFilterSettings;
+import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
 import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
-public class SecurityHotspotFilterAction extends ActionGroup {
+public class FilterSecurityHotspotAction extends ActionGroup {
 
   private final AnAction[] myChildren;
 
-  public SecurityHotspotFilterAction(String title, String description, @Nullable Icon icon) {
+  public FilterSecurityHotspotAction(String title, String description, @Nullable Icon icon) {
     super(title, description, icon);
     setPopup(true);
 
     final ArrayList<AnAction> kids = new ArrayList<>(3);
-    var settings = new SecurityHotspotFilterSettings();
-    kids.add(new SetSecurityHotspotFilterAction(SecurityHotspotFilters.SHOW_ALL, settings));
-    kids.add(new SetSecurityHotspotFilterAction(SecurityHotspotFilters.LOCAL_ONLY, settings));
-    kids.add(new SetSecurityHotspotFilterAction(SecurityHotspotFilters.EXISTING_ON_SONARQUBE, settings));
+    var settings = new FilterSecurityHotspotSettings();
+    kids.add(new SetFilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL, settings));
+    kids.add(new SetFilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY, settings));
+    kids.add(new SetFilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SONARQUBE, settings));
     myChildren = kids.toArray(AnAction.EMPTY_ARRAY);
   }
 
@@ -54,12 +54,12 @@ public class SecurityHotspotFilterAction extends ActionGroup {
     return myChildren;
   }
 
-  private static class SetSecurityHotspotFilterAction extends ToggleAction {
+  private static class SetFilterSecurityHotspotAction extends ToggleAction {
 
     private final SecurityHotspotFilters filter;
-    private final SecurityHotspotFilterSettings settings;
+    private final FilterSecurityHotspotSettings settings;
 
-    SetSecurityHotspotFilterAction(SecurityHotspotFilters filter, SecurityHotspotFilterSettings settings)  {
+    SetFilterSecurityHotspotAction(SecurityHotspotFilters filter, FilterSecurityHotspotSettings settings)  {
       super(filter.getTitle());
       this.filter = filter;
       this.settings = settings;
