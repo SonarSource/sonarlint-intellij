@@ -33,6 +33,7 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
@@ -69,7 +70,10 @@ class SonarAnalyzeChangedFilesActionTests extends AbstractSonarLintLightTests {
   void testNoProject() {
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
+
     action.actionPerformed(event);
+
+    verifyNoInteractions(analysisSubmitter);
   }
 
   @Test

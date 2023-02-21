@@ -20,34 +20,44 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 import org.sonarlint.intellij.common.ui.SonarLintConsole;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SonarCleanConsoleActionTests extends AbstractSonarLintLightTests {
 
+  private SonarLintConsole console;
+  private SonarCleanConsoleAction action;
+
+  @BeforeEach
+  void prepare() {
+    console = mock(SonarLintConsole.class);
+    replaceProjectService(SonarLintConsole.class, console);
+    action = new SonarCleanConsoleAction(null, null, null);
+  }
+
   @Test
   void testAction() {
     var event = mock(AnActionEvent.class);
-    var console = mock(SonarLintConsole.class);
-
     when(event.getProject()).thenReturn(getProject());
-    replaceProjectService(SonarLintConsole.class, console);
 
-    var clean = new SonarCleanConsoleAction(null, null, null);
+    action.actionPerformed(event);
 
-    clean.actionPerformed(event);
     verify(console).clear();
   }
 
   @Test
   void testNoOpIfNoProject() {
     var event = mock(AnActionEvent.class);
-    var clean = new SonarCleanConsoleAction(null, null, null);
-    clean.actionPerformed(event);
+
+    action.actionPerformed(event);
+
+    verifyNoInteractions(console);
   }
 }
