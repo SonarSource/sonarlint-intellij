@@ -20,24 +20,30 @@
 package org.sonarlint.intellij.actions;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.sonarlint.intellij.AbstractSonarLintLightTests;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class ClearReportActionTests extends AbstractSonarLintLightTests {
   private ClearReportAction action = new ClearReportAction(null, null, null);
+  private SonarLintToolWindow toolWindow;
 
+  @BeforeEach
+  void prepare() {
+    toolWindow = mock(SonarLintToolWindow.class);
+    replaceProjectService(SonarLintToolWindow.class, toolWindow);
+  }
 
   @Test
   void clear() {
-    var toolWindow = mock(SonarLintToolWindow.class);
-    replaceProjectService(SonarLintToolWindow.class, toolWindow);
-
     var event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(getProject());
+
     action.actionPerformed(event);
 
     verify(toolWindow).clearReportTab();
@@ -47,6 +53,9 @@ class ClearReportActionTests extends AbstractSonarLintLightTests {
   void noProject() {
     var event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
+
     action.actionPerformed(event);
+
+    verifyNoInteractions(toolWindow);
   }
 }

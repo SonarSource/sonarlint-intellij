@@ -31,6 +31,7 @@ import org.sonarlint.intellij.analysis.AnalysisStatus;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
@@ -49,7 +50,6 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
 
   @Test
   void testEnabled() {
-
     assertThat(action.isVisible("")).isTrue();
     status.tryRun();
     assertThat(action.isEnabled(event, getProject(), status)).isFalse();
@@ -62,7 +62,10 @@ class SonarAnalyzeAllFilesActionTests extends AbstractSonarLintLightTests {
   void testNoProject() {
     AnActionEvent event = mock(AnActionEvent.class);
     when(event.getProject()).thenReturn(null);
+
     action.actionPerformed(event);
+
+    verifyNoInteractions(analysisSubmitter);
   }
 
   @Test
