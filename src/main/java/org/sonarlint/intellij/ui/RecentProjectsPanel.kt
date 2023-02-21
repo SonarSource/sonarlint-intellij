@@ -19,14 +19,10 @@
  */
 package org.sonarlint.intellij.ui
 
-import com.intellij.ide.DataManager
 import com.intellij.ide.ProjectGroupActionGroup
 import com.intellij.ide.RecentProjectListActionProvider
 import com.intellij.ide.ReopenProjectAction
-import com.intellij.openapi.actionSystem.ActionPlaces
 import com.intellij.openapi.actionSystem.AnAction
-import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.ui.VerticalFlowLayout
 import com.intellij.openapi.util.SystemInfo
 import com.intellij.openapi.util.io.FileUtil

@@ -176,8 +176,7 @@ class ProjectServerNotificationsSubscriber : Disposable {
       val notif = SERVER_NOTIFICATIONS_GROUP.createNotification(
         "<b>$label Notification</b>",
         serverNotification.message(),
-        NotificationType.INFORMATION,
-        null)
+        NotificationType.INFORMATION)
       notif.icon = if (isSonarCloud) SonarLintIcons.ICON_SONARCLOUD_16 else SonarLintIcons.ICON_SONARQUBE_16
       notif.isImportant = true
       notif.addAction(OpenInServerAction(label, serverNotification.link(), category))

@@ -24,19 +24,22 @@ import com.intellij.openapi.actionSystem.ActionPlaces;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.openapi.ui.DoNotAskOption;
+import com.intellij.openapi.ui.MessageDialogBuilder;
 import com.intellij.openapi.ui.Messages;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.analysis.AnalysisStatus;
+import org.sonarlint.intellij.analysis.AnalysisSubmitter;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
 
 import static org.sonarlint.intellij.util.ProjectUtils.hasFiles;
 
 public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
   private static final String HIDE_WARNING_PROPERTY = "SonarLint.analyzeAllFiles.hideWarning";
+  public static final String WARNING_MESSAGE = "Analysing all files may take a considerable amount of time to complete.\n"
+    + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.";
 
   public SonarAnalyzeAllFilesAction() {
     super();
@@ -46,7 +49,8 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     super(text, description, icon);
   }
 
-  @Override protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
+  @Override
+  protected boolean isEnabled(AnActionEvent e, Project project, AnalysisStatus status) {
     return !status.isRunning() && hasFiles(project);
   }
 
@@ -55,47 +59,54 @@ public class SonarAnalyzeAllFilesAction extends AbstractSonarAction {
     return !ActionPlaces.PROJECT_VIEW_POPUP.equals(place);
   }
 
-  @Override public void actionPerformed(AnActionEvent e) {
+  @Override
+  public void actionPerformed(AnActionEvent e) {
     var project = e.getProject();
 
-    if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace()) || !showWarning()) {
+    if (project == null || ActionPlaces.PROJECT_VIEW_POPUP.equals(e.getPlace()) || !userConfirmed(project)) {
       return;
     }
 
     SonarLintUtils.getService(project, AnalysisSubmitter.class).analyzeAllFiles();
   }
 
-  static boolean showWarning() {
-    if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY, false)) {
-      // keep this deprecated call for a while as there is a breaking change between 2020.3 and 2021.3
-      var result = Messages.showYesNoDialog("Analysing all files may take a considerable amount of time to complete.\n"
-          + "To get the best from SonarLint, you should preferably use the automatic analysis of the file you're working on.",
-        "SonarLint - Analyze All Files",
-        "Proceed", "Cancel", Messages.getWarningIcon(), new DoNotShowAgain());
-      return result == Messages.OK;
+  static boolean userConfirmed(Project project) {
+    if (!ApplicationManager.getApplication().isUnitTestMode() && !PropertiesComponent.getInstance().getBoolean(HIDE_WARNING_PROPERTY,
+      false)) {
+      return MessageDialogBuilder.yesNo("SonarLint - Analyze All Files", WARNING_MESSAGE)
+        .yesText("Proceed")
+        .noText("Cancel")
+        .icon(Messages.getWarningIcon())
+        .doNotAsk(new DoNotShowAgain())
+        .ask(project);
     }
     return true;
   }
 
-  // Don't use DialogWrapper.DoNotAskOption.Adapter because it's not implemented in older versions of intellij
-  static class DoNotShowAgain implements DialogWrapper.DoNotAskOption {
-    @Override public boolean isToBeShown() {
+  static class DoNotShowAgain implements DoNotAskOption {
+    @Override
+    public boolean isToBeShown() {
       return true;
     }
 
-    @Override public void setToBeShown(boolean toBeShown, int exitCode) {
+    @Override
+    public void setToBeShown(boolean toBeShown, int exitCode) {
       PropertiesComponent.getInstance().setValue(HIDE_WARNING_PROPERTY, Boolean.toString(!toBeShown));
     }
 
-    @Override public boolean canBeHidden() {
+    @Override
+    public boolean canBeHidden() {
       return true;
     }
 
-    @Override public boolean shouldSaveOptionsOnCancel() {
+    @Override
+    public boolean shouldSaveOptionsOnCancel() {
       return false;
     }
 
-    @NotNull @Override public String getDoNotShowMessage() {
+    @NotNull
+    @Override
+    public String getDoNotShowMessage() {
       return "Don't show again";
     }
   }

@@ -120,7 +120,7 @@ class TaintVulnerabilitiesPresenter(private val project: Project) {
     val notification = GROUP.createNotification(
       "Taint vulnerabilities",
       message,
-      NotificationType.ERROR, null)
+      NotificationType.ERROR)
     notification.isImportant = true
     notification.addAction(action)
     notification.notify(project)

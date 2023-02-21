@@ -21,7 +21,7 @@ package org.sonarlint.intellij.ui.vulnerabilities
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.ui.JBColor
-import com.intellij.ui.components.labels.ActionLink
+import com.intellij.ui.components.AnActionLink
 import com.intellij.util.ui.JBUI
 import java.awt.FlowLayout
 import javax.swing.Icon
@@ -36,6 +36,6 @@ class StripePanel(text: String, icon: Icon) : JPanel(FlowLayout(FlowLayout.CENTE
     }
 
     fun addAction(linkText: String, action: AnAction) {
-        add(ActionLink(linkText, action))
+        add(AnActionLink(linkText, action))
     }
 }

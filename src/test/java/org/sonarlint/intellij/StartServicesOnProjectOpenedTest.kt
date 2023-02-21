@@ -17,37 +17,42 @@
  * License along with this program; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02
  */
-package org.sonarlint.intellij.core.server.events
+package org.sonarlint.intellij
 
-import com.intellij.openapi.application.ApplicationManager.getApplication
-import com.intellij.openapi.project.ProjectManager
 import org.assertj.core.api.Assertions.assertThat
-import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.mock
-import org.sonarlint.intellij.AbstractSonarLintLightTests
-import org.sonarlint.intellij.common.util.SonarLintUtils.getService
+import org.sonarlint.intellij.common.util.SonarLintUtils
 import org.sonarlint.intellij.config.global.ServerConnection
+import org.sonarlint.intellij.core.server.events.ServerEventsService
 import org.sonarlint.intellij.util.ServerEventsNoOpService
 import org.sonarsource.sonarlint.core.client.api.connected.ConnectedSonarLintEngine
 
-class SubscribeOnProjectOpenedOrClosedTests : AbstractSonarLintLightTests() {
-    @AfterEach
-    fun cleanUp() {
-        (getService(ServerEventsService::class.java) as ServerEventsNoOpService).clearSubscriptions()
+class StartServicesOnProjectOpenedTest : AbstractSonarLintLightTests() {
+    private val serviceStarter = StartServicesOnProjectOpened()
+
+    @BeforeEach
+    fun prepare() {
+        (SonarLintUtils.getService(ServerEventsService::class.java) as ServerEventsNoOpService).clearSubscriptions()
     }
 
     @Test
-    fun should_subscribe_when_project_is_opened() {
+    fun should_register_for_server_events_when_bound() {
+        val engineAndConnection = bindProject()
+
+        serviceStarter.doSubscribeForServerEvents(project)
+
+        val service = SonarLintUtils.getService(ServerEventsService::class.java) as ServerEventsNoOpService
+        assertThat(service.subscriptions)
+            .contains(engineAndConnection)
+    }
+
+    private fun bindProject(): Pair<ConnectedSonarLintEngine, ServerConnection> {
         val engine = mock(ConnectedSonarLintEngine::class.java)
         engineManager.registerEngine(engine, "connectionName")
         val connection = ServerConnection.newBuilder().setName("connectionName").build()
         connectProjectTo(connection, "projectKey")
-
-        getApplication().messageBus.syncPublisher(ProjectManager.TOPIC).projectOpened(project)
-
-        val service = getService(ServerEventsService::class.java) as ServerEventsNoOpService
-        assertThat(service.subscriptions)
-            .contains(Pair(engine, connection))
+        return Pair(engine, connection)
     }
 }

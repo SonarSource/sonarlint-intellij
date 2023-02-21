@@ -30,8 +30,8 @@ import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.tools.SimpleActionGroup;
 import com.intellij.ui.ScrollPaneFactory;
+import com.intellij.ui.components.AnActionLink;
 import com.intellij.ui.components.JBTabbedPane;
-import com.intellij.ui.components.labels.ActionLink;
 import com.intellij.ui.components.panels.HorizontalLayout;
 import com.intellij.ui.treeStructure.Tree;
 import com.intellij.util.ui.tree.TreeUtil;
@@ -112,7 +112,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
       ScrollPaneFactory.createScrollPane(treePanel), detailsTab, SPLIT_PROPORTION_PROPERTY, 0.5f));
 
     notSupportedLabel = new JLabel();
-    cardPanel.add(centeredLabel(notSupportedLabel, new ActionLink("Configure binding", new SonarConfigureProject())), NOT_SUPPORTED_CARD_ID);
+    cardPanel.add(centeredLabel(notSupportedLabel, new AnActionLink("Configure binding", new SonarConfigureProject())), NOT_SUPPORTED_CARD_ID);
     cardPanel.add(centeredLabel(new JLabel("No security hotspot found"), null), NO_SECURITY_HOTSPOT_CARD_ID);
     cardPanel.add(findingsPanel, SECURITY_HOTSPOTS_LIST_CARD_ID);
     setupToolbar(createActionGroup());
@@ -219,7 +219,7 @@ public class SecurityHotspotsPanel extends SimpleToolWindowPanel implements Disp
     return mainPanel;
   }
 
-  private static JPanel centeredLabel(JLabel textLabel, @Nullable ActionLink actionLink) {
+  private static JPanel centeredLabel(JLabel textLabel, @Nullable AnActionLink actionLink) {
     var labelPanel = new JPanel(new HorizontalLayout(5));
     labelPanel.add(textLabel, HorizontalLayout.CENTER);
     if (actionLink != null) {

@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.DisabledIf
 import org.sonarlint.intellij.its.BaseUiTest
+import org.sonarlint.intellij.its.fixtures.anActionLink
 import org.sonarlint.intellij.its.fixtures.clickWhenEnabled
 import org.sonarlint.intellij.its.fixtures.dialog
 import org.sonarlint.intellij.its.fixtures.idea
@@ -88,7 +89,7 @@ class TaintVulnerabilitiesTest : BaseUiTest() {
                     ensureOpen()
                     tab("Taint Vulnerabilities") { select() }
                     content("TaintVulnerabilitiesPanel") {
-                        jLabel("Configure Binding").click()
+                        anActionLink("Configure Binding").click()
                     }
                 }
                 dialog("Project Settings") {

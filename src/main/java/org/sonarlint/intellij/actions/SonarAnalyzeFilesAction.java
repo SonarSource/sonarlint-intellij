@@ -92,7 +92,7 @@ public class SonarAnalyzeFilesAction extends DumbAwareAction {
     var hasProject = Stream.of(files)
       .anyMatch(f -> f.getPath().equals(project.getBasePath()));
 
-    if (hasProject && !SonarAnalyzeAllFilesAction.showWarning()) {
+    if (hasProject && !SonarAnalyzeAllFilesAction.userConfirmed(project)) {
       return;
     }
 

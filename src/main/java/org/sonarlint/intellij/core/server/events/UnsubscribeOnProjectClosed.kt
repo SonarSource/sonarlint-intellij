@@ -22,15 +22,8 @@ package org.sonarlint.intellij.core.server.events
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManagerListener
 import org.sonarlint.intellij.common.util.SonarLintUtils.getService
-import org.sonarlint.intellij.core.ProjectBindingManager
 
-class SubscribeOnProjectOpenedOrClosed : ProjectManagerListener {
-    override fun projectOpened(project: Project) {
-        getService(ServerEventsService::class.java).autoSubscribe(
-            getService(project, ProjectBindingManager::class.java).binding ?: return
-        )
-    }
-
+class UnsubscribeOnProjectClosed : ProjectManagerListener {
     override fun projectClosing(project: Project) {
         getService(ServerEventsService::class.java).unsubscribe(project)
     }
