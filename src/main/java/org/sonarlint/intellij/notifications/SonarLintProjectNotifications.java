@@ -46,7 +46,6 @@ public class SonarLintProjectNotifications {
     .getNotificationGroup("SonarLint: Open in IDE");
   private static final String UPDATE_BINDING_MSG = "\n<br>Please check the SonarLint project configuration";
   private static final String TITLE_SONARLINT_INVALID_BINDING = "<b>SonarLint - Invalid binding</b>";
-  private static final String NO_SUBTITLE = null;
   private volatile boolean shown = false;
   private final Project myProject;
 
@@ -70,7 +69,6 @@ public class SonarLintProjectNotifications {
     }
     var notification = BINDING_PROBLEM_GROUP.createNotification(
       TITLE_SONARLINT_INVALID_BINDING,
-      NO_SUBTITLE,
       "Project bound to an invalid connection" + UPDATE_BINDING_MSG,
       NotificationType.WARNING);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -85,7 +83,6 @@ public class SonarLintProjectNotifications {
     }
     var notification = BINDING_PROBLEM_GROUP.createNotification(
       TITLE_SONARLINT_INVALID_BINDING,
-      NO_SUBTITLE,
       "Project bound to an invalid remote project" + UPDATE_BINDING_MSG,
       NotificationType.WARNING);
     notification.addAction(new OpenProjectSettingsAction(myProject));
@@ -108,13 +105,12 @@ public class SonarLintProjectNotifications {
   private void notifyBindingSuggestions(String message, AnAction... mainActions) {
     var notification = BINDING_SUGGESTION_GROUP.createNotification(
       "<b>SonarLint Suggestions</b>",
-      NO_SUBTITLE,
       message,
       NotificationType.INFORMATION);
     Arrays.stream(mainActions).forEach(notification::addAction);
     notification.addAction(new LearnMoreAboutConnectedModeAction());
     notification.addAction(new DisableBindingSuggestionsAction());
-    notification.setCollapseActionsDirection(Notification.CollapseActionsDirection.KEEP_LEFTMOST);
+    notification.setCollapseDirection(Notification.CollapseActionsDirection.KEEP_LEFTMOST);
     notification.setImportant(true);
     notification.setIcon(SonarLintIcons.SONARLINT);
     notification.notify(myProject);
@@ -124,7 +120,6 @@ public class SonarLintProjectNotifications {
     expireCurrentHotspotNotificationIfNeeded();
     currentOpenHotspotNotification = OPEN_IN_IDE_GROUP.createNotification(
       "<b>SonarLint - Unable To Open Security Hotspot</b>",
-      NO_SUBTITLE,
       message,
       NotificationType.INFORMATION);
     currentOpenHotspotNotification.setImportant(true);

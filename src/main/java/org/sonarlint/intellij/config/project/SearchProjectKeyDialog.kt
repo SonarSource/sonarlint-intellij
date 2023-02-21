@@ -27,13 +27,15 @@ import com.intellij.ui.IdeBorderFactory
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.components.JBList
-import com.intellij.ui.layout.GrowPolicy
-import com.intellij.ui.layout.panel
+import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.dsl.builder.COLUMNS_MEDIUM
+import com.intellij.ui.dsl.builder.columns
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.gridLayout.HorizontalAlign
 import org.sonarsource.sonarlint.core.serverapi.component.ServerProject
 import java.awt.Component
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.util.stream.Collectors
 import javax.swing.DefaultListModel
 import javax.swing.JList
 import javax.swing.ListSelectionModel
@@ -45,7 +47,7 @@ class SearchProjectKeyDialog(
     parent: Component,
     private val lastSelectedProjectKey: String?,
     private val projectsByKey: Map<String, ServerProject>,
-    private val isSonarCloud: Boolean
+    isSonarCloud: Boolean,
 ) : DialogWrapper(
     parent, false
 ) {
@@ -66,12 +68,16 @@ class SearchProjectKeyDialog(
                     updateProjectsInList()
                 }
             })
-            searchTextField().growPolicy(GrowPolicy.MEDIUM_TEXT)
+            searchTextField.textEditor.columns(COLUMNS_MEDIUM)
+            cell(searchTextField)
         }
         row {
             projectList = createProjectList()
-            scrollPane(projectList)
             updateProjectsInList()
+            cell(JBScrollPane(projectList))
+                .resizableColumn()
+                // deprecated in 2022.3, replace with align
+                .horizontalAlign(HorizontalAlign.FILL)
         }
     }
 
@@ -88,7 +94,7 @@ class SearchProjectKeyDialog(
         }
 
     private fun createProjectList(): JBList<ServerProject> {
-        val projectList = JBList<ServerProject>(DefaultListModel<ServerProject>())
+        val projectList = JBList<ServerProject>(DefaultListModel())
         val emptyText = StringBuilder("No projects found")
         if (projectsByKey.isEmpty()) {
             emptyText.append(" for the selected connection")
@@ -115,7 +121,11 @@ class SearchProjectKeyDialog(
         var selectedIndex = -1
         var index = 0
         for (sortedProject in sortedProjects) {
-            if (StringUtil.containsIgnoreCase(sortedProject.key, filterText) || StringUtil.containsIgnoreCase(sortedProject.name, filterText)) {
+            if (StringUtil.containsIgnoreCase(sortedProject.key, filterText) || StringUtil.containsIgnoreCase(
+                    sortedProject.name,
+                    filterText
+                )
+            ) {
                 model.addElement(sortedProject)
                 if ((selection != null && selection === sortedProject) || lastSelectedProjectKey == sortedProject.key) {
                     selectedIndex = index
@@ -143,7 +153,7 @@ class SearchProjectKeyDialog(
             value: ServerProject,
             index: Int,
             selected: Boolean,
-            hasFocus: Boolean
+            hasFocus: Boolean,
         ) {
             val attrs = SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES
             append(value.name, attrs, true)

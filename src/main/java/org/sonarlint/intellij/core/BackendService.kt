@@ -112,9 +112,6 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             })
         ApplicationManager.getApplication().messageBus.connect()
             .subscribe(ProjectManager.TOPIC, object : ProjectManagerListener {
-                override fun projectOpened(project: Project) {
-                    this@BackendService.projectOpened(project)
-                }
 
                 override fun projectClosing(project: Project) {
                     this@BackendService.projectClosed(project)
@@ -156,7 +153,7 @@ class BackendService @NonInjectable constructor(private val backend: SonarLintBa
             createdConnection.name, createdConnection.organizationKey!!
         )
 
-    internal fun projectOpened(project: Project) {
+    fun projectOpened(project: Project) {
         val binding = getService(project, ProjectBindingManager::class.java).binding
         backend.configurationService.didAddConfigurationScopes(
             DidAddConfigurationScopesParams(

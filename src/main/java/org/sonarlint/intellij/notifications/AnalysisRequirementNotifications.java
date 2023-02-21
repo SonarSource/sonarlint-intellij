@@ -91,7 +91,10 @@ public class AnalysisRequirementNotifications {
       var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
         title,
         content,
-        NotificationType.WARNING, listener);
+        NotificationType.WARNING);
+      if (listener != null) {
+        notification.setListener(listener);
+      }
       notification.setImportant(true);
       Stream.of(actions).forEach(notification::addAction);
       notification.notify(project);
@@ -106,7 +109,7 @@ public class AnalysisRequirementNotifications {
     var notification = ANALYZER_REQUIREMENT_GROUP.createNotification(
       "<b>SonarLint - Node.js Required</b>",
       "Node.js >= 16.x is required to perform JavaScript or TypeScript analysis. Check the SonarLint Log for details.",
-      NotificationType.WARNING, null);
+      NotificationType.WARNING);
     notification.setImportant(true);
     notification.notify(project);
     notification.addAction(new OpenSonarLintLogAction(project));

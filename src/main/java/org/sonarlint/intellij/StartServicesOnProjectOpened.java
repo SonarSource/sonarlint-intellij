@@ -24,11 +24,16 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
 import org.jetbrains.annotations.NotNull;
 import org.sonarlint.intellij.common.util.SonarLintUtils;
+import org.sonarlint.intellij.core.BackendService;
 import org.sonarlint.intellij.core.ConnectedModeStorageSynchronizer;
-import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
+import org.sonarlint.intellij.core.ProjectBindingManager;
+import org.sonarlint.intellij.core.server.events.ServerEventsService;
 import org.sonarlint.intellij.finding.hotspot.SecurityHotspotsRefreshTrigger;
+import org.sonarlint.intellij.finding.issue.vulnerabilities.TaintVulnerabilitiesRefreshTrigger;
 import org.sonarlint.intellij.notifications.ProjectServerNotificationsSubscriber;
 import org.sonarlint.intellij.trigger.EditorChangeTrigger;
+
+import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
 
 public class StartServicesOnProjectOpened implements StartupActivity {
 
@@ -37,14 +42,24 @@ public class StartServicesOnProjectOpened implements StartupActivity {
     if (ApplicationManager.getApplication().isUnitTestMode()) {
       return;
     }
-    SonarLintUtils.getService(project, ProjectServerNotificationsSubscriber.class).start();
-    SonarLintUtils.getService(project, EditorChangeTrigger.class).onProjectOpened();
+    getService(project, ProjectServerNotificationsSubscriber.class).start();
+    getService(project, EditorChangeTrigger.class).onProjectOpened();
     if (SonarLintUtils.isTaintVulnerabilitiesEnabled()) {
-      SonarLintUtils.getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
+      getService(project, TaintVulnerabilitiesRefreshTrigger.class).subscribeToTriggeringEvents();
     }
-    SonarLintUtils.getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
+    getService(project, SecurityHotspotsRefreshTrigger.class).subscribeToTriggeringEvents();
+    doSubscribeForServerEvents(project);
+
+    getService(BackendService.class).projectOpened(project);
 
     // perform on bindings load
-    SonarLintUtils.getService(project, ConnectedModeStorageSynchronizer.class).init();
+    getService(project, ConnectedModeStorageSynchronizer.class).init();
+  }
+
+  void doSubscribeForServerEvents(@NotNull Project project) {
+    var projectBinding = getService(project, ProjectBindingManager.class).getBinding();
+    if (projectBinding != null) {
+      getService(ServerEventsService.class).autoSubscribe(projectBinding);
+    }
   }
 }

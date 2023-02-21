@@ -39,7 +39,7 @@ public class SecretsNotifications {
       "SonarLint detected some secrets in one of the open files. " +
         "We strongly advise you to review those secrets and ensure they are not committed into repositories. " +
         "Please refer to the SonarLint tool window for more information.",
-      NotificationType.WARNING, null);
+      NotificationType.WARNING);
     notification.setImportant(true);
     notification.notify(project);
   }

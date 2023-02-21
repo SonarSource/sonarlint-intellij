@@ -33,7 +33,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.tools.SimpleActionGroup
 import com.intellij.ui.ScrollPaneFactory
-import com.intellij.ui.components.labels.ActionLink
+import com.intellij.ui.components.AnActionLink
 import com.intellij.ui.components.panels.HorizontalLayout
 import com.intellij.util.ui.tree.TreeUtil
 import org.sonarlint.intellij.actions.OpenIssueInBrowserAction
@@ -86,8 +86,8 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
     private val cards = CardPanel()
 
     init {
-        cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", ActionLink("Configure Binding", SonarConfigureProject())), NO_BINDING_CARD_ID)
-        cards.add(centeredLabel("The project binding is invalid", ActionLink("Edit Binding", SonarConfigureProject())), INVALID_BINDING_CARD_ID)
+        cards.add(centeredLabel("The project is not bound to SonarQube/SonarCloud", AnActionLink("Configure Binding", SonarConfigureProject())), NO_BINDING_CARD_ID)
+        cards.add(centeredLabel("The project binding is invalid", AnActionLink("Edit Binding", SonarConfigureProject())), INVALID_BINDING_CARD_ID)
         cards.add(centeredLabel(noVulnerabilitiesLabel), NO_ISSUES_CARD_ID)
         cards.add(createSplitter(project, this, this, ScrollPaneFactory.createScrollPane(createTree()), rulePanel, SPLIT_PROPORTION_PROPERTY, DEFAULT_SPLIT_PROPORTION),
             TREE_CARD_ID
@@ -102,9 +102,9 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         setupToolbar(listOf(RefreshTaintVulnerabilitiesAction(), OpenTaintVulnerabilityDocumentationAction()))
     }
 
-    private fun centeredLabel(text: String, actionLink: ActionLink? = null) = centeredLabel(JLabel(text), actionLink)
+    private fun centeredLabel(text: String, actionLink: AnActionLink? = null) = centeredLabel(JLabel(text), actionLink)
 
-    private fun centeredLabel(textLabel: JLabel, actionLink: ActionLink? = null): JPanel {
+    private fun centeredLabel(textLabel: JLabel, actionLink: AnActionLink? = null): JPanel {
         val labelPanel = JPanel(HorizontalLayout(5))
         labelPanel.add(textLabel, HorizontalLayout.CENTER)
         if (actionLink != null) labelPanel.add(actionLink, HorizontalLayout.CENTER)
@@ -127,7 +127,7 @@ class TaintVulnerabilitiesPanel(private val project: Project) : SimpleToolWindow
         val group = SimpleActionGroup()
         actions.forEach { group.add(it) }
         val toolbar = ActionManager.getInstance().createActionToolbar(TOOLBAR_GROUP_ID, group, false)
-        toolbar.setTargetComponent(this)
+        toolbar.targetComponent = this
         val toolBarBox = Box.createHorizontalBox()
         toolBarBox.add(toolbar.component)
         setToolbar(toolBarBox)
