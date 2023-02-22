@@ -63,7 +63,7 @@ import static org.mockito.Mockito.when;
 
 class AnalysisTests extends AbstractSonarLintLightTests {
   private Analysis task;
-  private Set<VirtualFile> filesToAnalyze = new HashSet<>();
+  private final Set<VirtualFile> filesToAnalyze = new HashSet<>();
   @Mock
   private ProgressIndicator progress;
   @Mock
@@ -75,7 +75,7 @@ class AnalysisTests extends AbstractSonarLintLightTests {
 
   @BeforeEach
   void prepare() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     var testFile = myFixture.configureByText("MyClass.java", "class MyClass {]");
     filesToAnalyze.add(testFile.getVirtualFile());
     when(progress.isCanceled()).thenReturn(false);

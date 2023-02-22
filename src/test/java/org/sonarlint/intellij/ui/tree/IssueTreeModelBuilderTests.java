@@ -22,6 +22,7 @@ package org.sonarlint.intellij.ui.tree;
 import com.intellij.openapi.editor.RangeMarker;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,8 +46,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class IssueTreeModelBuilderTests {
-  private IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
-  private DefaultTreeModel model  = treeBuilder.createModel();
+  private final IssueTreeModelBuilder treeBuilder = new IssueTreeModelBuilder();
+  private final DefaultTreeModel model  = treeBuilder.createModel();
 
   @Test
   void createModel() {
@@ -55,7 +56,7 @@ class IssueTreeModelBuilderTests {
   }
 
   @Test
-  void testNavigation() {
+  void testNavigation() throws IOException {
     Map<VirtualFile, Collection<LiveIssue>> data = new HashMap<>();
 
     // ordering of files: name
@@ -72,7 +73,7 @@ class IssueTreeModelBuilderTests {
     assertThat(second).isNotNull();
 
     var third = treeBuilder.getNextIssue(second);
-    assertThat(second).isNotNull();
+    assertThat(third).isNotNull();
 
     assertThat(treeBuilder.getPreviousIssue(third)).isEqualTo(second);
     assertThat(treeBuilder.getPreviousIssue(second)).isEqualTo(first);
@@ -80,7 +81,7 @@ class IssueTreeModelBuilderTests {
   }
 
   @Test
-  void testIssueComparator() {
+  void testIssueComparator() throws IOException {
     List<LiveIssue> list = new ArrayList<>();
 
     list.add(mockIssuePointer("f1", 100, "rule1", IssueSeverity.MAJOR, null));
@@ -96,7 +97,7 @@ class IssueTreeModelBuilderTests {
     assertThat(sorted).containsExactly(list.get(2), list.get(1), list.get(0), list.get(4), list.get(3));
   }
 
-  private void addFile(Map<VirtualFile, Collection<LiveIssue>> data, String fileName, int numIssues) {
+  private void addFile(Map<VirtualFile, Collection<LiveIssue>> data, String fileName, int numIssues) throws IOException {
     var file = mock(VirtualFile.class);
     when(file.getName()).thenReturn(fileName);
     when(file.isValid()).thenReturn(true);
@@ -112,7 +113,7 @@ class IssueTreeModelBuilderTests {
     data.put(file, issueList);
   }
 
-  private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) {
+  private static LiveIssue mockIssuePointer(String path, int startOffset, String rule, IssueSeverity severity, @Nullable Long introductionDate) throws IOException {
     var issue = mock(Issue.class);
     var psiFile = mock(PsiFile.class);
     when(psiFile.isValid()).thenReturn(true);
@@ -128,9 +129,9 @@ class IssueTreeModelBuilderTests {
     return ip;
   }
 
-  private static ClientInputFile mockFile(String path) {
+  private static ClientInputFile mockFile(String path) throws IOException {
     var file = mock(ClientInputFile.class);
-    when(file.getPath()).thenReturn(path);
+    when(file.contents()).thenReturn(path);
     when(file.getCharset()).thenReturn(Charset.defaultCharset());
     when(file.isTest()).thenReturn(false);
     return file;

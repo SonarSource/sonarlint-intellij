@@ -27,10 +27,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class SummaryNodeTests {
-  private SummaryNode node = new SummaryNode();
+  private final SummaryNode node = new SummaryNode();
+  private final SummaryNode nodeForSecurityHotspot = new SummaryNode(true);
 
   @Test
-  void testText() {
+  void testTextIssue() {
     var child1 = mock(AbstractNode.class);
     when(child1.getFindingCount()).thenReturn(3);
 
@@ -43,11 +44,32 @@ class SummaryNodeTests {
   }
 
   @Test
+  void testTextSecurityHotspot() {
+    var child1 = mock(AbstractNode.class);
+    when(child1.getFindingCount()).thenReturn(3);
+
+    nodeForSecurityHotspot.add(child1);
+
+    var renderer = mock(TreeCellRenderer.class);
+    nodeForSecurityHotspot.render(renderer);
+
+    verify(renderer).append("Found 3 security hotspots in 1 file");
+  }
+
+  @Test
   void testNoIssues() {
     var renderer = mock(TreeCellRenderer.class);
     node.render(renderer);
 
     verify(renderer).append("No issues to display");
+  }
+
+  @Test
+  void testNoSecurityHotspots() {
+    var renderer = mock(TreeCellRenderer.class);
+    nodeForSecurityHotspot.render(renderer);
+
+    verify(renderer).append("No security hotspots to display");
   }
 
   @Test

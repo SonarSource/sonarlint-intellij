@@ -22,29 +22,27 @@ package org.sonarlint.intellij.actions;
 import com.intellij.openapi.actionSystem.ActionGroup;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.ToggleAction;
 import java.util.ArrayList;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotAction;
 import org.sonarlint.intellij.actions.filters.FilterSecurityHotspotSettings;
 import org.sonarlint.intellij.actions.filters.SecurityHotspotFilters;
 
-import static org.sonarlint.intellij.common.util.SonarLintUtils.getService;
-
-public class FilterSecurityHotspotAction extends ActionGroup {
+public class FilterSecurityHotspotActionGroup extends ActionGroup {
 
   private final AnAction[] myChildren;
 
-  public FilterSecurityHotspotAction(String title, String description, @Nullable Icon icon) {
+  public FilterSecurityHotspotActionGroup(String title, String description, @Nullable Icon icon) {
     super(title, description, icon);
     setPopup(true);
 
     final ArrayList<AnAction> kids = new ArrayList<>(3);
     var settings = new FilterSecurityHotspotSettings();
-    kids.add(new SetFilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL, settings));
-    kids.add(new SetFilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY, settings));
-    kids.add(new SetFilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SONARQUBE, settings));
+    kids.add(new FilterSecurityHotspotAction(SecurityHotspotFilters.SHOW_ALL, settings));
+    kids.add(new FilterSecurityHotspotAction(SecurityHotspotFilters.LOCAL_ONLY, settings));
+    kids.add(new FilterSecurityHotspotAction(SecurityHotspotFilters.EXISTING_ON_SONARQUBE, settings));
     myChildren = kids.toArray(AnAction.EMPTY_ARRAY);
   }
 
@@ -52,37 +50,6 @@ public class FilterSecurityHotspotAction extends ActionGroup {
   @Override
   public AnAction[] getChildren(@Nullable AnActionEvent e) {
     return myChildren;
-  }
-
-  private static class SetFilterSecurityHotspotAction extends ToggleAction {
-
-    private final SecurityHotspotFilters filter;
-    private final FilterSecurityHotspotSettings settings;
-
-    SetFilterSecurityHotspotAction(SecurityHotspotFilters filter, FilterSecurityHotspotSettings settings)  {
-      super(filter.getTitle());
-      this.filter = filter;
-      this.settings = settings;
-    }
-
-    @Override
-    public boolean isSelected(@NotNull AnActionEvent e) {
-      return settings.getCurrentlySelectedFilter() == filter;
-    }
-
-    @Override
-    public void setSelected(@NotNull AnActionEvent e, boolean enabled) {
-      var project = e.getProject();
-      if (project == null) {
-        return;
-      }
-
-      if (enabled && settings.getCurrentlySelectedFilter() != filter) {
-        getService(project, SonarLintToolWindow.class).filterSecurityHotspotTab(filter);
-        settings.setCurrentlySelectedFilter(filter);
-      }
-    }
-
   }
 
 }

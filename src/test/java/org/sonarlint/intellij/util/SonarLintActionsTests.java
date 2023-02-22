@@ -32,9 +32,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class SonarLintActionsTests extends AbstractSonarLintLightTests {
-  private ActionManager actionManager = mock(ActionManager.class, RETURNS_DEEP_STUBS);
-  private DefaultActionGroup analyzeMenuGroup = new DefaultActionGroup();
-  private AnAction sonarlintAnalyzeMenuGroup = mock(AnAction.class);
+  private final ActionManager actionManager = mock(ActionManager.class, RETURNS_DEEP_STUBS);
+  private final DefaultActionGroup analyzeMenuGroup = new DefaultActionGroup();
+  private final AnAction sonarlintAnalyzeMenuGroup = mock(AnAction.class);
   private SonarLintActions instance;
 
   @BeforeEach
@@ -53,7 +53,7 @@ class SonarLintActionsTests extends AbstractSonarLintLightTests {
     assertActionFields(instance.clearReport());
     assertActionFields(instance.clearIssues());
     assertActionFields(instance.cleanConsole());
-
+    assertActionFields(instance.filterSecurityHotspots());
   }
 
   @Test
