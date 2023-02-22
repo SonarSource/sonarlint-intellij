@@ -91,6 +91,10 @@ To run an IntelliJ instance with the plugin installed, execute the Gradle task `
 or the **Gradle** toolbar in IntelliJ, under `Tasks/intellij`.
 The instance files are stored under `build/idea-sandbox`.
 
+To run against a specific version of IntelliJ, the `runIdeDirectory` property can be used as such:
+
+    ./gradlew :runIde -PrunIdeDirectory=<IDE_PATH>
+
 Keep in mind that the `clean` task will wipe out the content of `build/idea-sandbox`,
 so you will need to repeat some setup steps for that instance, such as configuring the JDK.
 
